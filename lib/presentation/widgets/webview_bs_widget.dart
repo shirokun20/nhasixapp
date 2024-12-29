@@ -19,27 +19,30 @@ class _WebviewBsWidgetState extends State<WebviewBsWidget> {
   Logger log = Logger();
   @override
   void initState() {
+    // setup webview controller
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (url) async {
             bool isSucces = false;
+            // check if the url contains nhentai.net and the cloudflare is bypassed
             if (url.contains('nhentai.net') &&
                 await isCloudflareBypassed() &&
                 mounted) {
               isSucces = true;
             }
+            // delay 1 second to show the result
             Future.delayed(const Duration(seconds: 1), () {
               getIt<SplashBloc>().add(
-                  SplashCFBypassEvent(status: isSucces ? "sukses" : "gagal"));
+                  SplashCFBypassEvent(status: isSucces ? "success" : "error"));
             });
             context.pop();
           },
           onHttpError: (HttpResponseError error) {
             log.e(error.response);
             Future.delayed(const Duration(seconds: 1), () {
-              getIt<SplashBloc>().add(SplashCFBypassEvent(status: "gagal"));
+              getIt<SplashBloc>().add(SplashCFBypassEvent(status: "error"));
             });
             context.pop();
           },
@@ -85,6 +88,7 @@ class _WebviewBsWidgetState extends State<WebviewBsWidget> {
     );
   }
 
+  // check if the cloudflare is bypassed
   Future<bool> isCloudflareBypassed() async {
     final cookies =
         await _controller.runJavaScriptReturningResult('document.cookie;');

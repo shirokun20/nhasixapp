@@ -21,10 +21,11 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
     SplashCFBypassEvent event,
     Emitter<SplashState> emit,
   ) async {
-    if (event.status.contains("sukses")) {
+    if (event.status.contains("success")) {
       emit(SplashSuccess());
     } else {
-      emit(SplashCloudflareInitial());
+      emit(SplashError(
+          message: "failed to bypass cloudflare, please using dns or vpn."));
     }
   }
 }

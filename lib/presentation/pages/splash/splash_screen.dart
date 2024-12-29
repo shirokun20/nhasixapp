@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:logger/web.dart';
 import 'package:nhasixapp/core/constants/colors_const.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
@@ -45,29 +44,23 @@ class _SplashMainWidgetState extends State<SplashMainWidget> {
       body: BlocListener<SplashBloc, SplashState>(
         listenWhen: (previous, current) => previous != current,
         listener: (context, state) {
-          Logger().i(state);
           if (state is SplashSuccess) {
-            final scaffold = ScaffoldMessenger.of(context);
-            scaffold.hideCurrentSnackBar();
-            scaffold
-                .showSnackBar(
-                  SnackBar(
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: ColorsConst.primaryTextColor,
-                    content: Text(
-                      'Success Bypass Cloudflare',
-                      style: TextStyleConst.styleRegular(
-                        size: 16,
-                        textColor: ColorsConst.primaryColor,
-                      ),
-                    ),
-                  ),
-                )
-                .closed
-                .then((reason) {
-              _navigateToMainScreen();
-            });
-          } else if (state is SplashCloudflareInitial) {
+            _snacBarCustom(
+              message: 'Success Bypass Cloudflare',
+              onFinish: _navigateToMainScreen,
+            );
+          }
+
+          if (state is SplashError) {
+            _snacBarCustom(
+              message: state.message,
+              onFinish: () {
+                // _showWebViewBottomSheet(context);
+              },
+            );
+          }
+
+          if (state is SplashCloudflareInitial) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               _showWebViewBottomSheet(context);
             });
@@ -86,5 +79,33 @@ class _SplashMainWidgetState extends State<SplashMainWidget> {
 
   Future<void> _navigateToMainScreen() async {
     context.go(AppRoute.main);
+  }
+
+  void _snacBarCustom({
+    String message = '',
+    VoidCallback? onFinish,
+  }) {
+    final scaffold = ScaffoldMessenger.of(context);
+    scaffold.hideCurrentSnackBar();
+    scaffold
+        .showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: ColorsConst.primaryTextColor,
+            content: Text(
+              message,
+              style: TextStyleConst.styleRegular(
+                size: 16,
+                textColor: ColorsConst.primaryColor,
+              ),
+            ),
+          ),
+        )
+        .closed
+        .then(
+      (reason) {
+        onFinish?.call();
+      },
+    );
   }
 }
