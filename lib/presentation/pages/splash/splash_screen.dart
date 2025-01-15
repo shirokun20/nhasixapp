@@ -13,10 +13,7 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => getIt<SplashBloc>()..add(SplashStartedEvent()),
-      child: const SplashMainWidget(),
-    );
+    return const SplashMainWidget();
   }
 }
 
@@ -33,8 +30,17 @@ class _SplashMainWidgetState extends State<SplashMainWidget> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => const WebviewBsWidget(),
+      builder: (context) => BlocProvider.value(
+        value: context.read<SplashBloc>(),
+        child: const WebviewBsWidget(),
+      ),
     );
+  }
+
+  @override
+  void initState() {
+    getIt<SplashBloc>().add(SplashStartedEvent());
+    super.initState();
   }
 
   @override
@@ -49,18 +55,14 @@ class _SplashMainWidgetState extends State<SplashMainWidget> {
               message: 'Success Bypass Cloudflare',
               onFinish: _navigateToMainScreen,
             );
-          }
-
-          if (state is SplashError) {
+          } else if (state is SplashError) {
             _snacBarCustom(
               message: state.message,
               onFinish: () {
                 // _showWebViewBottomSheet(context);
               },
             );
-          }
-
-          if (state is SplashCloudflareInitial) {
+          } else if (state is SplashCloudflareInitial) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               _showWebViewBottomSheet(context);
             });

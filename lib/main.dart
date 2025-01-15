@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nhasixapp/core/config/multi_bloc_provider_config.dart';
+import 'package:nhasixapp/core/constants/colors_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 
@@ -13,12 +16,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: "Nhentai Flutter App",
-      debugShowCheckedModeBanner: true,
-      routerConfig: AppRouter.router,
-      theme: ThemeData(
-        primaryColor: Colors.blue,
+    return MultiBlocProvider(
+      providers: MultiBlocProviderConfig.data,
+      child: MaterialApp.router(
+        title: "Nhentai Flutter App",
+        debugShowCheckedModeBanner: true,
+        routerConfig: AppRouter.router,
+        theme: ThemeData(
+          primaryColor: ColorsConst.primaryColor,
+        ),
       ),
     );
   }

@@ -63,7 +63,7 @@ class _WebviewBsWidgetState extends State<WebviewBsWidget> {
     return Container(
       height: MediaQuery.of(context).size.height * 0.8,
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: ColorsConst.primaryColor,
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Column(
@@ -74,7 +74,7 @@ class _WebviewBsWidgetState extends State<WebviewBsWidget> {
               'Please wait while we bypass Cloudflare...',
               style: TextStyleConst.styleRegular(
                 size: 16,
-                textColor: ColorsConst.primaryColor,
+                textColor: ColorsConst.primaryTextColor,
               ),
             ),
           ),
