@@ -40,13 +40,13 @@ class UrlNhentaiUtil {
     // Tambahkan tag yang harus dikecualikan
     if (excludeTags != null && excludeTags!.isNotEmpty) {
       for (var tag in excludeTags!) {
-        query += '-tag:"$tag"';
+        query += '+-tag:"$tag"';
       }
     }
 
     // Gabungkan dengan URL dasar dan parameter halaman
     final url = '$baseUrl/search/?q=$query&page=$page';
-    return Uri.encodeFull(url); // Encode URL agar valid
+    return url; // Encode URL agar valid
   }
 
   String buildWithPageOnly() {
@@ -55,10 +55,10 @@ class UrlNhentaiUtil {
 }
 
 // Contoh penggunaan withSearch
-// UrlUtil urlUtil = UrlUtil('https://nhentai.net', language: 'english', includeTags: ['loli'], excludeTags: ['shota'], artists: ['Sakuragi Hana'], page: 1);
+// UrlUtil urlUtil = UrlUtil('https://nhentai.net', language: 'english', includeTags: ['loli'], excludeTags: ['shota'], artists: ['leonat'], page: 1);
 // final builtUrl = urlUtil.buildWithSearch();
 // print(builtUrl);
-// Output: https://nhentai.net/search/?q=%2Blanguage%3A%22english%22%2Btag%3A%22loli%22-tag%3A%22shota%22+artist%3A%22Sakuragi%20Hana%22&page=1
+// Output: https://nhentai.net/search/?q=+language:"english"+tag:"loli"+artist:"leonat"+-tag:"shota"&page=1
 
 // Contoh penggunaan withPageOnly
 // UrlUtil urlUtil = UrlUtil('https://nhentai.net', page: 2);

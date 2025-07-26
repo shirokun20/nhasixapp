@@ -1,20 +1,219 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
-import 'package:nhasixapp/presentation/pages/main/main_screen.dart';
 import 'package:nhasixapp/presentation/pages/splash/splash_screen.dart';
+import 'package:nhasixapp/presentation/pages/main/main_screen.dart';
 
 class AppRouter {
-  static final router = GoRouter(
+  static final GoRouter router = GoRouter(
     initialLocation: AppRoute.defaultRoute,
+    debugLogDiagnostics: true,
     routes: [
+      // Splash Screen
       GoRoute(
-        path: AppRoute.defaultRoute,
+        path: AppRoute.splash,
+        name: AppRoute.splashName,
         builder: (context, state) => const SplashScreen(),
       ),
+
+      // Home Screen
+      GoRoute(
+        path: AppRoute.home,
+        name: AppRoute.homeName,
+        builder: (context, state) =>
+            const MainScreen(), // Using MainScreen as home for now
+      ),
+
+      // Search Screen
+      GoRoute(
+        path: AppRoute.search,
+        name: AppRoute.searchName,
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('Search Screen - To be implemented')),
+        ),
+      ),
+
+      // Content Detail Screen
+      GoRoute(
+        path: AppRoute.contentDetail,
+        name: AppRoute.contentDetailName,
+        builder: (context, state) {
+          final contentId = state.pathParameters['id']!;
+          return Scaffold(
+            appBar: AppBar(title: Text('Content: $contentId')),
+            body: const Center(
+                child: Text('Content Detail Screen - To be implemented')),
+          );
+        },
+      ),
+
+      // Reader Screen
+      GoRoute(
+        path: AppRoute.reader,
+        name: AppRoute.readerName,
+        builder: (context, state) {
+          final contentId = state.pathParameters['id']!;
+          final page =
+              int.tryParse(state.uri.queryParameters['page'] ?? '1') ?? 1;
+          return Scaffold(
+            appBar: AppBar(title: Text('Reading: $contentId - Page $page')),
+            body:
+                const Center(child: Text('Reader Screen - To be implemented')),
+          );
+        },
+      ),
+
+      // Favorites Screen
+      GoRoute(
+        path: AppRoute.favorites,
+        name: AppRoute.favoritesName,
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('Favorites Screen - To be implemented')),
+        ),
+      ),
+
+      // Downloads Screen
+      GoRoute(
+        path: AppRoute.downloads,
+        name: AppRoute.downloadsName,
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('Downloads Screen - To be implemented')),
+        ),
+      ),
+
+      // History Screen
+      GoRoute(
+        path: AppRoute.history,
+        name: AppRoute.historyName,
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('History Screen - To be implemented')),
+        ),
+      ),
+
+      // Settings Screen
+      GoRoute(
+        path: AppRoute.settings,
+        name: AppRoute.settingsName,
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('Settings Screen - To be implemented')),
+        ),
+      ),
+
+      // Tags Screen
+      GoRoute(
+        path: AppRoute.tags,
+        name: AppRoute.tagsName,
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('Tags Screen - To be implemented')),
+        ),
+      ),
+
+      // Artists Screen
+      GoRoute(
+        path: AppRoute.artists,
+        name: AppRoute.artistsName,
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('Artists Screen - To be implemented')),
+        ),
+      ),
+
+      // Random Screen
+      GoRoute(
+        path: AppRoute.random,
+        name: AppRoute.randomName,
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('Random Screen - To be implemented')),
+        ),
+      ),
+
+      // Status Screen
+      GoRoute(
+        path: AppRoute.status,
+        name: AppRoute.statusName,
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('Status Screen - To be implemented')),
+        ),
+      ),
+
+      // Legacy Main Screen route for backward compatibility
       GoRoute(
         path: AppRoute.main,
+        name: AppRoute.mainName,
         builder: (context, state) => const MainScreen(),
       ),
     ],
+
+    // Error handling
+    errorBuilder: (context, state) => Scaffold(
+      appBar: AppBar(title: const Text('Page Not Found')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(
+              'Page not found: ${state.uri}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => context.go(AppRoute.home),
+              child: const Text('Go Home'),
+            ),
+          ],
+        ),
+      ),
+    ),
   );
+
+  // Navigation helper methods
+  static void goToHome(BuildContext context) {
+    context.go(AppRoute.home);
+  }
+
+  static void goToSearch(BuildContext context) {
+    context.go(AppRoute.search);
+  }
+
+  static void goToContentDetail(BuildContext context, String contentId) {
+    context.go('/content/$contentId');
+  }
+
+  static void goToReader(BuildContext context, String contentId,
+      {int page = 1}) {
+    context.go('/reader/$contentId?page=$page');
+  }
+
+  static void goToFavorites(BuildContext context) {
+    context.go(AppRoute.favorites);
+  }
+
+  static void goToDownloads(BuildContext context) {
+    context.go(AppRoute.downloads);
+  }
+
+  static void goToHistory(BuildContext context) {
+    context.go(AppRoute.history);
+  }
+
+  static void goToSettings(BuildContext context) {
+    context.go(AppRoute.settings);
+  }
+
+  static void goToTags(BuildContext context) {
+    context.go(AppRoute.tags);
+  }
+
+  static void goToArtists(BuildContext context) {
+    context.go(AppRoute.artists);
+  }
+
+  static void goToRandom(BuildContext context) {
+    context.go(AppRoute.random);
+  }
+
+  static void goToStatus(BuildContext context) {
+    context.go(AppRoute.status);
+  }
 }

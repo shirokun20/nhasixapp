@@ -25,7 +25,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       emit(SplashSuccess());
     } else {
       emit(SplashError(
-          message: "failed to bypass cloudflare, please using dns or vpn."));
+        message: "failed to bypass cloudflare, please using dns or vpn.",
+      ));
     }
   }
 }

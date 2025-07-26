@@ -5,9 +5,9 @@ import 'package:nhasixapp/core/constants/colors_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  setupLocator();
+  await setupLocator();
   runApp(const MyApp());
 }
 
