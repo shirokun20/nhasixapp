@@ -68,12 +68,6 @@ lib/
 - **Flutter** - Cross-platform mobile development
 - **Dart** - Programming language
 
-### **Architecture & State Management**
-- **Clean Architecture** - Separation of concerns
-- **BLoC Pattern** - Reactive state management wis with comprehensive CRUD
-- **RemoteDataSource** - Web scraping with anti-detection and Cloudflare bypass
-- **DatabaseHelper** - Database schema management and migrations
-
 ### **Offline-First Strategy**
 - **Intelligent Caching** - 6-hour cache expiration with automatic refresh
 - **Fallback Mechanisms** - Cache → Remote → Cache fallback pattern
@@ -86,7 +80,15 @@ lib/
 - **DownloadStatusModel** - Download progress tracking
 - **HistoryModel** - Reading history with statistics
 
-## 🛠️ Tech Stackth `flutter_bloc`
+## 🛠️ Tech Stack
+
+### **Core Framework**
+- **Flutter** - Cross-platform mobile development
+- **Dart** - Programming language
+
+### **Architecture & State Management**
+- **Clean Architecture** - Separation of concerns
+- **BLoC Pattern** - Reactive state management with `flutter_bloc`
 - **Get It** - Dependency injection
 - **Equatable** - Value equality and immutability
 
