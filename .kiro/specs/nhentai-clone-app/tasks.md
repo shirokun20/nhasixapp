@@ -29,15 +29,15 @@
     - Add comprehensive error handling
     - _Requirements: 1.1, 2.1, 3.1, 4.1, 5.1_
 
-- [ ] 3. Setup data layer foundation
-  - [ ] 3.1 Create database schema dan local data source
+- [-] 3. Setup data layer foundation
+  - [x] 3.1 Create database schema dan local data source
     - Setup SQLite database dengan sqflite
     - Create database migration system
     - Implement LocalDataSource dengan CRUD operations
     - Add database indexes untuk performance
     - _Requirements: 4.1, 5.1, 7.1_
 
-  - [ ] 3.2 Implement web scraping remote data source
+  - [x] 3.2 Implement web scraping remote data source
     - Create RemoteDataSource dengan Dio HTTP client
     - Implement HTML parsing dengan html package
     - Create NhentaiScraper dengan CSS selectors
@@ -45,7 +45,7 @@
     - Implement anti-detection measures
     - _Requirements: 1.1, 2.1, 3.1_
 
-  - [ ] 3.3 Implement repository implementations
+  - [x] 3.3 Implement repository implementations
     - Create ContentRepositoryImpl dengan caching strategy
     - Create UserDataRepositoryImpl untuk local data
     - Create SettingsRepositoryImpl dengan SharedPreferences
