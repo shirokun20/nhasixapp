@@ -269,3 +269,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **Built with ❤️ using Flutter and Clean Architecture**
+
+---
+
+## 🌐 Other Languages
+
+- [English](README.md) ← You are here
+- [Bahasa Indonesia](README_ID.md)
