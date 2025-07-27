@@ -4,6 +4,11 @@
 ![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
+> **⚠️ AGE RESTRICTION WARNING**  
+> **This application is intended for users 18 years of age and older only.**  
+> **The content accessed through this application may contain mature themes and is not suitable for minors.**  
+> **By using this application, you confirm that you are at least 18 years old and legally permitted to access such content in your jurisdiction.**
+
 A comprehensive Flutter Android application that serves as a clone of nhentai.net, built with **Clean Architecture** and modern Flutter development practices. This app provides an enhanced mobile experience for browsing, reading, and managing manga/doujinshi content with offline capabilities.
 
 ## 🚀 Features
@@ -229,7 +234,14 @@ This project follows Clean Architecture principles and uses BLoC for state manag
 
 ## ⚖️ Legal Notice
 
-This application is created for educational purposes and personal use only. It demonstrates modern Flutter development practices and Clean Architecture implementation. Users are responsible for complying with applicable laws and terms of service of content sources.
+**AGE RESTRICTION:** This application is strictly intended for users who are 18 years of age or older. The content accessed through this application contains mature themes and adult material that is not suitable for minors.
+
+This application is created for educational purposes and personal use only. It demonstrates modern Flutter development practices and Clean Architecture implementation. Users are responsible for:
+- Verifying they meet the minimum age requirement (18+) in their jurisdiction
+- Complying with applicable laws and terms of service of content sources
+- Using the application responsibly and legally
+
+By downloading, installing, or using this application, you acknowledge and confirm that you are at least 18 years old and legally permitted to access adult content in your location.
 
 ## 📄 License
 
