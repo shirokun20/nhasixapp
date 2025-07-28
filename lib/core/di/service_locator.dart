@@ -122,7 +122,11 @@ void _setupUseCases() {
 /// Setup BLoCs
 void _setupBlocs() {
   // Splash BLoC
-  getIt.registerFactory<SplashBloc>(() => SplashBloc());
+  getIt.registerFactory<SplashBloc>(() => SplashBloc(
+        httpClient: getIt<Dio>(),
+        logger: getIt<Logger>(),
+        connectivity: getIt<Connectivity>(),
+      ));
 
   // Home BLoC
   getIt.registerFactory<HomeBloc>(() => HomeBloc());

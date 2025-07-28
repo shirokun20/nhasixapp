@@ -7,11 +7,37 @@ abstract class SplashState extends Equatable {
 
 class SplashInitial extends SplashState {}
 
-class SplashSuccess extends SplashState {}
+class SplashInitializing extends SplashState {}
+
+class SplashCloudflareInitial extends SplashState {}
+
+class SplashBypassInProgress extends SplashState {
+  final String message;
+
+  SplashBypassInProgress({this.message = 'Bypassing Cloudflare protection...'});
+
+  @override
+  List<Object?> get props => [message];
+}
+
+class SplashSuccess extends SplashState {
+  final String message;
+
+  SplashSuccess({this.message = 'Successfully bypassed Cloudflare protection'});
+
+  @override
+  List<Object?> get props => [message];
+}
 
 class SplashError extends SplashState {
   final String message;
-  SplashError({required this.message});
-}
+  final bool canRetry;
 
-class SplashCloudflareInitial extends SplashState {}
+  SplashError({
+    required this.message,
+    this.canRetry = true,
+  });
+
+  @override
+  List<Object?> get props => [message, canRetry];
+}
