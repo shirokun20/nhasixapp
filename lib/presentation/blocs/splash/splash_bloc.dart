@@ -1,19 +1,18 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass.dart';
+import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
 
 part 'splash_event.dart';
 part 'splash_state.dart';
 
 class SplashBloc extends Bloc<SplashEvent, SplashState> {
   SplashBloc({
-    required Dio httpClient,
+    required RemoteDataSource remoteDataSource,
     required Logger logger,
     required Connectivity connectivity,
-  })  : _httpClient = httpClient,
+  })  : _remoteDataSource = remoteDataSource,
         _logger = logger,
         _connectivity = connectivity,
         super(SplashInitial()) {
@@ -21,17 +20,11 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
     on<SplashInitializeBypassEvent>(_onInitializeBypass);
     on<SplashCFBypassEvent>(_onByPassCloudflare);
     on<SplashRetryBypassEvent>(_onRetryBypass);
-
-    _cloudflareBypass = CloudflareBypass(
-      httpClient: _httpClient,
-      logger: _logger,
-    );
   }
 
-  final Dio _httpClient;
+  final RemoteDataSource _remoteDataSource;
   final Logger _logger;
   final Connectivity _connectivity;
-  late final CloudflareBypass _cloudflareBypass;
 
   static const Duration _initialDelay = Duration(seconds: 1);
 
@@ -58,7 +51,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       }
 
       // Check if bypass is already working
-      final isAlreadyBypassed = await _cloudflareBypass.checkBypassStatus();
+      final isAlreadyBypassed = await _remoteDataSource.checkCloudflareStatus();
       if (isAlreadyBypassed) {
         _logger.i('SplashBloc: Cloudflare already bypassed');
         emit(SplashSuccess(message: 'Already connected to nhentai.net'));
@@ -85,8 +78,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       _logger.i('SplashBloc: Initializing Cloudflare bypass...');
       emit(SplashBypassInProgress(message: 'Initializing bypass system...'));
 
-      // Initialize the bypass system
-      await _cloudflareBypass.initialize();
+      // Initialize the remote data source (includes anti-detection)
+      await _remoteDataSource.initialize();
 
       // Start the bypass process
       emit(SplashBypassInProgress(message: 'Connecting to nhentai.net...'));
@@ -110,7 +103,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
 
       if (event.status.contains("success")) {
         // Verify the bypass actually worked
-        final isVerified = await _cloudflareBypass.checkBypassStatus();
+        final isVerified = await _remoteDataSource.checkCloudflareStatus();
 
         if (isVerified) {
           _logger.i('SplashBloc: Cloudflare bypass successful and verified');
@@ -152,8 +145,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
     try {
       _logger.i('SplashBloc: Retrying Cloudflare bypass...');
 
-      // Clear any existing cookies and reset
-      _cloudflareBypass.clearCookies();
+      // Attempt bypass again
+      await _remoteDataSource.bypassCloudflare();
 
       // Check connectivity again
       final connectivityResult = await _connectivity.checkConnectivity();
@@ -181,7 +174,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
 
   @override
   Future<void> close() {
-    _cloudflareBypass.dispose();
+    _remoteDataSource.dispose();
     return super.close();
   }
 }

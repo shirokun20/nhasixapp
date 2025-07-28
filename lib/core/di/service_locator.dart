@@ -5,6 +5,12 @@ import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
+// Data Sources
+import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
+import 'package:nhasixapp/data/datasources/remote/anti_detection.dart';
+import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass.dart';
+import 'package:nhasixapp/data/datasources/remote/nhentai_scraper.dart';
+
 // BLoCs
 import 'package:nhasixapp/presentation/blocs/splash/splash_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/home/home_bloc.dart';
@@ -51,11 +57,31 @@ void _setupCore() {
     dio.options.connectTimeout = const Duration(seconds: 30);
     dio.options.receiveTimeout = const Duration(seconds: 30);
     dio.options.sendTimeout = const Duration(seconds: 30);
+    dio.options.followRedirects = true;
+    dio.options.maxRedirects = 5;
+
+    // Default headers to mimic real browser
+    dio.options.headers = {
+      'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept':
+          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'DNT': '1',
+      'Connection': 'keep-alive',
+      'Upgrade-Insecure-Requests': '1',
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'none',
+      'Sec-Fetch-User': '?1',
+      'Cache-Control': 'max-age=0',
+    };
 
     // Add interceptors for logging and error handling
     dio.interceptors.add(LogInterceptor(
-      requestBody: true,
-      responseBody: true,
+      requestBody: false, // Don't log request body for privacy
+      responseBody: false, // Don't log response body for performance
       logPrint: (obj) => getIt<Logger>().d(obj),
     ));
 
@@ -68,8 +94,32 @@ void _setupCore() {
 
 /// Setup data sources (Remote and Local)
 void _setupDataSources() {
-  // TODO: Register data sources when implemented
-  // getIt.registerLazySingleton<RemoteDataSource>(() => RemoteDataSourceImpl(getIt()));
+  // Anti-Detection
+  getIt.registerLazySingleton<AntiDetection>(() => AntiDetection(
+        logger: getIt<Logger>(),
+      ));
+
+  // Cloudflare Bypass
+  getIt.registerLazySingleton<CloudflareBypass>(() => CloudflareBypass(
+        httpClient: getIt<Dio>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // Nhentai Scraper
+  getIt.registerLazySingleton<NhentaiScraper>(() => NhentaiScraper(
+        logger: getIt<Logger>(),
+      ));
+
+  // Remote Data Source
+  getIt.registerLazySingleton<RemoteDataSource>(() => RemoteDataSource(
+        httpClient: getIt<Dio>(),
+        scraper: getIt<NhentaiScraper>(),
+        cloudflareBypass: getIt<CloudflareBypass>(),
+        antiDetection: getIt<AntiDetection>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // TODO: Register local data source when implemented
   // getIt.registerLazySingleton<LocalDataSource>(() => LocalDataSourceImpl(getIt()));
 }
 
@@ -123,7 +173,7 @@ void _setupUseCases() {
 void _setupBlocs() {
   // Splash BLoC
   getIt.registerFactory<SplashBloc>(() => SplashBloc(
-        httpClient: getIt<Dio>(),
+        remoteDataSource: getIt<RemoteDataSource>(),
         logger: getIt<Logger>(),
         connectivity: getIt<Connectivity>(),
       ));
