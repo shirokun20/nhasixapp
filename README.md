@@ -86,6 +86,29 @@ lib/
 - **DownloadStatusModel** - Download progress tracking
 - **HistoryModel** - Reading history with statistics
 
+## 🎯 Recent Implementation: Enhanced SplashBloc
+
+### **Key Features Implemented**
+- **🔄 Comprehensive State Management** - Multiple states for different phases of app initialization
+- **🌐 Network Connectivity Validation** - Checks internet connection before attempting bypass
+- **🛡️ Cloudflare Bypass Integration** - Seamless integration with existing bypass system
+- **✅ Bypass Verification** - Ensures bypass actually worked before proceeding
+- **🔄 Retry Mechanism** - Smart retry with proper error handling
+- **📱 Enhanced User Experience** - Loading indicators, progress messages, and error feedback
+- **🧪 Comprehensive Testing** - Unit tests with mocking for all scenarios
+
+### **State Flow**
+```
+SplashInitial → SplashInitializing → SplashBypassInProgress → 
+SplashCloudflareInitial → [WebView Modal] → SplashSuccess/SplashError
+```
+
+### **Error Handling**
+- Network connectivity issues with retry options
+- Cloudflare bypass failures with detailed error messages
+- Bypass verification failures with automatic retry
+- User-friendly error messages with actionable solutions
+
 ## 🛠️ Tech Stack
 
 ### **Core Framework**
@@ -143,6 +166,13 @@ lib/
 - **Package Info Plus** - App information
 - **Device Info Plus** - Device information
 
+### **Testing & Development**
+- **BLoC Test** - Testing utilities for BLoC state management
+- **Mockito** - Mock generation for unit testing
+- **Build Runner** - Code generation for mocks and other build tasks
+- **Flutter Test** - Core testing framework
+- **Flutter Lints** - Code quality and style enforcement
+
 ## 📋 Development Progress
 
 ### ✅ **Completed Tasks**
@@ -157,9 +187,15 @@ lib/
   - [x] Remote data sources with web scraping capabilities
   - [x] Data models with entity conversion
   - [x] Caching strategy and error handling
+- [x] **Task 4.1**: Enhanced SplashBloc implementation ✨
+  - [x] Comprehensive state management for app initialization
+  - [x] Cloudflare bypass integration with proper error handling
+  - [x] Network connectivity validation and retry mechanisms
+  - [x] Enhanced UI with loading states and progress indicators
+  - [x] Comprehensive unit testing with mocking
 
 ### 🚧 **In Progress**
-- [ ] **Task 4**: Core BLoC state management (Week 2)
+- [ ] **Task 4**: Core BLoC state management (Week 2) - 25% Complete
 - [ ] **Task 5**: Core UI components (Week 3)
 
 ### 📅 **Upcoming Tasks** (12-week roadmap)
@@ -209,16 +245,30 @@ flutter build appbundle --release
 
 ## 🧪 Testing
 
+The project includes comprehensive testing with mocking for reliable unit tests:
+
 ```bash
 # Run all tests
 flutter test
 
+# Run specific test file
+flutter test test/presentation/blocs/splash/splash_bloc_test.dart
+
 # Run tests with coverage
 flutter test --coverage
+
+# Generate mock files
+flutter packages pub run build_runner build
 
 # Analyze code
 flutter analyze
 ```
+
+### **Test Coverage**
+- **SplashBloc Tests** - Complete state management testing with mocked dependencies
+- **Repository Tests** - Data layer testing with offline-first scenarios
+- **Use Case Tests** - Business logic validation
+- **Integration Tests** - End-to-end testing for critical flows
 
 ## 📱 Screenshots
 
@@ -260,11 +310,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📊 Project Statistics
 
 - **Architecture**: Clean Architecture with 3 layers
-- **State Management**: BLoC Pattern
-- **Dependencies**: 40+ carefully selected packages
+- **State Management**: BLoC Pattern with comprehensive testing
+- **Dependencies**: 45+ carefully selected packages
+- **Test Coverage**: Unit tests with mocking for critical components
+- **Development Progress**: 25% complete (4.1/12 tasks)
 - **Estimated Development Time**: 12 weeks (1 task per week)
 - **Target Platform**: Android
 - **Minimum SDK**: Android API 21+ (Android 5.0)
+- **Latest Achievement**: Enhanced SplashBloc with Cloudflare bypass integration ✨
 
 ---
 

@@ -92,6 +92,29 @@ lib/
 - **DownloadStatusModel** - Pelacakan progress download
 - **HistoryModel** - Riwayat membaca dengan statistik
 
+## 🎯 Implementasi Terbaru: SplashBloc yang Ditingkatkan
+
+### **Fitur Utama yang Diimplementasikan**
+- **🔄 Manajemen State Komprehensif** - Multiple state untuk fase berbeda inisialisasi aplikasi
+- **🌐 Validasi Konektivitas Jaringan** - Cek koneksi internet sebelum mencoba bypass
+- **🛡️ Integrasi Bypass Cloudflare** - Integrasi seamless dengan sistem bypass yang ada
+- **✅ Verifikasi Bypass** - Memastikan bypass benar-benar berhasil sebelum melanjutkan
+- **🔄 Mekanisme Retry** - Retry cerdas dengan error handling yang tepat
+- **📱 User Experience yang Ditingkatkan** - Indikator loading, pesan progress, dan feedback error
+- **🧪 Testing Komprehensif** - Unit test dengan mocking untuk semua skenario
+
+### **Alur State**
+```
+SplashInitial → SplashInitializing → SplashBypassInProgress → 
+SplashCloudflareInitial → [Modal WebView] → SplashSuccess/SplashError
+```
+
+### **Error Handling**
+- Masalah konektivitas jaringan dengan opsi retry
+- Kegagalan bypass Cloudflare dengan pesan error detail
+- Kegagalan verifikasi bypass dengan retry otomatis
+- Pesan error yang user-friendly dengan solusi yang dapat ditindaklanjuti
+
 ## 🛠️ Tech Stack
 
 ### **Framework Inti**
@@ -149,6 +172,13 @@ lib/
 - **Package Info Plus** - Informasi aplikasi
 - **Device Info Plus** - Informasi perangkat
 
+### **Testing & Development**
+- **BLoC Test** - Utilitas testing untuk manajemen state BLoC
+- **Mockito** - Generasi mock untuk unit testing
+- **Build Runner** - Code generation untuk mock dan build task lainnya
+- **Flutter Test** - Framework testing inti
+- **Flutter Lints** - Penegakan kualitas dan style kode
+
 ## 📋 Progress Pengembangan
 
 ### ✅ **Tugas Selesai**
@@ -163,9 +193,15 @@ lib/
   - [x] Sumber data remote dengan kemampuan web scraping
   - [x] Model data dengan konversi entitas
   - [x] Strategi caching dan error handling
+- [x] **Tugas 4.1**: Implementasi SplashBloc yang ditingkatkan ✨
+  - [x] Manajemen state komprehensif untuk inisialisasi aplikasi
+  - [x] Integrasi bypass Cloudflare dengan error handling yang tepat
+  - [x] Validasi konektivitas jaringan dan mekanisme retry
+  - [x] UI yang ditingkatkan dengan loading state dan indikator progress
+  - [x] Unit testing komprehensif dengan mocking
 
 ### 🚧 **Sedang Berlangsung**
-- [ ] **Tugas 4**: Manajemen state BLoC inti (Minggu 2)
+- [ ] **Tugas 4**: Manajemen state BLoC inti (Minggu 2) - 25% Selesai
 - [ ] **Tugas 5**: Komponen UI inti (Minggu 3)
 
 ### 📅 **Tugas Mendatang** (roadmap 12 minggu)
@@ -215,16 +251,30 @@ flutter build appbundle --release
 
 ## 🧪 Testing
 
+Proyek ini mencakup testing komprehensif dengan mocking untuk unit test yang reliable:
+
 ```bash
 # Jalankan semua test
 flutter test
 
+# Jalankan file test spesifik
+flutter test test/presentation/blocs/splash/splash_bloc_test.dart
+
 # Jalankan test dengan coverage
 flutter test --coverage
+
+# Generate file mock
+flutter packages pub run build_runner build
 
 # Analisis kode
 flutter analyze
 ```
+
+### **Cakupan Test**
+- **Test SplashBloc** - Testing manajemen state lengkap dengan dependensi yang di-mock
+- **Test Repository** - Testing layer data dengan skenario offline-first
+- **Test Use Case** - Validasi logika bisnis
+- **Integration Test** - Testing end-to-end untuk alur kritis
 
 ## 📱 Screenshot
 
@@ -266,11 +316,14 @@ Proyek ini dilisensikan di bawah MIT License - lihat file [LICENSE](LICENSE) unt
 ## 📊 Statistik Proyek
 
 - **Arsitektur**: Clean Architecture dengan 3 layer
-- **Manajemen State**: Pola BLoC
-- **Dependensi**: 40+ package yang dipilih dengan hati-hati
+- **Manajemen State**: Pola BLoC dengan testing komprehensif
+- **Dependensi**: 45+ package yang dipilih dengan hati-hati
+- **Cakupan Test**: Unit test dengan mocking untuk komponen kritis
+- **Progress Pengembangan**: 25% selesai (4.1/12 tugas)
 - **Estimasi Waktu Pengembangan**: 12 minggu (1 tugas per minggu)
 - **Platform Target**: Android
 - **SDK Minimum**: Android API 21+ (Android 5.0)
+- **Pencapaian Terbaru**: SplashBloc yang ditingkatkan dengan integrasi bypass Cloudflare ✨
 
 ---
 
