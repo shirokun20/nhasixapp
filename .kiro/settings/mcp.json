@@ -86,11 +86,7 @@
         "git_rebase",
         "git_cherry_pick",
         "git_blame",
-        "git_bisect",
-        "git-status",
-        "git-log",
-        "git-add",
-        "git-quick-commit"
+        "git_bisect"
       ]
     },
     "time": {
@@ -122,6 +118,22 @@
       "disabled": false,
       "autoApprove": [
         "fetch"
+      ]
+    },
+    "pubdev-mcp": {
+      "command": "/Users/asix/fvm/versions/stable/bin/dart",
+      "args": [
+        "/tmp/pubdev_mcp/bin/pubdev_mcp.dart"
+      ],
+      "env": {
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "search_packages",
+        "get_package_info",
+        "search_pub_dev",
+        "search pub.dev"
       ]
     }
   }
