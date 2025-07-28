@@ -30,7 +30,7 @@
       "env": {
         "FASTMCP_LOG_LEVEL": "ERROR"
       },
-      "disabled": false,
+      "disabled": true,
       "autoApprove": [
         "git_status",
         "git_diff_unstaged",
@@ -86,7 +86,9 @@
         "git_rebase",
         "git_cherry_pick",
         "git_blame",
-        "git_bisect"
+        "git_bisect",
+        "git-status",
+        "git-flow"
       ]
     },
     "time": {
