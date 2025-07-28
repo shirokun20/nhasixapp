@@ -1,5 +1,5 @@
 {
   "dart.flutterSdkPath": ".fvm/versions/stable",
   "CodeGPT.apiKey": "CodeGPT Plus Beta",
-  "kiroAgent.configureMCP": "Disabled"
+  "kiroAgent.configureMCP": "Enabled"
 }
