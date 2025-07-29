@@ -3,27 +3,28 @@ import '../../entities/entities.dart';
 import '../../repositories/repositories.dart';
 
 /// Use case for getting random content
-class GetRandomContentUseCase
-    extends UseCase<List<Content>, GetRandomContentParams> {
+class GetRandomContentUseCase extends UseCase<List<Content>, int> {
   GetRandomContentUseCase(this._contentRepository);
 
   final ContentRepository _contentRepository;
 
+  static const int maxCount = 50;
+
   @override
-  Future<List<Content>> call(GetRandomContentParams params) async {
+  Future<List<Content>> call(int count) async {
     try {
       // Validate parameters
-      if (params.count < 1) {
+      if (count < 1) {
         throw const ValidationException('Count must be greater than 0');
       }
 
-      if (params.count > params.maxCount) {
-        throw ValidationException('Count cannot exceed ${params.maxCount}');
+      if (count > maxCount) {
+        throw ValidationException('Count cannot exceed $maxCount');
       }
 
       // Get random content from repository
       final content = await _contentRepository.getRandomContent(
-        count: params.count,
+        count: count,
       );
 
       return content;

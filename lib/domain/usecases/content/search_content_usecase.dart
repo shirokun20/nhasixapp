@@ -3,33 +3,26 @@ import '../../entities/entities.dart';
 import '../../repositories/repositories.dart';
 
 /// Use case for searching content with advanced filters
-class SearchContentUseCase
-    extends UseCase<ContentListResult, SearchContentParams> {
+class SearchContentUseCase extends UseCase<ContentListResult, SearchFilter> {
   SearchContentUseCase(this._contentRepository);
 
   final ContentRepository _contentRepository;
 
   @override
-  Future<ContentListResult> call(SearchContentParams params) async {
+  Future<ContentListResult> call(SearchFilter filter) async {
     try {
       // Validate parameters
-      if (params.filter.page < 1) {
+      if (filter.page < 1) {
         throw const ValidationException('Page number must be greater than 0');
       }
 
       // Validate search query if provided
-      if (params.filter.query != null && params.filter.query!.trim().isEmpty) {
+      if (filter.query != null && filter.query!.trim().isEmpty) {
         throw const ValidationException('Search query cannot be empty');
       }
 
-      // Check if filter has any criteria
-      if (params.requireFilters && params.filter.isEmpty) {
-        throw const ValidationException(
-            'At least one search criteria must be provided');
-      }
-
       // Search content using repository
-      final result = await _contentRepository.searchContent(params.filter);
+      final result = await _contentRepository.searchContent(filter);
 
       return result;
     } on UseCaseException {

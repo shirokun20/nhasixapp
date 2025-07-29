@@ -14,6 +14,15 @@ import 'package:nhasixapp/data/datasources/remote/nhentai_scraper.dart';
 // BLoCs
 import 'package:nhasixapp/presentation/blocs/splash/splash_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/home/home_bloc.dart';
+import 'package:nhasixapp/presentation/blocs/content/content_bloc.dart';
+
+// Repositories
+import 'package:nhasixapp/domain/repositories/repositories.dart';
+import 'package:nhasixapp/data/repositories/content_repository_impl.dart';
+
+// Use Cases
+import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
+import 'package:nhasixapp/domain/usecases/favorites/favorites_usecases.dart';
 
 final getIt = GetIt.instance;
 
@@ -125,7 +134,9 @@ void _setupDataSources() {
 
 /// Setup repository implementations
 void _setupRepositories() {
-  // TODO: Register repositories when implemented
+  // TODO: Register local data source when implemented
+  // For now, we'll register repositories without local data source
+
   // Content Repository
   // getIt.registerLazySingleton<ContentRepository>(() => ContentRepositoryImpl(
   //   remoteDataSource: getIt(),
@@ -148,7 +159,7 @@ void _setupRepositories() {
 
 /// Setup use cases
 void _setupUseCases() {
-  // TODO: Register use cases when implemented
+  // TODO: Register use cases when repositories are implemented
 
   // Content Use Cases
   // getIt.registerLazySingleton<GetContentListUseCase>(() => GetContentListUseCase(getIt()));
@@ -181,8 +192,18 @@ void _setupBlocs() {
   // Home BLoC
   getIt.registerFactory<HomeBloc>(() => HomeBloc());
 
+  // TODO: Register ContentBloc when repositories and use cases are implemented
+  // getIt.registerFactory<ContentBloc>(() => ContentBloc(
+  //   getContentListUseCase: getIt<GetContentListUseCase>(),
+  //   searchContentUseCase: getIt<SearchContentUseCase>(),
+  //   getRandomContentUseCase: getIt<GetRandomContentUseCase>(),
+  //   contentRepository: getIt<ContentRepository>(),
+  //   logger: getIt<Logger>(),
+  //   addToFavoritesUseCase: getIt<AddToFavoritesUseCase>(),
+  //   removeFromFavoritesUseCase: getIt<RemoveFromFavoritesUseCase>(),
+  // ));
+
   // TODO: Register other BLoCs when implemented
-  // getIt.registerFactory<ContentBloc>(() => ContentBloc(getIt()));
   // getIt.registerFactory<SearchBloc>(() => SearchBloc(getIt()));
   // getIt.registerFactory<FavoriteBloc>(() => FavoriteBloc(getIt()));
   // getIt.registerFactory<DownloadBloc>(() => DownloadBloc(getIt()));
