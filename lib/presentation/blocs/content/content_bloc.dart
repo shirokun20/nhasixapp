@@ -40,17 +40,19 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     on<ContentLoadPopularEvent>(_onContentLoadPopular);
     on<ContentLoadRandomEvent>(_onContentLoadRandom);
     on<ContentLoadByTagEvent>(_onContentLoadByTag);
-    on<ContentToggleFavoriteEvent>(_onContentToggleFavorite);
-    on<ContentUpdateEvent>(_onContentUpdate);
-    on<ContentRemoveEvent>(_onContentRemove);
+    on<ContentToggleFavoriteEvent>(
+        _onContentToggleFavorite); // TODO: Implement later
+    on<ContentUpdateEvent>(_onContentUpdate); // TODO: Implement later
+    on<ContentRemoveEvent>(_onContentRemove); // TODO: Implement later
   }
 
   final GetContentListUseCase _getContentListUseCase;
   final SearchContentUseCase _searchContentUseCase;
   final GetRandomContentUseCase _getRandomContentUseCase;
   final ContentRepository _contentRepository;
-  final AddToFavoritesUseCase? _addToFavoritesUseCase;
-  final RemoveFromFavoritesUseCase? _removeFromFavoritesUseCase;
+  final AddToFavoritesUseCase? _addToFavoritesUseCase; // TODO: Implement later
+  final RemoveFromFavoritesUseCase?
+      _removeFromFavoritesUseCase; // TODO: Implement later
   final Logger _logger;
 
   // Internal state tracking
@@ -58,12 +60,13 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
   SearchFilter? _currentSearchFilter;
   Tag? _currentTag;
   PopularTimeframe? _currentTimeframe;
-  Timer? _debounceTimer;
+  Timer? _debounceTimer; // TODO: Implement later
 
   // Configuration constants
-  static const Duration _debounceDelay = Duration(milliseconds: 500);
-  static const int _defaultPageSize = 25;
-  static const int _maxRetryAttempts = 3;
+  static const Duration _debounceDelay =
+      Duration(milliseconds: 500); // TODO: Implement later
+  static const int _defaultPageSize = 25; // TODO: Implement later
+  static const int _maxRetryAttempts = 3; // TODO: Implement later
 
   /// Load initial content list
   Future<void> _onContentLoad(
@@ -590,6 +593,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
   }
 
   /// Toggle favorite status of content
+  // TODO: Implement later - requires favorite use cases implementation
   Future<void> _onContentToggleFavorite(
     ContentToggleFavoriteEvent event,
     Emitter<ContentState> emit,
@@ -621,6 +625,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
   }
 
   /// Update content in list
+  // TODO: Implement later - currently not triggered from UI
   Future<void> _onContentUpdate(
     ContentUpdateEvent event,
     Emitter<ContentState> emit,
@@ -634,6 +639,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
   }
 
   /// Remove content from list
+  // TODO: Implement later - currently not triggered from UI
   Future<void> _onContentRemove(
     ContentRemoveEvent event,
     Emitter<ContentState> emit,
