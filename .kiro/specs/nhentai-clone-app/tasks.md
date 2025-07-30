@@ -66,7 +66,7 @@
     - Add infinite scrolling support
     - _Requirements: 1.1, 2.1, 6.1_
 
-  - [ ] 4.3 Implement SearchBloc untuk advanced search
+  - [x] 4.3 Implement SearchBloc untuk advanced search
     - Create SearchBloc dengan filter support
     - Add search history functionality
     - Implement debounced search
