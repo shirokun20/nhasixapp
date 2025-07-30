@@ -205,12 +205,19 @@ ContentLoadingMore → ContentLoaded (infinite scroll)
   - [x] LocalDataSource integration ready
   - [x] Complete testing suite (10 unit + 8 integration tests)
   - [x] Real nhentai.net connection verification
+- [x] **Task 4.3**: SearchBloc for advanced search functionality ✨
+  - [x] Advanced search with comprehensive filter support (query, tags, artists, language, category)
+  - [x] Search history management with persistent storage (max 50 items, FIFO)
+  - [x] Debounced search with 500ms delay for performance optimization
+  - [x] Real-time tag suggestions with debounced requests
+  - [x] Complex filter combinations and state management
+  - [x] Comprehensive testing suite (38+ tests across unit, real API, and integration)
 
 ### 🚧 **In Progress**
-- [ ] **Task 4**: Core BLoC state management (Week 2) - 67% Complete
+- [ ] **Task 4**: Core BLoC state management (Week 2) - 100% Complete
   - [x] SplashBloc ✅
   - [x] ContentBloc ✅
-  - [ ] SearchBloc (next)
+  - [x] SearchBloc ✅
 - [ ] **Task 5**: Core UI components (Week 3)
 
 ### 📅 **Upcoming Tasks** (12-week roadmap)
@@ -330,11 +337,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **State Management**: BLoC Pattern with comprehensive testing
 - **Dependencies**: 45+ carefully selected packages
 - **Test Coverage**: Unit tests with mocking for critical components
-- **Development Progress**: 33% complete (4.2/12 tasks)
+- **Development Progress**: 36% complete (4.3/12 tasks)
 - **Estimated Development Time**: 12 weeks (1 task per week)
 - **Target Platform**: Android
 - **Minimum SDK**: Android API 21+ (Android 5.0)
-- **Latest Achievement**: ContentBloc with advanced pagination & LocalDataSource integration ✨
+- **Latest Achievement**: SearchBloc with advanced search functionality & comprehensive testing ✨
 
 ---
 

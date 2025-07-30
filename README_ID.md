@@ -211,12 +211,19 @@ ContentLoadingMore → ContentLoaded (infinite scroll)
   - [x] Integrasi LocalDataSource siap pakai
   - [x] Suite testing lengkap (10 unit + 8 integration test)
   - [x] Verifikasi koneksi real nhentai.net
+- [x] **Tugas 4.3**: SearchBloc untuk fungsi pencarian lanjutan ✨
+  - [x] Pencarian lanjutan dengan dukungan filter komprehensif (query, tag, artis, bahasa, kategori)
+  - [x] Manajemen riwayat pencarian dengan penyimpanan persisten (maks 50 item, FIFO)
+  - [x] Pencarian debounced dengan delay 500ms untuk optimisasi performa
+  - [x] Saran tag real-time dengan request debounced
+  - [x] Kombinasi filter kompleks dan manajemen state
+  - [x] Suite testing komprehensif (38+ test meliputi unit, real API, dan integration)
 
 ### 🚧 **Sedang Berlangsung**
-- [ ] **Tugas 4**: Manajemen state BLoC inti (Minggu 2) - 67% Selesai
+- [ ] **Tugas 4**: Manajemen state BLoC inti (Minggu 2) - 100% Selesai
   - [x] SplashBloc ✅
   - [x] ContentBloc ✅
-  - [ ] SearchBloc (selanjutnya)
+  - [x] SearchBloc ✅
 - [ ] **Tugas 5**: Komponen UI inti (Minggu 3)
 
 ### 📅 **Tugas Mendatang** (roadmap 12 minggu)
@@ -336,11 +343,11 @@ Proyek ini dilisensikan di bawah MIT License - lihat file [LICENSE](LICENSE) unt
 - **Manajemen State**: Pola BLoC dengan testing komprehensif
 - **Dependensi**: 45+ package yang dipilih dengan hati-hati
 - **Cakupan Test**: Unit test dengan mocking untuk komponen kritis
-- **Progress Pengembangan**: 33% selesai (4.2/12 tugas)
+- **Progress Pengembangan**: 36% selesai (4.3/12 tugas)
 - **Estimasi Waktu Pengembangan**: 12 minggu (1 tugas per minggu)
 - **Platform Target**: Android
 - **SDK Minimum**: Android API 21+ (Android 5.0)
-- **Pencapaian Terbaru**: ContentBloc dengan pagination lanjutan & integrasi LocalDataSource ✨
+- **Pencapaian Terbaru**: SearchBloc dengan fungsi pencarian lanjutan & testing komprehensif ✨
 
 ---
 
