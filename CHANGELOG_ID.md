@@ -160,24 +160,13 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - ✅ **Tugas 1**: Setup struktur proyek dan dependensi inti
 - ✅ **Tugas 2**: Implementasi layer domain inti
 - ✅ **Tugas 3**: Fondasi layer data
-- ✅ **Tugas 4.1**: Implementasi SplashBloc yang ditingkatkan ← **Terbaru**
-- 🚧 **Tugas 4**: Manajemen state BLoC inti (25% selesai)
-- 📅 **Tugas 5**: Komponen UI inti (mendatang)
+- ✅ **Tugas 4**: Manajemen state BLoC inti ← **Terbaru**
+  - ✅ **Tugas 4.1**: Implementasi SplashBloc yang ditingkatkan
+  - ✅ **Tugas 4.2**: Implementasi ContentBloc
+  - ✅ **Tugas 4.3**: Implementasi SearchBloc lanjutan
+- 📅 **Tugas 5**: Komponen UI inti (berikutnya)
 
 ---
 
-## Progress Pengembangan
-
-- ✅ **Tugas 1**: Setup struktur proyek dan dependensi inti
-- ✅ **Tugas 2**: Implementasi layer domain inti
-- ✅ **Tugas 3**: Fondasi layer data
-- ✅ **Tugas 4.1**: Implementasi SplashBloc yang ditingkatkan
-- ✅ **Tugas 4.3**: Implementasi SearchBloc lanjutan ← **Terbaru**
-- 🚧 **Tugas 4**: Manajemen state BLoC inti (50% selesai)
-- 📅 **Tugas 4.2**: Implementasi ContentBloc (berikutnya)
-- 📅 **Tugas 5**: Komponen UI inti (mendatang)
-
----
-
-**Status Saat Ini**: 35% Selesai (4.3/12 tugas)  
-**Milestone Berikutnya**: Menyelesaikan implementasi ContentBloc dan memulai komponen UI
+**Status Saat Ini**: 33% Selesai (4/12 tugas)  
+**Milestone Berikutnya**: Memulai pengembangan komponen UI inti

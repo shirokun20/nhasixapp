@@ -160,24 +160,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ **Task 1**: Project structure and core dependencies setup
 - ✅ **Task 2**: Core domain layer implementation  
 - ✅ **Task 3**: Data layer foundation
-- ✅ **Task 4.1**: Enhanced SplashBloc implementation ← **Latest**
-- 🚧 **Task 4**: Core BLoC state management (25% complete)
-- 📅 **Task 5**: Core UI components (upcoming)
+- ✅ **Task 4**: Core BLoC state management ← **Latest**
+  - ✅ **Task 4.1**: Enhanced SplashBloc implementation
+  - ✅ **Task 4.2**: ContentBloc implementation  
+  - ✅ **Task 4.3**: Advanced SearchBloc implementation
+- 📅 **Task 5**: Core UI components (next)
 
 ---
 
-## Development Progress
-
-- ✅ **Task 1**: Project structure and core dependencies setup
-- ✅ **Task 2**: Core domain layer implementation  
-- ✅ **Task 3**: Data layer foundation
-- ✅ **Task 4.1**: Enhanced SplashBloc implementation
-- ✅ **Task 4.3**: Advanced SearchBloc implementation ← **Latest**
-- 🚧 **Task 4**: Core BLoC state management (50% complete)
-- 📅 **Task 4.2**: ContentBloc implementation (next)
-- 📅 **Task 5**: Core UI components (upcoming)
-
----
-
-**Current Status**: 35% Complete (4.3/12 tasks)  
-**Next Milestone**: Complete ContentBloc implementation and begin UI components
+**Current Status**: 33% Complete (4/12 tasks)  
+**Next Milestone**: Begin core UI components development
