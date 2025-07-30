@@ -219,11 +219,25 @@ ContentLoadingMore → ContentLoaded (infinite scroll)
   - [x] Kombinasi filter kompleks dan manajemen state
   - [x] Suite testing komprehensif (38+ test meliputi unit, real API, dan integration)
 
+### ✅ **Baru Saja Selesai**
+- [x] **Tugas 4**: Manajemen state BLoC inti (Minggu 2) - ✅ SELESAI
+  - [x] **Tugas 4.1**: SplashBloc untuk initial loading ✅
+    - [x] Logika bypass Cloudflare dengan alur komprehensif
+    - [x] Loading state dan error handling dengan mekanisme retry
+    - [x] Navigasi setelah bypass berhasil
+    - [x] Validasi konektivitas jaringan
+  - [x] **Tugas 4.2**: ContentBloc untuk manajemen konten ✅
+    - [x] Dukungan pagination dengan infinite scrolling
+    - [x] Loading, loaded, error state dengan transisi yang tepat
+    - [x] Fungsi pull-to-refresh dengan SmartRefresher
+    - [x] Manajemen konten lanjutan (sort, search, popular, random, tags)
+  - [x] **Tugas 4.3**: SearchBloc untuk pencarian lanjutan ✅
+    - [x] Pencarian lanjutan dengan dukungan filter komprehensif
+    - [x] Fungsi riwayat pencarian dengan penyimpanan persisten
+    - [x] Pencarian debounced dengan optimisasi delay 500ms
+    - [x] Saran tag real-time dengan optimisasi performa
+
 ### 🚧 **Sedang Berlangsung**
-- [ ] **Tugas 4**: Manajemen state BLoC inti (Minggu 2) - 100% Selesai
-  - [x] SplashBloc ✅
-  - [x] ContentBloc ✅
-  - [x] SearchBloc ✅
 - [ ] **Tugas 5**: Komponen UI inti (Minggu 3)
 
 ### 📅 **Tugas Mendatang** (roadmap 12 minggu)
@@ -343,11 +357,11 @@ Proyek ini dilisensikan di bawah MIT License - lihat file [LICENSE](LICENSE) unt
 - **Manajemen State**: Pola BLoC dengan testing komprehensif
 - **Dependensi**: 45+ package yang dipilih dengan hati-hati
 - **Cakupan Test**: Unit test dengan mocking untuk komponen kritis
-- **Progress Pengembangan**: 36% selesai (4.3/12 tugas)
+- **Progress Pengembangan**: 42% selesai (5/12 tugas)
 - **Estimasi Waktu Pengembangan**: 12 minggu (1 tugas per minggu)
 - **Platform Target**: Android
 - **SDK Minimum**: Android API 21+ (Android 5.0)
-- **Pencapaian Terbaru**: SearchBloc dengan fungsi pencarian lanjutan & testing komprehensif ✨
+- **Pencapaian Terbaru**: Sistem manajemen state BLoC lengkap dengan SplashBloc, ContentBloc, dan SearchBloc ✨
 
 ---
 

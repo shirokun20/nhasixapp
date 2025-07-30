@@ -213,11 +213,25 @@ ContentLoadingMore → ContentLoaded (infinite scroll)
   - [x] Complex filter combinations and state management
   - [x] Comprehensive testing suite (38+ tests across unit, real API, and integration)
 
+### ✅ **Recently Completed**
+- [x] **Task 4**: Core BLoC state management (Week 2) - ✅ COMPLETED
+  - [x] **Task 4.1**: SplashBloc untuk initial loading ✅
+    - [x] Cloudflare bypass logic with comprehensive flow
+    - [x] Loading states and error handling with retry mechanisms
+    - [x] Navigation after bypass success
+    - [x] Network connectivity validation
+  - [x] **Task 4.2**: ContentBloc untuk content management ✅
+    - [x] Pagination support with infinite scrolling
+    - [x] Loading, loaded, error states with proper transitions
+    - [x] Pull-to-refresh functionality with SmartRefresher
+    - [x] Advanced content management (sort, search, popular, random, tags)
+  - [x] **Task 4.3**: SearchBloc untuk advanced search ✅
+    - [x] Advanced search with comprehensive filter support
+    - [x] Search history functionality with persistent storage
+    - [x] Debounced search with 500ms delay optimization
+    - [x] Real-time tag suggestions with performance optimization
+
 ### 🚧 **In Progress**
-- [ ] **Task 4**: Core BLoC state management (Week 2) - 100% Complete
-  - [x] SplashBloc ✅
-  - [x] ContentBloc ✅
-  - [x] SearchBloc ✅
 - [ ] **Task 5**: Core UI components (Week 3)
 
 ### 📅 **Upcoming Tasks** (12-week roadmap)
@@ -337,11 +351,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **State Management**: BLoC Pattern with comprehensive testing
 - **Dependencies**: 45+ carefully selected packages
 - **Test Coverage**: Unit tests with mocking for critical components
-- **Development Progress**: 36% complete (4.3/12 tasks)
+- **Development Progress**: 42% complete (5/12 tasks)
 - **Estimated Development Time**: 12 weeks (1 task per week)
 - **Target Platform**: Android
 - **Minimum SDK**: Android API 21+ (Android 5.0)
-- **Latest Achievement**: SearchBloc with advanced search functionality & comprehensive testing ✨
+- **Latest Achievement**: Complete BLoC state management system with SplashBloc, ContentBloc, and SearchBloc ✨
 
 ---
 

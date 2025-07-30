@@ -52,7 +52,7 @@
     - Add offline-first architecture
     - _Requirements: 1.1, 2.1, 4.1, 5.1, 7.1_
 
-- [ ] 4. Create core BLoC state management
+- [x] 4. Create core BLoC state management
   - [x] 4.1 Implement SplashBloc untuk initial loading
     - Create SplashBloc dengan Cloudflare bypass logic
     - Add loading states dan error handling
