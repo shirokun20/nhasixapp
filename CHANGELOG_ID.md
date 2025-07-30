@@ -7,6 +7,73 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-01-30
+
+### Ditambahkan
+- **Implementasi SearchBloc Lanjutan** 🔍
+  - Fungsi pencarian komprehensif dengan kemampuan filter lanjutan
+  - Pencarian debounced dengan delay 500ms untuk performa optimal
+  - Manajemen riwayat pencarian dengan integrasi penyimpanan lokal
+  - Saran tag dan fungsi autocomplete
+  - Pelacakan dan tampilan pencarian populer
+  - Preset pencarian untuk menyimpan dan memuat konfigurasi filter kustom
+  - Toggle mode pencarian lanjutan untuk pengguna power
+  - Aplikasi filter cepat untuk tag, artis, bahasa, dan kategori
+  - Dukungan pagination dengan fungsi load more
+  - Kemampuan pull-to-refresh untuk hasil pencarian
+  - Mekanisme retry cerdas dengan deteksi tipe error
+
+### Ditingkatkan
+- **Manajemen State Pencarian**
+  - Multiple state khusus: `SearchInitial`, `SearchLoading`, `SearchLoaded`, `SearchEmpty`, `SearchError`
+  - State loading lanjutan: `SearchLoadingMore`, `SearchRefreshing`
+  - Error handling komprehensif dengan tipe error spesifik (network, server, cloudflare, rate limit, parsing)
+  - State saran pencarian dengan pencocokan query real-time
+  - State riwayat pencarian dengan integrasi pencarian populer
+
+- **Fitur Pencarian**
+  - Saran pencarian real-time dari riwayat dan pencarian populer
+  - Autocomplete berbasis tag dengan integrasi database
+  - Persistensi dan manajemen filter pencarian
+  - Opsi sort dengan re-searching dinamis
+  - Caching dan optimisasi hasil pencarian
+  - Maksimal 50 item riwayat dengan pembersihan otomatis
+  - Maksimal 10 saran per query untuk performa
+
+- **Error Handling & UX**
+  - Deteksi tipe error cerdas dan kategorisasi
+  - Fungsi retry dengan pesan error yang context-aware
+  - Degradasi yang elegan untuk skenario error berbeda
+  - Loading state dengan pesan deskriptif
+  - Penanganan empty state dengan saran pencarian
+
+### Testing
+- **Unit Test Komprehensif**
+  - Suite testing SearchBloc lengkap dengan `flutter_test`
+  - Implementasi mock untuk use case dan data source
+  - Testing transisi state untuk semua skenario pencarian
+  - Testing error handling dan edge case
+  - Testing riwayat pencarian dan saran
+  - Integration test untuk skenario dunia nyata
+
+### Perbaikan Teknis
+- **Manajemen Stream**
+  - Custom debounce transformer untuk search event
+  - Penanganan subscription stream yang tepat dan cleanup
+  - Pencegahan memory leak dengan pembatalan timer
+  - Pemrosesan event efisien dengan pola async/await
+
+- **Integrasi Data Layer**
+  - Integrasi LocalDataSource yang ditingkatkan untuk riwayat pencarian
+  - Fungsi pencarian tag dengan query database
+  - Serialisasi dan persistensi filter pencarian
+  - Operasi database yang dioptimalkan untuk performa pencarian
+
+### Dependencies
+- Integrasi yang ditingkatkan dengan package `logger`, `equatable`, dan `bloc` yang ada
+- Kompatibilitas yang diperbaiki dengan implementasi local data source
+- Integrasi error handling yang lebih baik dengan exception domain layer
+
 ## [0.2.0] - 2025-01-28
 
 ### Ditambahkan
@@ -99,5 +166,18 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ---
 
-**Status Saat Ini**: 25% Selesai (4.1/12 tugas)  
-**Milestone Berikutnya**: Menyelesaikan implementasi BLoC yang tersisa untuk fitur inti
+## Progress Pengembangan
+
+- ✅ **Tugas 1**: Setup struktur proyek dan dependensi inti
+- ✅ **Tugas 2**: Implementasi layer domain inti
+- ✅ **Tugas 3**: Fondasi layer data
+- ✅ **Tugas 4.1**: Implementasi SplashBloc yang ditingkatkan
+- ✅ **Tugas 4.3**: Implementasi SearchBloc lanjutan ← **Terbaru**
+- 🚧 **Tugas 4**: Manajemen state BLoC inti (50% selesai)
+- 📅 **Tugas 4.2**: Implementasi ContentBloc (berikutnya)
+- 📅 **Tugas 5**: Komponen UI inti (mendatang)
+
+---
+
+**Status Saat Ini**: 35% Selesai (4.3/12 tugas)  
+**Milestone Berikutnya**: Menyelesaikan implementasi ContentBloc dan memulai komponen UI
