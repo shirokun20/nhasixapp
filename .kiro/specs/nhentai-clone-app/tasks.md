@@ -83,7 +83,7 @@
 
   - [ ] 5.2 Implement main screens
     - Create SplashScreen dengan bypass progress
-    - Build HomeScreen dengan content grid
+    - Build MainScreen dengan content grid
     - Implement SearchScreen dengan filters
     - Create DetailScreen dengan content metadata
     - _Requirements: 1.1, 2.1, 3.1, 6.1_
