@@ -46,7 +46,9 @@ void main() {
               .thenAnswer((_) async => ConnectivityResult.wifi);
           when(mockRemoteDataSource.checkCloudflareStatus())
               .thenAnswer((_) async => false);
-          when(mockRemoteDataSource.initialize()).thenAnswer((_) async {});
+          when(mockRemoteDataSource.initialize()).thenAnswer((_) async {
+            return true;
+          });
           return splashBloc;
         },
         act: (bloc) => bloc.add(SplashStartedEvent()),
@@ -122,7 +124,9 @@ void main() {
               .thenAnswer((_) async => ConnectivityResult.wifi);
           when(mockRemoteDataSource.bypassCloudflare())
               .thenAnswer((_) async => true);
-          when(mockRemoteDataSource.initialize()).thenAnswer((_) async {});
+          when(mockRemoteDataSource.initialize()).thenAnswer((_) async {
+            return true;
+          });
           return splashBloc;
         },
         act: (bloc) => bloc.add(SplashRetryBypassEvent()),

@@ -28,18 +28,18 @@ class ContentRepositoryImpl implements ContentRepository {
     int page = 1,
     SortOption sortBy = SortOption.newest,
   }) async {
-    try {
-      _logger.i('Getting content list - page: $page, sort: $sortBy');
+    // try {
+    //   _logger.i('Getting content list - page: $page, sort: $sortBy');
 
-      // Try to get from cache first (offline-first approach)
-      final cachedContents = await _getCachedContentList(page: page);
+    //   // Try to get from cache first (offline-first approach)
+    //   final cachedContents = await _getCachedContentList(page: page);
 
-      // If we have cached content and it's not expired, return it
-      if (cachedContents.isNotEmpty && !_isCacheExpired(cachedContents.first)) {
-        _logger.d(
-            'Returning cached content list (${cachedContents.length} items)');
-        return _buildContentListResult(cachedContents, page);
-      }
+    //   // If we have cached content and it's not expired, return it
+    //   if (cachedContents.isNotEmpty && !_isCacheExpired(cachedContents.first)) {
+    //     _logger.d(
+    //         'Returning cached content list (${cachedContents.length} items)');
+    //     return _buildContentListResult(cachedContents, page);
+    //   }
 
       try {
         // Try to fetch from remote
@@ -47,7 +47,7 @@ class ContentRepositoryImpl implements ContentRepository {
             await remoteDataSource.getContentList(page: page);
 
         // Cache the fetched content
-        await _cacheContentList(remoteContents);
+        // await _cacheContentList(remoteContents);
 
         _logger.i(
             'Fetched and cached ${remoteContents.length} contents from remote');
@@ -59,17 +59,17 @@ class ContentRepositoryImpl implements ContentRepository {
         _logger.w('Failed to fetch from remote, falling back to cache: $e');
 
         // Fallback to cached content even if expired
-        if (cachedContents.isNotEmpty) {
-          _logger.d('Using expired cache as fallback');
-          return _buildContentListResult(cachedContents, page);
-        }
+        // if (cachedContents.isNotEmpty) {
+        //   _logger.d('Using expired cache as fallback');
+        //   return _buildContentListResult(cachedContents, page);
+        // }
 
         rethrow;
       }
-    } catch (e, stackTrace) {
-      _logger.e('Failed to get content list', error: e, stackTrace: stackTrace);
-      rethrow;
-    }
+    // } catch (e, stackTrace) {
+    //   _logger.e('Failed to get content list', error: e, stackTrace: stackTrace);
+    //   rethrow;
+    // }
   }
 
   @override

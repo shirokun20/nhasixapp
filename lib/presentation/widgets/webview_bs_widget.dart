@@ -102,6 +102,7 @@ class _WebviewBsWidgetState extends State<WebviewBsWidget> {
       await Future.delayed(const Duration(seconds: 1));
 
       if (mounted) {
+        _logger.i('WebView: Cloudflare bypass result: $isSuccess');
         context.read<SplashBloc>().add(
               SplashCFBypassEvent(status: isSuccess ? "success" : "error"),
             );

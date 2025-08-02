@@ -1,12 +1,13 @@
+
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass_no_webview.dart';
 import 'dart:math';
 
 import '../../models/content_model.dart';
 import '../../models/tag_model.dart';
 import '../../../domain/entities/search_filter.dart';
 import 'nhentai_scraper.dart';
-import 'cloudflare_bypass.dart';
 import 'anti_detection.dart';
 import 'exceptions.dart';
 
@@ -22,7 +23,7 @@ class RemoteDataSource {
 
   final Dio httpClient;
   final NhentaiScraper scraper;
-  final CloudflareBypass cloudflareBypass;
+  final CloudflareBypassNoWebView cloudflareBypass;
   final AntiDetection antiDetection;
   final Logger _logger;
 
@@ -31,7 +32,7 @@ class RemoteDataSource {
   static const int maxRetries = 3;
 
   /// Initialize the remote data source
-  Future<void> initialize() async {
+  Future<bool> initialize() async {
     try {
       _logger.i('Initializing RemoteDataSource...');
 
@@ -45,9 +46,9 @@ class RemoteDataSource {
       final bypassSuccess = await cloudflareBypass.attemptBypass();
       if (!bypassSuccess) {
         _logger.w('Cloudflare bypass failed, some requests may fail');
+        return false;
       }
-
-      _logger.i('RemoteDataSource initialized successfully');
+      return true;
     } catch (e, stackTrace) {
       _logger.e('Failed to initialize RemoteDataSource',
           error: e, stackTrace: stackTrace);
@@ -195,18 +196,17 @@ class RemoteDataSource {
 
   /// Check if Cloudflare bypass is needed
   Future<bool> checkCloudflareStatus() async {
+      _logger.i('Checking Cloudflare status... from $baseUrl');
     try {
       final response = await httpClient.get(
-        baseUrl,
-        options: Options(
-          sendTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 10),
-        ),
+        baseUrl
       );
 
-      return !cloudflareBypass.isCloudflareChallenge(response.data);
-    } catch (e) {
-      _logger.w('Failed to check Cloudflare status: $e');
+      _logger.i('Cloudflare status: ${response.statusCode}');
+
+      return !cloudflareBypass.isCloudflareChallenge(response.data) || response.statusCode == 200;
+    } catch (e, stackTrace) {
+      _logger.w('Failed to check Cloudflare status: $e, and $stackTrace');
       return false;
     }
   }
@@ -239,6 +239,8 @@ class RemoteDataSource {
         await antiDetection.applyRandomDelay();
         final headers = antiDetection.getRandomHeaders();
 
+        _logger.i("headers: $headers");
+
         final response = await httpClient.get(
           url,
           options: Options(
@@ -247,6 +249,7 @@ class RemoteDataSource {
             receiveTimeout: requestTimeout,
             followRedirects: true,
             maxRedirects: 5,
+            responseType: ResponseType.plain,
           ),
         );
 
@@ -280,9 +283,9 @@ class RemoteDataSource {
               'HTTP ${response.statusCode}: ${response.statusMessage}',
               response.statusCode.toString());
         }
-      } on DioException catch (e) {
+      } on DioException catch (e, stackTrace) {
         lastException = _handleDioException(e, url);
-        _logger.w('Attempt $attempt failed: $lastException');
+        _logger.w('Attempt $attempt failed: $lastException, $stackTrace');
 
         if (attempt < maxRetries && _shouldRetry(lastException)) {
           // Exponential backoff with jitter
@@ -369,6 +372,7 @@ class RemoteDataSource {
     httpClient.options.sendTimeout = requestTimeout;
     httpClient.options.followRedirects = true;
     httpClient.options.maxRedirects = 5;
+    httpClient.options.responseType = ResponseType.plain;
 
     // Add interceptors for logging and error handling
     httpClient.interceptors.add(
@@ -414,7 +418,7 @@ class RemoteDataSource {
   /// Dispose resources
   void dispose() {
     _logger.i('Disposing RemoteDataSource...');
-    httpClient.close();
-    antiDetection.dispose();
+    // httpClient.close();
+    // antiDetection.dispose();
   }
 }

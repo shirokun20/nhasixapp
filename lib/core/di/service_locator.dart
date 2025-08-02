@@ -1,5 +1,9 @@
+import 'package:flutter/rendering.dart';
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
+import 'package:nhasixapp/data/datasources/local/database_helper.dart';
+import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
+import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass_no_webview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -22,7 +26,6 @@ import 'package:nhasixapp/data/repositories/content_repository_impl.dart';
 
 // Use Cases
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
-import 'package:nhasixapp/domain/usecases/favorites/favorites_usecases.dart';
 
 final getIt = GetIt.instance;
 
@@ -63,36 +66,18 @@ void _setupCore() {
   // HTTP Client (Dio)
   getIt.registerLazySingleton<Dio>(() {
     final dio = Dio();
-    dio.options.connectTimeout = const Duration(seconds: 30);
-    dio.options.receiveTimeout = const Duration(seconds: 30);
-    dio.options.sendTimeout = const Duration(seconds: 30);
-    dio.options.followRedirects = true;
-    dio.options.maxRedirects = 5;
 
-    // Default headers to mimic real browser
     dio.options.headers = {
       'User-Agent':
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       'Accept':
-          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
       'Accept-Language': 'en-US,en;q=0.9',
       'Accept-Encoding': 'gzip, deflate, br',
       'DNT': '1',
       'Connection': 'keep-alive',
       'Upgrade-Insecure-Requests': '1',
-      'Sec-Fetch-Dest': 'document',
-      'Sec-Fetch-Mode': 'navigate',
-      'Sec-Fetch-Site': 'none',
-      'Sec-Fetch-User': '?1',
-      'Cache-Control': 'max-age=0',
     };
-
-    // Add interceptors for logging and error handling
-    dio.interceptors.add(LogInterceptor(
-      requestBody: false, // Don't log request body for privacy
-      responseBody: false, // Don't log response body for performance
-      logPrint: (obj) => getIt<Logger>().d(obj),
-    ));
 
     return dio;
   });
@@ -109,7 +94,7 @@ void _setupDataSources() {
       ));
 
   // Cloudflare Bypass
-  getIt.registerLazySingleton<CloudflareBypass>(() => CloudflareBypass(
+  getIt.registerLazySingleton<CloudflareBypassNoWebView>(() => CloudflareBypassNoWebView(
         httpClient: getIt<Dio>(),
         logger: getIt<Logger>(),
       ));
@@ -123,26 +108,27 @@ void _setupDataSources() {
   getIt.registerLazySingleton<RemoteDataSource>(() => RemoteDataSource(
         httpClient: getIt<Dio>(),
         scraper: getIt<NhentaiScraper>(),
-        cloudflareBypass: getIt<CloudflareBypass>(),
+        cloudflareBypass: getIt<CloudflareBypassNoWebView>(),
         antiDetection: getIt<AntiDetection>(),
         logger: getIt<Logger>(),
       ));
 
-  // TODO: Register local data source when implemented
-  // getIt.registerLazySingleton<LocalDataSource>(() => LocalDataSourceImpl(getIt()));
+  // Database Helper
+  getIt.registerLazySingleton<DatabaseHelper>(() => DatabaseHelper.instance);
+
+  // Local Data Source
+  getIt.registerLazySingleton<LocalDataSource>(
+      () => LocalDataSource(getIt<DatabaseHelper>()));
 }
 
 /// Setup repository implementations
 void _setupRepositories() {
-  // TODO: Register local data source when implemented
-  // For now, we'll register repositories without local data source
-
   // Content Repository
-  // getIt.registerLazySingleton<ContentRepository>(() => ContentRepositoryImpl(
-  //   remoteDataSource: getIt(),
-  //   localDataSource: getIt(),
-  //   logger: getIt(),
-  // ));
+  getIt.registerLazySingleton<ContentRepository>(() => ContentRepositoryImpl(
+        remoteDataSource: getIt<RemoteDataSource>(),
+        localDataSource: getIt<LocalDataSource>(),
+        logger: getIt<Logger>(),
+      ));
 
   // User Data Repository
   // getIt.registerLazySingleton<UserDataRepository>(() => UserDataRepositoryImpl(
@@ -159,13 +145,15 @@ void _setupRepositories() {
 
 /// Setup use cases
 void _setupUseCases() {
-  // TODO: Register use cases when repositories are implemented
-
   // Content Use Cases
-  // getIt.registerLazySingleton<GetContentListUseCase>(() => GetContentListUseCase(getIt()));
-  // getIt.registerLazySingleton<GetContentDetailUseCase>(() => GetContentDetailUseCase(getIt()));
-  // getIt.registerLazySingleton<SearchContentUseCase>(() => SearchContentUseCase(getIt()));
-  // getIt.registerLazySingleton<GetRandomContentUseCase>(() => GetRandomContentUseCase(getIt()));
+  getIt.registerLazySingleton<GetContentListUseCase>(
+      () => GetContentListUseCase(getIt()));
+  getIt.registerLazySingleton<GetContentDetailUseCase>(
+      () => GetContentDetailUseCase(getIt()));
+  getIt.registerLazySingleton<SearchContentUseCase>(
+      () => SearchContentUseCase(getIt()));
+  getIt.registerLazySingleton<GetRandomContentUseCase>(
+      () => GetRandomContentUseCase(getIt()));
 
   // Favorites Use Cases
   // getIt.registerLazySingleton<AddToFavoritesUseCase>(() => AddToFavoritesUseCase(getIt()));
@@ -192,16 +180,14 @@ void _setupBlocs() {
   // Home BLoC
   getIt.registerFactory<HomeBloc>(() => HomeBloc());
 
-  // TODO: Register ContentBloc when repositories and use cases are implemented
-  // getIt.registerFactory<ContentBloc>(() => ContentBloc(
-  //   getContentListUseCase: getIt<GetContentListUseCase>(),
-  //   searchContentUseCase: getIt<SearchContentUseCase>(),
-  //   getRandomContentUseCase: getIt<GetRandomContentUseCase>(),
-  //   contentRepository: getIt<ContentRepository>(),
-  //   logger: getIt<Logger>(),
-  //   addToFavoritesUseCase: getIt<AddToFavoritesUseCase>(),
-  //   removeFromFavoritesUseCase: getIt<RemoveFromFavoritesUseCase>(),
-  // ));
+  // Register ContentBloc when repositories and use cases are implemented
+  getIt.registerFactory<ContentBloc>(() => ContentBloc(
+        getContentListUseCase: getIt<GetContentListUseCase>(),
+        searchContentUseCase: getIt<SearchContentUseCase>(),
+        getRandomContentUseCase: getIt<GetRandomContentUseCase>(),
+        contentRepository: getIt<ContentRepository>(),
+        logger: getIt<Logger>(),
+      ));
 
   // TODO: Register other BLoCs when implemented
   // getIt.registerFactory<SearchBloc>(() => SearchBloc(getIt()));

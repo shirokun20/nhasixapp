@@ -32,9 +32,9 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
     SplashStartedEvent event,
     Emitter<SplashState> emit,
   ) async {
+    emit(SplashInitializing());
     try {
       _logger.i('SplashBloc: Starting initialization...');
-      emit(SplashInitializing());
 
       // Add initial delay for splash screen visibility
       await Future.delayed(_initialDelay);
@@ -79,11 +79,21 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       emit(SplashBypassInProgress(message: 'Initializing bypass system...'));
 
       // Initialize the remote data source (includes anti-detection)
-      await _remoteDataSource.initialize();
+      await Future.delayed(Duration(seconds: 1));
+      emit(SplashBypassInProgress(message: 'Connecting to nhentai.net...'));
+      final success = await _remoteDataSource.initialize();
+
+      if (success) {
+        emit(SplashSuccess(message: 'Successfully connected to nhentai.net'));
+      } else {
+        emit(SplashError(
+          message: 'Failed to connect to nhentai.net. Please try again.',
+          canRetry: true,
+        ));
+      }
 
       // Start the bypass process
-      emit(SplashBypassInProgress(message: 'Connecting to nhentai.net...'));
-      emit(SplashCloudflareInitial());
+      // emit(SplashCloudflareInitial());
     } catch (e, stackTrace) {
       _logger.e('SplashBloc: Error initializing bypass',
           error: e, stackTrace: stackTrace);
@@ -142,11 +152,11 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
     SplashRetryBypassEvent event,
     Emitter<SplashState> emit,
   ) async {
+    emit(SplashBypassInProgress(message: 'Retrying bypass...'));
     try {
       _logger.i('SplashBloc: Retrying Cloudflare bypass...');
 
       // Attempt bypass again
-      await _remoteDataSource.bypassCloudflare();
 
       // Check connectivity again
       final connectivityResult = await _connectivity.checkConnectivity();
@@ -159,9 +169,18 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
         return;
       }
 
+      final result = await _remoteDataSource.bypassCloudflare();
+
+      if (result) {
+        emit(SplashSuccess(message: 'Successfully connected to nhentai.net'));
+      } else {
+        emit(SplashError(
+          message: 'Failed to bypass Cloudflare protection. Please try again.',
+          canRetry: true,
+        ));
+      }
       // Restart the bypass process
-      emit(SplashBypassInProgress(message: 'Retrying bypass...'));
-      add(SplashInitializeBypassEvent());
+      // add(SplashInitializeBypassEvent());
     } catch (e, stackTrace) {
       _logger.e('SplashBloc: Error during retry',
           error: e, stackTrace: stackTrace);
@@ -174,7 +193,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
 
   @override
   Future<void> close() {
-    _remoteDataSource.dispose();
+    // _remoteDataSource.dispose();
     return super.close();
   }
 }

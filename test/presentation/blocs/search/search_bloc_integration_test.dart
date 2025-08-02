@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
 import 'package:dio/dio.dart';
+import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass_no_webview.dart';
 
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/domain/repositories/content_repository.dart';
@@ -36,7 +37,7 @@ void main() {
       // Setup scraper components
       final scraper = NhentaiScraper();
       final cloudflareBypass =
-          CloudflareBypass(httpClient: dio, logger: logger);
+          CloudflareBypassNoWebView(httpClient: dio, logger: logger);
       final antiDetection = AntiDetection(logger: logger);
 
       // Setup remote data source with real API
@@ -168,7 +169,7 @@ void main() {
 
         final errorScraper = NhentaiScraper();
         final errorCloudflareBypass =
-            CloudflareBypass(httpClient: errorDio, logger: logger);
+            CloudflareBypassNoWebView(httpClient: errorDio, logger: logger);
         final errorAntiDetection = AntiDetection(logger: logger);
 
         final errorRemoteDataSource = RemoteDataSource(

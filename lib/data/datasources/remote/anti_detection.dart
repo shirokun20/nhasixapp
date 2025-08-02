@@ -56,13 +56,6 @@ class AntiDetection {
     'ja,en-US;q=0.9,en;q=0.8',
   ];
 
-  // Accept-Encoding headers
-  static const List<String> _acceptEncodingHeaders = [
-    'gzip, deflate, br',
-    'gzip, deflate',
-    'gzip, deflate, br, zstd',
-  ];
-
   /// Initialize anti-detection measures
   Future<void> initialize() async {
     try {
@@ -104,7 +97,8 @@ class AntiDetection {
   /// Get random headers for request
   Map<String, String> getRandomHeaders() {
     // Rotate user agent occasionally
-    if (_requestCount % 10 == 0) {
+
+    if (_requestCount % 10 == 0 || _currentUserAgent == null) {
       _currentUserAgent = _getRandomUserAgent();
     }
 
@@ -112,15 +106,15 @@ class AntiDetection {
       'User-Agent': _currentUserAgent!,
       'Accept': _getRandomAcceptHeader(),
       'Accept-Language': _getRandomAcceptLanguageHeader(),
-      'Accept-Encoding': _getRandomAcceptEncodingHeader(),
+      'Accept-Encoding': 'gzip, deflate', // ← safer untuk decoding
       'DNT': '1',
-      'Connection': 'keep-alive',
       'Upgrade-Insecure-Requests': '1',
       'Sec-Fetch-Dest': 'document',
       'Sec-Fetch-Mode': 'navigate',
       'Sec-Fetch-Site': 'none',
       'Sec-Fetch-User': '?1',
       'Cache-Control': 'max-age=0',
+      'Referer': 'https://nhentai.net/', // ← selalu sertakan referer!
     };
 
     // Randomly add some optional headers
@@ -137,9 +131,9 @@ class AntiDetection {
     }
 
     // Add referer occasionally (simulate browsing behavior)
-    if (_requestCount > 1 && _random.nextDouble() < 0.3) {
-      headers['Referer'] = 'https://nhentai.net/';
-    }
+    // if (_requestCount > 1 && _random.nextDouble() < 0.3) {
+    //   headers['Referer'] = 'https://nhentai.net/';
+    // }
 
     return headers;
   }
@@ -172,11 +166,6 @@ class AntiDetection {
         _random.nextInt(_acceptLanguageHeaders.length)];
   }
 
-  /// Get random accept-encoding header
-  String _getRandomAcceptEncodingHeader() {
-    return _acceptEncodingHeaders[
-        _random.nextInt(_acceptEncodingHeaders.length)];
-  }
 
   /// Generate Sec-CH-UA header
   String _generateSecChUa() {

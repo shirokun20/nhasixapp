@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass_no_webview.dart';
 
 import 'remote_data_source.dart';
 import 'nhentai_scraper.dart';
@@ -16,7 +17,7 @@ class RemoteDataSourceFactory {
 
     // Create dependencies
     final scraper = NhentaiScraper(logger: log);
-    final cloudflareBypass = CloudflareBypass(
+    final cloudflareBypass = CloudflareBypassNoWebView(
       httpClient: httpClient,
       logger: log,
     );

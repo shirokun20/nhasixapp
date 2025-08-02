@@ -13,7 +13,7 @@ class NhentaiScraper {
   final Logger _logger;
 
   // CSS Selectors for content list
-  static const String contentListSelector = '.gallery';
+  static const String contentListSelector = 'div.gallery';
   static const String contentLinkSelector = 'a';
   static const String contentCoverSelector = '.cover img';
   static const String contentTitleSelector = '.caption';
@@ -40,10 +40,11 @@ class NhentaiScraper {
   /// Parse content list from HTML
   List<ContentModel> parseContentList(String html) {
     try {
-      final document = html_parser.parse(html);
+      final document = html_parser.parse(html, encoding: 'utf-8');
       final contentElements = document.querySelectorAll(contentListSelector);
 
       final contents = <ContentModel>[];
+
 
       for (final element in contentElements) {
         try {

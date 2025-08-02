@@ -12,7 +12,7 @@ import 'package:dio/dio.dart' as _i2;
 import 'package:logger/logger.dart' as _i11;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:nhasixapp/data/datasources/remote/anti_detection.dart' as _i5;
-import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass.dart'
+import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass_no_webview.dart'
     as _i4;
 import 'package:nhasixapp/data/datasources/remote/nhentai_scraper.dart' as _i3;
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart'
@@ -56,9 +56,9 @@ class _FakeNhentaiScraper_1 extends _i1.SmartFake
         );
 }
 
-class _FakeCloudflareBypass_2 extends _i1.SmartFake
-    implements _i4.CloudflareBypass {
-  _FakeCloudflareBypass_2(
+class _FakeCloudflareBypassNoWebView_2 extends _i1.SmartFake
+    implements _i4.CloudflareBypassNoWebView {
+  _FakeCloudflareBypassNoWebView_2(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -114,13 +114,13 @@ class MockRemoteDataSource extends _i1.Mock implements _i7.RemoteDataSource {
       ) as _i3.NhentaiScraper);
 
   @override
-  _i4.CloudflareBypass get cloudflareBypass => (super.noSuchMethod(
+  _i4.CloudflareBypassNoWebView get cloudflareBypass => (super.noSuchMethod(
         Invocation.getter(#cloudflareBypass),
-        returnValue: _FakeCloudflareBypass_2(
+        returnValue: _FakeCloudflareBypassNoWebView_2(
           this,
           Invocation.getter(#cloudflareBypass),
         ),
-      ) as _i4.CloudflareBypass);
+      ) as _i4.CloudflareBypassNoWebView);
 
   @override
   _i5.AntiDetection get antiDetection => (super.noSuchMethod(
@@ -132,14 +132,13 @@ class MockRemoteDataSource extends _i1.Mock implements _i7.RemoteDataSource {
       ) as _i5.AntiDetection);
 
   @override
-  _i8.Future<void> initialize() => (super.noSuchMethod(
+  _i8.Future<bool> initialize() => (super.noSuchMethod(
         Invocation.method(
           #initialize,
           [],
         ),
-        returnValue: _i8.Future<void>.value(),
-        returnValueForMissingStub: _i8.Future<void>.value(),
-      ) as _i8.Future<void>);
+        returnValue: _i8.Future<bool>.value(false),
+      ) as _i8.Future<bool>);
 
   @override
   _i8.Future<List<_i6.ContentModel>> getContentList({int? page = 1}) =>

@@ -6,7 +6,6 @@ import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/presentation/blocs/splash/splash_bloc.dart';
-import 'package:nhasixapp/presentation/widgets/webview_bs_widget.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
@@ -28,19 +27,6 @@ class SplashMainWidget extends StatefulWidget {
 }
 
 class _SplashMainWidgetState extends State<SplashMainWidget> {
-  void _showWebViewBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      isDismissible: false,
-      enableDrag: false,
-      builder: (context) => BlocProvider.value(
-        value: context.read<SplashBloc>(),
-        child: const WebviewBsWidget(),
-      ),
-    );
-  }
 
   @override
   void initState() {
@@ -59,26 +45,32 @@ class _SplashMainWidgetState extends State<SplashMainWidget> {
         listenWhen: (previous, current) => previous != current,
         listener: (context, state) {
           if (state is SplashSuccess) {
-            _showSnackBar(
-              context: context,
-              message: state.message,
-              isError: false,
-              onFinish: _navigateToMainScreen,
-            );
-          } else if (state is SplashError) {
-            _showSnackBar(
-              context: context,
-              message: state.message,
-              isError: true,
-              showRetry: state.canRetry,
-              onRetry: () =>
-                  context.read<SplashBloc>().add(SplashRetryBypassEvent()),
-            );
-          } else if (state is SplashCloudflareInitial) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              _showWebViewBottomSheet(context);
+              _showSnackBar(
+                context: context,
+                message: state.message,
+                isError: false,
+                onFinish: _navigateToMainScreen,
+              );
+            });
+          } else if (state is SplashError) {
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
+              await Future.delayed(const Duration(milliseconds: 100));
+              _showSnackBar(
+                context: context,
+                message: state.message,
+                isError: true,
+                showRetry: state.canRetry,
+                onRetry: () =>
+                    context.read<SplashBloc>().add(SplashRetryBypassEvent()),
+              );
             });
           }
+          // else if (state is SplashCloudflareInitial) {
+          //   WidgetsBinding.instance.addPostFrameCallback((_) {
+          //     _showWebViewBottomSheet(context);
+          //   });
+          // }
         },
         builder: (context, state) {
           return Center(
