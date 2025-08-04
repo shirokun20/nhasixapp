@@ -36,7 +36,7 @@ class PaginationWidget extends StatefulWidget {
 
 class _PaginationWidgetState extends State<PaginationWidget> {
   final TextEditingController _pageController = TextEditingController();
-  bool _showPageInput = false;
+  // bool _showPageInput = false;
 
   @override
   void dispose() {
@@ -69,7 +69,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
             Text(
               'Enter page number (1 - ${widget.totalPages})',
               style: TextStyleConst.styleRegular(
-                textColor: ColorsConst.primaryTextColor.withOpacity(0.8),
+                textColor: ColorsConst.primaryTextColor.withValues(alpha: 0.8),
                 size: 14,
               ),
             ),
@@ -88,12 +88,13 @@ class _PaginationWidgetState extends State<PaginationWidget> {
               decoration: InputDecoration(
                 hintText: 'Page number',
                 hintStyle: TextStyleConst.styleRegular(
-                  textColor: ColorsConst.primaryTextColor.withOpacity(0.5),
+                  textColor:
+                      ColorsConst.primaryTextColor.withValues(alpha: 0.5),
                   size: 16,
                 ),
                 border: OutlineInputBorder(
                   borderSide: BorderSide(
-                    color: ColorsConst.primaryTextColor.withOpacity(0.3),
+                    color: ColorsConst.primaryTextColor.withValues(alpha: 0.3),
                   ),
                 ),
                 focusedBorder: const OutlineInputBorder(
@@ -116,7 +117,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
             child: Text(
               'Cancel',
               style: TextStyleConst.styleRegular(
-                textColor: ColorsConst.primaryTextColor.withOpacity(0.7),
+                textColor: ColorsConst.primaryTextColor.withValues(alpha: 0.7),
                 size: 14,
               ),
             ),
@@ -186,7 +187,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                 icon: const Icon(Icons.chevron_left),
                 color: widget.hasPrevious
                     ? ColorsConst.primaryTextColor
-                    : ColorsConst.primaryTextColor.withOpacity(0.3),
+                    : ColorsConst.primaryTextColor.withValues(alpha: 0.3),
                 tooltip: 'Previous page',
               ),
 
@@ -216,8 +217,8 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                         Container(
                           height: 4,
                           decoration: BoxDecoration(
-                            color:
-                                ColorsConst.primaryTextColor.withOpacity(0.2),
+                            color: ColorsConst.primaryTextColor
+                                .withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(2),
                           ),
                           child: FractionallySizedBox(
@@ -239,8 +240,8 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                         Text(
                           '${(progressPercentage * 100).toStringAsFixed(1)}%',
                           style: TextStyleConst.styleRegular(
-                            textColor:
-                                ColorsConst.primaryTextColor.withOpacity(0.7),
+                            textColor: ColorsConst.primaryTextColor
+                                .withValues(alpha: 0.7),
                             size: 12,
                           ),
                           textAlign: TextAlign.center,
@@ -252,8 +253,8 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                         Text(
                           'Tap to jump to page',
                           style: TextStyleConst.styleRegular(
-                            textColor:
-                                ColorsConst.primaryTextColor.withOpacity(0.5),
+                            textColor: ColorsConst.primaryTextColor
+                                .withValues(alpha: 0.5),
                             size: 10,
                           ),
                           textAlign: TextAlign.center,
@@ -273,7 +274,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                 icon: const Icon(Icons.chevron_right),
                 color: widget.hasNext
                     ? ColorsConst.primaryTextColor
-                    : ColorsConst.primaryTextColor.withOpacity(0.3),
+                    : ColorsConst.primaryTextColor.withValues(alpha: 0.3),
                 tooltip: 'Next page',
               ),
 
@@ -287,7 +288,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
             Text(
               'Total: ${widget.totalPages.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} pages',
               style: TextStyleConst.styleRegular(
-                textColor: ColorsConst.primaryTextColor.withOpacity(0.6),
+                textColor: ColorsConst.primaryTextColor.withValues(alpha: 0.6),
                 size: 11,
               ),
               textAlign: TextAlign.center,
@@ -334,7 +335,7 @@ class SimplePaginationWidget extends StatelessWidget {
             style: TextButton.styleFrom(
               foregroundColor: hasPrevious
                   ? ColorsConst.primaryTextColor
-                  : ColorsConst.primaryTextColor.withOpacity(0.3),
+                  : ColorsConst.primaryTextColor.withValues(alpha: 0.3),
             ),
           ),
 
@@ -355,7 +356,7 @@ class SimplePaginationWidget extends StatelessWidget {
             style: TextButton.styleFrom(
               foregroundColor: hasNext
                   ? ColorsConst.primaryTextColor
-                  : ColorsConst.primaryTextColor.withOpacity(0.3),
+                  : ColorsConst.primaryTextColor.withValues(alpha: 0.3),
             ),
           ),
         ],

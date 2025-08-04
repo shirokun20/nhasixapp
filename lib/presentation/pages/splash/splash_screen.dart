@@ -27,7 +27,6 @@ class SplashMainWidget extends StatefulWidget {
 }
 
 class _SplashMainWidgetState extends State<SplashMainWidget> {
-
   @override
   void initState() {
     super.initState();
@@ -43,34 +42,39 @@ class _SplashMainWidgetState extends State<SplashMainWidget> {
       backgroundColor: ColorsConst.primaryColor,
       body: BlocConsumer<SplashBloc, SplashState>(
         listenWhen: (previous, current) => previous != current,
-        listener: (context, state) {
+        listener: (_, state) {
+          if (!mounted) return;
+
           if (state is SplashSuccess) {
+            final scaffoldMessenger = ScaffoldMessenger.of(context);
             WidgetsBinding.instance.addPostFrameCallback((_) {
               _showSnackBar(
-                context: context,
+                scaffoldMessenger: scaffoldMessenger,
                 message: state.message,
                 isError: false,
                 onFinish: _navigateToMainScreen,
               );
             });
           } else if (state is SplashError) {
-            WidgetsBinding.instance.addPostFrameCallback((_) async {
-              await Future.delayed(const Duration(milliseconds: 100));
-              _showSnackBar(
-                context: context,
-                message: state.message,
-                isError: true,
-                showRetry: state.canRetry,
-                onRetry: () =>
-                    context.read<SplashBloc>().add(SplashRetryBypassEvent()),
-              );
+            final scaffoldMessenger = ScaffoldMessenger.of(context);
+            final splashBloc = context.read<SplashBloc>();
+            final localMessage = state.message;
+            final canRetry = state.canRetry;
+
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Future.delayed(const Duration(milliseconds: 100)).then((_) {
+                if (!mounted) return;
+
+                _showSnackBar(
+                  scaffoldMessenger: scaffoldMessenger,
+                  message: localMessage,
+                  isError: true,
+                  showRetry: canRetry,
+                  onRetry: () => splashBloc.add(SplashRetryBypassEvent()),
+                );
+              });
             });
           }
-          // else if (state is SplashCloudflareInitial) {
-          //   WidgetsBinding.instance.addPostFrameCallback((_) {
-          //     _showWebViewBottomSheet(context);
-          //   });
-          // }
         },
         builder: (context, state) {
           return Center(
@@ -166,16 +170,15 @@ class _SplashMainWidgetState extends State<SplashMainWidget> {
   }
 
   void _showSnackBar({
-    required BuildContext context,
+    required ScaffoldMessengerState scaffoldMessenger,
     required String message,
     bool isError = false,
     bool showRetry = false,
     VoidCallback? onFinish,
     VoidCallback? onRetry,
   }) {
-    final scaffold = ScaffoldMessenger.of(context);
+    final scaffold = scaffoldMessenger;
     scaffold.hideCurrentSnackBar();
-
     scaffold
         .showSnackBar(
           SnackBar(

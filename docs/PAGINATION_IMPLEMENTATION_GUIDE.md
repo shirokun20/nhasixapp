@@ -414,7 +414,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
             icon: const Icon(Icons.chevron_left),
             color: widget.hasPrevious 
                 ? ColorsConst.primaryTextColor 
-                : ColorsConst.primaryTextColor.withOpacity(0.3),
+                : ColorsConst.primaryTextColor.withValues(alpha: 0.3),
             tooltip: 'Previous page',
           ),
           
@@ -444,7 +444,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                     Container(
                       height: 4,
                       decoration: BoxDecoration(
-                        color: ColorsConst.primaryTextColor.withOpacity(0.2),
+                        color: ColorsConst.primaryTextColor.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(2),
                       ),
                       child: FractionallySizedBox(
@@ -466,7 +466,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                     Text(
                       '${(progressPercentage * 100).toStringAsFixed(1)}%',
                       style: TextStyleConst.styleRegular(
-                        textColor: ColorsConst.primaryTextColor.withOpacity(0.7),
+                        textColor: ColorsConst.primaryTextColor.withValues(alpha: 0.7),
                         size: 12,
                       ),
                       textAlign: TextAlign.center,
@@ -478,7 +478,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                     Text(
                       'Tap to jump to page',
                       style: TextStyleConst.styleRegular(
-                        textColor: ColorsConst.primaryTextColor.withOpacity(0.5),
+                        textColor: ColorsConst.primaryTextColor.withValues(alpha: 0.5),
                         size: 10,
                       ),
                       textAlign: TextAlign.center,
@@ -498,7 +498,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
             icon: const Icon(Icons.chevron_right),
             color: widget.hasNext 
                 ? ColorsConst.primaryTextColor 
-                : ColorsConst.primaryTextColor.withOpacity(0.3),
+                : ColorsConst.primaryTextColor.withValues(alpha: 0.3),
             tooltip: 'Next page',
           ),
           

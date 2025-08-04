@@ -5,7 +5,6 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/blocs/content/content_bloc.dart';
 import 'package:nhasixapp/core/constants/colors_const.dart';
-import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_header_widget.dart';
 import 'package:nhasixapp/presentation/widgets/pagination_widget.dart';
@@ -134,22 +133,29 @@ class _MainScreenState extends State<MainScreen> {
                 SizedBox(
                   height: 5,
                 ),
-                Row(
-                  children: content.tags
-                      .map((value) => Text(value.name,
-                          style: const TextStyle(
-                              color: ColorsConst.redCustomColor)) as Widget)
-                      .toList(),
+                SizedBox(
+                  width: double.infinity,
+                  child: Wrap(
+                    children: content.tags
+                        .map((value) => Container(
+                              margin: const EdgeInsets.only(right: 5),
+                              child: Text(value.name,
+                                      style: const TextStyle(
+                                          color: ColorsConst.redCustomColor))
+                                  as Widget,
+                            ))
+                        .toList(),
+                  ),
                 ),
               ],
             ),
             subtitle: Text(
               'ID: ${content.id}',
-              style: const TextStyle(color: ColorsConst.redCustomColor),
+              style: const TextStyle(color: ColorsConst.primaryTextColor),
             ),
             leading: CachedNetworkImage(
               imageUrl: content.coverUrl,
-              height: 100,
+              height: 130,
               width: 50,
               fit: BoxFit.cover,
             ),
