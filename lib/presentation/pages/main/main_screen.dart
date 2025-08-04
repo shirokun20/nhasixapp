@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
@@ -9,6 +8,7 @@ import 'package:nhasixapp/core/constants/colors_const.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_header_widget.dart';
+import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
 import 'package:nhasixapp/presentation/widgets/pagination_widget.dart';
 
 class MainScreen extends StatefulWidget {
@@ -89,10 +89,17 @@ class _MainScreenState extends State<MainScreen> {
   Widget _buildBody() {
     return BlocBuilder<ContentBloc, ContentState>(
       builder: (context, state) {
+        // Use pagination or infinite scroll based on user preference
+        // For now, we'll use pagination with ContentListWidget
         return Column(
           children: [
             Expanded(
-              child: _buildContent(state),
+              child: ContentListWidget(
+                onContentTap: _onContentTap,
+                enablePullToRefresh: true, // Allow pull-to-refresh
+                enableInfiniteScroll:
+                    false, // Disable infinite scroll for pagination
+              ),
             ),
             _buildContentFooter(state)
           ],
@@ -101,132 +108,18 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildContent(ContentState state) {
-    if (state is ContentLoading) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator(
-              color: ColorsConst.accentBlue,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              state.message,
-              style: TextStyleConst.styleMedium(
-                textColor: ColorsConst.darkTextPrimary,
-                size: 16,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+  /// Handle content tap to navigate to detail screen
+  void _onContentTap(Content content) {
+    // TODO: Navigate to detail screen with DetailCubit
+    // For now, just show a snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Tapped: ${content.title}',
+          style: TextStyleConst.bodyMedium.copyWith(color: Colors.white),
         ),
-      );
-    } else if (state is ContentError) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Error: ${state.message}',
-              style: TextStyleConst.styleMedium(
-                textColor: ColorsConst.accentRed,
-                size: 16,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            if (state.canRetry)
-              ElevatedButton(
-                onPressed: () => _contentBloc.add(const ContentRetryEvent()),
-                child: const Text('Retry'),
-              ),
-          ],
-        ),
-      );
-    } else if (state is ContentEmpty) {
-      return Center(
-        child: Column(
-          children: [
-            Text(
-              state.message,
-              style: TextStyleConst.styleMedium(
-                textColor: ColorsConst.darkTextSecondary,
-                size: 16,
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () => _contentBloc.add(const ContentRetryEvent()),
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      );
-    } else if (state is ContentLoaded) {
-      return ListView.builder(
-        itemCount: state.contents.length,
-        itemBuilder: (context, index) {
-          final content = state.contents[index];
-          return ListTile(
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  content.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyleConst.styleSemiBold(
-                    textColor: ColorsConst.darkTextPrimary,
-                    size: 16,
-                  ),
-                ),
-                SizedBox(
-                  height: 5,
-                ),
-                SizedBox(
-                  width: double.infinity,
-                  child: Wrap(
-                    children: content.tags
-                        .map((value) => Container(
-                              margin: const EdgeInsets.only(right: 5),
-                              child: Text(
-                                value.name,
-                                style: TextStyleConst.styleRegular(
-                                  textColor:
-                                      ColorsConst.getTagColor(value.type),
-                                  size: 12,
-                                ),
-                              ),
-                            ))
-                        .toList(),
-                  ),
-                ),
-              ],
-            ),
-            subtitle: Text(
-              'ID: ${content.id}',
-              style: TextStyleConst.styleLight(
-                textColor: ColorsConst.darkTextSecondary,
-                size: 12,
-              ),
-            ),
-            leading: CachedNetworkImage(
-              imageUrl: content.coverUrl,
-              height: 130,
-              width: 50,
-              fit: BoxFit.cover,
-            ),
-          );
-        },
-      );
-    }
-    return Center(
-      child: Text(
-        'Welcome!',
-        style: TextStyleConst.styleBold(
-          textColor: ColorsConst.darkTextPrimary,
-          size: 24,
-        ),
+        backgroundColor: ColorsConst.accentBlue,
+        duration: const Duration(seconds: 2),
       ),
     );
   }

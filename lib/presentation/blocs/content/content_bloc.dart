@@ -686,6 +686,8 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     Emitter<ContentState> emit,
   ) async {
     final currentState = state;
+    _logger.i(
+        'on ContentLoaded is ${currentState is ContentLoaded} and hasNext ${currentState is ContentLoaded && currentState.hasNext}');
     if (currentState is! ContentLoaded || !currentState.hasNext) {
       return;
     }
@@ -746,7 +748,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
   ) async {
     try {
       // Show loading state
-      emit(const ContentLoading(message: 'Loading page...'));
+      emit(const ContentLoading(message: 'Loading content'));
 
       ContentListResult result;
 

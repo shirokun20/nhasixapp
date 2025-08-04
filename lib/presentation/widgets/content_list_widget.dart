@@ -7,16 +7,19 @@ import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/entities.dart';
 import '../blocs/content/content_bloc.dart';
 
-/// Widget that displays a list of content with pull-to-refresh and infinite scrolling
+/// Widget that displays a grid of content with pagination support
+/// Designed to work with PaginationWidget for page navigation
 class ContentListWidget extends StatefulWidget {
   const ContentListWidget({
     super.key,
     this.onContentTap,
-    this.showLoadMoreButton = false,
+    this.enablePullToRefresh = true,
+    this.enableInfiniteScroll = false, // Disabled by default for pagination
   });
 
   final void Function(Content content)? onContentTap;
-  final bool showLoadMoreButton;
+  final bool enablePullToRefresh;
+  final bool enableInfiniteScroll;
 
   @override
   State<ContentListWidget> createState() => _ContentListWidgetState();
@@ -42,16 +45,19 @@ class _ContentListWidgetState extends State<ContentListWidget> {
   }
 
   void _setupScrollListener() {
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >=
-          _scrollController.position.maxScrollExtent - 200) {
-        // Load more when near bottom
-        final state = context.read<ContentBloc>().state;
-        if (state is ContentLoaded && state.canLoadMore) {
-          context.read<ContentBloc>().add(const ContentLoadMoreEvent());
+    // Only setup infinite scroll if enabled
+    if (widget.enableInfiniteScroll) {
+      _scrollController.addListener(() {
+        if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200) {
+          // Load more when near bottom
+          final state = context.read<ContentBloc>().state;
+          if (state is ContentLoaded && state.canLoadMore) {
+            context.read<ContentBloc>().add(const ContentLoadMoreEvent());
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   void _onRefresh() {
@@ -217,123 +223,125 @@ class _ContentListWidgetState extends State<ContentListWidget> {
         }
 
         if (state is ContentLoaded) {
-          return SmartRefresher(
-            controller: _refreshController,
-            enablePullDown: true,
-            enablePullUp: state.hasNext && !widget.showLoadMoreButton,
-            onRefresh: _onRefresh,
-            onLoading: _onLoadMore,
-            header: const WaterDropMaterialHeader(),
-            footer: CustomFooter(
-              builder: (context, mode) {
-                Widget body;
-                if (mode == LoadStatus.idle) {
-                  body = const Text("Pull up to load more");
-                } else if (mode == LoadStatus.loading) {
-                  body = const CircularProgressIndicator();
-                } else if (mode == LoadStatus.failed) {
-                  body = const Text("Load Failed! Click retry!");
-                } else if (mode == LoadStatus.canLoading) {
-                  body = const Text("Release to load more");
-                } else {
-                  body = const Text("No more content");
-                }
-                return SizedBox(
-                  height: 55.0,
-                  child: Center(child: body),
-                );
-              },
-            ),
-            child: CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                // Content type header
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                state.contentTypeDescription,
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                              Text(
-                                '${state.totalCount} items • Page ${state.currentPage} of ${state.totalPages}',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (state.lastUpdated != null)
-                          Text(
-                            'Updated: ${_formatTime(state.lastUpdated!)}',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Content grid
-                SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.7,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final content = state.contents[index];
-                      return ContentCard(
-                        content: content,
-                        onTap: () => widget.onContentTap?.call(content),
-                      );
-                    },
-                    childCount: state.contents.length,
-                  ),
-                ),
-
-                // Loading more indicator
-                if (state.isLoadingMore)
-                  const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                    ),
-                  ),
-
-                // Load more button (alternative to pull-up)
-                if (widget.showLoadMoreButton &&
-                    state.hasNext &&
-                    !state.isLoadingMore)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: ElevatedButton(
-                        onPressed: _onLoadMore,
-                        child: const Text('Load More'),
-                      ),
-                    ),
-                  ),
-
-                // Bottom padding
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: 16),
-                ),
-              ],
-            ),
-          );
+          // Use SmartRefresher only if pull-to-refresh or infinite scroll is enabled
+          if (widget.enablePullToRefresh || widget.enableInfiniteScroll) {
+            return SmartRefresher(
+              controller: _refreshController,
+              enablePullDown: widget.enablePullToRefresh,
+              enablePullUp: widget.enableInfiniteScroll && state.hasNext,
+              onRefresh: _onRefresh,
+              onLoading: _onLoadMore,
+              header: widget.enablePullToRefresh
+                  ? const WaterDropMaterialHeader()
+                  : null,
+              footer: widget.enableInfiniteScroll
+                  ? CustomFooter(
+                      builder: (context, mode) {
+                        Widget body;
+                        if (mode == LoadStatus.idle) {
+                          body = const Text("Pull up to load more");
+                        } else if (mode == LoadStatus.loading) {
+                          body = const CircularProgressIndicator(
+                              color: ColorsConst.accentBlue);
+                        } else if (mode == LoadStatus.failed) {
+                          body = const Text("Load Failed! Click retry!");
+                        } else if (mode == LoadStatus.canLoading) {
+                          body = const Text("Release to load more");
+                        } else {
+                          body = const Text("No more content");
+                        }
+                        return SizedBox(
+                          height: 55.0,
+                          child: Center(child: body),
+                        );
+                      },
+                    )
+                  : null,
+              child: _buildContentGrid(state),
+            );
+          } else {
+            // Simple grid without SmartRefresher for pagination mode
+            return _buildContentGrid(state);
+          }
         }
 
         return const SizedBox.shrink();
       },
+    );
+  }
+
+  /// Build the content grid layout
+  Widget _buildContentGrid(ContentLoaded state) {
+    return CustomScrollView(
+      controller: _scrollController,
+      slivers: [
+        // Content type header
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        state.contentTypeDescription,
+                        style: TextStyleConst.bodyLarge,
+                      ),
+                      Text(
+                        '${state.totalCount} items • Page ${state.currentPage} of ${state.totalPages}',
+                        style: TextStyleConst.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                if (state.lastUpdated != null)
+                  Text(
+                    'Updated: ${_formatTime(state.lastUpdated!)}',
+                    style: TextStyleConst.bodySmall,
+                  ),
+              ],
+            ),
+          ),
+        ),
+
+        // Content grid
+        SliverGrid(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.7,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+          ),
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final content = state.contents[index];
+              return ContentCard(
+                content: content,
+                onTap: () => widget.onContentTap?.call(content),
+              );
+            },
+            childCount: state.contents.length,
+          ),
+        ),
+
+        // Loading more indicator (only for infinite scroll)
+        if (widget.enableInfiniteScroll && state.isLoadingMore)
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Center(
+                child: CircularProgressIndicator(color: ColorsConst.accentBlue),
+              ),
+            ),
+          ),
+
+        // Bottom padding
+        const SliverToBoxAdapter(
+          child: SizedBox(height: 16),
+        ),
+      ],
     );
   }
 
