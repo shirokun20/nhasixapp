@@ -7,7 +7,7 @@ import 'package:logger/logger.dart';
 /// Database helper class for managing SQLite database
 class DatabaseHelper {
   static const String _databaseName = 'nhasix_app.db';
-  static const int _databaseVersion = 1;
+  static const int _databaseVersion = 2;
 
   static Database? _database;
   static final Logger _logger = Logger();
@@ -111,6 +111,7 @@ class DatabaseHelper {
     _createHistoryTable(batch);
     _createPreferencesTable(batch);
     _createSearchHistoryTable(batch);
+    _createPaginationCacheTable(batch);
 
     // Create indexes
     _createIndexes(batch);
@@ -126,10 +127,19 @@ class DatabaseHelper {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     _logger.i('Upgrading database from version $oldVersion to $newVersion');
 
-    // Handle future database migrations here
-    // For now, we'll just recreate the database
-    if (oldVersion < newVersion) {
-      // Drop all tables and recreate
+    // Handle specific version upgrades
+    if (oldVersion < 2 && newVersion >= 2) {
+      // Add pagination cache table in version 2
+      _logger.i('Adding pagination cache table...');
+      final batch = db.batch();
+      _createPaginationCacheTable(batch);
+      _createPaginationCacheIndexes(batch);
+      await batch.commit();
+      _logger.i('Pagination cache table added successfully');
+    }
+
+    // For major version changes, recreate database
+    if (oldVersion < newVersion && (newVersion - oldVersion) > 1) {
       await _dropAllTables(db);
       await _onCreate(db, newVersion);
     }
@@ -265,6 +275,25 @@ class DatabaseHelper {
     ''');
   }
 
+  /// Create pagination cache table
+  void _createPaginationCacheTable(Batch batch) {
+    batch.execute('''
+      CREATE TABLE pagination_cache (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        context_key TEXT NOT NULL UNIQUE,
+        current_page INTEGER NOT NULL,
+        total_pages INTEGER NOT NULL,
+        has_next INTEGER NOT NULL, -- boolean as integer
+        has_previous INTEGER NOT NULL, -- boolean as integer
+        total_count INTEGER,
+        next_page INTEGER,
+        previous_page INTEGER,
+        cached_at INTEGER NOT NULL,
+        expires_at INTEGER NOT NULL
+      )
+    ''');
+  }
+
   /// Create database indexes for performance
   void _createIndexes(Batch batch) {
     // Content indexes
@@ -308,6 +337,19 @@ class DatabaseHelper {
     // Search history indexes
     batch.execute(
         'CREATE INDEX idx_search_history_searched_at ON search_history (searched_at DESC)');
+
+    // Pagination cache indexes
+    _createPaginationCacheIndexes(batch);
+  }
+
+  /// Create pagination cache indexes
+  void _createPaginationCacheIndexes(Batch batch) {
+    batch.execute(
+        'CREATE INDEX idx_pagination_cache_context_key ON pagination_cache (context_key)');
+    batch.execute(
+        'CREATE INDEX idx_pagination_cache_expires_at ON pagination_cache (expires_at)');
+    batch.execute(
+        'CREATE INDEX idx_pagination_cache_cached_at ON pagination_cache (cached_at DESC)');
   }
 
   /// Insert default data
@@ -350,6 +392,7 @@ class DatabaseHelper {
   /// Drop all tables (for database recreation)
   Future<void> _dropAllTables(Database db) async {
     final tables = [
+      'pagination_cache',
       'search_history',
       'preferences',
       'history',
@@ -382,6 +425,7 @@ class DatabaseHelper {
     final batch = db.batch();
 
     // Clear all tables except preferences and favorite_categories
+    batch.delete('pagination_cache');
     batch.delete('search_history');
     batch.delete('history');
     batch.delete('downloads');

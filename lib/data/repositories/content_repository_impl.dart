@@ -4,6 +4,7 @@ import '../../domain/entities/entities.dart';
 import '../../domain/repositories/content_repository.dart';
 import '../../domain/value_objects/value_objects.dart';
 import '../datasources/local/local_data_source.dart';
+import '../datasources/local/pagination_cache_keys.dart';
 import '../datasources/remote/remote_data_source.dart';
 import '../models/content_model.dart';
 import '../models/tag_model.dart';
@@ -31,6 +32,8 @@ class ContentRepositoryImpl implements ContentRepository {
     try {
       _logger.i('Getting content list - page: $page, sort: $sortBy');
 
+      final contextKey = PaginationCacheKeys.contentList(page, sortBy);
+
       // Try to get from cache first (offline-first approach)
       final cachedModels = await localDataSource.getCachedContentList(
         page: page,
@@ -39,13 +42,19 @@ class ContentRepositoryImpl implements ContentRepository {
 
       _logger.i("Cached contents: ${cachedModels.length}");
 
-      // If we have cached content and it's not expired, return it
+      // Check if we have both content and pagination cache
+      final cachedPaginationInfo =
+          await localDataSource.getCachedPaginationInfo(contextKey);
+
+      // If we have cached content and pagination info, and content is not expired, return it
       if (cachedModels.isNotEmpty &&
-          !cachedModels.first.isCacheExpired(maxAge: cacheExpiration)) {
-        _logger
-            .d('Returning cached content list (${cachedModels.length} items)');
+          !cachedModels.first.isCacheExpired(maxAge: cacheExpiration) &&
+          cachedPaginationInfo != null) {
+        _logger.d(
+            'Returning cached content list with pagination (${cachedModels.length} items)');
         final entities = cachedModels.map((model) => model.toEntity()).toList();
-        return _buildContentListResult(entities, page);
+        return _buildContentListResultWithPagination(
+            entities, cachedPaginationInfo);
       }
 
       try {
@@ -57,11 +66,15 @@ class ContentRepositoryImpl implements ContentRepository {
         final paginationInfo =
             remoteResult['pagination'] as Map<String, dynamic>;
 
-        // Cache the fetched content
+        // Cache both content and pagination info
         await _cacheContentList(remoteContents);
+        await localDataSource.cachePaginationInfo(
+          contextKey: contextKey,
+          paginationInfo: paginationInfo,
+        );
 
         _logger.i(
-            'Fetched and cached ${remoteContents.length} contents from remote');
+            'Fetched and cached ${remoteContents.length} contents with pagination from remote');
 
         final entities =
             remoteContents.map((model) => model.toEntity()).toList();
@@ -74,7 +87,14 @@ class ContentRepositoryImpl implements ContentRepository {
           _logger.d('Using expired cache as fallback');
           final entities =
               cachedModels.map((model) => model.toEntity()).toList();
-          return _buildContentListResult(entities, page);
+
+          // Try to use cached pagination info if available
+          if (cachedPaginationInfo != null) {
+            return _buildContentListResultWithPagination(
+                entities, cachedPaginationInfo);
+          } else {
+            return _buildContentListResult(entities, page);
+          }
         }
 
         rethrow;
@@ -140,8 +160,14 @@ class ContentRepositoryImpl implements ContentRepository {
         final paginationInfo =
             remoteResult['pagination'] as Map<String, dynamic>;
 
-        // Cache search results
+        final contextKey = PaginationCacheKeys.search(filter);
+
+        // Cache both search results and pagination info
         await _cacheContentList(remoteResults);
+        await localDataSource.cachePaginationInfo(
+          contextKey: contextKey,
+          paginationInfo: paginationInfo,
+        );
 
         _logger.i('Found ${remoteResults.length} search results from remote');
 
@@ -150,6 +176,8 @@ class ContentRepositoryImpl implements ContentRepository {
         return _buildContentListResultWithPagination(entities, paginationInfo);
       } catch (e) {
         _logger.w('Remote search failed, trying cached search: $e');
+
+        final contextKey = PaginationCacheKeys.search(filter);
 
         // Fallback to cached search
         final cachedResults = await localDataSource.searchCachedContent(
@@ -164,7 +192,16 @@ class ContentRepositoryImpl implements ContentRepository {
           _logger.d('Found ${cachedResults.length} cached search results');
           final entities =
               cachedResults.map((model) => model.toEntity()).toList();
-          return _buildContentListResult(entities, filter.page);
+
+          // Try to use cached pagination info if available
+          final cachedPaginationInfo =
+              await localDataSource.getCachedPaginationInfo(contextKey);
+          if (cachedPaginationInfo != null) {
+            return _buildContentListResultWithPagination(
+                entities, cachedPaginationInfo);
+          } else {
+            return _buildContentListResult(entities, filter.page);
+          }
         }
 
         rethrow;
@@ -230,7 +267,14 @@ class ContentRepositoryImpl implements ContentRepository {
         final paginationInfo =
             remoteResult['pagination'] as Map<String, dynamic>;
 
+        final contextKey = PaginationCacheKeys.popular(timeframe, page);
+
+        // Cache both content and pagination info
         await _cacheContentList(remoteContents);
+        await localDataSource.cachePaginationInfo(
+          contextKey: contextKey,
+          paginationInfo: paginationInfo,
+        );
 
         _logger.i('Fetched ${remoteContents.length} popular contents');
 
@@ -239,6 +283,8 @@ class ContentRepositoryImpl implements ContentRepository {
         return _buildContentListResultWithPagination(entities, paginationInfo);
       } catch (e) {
         _logger.w('Failed to fetch popular content from remote: $e');
+
+        final contextKey = PaginationCacheKeys.popular(timeframe, page);
 
         // Fallback to cached content sorted by favorites
         final cachedContents = await localDataSource.getCachedContentList(
@@ -251,7 +297,16 @@ class ContentRepositoryImpl implements ContentRepository {
 
         final entities =
             cachedContents.map((model) => model.toEntity()).toList();
-        return _buildContentListResult(entities, page);
+
+        // Try to use cached pagination info if available
+        final cachedPaginationInfo =
+            await localDataSource.getCachedPaginationInfo(contextKey);
+        if (cachedPaginationInfo != null) {
+          return _buildContentListResultWithPagination(
+              entities, cachedPaginationInfo);
+        } else {
+          return _buildContentListResult(entities, page);
+        }
       }
     } catch (e, stackTrace) {
       _logger.e('Failed to get popular content',
@@ -435,9 +490,11 @@ class ContentRepositoryImpl implements ContentRepository {
 
       if (olderThan != null) {
         await localDataSource.deleteExpiredCache(maxAge: olderThan);
+        await localDataSource.deleteExpiredPaginationCache();
       } else {
         // Clear all cache by deleting very old entries
         await localDataSource.deleteExpiredCache(maxAge: Duration.zero);
+        await localDataSource.clearAllPaginationCache();
       }
 
       _logger.d('Cache cleared successfully');

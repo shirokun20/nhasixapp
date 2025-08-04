@@ -9,6 +9,7 @@ import '../../models/history_model.dart';
 import '../../../domain/entities/user_preferences.dart';
 import '../../../domain/entities/download_status.dart';
 import 'database_helper.dart';
+import 'pagination_cache_keys.dart';
 
 /// Local data source for database operations
 class LocalDataSource {
@@ -901,6 +902,283 @@ class LocalDataSource {
       _logger.d('Cleaned up old data');
     } catch (e) {
       _logger.e('Error cleaning up old data: $e');
+    }
+  }
+
+  // ==================== PAGINATION CACHE OPERATIONS ====================
+
+  /// Cache pagination information
+  Future<void> cachePaginationInfo({
+    required String contextKey,
+    required Map<String, dynamic> paginationInfo,
+    Duration cacheExpiration = const Duration(hours: 6),
+  }) async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) {
+        _logger.e('Database not available, cannot cache pagination info');
+        return;
+      }
+
+      if (!PaginationCacheKeys.isValidKey(contextKey)) {
+        _logger.w('Invalid cache key format: $contextKey');
+        return;
+      }
+
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final expiresAt =
+          DateTime.now().add(cacheExpiration).millisecondsSinceEpoch;
+
+      await db.insert(
+        'pagination_cache',
+        {
+          'context_key': contextKey,
+          'current_page': paginationInfo['currentPage'] as int? ?? 1,
+          'total_pages': paginationInfo['totalPages'] as int? ?? 1,
+          'has_next': (paginationInfo['hasNext'] as bool? ?? false) ? 1 : 0,
+          'has_previous':
+              (paginationInfo['hasPrevious'] as bool? ?? false) ? 1 : 0,
+          'total_count': paginationInfo['totalCount'] as int?,
+          'next_page': paginationInfo['nextPage'] as int?,
+          'previous_page': paginationInfo['previousPage'] as int?,
+          'cached_at': now,
+          'expires_at': expiresAt,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+
+      _logger.d('Cached pagination info for key: $contextKey');
+    } catch (e) {
+      _logger.e('Error caching pagination info: $e');
+    }
+  }
+
+  /// Get cached pagination information
+  Future<Map<String, dynamic>?> getCachedPaginationInfo(
+      String contextKey) async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) {
+        _logger.e('Database not available, cannot get pagination info');
+        return null;
+      }
+
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final result = await db.query(
+        'pagination_cache',
+        where: 'context_key = ? AND expires_at > ?',
+        whereArgs: [contextKey, now],
+        limit: 1,
+      );
+
+      if (result.isEmpty) {
+        _logger.d('No valid pagination cache found for key: $contextKey');
+        return null;
+      }
+
+      final row = result.first;
+      final paginationInfo = {
+        'currentPage': row['current_page'] as int,
+        'totalPages': row['total_pages'] as int,
+        'hasNext': (row['has_next'] as int) == 1,
+        'hasPrevious': (row['has_previous'] as int) == 1,
+        'totalCount': row['total_count'] as int?,
+        'nextPage': row['next_page'] as int?,
+        'previousPage': row['previous_page'] as int?,
+      };
+
+      _logger.d('Retrieved pagination cache for key: $contextKey');
+      return paginationInfo;
+    } catch (e) {
+      _logger.e('Error getting cached pagination info: $e');
+      return null;
+    }
+  }
+
+  /// Check if pagination cache is valid for context key
+  Future<bool> isPaginationCacheValid(String contextKey) async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) return false;
+
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final result = await db.query(
+        'pagination_cache',
+        columns: ['id'],
+        where: 'context_key = ? AND expires_at > ?',
+        whereArgs: [contextKey, now],
+        limit: 1,
+      );
+
+      return result.isNotEmpty;
+    } catch (e) {
+      _logger.e('Error checking pagination cache validity: $e');
+      return false;
+    }
+  }
+
+  /// Delete expired pagination cache
+  Future<void> deleteExpiredPaginationCache() async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) return;
+
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final deletedCount = await db.delete(
+        'pagination_cache',
+        where: 'expires_at <= ?',
+        whereArgs: [now],
+      );
+
+      if (deletedCount > 0) {
+        _logger.d('Deleted $deletedCount expired pagination cache entries');
+      }
+    } catch (e) {
+      _logger.e('Error deleting expired pagination cache: $e');
+    }
+  }
+
+  /// Clear pagination cache for specific context
+  Future<void> clearPaginationCacheForContext(String context) async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) return;
+
+      final pattern = PaginationCacheKeys.getPatternForContext(context);
+      final deletedCount = await db.delete(
+        'pagination_cache',
+        where: 'context_key LIKE ?',
+        whereArgs: [pattern],
+      );
+
+      if (deletedCount > 0) {
+        _logger.d(
+            'Cleared $deletedCount pagination cache entries for context: $context');
+      }
+    } catch (e) {
+      _logger.e('Error clearing pagination cache for context: $e');
+    }
+  }
+
+  /// Clear all pagination cache
+  Future<void> clearAllPaginationCache() async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) return;
+
+      final deletedCount = await db.delete('pagination_cache');
+      _logger.d('Cleared all pagination cache ($deletedCount entries)');
+    } catch (e) {
+      _logger.e('Error clearing all pagination cache: $e');
+    }
+  }
+
+  /// Get pagination cache statistics
+  Future<Map<String, dynamic>> getPaginationCacheStats() async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) return {};
+
+      final now = DateTime.now().millisecondsSinceEpoch;
+
+      // Total entries
+      final totalResult =
+          await db.rawQuery('SELECT COUNT(*) as count FROM pagination_cache');
+      final totalEntries = totalResult.first['count'] as int;
+
+      // Valid entries (not expired)
+      final validResult = await db.rawQuery(
+        'SELECT COUNT(*) as count FROM pagination_cache WHERE expires_at > ?',
+        [now],
+      );
+      final validEntries = validResult.first['count'] as int;
+
+      // Expired entries
+      final expiredEntries = totalEntries - validEntries;
+
+      // Entries by context
+      final contextResult = await db.rawQuery('''
+        SELECT 
+          CASE 
+            WHEN context_key LIKE 'content_list_%' THEN 'content_list'
+            WHEN context_key LIKE 'search_%' THEN 'search'
+            WHEN context_key LIKE 'popular_%' THEN 'popular'
+            WHEN context_key LIKE 'tag_%' THEN 'tag'
+            WHEN context_key LIKE 'homepage_%' THEN 'homepage'
+            WHEN context_key LIKE 'random_%' THEN 'random'
+            ELSE 'other'
+          END as context,
+          COUNT(*) as count
+        FROM pagination_cache
+        WHERE expires_at > ?
+        GROUP BY context
+      ''', [now]);
+
+      final contextStats = <String, int>{};
+      for (final row in contextResult) {
+        contextStats[row['context'] as String] = row['count'] as int;
+      }
+
+      return {
+        'totalEntries': totalEntries,
+        'validEntries': validEntries,
+        'expiredEntries': expiredEntries,
+        'contextStats': contextStats,
+      };
+    } catch (e) {
+      _logger.e('Error getting pagination cache stats: $e');
+      return {};
+    }
+  }
+
+  /// Batch cache multiple pagination info
+  Future<void> batchCachePaginationInfo(
+    Map<String, Map<String, dynamic>> paginationData, {
+    Duration cacheExpiration = const Duration(hours: 6),
+  }) async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) return;
+
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final expiresAt =
+          DateTime.now().add(cacheExpiration).millisecondsSinceEpoch;
+
+      final batch = db.batch();
+
+      for (final entry in paginationData.entries) {
+        final contextKey = entry.key;
+        final paginationInfo = entry.value;
+
+        if (!PaginationCacheKeys.isValidKey(contextKey)) {
+          _logger.w('Skipping invalid cache key: $contextKey');
+          continue;
+        }
+
+        batch.insert(
+          'pagination_cache',
+          {
+            'context_key': contextKey,
+            'current_page': paginationInfo['currentPage'] as int? ?? 1,
+            'total_pages': paginationInfo['totalPages'] as int? ?? 1,
+            'has_next': (paginationInfo['hasNext'] as bool? ?? false) ? 1 : 0,
+            'has_previous':
+                (paginationInfo['hasPrevious'] as bool? ?? false) ? 1 : 0,
+            'total_count': paginationInfo['totalCount'] as int?,
+            'next_page': paginationInfo['nextPage'] as int?,
+            'previous_page': paginationInfo['previousPage'] as int?,
+            'cached_at': now,
+            'expires_at': expiresAt,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+
+      await batch.commit();
+      _logger
+          .d('Batch cached ${paginationData.length} pagination info entries');
+    } catch (e) {
+      _logger.e('Error batch caching pagination info: $e');
     }
   }
 }
