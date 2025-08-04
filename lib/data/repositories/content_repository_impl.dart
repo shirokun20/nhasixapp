@@ -49,9 +49,13 @@ class ContentRepositoryImpl implements ContentRepository {
       }
 
       try {
-        // Try to fetch from remote
-        final remoteContents =
-            await remoteDataSource.getContentList(page: page);
+        // Try to fetch from remote with pagination info
+        final remoteResult =
+            await remoteDataSource.getContentListWithPagination(page: page);
+
+        final remoteContents = remoteResult['contents'] as List<ContentModel>;
+        final paginationInfo =
+            remoteResult['pagination'] as Map<String, dynamic>;
 
         // Cache the fetched content
         await _cacheContentList(remoteContents);
@@ -61,7 +65,7 @@ class ContentRepositoryImpl implements ContentRepository {
 
         final entities =
             remoteContents.map((model) => model.toEntity()).toList();
-        return _buildContentListResult(entities, page);
+        return _buildContentListResultWithPagination(entities, paginationInfo);
       } catch (e) {
         _logger.w('Failed to fetch from remote, falling back to cache: $e');
 
@@ -129,7 +133,12 @@ class ContentRepositoryImpl implements ContentRepository {
 
       // For search, try remote first for fresh results
       try {
-        final remoteResults = await remoteDataSource.searchContent(filter);
+        final remoteResult =
+            await remoteDataSource.searchContentWithPagination(filter);
+
+        final remoteResults = remoteResult['contents'] as List<ContentModel>;
+        final paginationInfo =
+            remoteResult['pagination'] as Map<String, dynamic>;
 
         // Cache search results
         await _cacheContentList(remoteResults);
@@ -138,7 +147,7 @@ class ContentRepositoryImpl implements ContentRepository {
 
         final entities =
             remoteResults.map((model) => model.toEntity()).toList();
-        return _buildContentListResult(entities, filter.page);
+        return _buildContentListResultWithPagination(entities, paginationInfo);
       } catch (e) {
         _logger.w('Remote search failed, trying cached search: $e');
 
@@ -211,10 +220,15 @@ class ContentRepositoryImpl implements ContentRepository {
       _logger.i('Getting popular content - timeframe: $timeframe, page: $page');
 
       try {
-        final remoteContents = await remoteDataSource.getPopularContent(
+        final remoteResult =
+            await remoteDataSource.getPopularContentWithPagination(
           period: timeframe.apiValue,
           page: page,
         );
+
+        final remoteContents = remoteResult['contents'] as List<ContentModel>;
+        final paginationInfo =
+            remoteResult['pagination'] as Map<String, dynamic>;
 
         await _cacheContentList(remoteContents);
 
@@ -222,7 +236,7 @@ class ContentRepositoryImpl implements ContentRepository {
 
         final entities =
             remoteContents.map((model) => model.toEntity()).toList();
-        return _buildContentListResult(entities, page);
+        return _buildContentListResultWithPagination(entities, paginationInfo);
       } catch (e) {
         _logger.w('Failed to fetch popular content from remote: $e');
 
@@ -542,7 +556,7 @@ class ContentRepositoryImpl implements ContentRepository {
     }
   }
 
-  /// Build ContentListResult from content list
+  /// Build ContentListResult from content list (fallback for cached content)
   ContentListResult _buildContentListResult(List<Content> contents, int page) {
     // For simplicity, assume each page has defaultPageSize items
     // In a real implementation, you'd get total count from the data source
@@ -554,6 +568,32 @@ class ContentRepositoryImpl implements ContentRepository {
       currentPage: page,
       totalPages: hasNext ? page + 1 : page, // Approximate
       totalCount: contents.length, // This would be the total across all pages
+      hasNext: hasNext,
+      hasPrevious: hasPrevious,
+    );
+  }
+
+  /// Build ContentListResult with real pagination data from scraper
+  ContentListResult _buildContentListResultWithPagination(
+      List<Content> contents, Map<String, dynamic> paginationInfo) {
+    final currentPage = paginationInfo['currentPage'] as int? ?? 1;
+    final totalPages = paginationInfo['totalPages'] as int? ?? 1;
+    final hasNext = paginationInfo['hasNext'] as bool? ?? false;
+    final hasPrevious = paginationInfo['hasPrevious'] as bool? ?? false;
+
+    // Calculate approximate total count based on pages and content per page
+    final totalCount = totalPages * defaultPageSize;
+
+    _logger.d('Built ContentListResult with real pagination: '
+        'currentPage=$currentPage, totalPages=$totalPages, '
+        'hasNext=$hasNext, hasPrevious=$hasPrevious, '
+        'totalCount=$totalCount');
+
+    return ContentListResult(
+      contents: contents,
+      currentPage: currentPage,
+      totalPages: totalPages,
+      totalCount: totalCount,
       hasNext: hasNext,
       hasPrevious: hasPrevious,
     );

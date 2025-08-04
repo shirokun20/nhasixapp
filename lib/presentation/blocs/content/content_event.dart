@@ -140,3 +140,23 @@ class ContentRemoveEvent extends ContentEvent {
   @override
   List<Object?> get props => [contentId];
 }
+
+/// Event to navigate to next page
+class ContentNextPageEvent extends ContentEvent {
+  const ContentNextPageEvent();
+}
+
+/// Event to navigate to previous page
+class ContentPreviousPageEvent extends ContentEvent {
+  const ContentPreviousPageEvent();
+}
+
+/// Event to navigate to specific page
+class ContentGoToPageEvent extends ContentEvent {
+  const ContentGoToPageEvent(this.page);
+
+  final int page;
+
+  @override
+  List<Object?> get props => [page];
+}

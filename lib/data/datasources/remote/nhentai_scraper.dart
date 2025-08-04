@@ -398,6 +398,134 @@ class NhentaiScraper {
     }
   }
 
+  /// Parse pagination information from HTML
+  Map<String, dynamic> parsePaginationInfo(String html) {
+    try {
+      final document = html_parser.parse(html);
+      final paginationSection = document.querySelector('section.pagination');
+
+      if (paginationSection == null) {
+        _logger.w('No pagination section found');
+        return {
+          'currentPage': 1,
+          'totalPages': 1,
+          'hasNext': false,
+          'hasPrevious': false,
+          'nextPage': null,
+          'previousPage': null,
+        };
+      }
+
+      // Extract current page
+      int currentPage = 1;
+      final currentPageElement =
+          paginationSection.querySelector('a.page.current');
+      if (currentPageElement != null) {
+        currentPage = int.tryParse(currentPageElement.text.trim()) ?? 1;
+      }
+
+      // Extract total pages from "last" link
+      int totalPages = 1;
+      final lastPageElement = paginationSection.querySelector('a.last');
+      if (lastPageElement != null) {
+        final href = lastPageElement.attributes['href'];
+        if (href != null) {
+          final match = RegExp(r'page=(\d+)').firstMatch(href);
+          if (match != null) {
+            totalPages = int.tryParse(match.group(1)!) ?? 1;
+          }
+        }
+      }
+
+      // Extract next page
+      int? nextPage;
+      final nextPageElement = paginationSection.querySelector('a.next');
+      if (nextPageElement != null) {
+        final href = nextPageElement.attributes['href'];
+        if (href != null) {
+          final match = RegExp(r'page=(\d+)').firstMatch(href);
+          if (match != null) {
+            nextPage = int.tryParse(match.group(1)!);
+          }
+        }
+      }
+
+      // Extract previous page
+      int? previousPage;
+      final previousPageElement = paginationSection.querySelector('a.previous');
+      if (previousPageElement != null) {
+        final href = previousPageElement.attributes['href'];
+        if (href != null) {
+          final match = RegExp(r'page=(\d+)').firstMatch(href);
+          if (match != null) {
+            previousPage = int.tryParse(match.group(1)!);
+          }
+        }
+      }
+
+      // Calculate previous page if not found in DOM
+      if (previousPage == null && currentPage > 1) {
+        previousPage = currentPage - 1;
+      }
+
+      // Calculate next page if not found in DOM
+      if (nextPage == null && currentPage < totalPages) {
+        nextPage = currentPage + 1;
+      }
+
+      final paginationInfo = {
+        'currentPage': currentPage,
+        'totalPages': totalPages,
+        'hasNext': currentPage < totalPages,
+        'hasPrevious': currentPage > 1,
+        'nextPage': nextPage,
+        'previousPage': previousPage,
+      };
+
+      _logger.d('Parsed pagination info: $paginationInfo');
+      return paginationInfo;
+    } catch (e, stackTrace) {
+      _logger.e('Failed to parse pagination info',
+          error: e, stackTrace: stackTrace);
+      return {
+        'currentPage': 1,
+        'totalPages': 1,
+        'hasNext': false,
+        'hasPrevious': false,
+        'nextPage': null,
+        'previousPage': null,
+      };
+    }
+  }
+
+  /// Extract visible page numbers from pagination
+  List<int> extractVisiblePages(String html) {
+    try {
+      final document = html_parser.parse(html);
+      final paginationSection = document.querySelector('section.pagination');
+
+      if (paginationSection == null) return [1];
+
+      final pageElements = paginationSection.querySelectorAll('a.page');
+      final visiblePages = <int>[];
+
+      for (final element in pageElements) {
+        final pageText = element.text.trim();
+        final pageNumber = int.tryParse(pageText);
+        if (pageNumber != null) {
+          visiblePages.add(pageNumber);
+        }
+      }
+
+      visiblePages.sort();
+      _logger.d('Extracted visible pages: $visiblePages');
+      return visiblePages;
+    } catch (e) {
+      _logger.w('Failed to extract visible pages: $e');
+      return [1];
+    }
+  }
+
   /// Parse individual content card (async version with tag resolution)
   Future<ContentModel?> _parseContentCard(html_dom.Element element) async {
     try {

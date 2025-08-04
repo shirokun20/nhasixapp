@@ -44,6 +44,9 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         _onContentToggleFavorite); // TODO: Implement later
     on<ContentUpdateEvent>(_onContentUpdate); // TODO: Implement later
     on<ContentRemoveEvent>(_onContentRemove); // TODO: Implement later
+    on<ContentNextPageEvent>(_onContentNextPage);
+    on<ContentPreviousPageEvent>(_onContentPreviousPage);
+    on<ContentGoToPageEvent>(_onContentGoToPage);
   }
 
   final GetContentListUseCase _getContentListUseCase;
@@ -674,6 +677,141 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
       return ContentErrorType.parsing;
     } else {
       return ContentErrorType.unknown;
+    }
+  }
+
+  /// Navigate to next page
+  Future<void> _onContentNextPage(
+    ContentNextPageEvent event,
+    Emitter<ContentState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! ContentLoaded || !currentState.hasNext) {
+      return;
+    }
+
+    final nextPage = currentState.currentPage + 1;
+    _logger.i('ContentBloc: Navigating to next page: $nextPage');
+
+    await _loadSpecificPage(nextPage, currentState, emit);
+  }
+
+  /// Navigate to previous page
+  Future<void> _onContentPreviousPage(
+    ContentPreviousPageEvent event,
+    Emitter<ContentState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! ContentLoaded || !currentState.hasPrevious) {
+      return;
+    }
+
+    final previousPage = currentState.currentPage - 1;
+    _logger.i('ContentBloc: Navigating to previous page: $previousPage');
+
+    await _loadSpecificPage(previousPage, currentState, emit);
+  }
+
+  /// Navigate to specific page
+  Future<void> _onContentGoToPage(
+    ContentGoToPageEvent event,
+    Emitter<ContentState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! ContentLoaded) {
+      return;
+    }
+
+    // Validate page number
+    if (event.page < 1 || event.page > currentState.totalPages) {
+      _logger.w('ContentBloc: Invalid page number: ${event.page}');
+      return;
+    }
+
+    // Don't reload if already on the same page
+    if (event.page == currentState.currentPage) {
+      return;
+    }
+
+    _logger.i('ContentBloc: Navigating to page: ${event.page}');
+
+    await _loadSpecificPage(event.page, currentState, emit);
+  }
+
+  /// Load specific page based on current context
+  Future<void> _loadSpecificPage(
+    int page,
+    ContentLoaded currentState,
+    Emitter<ContentState> emit,
+  ) async {
+    try {
+      // Show loading state
+      emit(const ContentLoading(message: 'Loading page...'));
+
+      ContentListResult result;
+
+      // Load page based on current context
+      if (currentState.searchFilter != null) {
+        // Load search results page
+        final pageFilter = currentState.searchFilter!.copyWith(page: page);
+        result = await _searchContentUseCase(pageFilter);
+      } else if (currentState.tag != null) {
+        // Load content by tag page
+        result = await _contentRepository.getContentByTag(
+          tag: currentState.tag!,
+          page: page,
+          sortBy: currentState.sortBy,
+        );
+      } else if (currentState.timeframe != null) {
+        // Load popular content page
+        result = await _contentRepository.getPopularContent(
+          timeframe: currentState.timeframe!,
+          page: page,
+        );
+      } else {
+        // Load regular content page
+        final params = GetContentListParams(
+          page: page,
+          sortBy: currentState.sortBy,
+        );
+        result = await _getContentListUseCase(params);
+      }
+
+      if (result.isEmpty) {
+        emit(const ContentEmpty(
+          message: 'No content found on this page.',
+        ));
+        return;
+      }
+
+      emit(ContentLoaded(
+        contents: result.contents,
+        currentPage: result.currentPage,
+        totalPages: result.totalPages,
+        totalCount: result.totalCount,
+        hasNext: result.hasNext,
+        hasPrevious: result.hasPrevious,
+        sortBy: currentState.sortBy,
+        searchFilter: currentState.searchFilter,
+        tag: currentState.tag,
+        timeframe: currentState.timeframe,
+        lastUpdated: DateTime.now(),
+      ));
+
+      _logger.i(
+          'ContentBloc: Loaded page $page with ${result.contents.length} contents');
+    } catch (e, stackTrace) {
+      _logger.e('ContentBloc: Error loading page $page',
+          error: e, stackTrace: stackTrace);
+
+      final errorType = _determineErrorType(e);
+      emit(ContentError(
+        message: e.toString(),
+        canRetry: errorType.isRetryable,
+        previousContents: currentState.contents,
+        errorType: errorType,
+        stackTrace: stackTrace,
+      ));
     }
   }
 

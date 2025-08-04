@@ -8,6 +8,7 @@ import 'package:nhasixapp/core/constants/colors_const.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_header_widget.dart';
+import 'package:nhasixapp/presentation/widgets/pagination_widget.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -62,9 +63,23 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildContent(ContentState state) {
     if (state is ContentLoading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          color: ColorsConst.primaryTextColor,
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(
+              color: ColorsConst.primaryTextColor,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              state.message,
+              style: const TextStyle(
+                color: ColorsConst.primaryTextColor,
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       );
     } else if (state is ContentError) {
@@ -116,18 +131,28 @@ class _MainScreenState extends State<MainScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: ColorsConst.primaryTextColor),
                 ),
-                SizedBox(height: 5,),
+                SizedBox(
+                  height: 5,
+                ),
                 Row(
-                  children: content.tags.map((value) 
-                     => Text(value.name, style: const TextStyle(color: ColorsConst.redCustomColor)) as Widget).toList(),
-                  ),
+                  children: content.tags
+                      .map((value) => Text(value.name,
+                          style: const TextStyle(
+                              color: ColorsConst.redCustomColor)) as Widget)
+                      .toList(),
+                ),
               ],
             ),
             subtitle: Text(
               'ID: ${content.id}',
               style: const TextStyle(color: ColorsConst.redCustomColor),
             ),
-            leading: CachedNetworkImage(imageUrl: content.coverUrl, height: 100, width: 50, fit: BoxFit.cover,),
+            leading: CachedNetworkImage(
+              imageUrl: content.coverUrl,
+              height: 100,
+              width: 50,
+              fit: BoxFit.cover,
+            ),
           );
         },
       );
@@ -141,63 +166,27 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _buildContentFooter(ContentState state) {
-    int currentPage = 0;
-    int totalPages = 0;
-
-    if (state is ContentLoaded) {
-      currentPage = state.currentPage;
-      totalPages = state.totalPages;
+    if (state is! ContentLoaded) {
+      return const SizedBox.shrink();
     }
 
-    return Container(
-      color: ColorsConst.thirdColor,
-      width: double.infinity,
-      padding: const EdgeInsets.all(4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Spacer(),
-          IconButton(
-            iconSize: 32,
-            onPressed:
-                (state is ContentLoaded && state.hasPrevious) ? () {} : null,
-            icon: const Icon(Icons.chevron_left),
-            color: ColorsConst.primaryTextColor,
-          ),
-          const Spacer(),
-          Expanded(
-            flex: 2,
-            child: Column(
-              children: [
-                Text(
-                  'Page $currentPage of $totalPages',
-                  style: TextStyleConst.styleBold(
-                    textColor: ColorsConst.primaryTextColor,
-                    size: 16,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(
-                  height: 8,
-                ),
-                Container(
-                  height: 2,
-                  color: ColorsConst.primaryTextColor,
-                )
-              ],
-            ),
-          ),
-          const Spacer(),
-          IconButton(
-            iconSize: 32,
-            onPressed: (state is ContentLoaded && state.hasNext) ? () {} : null,
-            icon: const Icon(Icons.chevron_right),
-            color: ColorsConst.primaryTextColor,
-          ),
-          const Spacer(),
-        ],
-      ),
+    return PaginationWidget(
+      currentPage: state.currentPage,
+      totalPages: state.totalPages,
+      hasNext: state.hasNext,
+      hasPrevious: state.hasPrevious,
+      onNextPage: () {
+        _contentBloc.add(const ContentNextPageEvent());
+      },
+      onPreviousPage: () {
+        _contentBloc.add(const ContentPreviousPageEvent());
+      },
+      onGoToPage: (page) {
+        _contentBloc.add(ContentGoToPageEvent(page));
+      },
+      showProgressBar: true,
+      showPercentage: true,
+      showPageInput: true, // Enable page input for large page counts
     );
   }
 }

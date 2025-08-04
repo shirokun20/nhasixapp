@@ -79,6 +79,37 @@ class RemoteDataSource {
     }
   }
 
+  /// Get content list with pagination information (with tag resolution)
+  Future<Map<String, dynamic>> getContentListWithPagination(
+      {int page = 1}) async {
+    try {
+      _logger.i('Fetching content list with pagination for page $page');
+
+      final url = page == 1 ? baseUrl : '$baseUrl/?page=$page';
+      final html = await _getPageHtml(url);
+
+      // Parse content list
+      final contents = page == 1
+          ? await scraper.parseFromIndexContainers(html)
+          : await scraper.parseContentList(html);
+
+      // Parse pagination info
+      final paginationInfo = scraper.parsePaginationInfo(html);
+
+      _logger.i(
+          'Successfully parsed ${contents.length} contents and pagination info for page $page');
+
+      return {
+        'contents': contents,
+        'pagination': paginationInfo,
+      };
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get content list with pagination for page $page',
+          error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
   /// Get content list from homepage or specific page (sync version without tag resolution)
   /// Use this for better performance when tag resolution is not needed
   Future<List<ContentModel>> getContentListSync({int page = 1}) async {
@@ -180,6 +211,36 @@ class RemoteDataSource {
     }
   }
 
+  /// Search content with filters and pagination info (with tag resolution)
+  Future<Map<String, dynamic>> searchContentWithPagination(
+      SearchFilter filter) async {
+    try {
+      _logger.i(
+          'Searching content with pagination for filter: ${filter.toQueryString()}');
+
+      final url = _buildSearchUrl(filter);
+      final html = await _getPageHtml(url);
+
+      // Parse search results
+      final contents = await scraper.parseSearchResults(html);
+
+      // Parse pagination info
+      final paginationInfo = scraper.parsePaginationInfo(html);
+
+      _logger.i(
+          'Successfully found ${contents.length} search results with pagination info');
+
+      return {
+        'contents': contents,
+        'pagination': paginationInfo,
+      };
+    } catch (e, stackTrace) {
+      _logger.e('Failed to search content with pagination',
+          error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
   /// Search content with filters (sync version without tag resolution)
   /// Use this for better performance when tag resolution is not needed
   Future<List<ContentModel>> searchContentSync(SearchFilter filter) async {
@@ -240,6 +301,38 @@ class RemoteDataSource {
       return contents;
     } catch (e, stackTrace) {
       _logger.e('Failed to get popular content',
+          error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Get popular content with pagination info (with tag resolution)
+  Future<Map<String, dynamic>> getPopularContentWithPagination({
+    String period = 'all', // all, week, today
+    int page = 1,
+  }) async {
+    try {
+      _logger.i(
+          'Fetching popular content with pagination for period: $period, page: $page');
+
+      final url = '$baseUrl/search/?q=&sort=popular-$period&page=$page';
+      final html = await _getPageHtml(url);
+
+      // Parse content list
+      final contents = await scraper.parseContentList(html);
+
+      // Parse pagination info
+      final paginationInfo = scraper.parsePaginationInfo(html);
+
+      _logger.i(
+          'Successfully parsed ${contents.length} popular contents with pagination info');
+
+      return {
+        'contents': contents,
+        'pagination': paginationInfo,
+      };
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get popular content with pagination',
           error: e, stackTrace: stackTrace);
       rethrow;
     }

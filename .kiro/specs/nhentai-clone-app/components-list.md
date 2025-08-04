@@ -42,7 +42,7 @@ Dokumen ini berisi daftar lengkap semua komponen yang ada dan akan diimplementas
 | ImageViewer | ⏳ | Zoomable image viewer component | `lib/presentation/widgets/image_viewer_widget.dart` |
 | ProgressIndicator | ⏳ | Custom loading indicators | `lib/presentation/widgets/progress_indicator_widget.dart` |
 | ErrorWidget | ⏳ | Standardized error display | `lib/presentation/widgets/error_widget.dart` |
-| PaginationWidget | ⏳ | Next/Previous pagination buttons | `lib/presentation/widgets/pagination_widget.dart` |
+| PaginationWidget | ✅ | Advanced pagination dengan progress bar dan page input | `lib/presentation/widgets/pagination_widget.dart` |
 
 ### 1.3 BLoCs & Cubits (State Management)
 
@@ -79,6 +79,7 @@ Dokumen ini berisi daftar lengkap semua komponen yang ada dan akan diimplementas
 | SearchFilter | ✅ | Search filter parameters | `lib/domain/entities/search_filter.dart` |
 | UserPreferences | ✅ | User settings entity | `lib/domain/entities/user_preferences.dart` |
 | ReadingStatistics | ✅ | Reading stats entity | `lib/domain/entities/reading_statistics.dart` |
+| PaginationInfo | ✅ | Pagination information entity | `lib/domain/entities/pagination_info.dart` |
 
 ### 2.2 Value Objects
 
@@ -122,6 +123,7 @@ Dokumen ini berisi daftar lengkap semua komponen yang ada dan akan diimplementas
 | TagModel | ✅ | Tag data model | `lib/data/models/tag_model.dart` |
 | HistoryModel | ✅ | History data model | `lib/data/models/history_model.dart` |
 | DownloadStatusModel | ✅ | Download status data model | `lib/data/models/download_status_model.dart` |
+| PaginationModel | ✅ | Pagination data model | `lib/data/models/pagination_model.dart` |
 
 ### 3.2 Data Sources
 
@@ -131,7 +133,7 @@ Dokumen ini berisi daftar lengkap semua komponen yang ada dan akan diimplementas
 |-----------|--------|-------------|-----------|
 | RemoteDataSource | ✅ | Main remote data interface | `lib/data/datasources/remote/remote_data_source.dart` |
 | RemoteDataSourceFactory | ✅ | Factory untuk remote data sources | `lib/data/datasources/remote/remote_data_source_factory.dart` |
-| NhentaiScraper | ✅ | Web scraping implementation | `lib/data/datasources/remote/nhentai_scraper.dart` |
+| NhentaiScraper | ✅ | Web scraping implementation dengan pagination parsing | `lib/data/datasources/remote/nhentai_scraper.dart` |
 | TagResolver | ✅ | Tag ID resolution dari local assets | `lib/data/datasources/remote/tag_resolver.dart` |
 | AntiDetection | ✅ | Anti-detection measures | `lib/data/datasources/remote/anti_detection.dart` |
 | CloudflareBypass | ✅ | Cloudflare bypass dengan webview | `lib/data/datasources/remote/cloudflare_bypass.dart` |
