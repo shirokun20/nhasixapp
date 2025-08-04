@@ -28,18 +28,25 @@ class ContentRepositoryImpl implements ContentRepository {
     int page = 1,
     SortOption sortBy = SortOption.newest,
   }) async {
-    // try {
-    //   _logger.i('Getting content list - page: $page, sort: $sortBy');
+    try {
+      _logger.i('Getting content list - page: $page, sort: $sortBy');
 
-    //   // Try to get from cache first (offline-first approach)
-    //   final cachedContents = await _getCachedContentList(page: page);
+      // Try to get from cache first (offline-first approach)
+      final cachedModels = await localDataSource.getCachedContentList(
+        page: page,
+        limit: defaultPageSize,
+      );
 
-    //   // If we have cached content and it's not expired, return it
-    //   if (cachedContents.isNotEmpty && !_isCacheExpired(cachedContents.first)) {
-    //     _logger.d(
-    //         'Returning cached content list (${cachedContents.length} items)');
-    //     return _buildContentListResult(cachedContents, page);
-    //   }
+      _logger.i("Cached contents: ${cachedModels.length}");
+
+      // If we have cached content and it's not expired, return it
+      if (cachedModels.isNotEmpty &&
+          !cachedModels.first.isCacheExpired(maxAge: cacheExpiration)) {
+        _logger
+            .d('Returning cached content list (${cachedModels.length} items)');
+        final entities = cachedModels.map((model) => model.toEntity()).toList();
+        return _buildContentListResult(entities, page);
+      }
 
       try {
         // Try to fetch from remote
@@ -47,7 +54,7 @@ class ContentRepositoryImpl implements ContentRepository {
             await remoteDataSource.getContentList(page: page);
 
         // Cache the fetched content
-        // await _cacheContentList(remoteContents);
+        await _cacheContentList(remoteContents);
 
         _logger.i(
             'Fetched and cached ${remoteContents.length} contents from remote');
@@ -59,17 +66,19 @@ class ContentRepositoryImpl implements ContentRepository {
         _logger.w('Failed to fetch from remote, falling back to cache: $e');
 
         // Fallback to cached content even if expired
-        // if (cachedContents.isNotEmpty) {
-        //   _logger.d('Using expired cache as fallback');
-        //   return _buildContentListResult(cachedContents, page);
-        // }
+        if (cachedModels.isNotEmpty) {
+          _logger.d('Using expired cache as fallback');
+          final entities =
+              cachedModels.map((model) => model.toEntity()).toList();
+          return _buildContentListResult(entities, page);
+        }
 
         rethrow;
       }
-    // } catch (e, stackTrace) {
-    //   _logger.e('Failed to get content list', error: e, stackTrace: stackTrace);
-    //   rethrow;
-    // }
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get content list', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   @override
@@ -81,7 +90,8 @@ class ContentRepositoryImpl implements ContentRepository {
       final cachedContent =
           await localDataSource.getContentById(contentId.value);
 
-      if (cachedContent != null && !_isCacheExpired(cachedContent.toEntity())) {
+      if (cachedContent != null &&
+          !cachedContent.isCacheExpired(maxAge: cacheExpiration)) {
         _logger.d('Returning cached content detail');
         return cachedContent.toEntity();
       }
@@ -530,14 +540,6 @@ class ContentRepositoryImpl implements ContentRepository {
     if (contents.isNotEmpty) {
       await localDataSource.cacheContentList(contents);
     }
-  }
-
-  /// Check if content cache is expired
-  bool _isCacheExpired(Content content) {
-    if (content is ContentModel) {
-      return content.isCacheExpired(maxAge: cacheExpiration);
-    }
-    return true;
   }
 
   /// Build ContentListResult from content list

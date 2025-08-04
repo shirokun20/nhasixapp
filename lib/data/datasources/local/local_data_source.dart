@@ -17,12 +17,35 @@ class LocalDataSource {
 
   LocalDataSource(this._databaseHelper);
 
+  /// Handle database errors and attempt recovery
+  Future<Database?> _getSafeDatabase() async {
+    try {
+      return await _databaseHelper.database;
+    } catch (e) {
+      _logger.e('Database access failed: $e');
+
+      // Attempt to reset database if it's corrupted
+      try {
+        _logger.w('Attempting to reset corrupted database...');
+        await _databaseHelper.resetDatabase();
+        return await _databaseHelper.database;
+      } catch (resetError) {
+        _logger.e('Database reset failed: $resetError');
+        return null;
+      }
+    }
+  }
+
   // ==================== CONTENT OPERATIONS ====================
 
   /// Cache content list
   Future<void> cacheContentList(List<ContentModel> contents) async {
     try {
-      final db = await _databaseHelper.database;
+      final db = await _getSafeDatabase();
+      if (db == null) {
+        _logger.e('Database not available, cannot cache content list');
+        return;
+      }
 
       // Use transaction for better performance and consistency
       await db.transaction((txn) async {
@@ -55,7 +78,11 @@ class LocalDataSource {
     List<String>? excludeIds,
   }) async {
     try {
-      final db = await _databaseHelper.database;
+      final db = await _getSafeDatabase();
+      if (db == null) {
+        _logger.e('Database not available, returning empty list');
+        return [];
+      }
       final offset = (page - 1) * limit;
 
       String whereClause = '1=1';

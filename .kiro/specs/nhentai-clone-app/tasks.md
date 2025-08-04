@@ -41,9 +41,10 @@
     - Create RemoteDataSource dengan Dio HTTP client
     - Implement HTML parsing dengan html package
     - Create NhentaiScraper dengan CSS selectors
-    - Add Cloudflare bypass integration
+    - Integrate existing TagResolver for tag resolution
     - Implement anti-detection measures
-    - _Requirements: 1.1, 2.1, 3.1_
+    - Ensure HTTP client is not disposed to prevent connection errors
+    - _Requirements: 1.1, 2.1, 3.1, 8.1_
 
   - [x] 3.3 Implement repository implementations
     - Create ContentRepositoryImpl dengan caching strategy
@@ -52,43 +53,65 @@
     - Add offline-first architecture
     - _Requirements: 1.1, 2.1, 4.1, 5.1, 7.1_
 
-- [x] 4. Create core BLoC state management
-  - [x] 4.1 Implement SplashBloc untuk initial loading
-    - Create SplashBloc dengan Cloudflare bypass logic
+  - [x] 3.4 Fix HTTP client lifecycle management
+    - Review dan fix disposal of Dio HTTP client
+    - Ensure singleton pattern untuk HTTP client
+    - Add proper error handling untuk connection issues
+    - Test HTTP client persistence across app lifecycle
+    - _Requirements: 8.1_
+
+- [x] 4. Create core BLoC dan Cubit state management
+  - [x] 4.1 Implement SplashBloc untuk initial loading (Complex - tetap BLoC)
+    - Create SplashBloc dengan initial loading logic
     - Add loading states dan error handling
-    - Implement navigation setelah bypass success
+    - Implement navigation setelah loading success
     - _Requirements: 1.1, 8.1_
 
-  - [x] 4.2 Implement ContentBloc untuk content management
+  - [x] 4.2 Implement ContentBloc untuk content management (Complex - tetap BLoC)
     - Create ContentBloc dengan pagination support
     - Add loading, loaded, error states
     - Implement pull-to-refresh functionality
-    - Add infinite scrolling support
+    - Add simple pagination dengan next/previous buttons
     - _Requirements: 1.1, 2.1, 6.1_
 
-  - [x] 4.3 Implement SearchBloc untuk advanced search
+  - [x] 4.3 Implement SearchBloc untuk advanced search (Complex - tetap BLoC)
     - Create SearchBloc dengan filter support
     - Add search history functionality
     - Implement debounced search
     - Add tag suggestions
     - _Requirements: 2.1, 6.1_
 
+  - [ ] 4.4 Implement simple Cubits untuk basic state management
+    - Create NetworkCubit untuk connection status tracking
+    - Implement DetailCubit untuk content detail dan favorite toggle
+    - Add base Cubit classes dengan common functionality
+    - Setup Cubit providers dalam MultiBlocProviderConfig
+    - _Requirements: 6.1, 8.1_
+
 - [ ] 5. Build core UI components
-  - [ ] 5.1 Create reusable widgets
-    - Implement ContentCard dengan image caching
-    - Create SearchFilter widget dengan advanced options
-    - Build ProgressIndicator dan ErrorWidget
-    - Add NavigationDrawer dengan menu items
+  - [ ] 5.1 Update AppMainDrawerWidget dengan menu yang sesuai
+    - Update drawer dengan 4 menu utama: Downloaded galleries, Random gallery, Favorite galleries, View history
+    - Implement navigation untuk setiap menu item
+    - Maintain black theme consistency
+    - Add proper icons dan styling
     - _Requirements: 6.1_
 
-  - [ ] 5.2 Implement main screens
-    - Create SplashScreen dengan bypass progress
-    - Build MainScreen dengan content grid
+  - [ ] 5.2 Create reusable widgets
+    - Implement ContentCard dengan image caching
+    - Create SearchFilter widget dengan advanced options
+    - Build ProgressIndicator dan ErrorWidget dengan black theme
+    - Create PaginationWidget dengan next/previous buttons
+    - _Requirements: 6.1_
+
+  - [ ] 5.3 Implement main screens dengan tema hitam
+    - Update SplashScreen dengan initial loading progress
+    - Fix MainScreen dengan content grid dan tema hitam default
     - Implement SearchScreen dengan filters
     - Create DetailScreen dengan content metadata
+    - Replace infinite scroll dengan simple pagination buttons
     - _Requirements: 1.1, 2.1, 3.1, 6.1_
 
-  - [ ] 5.3 Add image loading dan caching
+  - [ ] 5.4 Add image loading dan caching
     - Implement progressive image loading
     - Add CachedNetworkImage dengan custom cache
     - Create thumbnail generation
@@ -96,8 +119,9 @@
     - _Requirements: 3.1, 5.1, 6.1_
 
 - [ ] 6. Implement reader functionality
-  - [ ] 6.1 Create basic reader screen
+  - [ ] 6.1 Create basic reader screen dengan ReaderCubit
     - Build ReaderScreen dengan page navigation
+    - Implement ReaderCubit untuk simple state management
     - Add zoom dan pan functionality dengan PhotoView
     - Implement reading progress tracking
     - Add reading modes (single page, continuous)
@@ -118,15 +142,15 @@
     - _Requirements: 3.1, 7.1_
 
 - [ ] 7. Build favorites dan download system
-  - [ ] 7.1 Implement favorites management
-    - Create FavoriteBloc dengan category support
+  - [ ] 7.1 Implement favorites management dengan FavoriteCubit
+    - Create FavoriteCubit untuk simple CRUD operations
     - Build FavoritesScreen dengan category tabs
     - Add favorite categories management
     - Implement batch favorite operations
     - _Requirements: 4.1_
 
-  - [ ] 7.2 Create download manager
-    - Implement DownloadBloc dengan queue system
+  - [ ] 7.2 Create download manager dengan DownloadBloc
+    - Implement DownloadBloc dengan queue system (Complex - tetap BLoC)
     - Build DownloadsScreen dengan status tracking
     - Add concurrent download support
     - Create download progress notifications
@@ -140,8 +164,9 @@
     - _Requirements: 5.1_
 
 - [ ] 8. Implement settings dan preferences
-  - [ ] 8.1 Create settings screen
+  - [ ] 8.1 Create settings screen dengan SettingsCubit
     - Build SettingsScreen dengan organized sections
+    - Implement SettingsCubit untuk simple state management
     - Add theme selection (light/dark/AMOLED)
     - Implement language preferences
     - Create image quality settings
@@ -156,10 +181,11 @@
 
 - [ ] 9. Add advanced features
   - [ ] 9.1 Implement tag management
-    - Create TagScreen dengan tag statistics
+    - Create TagScreen dengan tag statistics using existing TagResolver
     - Add tag blacklisting functionality
-    - Implement popular tags display
-    - Build tag-based content discovery
+    - Implement popular tags display with TagResolver.getTagsByType()
+    - Build tag-based content discovery using TagResolver.searchTags()
+    - Integrate TagResolver cache management features
     - _Requirements: 2.1_
 
   - [ ] 9.2 Create history dan statistics
@@ -176,61 +202,149 @@
     - Build recommendation engine
     - _Requirements: 2.1, 3.1_
 
-- [ ] 10. Performance optimization dan testing
-  - [ ] 10.1 Optimize performance
-    - Implement memory management untuk images
-    - Add database query optimization
-    - Create background task management
-    - Optimize app startup time
-    - _Requirements: 6.1, 8.1_
+- [ ] 10. Performance optimization dan real device testing
+  - [ ] 10.1 Optimize performance dan test pada perangkat nyata
+    - Implement memory management untuk images dan test pada perangkat Android fisik
+    - Add database query optimization dan verify performance pada real device
+    - Create background task management dan test background execution pada perangkat nyata
+    - Optimize app startup time dan measure pada berbagai perangkat Android
+    - Test aplikasi dengan berbagai kondisi jaringan pada perangkat fisik
+    - Monitor penggunaan CPU dan memory pada perangkat nyata
+    - _Requirements: 6.1, 8.1, 9.1_
 
-  - [ ] 10.2 Add comprehensive testing
-    - Write unit tests untuk use cases
-    - Create BLoC tests dengan bloc_test
-    - Add widget tests untuk UI components
-    - Implement integration tests untuk user flows
+  - [ ] 10.2 Hapus semua file test yang tidak diperlukan
+    - Remove folder test/ dan semua isinya
+    - Clean up pubspec.yaml dari test dependencies yang tidak diperlukan
+    - Verify project structure tetap bersih setelah penghapusan
+    - Update .gitignore jika diperlukan
     - _Requirements: 8.1_
 
-  - [ ] 10.3 Add monitoring dan analytics
-    - Implement error tracking
-    - Add performance monitoring
-    - Create usage analytics (optional)
-    - Build crash reporting system
-    - _Requirements: 8.1_
-
-- [ ] 11. Polish dan deployment preparation
-  - [ ] 11.1 UI/UX polish
-    - Add animations dan transitions
-    - Implement loading skeletons
-    - Create empty states dan error screens
-    - Add haptic feedback
-    - _Requirements: 6.1_
-
-  - [ ] 11.2 Add accessibility features
-    - Implement screen reader support
-    - Add semantic labels
-    - Create high contrast mode
-    - Build keyboard navigation support
-    - _Requirements: 6.1_
-
-  - [ ] 11.3 Prepare for deployment
-    - Setup app icons dan splash screens
-    - Configure build flavors (dev/prod)
-    - Add code obfuscation
-    - Create release build configuration
-    - _Requirements: 8.1_
-
-- [ ] 12. Documentation dan learning resources
-  - [ ] 12.1 Create comprehensive documentation
-    - Write API documentation dengan dartdoc
-    - Create architecture documentation
-    - Add code examples dan tutorials
-    - Build developer guide
+  - [ ] 10.3 Create tutorial Clean Architecture berbahasa Indonesia
+    - Buat docs/TUTORIAL_CLEAN_ARCHITECTURE.md
+    - Jelaskan konsep Clean Architecture dengan contoh dari project
+    - Sertakan diagram layer dan dependency flow
+    - Tambahkan contoh implementasi entities, use cases, dan repositories
+    - Berikan tips best practices dan common pitfalls
     - _Requirements: Learning objectives_
 
-  - [ ] 12.2 Add learning utilities
-    - Implement debug logging utilities
-    - Create performance monitoring tools
-    - Add architecture flow visualization
-    - Build testing examples
+  - [ ] 10.4 Create tutorial BLoC dan Cubit State Management berbahasa Indonesia
+    - Buat docs/TUTORIAL_BLOC_CUBIT_STATE_MANAGEMENT.md
+    - Jelaskan perbedaan BLoC vs Cubit dan kapan menggunakan masing-masing
+    - Sertakan implementasi ContentBloc (complex) dan SettingsCubit (simple)
+    - Tambahkan penjelasan tentang states, events, dan direct method calls
+    - Berikan contoh testing BLoC dan Cubit dengan bloc_test
+    - _Requirements: Learning objectives_
+
+  - [ ] 10.5 Create tutorial Web Scraping dan Caching berbahasa Indonesia
+    - Update docs/TUTORIAL_SCRAPER_CACHE.md dengan konten yang lebih lengkap
+    - Jelaskan strategi web scraping dengan Dio dan HTML parsing
+    - Sertakan implementasi anti-detection measures
+    - Tambahkan penjelasan caching strategy dan offline-first approach
+    - Berikan troubleshooting common issues
+    - _Requirements: Learning objectives_
+
+  - [ ] 10.6 Add monitoring dan analytics dengan real device testing
+    - Implement error tracking dan test error scenarios pada perangkat nyata
+    - Add performance monitoring dan verify metrics pada perangkat Android fisik
+    - Create usage analytics (optional) dan test data collection pada real device
+    - Build crash reporting system dan test crash recovery pada perangkat nyata
+    - Test aplikasi stability dengan extended usage pada perangkat fisik
+    - _Requirements: 8.1, 9.1_
+
+- [ ] 11. Polish dan deployment preparation dengan real device validation
+  - [ ] 11.1 UI/UX polish dan real device testing
+    - Add animations dan transitions dan test smoothness pada perangkat Android fisik
+    - Implement loading skeletons dan verify performance pada berbagai perangkat
+    - Create empty states dan error screens dan test user experience pada real device
+    - Add haptic feedback dan test responsiveness pada perangkat nyata
+    - Test UI responsiveness pada berbagai ukuran layar perangkat fisik
+    - _Requirements: 6.1, 9.1_
+
+  - [ ] 11.2 Add accessibility features dengan real device testing
+    - Implement screen reader support dan test dengan TalkBack pada perangkat Android
+    - Add semantic labels dan verify accessibility pada perangkat nyata
+    - Create high contrast mode dan test visibility pada berbagai perangkat
+    - Build keyboard navigation support dan test pada perangkat dengan keyboard fisik
+    - Test accessibility features dengan pengguna nyata pada perangkat fisik
+    - _Requirements: 6.1, 9.1_
+
+  - [ ] 11.3 Prepare for deployment dengan real device validation
+    - Setup app icons dan splash screens dan test tampilan pada berbagai perangkat
+    - Configure build flavors (dev/prod) dan test kedua build pada perangkat nyata
+    - Add code obfuscation dan verify aplikasi tetap berfungsi pada perangkat fisik
+    - Create release build configuration dan test performa release build pada real device
+    - Test installation dan uninstallation process pada berbagai perangkat Android
+    - _Requirements: 8.1, 9.1_
+
+- [ ] 12. Comprehensive real device testing dan validation
+  - [ ] 12.1 Core functionality testing pada perangkat nyata
+    - Test splash screen dan initial loading pada berbagai perangkat Android
+    - Verify content browsing dan pagination pada perangkat dengan RAM terbatas
+    - Test search functionality dengan keyboard fisik dan virtual pada real device
+    - Validate content detail view dan image loading pada berbagai ukuran layar
+    - Test reader mode dengan gesture navigation pada perangkat touchscreen
+    - _Requirements: 9.1_
+
+  - [ ] 12.2 Network dan offline testing pada perangkat fisik
+    - Test aplikasi dengan koneksi WiFi, 4G, dan 3G pada perangkat nyata
+    - Verify offline functionality dengan benar-benar memutus koneksi internet
+    - Test download functionality dengan berbagai kecepatan internet pada real device
+    - Validate sync behavior saat koneksi internet kembali tersedia
+    - Test aplikasi behavior saat koneksi internet tidak stabil
+    - _Requirements: 9.1_
+
+  - [ ] 12.3 Performance dan resource usage testing
+    - Monitor memory usage selama extended usage pada perangkat fisik
+    - Test aplikasi dengan storage hampir penuh pada perangkat nyata
+    - Verify battery usage optimization pada berbagai perangkat Android
+    - Test aplikasi performance pada perangkat dengan spesifikasi rendah
+    - Monitor CPU usage dan thermal behavior pada perangkat fisik
+    - _Requirements: 9.1_
+
+  - [ ] 12.4 User experience testing pada perangkat nyata
+    - Test aplikasi dengan berbagai orientasi layar pada perangkat fisik
+    - Verify gesture navigation dan touch responsiveness pada real device
+    - Test aplikasi dengan berbagai ukuran font sistem pada perangkat nyata
+    - Validate dark theme appearance pada berbagai jenis layar perangkat
+    - Test aplikasi behavior saat menerima notifikasi pada perangkat fisik
+    - _Requirements: 9.1_
+
+- [ ] 13. Documentation dan learning resources
+  - [ ] 13.1 Create tutorial Database Operations berbahasa Indonesia
+    - Buat docs/TUTORIAL_DATABASE_OPERATIONS.md
+    - Jelaskan implementasi SQLite dengan sqflite
+    - Sertakan contoh CRUD operations dan migrations
+    - Tambahkan penjelasan tentang database schema design
+    - Berikan tips optimasi query dan indexing
+    - _Requirements: Learning objectives_
+
+  - [ ] 13.2 Create tutorial UI Components dan Navigation berbahasa Indonesia
+    - Buat docs/TUTORIAL_UI_NAVIGATION.md
+    - Jelaskan implementasi custom widgets dan theming
+    - Sertakan contoh Go Router configuration
+    - Tambahkan penjelasan tentang responsive design
+    - Berikan tips untuk dark theme implementation
+    - _Requirements: Learning objectives_
+
+  - [ ] 13.3 Create tutorial Offline Functionality berbahasa Indonesia
+    - Buat docs/TUTORIAL_OFFLINE_FUNCTIONALITY.md
+    - Jelaskan implementasi offline-first architecture
+    - Sertakan contoh download manager dan background tasks
+    - Tambahkan penjelasan tentang data synchronization
+    - Berikan troubleshooting untuk offline scenarios
+    - _Requirements: Learning objectives_
+
+  - [ ] 13.4 Create tutorial Real Device Testing berbahasa Indonesia
+    - Buat docs/TUTORIAL_REAL_DEVICE_TESTING.md
+    - Jelaskan metodologi testing pada perangkat fisik vs emulator
+    - Sertakan checklist untuk testing berbagai aspek aplikasi
+    - Tambahkan panduan monitoring performance pada perangkat nyata
+    - Berikan tips troubleshooting issues yang hanya muncul pada real device
+    - _Requirements: 9.1_
+
+  - [ ] 13.5 Create comprehensive documentation index
+    - Buat docs/README.md sebagai index semua tutorial
+    - Organize tutorial berdasarkan kategori dan difficulty level
+    - Add navigation links antar tutorial
+    - Sertakan prerequisites dan learning path
     - _Requirements: Learning objectives_

@@ -1,4 +1,3 @@
-import 'package:flutter/rendering.dart';
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
 import 'package:nhasixapp/data/datasources/local/database_helper.dart';
@@ -9,10 +8,12 @@ import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
+// Core Network
+import 'package:nhasixapp/core/network/http_client_manager.dart';
+
 // Data Sources
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/anti_detection.dart';
-import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass.dart';
 import 'package:nhasixapp/data/datasources/remote/nhentai_scraper.dart';
 
 // BLoCs
@@ -63,23 +64,9 @@ void _setupCore() {
         ),
       ));
 
-  // HTTP Client (Dio)
+  // HTTP Client (Dio) - Using singleton manager to prevent disposal issues
   getIt.registerLazySingleton<Dio>(() {
-    final dio = Dio();
-
-    dio.options.headers = {
-      'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Accept':
-          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-      'Accept-Language': 'en-US,en;q=0.9',
-      'Accept-Encoding': 'gzip, deflate, br',
-      'DNT': '1',
-      'Connection': 'keep-alive',
-      'Upgrade-Insecure-Requests': '1',
-    };
-
-    return dio;
+    return HttpClientManager.initializeHttpClient(logger: getIt<Logger>());
   });
 
   // Cache Manager
@@ -94,10 +81,11 @@ void _setupDataSources() {
       ));
 
   // Cloudflare Bypass
-  getIt.registerLazySingleton<CloudflareBypassNoWebView>(() => CloudflareBypassNoWebView(
-        httpClient: getIt<Dio>(),
-        logger: getIt<Logger>(),
-      ));
+  getIt.registerLazySingleton<CloudflareBypassNoWebView>(
+      () => CloudflareBypassNoWebView(
+            httpClient: getIt<Dio>(),
+            logger: getIt<Logger>(),
+          ));
 
   // Nhentai Scraper
   getIt.registerLazySingleton<NhentaiScraper>(() => NhentaiScraper(

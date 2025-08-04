@@ -193,7 +193,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
 
   @override
   Future<void> close() {
-    // _remoteDataSource.dispose();
+    // HTTP client is managed as singleton and should never be disposed
+    // to prevent connection errors across the application lifecycle
     return super.close();
   }
 }

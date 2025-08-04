@@ -1,4 +1,3 @@
-
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass_no_webview.dart';
@@ -56,7 +55,7 @@ class RemoteDataSource {
     }
   }
 
-  /// Get content list from homepage or specific page
+  /// Get content list from homepage or specific page (with tag resolution)
   Future<List<ContentModel>> getContentList({int page = 1}) async {
     try {
       _logger.i('Fetching content list for page $page');
@@ -64,13 +63,81 @@ class RemoteDataSource {
       final url = page == 1 ? baseUrl : '$baseUrl/?page=$page';
       final html = await _getPageHtml(url);
 
-      final contents = scraper.parseContentList(html);
+      // For homepage (page 1), use the specialized parser to get only index containers
+      final contents = page == 1
+          ? await scraper.parseFromIndexContainers(html)
+          : await scraper.parseContentList(html);
+
       _logger
           .i('Successfully parsed ${contents.length} contents from page $page');
 
       return contents;
     } catch (e, stackTrace) {
       _logger.e('Failed to get content list for page $page',
+          error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Get content list from homepage or specific page (sync version without tag resolution)
+  /// Use this for better performance when tag resolution is not needed
+  Future<List<ContentModel>> getContentListSync({int page = 1}) async {
+    try {
+      _logger.i('Fetching content list (sync) for page $page');
+
+      final url = page == 1 ? baseUrl : '$baseUrl/?page=$page';
+      final html = await _getPageHtml(url);
+
+      // For homepage (page 1), use the specialized parser to get only index containers
+      final contents = page == 1
+          ? scraper.parseFromIndexContainersSync(html)
+          : scraper.parseContentListSync(html);
+
+      _logger.i(
+          'Successfully parsed ${contents.length} contents from page $page (sync)');
+
+      return contents;
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get content list (sync) for page $page',
+          error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Get homepage content separated by sections (with tag resolution)
+  Future<Map<String, List<ContentModel>>> getHomepageContent() async {
+    try {
+      _logger.i('Fetching homepage content with sections');
+
+      final html = await _getPageHtml(baseUrl);
+      final result = await scraper.parseHomepage(html);
+
+      _logger.i(
+          'Successfully parsed homepage: ${result['popular']!.length} popular, ${result['new_uploads']!.length} new uploads');
+
+      return result;
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get homepage content',
+          error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Get homepage content separated by sections (sync version without tag resolution)
+  /// Use this for better performance when tag resolution is not needed
+  Future<Map<String, List<ContentModel>>> getHomepageContentSync() async {
+    try {
+      _logger.i('Fetching homepage content with sections (sync)');
+
+      final html = await _getPageHtml(baseUrl);
+      final result = scraper.parseHomepageSync(html);
+
+      _logger.i(
+          'Successfully parsed homepage (sync): ${result['popular']!.length} popular, ${result['new_uploads']!.length} new uploads');
+
+      return result;
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get homepage content (sync)',
           error: e, stackTrace: stackTrace);
       rethrow;
     }
@@ -95,7 +162,7 @@ class RemoteDataSource {
     }
   }
 
-  /// Search content with filters
+  /// Search content with filters (with tag resolution)
   Future<List<ContentModel>> searchContent(SearchFilter filter) async {
     try {
       _logger.i('Searching content with filter: ${filter.toQueryString()}');
@@ -103,12 +170,33 @@ class RemoteDataSource {
       final url = _buildSearchUrl(filter);
       final html = await _getPageHtml(url);
 
-      final contents = scraper.parseSearchResults(html);
+      final contents = await scraper.parseSearchResults(html);
       _logger.i('Successfully found ${contents.length} search results');
 
       return contents;
     } catch (e, stackTrace) {
       _logger.e('Failed to search content', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Search content with filters (sync version without tag resolution)
+  /// Use this for better performance when tag resolution is not needed
+  Future<List<ContentModel>> searchContentSync(SearchFilter filter) async {
+    try {
+      _logger
+          .i('Searching content (sync) with filter: ${filter.toQueryString()}');
+
+      final url = _buildSearchUrl(filter);
+      final html = await _getPageHtml(url);
+
+      final contents = scraper.parseSearchResultsSync(html);
+      _logger.i('Successfully found ${contents.length} search results (sync)');
+
+      return contents;
+    } catch (e, stackTrace) {
+      _logger.e('Failed to search content (sync)',
+          error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
@@ -135,7 +223,7 @@ class RemoteDataSource {
     }
   }
 
-  /// Get popular content
+  /// Get popular content (with tag resolution)
   Future<List<ContentModel>> getPopularContent({
     String period = 'all', // all, week, today
     int page = 1,
@@ -146,12 +234,37 @@ class RemoteDataSource {
       final url = '$baseUrl/search/?q=&sort=popular-$period&page=$page';
       final html = await _getPageHtml(url);
 
-      final contents = scraper.parseContentList(html);
+      final contents = await scraper.parseContentList(html);
       _logger.i('Successfully parsed ${contents.length} popular contents');
 
       return contents;
     } catch (e, stackTrace) {
       _logger.e('Failed to get popular content',
+          error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Get popular content (sync version without tag resolution)
+  /// Use this for better performance when tag resolution is not needed
+  Future<List<ContentModel>> getPopularContentSync({
+    String period = 'all', // all, week, today
+    int page = 1,
+  }) async {
+    try {
+      _logger.i(
+          'Fetching popular content (sync) for period: $period, page: $page');
+
+      final url = '$baseUrl/search/?q=&sort=popular-$period&page=$page';
+      final html = await _getPageHtml(url);
+
+      final contents = scraper.parseContentListSync(html);
+      _logger
+          .i('Successfully parsed ${contents.length} popular contents (sync)');
+
+      return contents;
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get popular content (sync)',
           error: e, stackTrace: stackTrace);
       rethrow;
     }
@@ -196,15 +309,14 @@ class RemoteDataSource {
 
   /// Check if Cloudflare bypass is needed
   Future<bool> checkCloudflareStatus() async {
-      _logger.i('Checking Cloudflare status... from $baseUrl');
+    _logger.i('Checking Cloudflare status... from $baseUrl');
     try {
-      final response = await httpClient.get(
-        baseUrl
-      );
+      final response = await httpClient.get(baseUrl);
 
       _logger.i('Cloudflare status: ${response.statusCode}');
 
-      return !cloudflareBypass.isCloudflareChallenge(response.data) || response.statusCode == 200;
+      return !cloudflareBypass.isCloudflareChallenge(response.data) ||
+          response.statusCode == 200;
     } catch (e, stackTrace) {
       _logger.w('Failed to check Cloudflare status: $e, and $stackTrace');
       return false;
@@ -364,31 +476,56 @@ class RemoteDataSource {
         exception is CloudflareException;
   }
 
-  /// Configure HTTP client with default settings
+  /// Configure HTTP client with default settings and enhanced error handling
   void _configureHttpClient() {
     httpClient.options.baseUrl = baseUrl;
-    httpClient.options.connectTimeout = requestTimeout;
-    httpClient.options.receiveTimeout = requestTimeout;
-    httpClient.options.sendTimeout = requestTimeout;
+
+    // Only set timeouts if they haven't been configured already
+    httpClient.options.connectTimeout ??= requestTimeout;
+    httpClient.options.receiveTimeout ??= requestTimeout;
+    httpClient.options.sendTimeout ??= requestTimeout;
+
     httpClient.options.followRedirects = true;
     httpClient.options.maxRedirects = 5;
     httpClient.options.responseType = ResponseType.plain;
 
-    // Add interceptors for logging and error handling
+    // Add enhanced error handling interceptor
+    httpClient.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          _logger.d('HTTP Request: ${options.method} ${options.uri}');
+          handler.next(options);
+        },
+        onResponse: (response, handler) {
+          _logger.d(
+              'HTTP Response: ${response.statusCode} ${response.requestOptions.uri}');
+          handler.next(response);
+        },
+        onError: (error, handler) {
+          _logger.e('HTTP Error: ${error.message}');
+
+          // Enhanced error handling for connection issues
+          if (error.type == DioExceptionType.connectionError) {
+            _logger.w(
+                'Connection error detected - HTTP client may need reinitialization');
+          } else if (error.type == DioExceptionType.connectionTimeout) {
+            _logger
+                .w('Connection timeout - network may be slow or unavailable');
+          } else if (error.type == DioExceptionType.receiveTimeout) {
+            _logger.w('Receive timeout - server may be overloaded');
+          }
+
+          handler.next(error);
+        },
+      ),
+    );
+
+    // Add logging interceptor (after error handling)
     httpClient.interceptors.add(
       LogInterceptor(
         requestBody: false,
         responseBody: false,
         logPrint: (obj) => _logger.d(obj),
-      ),
-    );
-
-    httpClient.interceptors.add(
-      InterceptorsWrapper(
-        onError: (error, handler) {
-          _logger.e('HTTP Error: ${error.message}');
-          handler.next(error);
-        },
       ),
     );
   }
@@ -415,10 +552,47 @@ class RemoteDataSource {
     return buffer.toString();
   }
 
-  /// Dispose resources
-  void dispose() {
-    _logger.i('Disposing RemoteDataSource...');
-    // httpClient.close();
-    // antiDetection.dispose();
+  /// Check HTTP client health and connection status
+  Future<bool> checkConnectionHealth() async {
+    try {
+      _logger.d('Checking HTTP client connection health...');
+
+      // Simple connectivity test
+      final response = await httpClient.get(
+        'https://httpbin.org/status/200',
+        options: Options(
+          sendTimeout: const Duration(seconds: 5),
+          receiveTimeout: const Duration(seconds: 5),
+        ),
+      );
+
+      final isHealthy = response.statusCode == 200;
+      _logger.d(
+          'HTTP client health check: ${isHealthy ? 'HEALTHY' : 'UNHEALTHY'}');
+
+      return isHealthy;
+    } catch (e) {
+      _logger.w('HTTP client health check failed: $e');
+      return false;
+    }
   }
+
+  /// Get HTTP client statistics for monitoring
+  Map<String, dynamic> getHttpClientStats() {
+    return {
+      'base_url': httpClient.options.baseUrl,
+      'connect_timeout': httpClient.options.connectTimeout?.inMilliseconds,
+      'receive_timeout': httpClient.options.receiveTimeout?.inMilliseconds,
+      'send_timeout': httpClient.options.sendTimeout?.inMilliseconds,
+      'interceptors_count': httpClient.interceptors.length,
+      'headers_count': httpClient.options.headers.length,
+    };
+  }
+
+  /// IMPORTANT: RemoteDataSource should NEVER dispose the HTTP client
+  /// The HTTP client is managed as a singleton and should persist throughout
+  /// the application lifecycle to prevent connection errors
+  ///
+  /// This method is intentionally removed to prevent accidental disposal
+  /// If cleanup is needed, it should be handled at the application level
 }

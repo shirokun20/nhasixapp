@@ -12,10 +12,10 @@ Aplikasi NhentaiApp adalah sebuah aplikasi mobile Flutter yang berfungsi sebagai
 
 #### Acceptance Criteria
 
-1. WHEN aplikasi dibuka THEN sistem SHALL menampilkan splash screen dengan proses bypass Cloudflare
-2. WHEN proses bypass Cloudflare berhasil THEN sistem SHALL mengarahkan pengguna ke halaman utama
-3. IF proses bypass Cloudflare gagal THEN sistem SHALL menampilkan pesan error dan opsi untuk mencoba lagi
-4. WHEN pengguna berada di halaman utama THEN sistem SHALL menampilkan daftar konten terbaru dari nhentai.net
+1. WHEN aplikasi dibuka THEN sistem SHALL menampilkan splash screen dengan proses initial loading
+2. WHEN proses initial loading berhasil THEN sistem SHALL mengarahkan pengguna ke main screen
+3. IF proses initial loading gagal THEN sistem SHALL menampilkan pesan error dan opsi untuk mencoba lagi
+4. WHEN pengguna berada di main screen THEN sistem SHALL menampilkan daftar konten terbaru dari nhentai.net dengan tema hitam default
 
 ### Requirement 2
 
@@ -68,15 +68,16 @@ Aplikasi NhentaiApp adalah sebuah aplikasi mobile Flutter yang berfungsi sebagai
 
 ### Requirement 6
 
-**User Story:** Sebagai pengguna, saya ingin aplikasi memiliki interface yang intuitif dan responsif, sehingga saya dapat menggunakan aplikasi dengan mudah dan nyaman.
+**User Story:** Sebagai pengguna, saya ingin aplikasi memiliki interface yang intuitif dan responsif dengan navigasi sederhana, sehingga saya dapat menggunakan aplikasi dengan mudah dan nyaman.
 
 #### Acceptance Criteria
 
-1. WHEN aplikasi dibuka THEN sistem SHALL menampilkan UI yang konsisten dengan design system yang telah ditentukan
+1. WHEN aplikasi dibuka THEN sistem SHALL menampilkan UI dengan tema hitam default dan design yang konsisten
 2. WHEN pengguna berinteraksi dengan elemen UI THEN sistem SHALL memberikan feedback visual yang jelas
 3. WHEN aplikasi digunakan di berbagai ukuran layar THEN sistem SHALL menyesuaikan layout secara responsif
-4. WHEN pengguna melakukan navigasi THEN sistem SHALL memberikan transisi yang smooth dan tidak lag
+4. WHEN pengguna melakukan navigasi THEN sistem SHALL menggunakan tombol next/previous untuk pagination tanpa infinite scroll
 5. WHEN terjadi loading data THEN sistem SHALL menampilkan loading indicator yang informatif
+6. WHEN pengguna mengakses drawer menu THEN sistem SHALL menampilkan menu dengan fitur: Downloaded galleries, Random gallery, Favorite galleries, dan View history
 
 ### Requirement 7
 
@@ -101,3 +102,18 @@ Aplikasi NhentaiApp adalah sebuah aplikasi mobile Flutter yang berfungsi sebagai
 3. WHEN terjadi error saat download THEN sistem SHALL memberikan notifikasi error dan opsi untuk mencoba lagi
 4. WHEN aplikasi crash atau force close THEN sistem SHALL menyimpan state terakhir dan restore saat dibuka kembali
 5. WHEN terjadi error parsing data THEN sistem SHALL log error untuk debugging dan menampilkan fallback UI
+6. WHEN aplikasi menggunakan HTTP client THEN sistem SHALL tidak dispose dio/httpClient untuk menghindari error koneksi
+
+### Requirement 9
+
+**User Story:** Sebagai developer, saya ingin semua fitur aplikasi ditest tidak hanya melalui analisis kode tetapi juga pada perangkat nyata, sehingga saya dapat memastikan aplikasi berfungsi dengan baik di lingkungan produksi.
+
+#### Acceptance Criteria
+
+1. WHEN melakukan testing fitur THEN sistem SHALL ditest pada perangkat Android fisik untuk memverifikasi performa
+2. WHEN testing UI components THEN sistem SHALL ditest pada berbagai ukuran layar perangkat nyata
+3. WHEN testing download functionality THEN sistem SHALL ditest dengan koneksi internet yang bervariasi pada perangkat nyata
+4. WHEN testing offline functionality THEN sistem SHALL ditest dengan benar-benar memutus koneksi internet pada perangkat fisik
+5. WHEN testing reader mode THEN sistem SHALL ditest dengan gesture navigation pada perangkat nyata
+6. WHEN testing performance THEN sistem SHALL dimonitor penggunaan memory dan CPU pada perangkat fisik
+7. WHEN testing background tasks THEN sistem SHALL diverifikasi berjalan dengan benar saat aplikasi di background pada perangkat nyata

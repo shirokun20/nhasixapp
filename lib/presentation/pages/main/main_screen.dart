@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
@@ -106,14 +107,27 @@ class _MainScreenState extends State<MainScreen> {
         itemBuilder: (context, index) {
           final content = state.contents[index];
           return ListTile(
-            title: Text(
-              content.title,
-              style: const TextStyle(color: ColorsConst.primaryTextColor),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  content.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: ColorsConst.primaryTextColor),
+                ),
+                SizedBox(height: 5,),
+                Row(
+                  children: content.tags.map((value) 
+                     => Text(value.name, style: const TextStyle(color: ColorsConst.redCustomColor)) as Widget).toList(),
+                  ),
+              ],
             ),
             subtitle: Text(
               'ID: ${content.id}',
-              style: const TextStyle(color: ColorsConst.secondaryTextColor),
+              style: const TextStyle(color: ColorsConst.redCustomColor),
             ),
+            leading: CachedNetworkImage(imageUrl: content.coverUrl, height: 100, width: 50, fit: BoxFit.cover,),
           );
         },
       );

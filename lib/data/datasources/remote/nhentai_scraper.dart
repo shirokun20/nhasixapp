@@ -5,18 +5,29 @@ import 'package:logger/logger.dart';
 import '../../models/content_model.dart';
 import '../../models/tag_model.dart';
 import '../../../domain/entities/tag.dart';
+import 'tag_resolver.dart';
 
 /// HTML scraper for nhentai.net with CSS selectors
 class NhentaiScraper {
-  NhentaiScraper({Logger? logger}) : _logger = logger ?? Logger();
+  NhentaiScraper({Logger? logger, TagResolver? tagResolver})
+      : _logger = logger ?? Logger(),
+        _tagResolver = tagResolver ?? TagResolver(logger: logger);
 
   final Logger _logger;
+  final TagResolver _tagResolver;
 
   // CSS Selectors for content list
   static const String contentListSelector = 'div.gallery';
-  static const String contentLinkSelector = 'a';
-  static const String contentCoverSelector = '.cover img';
+  static const String contentLinkSelector = 'a.cover';
+  static const String contentCoverSelector = 'img';
   static const String contentTitleSelector = '.caption';
+
+  // CSS Selectors for homepage sections
+  static const String popularSectionSelector =
+      '.container.index-container.index-popular';
+  static const String newUploadsSectionSelector =
+      '.container.index-container:not(.index-popular)';
+  static const String indexContainerSelector = '.container.index-container';
 
   // CSS Selectors for content detail
   static const String detailTitleSelector = '#info h1';
@@ -37,18 +48,17 @@ class NhentaiScraper {
   static const String imageUrlPattern =
       r'https://t\.nhentai\.net/galleries/(\d+)/(\d+)t\.(jpg|png|gif)';
 
-  /// Parse content list from HTML
-  List<ContentModel> parseContentList(String html) {
+  /// Parse content list from HTML (async version with tag resolution)
+  Future<List<ContentModel>> parseContentList(String html) async {
     try {
       final document = html_parser.parse(html, encoding: 'utf-8');
       final contentElements = document.querySelectorAll(contentListSelector);
 
       final contents = <ContentModel>[];
 
-
       for (final element in contentElements) {
         try {
-          final content = _parseContentCard(element);
+          final content = await _parseContentCard(element);
           if (content != null) {
             contents.add(content);
           }
@@ -62,6 +72,36 @@ class NhentaiScraper {
       return contents;
     } catch (e, stackTrace) {
       _logger.e('Failed to parse content list',
+          error: e, stackTrace: stackTrace);
+      return [];
+    }
+  }
+
+  /// Parse content list from HTML (sync version without tag resolution)
+  /// Use this when you don't need tag resolution for better performance
+  List<ContentModel> parseContentListSync(String html) {
+    try {
+      final document = html_parser.parse(html, encoding: 'utf-8');
+      final contentElements = document.querySelectorAll(contentListSelector);
+
+      final contents = <ContentModel>[];
+
+      for (final element in contentElements) {
+        try {
+          final content = _parseContentCardSync(element);
+          if (content != null) {
+            contents.add(content);
+          }
+        } catch (e) {
+          _logger.w('Failed to parse content card: $e');
+          continue;
+        }
+      }
+
+      _logger.d('Parsed ${contents.length} content items from list (sync)');
+      return contents;
+    } catch (e, stackTrace) {
+      _logger.e('Failed to parse content list (sync)',
           error: e, stackTrace: stackTrace);
       return [];
     }
@@ -127,10 +167,170 @@ class NhentaiScraper {
     }
   }
 
-  /// Parse search results from HTML
-  List<ContentModel> parseSearchResults(String html) {
+  /// Parse homepage content from HTML (async version with tag resolution)
+  Future<Map<String, List<ContentModel>>> parseHomepage(String html) async {
+    try {
+      final document = html_parser.parse(html, encoding: 'utf-8');
+
+      final result = <String, List<ContentModel>>{
+        'popular': [],
+        'new_uploads': [],
+      };
+
+      // Parse Popular Now section
+      final popularSection = document.querySelector(popularSectionSelector);
+      if (popularSection != null) {
+        final popularGalleries =
+            popularSection.querySelectorAll(contentListSelector);
+        for (final gallery in popularGalleries) {
+          final content = await _parseContentCard(gallery);
+          if (content != null) {
+            result['popular']!.add(content);
+          }
+        }
+      }
+
+      // Parse New Uploads section
+      final containers = document.querySelectorAll(indexContainerSelector);
+      for (final container in containers) {
+        // Skip the popular section (already processed)
+        if (container.classes.contains('index-popular')) continue;
+
+        final newGalleries = container.querySelectorAll(contentListSelector);
+        for (final gallery in newGalleries) {
+          final content = await _parseContentCard(gallery);
+          if (content != null) {
+            result['new_uploads']!.add(content);
+          }
+        }
+      }
+
+      _logger.d(
+          'Parsed homepage: ${result['popular']!.length} popular, ${result['new_uploads']!.length} new uploads');
+      return result;
+    } catch (e, stackTrace) {
+      _logger.e('Failed to parse homepage', error: e, stackTrace: stackTrace);
+      return {'popular': [], 'new_uploads': []};
+    }
+  }
+
+  /// Parse homepage content from HTML (sync version without tag resolution)
+  /// Use this when you don't need tag resolution for better performance
+  Map<String, List<ContentModel>> parseHomepageSync(String html) {
+    try {
+      final document = html_parser.parse(html, encoding: 'utf-8');
+
+      final result = <String, List<ContentModel>>{
+        'popular': [],
+        'new_uploads': [],
+      };
+
+      // Parse Popular Now section
+      final popularSection = document.querySelector(popularSectionSelector);
+      if (popularSection != null) {
+        final popularGalleries =
+            popularSection.querySelectorAll(contentListSelector);
+        for (final gallery in popularGalleries) {
+          final content = _parseContentCardSync(gallery);
+          if (content != null) {
+            result['popular']!.add(content);
+          }
+        }
+      }
+
+      // Parse New Uploads section
+      final containers = document.querySelectorAll(indexContainerSelector);
+      for (final container in containers) {
+        // Skip the popular section (already processed)
+        if (container.classes.contains('index-popular')) continue;
+
+        final newGalleries = container.querySelectorAll(contentListSelector);
+        for (final gallery in newGalleries) {
+          final content = _parseContentCardSync(gallery);
+          if (content != null) {
+            result['new_uploads']!.add(content);
+          }
+        }
+      }
+
+      _logger.d(
+          'Parsed homepage (sync): ${result['popular']!.length} popular, ${result['new_uploads']!.length} new uploads');
+      return result;
+    } catch (e, stackTrace) {
+      _logger.e('Failed to parse homepage (sync)',
+          error: e, stackTrace: stackTrace);
+      return {'popular': [], 'new_uploads': []};
+    }
+  }
+
+  /// Parse only from index containers (async version with tag resolution)
+  Future<List<ContentModel>> parseFromIndexContainers(String html) async {
+    try {
+      final document = html_parser.parse(html, encoding: 'utf-8');
+      final containers = document.querySelectorAll(indexContainerSelector);
+
+      final contents = <ContentModel>[];
+
+      for (final container in containers) {
+        final galleries = container.querySelectorAll(contentListSelector);
+        for (final gallery in galleries) {
+          final content = await _parseContentCard(gallery);
+          if (content != null) {
+            contents.add(content);
+          }
+        }
+      }
+
+      _logger
+          .d('Parsed ${contents.length} content items from index containers');
+      return contents;
+    } catch (e, stackTrace) {
+      _logger.e('Failed to parse from index containers',
+          error: e, stackTrace: stackTrace);
+      return [];
+    }
+  }
+
+  /// Parse only from index containers (sync version without tag resolution)
+  /// Use this when you don't need tag resolution for better performance
+  List<ContentModel> parseFromIndexContainersSync(String html) {
+    try {
+      final document = html_parser.parse(html, encoding: 'utf-8');
+      final containers = document.querySelectorAll(indexContainerSelector);
+
+      final contents = <ContentModel>[];
+
+      for (final container in containers) {
+        final galleries = container.querySelectorAll(contentListSelector);
+        for (final gallery in galleries) {
+          final content = _parseContentCardSync(gallery);
+          if (content != null) {
+            contents.add(content);
+          }
+        }
+      }
+
+      _logger.d(
+          'Parsed ${contents.length} content items from index containers (sync)');
+      return contents;
+    } catch (e, stackTrace) {
+      _logger.e('Failed to parse from index containers (sync)',
+          error: e, stackTrace: stackTrace);
+      return [];
+    }
+  }
+
+  /// Parse search results from HTML (async version with tag resolution)
+  Future<List<ContentModel>> parseSearchResults(String html) async {
     // Search results use the same structure as content list
-    return parseContentList(html);
+    return await parseContentList(html);
+  }
+
+  /// Parse search results from HTML (sync version without tag resolution)
+  /// Use this when you don't need tag resolution for better performance
+  List<ContentModel> parseSearchResultsSync(String html) {
+    // Search results use the same structure as content list
+    return parseContentListSync(html);
   }
 
   /// Parse tags page from HTML
@@ -198,8 +398,8 @@ class NhentaiScraper {
     }
   }
 
-  /// Parse individual content card
-  ContentModel? _parseContentCard(html_dom.Element element) {
+  /// Parse individual content card (async version with tag resolution)
+  Future<ContentModel?> _parseContentCard(html_dom.Element element) async {
     try {
       // Extract content ID from link
       final linkElement = element.querySelector(contentLinkSelector);
@@ -216,17 +416,123 @@ class NhentaiScraper {
       final title = (titleElement?.text)?.trim() ?? 'Unknown Title';
 
       // Extract cover URL
-      final coverElement = element.querySelector(contentCoverSelector);
+      final coverElement = linkElement?.querySelector(contentCoverSelector);
       final coverUrl = _extractImageUrl(coverElement?.attributes['data-src'] ??
           coverElement?.attributes['src'] ??
           '');
+
+      // Extract tag IDs from data-tags attribute (if available)
+      final tagIds = _parseTagIds(element.attributes['data-tags']);
+
+      // Extract dimensions from cover element attributes
+      final width =
+          int.tryParse(coverElement?.attributes['width'] ?? '0') ?? 250;
+      final height =
+          int.tryParse(coverElement?.attributes['height'] ?? '0') ?? 350;
+
+      // Extract aspect ratio from cover link style
+      final aspectRatio = _extractAspectRatio(linkElement);
+
+      // Resolve tag IDs to Tag objects using TagResolver
+      final resolvedTags = await _tagResolver.resolveTagIds(tagIds);
+
+      // Extract tags by type for better categorization
+      final artists = resolvedTags
+          .where((tag) => tag.type == 'artist')
+          .map((tag) => tag.name)
+          .toList();
+      final characters = resolvedTags
+          .where((tag) => tag.type == 'character')
+          .map((tag) => tag.name)
+          .toList();
+      final parodies = resolvedTags
+          .where((tag) => tag.type == 'parody')
+          .map((tag) => tag.name)
+          .toList();
+      final groups = resolvedTags
+          .where((tag) => tag.type == 'group')
+          .map((tag) => tag.name)
+          .toList();
+
+      // Determine language from resolved tags
+      final languageTags =
+          resolvedTags.where((tag) => tag.type == 'language').toList();
+      final language =
+          languageTags.isNotEmpty ? languageTags.first.name : 'japanese';
+
+      // Log extracted data for debugging
+      _logger.d(
+          'Parsed content card - ID: $contentId, TagIDs: $tagIds, Tags: ${resolvedTags.length}, Dimensions: ${width}x$height, AspectRatio: $aspectRatio');
+
+      // Create content model with resolved tags
+      return ContentModel(
+        id: contentId,
+        title: title,
+        coverUrl: coverUrl,
+        tags: resolvedTags,
+        artists: artists,
+        characters: characters,
+        parodies: parodies,
+        groups: groups,
+        language: language,
+        pageCount: 0, // Will be populated from detail
+        imageUrls: const [],
+        uploadDate: DateTime.now(), // Will be populated from detail
+        favorites: 0,
+        cachedAt: DateTime.now(),
+      );
+    } catch (e) {
+      _logger.w('Failed to parse content card: $e');
+      return null;
+    }
+  }
+
+  /// Parse individual content card (sync version without tag resolution)
+  /// Use this when you don't need tag resolution for better performance
+  ContentModel? _parseContentCardSync(html_dom.Element element) {
+    try {
+      // Extract content ID from link
+      final linkElement = element.querySelector(contentLinkSelector);
+      final href = linkElement?.attributes['href'];
+      if (href == null) return null;
+
+      final match = RegExp(contentUrlPattern).firstMatch(href);
+      if (match == null) return null;
+
+      final contentId = match.group(1)!;
+
+      // Extract title
+      final titleElement = element.querySelector(contentTitleSelector);
+      final title = (titleElement?.text)?.trim() ?? 'Unknown Title';
+
+      // Extract cover URL
+      final coverElement = linkElement?.querySelector(contentCoverSelector);
+      final coverUrl = _extractImageUrl(coverElement?.attributes['data-src'] ??
+          coverElement?.attributes['src'] ??
+          '');
+
+      // Extract tag IDs from data-tags attribute (if available)
+      final tagIds = _parseTagIds(element.attributes['data-tags']);
+
+      // Extract dimensions from cover element attributes
+      final width =
+          int.tryParse(coverElement?.attributes['width'] ?? '0') ?? 250;
+      final height =
+          int.tryParse(coverElement?.attributes['height'] ?? '0') ?? 350;
+
+      // Extract aspect ratio from cover link style
+      final aspectRatio = _extractAspectRatio(linkElement);
+
+      // Log extracted data for debugging
+      _logger.d(
+          'Parsed content card (sync) - ID: $contentId, TagIDs: $tagIds, Dimensions: ${width}x$height, AspectRatio: $aspectRatio');
 
       // Create minimal content model (will be enriched when detail is fetched)
       return ContentModel(
         id: contentId,
         title: title,
         coverUrl: coverUrl,
-        tags: const [], // Will be populated from detail
+        tags: const [], // Will be populated from detail or tag IDs
         artists: const [],
         characters: const [],
         parodies: const [],
@@ -236,11 +542,63 @@ class NhentaiScraper {
         imageUrls: const [],
         uploadDate: DateTime.now(), // Will be populated from detail
         favorites: 0,
+        cachedAt: DateTime.now(),
       );
     } catch (e) {
-      _logger.w('Failed to parse content card: $e');
+      _logger.w('Failed to parse content card (sync): $e');
       return null;
     }
+  }
+
+  /// Parse tag IDs from data-tags attribute
+  List<String> _parseTagIds(String? dataTags) {
+    if (dataTags == null || dataTags.isEmpty) return [];
+
+    try {
+      return dataTags.split(' ').where((id) => id.isNotEmpty).toList();
+    } catch (e) {
+      _logger.w('Failed to parse tag IDs: $e');
+      return [];
+    }
+  }
+
+  /// Extract aspect ratio from cover element style
+  double? _extractAspectRatio(html_dom.Element? linkElement) {
+    try {
+      final style = linkElement?.attributes['style'];
+      if (style == null) return null;
+
+      // Extract padding percentage from style like "padding:0 0 141.2% 0"
+      final paddingMatch =
+          RegExp(r'padding:\s*0\s+0\s+([\d.]+)%\s+0').firstMatch(style);
+      if (paddingMatch != null) {
+        final paddingPercent = double.tryParse(paddingMatch.group(1)!);
+        if (paddingPercent != null) {
+          // Convert padding percentage to aspect ratio (height/width)
+          return paddingPercent / 100.0;
+        }
+      }
+    } catch (e) {
+      _logger.w('Failed to extract aspect ratio: $e');
+    }
+    return null;
+  }
+
+  /// Get tag IDs from content card for potential tag resolution
+  List<String> getTagIdsFromCard(html_dom.Element element) {
+    return _parseTagIds(element.attributes['data-tags']);
+  }
+
+  /// Get dimensions from content card
+  Map<String, int> getDimensionsFromCard(html_dom.Element element) {
+    final linkElement = element.querySelector(contentLinkSelector);
+    final coverElement = linkElement?.querySelector(contentCoverSelector);
+
+    final width = int.tryParse(coverElement?.attributes['width'] ?? '0') ?? 250;
+    final height =
+        int.tryParse(coverElement?.attributes['height'] ?? '0') ?? 350;
+
+    return {'width': width, 'height': height};
   }
 
   /// Parse tags from detail page
@@ -514,5 +872,112 @@ class NhentaiScraper {
   bool _isJapanese(String text) {
     // Check for Japanese characters (Hiragana, Katakana, Kanji)
     return RegExp(r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]').hasMatch(text);
+  }
+
+  /// Resolve tag IDs to Tag objects using external tag mapping
+  /// This method can be used when tag ID to name mapping is available
+  /// For example, using data from https://github.com/maxwai/NClientV3/blob/main/data/tagsPretty.json
+  List<Tag> resolveTagIds(
+      List<String> tagIds, Map<String, Map<String, dynamic>>? tagMapping) {
+    if (tagMapping == null || tagIds.isEmpty) return [];
+
+    final tags = <Tag>[];
+
+    for (final tagId in tagIds) {
+      final tagData = tagMapping[tagId];
+      if (tagData != null) {
+        try {
+          tags.add(Tag(
+            name: tagData['name'] ?? 'Unknown',
+            type: tagData['type'] ?? 'tag',
+            count: tagData['count'] ?? 0,
+            url: '/tag/${tagData['name']?.replaceAll(' ', '-') ?? tagId}/',
+          ));
+        } catch (e) {
+          _logger.w('Failed to resolve tag ID $tagId: $e');
+        }
+      }
+    }
+
+    return tags;
+  }
+
+  /// Create enhanced ContentModel with resolved tags from tag IDs (async version)
+  /// Uses TagResolver to automatically download and cache tag mapping
+  /// This is now an alias to the main _parseContentCard method
+  Future<ContentModel?> parseContentCardWithTagsAsync(
+      html_dom.Element element) async {
+    return await _parseContentCard(element);
+  }
+
+  /// Parse homepage content with resolved tags (async version)
+  /// This is now an alias to the main parseHomepage method
+  Future<Map<String, List<ContentModel>>> parseHomepageWithTagsAsync(
+      String html) async {
+    return await parseHomepage(html);
+  }
+
+  /// Parse content list with resolved tags (async version)
+  /// This is now an alias to the main parseContentList method
+  Future<List<ContentModel>> parseContentListWithTagsAsync(String html) async {
+    return await parseContentList(html);
+  }
+
+  /// Get TagResolver instance for direct access
+  TagResolver get tagResolver => _tagResolver;
+
+  /// Create enhanced ContentModel with resolved tags from tag IDs (sync version with mapping)
+  /// This method can be used when tag mapping is already available
+  ContentModel? parseContentCardWithTags(
+      html_dom.Element element, Map<String, Map<String, dynamic>>? tagMapping) {
+    final baseContent = _parseContentCardSync(element);
+    if (baseContent == null) return null;
+
+    // Extract tag IDs and resolve them to Tag objects
+    final tagIds = _parseTagIds(element.attributes['data-tags']);
+    final resolvedTags = resolveTagIds(tagIds, tagMapping);
+
+    // Extract tags by type for better categorization
+    final artists = resolvedTags
+        .where((tag) => tag.type == 'artist')
+        .map((tag) => tag.name)
+        .toList();
+    final characters = resolvedTags
+        .where((tag) => tag.type == 'character')
+        .map((tag) => tag.name)
+        .toList();
+    final parodies = resolvedTags
+        .where((tag) => tag.type == 'parody')
+        .map((tag) => tag.name)
+        .toList();
+    final groups = resolvedTags
+        .where((tag) => tag.type == 'group')
+        .map((tag) => tag.name)
+        .toList();
+
+    // Determine language from resolved tags
+    final languageTags =
+        resolvedTags.where((tag) => tag.type == 'language').toList();
+    final language =
+        languageTags.isNotEmpty ? languageTags.first.name : 'japanese';
+
+    return ContentModel(
+      id: baseContent.id,
+      title: baseContent.title,
+      coverUrl: baseContent.coverUrl,
+      tags: resolvedTags,
+      artists: artists,
+      characters: characters,
+      parodies: parodies,
+      groups: groups,
+      language: language,
+      pageCount: baseContent.pageCount,
+      imageUrls: baseContent.imageUrls,
+      uploadDate: baseContent.uploadDate,
+      favorites: baseContent.favorites,
+      englishTitle: baseContent.englishTitle,
+      japaneseTitle: baseContent.japaneseTitle,
+      cachedAt: baseContent.cachedAt,
+    );
   }
 }

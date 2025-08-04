@@ -2,7 +2,7 @@
 
 ## Overview
 
-NhentaiApp adalah aplikasi Flutter yang mengimplementasikan Clean Architecture dengan BLoC pattern untuk state management. Aplikasi ini dirancang untuk memberikan pengalaman browsing yang optimal dengan fitur offline-first, caching yang efisien, dan UI yang responsif. Aplikasi menggunakan webview untuk bypass Cloudflare protection dan web scraping untuk mengambil data langsung dari HTML nhentai.net.
+NhentaiApp adalah aplikasi Flutter yang mengimplementasikan Clean Architecture dengan BLoC pattern untuk state management. Aplikasi ini dirancang untuk memberikan pengalaman browsing yang optimal dengan fitur offline-first, caching yang efisien, dan UI yang responsif. Aplikasi menggunakan Dio HTTP client untuk web scraping dan mengambil data langsung dari HTML nhentai.net.
 
 ## Architecture
 
@@ -45,8 +45,8 @@ Aplikasi menggunakan BLoC (Business Logic Component) pattern dengan flutter_bloc
 ### 1. Presentation Layer
 
 #### Pages
-- **SplashScreen**: Menangani Cloudflare bypass dan initial loading
-- **HomeScreen**: Menampilkan konten terbaru dan navigasi utama
+- **SplashScreen**: Menangani initial loading
+- **MainScreen**: Menampilkan konten terbaru dengan tema hitam default dan navigasi sederhana
 - **SearchScreen**: Interface untuk pencarian dengan filter advanced
 - **DetailScreen**: Menampilkan detail konten dan metadata lengkap
 - **ReaderScreen**: Mode baca dengan navigasi halaman dan zoom
@@ -67,22 +67,20 @@ Aplikasi menggunakan BLoC (Business Logic Component) pattern dengan flutter_bloc
 - **ErrorWidget**: Standardized error display
 - **NavigationDrawer**: Side navigation menu
 
-#### BLoCs
+#### BLoCs & Cubits
 ```dart
-// Content Management
-ContentBloc: Mengelola state untuk daftar konten
-SearchBloc: Mengelola pencarian dan filter
-DetailBloc: Mengelola detail konten
-ReaderBloc: Mengelola state reader mode
+// Complex State Management (BLoCs)
+ContentBloc: Mengelola state untuk daftar konten dengan pagination kompleks
+SearchBloc: Mengelola pencarian dan filter dengan debouncing
+DownloadBloc: Mengelola download queue dan concurrent operations
+SplashBloc: Mengelola initial loading dan bypass logic
 
-// User Data Management  
-FavoriteBloc: Mengelola bookmark/favorites
-DownloadBloc: Mengelola download dan offline content
-SettingsBloc: Mengelola pengaturan aplikasi
-
-// System
-SplashBloc: Mengelola initial loading dan bypass
-NetworkBloc: Mengelola status koneksi
+// Simple State Management (Cubits)
+DetailCubit: Mengelola detail konten dan favorite toggle
+ReaderCubit: Mengelola state reader mode dan navigation
+FavoriteCubit: Mengelola bookmark/favorites CRUD operations
+SettingsCubit: Mengelola pengaturan aplikasi
+NetworkCubit: Mengelola status koneksi sederhana
 ```
 
 ### 2. Domain Layer
@@ -130,13 +128,13 @@ class SearchFilter {
 }
 
 class UserPreferences {
-  final String theme; // light, dark, amoled
+  final String theme; // light, dark, amoled (default: dark)
   final String defaultLanguage;
   final String imageQuality; // low, medium, high, original
   final bool autoDownload;
   final bool showTitles; // Show titles on cards
   final bool blurThumbnails; // Blur NSFW thumbnails
-  final bool infiniteScroll;
+  final bool usePagination; // Use next/previous buttons instead of infinite scroll
   final int columnsPortrait;
   final int columnsLandscape;
   final bool useVolumeKeys; // For reader navigation
@@ -250,19 +248,23 @@ abstract class SettingsRepository {
 ```dart
 class RemoteDataSource {
   final Dio httpClient;
-  final WebViewController webViewController;
+  final TagResolver tagResolver; // Already implemented
   
   // Web scraping methods
   Future<List<ContentModel>> scrapeContentList(int page);
   Future<ContentModel> scrapeContentDetail(String id);
   Future<List<ContentModel>> scrapeSearchResults(SearchFilter filter);
-  Future<bool> bypassCloudflare();
   
   // HTML parsing utilities
   Future<String> getPageHtml(String url);
   List<ContentModel> parseContentListHtml(String html);
   ContentModel parseContentDetailHtml(String html);
   List<String> extractImageUrls(String html);
+  
+  // Tag resolution (using existing TagResolver)
+  Future<List<Tag>> resolveTagIds(List<String> tagIds);
+  Future<List<Tag>> searchTags(String query);
+  Future<List<Tag>> getTagsByType(String type);
 }
 ```
 
@@ -452,11 +454,13 @@ class CacheException extends AppException {
 - BLoC testing with mock use cases
 - Repository testing with mock data sources
 - Utility functions testing
+- TagResolver testing with mock data
 
 ### Integration Tests
 - Database operations
 - API integration with mock server
 - BLoC integration with real repositories
+- TagResolver integration with local assets
 
 ### Widget Tests
 - Individual widget rendering
@@ -467,6 +471,16 @@ class CacheException extends AppException {
 - Complete user flows
 - Offline functionality
 - Error scenarios
+
+### Real Device Testing
+- Performance testing on physical Android devices
+- Memory and CPU usage monitoring
+- Network connectivity testing with real internet conditions
+- Gesture navigation testing on actual touchscreens
+- Background task verification on physical devices
+- Battery usage optimization testing
+- Different screen sizes and orientations testing
+- Real-world user interaction patterns testing
 
 ## Dependencies & Libraries
 
@@ -481,7 +495,6 @@ get_it: ^8.0.2
 # Networking & Web Scraping
 dio: ^5.7.0
 html: ^0.15.4
-webview_flutter: ^4.10.0
 connectivity_plus: ^5.0.2
 
 # Navigation & Routing

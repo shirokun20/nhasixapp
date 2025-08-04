@@ -36,26 +36,63 @@ class DatabaseHelper {
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
         onConfigure: _onConfigure,
+        onOpen: (db) async {
+          _logger.i('Database opened successfully');
+        },
       );
     } catch (e) {
       _logger.e('Error initializing database: $e');
+
+      // If database initialization fails, try to delete the corrupted database file
+      try {
+        final documentsDirectory = await getApplicationDocumentsDirectory();
+        final path = '${documentsDirectory.path}/$_databaseName';
+        final file = File(path);
+        if (await file.exists()) {
+          await file.delete();
+          _logger
+              .w('Deleted corrupted database file, attempting to recreate...');
+
+          // Try to initialize again
+          return await openDatabase(
+            path,
+            version: _databaseVersion,
+            onCreate: _onCreate,
+            onUpgrade: _onUpgrade,
+            onConfigure: _onConfigure,
+            onOpen: (db) async {
+              _logger.i('Database recreated and opened successfully');
+            },
+          );
+        }
+      } catch (deleteError) {
+        _logger.e('Error deleting corrupted database: $deleteError');
+      }
+
       rethrow;
     }
   }
 
   /// Configure database settings
   Future<void> _onConfigure(Database db) async {
-    // Enable foreign key constraints
-    await db.execute('PRAGMA foreign_keys = ON');
+    try {
+      // Enable foreign key constraints
+      await db.rawQuery('PRAGMA foreign_keys = ON');
 
-    // Set journal mode to WAL for better performance
-    await db.execute('PRAGMA journal_mode = WAL');
+      // Set journal mode to WAL for better performance
+      await db.rawQuery('PRAGMA journal_mode = WAL');
 
-    // Set synchronous mode to NORMAL for better performance
-    await db.execute('PRAGMA synchronous = NORMAL');
+      // Set synchronous mode to NORMAL for better performance
+      await db.rawQuery('PRAGMA synchronous = NORMAL');
 
-    // Set cache size to 10MB
-    await db.execute('PRAGMA cache_size = -10000');
+      // Set cache size to 10MB
+      await db.rawQuery('PRAGMA cache_size = -10000');
+
+      _logger.d('Database configuration completed successfully');
+    } catch (e) {
+      _logger.e('Error configuring database: $e');
+      // Don't rethrow here as it might prevent database initialization
+    }
   }
 
   /// Create database tables
@@ -378,7 +415,7 @@ class DatabaseHelper {
   Future<void> vacuum() async {
     try {
       final db = await database;
-      await db.execute('VACUUM');
+      await db.rawQuery('VACUUM');
       _logger.i('Database vacuumed successfully');
     } catch (e) {
       _logger.e('Error vacuuming database: $e');
@@ -390,7 +427,7 @@ class DatabaseHelper {
     try {
       final db = await database;
       final result = await db.rawQuery('PRAGMA integrity_check');
-      final isOk = result.isNotEmpty && result.first['integrity_check'] == 'ok';
+      final isOk = result.isNotEmpty && result.first.values.first == 'ok';
 
       if (isOk) {
         _logger.i('Database integrity check passed');
@@ -402,6 +439,31 @@ class DatabaseHelper {
     } catch (e) {
       _logger.e('Error checking database integrity: $e');
       return false;
+    }
+  }
+
+  /// Reset database by deleting and recreating it
+  Future<void> resetDatabase() async {
+    try {
+      // Close existing connection
+      await close();
+
+      // Delete database file
+      final documentsDirectory = await getApplicationDocumentsDirectory();
+      final path = '${documentsDirectory.path}/$_databaseName';
+      final file = File(path);
+
+      if (await file.exists()) {
+        await file.delete();
+        _logger.i('Database file deleted');
+      }
+
+      // Reinitialize database
+      _database = await _initDatabase();
+      _logger.i('Database reset completed');
+    } catch (e) {
+      _logger.e('Error resetting database: $e');
+      rethrow;
     }
   }
 }
