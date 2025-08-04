@@ -20,7 +20,7 @@ class AppMainHeaderWidget extends StatelessWidget
           onPressed: () {
             Scaffold.of(context).openDrawer();
           },
-          color: ColorsConst.primaryTextColor,
+          color: ColorsConst.darkTextPrimary,
           icon: const Icon(
             Icons.menu,
           ),
@@ -29,15 +29,14 @@ class AppMainHeaderWidget extends StatelessWidget
       actions: [
         IconButton(
           onPressed: () {},
-          color: ColorsConst.primaryTextColor,
+          color: ColorsConst.darkTextPrimary,
           icon: const Icon(
             Icons.search,
           ),
         ),
         PopupMenuButton<String>(
-          color: ColorsConst.primaryColor,
-          icon:
-              const Icon(Icons.more_vert, color: ColorsConst.primaryTextColor),
+          color: ColorsConst.darkCard,
+          icon: const Icon(Icons.more_vert, color: ColorsConst.darkTextPrimary),
           onSelected: (String item) {
             // Handle item selection
           },
@@ -47,14 +46,14 @@ class AppMainHeaderWidget extends StatelessWidget
                 value: 'opob',
                 child: Text(
                   'Open in browser',
-                  style: TextStyleConst.styleRegular(),
+                  style: TextStyleConst.bodyMedium,
                 ),
               ),
               PopupMenuItem<String>(
                 value: 'download-all',
                 child: Text(
                   'Download all galleries in this page',
-                  style: TextStyleConst.styleRegular(),
+                  style: TextStyleConst.bodyMedium,
                 ),
               ),
             ];
@@ -63,11 +62,9 @@ class AppMainHeaderWidget extends StatelessWidget
       ],
       title: Text(
         'Nhentai',
-        style: TextStyleConst.styleBold(
-          textColor: ColorsConst.primaryTextColor,
-        ),
+        style: TextStyleConst.headingMedium,
       ),
-      backgroundColor: ColorsConst.primaryColor,
+      backgroundColor: ColorsConst.darkSurface,
     );
   }
 

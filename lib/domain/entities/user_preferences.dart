@@ -9,7 +9,7 @@ class UserPreferences extends Equatable {
     this.autoDownload = false,
     this.showTitles = true,
     this.blurThumbnails = false,
-    this.infiniteScroll = true,
+    this.usePagination = true,
     this.columnsPortrait = 2,
     this.columnsLandscape = 3,
     this.useVolumeKeys = false,
@@ -30,7 +30,7 @@ class UserPreferences extends Equatable {
   final bool autoDownload;
   final bool showTitles; // Show titles on cards
   final bool blurThumbnails; // Blur NSFW thumbnails
-  final bool infiniteScroll;
+  final bool usePagination;
   final int columnsPortrait;
   final int columnsLandscape;
   final bool useVolumeKeys; // For reader navigation
@@ -52,7 +52,7 @@ class UserPreferences extends Equatable {
         autoDownload,
         showTitles,
         blurThumbnails,
-        infiniteScroll,
+        usePagination,
         columnsPortrait,
         columnsLandscape,
         useVolumeKeys,
@@ -74,7 +74,7 @@ class UserPreferences extends Equatable {
     bool? autoDownload,
     bool? showTitles,
     bool? blurThumbnails,
-    bool? infiniteScroll,
+    bool? usePagination,
     int? columnsPortrait,
     int? columnsLandscape,
     bool? useVolumeKeys,
@@ -95,7 +95,7 @@ class UserPreferences extends Equatable {
       autoDownload: autoDownload ?? this.autoDownload,
       showTitles: showTitles ?? this.showTitles,
       blurThumbnails: blurThumbnails ?? this.blurThumbnails,
-      infiniteScroll: infiniteScroll ?? this.infiniteScroll,
+      usePagination: usePagination ?? this.usePagination,
       columnsPortrait: columnsPortrait ?? this.columnsPortrait,
       columnsLandscape: columnsLandscape ?? this.columnsLandscape,
       useVolumeKeys: useVolumeKeys ?? this.useVolumeKeys,
@@ -186,7 +186,7 @@ class UserPreferences extends Equatable {
       'autoDownload': autoDownload,
       'showTitles': showTitles,
       'blurThumbnails': blurThumbnails,
-      'infiniteScroll': infiniteScroll,
+      'usePagination': usePagination,
       'columnsPortrait': columnsPortrait,
       'columnsLandscape': columnsLandscape,
       'useVolumeKeys': useVolumeKeys,
@@ -211,7 +211,7 @@ class UserPreferences extends Equatable {
       autoDownload: json['autoDownload'] ?? false,
       showTitles: json['showTitles'] ?? true,
       blurThumbnails: json['blurThumbnails'] ?? false,
-      infiniteScroll: json['infiniteScroll'] ?? true,
+      usePagination: json['usePagination'] ?? true,
       columnsPortrait: json['columnsPortrait'] ?? 2,
       columnsLandscape: json['columnsLandscape'] ?? 3,
       useVolumeKeys: json['useVolumeKeys'] ?? false,

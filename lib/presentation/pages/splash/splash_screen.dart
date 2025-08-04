@@ -39,7 +39,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ColorsConst.primaryColor,
+      backgroundColor: ColorsConst.darkBackground,
       body: BlocConsumer<SplashBloc, SplashState>(
         listenWhen: (previous, current) => previous != current,
         listener: (_, state) {
@@ -97,7 +97,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget> {
                     children: [
                       const CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          ColorsConst.primaryTextColor,
+                          ColorsConst.accentBlue,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -105,9 +105,9 @@ class _SplashMainWidgetState extends State<SplashMainWidget> {
                         state is SplashInitializing
                             ? 'Initializing...'
                             : (state as SplashBypassInProgress).message,
-                        style: TextStyleConst.styleRegular(
-                          size: 16,
-                          textColor: ColorsConst.primaryTextColor,
+                        style: TextStyleConst.loadingText.copyWith(
+                          fontSize: 16,
+                          color: ColorsConst.darkTextPrimary,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -121,16 +121,16 @@ class _SplashMainWidgetState extends State<SplashMainWidget> {
                       Icon(
                         Icons.error_outline,
                         size: 48,
-                        color: Colors.red.shade300,
+                        color: ColorsConst.accentRed,
                       ),
                       const SizedBox(height: 16),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
                           'Connection Failed',
-                          style: TextStyleConst.styleBold(
-                            size: 18,
-                            textColor: Colors.red.shade300,
+                          style: TextStyleConst.statusError.copyWith(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -143,12 +143,13 @@ class _SplashMainWidgetState extends State<SplashMainWidget> {
                         icon: const Icon(Icons.refresh),
                         label: const Text('Retry'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: ColorsConst.primaryTextColor,
-                          foregroundColor: ColorsConst.primaryColor,
+                          backgroundColor: ColorsConst.accentBlue,
+                          foregroundColor: ColorsConst.darkBackground,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
                             vertical: 12,
                           ),
+                          textStyle: TextStyleConst.buttonMedium,
                         ),
                       ),
                     ],
@@ -184,7 +185,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget> {
           SnackBar(
             behavior: SnackBarBehavior.floating,
             backgroundColor:
-                isError ? Colors.red.shade700 : Colors.green.shade700,
+                isError ? ColorsConst.accentRed : ColorsConst.accentGreen,
             content: Row(
               children: [
                 Icon(
@@ -196,9 +197,8 @@ class _SplashMainWidgetState extends State<SplashMainWidget> {
                 Expanded(
                   child: Text(
                     message,
-                    style: TextStyleConst.styleRegular(
-                      size: 14,
-                      textColor: Colors.white,
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: Colors.white,
                     ),
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
@@ -213,9 +213,9 @@ class _SplashMainWidgetState extends State<SplashMainWidget> {
                     },
                     child: Text(
                       'RETRY',
-                      style: TextStyleConst.styleBold(
-                        size: 12,
-                        textColor: Colors.white,
+                      style: TextStyleConst.buttonSmall.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),

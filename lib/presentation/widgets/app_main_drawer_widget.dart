@@ -13,13 +13,13 @@ class AppMainDrawerWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: ColorsConst.primaryColor,
+      backgroundColor: ColorsConst.darkSurface,
       child: ListView(
         padding: EdgeInsets.zero,
         children: <Widget>[
           Container(
             decoration: const BoxDecoration(
-              color: ColorsConst.primaryColor,
+              color: ColorsConst.darkCard,
             ),
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -39,15 +39,14 @@ class AppMainDrawerWidget extends StatelessWidget {
                 ),
                 Text(
                   'Nhentai',
-                  style: TextStyleConst.styleBold(
-                    textColor: ColorsConst.primaryTextColor,
-                    size: 30,
+                  style: TextStyleConst.headingLarge.copyWith(
+                    fontSize: 30,
                   ),
                 ),
                 Text(
                   'Nhentai unofficial client',
-                  style: TextStyleConst.styleRegular(
-                    textColor: ColorsConst.primaryTextColor,
+                  style: TextStyleConst.caption.copyWith(
+                    color: ColorsConst.darkTextSecondary,
                   ),
                 ),
               ],
@@ -56,13 +55,11 @@ class AppMainDrawerWidget extends StatelessWidget {
           ListTile(
             leading: const Icon(
               Icons.download,
-              color: ColorsConst.primaryTextColor,
+              color: ColorsConst.darkTextSecondary,
             ),
             title: Text(
               'Downloaded galleries',
-              style: TextStyleConst.styleRegular(
-                textColor: ColorsConst.primaryTextColor,
-              ),
+              style: TextStyleConst.navigationLabel,
             ),
             onTap: () {
               // Update the state of the app
@@ -74,13 +71,11 @@ class AppMainDrawerWidget extends StatelessWidget {
           ListTile(
             leading: const Icon(
               Icons.shuffle,
-              color: ColorsConst.primaryTextColor,
+              color: ColorsConst.darkTextSecondary,
             ),
             title: Text(
               'Random gallery',
-              style: TextStyleConst.styleRegular(
-                textColor: ColorsConst.primaryTextColor,
-              ),
+              style: TextStyleConst.navigationLabel,
             ),
             onTap: () {
               // Update the state of the app
@@ -90,15 +85,13 @@ class AppMainDrawerWidget extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(
+            leading: Icon(
               Icons.favorite,
-              color: ColorsConst.primaryTextColor,
+              color: ColorsConst.accentPink,
             ),
             title: Text(
               'Favorite galleries',
-              style: TextStyleConst.styleRegular(
-                textColor: ColorsConst.primaryTextColor,
-              ),
+              style: TextStyleConst.navigationLabel,
             ),
             onTap: () {
               // Update the state of the app
@@ -110,13 +103,11 @@ class AppMainDrawerWidget extends StatelessWidget {
           ListTile(
             leading: const Icon(
               Icons.history,
-              color: ColorsConst.primaryTextColor,
+              color: ColorsConst.darkTextSecondary,
             ),
             title: Text(
               'View history',
-              style: TextStyleConst.styleRegular(
-                textColor: ColorsConst.primaryTextColor,
-              ),
+              style: TextStyleConst.navigationLabel,
             ),
             onTap: () {
               Navigator.pop(context);

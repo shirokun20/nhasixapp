@@ -18,8 +18,8 @@ Dokumen ini berisi daftar lengkap semua komponen yang ada dan akan diimplementas
 
 | Component | Status | Description | File Path |
 |-----------|--------|-------------|-----------|
-| SplashScreen | ✅ | Initial loading screen dengan progress indicator | `lib/presentation/pages/splash/splash_screen.dart` |
-| MainScreen | ✅ | Home screen dengan content grid dan tema hitam | `lib/presentation/pages/main/main_screen.dart` |
+| SplashScreen | 🔧 | Initial loading screen dengan progress indicator (Updated: ColorsConst + TextStyleConst) | `lib/presentation/pages/splash/splash_screen.dart` |
+| MainScreen | 🔧 | Home screen dengan content grid dan tema hitam (Updated: HomeBloc integration + TextStyleConst) | `lib/presentation/pages/main/main_screen.dart` |
 | SearchScreen | ⏳ | Advanced search dengan filter options | `lib/presentation/pages/search/search_screen.dart` |
 | DetailScreen | ⏳ | Content detail dengan metadata lengkap | `lib/presentation/pages/detail/detail_screen.dart` |
 | ReaderScreen | ⏳ | Reading mode dengan zoom dan navigation | `lib/presentation/pages/reader/reader_screen.dart` |
@@ -33,16 +33,16 @@ Dokumen ini berisi daftar lengkap semua komponen yang ada dan akan diimplementas
 
 | Component | Status | Description | File Path |
 |-----------|--------|-------------|-----------|
-| AppMainDrawerWidget | 🔧 | Navigation drawer dengan 4 menu utama | `lib/presentation/widgets/app_main_drawer_widget.dart` |
-| AppMainHeaderWidget | ✅ | Main header dengan search dan menu | `lib/presentation/widgets/app_main_header_widget.dart` |
-| ContentListWidget | ✅ | Grid layout untuk content cards | `lib/presentation/widgets/content_list_widget.dart` |
-| WebviewBsWidget | ✅ | Webview bottom sheet untuk bypass | `lib/presentation/widgets/webview_bs_widget.dart` |
+| AppMainDrawerWidget | 🔧 | Navigation drawer dengan 4 menu utama (Updated: ColorsConst + TextStyleConst) | `lib/presentation/widgets/app_main_drawer_widget.dart` |
+| AppMainHeaderWidget | 🔧 | Main header dengan search dan menu (Updated: ColorsConst + TextStyleConst) | `lib/presentation/widgets/app_main_header_widget.dart` |
+| ContentListWidget | 🔧 | Grid layout untuk content cards (Updated: ColorsConst + TextStyleConst) | `lib/presentation/widgets/content_list_widget.dart` |
+
 | ContentCard | ⏳ | Individual content card component | `lib/presentation/widgets/content_card_widget.dart` |
 | SearchFilter | ⏳ | Advanced search filter widget | `lib/presentation/widgets/search_filter_widget.dart` |
 | ImageViewer | ⏳ | Zoomable image viewer component | `lib/presentation/widgets/image_viewer_widget.dart` |
 | ProgressIndicator | ⏳ | Custom loading indicators | `lib/presentation/widgets/progress_indicator_widget.dart` |
 | ErrorWidget | ⏳ | Standardized error display | `lib/presentation/widgets/error_widget.dart` |
-| PaginationWidget | ✅ | Advanced pagination dengan progress bar dan page input | `lib/presentation/widgets/pagination_widget.dart` |
+| PaginationWidget | 🔧 | Advanced pagination dengan progress bar dan page input (Updated: ColorsConst + TextStyleConst) | `lib/presentation/widgets/pagination_widget.dart` |
 
 ### 1.3 BLoCs & Cubits (State Management)
 
@@ -52,7 +52,7 @@ Dokumen ini berisi daftar lengkap semua komponen yang ada dan akan diimplementas
 | SplashBloc | ✅ | Initial loading dan bypass logic | `lib/presentation/blocs/splash/` |
 | ContentBloc | ✅ | Content list dengan pagination kompleks | `lib/presentation/blocs/content/` |
 | SearchBloc | ✅ | Search dengan debouncing dan filters | `lib/presentation/blocs/search/` |
-| HomeBloc | ✅ | Home screen state management | `lib/presentation/blocs/home/` |
+| HomeBloc | ✅ | Main screen state management (integrated with MainScreen) | `lib/presentation/blocs/home/` |
 | DownloadBloc | ⏳ | Download queue dan concurrent operations | `lib/presentation/blocs/download/` |
 
 #### Simple State Management (Cubits)
@@ -136,8 +136,8 @@ Dokumen ini berisi daftar lengkap semua komponen yang ada dan akan diimplementas
 | NhentaiScraper | ✅ | Web scraping implementation dengan pagination parsing | `lib/data/datasources/remote/nhentai_scraper.dart` |
 | TagResolver | ✅ | Tag ID resolution dari local assets | `lib/data/datasources/remote/tag_resolver.dart` |
 | AntiDetection | ✅ | Anti-detection measures | `lib/data/datasources/remote/anti_detection.dart` |
-| CloudflareBypass | ✅ | Cloudflare bypass dengan webview | `lib/data/datasources/remote/cloudflare_bypass.dart` |
-| CloudflareBypassNoWebview | ✅ | Cloudflare bypass tanpa webview | `lib/data/datasources/remote/cloudflare_bypass_no_webview.dart` |
+
+| CloudflareBypassNoWebView | ✅ | Cloudflare bypass tanpa webview (actively used) | `lib/data/datasources/remote/cloudflare_bypass_no_webview.dart` |
 | Exceptions | ✅ | Custom exceptions untuk remote operations | `lib/data/datasources/remote/exceptions.dart` |
 
 #### 3.2.2 Local Data Sources
@@ -170,8 +170,8 @@ Dokumen ini berisi daftar lengkap semua komponen yang ada dan akan diimplementas
 
 | Component | Status | Description | File Path |
 |-----------|--------|-------------|-----------|
-| ColorsConst | ✅ | App color constants | `lib/core/constants/colors_const.dart` |
-| TextStyleConst | ✅ | Text style constants | `lib/core/constants/text_style_const.dart` |
+| ColorsConst | 🔧 | App color constants (Updated: Eye-friendly dark theme + semantic colors) | `lib/core/constants/colors_const.dart` |
+| TextStyleConst | 🔧 | Text style constants (Updated: Semantic styles + utility methods) | `lib/core/constants/text_style_const.dart` |
 
 ### 4.3 Dependency Injection
 
@@ -341,10 +341,45 @@ Berdasarkan task list dan completed pagination system, komponen berikut adalah p
 - ✅ **Complete Pagination System** - Real data integration dengan 22,114+ pages
 - ✅ **Pagination Cache** - Offline-consistent pagination experience
 - ✅ **Advanced PaginationWidget** - Progress bar, page jumping, accessibility support
+- 🔧 **UI Constants Update** - ColorsConst & TextStyleConst modernization
+- 🔧 **Consistent Styling** - All presentation components updated to use new constants
 
 ---
 
-## 11. Real Device Testing Requirements
+## 11. Recent UI Constants Modernization
+
+### 🎨 **ColorsConst Updates (Eye-friendly & Performance optimized):**
+- **Dark Theme Colors**: GitHub-inspired dark colors yang nyaman untuk mata
+- **Semantic Colors**: Tag categories, download status, reading progress
+- **Interactive Colors**: Hover, pressed, focus states yang subtle
+- **OLED Optimization**: True black colors untuk hemat battery
+- **Utility Methods**: Dynamic color selection dan context-aware colors
+
+### ✍️ **TextStyleConst Updates (Semantic & Consistent):**
+- **Semantic Styles**: headingLarge, bodyMedium, caption, dll
+- **Component-specific**: contentTitle, buttonMedium, navigationLabel
+- **Status Styles**: statusSuccess, statusError, statusWarning
+- **Utility Methods**: withColor(), withSize(), getContextualStyle()
+- **Better Readability**: Line height 1.4 untuk semua text styles
+
+### 🔧 **Updated Components:**
+- ✅ **SplashScreen**: Modern colors + semantic text styles
+- ✅ **MainScreen**: HomeBloc integration + consistent styling
+- ✅ **AppMainDrawerWidget**: Navigation colors + semantic styles
+- ✅ **AppMainHeaderWidget**: Header colors + consistent styling
+- ✅ **ContentListWidget**: Loading states + placeholder styling
+- ✅ **PaginationWidget**: Interactive colors + semantic text styles
+
+### 📱 **Benefits:**
+- **Eye Comfort**: Reduced strain untuk extended usage
+- **Performance**: OLED-optimized colors untuk battery efficiency
+- **Consistency**: Unified styling across all components
+- **Maintainability**: Semantic styles yang mudah diupdate
+- **Accessibility**: High contrast ratios dan color-blind friendly
+
+---
+
+## 12. Real Device Testing Requirements
 
 Setiap komponen yang diimplementasikan harus ditest pada perangkat Android fisik untuk memastikan:
 

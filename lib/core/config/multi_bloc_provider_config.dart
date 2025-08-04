@@ -9,9 +9,7 @@ import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
 // import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart'; // Will be added later
 
 // Cubits (Simple State Management)
-// import 'package:nhasixapp/presentation/cubits/network/network_cubit.dart'; // Will be added later
-// import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart'; // Will be added later
-// import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart'; // Will be added later
+import 'package:nhasixapp/presentation/cubits/cubits.dart';
 
 class MultiBlocProviderConfig {
   static List<BlocProvider> data = [
@@ -29,13 +27,13 @@ class MultiBlocProviderConfig {
       create: (context) => getIt<SearchBloc>(),
     ),
 
-    // Simple State Management (Cubits) - Will be uncommented as implemented
-    // BlocProvider<NetworkCubit>(
-    //   create: (context) => getIt<NetworkCubit>(),
-    // ),
-    // BlocProvider<SettingsCubit>(
-    //   create: (context) => getIt<SettingsCubit>(),
-    // ),
+    // Simple State Management (Cubits)
+    BlocProvider<NetworkCubit>(
+      create: (context) => getIt<NetworkCubit>(),
+    ),
+    BlocProvider<SettingsCubit>(
+      create: (context) => getIt<SettingsCubit>(),
+    ),
 
     // Note: DetailCubit, ReaderCubit, FavoriteCubit akan di-provide secara lokal
     // di screen masing-masing karena mereka screen-specific, bukan app-wide

@@ -20,6 +20,10 @@ import 'package:nhasixapp/data/datasources/remote/nhentai_scraper.dart';
 import 'package:nhasixapp/presentation/blocs/splash/splash_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/home/home_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/content/content_bloc.dart';
+import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
+
+// Cubits
+import 'package:nhasixapp/presentation/cubits/cubits.dart';
 
 // Repositories
 import 'package:nhasixapp/domain/repositories/repositories.dart';
@@ -38,6 +42,7 @@ Future<void> setupLocator() async {
   _setupRepositories();
   _setupUseCases();
   _setupBlocs();
+  _setupCubits();
 }
 
 /// Setup external dependencies that require async initialization
@@ -177,11 +182,36 @@ void _setupBlocs() {
         logger: getIt<Logger>(),
       ));
 
+  // Register SearchBloc
+  getIt.registerFactory<SearchBloc>(() => SearchBloc(
+        searchContentUseCase: getIt<SearchContentUseCase>(),
+        localDataSource: getIt<LocalDataSource>(),
+        logger: getIt<Logger>(),
+      ));
+
   // TODO: Register other BLoCs when implemented
-  // getIt.registerFactory<SearchBloc>(() => SearchBloc(getIt()));
   // getIt.registerFactory<FavoriteBloc>(() => FavoriteBloc(getIt()));
   // getIt.registerFactory<DownloadBloc>(() => DownloadBloc(getIt()));
   // getIt.registerFactory<SettingsBloc>(() => SettingsBloc(getIt()));
+}
+
+/// Setup Cubits (Simple State Management)
+void _setupCubits() {
+  // NetworkCubit - App-wide connectivity monitoring
+  getIt.registerLazySingleton<NetworkCubit>(() => NetworkCubit(
+        connectivity: getIt<Connectivity>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // SettingsCubit - App-wide settings management
+  getIt.registerLazySingleton<SettingsCubit>(() => SettingsCubit(
+        sharedPreferences: getIt<SharedPreferences>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // Note: DetailCubit is screen-specific and will be provided locally
+  // in the detail screen rather than registered globally
+  // Same for ReaderCubit and FavoriteCubit when implemented
 }
 
 /// Clean up all registered dependencies

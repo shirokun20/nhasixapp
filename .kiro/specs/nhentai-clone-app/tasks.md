@@ -1,5 +1,17 @@
 # Implementation Plan
 
+## ⚠️ IMPORTANT REMINDER
+**Before implementing any task, ALWAYS check `.kiro/specs/nhentai-clone-app/components-list.md` for:**
+- Component status (✅ Implemented, 🚧 In Progress, ⏳ Planned)
+- File paths and structure
+- Dependencies and integration points
+- Architecture decisions (BLoC vs Cubit, app-wide vs screen-specific)
+- Implementation details and requirements
+
+**This ensures consistency and prevents duplication of work!**
+
+---
+
 - [x] 1. Setup project structure dan core dependencies
   - Setup Clean Architecture folder structure (presentation, domain, data)
   - Add semua dependencies yang diperlukan ke pubspec.yaml
@@ -81,7 +93,7 @@
     - Add tag suggestions
     - _Requirements: 2.1, 6.1_
 
-  - [ ] 4.4 Implement simple Cubits untuk basic state management
+  - [x] 4.4 Implement simple Cubits untuk basic state management
     - Create NetworkCubit untuk connection status tracking
     - Implement DetailCubit untuk content detail dan favorite toggle
     - Add base Cubit classes dengan common functionality
@@ -89,6 +101,7 @@
     - _Requirements: 6.1, 8.1_
 
 - [ ] 5. Build core UI components
+💡 *Remember to check components-list.md first*
   - [ ] 5.1 Update AppMainDrawerWidget dengan menu yang sesuai
     - Update drawer dengan 4 menu utama: Downloaded galleries, Random gallery, Favorite galleries, View history
     - Implement navigation untuk setiap menu item
@@ -119,6 +132,7 @@
     - _Requirements: 3.1, 5.1, 6.1_
 
 - [ ] 6. Implement reader functionality
+💡 *Remember to check components-list.md first*
   - [ ] 6.1 Create basic reader screen dengan ReaderCubit
     - Build ReaderScreen dengan page navigation
     - Implement ReaderCubit untuk simple state management
@@ -142,6 +156,7 @@
     - _Requirements: 3.1, 7.1_
 
 - [ ] 7. Build favorites dan download system
+💡 *Remember to check components-list.md first*
   - [ ] 7.1 Implement favorites management dengan FavoriteCubit
     - Create FavoriteCubit untuk simple CRUD operations
     - Build FavoritesScreen dengan category tabs
@@ -164,6 +179,7 @@
     - _Requirements: 5.1_
 
 - [ ] 8. Implement settings dan preferences
+💡 *Remember to check components-list.md first*
   - [ ] 8.1 Create settings screen dengan SettingsCubit
     - Build SettingsScreen dengan organized sections
     - Implement SettingsCubit untuk simple state management
@@ -180,6 +196,7 @@
     - _Requirements: 7.1_
 
 - [ ] 9. Add advanced features
+💡 *Remember to check components-list.md first*
   - [ ] 9.1 Implement tag management
     - Create TagScreen dengan tag statistics using existing TagResolver
     - Add tag blacklisting functionality
@@ -203,6 +220,7 @@
     - _Requirements: 2.1, 3.1_
 
 - [ ] 10. Performance optimization dan real device testing
+💡 *Remember to check components-list.md first*
   - [ ] 10.1 Optimize performance dan test pada perangkat nyata
     - Implement memory management untuk images dan test pada perangkat Android fisik
     - Add database query optimization dan verify performance pada real device
@@ -252,6 +270,7 @@
     - _Requirements: 8.1, 9.1_
 
 - [ ] 11. Polish dan deployment preparation dengan real device validation
+💡 *Remember to check components-list.md first*
   - [ ] 11.1 UI/UX polish dan real device testing
     - Add animations dan transitions dan test smoothness pada perangkat Android fisik
     - Implement loading skeletons dan verify performance pada berbagai perangkat
@@ -277,6 +296,7 @@
     - _Requirements: 8.1, 9.1_
 
 - [ ] 12. Comprehensive real device testing dan validation
+💡 *Remember to check components-list.md first*
   - [ ] 12.1 Core functionality testing pada perangkat nyata
     - Test splash screen dan initial loading pada berbagai perangkat Android
     - Verify content browsing dan pagination pada perangkat dengan RAM terbatas
@@ -310,6 +330,7 @@
     - _Requirements: 9.1_
 
 - [ ] 13. Documentation dan learning resources
+💡 *Remember to check components-list.md first*
   - [ ] 13.1 Create tutorial Database Operations berbahasa Indonesia
     - Buat docs/TUTORIAL_DATABASE_OPERATIONS.md
     - Jelaskan implementasi SQLite dengan sqflite

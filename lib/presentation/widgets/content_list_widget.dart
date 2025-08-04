@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
+import '../../core/constants/colors_const.dart';
+import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/entities.dart';
 import '../blocs/content/content_bloc.dart';
 
@@ -97,20 +99,28 @@ class _ContentListWidgetState extends State<ContentListWidget> {
       },
       builder: (context, state) {
         if (state is ContentInitial) {
-          return const Center(
-            child: Text('Tap to load content'),
+          return Center(
+            child: Text(
+              'Tap to load content',
+              style: TextStyleConst.placeholderText,
+            ),
           );
         }
 
         if (state is ContentLoading &&
             state.message.contains('Loading content')) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Loading content...'),
+                const CircularProgressIndicator(
+                  color: ColorsConst.accentBlue,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Loading content...',
+                  style: TextStyleConst.loadingText,
+                ),
               ],
             ),
           );

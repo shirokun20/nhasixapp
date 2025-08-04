@@ -55,22 +55,18 @@ class _PaginationWidgetState extends State<PaginationWidget> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: ColorsConst.thirdColor,
+        backgroundColor: ColorsConst.darkCard,
         title: Text(
           'Go to Page',
-          style: TextStyleConst.styleBold(
-            textColor: ColorsConst.primaryTextColor,
-            size: 18,
-          ),
+          style: TextStyleConst.headingSmall,
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               'Enter page number (1 - ${widget.totalPages})',
-              style: TextStyleConst.styleRegular(
-                textColor: ColorsConst.primaryTextColor.withValues(alpha: 0.8),
-                size: 14,
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: ColorsConst.darkTextSecondary,
               ),
             ),
             const SizedBox(height: 16),
@@ -81,25 +77,22 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                 FilteringTextInputFormatter.digitsOnly,
                 LengthLimitingTextInputFormatter(6),
               ],
-              style: TextStyleConst.styleRegular(
-                textColor: ColorsConst.primaryTextColor,
-                size: 16,
+              style: TextStyleConst.bodyLarge.copyWith(
+                color: ColorsConst.darkTextPrimary,
               ),
               decoration: InputDecoration(
                 hintText: 'Page number',
-                hintStyle: TextStyleConst.styleRegular(
-                  textColor:
-                      ColorsConst.primaryTextColor.withValues(alpha: 0.5),
-                  size: 16,
+                hintStyle: TextStyleConst.placeholderText.copyWith(
+                  fontSize: 16,
                 ),
                 border: OutlineInputBorder(
                   borderSide: BorderSide(
-                    color: ColorsConst.primaryTextColor.withValues(alpha: 0.3),
+                    color: ColorsConst.borderDefault,
                   ),
                 ),
                 focusedBorder: const OutlineInputBorder(
                   borderSide: BorderSide(
-                    color: ColorsConst.redCustomColor,
+                    color: ColorsConst.accentBlue,
                   ),
                 ),
               ),
@@ -116,9 +109,8 @@ class _PaginationWidgetState extends State<PaginationWidget> {
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
               'Cancel',
-              style: TextStyleConst.styleRegular(
-                textColor: ColorsConst.primaryTextColor.withValues(alpha: 0.7),
-                size: 14,
+              style: TextStyleConst.buttonMedium.copyWith(
+                color: ColorsConst.darkTextSecondary,
               ),
             ),
           ),
@@ -128,13 +120,13 @@ class _PaginationWidgetState extends State<PaginationWidget> {
               Navigator.of(context).pop();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: ColorsConst.redCustomColor,
+              backgroundColor: ColorsConst.accentBlue,
             ),
             child: Text(
               'Go',
-              style: TextStyleConst.styleBold(
-                textColor: Colors.white,
-                size: 14,
+              style: TextStyleConst.buttonMedium.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
@@ -155,7 +147,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
             'Please enter a valid page number between 1 and ${widget.totalPages}',
             style: const TextStyle(color: Colors.white),
           ),
-          backgroundColor: ColorsConst.redCustomColor,
+          backgroundColor: ColorsConst.accentRed,
         ),
       );
       return;
@@ -167,7 +159,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: ColorsConst.thirdColor,
+      color: ColorsConst.darkCard,
       width: double.infinity,
       padding: const EdgeInsets.all(8),
       child: Column(
@@ -186,8 +178,8 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                 onPressed: widget.hasPrevious ? widget.onPreviousPage : null,
                 icon: const Icon(Icons.chevron_left),
                 color: widget.hasPrevious
-                    ? ColorsConst.primaryTextColor
-                    : ColorsConst.primaryTextColor.withValues(alpha: 0.3),
+                    ? ColorsConst.darkTextPrimary
+                    : ColorsConst.darkTextDisabled,
                 tooltip: 'Previous page',
               ),
 
@@ -204,9 +196,8 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                       // Page text
                       Text(
                         'Page ${widget.currentPage} of ${widget.totalPages}',
-                        style: TextStyleConst.styleBold(
-                          textColor: ColorsConst.primaryTextColor,
-                          size: 16,
+                        style: TextStyleConst.bodyLarge.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -217,8 +208,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                         Container(
                           height: 4,
                           decoration: BoxDecoration(
-                            color: ColorsConst.primaryTextColor
-                                .withValues(alpha: 0.2),
+                            color: ColorsConst.borderMuted,
                             borderRadius: BorderRadius.circular(2),
                           ),
                           child: FractionallySizedBox(
@@ -226,7 +216,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                             widthFactor: progressPercentage,
                             child: Container(
                               decoration: BoxDecoration(
-                                color: ColorsConst.redCustomColor,
+                                color: ColorsConst.accentBlue,
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             ),
@@ -239,11 +229,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                         // Progress percentage
                         Text(
                           '${(progressPercentage * 100).toStringAsFixed(1)}%',
-                          style: TextStyleConst.styleRegular(
-                            textColor: ColorsConst.primaryTextColor
-                                .withValues(alpha: 0.7),
-                            size: 12,
-                          ),
+                          style: TextStyleConst.caption,
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -252,10 +238,8 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                         const SizedBox(height: 2),
                         Text(
                           'Tap to jump to page',
-                          style: TextStyleConst.styleRegular(
-                            textColor: ColorsConst.primaryTextColor
-                                .withValues(alpha: 0.5),
-                            size: 10,
+                          style: TextStyleConst.overline.copyWith(
+                            color: ColorsConst.darkTextTertiary,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -273,8 +257,8 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                 onPressed: widget.hasNext ? widget.onNextPage : null,
                 icon: const Icon(Icons.chevron_right),
                 color: widget.hasNext
-                    ? ColorsConst.primaryTextColor
-                    : ColorsConst.primaryTextColor.withValues(alpha: 0.3),
+                    ? ColorsConst.darkTextPrimary
+                    : ColorsConst.darkTextDisabled,
                 tooltip: 'Next page',
               ),
 
@@ -287,9 +271,9 @@ class _PaginationWidgetState extends State<PaginationWidget> {
             const SizedBox(height: 4),
             Text(
               'Total: ${widget.totalPages.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} pages',
-              style: TextStyleConst.styleRegular(
-                textColor: ColorsConst.primaryTextColor.withValues(alpha: 0.6),
-                size: 11,
+              style: TextStyleConst.overline.copyWith(
+                color: ColorsConst.darkTextTertiary,
+                fontSize: 11,
               ),
               textAlign: TextAlign.center,
             ),
@@ -322,7 +306,7 @@ class SimplePaginationWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: ColorsConst.thirdColor,
+      color: ColorsConst.darkCard,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -334,17 +318,16 @@ class SimplePaginationWidget extends StatelessWidget {
             label: const Text('Previous'),
             style: TextButton.styleFrom(
               foregroundColor: hasPrevious
-                  ? ColorsConst.primaryTextColor
-                  : ColorsConst.primaryTextColor.withValues(alpha: 0.3),
+                  ? ColorsConst.darkTextPrimary
+                  : ColorsConst.darkTextDisabled,
             ),
           ),
 
           // Page info
           Text(
             '$currentPage / $totalPages',
-            style: TextStyleConst.styleBold(
-              textColor: ColorsConst.primaryTextColor,
-              size: 16,
+            style: TextStyleConst.bodyLarge.copyWith(
+              fontWeight: FontWeight.bold,
             ),
           ),
 
@@ -355,8 +338,8 @@ class SimplePaginationWidget extends StatelessWidget {
             label: const Text('Next'),
             style: TextButton.styleFrom(
               foregroundColor: hasNext
-                  ? ColorsConst.primaryTextColor
-                  : ColorsConst.primaryTextColor.withValues(alpha: 0.3),
+                  ? ColorsConst.darkTextPrimary
+                  : ColorsConst.darkTextDisabled,
             ),
           ),
         ],
