@@ -213,25 +213,31 @@ ContentLoadingMore → ContentLoaded (infinite scroll)
   - [x] Complex filter combinations and state management
   - [x] Comprehensive testing suite (38+ tests across unit, real API, and integration)
 
-### ✅ **Recently Completed**
-- [x] **Task 4**: Core BLoC state management (Week 2) - ✅ COMPLETED
-  - [x] **Task 4.1**: SplashBloc untuk initial loading ✅
+- [x] **Task 4**: Core BLoC state management (Week 2) - 🚧 IN PROGRESS
+  - [x] **Task 4.1**: SplashBloc for initial loading ✅
     - [x] Cloudflare bypass logic with comprehensive flow
     - [x] Loading states and error handling with retry mechanisms
     - [x] Navigation after bypass success
     - [x] Network connectivity validation
-  - [x] **Task 4.2**: ContentBloc untuk content management ✅
+  - [x] **Task 4.2**: ContentBloc for content management ✅
     - [x] Pagination support with infinite scrolling
     - [x] Loading, loaded, error states with proper transitions
     - [x] Pull-to-refresh functionality with SmartRefresher
     - [x] Advanced content management (sort, search, popular, random, tags)
-  - [x] **Task 4.3**: SearchBloc untuk advanced search ✅
+  - [x] **Task 4.3**: SearchBloc for advanced search ✅
     - [x] Advanced search with comprehensive filter support
     - [x] Search history functionality with persistent storage
     - [x] Debounced search with 500ms delay optimization
     - [x] Real-time tag suggestions with performance optimization
 
 ### 🚧 **In Progress**
+- [ ] **Task 4.4**: Simple Cubits for basic state management
+  - [ ] NetworkCubit for connection status tracking
+  - [ ] DetailCubit for content detail and favorite toggle
+  - [ ] Base Cubit classes with common functionality
+  - [ ] Cubit providers setup in MultiBlocProviderConfig
+
+### 📅 **Next Up**
 - [ ] **Task 5**: Core UI components (Week 3)
 
 ### 📅 **Upcoming Tasks** (12-week roadmap)

@@ -60,7 +60,7 @@
     - Test HTTP client persistence across app lifecycle
     - _Requirements: 8.1_
 
-- [x] 4. Create core BLoC dan Cubit state management
+- [-] 4. Create core BLoC dan Cubit state management
   - [x] 4.1 Implement SplashBloc untuk initial loading (Complex - tetap BLoC)
     - Create SplashBloc dengan initial loading logic
     - Add loading states dan error handling

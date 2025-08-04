@@ -160,13 +160,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ **Task 1**: Project structure and core dependencies setup
 - ✅ **Task 2**: Core domain layer implementation  
 - ✅ **Task 3**: Data layer foundation
-- ✅ **Task 4**: Core BLoC state management ← **Latest**
+- ✅ **Task 4**: Core BLoC state management
   - ✅ **Task 4.1**: Enhanced SplashBloc implementation
   - ✅ **Task 4.2**: ContentBloc implementation  
   - ✅ **Task 4.3**: Advanced SearchBloc implementation
+- 🚧 **Task 4.4**: Simple Cubits for basic state management ← **In Progress**
+  - ⏳ NetworkCubit for connection status tracking
+  - ⏳ DetailCubit for content detail and favorite toggle
+  - ⏳ Base Cubit classes with common functionality
+  - ⏳ Cubit providers setup in MultiBlocProviderConfig
 - 📅 **Task 5**: Core UI components (next)
 
 ---
 
-**Current Status**: 33% Complete (4/12 tasks)  
-**Next Milestone**: Begin core UI components development
+**Current Status**: 42% Complete (5/12 tasks)  
+**Task 4 Progress**: 75% Complete (3/4 sub-tasks)  
+**Next Milestone**: Complete Task 4.4 (Simple Cubits) then begin core UI components

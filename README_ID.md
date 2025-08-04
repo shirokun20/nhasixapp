@@ -219,8 +219,7 @@ ContentLoadingMore → ContentLoaded (infinite scroll)
   - [x] Kombinasi filter kompleks dan manajemen state
   - [x] Suite testing komprehensif (38+ test meliputi unit, real API, dan integration)
 
-### ✅ **Baru Saja Selesai**
-- [x] **Tugas 4**: Manajemen state BLoC inti (Minggu 2) - ✅ SELESAI
+- [x] **Tugas 4**: Manajemen state BLoC inti (Minggu 2) - 🚧 SEDANG BERLANGSUNG
   - [x] **Tugas 4.1**: SplashBloc untuk initial loading ✅
     - [x] Logika bypass Cloudflare dengan alur komprehensif
     - [x] Loading state dan error handling dengan mekanisme retry
@@ -238,6 +237,13 @@ ContentLoadingMore → ContentLoaded (infinite scroll)
     - [x] Saran tag real-time dengan optimisasi performa
 
 ### 🚧 **Sedang Berlangsung**
+- [ ] **Tugas 4.4**: Cubit sederhana untuk manajemen state dasar
+  - [ ] NetworkCubit untuk pelacakan status koneksi
+  - [ ] DetailCubit untuk detail konten dan toggle favorit
+  - [ ] Kelas Cubit dasar dengan fungsi umum
+  - [ ] Setup provider Cubit dalam MultiBlocProviderConfig
+
+### 📅 **Selanjutnya**
 - [ ] **Tugas 5**: Komponen UI inti (Minggu 3)
 
 ### 📅 **Tugas Mendatang** (roadmap 12 minggu)

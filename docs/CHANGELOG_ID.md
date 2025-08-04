@@ -160,13 +160,19 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - ✅ **Tugas 1**: Setup struktur proyek dan dependensi inti
 - ✅ **Tugas 2**: Implementasi layer domain inti
 - ✅ **Tugas 3**: Fondasi layer data
-- ✅ **Tugas 4**: Manajemen state BLoC inti ← **Terbaru**
+- ✅ **Tugas 4**: Manajemen state BLoC inti
   - ✅ **Tugas 4.1**: Implementasi SplashBloc yang ditingkatkan
   - ✅ **Tugas 4.2**: Implementasi ContentBloc
   - ✅ **Tugas 4.3**: Implementasi SearchBloc lanjutan
+- 🚧 **Tugas 4.4**: Cubit sederhana untuk manajemen state dasar ← **Sedang Berlangsung**
+  - ⏳ NetworkCubit untuk pelacakan status koneksi
+  - ⏳ DetailCubit untuk detail konten dan toggle favorit
+  - ⏳ Kelas Cubit dasar dengan fungsi umum
+  - ⏳ Setup provider Cubit dalam MultiBlocProviderConfig
 - 📅 **Tugas 5**: Komponen UI inti (berikutnya)
 
 ---
 
-**Status Saat Ini**: 33% Selesai (4/12 tugas)  
-**Milestone Berikutnya**: Memulai pengembangan komponen UI inti
+**Status Saat Ini**: 42% Selesai (5/12 tugas)  
+**Progress Tugas 4**: 75% Selesai (3/4 sub-tugas)  
+**Milestone Berikutnya**: Selesaikan Tugas 4.4 (Cubit Sederhana) kemudian mulai komponen UI inti
