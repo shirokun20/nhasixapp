@@ -60,7 +60,7 @@ class RemoteDataSource {
     try {
       _logger.i('Fetching content list for page $page');
 
-      final url = page == 1 ? baseUrl : '$baseUrl/?page=$page';
+      final url = '$baseUrl/?page=$page';
       final html = await _getPageHtml(url);
 
       // For homepage (page 1), use the specialized parser to get only index containers
@@ -85,7 +85,7 @@ class RemoteDataSource {
     try {
       _logger.i('Fetching content list with pagination for page $page');
 
-      final url = page == 1 ? baseUrl : '$baseUrl/?page=$page';
+      final url = '$baseUrl/?page=$page';
       final html = await _getPageHtml(url);
 
       // Parse content list

@@ -73,46 +73,11 @@ abstract class ContentRepository {
     TagSortOption sortBy = TagSortOption.count,
   });
 
-  /// Search tags by name
-  ///
-  /// [query] - Search query for tag names
-  /// [limit] - Maximum number of results
-  /// Returns matching tags
-  Future<List<Tag>> searchTags({
-    required String query,
-    int limit = 20,
-  });
-
-  /// Get content from cache (offline support)
-  ///
-  /// [page] - Page number
-  /// Returns cached content list
-  Future<ContentListResult> getCachedContent({int page = 1});
-
-  /// Cache content for offline access
-  ///
-  /// [contents] - List of content to cache
-  /// [replaceExisting] - Whether to replace existing cache
-  Future<void> cacheContent({
-    required List<Content> contents,
-    bool replaceExisting = false,
-  });
-
-  /// Clear content cache
-  ///
-  /// [olderThan] - Clear cache older than specified duration
-  Future<void> clearCache({Duration? olderThan});
-
   /// Check if content exists and is accessible
   ///
   /// [contentId] - Content ID to verify
   /// Returns true if content exists and accessible
   Future<bool> verifyContentExists(ContentId contentId);
-
-  /// Get content statistics
-  ///
-  /// Returns overall content statistics
-  Future<ContentStatistics> getContentStatistics();
 }
 
 /// Result wrapper for paginated content lists

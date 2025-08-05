@@ -37,7 +37,8 @@ class CloudflareBypassNoWebView {
           _extractCookiesFromResponse(response);
           return true;
         } else {
-          _logger.w('Cloudflare challenge detected, retrying in ${retryInterval.inSeconds} seconds...');
+          _logger.w(
+              'Cloudflare challenge detected, retrying in ${retryInterval.inSeconds} seconds...');
           await Future.delayed(retryInterval);
         }
       } catch (e) {
@@ -64,7 +65,9 @@ class CloudflareBypassNoWebView {
     ];
 
     final lowerHtml = html.toLowerCase();
-    return cloudflareIndicators.any((indicator) => lowerHtml.contains(indicator.toLowerCase()));
+
+    return cloudflareIndicators
+        .any((indicator) => lowerHtml.contains(indicator.toLowerCase()));
   }
 
   /// Extract cookies from response headers and add to HTTP client
@@ -78,7 +81,7 @@ class CloudflareBypassNoWebView {
 
       final cookies = <String>[];
       for (final header in setCookieHeaders) {
-        final cookie = header.split(';').first;
+        final cookie = header.split(';')[0].trim(); // name=value only
         cookies.add(cookie);
       }
 

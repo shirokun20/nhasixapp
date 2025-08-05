@@ -17,12 +17,14 @@ class ContentInitial extends ContentState {
 class ContentLoading extends ContentState {
   const ContentLoading({
     this.message = 'Loading content...',
+    this.previousContents,
   });
 
   final String message;
+  final List<Content>? previousContents;
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, previousContents];
 }
 
 /// State when content is successfully loaded

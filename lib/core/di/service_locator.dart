@@ -119,7 +119,7 @@ void _setupRepositories() {
   // Content Repository
   getIt.registerLazySingleton<ContentRepository>(() => ContentRepositoryImpl(
         remoteDataSource: getIt<RemoteDataSource>(),
-        localDataSource: getIt<LocalDataSource>(),
+        // localDataSource: getIt<LocalDataSource>(),
         logger: getIt<Logger>(),
       ));
 

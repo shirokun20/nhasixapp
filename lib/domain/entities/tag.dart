@@ -7,6 +7,7 @@ class Tag extends Equatable {
     required this.type,
     required this.count,
     required this.url,
+    this.slug,
   });
 
   final String name;
@@ -14,6 +15,7 @@ class Tag extends Equatable {
       type; // tag, artist, character, parody, group, language, category
   final int count; // Popularity count
   final String url;
+  final String? slug;
 
   @override
   List<Object> get props => [name, type, count, url];
@@ -23,12 +25,14 @@ class Tag extends Equatable {
     String? type,
     int? count,
     String? url,
+    String? slug,
   }) {
     return Tag(
       name: name ?? this.name,
       type: type ?? this.type,
       count: count ?? this.count,
       url: url ?? this.url,
+      slug: slug ?? this.slug,
     );
   }
 

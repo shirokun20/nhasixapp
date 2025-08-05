@@ -1,3 +1,4 @@
+import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
@@ -30,6 +31,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
     initialRefresh: false,
   );
   final ScrollController _scrollController = ScrollController();
+  bool _isRefreshing = false;
 
   @override
   void initState() {
@@ -61,7 +63,18 @@ class _ContentListWidgetState extends State<ContentListWidget> {
   }
 
   void _onRefresh() {
-    context.read<ContentBloc>().add(const ContentRefreshEvent());
+    if (_isRefreshing) return; // Prevent multiple refresh calls
+
+    _isRefreshing = true;
+    final currentState = context.read<ContentBloc>().state;
+    if (currentState is ContentLoaded) {
+      // Refresh current page instead of going back to page 1
+      context
+          .read<ContentBloc>()
+          .add(ContentGoToPageEvent(currentState.currentPage));
+    } else {
+      context.read<ContentBloc>().add(const ContentRefreshEvent());
+    }
   }
 
   void _onLoadMore() {
@@ -73,17 +86,31 @@ class _ContentListWidgetState extends State<ContentListWidget> {
     return BlocConsumer<ContentBloc, ContentState>(
       listener: (context, state) {
         if (state is ContentLoaded) {
-          if (state.isRefreshing) {
-            // Refresh completed
-            _refreshController.refreshCompleted();
+          // Complete refresh if we were refreshing
+          if (_isRefreshing) {
+            // Only call SmartRefresher methods if infinite scroll is enabled
+            if (widget.enableInfiniteScroll) {
+              _refreshController.refreshCompleted();
+            }
+            _isRefreshing = false;
           }
-          if (state.isLoadingMore) {
-            // Load more completed
+
+          if (state.isLoadingMore && widget.enableInfiniteScroll) {
+            // Load more completed (only for infinite scroll)
             _refreshController.loadComplete();
           }
         } else if (state is ContentError) {
-          _refreshController.refreshFailed();
-          _refreshController.loadFailed();
+          // Reset refresh state and notify controller
+          if (_isRefreshing) {
+            if (widget.enableInfiniteScroll) {
+              _refreshController.refreshFailed();
+            }
+            _isRefreshing = false;
+          }
+
+          if (widget.enableInfiniteScroll) {
+            _refreshController.loadFailed();
+          }
 
           // Show error snackbar
           ScaffoldMessenger.of(context).showSnackBar(
@@ -113,21 +140,99 @@ class _ContentListWidgetState extends State<ContentListWidget> {
           );
         }
 
-        if (state is ContentLoading &&
-            state.message.contains('Loading content')) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+        if (state is ContentLoading) {
+          // Show overlay loading for pagination changes if we have previous content
+          if (state.previousContents != null &&
+              state.previousContents!.isNotEmpty) {
+            return Stack(
               children: [
-                const CircularProgressIndicator(
-                  color: ColorsConst.accentBlue,
+                // Show previous content with reduced opacity
+                Opacity(
+                  opacity: 0.3,
+                  child: _buildContentGrid(ContentLoaded(
+                    contents: state.previousContents!,
+                    currentPage: 1, // Temporary values
+                    totalPages: 1,
+                    totalCount: state.previousContents!.length,
+                    hasNext: false,
+                    hasPrevious: false,
+                    sortBy: SortOption.newest,
+                    lastUpdated: DateTime.now(),
+                  )),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Loading content...',
-                  style: TextStyleConst.loadingText,
+                // Loading overlay
+                Container(
+                  color: ColorsConst.darkBackground.withValues(alpha: 0.7),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: ColorsConst.darkCard,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: ColorsConst.darkBackground
+                                .withValues(alpha: 0.5),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: ColorsConst.accentBlue,
+                              strokeWidth: 2.5,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Text(
+                            state.message.isNotEmpty
+                                ? state.message
+                                : 'Loading...',
+                            style: TextStyleConst.bodyMedium.copyWith(
+                              color: ColorsConst.darkTextPrimary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ],
+            );
+          }
+
+          // Full loading for initial load
+          return Container(
+            color: ColorsConst.darkBackground,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(
+                    color: ColorsConst.accentBlue,
+                    strokeWidth: 3,
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    state.message.isNotEmpty
+                        ? state.message
+                        : 'Loading content...',
+                    style: TextStyleConst.bodyLarge.copyWith(
+                      color: ColorsConst.darkTextPrimary,
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         }
@@ -223,8 +328,9 @@ class _ContentListWidgetState extends State<ContentListWidget> {
         }
 
         if (state is ContentLoaded) {
-          // Use SmartRefresher only if pull-to-refresh or infinite scroll is enabled
-          if (widget.enablePullToRefresh || widget.enableInfiniteScroll) {
+          // For pagination mode, we don't use SmartRefresher at all
+          // Only use SmartRefresher when infinite scroll is explicitly enabled
+          if (widget.enableInfiniteScroll) {
             return SmartRefresher(
               controller: _refreshController,
               enablePullDown: widget.enablePullToRefresh,
@@ -234,33 +340,32 @@ class _ContentListWidgetState extends State<ContentListWidget> {
               header: widget.enablePullToRefresh
                   ? const WaterDropMaterialHeader()
                   : null,
-              footer: widget.enableInfiniteScroll
-                  ? CustomFooter(
-                      builder: (context, mode) {
-                        Widget body;
-                        if (mode == LoadStatus.idle) {
-                          body = const Text("Pull up to load more");
-                        } else if (mode == LoadStatus.loading) {
-                          body = const CircularProgressIndicator(
-                              color: ColorsConst.accentBlue);
-                        } else if (mode == LoadStatus.failed) {
-                          body = const Text("Load Failed! Click retry!");
-                        } else if (mode == LoadStatus.canLoading) {
-                          body = const Text("Release to load more");
-                        } else {
-                          body = const Text("No more content");
-                        }
-                        return SizedBox(
-                          height: 55.0,
-                          child: Center(child: body),
-                        );
-                      },
-                    )
-                  : null,
+              footer: CustomFooter(
+                builder: (context, mode) {
+                  Widget body;
+                  if (mode == LoadStatus.idle) {
+                    body = const Text("Pull up to load more");
+                  } else if (mode == LoadStatus.loading) {
+                    body = const CircularProgressIndicator(
+                        color: ColorsConst.accentBlue);
+                  } else if (mode == LoadStatus.failed) {
+                    body = const Text("Load Failed! Click retry!");
+                  } else if (mode == LoadStatus.canLoading) {
+                    body = const Text("Release to load more");
+                  } else {
+                    body = const Text("No more content");
+                  }
+                  return SizedBox(
+                    height: 55.0,
+                    child: Center(child: body),
+                  );
+                },
+              ),
               child: _buildContentGrid(state),
             );
           } else {
-            // Simple grid without SmartRefresher for pagination mode
+            // Simple grid for pagination mode
+            // For pagination, we use pagination controls instead of pull-to-refresh
             return _buildContentGrid(state);
           }
         }
@@ -287,11 +392,15 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                     children: [
                       Text(
                         state.contentTypeDescription,
-                        style: TextStyleConst.bodyLarge,
+                        style: TextStyleConst.bodyLarge.copyWith(
+                          color: ColorsConst.darkTextPrimary,
+                        ),
                       ),
                       Text(
                         '${state.totalCount} items • Page ${state.currentPage} of ${state.totalPages}',
-                        style: TextStyleConst.bodySmall,
+                        style: TextStyleConst.bodySmall.copyWith(
+                          color: ColorsConst.darkTextSecondary,
+                        ),
                       ),
                     ],
                   ),
@@ -299,7 +408,9 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                 if (state.lastUpdated != null)
                   Text(
                     'Updated: ${_formatTime(state.lastUpdated!)}',
-                    style: TextStyleConst.bodySmall,
+                    style: TextStyleConst.bodySmall.copyWith(
+                      color: ColorsConst.darkTextTertiary,
+                    ),
                   ),
               ],
             ),
@@ -376,8 +487,13 @@ class ContentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       clipBehavior: Clip.antiAlias,
+      color: ColorsConst.darkCard,
+      elevation: 2,
+      shadowColor: ColorsConst.darkBackground.withValues(alpha: 0.3),
       child: InkWell(
         onTap: onTap,
+        splashColor: ColorsConst.accentBlue.withValues(alpha: 0.1),
+        highlightColor: ColorsConst.hoverColor,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -386,29 +502,34 @@ class ContentCard extends StatelessWidget {
               flex: 3,
               child: Container(
                 width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                decoration: const BoxDecoration(
+                  color: ColorsConst.darkElevated,
                 ),
                 child: content.coverUrl.isNotEmpty
                     ? Image.network(
                         content.coverUrl,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
+                          return Icon(
                             Icons.broken_image,
                             size: 48,
+                            color: ColorsConst.darkTextTertiary,
                           );
                         },
                         loadingBuilder: (context, child, loadingProgress) {
                           if (loadingProgress == null) return child;
                           return const Center(
-                            child: CircularProgressIndicator(),
+                            child: CircularProgressIndicator(
+                              color: ColorsConst.accentBlue,
+                              strokeWidth: 2,
+                            ),
                           );
                         },
                       )
-                    : const Icon(
+                    : Icon(
                         Icons.image_not_supported,
                         size: 48,
+                        color: ColorsConst.darkTextTertiary,
                       ),
               ),
             ),
@@ -424,7 +545,9 @@ class ContentCard extends StatelessWidget {
                     // Title
                     Text(
                       content.getDisplayTitle(),
-                      style: Theme.of(context).textTheme.titleSmall,
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: ColorsConst.darkTextPrimary,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -433,10 +556,10 @@ class ContentCard extends StatelessWidget {
                     // Artist
                     if (content.artists.isNotEmpty)
                       Text(
-                        content.artists.first,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
+                        content.artists.join(', ').capitalize,
+                        style: TextStyleConst.bodySmall.copyWith(
+                          color: ColorsConst.accentBlue,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -446,42 +569,10 @@ class ContentCard extends StatelessWidget {
                     // Bottom info
                     Row(
                       children: [
-                        Icon(
-                          Icons.photo_library,
-                          size: 12,
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          '${content.pageCount}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
                         const Spacer(),
                         if (content.language.isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 4,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primaryContainer,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              content.language.toUpperCase(),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimaryContainer,
-                                    fontSize: 10,
-                                  ),
-                            ),
-                          ),
+                          Image.asset(
+                            'assets/images/${content.language.toLowerCase()}.gif', width: 30,),
                       ],
                     ),
                   ],

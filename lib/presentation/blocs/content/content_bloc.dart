@@ -64,6 +64,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
   Tag? _currentTag;
   PopularTimeframe? _currentTimeframe;
   Timer? _debounceTimer; // TODO: Implement later
+  DateTime? _lastFetchTime; // Track when data was actually fetched from server
 
   // Configuration constants
   static const Duration _debounceDelay =
@@ -107,6 +108,9 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         return;
       }
 
+      // Update fetch time when we actually get data from server
+      _lastFetchTime = DateTime.now();
+
       emit(ContentLoaded(
         contents: result.contents,
         currentPage: result.currentPage,
@@ -115,7 +119,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         hasNext: result.hasNext,
         hasPrevious: result.hasPrevious,
         sortBy: event.sortBy,
-        lastUpdated: DateTime.now(),
+        lastUpdated: _lastFetchTime,
       ));
 
       _logger.i('ContentBloc: Loaded ${result.contents.length} contents');
@@ -192,13 +196,16 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         result = await _getContentListUseCase(params);
       }
 
+      // Update fetch time when we get more data from server
+      _lastFetchTime = DateTime.now();
+
       // Update state with more content
       emit(currentState.copyWith(
         contents: [...currentState.contents, ...result.contents],
         currentPage: result.currentPage,
         hasNext: result.hasNext,
         isLoadingMore: false,
-        lastUpdated: DateTime.now(),
+        lastUpdated: _lastFetchTime,
       ));
 
       _logger.i('ContentBloc: Loaded ${result.contents.length} more contents');
@@ -242,27 +249,27 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
 
       ContentListResult result;
 
-      // Refresh based on current context
+      // Refresh always goes back to page 1 - that's the concept of "refresh"
       if (currentState is ContentLoaded) {
         if (currentState.searchFilter != null) {
-          // Refresh search results
+          // Refresh search results from page 1
           final refreshFilter = currentState.searchFilter!.copyWith(page: 1);
           result = await _searchContentUseCase(refreshFilter);
         } else if (currentState.tag != null) {
-          // Refresh content by tag
+          // Refresh content by tag from page 1
           result = await _contentRepository.getContentByTag(
             tag: currentState.tag!,
             page: 1,
             sortBy: currentState.sortBy,
           );
         } else if (currentState.timeframe != null) {
-          // Refresh popular content
+          // Refresh popular content from page 1
           result = await _contentRepository.getPopularContent(
             timeframe: currentState.timeframe!,
             page: 1,
           );
         } else {
-          // Refresh regular content
+          // Refresh regular content from page 1
           final params = GetContentListParams(
             page: 1,
             sortBy: event.sortBy,
@@ -270,7 +277,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
           result = await _getContentListUseCase(params);
         }
       } else {
-        // Fresh load
+        // Fresh load from page 1
         final params = GetContentListParams(
           page: 1,
           sortBy: event.sortBy,
@@ -288,6 +295,9 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
       // Update current sort if changed
       _currentSortBy = event.sortBy;
 
+      // Update fetch time when we refresh data from server
+      _lastFetchTime = DateTime.now();
+
       emit(ContentLoaded(
         contents: result.contents,
         currentPage: result.currentPage,
@@ -301,7 +311,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         tag: currentState is ContentLoaded ? currentState.tag : null,
         timeframe:
             currentState is ContentLoaded ? currentState.timeframe : null,
-        lastUpdated: DateTime.now(),
+        lastUpdated: _lastFetchTime,
       ));
 
       _logger
@@ -402,6 +412,9 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         return;
       }
 
+      // Update fetch time when we search from server
+      _lastFetchTime = DateTime.now();
+
       emit(ContentLoaded(
         contents: result.contents,
         currentPage: result.currentPage,
@@ -411,7 +424,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         hasPrevious: result.hasPrevious,
         sortBy: event.filter.sortBy,
         searchFilter: event.filter,
-        lastUpdated: DateTime.now(),
+        lastUpdated: _lastFetchTime,
       ));
 
       _logger.i('ContentBloc: Found ${result.contents.length} search results');
@@ -458,6 +471,9 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         return;
       }
 
+      // Update fetch time when we load popular content from server
+      _lastFetchTime = DateTime.now();
+
       emit(ContentLoaded(
         contents: result.contents,
         currentPage: result.currentPage,
@@ -467,7 +483,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         hasPrevious: result.hasPrevious,
         sortBy: SortOption.popular,
         timeframe: event.timeframe,
-        lastUpdated: DateTime.now(),
+        lastUpdated: _lastFetchTime,
       ));
 
       _logger
@@ -509,6 +525,9 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         return;
       }
 
+      // Update fetch time when we load random content from server
+      _lastFetchTime = DateTime.now();
+
       // Create a single page result for random content
       emit(ContentLoaded(
         contents: contents,
@@ -518,7 +537,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         hasNext: false,
         hasPrevious: false,
         sortBy: SortOption.random,
-        lastUpdated: DateTime.now(),
+        lastUpdated: _lastFetchTime,
       ));
 
       _logger.i('ContentBloc: Loaded ${contents.length} random contents');
@@ -567,6 +586,9 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         return;
       }
 
+      // Update fetch time when we load content by tag from server
+      _lastFetchTime = DateTime.now();
+
       emit(ContentLoaded(
         contents: result.contents,
         currentPage: result.currentPage,
@@ -576,7 +598,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         hasPrevious: result.hasPrevious,
         sortBy: event.sortBy,
         tag: event.tag,
-        lastUpdated: DateTime.now(),
+        lastUpdated: _lastFetchTime,
       ));
 
       _logger
@@ -747,8 +769,11 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     Emitter<ContentState> emit,
   ) async {
     try {
-      // Show loading state
-      emit(const ContentLoading(message: 'Loading content'));
+      // Show minimal loading state for pagination
+      emit(ContentLoading(
+        message: 'Loading page $page...',
+        previousContents: currentState.contents,
+      ));
 
       ContentListResult result;
 
@@ -786,6 +811,9 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         return;
       }
 
+      // Update fetch time when we load a specific page from server
+      _lastFetchTime = DateTime.now();
+
       emit(ContentLoaded(
         contents: result.contents,
         currentPage: result.currentPage,
@@ -797,7 +825,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         searchFilter: currentState.searchFilter,
         tag: currentState.tag,
         timeframe: currentState.timeframe,
-        lastUpdated: DateTime.now(),
+        lastUpdated: _lastFetchTime,
       ));
 
       _logger.i(

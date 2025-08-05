@@ -61,7 +61,8 @@ class TagResolver {
             name: tagData['name'] ?? 'Unknown',
             type: _normalizeTagType(tagData['type']),
             count: tagData['count'] ?? 0,
-            url: _generateTagUrl(tagData['name'], tagData['type']),
+            url: _generateTagUrl(tagData['slug'], tagData['type']),
+            slug: tagData['slug'],
           ));
         } catch (e) {
           _logger.w('Failed to resolve tag ID $tagId: $e');
@@ -87,7 +88,7 @@ class TagResolver {
         name: tagData['name'] ?? 'Unknown',
         type: _normalizeTagType(tagData['type']),
         count: tagData['count'] ?? 0,
-        url: _generateTagUrl(tagData['name'], tagData['type']),
+        url: _generateTagUrl(tagData['slug'], tagData['type']),
       );
     } catch (e) {
       _logger.w('Failed to create tag from ID $tagId: $e');
@@ -113,7 +114,7 @@ class TagResolver {
             name: tagData['name'] ?? 'Unknown',
             type: _normalizeTagType(tagData['type']),
             count: tagData['count'] ?? 0,
-            url: _generateTagUrl(tagData['name'], tagData['type']),
+            url: _generateTagUrl(tagData['slug'], tagData['type']),
           ));
 
           if (results.length >= limit) break;
@@ -146,7 +147,7 @@ class TagResolver {
             name: tagData['name'] ?? 'Unknown',
             type: normalizedType,
             count: tagData['count'] ?? 0,
-            url: _generateTagUrl(tagData['name'], tagData['type']),
+            url: _generateTagUrl(tagData['slug'], tagData['type']),
           ));
 
           if (results.length >= limit) break;
@@ -192,12 +193,12 @@ class TagResolver {
 
       final mapping = <String, Map<String, dynamic>>{};
 
-      // Convert array format [id, name, count, type] to mapping format
+      // Convert array format [id, name, slug, type] to mapping format
       for (final item in jsonData) {
         if (item is List && item.length >= 4) {
           final id = item[0].toString();
           final name = item[1].toString();
-          final count = item[2] as int? ?? 0;
+          final slug = item[2].toString();
           final typeCode = item[3] as int? ?? 3;
 
           // Convert type code to type name
@@ -206,7 +207,8 @@ class TagResolver {
           mapping[id] = {
             'name': name,
             'type': type,
-            'count': count,
+            'slug': slug,
+            'count': 0,
           };
         }
       }

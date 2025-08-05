@@ -267,7 +267,7 @@ class NhentaiScraper {
   Future<List<ContentModel>> parseFromIndexContainers(String html) async {
     try {
       final document = html_parser.parse(html, encoding: 'utf-8');
-      final containers = document.querySelectorAll(indexContainerSelector);
+      final containers = document.querySelectorAll(newUploadsSectionSelector);
 
       final contents = <ContentModel>[];
 
