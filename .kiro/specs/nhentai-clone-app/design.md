@@ -178,44 +178,35 @@ class History {
 
 #### Use Cases
 ```dart
-// Content Use Cases
+// Content Use Cases (Unchanged)
 GetContentListUseCase: Mengambil daftar konten dengan pagination
 GetContentDetailUseCase: Mengambil detail konten lengkap
 SearchContentUseCase: Mencari konten dengan filter advanced
 GetRandomContentUseCase: Mengambil konten random
-GetPopularContentUseCase: Mengambil konten popular
-GetRelatedContentUseCase: Mengambil konten terkait
 
-// Tag & Category Use Cases
-GetAllTagsUseCase: Mengambil semua tag dengan count
-GetTagsByTypeUseCase: Mengambil tag berdasarkan type (artist, character, etc)
-GetContentByTagUseCase: Mengambil konten berdasarkan tag
-
-// User Data Use Cases
-AddToFavoritesUseCase: Menambah ke favorites dengan kategori
+// Favorites Use Cases (Simplified)
+AddToFavoritesUseCase: Menambah ke favorites (hanya id + cover_url)
 RemoveFromFavoritesUseCase: Menghapus dari favorites
-GetFavoritesUseCase: Mengambil favorites dengan kategori
-CreateFavoriteCategoryUseCase: Membuat kategori favorite baru
+GetFavoritesUseCase: Mengambil favorites (return Map<String, dynamic>)
 
-// Download Use Cases
-QueueDownloadUseCase: Menambah ke download queue
-PauseDownloadUseCase: Pause download
-ResumeDownloadUseCase: Resume download
-CancelDownloadUseCase: Cancel download
+// Downloads Use Cases (Simplified)
+DownloadContentUseCase: Queue download dan save status
 GetDownloadStatusUseCase: Mengambil status download
-GetDownloadedContentUseCase: Mengambil konten offline
 
-// History Use Cases
-AddToHistoryUseCase: Menambah ke history
-GetHistoryUseCase: Mengambil history
-ClearHistoryUseCase: Clear history
-UpdateReadingProgressUseCase: Update progress baca
+// History Use Cases (Simplified)
+AddToHistoryUseCase: Menambah ke history (dengan title + cover_url)
 
-// Settings Use Cases
-UpdateUserPreferencesUseCase: Update pengaturan
-GetUserPreferencesUseCase: Mengambil pengaturan
-ExportDataUseCase: Export user data
-ImportDataUseCase: Import user data
+// Settings Use Cases (Simplified)
+SaveUserPreferencesUseCase: Save user preferences
+GetUserPreferencesUseCase: Get user preferences
+SavePreferenceUseCase: Save single preference
+GetPreferenceUseCase: Get single preference
+
+// Search History Use Cases (New)
+AddSearchHistoryUseCase: Add search query to history
+GetSearchHistoryUseCase: Get search history
+ClearSearchHistoryUseCase: Clear search history
+DeleteSearchHistoryUseCase: Delete specific search entry
 ```
 
 ### 3. Data Layer
@@ -223,22 +214,40 @@ ImportDataUseCase: Import user data
 #### Repositories
 ```dart
 abstract class ContentRepository {
-  Future<List<Content>> getContentList(int page);
+  Future<ContentListResult> getContentList({int page = 1});
   Future<Content> getContentDetail(String id);
-  Future<List<Content>> searchContent(SearchFilter filter);
+  Future<ContentListResult> searchContent(SearchFilter filter);
 }
 
 abstract class UserDataRepository {
-  Future<void> addToFavorites(Content content);
-  Future<void> removeFromFavorites(String contentId);
-  Future<List<Content>> getFavorites();
-  Future<void> downloadContent(Content content);
-  Future<List<Content>> getDownloadedContent();
-}
+  // Favorites (Simplified)
+  Future<void> addToFavorites({required String id, required String coverUrl});
+  Future<void> removeFromFavorites(String id);
+  Future<List<Map<String, dynamic>>> getFavorites({int page = 1, int limit = 20});
+  Future<bool> isFavorite(String id);
+  Future<int> getFavoritesCount();
 
-abstract class SettingsRepository {
+  // Downloads (Simplified)
+  Future<void> saveDownloadStatus(DownloadStatus status);
+  Future<DownloadStatus?> getDownloadStatus(String id);
+  Future<List<DownloadStatus>> getAllDownloads({DownloadState? state, int page = 1, int limit = 20});
+  Future<void> deleteDownloadStatus(String id);
+  Future<int> getDownloadsCount({DownloadState? state});
+
+  // History (Simplified)
+  Future<void> saveHistory(History history);
+  Future<List<History>> getHistory({int page = 1, int limit = 50});
+  Future<History?> getHistoryEntry(String id);
+  Future<void> removeFromHistory(String id);
+  Future<void> clearHistory();
+  Future<int> getHistoryCount();
+
+  // Preferences & Search History
+  Future<void> saveUserPreferences(UserPreferences preferences);
   Future<UserPreferences> getUserPreferences();
-  Future<void> updateUserPreferences(UserPreferences preferences);
+  Future<void> addSearchHistory(String query);
+  Future<List<String>> getSearchHistory({int limit = 20});
+  Future<void> clearSearchHistory();
 }
 ```
 
@@ -268,17 +277,40 @@ class RemoteDataSource {
 }
 ```
 
-**Local Data Source**
+**Local Data Source (Simplified)**
 ```dart
 class LocalDataSource {
-  final Database database;
-  final SharedPreferences sharedPreferences;
+  final DatabaseHelper _databaseHelper;
   
-  Future<void> cacheContent(List<ContentModel> contents);
-  Future<List<ContentModel>> getCachedContent();
-  Future<void> saveFavorite(ContentModel content);
-  Future<void> saveDownloadedContent(ContentModel content, List<File> images);
-  Future<UserPreferences> getPreferences();
+  // Favorites (Simplified)
+  Future<void> addToFavorites(String id, String coverUrl);
+  Future<void> removeFromFavorites(String id);
+  Future<List<Map<String, dynamic>>> getFavorites({int page = 1, int limit = 20});
+  Future<bool> isFavorited(String id);
+  Future<int> getFavoritesCount();
+
+  // Downloads (Simplified)
+  Future<void> saveDownloadStatus(DownloadStatusModel status);
+  Future<DownloadStatusModel?> getDownloadStatus(String id);
+  Future<List<DownloadStatusModel>> getAllDownloads({DownloadState? state, int page = 1, int limit = 20});
+  Future<void> deleteDownloadStatus(String id);
+  Future<int> getDownloadsCount({DownloadState? state});
+
+  // History (Simplified)
+  Future<void> saveHistory(HistoryModel history);
+  Future<HistoryModel?> getHistory(String id);
+  Future<List<HistoryModel>> getAllHistory({int page = 1, int limit = 50});
+  Future<void> clearHistory();
+  Future<void> deleteHistory(String id);
+  Future<int> getHistoryCount();
+
+  // Preferences & Search History
+  Future<void> saveUserPreferences(UserPreferences preferences);
+  Future<UserPreferences> getUserPreferences();
+  Future<void> addSearchHistory(String query);
+  Future<List<String>> getSearchHistory({int limit = 20});
+  Future<void> clearSearchHistory();
+  Future<void> deleteSearchHistory(String query);
 }
 ```
 

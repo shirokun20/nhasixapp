@@ -41,12 +41,13 @@
     - Add comprehensive error handling
     - _Requirements: 1.1, 2.1, 3.1, 4.1, 5.1_
 
-- [-] 3. Setup data layer foundation
-  - [x] 3.1 Create database schema dan local data source
-    - Setup SQLite database dengan sqflite
-    - Create database migration system
-    - Implement LocalDataSource dengan CRUD operations
+- [x] 3. Setup data layer foundation (SIMPLIFIED)
+  - [x] 3.1 Create simplified database schema dan local data source
+    - Setup SQLite database dengan sqflite (5 tables only)
+    - Create simplified database schema (favorites, downloads, history, preferences, search_history)
+    - Implement LocalDataSource dengan simplified CRUD operations
     - Add database indexes untuk performance
+    - Remove complex content caching and tag management
     - _Requirements: 4.1, 5.1, 7.1_
 
   - [x] 3.2 Implement web scraping remote data source
@@ -58,11 +59,11 @@
     - Ensure HTTP client is not disposed to prevent connection errors
     - _Requirements: 1.1, 2.1, 3.1, 8.1_
 
-  - [x] 3.3 Implement repository implementations
-    - Create ContentRepositoryImpl dengan caching strategy
-    - Create UserDataRepositoryImpl untuk local data
-    - Create SettingsRepositoryImpl dengan SharedPreferences
-    - Add offline-first architecture
+  - [x] 3.3 Implement simplified repository implementations
+    - Create ContentRepositoryImpl dengan basic functionality
+    - Create UserDataRepositoryImpl untuk simplified local data
+    - Remove complex caching strategy and tag management
+    - Add basic offline support untuk favorites dan history
     - _Requirements: 1.1, 2.1, 4.1, 5.1, 7.1_
 
   - [x] 3.4 Fix HTTP client lifecycle management
@@ -72,7 +73,7 @@
     - Test HTTP client persistence across app lifecycle
     - _Requirements: 8.1_
 
-- [-] 4. Create core BLoC dan Cubit state management
+- [x] 4. Create core BLoC dan Cubit state management (COMPLETED)
   - [x] 4.1 Implement SplashBloc untuk initial loading (Complex - tetap BLoC)
     - Create SplashBloc dengan initial loading logic
     - Add loading states dan error handling
@@ -99,6 +100,16 @@
     - Add base Cubit classes dengan common functionality
     - Setup Cubit providers dalam MultiBlocProviderConfig
     - _Requirements: 6.1, 8.1_
+
+- [x] 4.5 Database and Repository Simplification (COMPLETED)
+  - [x] Simplify database schema (remove contents, tags, content_tags, favorite_categories, pagination_cache)
+  - [x] Update LocalDataSource to match simplified schema
+  - [x] Simplify UserDataRepository interface (remove complex result wrappers)
+  - [x] Update all use cases (favorites, downloads, history) to work with simplified interface
+  - [x] Update models (DownloadStatusModel, HistoryModel) with new fields
+  - [x] Fix search bloc compatibility with simplified LocalDataSource
+  - [x] Update documentation (design.md, components-list.md)
+  - _Requirements: All simplified for better maintainability_
 
 - [ ] 5. Build core UI components
 💡 *Remember to check components-list.md first*
