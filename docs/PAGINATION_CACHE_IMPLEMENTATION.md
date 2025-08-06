@@ -1,8 +1,15 @@
-# Pagination Cache Implementation Guide
+# ⚠️ DEPRECATED: Pagination Cache Implementation Guide
 
-## Overview
+> **NOTICE**: This pagination cache system has been **REMOVED** in the simplified architecture.  
+> **Date Deprecated**: January 2025  
+> **Reason**: Database simplification - removed complex caching to focus on core functionality  
+> **Alternative**: Basic pagination without local cache  
 
-Dokumen ini menjelaskan implementasi pagination cache system yang memungkinkan aplikasi NhentaiApp untuk menyimpan pagination metadata (total pages, current page, navigation info) secara lokal. Ini memberikan consistent pagination experience antara online dan offline mode.
+## ~~Overview~~ (DEPRECATED)
+
+~~Dokumen ini menjelaskan implementasi pagination cache system yang memungkinkan aplikasi NhentaiApp untuk menyimpan pagination metadata (total pages, current page, navigation info) secara lokal. Ini memberikan consistent pagination experience antara online dan offline mode.~~
+
+**This feature has been removed as part of database simplification efforts.**
 
 ## Problem Statement
 

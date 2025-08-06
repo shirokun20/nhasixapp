@@ -86,11 +86,11 @@ lib/
 - **Error Handling** - Error handling komprehensif dengan degradasi yang elegan
 - **Optimisasi Performa** - Transaksi database dan manajemen memori
 
-### **Model Data**
-- **ContentModel** - Entitas konten dengan serialisasi database
-- **TagModel** - Entitas tag dengan manajemen relasi
-- **DownloadStatusModel** - Pelacakan progress download
-- **HistoryModel** - Riwayat membaca dengan statistik
+### **Model Data (Disederhanakan)**
+- **DownloadStatusModel** - Pelacakan progress download dengan title dan cover
+- **HistoryModel** - Riwayat membaca dengan title dan cover untuk display
+- **UserPreferences** - Pengaturan dan preferensi pengguna
+- **SearchFilter** - Filter pencarian lanjutan
 
 ## 🎯 Implementasi Terbaru: ContentBloc dengan Fitur Lanjutan
 

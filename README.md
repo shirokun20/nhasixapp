@@ -80,11 +80,11 @@ lib/
 - **Error Handling** - Comprehensive error handling with graceful degradation
 - **Performance Optimization** - Database transactions and memory management
 
-### **Data Models**
-- **ContentModel** - Content entity with database serialization
-- **TagModel** - Tag entity with relationship management
-- **DownloadStatusModel** - Download progress tracking
-- **HistoryModel** - Reading history with statistics
+### **Data Models (Simplified)**
+- **DownloadStatusModel** - Download progress tracking with title and cover
+- **HistoryModel** - Reading history with title and cover for display
+- **UserPreferences** - User settings and preferences
+- **SearchFilter** - Advanced search filtering
 
 ## 🎯 Recent Implementation: ContentBloc with Advanced Features
 
@@ -105,14 +105,13 @@ ContentRefreshing → ContentLoaded (pull-to-refresh)
 ContentLoadingMore → ContentLoaded (infinite scroll)
 ```
 
-### **LocalDataSource Capabilities**
-- **Content Operations**: Cache, get, search with pagination
-- **Tag Management**: Tag relationships and filtering
-- **Favorites System**: Categories and batch operations
-- **Download Tracking**: Status monitoring and queue management
-- **History Management**: Reading progress and statistics
+### **LocalDataSource Capabilities (Simplified)**
+- **Favorites System**: Simple ID + cover URL storage
+- **Download Tracking**: Basic status monitoring with title and cover
+- **History Management**: Reading progress with title and cover for display
 - **User Preferences**: Settings and customization storage
-- **Database Optimization**: Transactions, indexes, and cleanup
+- **Search History**: Recent search queries management
+- **Database Optimization**: Lightweight schema with 5 tables only
 
 ## 🛠️ Tech Stack
 
@@ -184,34 +183,25 @@ ContentLoadingMore → ContentLoaded (infinite scroll)
 - [x] **Task 1**: Project structure and core dependencies setup
 - [x] **Task 2**: Core domain layer implementation
   - [x] Domain entities and value objects
-  - [x] Repository interfaces
-  - [x] Use cases with comprehensive business logic
-- [x] **Task 3**: Data layer foundation (Week 1)
-  - [x] Repository implementations with offline-first architecture
-  - [x] Local data sources with SQLite integration (EXCELLENT implementation!)
+  - [x] Repository interfaces (simplified)
+  - [x] Use cases with simplified business logic
+- [x] **Task 3**: Data layer foundation (Simplified) ✨
+  - [x] Repository implementations with simplified architecture
+  - [x] Local data sources with SQLite integration (5 tables only)
   - [x] Remote data sources with web scraping capabilities
-  - [x] Data models with entity conversion
-  - [x] Caching strategy and error handling
-- [x] **Task 4.1**: Enhanced SplashBloc implementation ✨
-  - [x] Comprehensive state management for app initialization
-  - [x] Cloudflare bypass integration with proper error handling
-  - [x] Network connectivity validation and retry mechanisms
-  - [x] Enhanced UI with loading states and progress indicators
-  - [x] Comprehensive unit testing with mocking
-- [x] **Task 4.2**: ContentBloc for content management ✨
-  - [x] Advanced pagination with infinite scrolling
-  - [x] Pull-to-refresh functionality with SmartRefresher
-  - [x] Comprehensive state management (loading, loaded, error)
-  - [x] LocalDataSource integration ready
-  - [x] Complete testing suite (10 unit + 8 integration tests)
-  - [x] Real nhentai.net connection verification
-- [x] **Task 4.3**: SearchBloc for advanced search functionality ✨
-  - [x] Advanced search with comprehensive filter support (query, tags, artists, language, category)
-  - [x] Search history management with persistent storage (max 50 items, FIFO)
-  - [x] Debounced search with 500ms delay for performance optimization
-  - [x] Real-time tag suggestions with debounced requests
-  - [x] Complex filter combinations and state management
-  - [x] Comprehensive testing suite (38+ tests across unit, real API, and integration)
+  - [x] Data models with simplified entity conversion
+  - [x] Basic offline support for favorites and history
+- [x] **Task 4**: Core BLoC state management ✨
+  - [x] **Task 4.1**: SplashBloc implementation
+  - [x] **Task 4.2**: ContentBloc for content management
+  - [x] **Task 4.3**: SearchBloc for advanced search functionality
+  - [x] **Task 4.5**: Database and Repository Simplification ✨
+    - [x] Simplified database schema (5 tables vs 10+ tables)
+    - [x] Updated LocalDataSource to match simplified schema
+    - [x] Simplified UserDataRepository interface
+    - [x] Updated all use cases (favorites, downloads, history)
+    - [x] Updated models with new simplified fields
+    - [x] Fixed search bloc compatibility
 
 - [x] **Task 4**: Core BLoC state management (Week 2) - 🚧 IN PROGRESS
   - [x] **Task 4.1**: SplashBloc for initial loading ✅
@@ -357,11 +347,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **State Management**: BLoC Pattern with comprehensive testing
 - **Dependencies**: 45+ carefully selected packages
 - **Test Coverage**: Unit tests with mocking for critical components
-- **Development Progress**: 42% complete (5/12 tasks)
+- **Development Progress**: 50% complete (6/12 tasks)
 - **Estimated Development Time**: 12 weeks (1 task per week)
 - **Target Platform**: Android
 - **Minimum SDK**: Android API 21+ (Android 5.0)
-- **Latest Achievement**: Complete BLoC state management system with SplashBloc, ContentBloc, and SearchBloc ✨
+- **Latest Achievement**: Complete database simplification and BLoC state management system ✨
 
 ---
 
