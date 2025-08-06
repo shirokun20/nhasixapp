@@ -20,8 +20,7 @@ class AddToFavoritesUseCase extends UseCase<void, AddToFavoritesParams> {
       // Check if already in favorites (optional)
       if (params.checkDuplicate) {
         final isAlreadyFavorite = await _userDataRepository.isFavorite(
-          contentId: ContentId.fromString(params.content.id),
-          categoryId: params.categoryId,
+          params.content.id,
         );
 
         if (isAlreadyFavorite) {
@@ -34,10 +33,10 @@ class AddToFavoritesUseCase extends UseCase<void, AddToFavoritesParams> {
         }
       }
 
-      // Add to favorites
+      // Add to favorites (simplified - only id and cover_url)
       await _userDataRepository.addToFavorites(
-        content: params.content,
-        categoryId: params.categoryId,
+        id: params.content.id,
+        coverUrl: params.content.coverUrl,
       );
     } on UseCaseException {
       rethrow;
@@ -47,60 +46,46 @@ class AddToFavoritesUseCase extends UseCase<void, AddToFavoritesParams> {
   }
 }
 
-/// Parameters for AddToFavoritesUseCase
+/// Parameters for AddToFavoritesUseCase (simplified)
 class AddToFavoritesParams extends UseCaseParams {
   const AddToFavoritesParams({
     required this.content,
-    this.categoryId,
     this.checkDuplicate = true,
     this.throwIfDuplicate = false,
   });
 
   final Content content;
-  final int? categoryId;
   final bool checkDuplicate;
   final bool throwIfDuplicate;
 
   @override
   List<Object?> get props => [
         content,
-        categoryId,
         checkDuplicate,
         throwIfDuplicate,
       ];
 
   AddToFavoritesParams copyWith({
     Content? content,
-    int? categoryId,
     bool? checkDuplicate,
     bool? throwIfDuplicate,
   }) {
     return AddToFavoritesParams(
       content: content ?? this.content,
-      categoryId: categoryId ?? this.categoryId,
       checkDuplicate: checkDuplicate ?? this.checkDuplicate,
       throwIfDuplicate: throwIfDuplicate ?? this.throwIfDuplicate,
     );
   }
 
-  /// Create params for default category
-  factory AddToFavoritesParams.defaultCategory(Content content) {
+  /// Create params for content
+  factory AddToFavoritesParams.create(Content content) {
     return AddToFavoritesParams(content: content);
   }
 
-  /// Create params for specific category
-  factory AddToFavoritesParams.category(Content content, int categoryId) {
-    return AddToFavoritesParams(
-      content: content,
-      categoryId: categoryId,
-    );
-  }
-
   /// Create params with duplicate check disabled
-  factory AddToFavoritesParams.force(Content content, {int? categoryId}) {
+  factory AddToFavoritesParams.force(Content content) {
     return AddToFavoritesParams(
       content: content,
-      categoryId: categoryId,
       checkDuplicate: false,
     );
   }

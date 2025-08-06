@@ -3,7 +3,6 @@ import 'package:logger/logger.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/content_repository.dart';
 import '../../domain/value_objects/value_objects.dart';
-import '../datasources/local/local_data_source.dart';
 // import '../datasources/local/pagination_cache_keys.dart';
 import '../datasources/remote/remote_data_source.dart';
 import '../models/content_model.dart';
@@ -250,24 +249,6 @@ class ContentRepositoryImpl implements ContentRepository {
       _logger.d('Content verification failed: $e');
       return false;
     }
-  }
-
-  // ==================== PRIVATE HELPER METHODS ====================
-  /// Build ContentListResult from content list (fallback for cached content)
-  ContentListResult _buildContentListResult(List<Content> contents, int page) {
-    // For simplicity, assume each page has defaultPageSize items
-    // In a real implementation, you'd get total count from the data source
-    final hasNext = contents.length == defaultPageSize;
-    final hasPrevious = page > 1;
-
-    return ContentListResult(
-      contents: contents,
-      currentPage: page,
-      totalPages: hasNext ? page + 1 : page, // Approximate
-      totalCount: contents.length, // This would be the total across all pages
-      hasNext: hasNext,
-      hasPrevious: hasPrevious,
-    );
   }
 
   /// Build ContentListResult with real pagination data from scraper

@@ -144,9 +144,9 @@ Dokumen ini berisi daftar lengkap semua komponen yang ada dan akan diimplementas
 
 | Component | Status | Description | File Path |
 |-----------|--------|-------------|-----------|
-| LocalDataSource | ✅ | Local database operations dengan pagination cache | `lib/data/datasources/local/local_data_source.dart` |
-| DatabaseHelper | ✅ | SQLite database helper dengan pagination cache table | `lib/data/datasources/local/database_helper.dart` |
-| PaginationCacheKeys | ✅ | Utility untuk generate pagination cache keys | `lib/data/datasources/local/pagination_cache_keys.dart` |
+| LocalDataSource | ✅ | Local database operations (simplified) | `lib/data/datasources/local/local_data_source.dart` |
+| DatabaseHelper | ✅ | SQLite database helper (simplified schema) | `lib/data/datasources/local/database_helper.dart` |
+| ~~PaginationCacheKeys~~ | ❌ | Removed - not needed for simplified app | ~~`lib/data/datasources/local/pagination_cache_keys.dart`~~ |
 
 ### 3.3 Repository Implementations
 
@@ -276,18 +276,20 @@ Dokumen ini berisi daftar lengkap semua komponen yang ada dan akan diimplementas
 
 - ✅ **Web Scraping**: Implemented dengan anti-detection
 - ✅ **Tag Resolution**: TagResolver sudah lengkap dengan local assets
-- ✅ **Database Operations**: SQLite dengan migration system dan pagination cache
+- ✅ **Database Operations**: SQLite dengan simplified schema (favorites, downloads, history, preferences, search_history)
 - ✅ **HTTP Client Management**: Dio dengan proper lifecycle
 - ✅ **State Management**: BLoC pattern untuk complex features, Cubit untuk simple features
-- ✅ **Pagination System**: Complete dengan real data integration dan offline cache
-- 🚧 **UI Components**: Advanced pagination widget implemented, other components in progress
-- ⏳ **Reader Mode**: Planned dengan ReaderCubit dan gesture support
-- ⏳ **Download Manager**: Planned dengan DownloadBloc queue system
-- ✅ **Offline Functionality**: Pagination cache implemented untuk consistent offline experience
+- 🚧 **UI Components**: Basic components implemented, advanced features simplified
+- ⏳ **Reader Mode**: Planned dengan basic functionality
+- ⏳ **Download Manager**: Planned dengan simplified queue system
+- ✅ **Offline Functionality**: Basic offline support untuk favorites dan history
 
-### 9.2 Advanced Features
+### 9.2 Simplified Features (Updated)
 
-- ✅ **Pagination Cache**: Offline-consistent pagination dengan 22,114+ pages support
+- ✅ **Simplified Database**: Removed complex content caching, tag management, dan pagination cache
+- ✅ **Simplified Favorites**: Only stores ID dan cover URL untuk lightweight operation
+- ✅ **Simplified Downloads**: Basic download tracking dengan title dan cover untuk display
+- ✅ **Simplified History**: Basic reading history dengan progress tracking
 - ✅ **Real Data Integration**: HTML parsing dengan accurate total pages extraction
 - ✅ **Advanced UI Components**: PaginationWidget dengan progress bar dan page jumping
 - ⏳ **Favorites Management**: Dengan category support

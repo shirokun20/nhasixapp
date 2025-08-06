@@ -101,17 +101,12 @@ class DatabaseHelper {
 
     final batch = db.batch();
 
-    // Create all tables
-    _createContentTable(batch);
-    _createTagsTable(batch);
-    _createContentTagsTable(batch);
-    _createFavoriteCategoriesTable(batch);
+    // Create essential tables only
     _createFavoritesTable(batch);
     _createDownloadsTable(batch);
     _createHistoryTable(batch);
     _createPreferencesTable(batch);
     _createSearchHistoryTable(batch);
-    _createPaginationCacheTable(batch);
 
     // Create indexes
     _createIndexes(batch);
@@ -127,16 +122,8 @@ class DatabaseHelper {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     _logger.i('Upgrading database from version $oldVersion to $newVersion');
 
-    // Handle specific version upgrades
-    if (oldVersion < 2 && newVersion >= 2) {
-      // Add pagination cache table in version 2
-      _logger.i('Adding pagination cache table...');
-      final batch = db.batch();
-      _createPaginationCacheTable(batch);
-      _createPaginationCacheIndexes(batch);
-      await batch.commit();
-      _logger.i('Pagination cache table added successfully');
-    }
+    // Handle specific version upgrades if needed
+    // Currently no version-specific upgrades needed
 
     // For major version changes, recreate database
     if (oldVersion < newVersion && (newVersion - oldVersion) > 1) {
@@ -145,78 +132,13 @@ class DatabaseHelper {
     }
   }
 
-  /// Create content table
-  void _createContentTable(Batch batch) {
-    batch.execute('''
-      CREATE TABLE contents (
-        id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        english_title TEXT,
-        japanese_title TEXT,
-        cover_url TEXT,
-        artists TEXT, -- JSON array
-        characters TEXT, -- JSON array
-        parodies TEXT, -- JSON array
-        groups TEXT, -- JSON array
-        language TEXT,
-        category TEXT,
-        page_count INTEGER,
-        image_urls TEXT, -- JSON array
-        upload_date INTEGER,
-        favorites INTEGER DEFAULT 0,
-        cached_at INTEGER
-      )
-    ''');
-  }
-
-  /// Create tags table
-  void _createTagsTable(Batch batch) {
-    batch.execute('''
-      CREATE TABLE tags (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        type TEXT NOT NULL, -- tag, artist, character, parody, group, language, category
-        count INTEGER DEFAULT 0,
-        url TEXT,
-        UNIQUE(name, type)
-      )
-    ''');
-  }
-
-  /// Create content tags relationship table
-  void _createContentTagsTable(Batch batch) {
-    batch.execute('''
-      CREATE TABLE content_tags (
-        content_id TEXT,
-        tag_id INTEGER,
-        PRIMARY KEY (content_id, tag_id),
-        FOREIGN KEY (content_id) REFERENCES contents (id) ON DELETE CASCADE,
-        FOREIGN KEY (tag_id) REFERENCES tags (id) ON DELETE CASCADE
-      )
-    ''');
-  }
-
-  /// Create favorite categories table
-  void _createFavoriteCategoriesTable(Batch batch) {
-    batch.execute('''
-      CREATE TABLE favorite_categories (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE,
-        created_at INTEGER
-      )
-    ''');
-  }
-
-  /// Create favorites table
+  /// Create favorites table (simplified - only id and cover_url)
   void _createFavoritesTable(Batch batch) {
     batch.execute('''
       CREATE TABLE favorites (
-        content_id TEXT,
-        category_id INTEGER DEFAULT 1, -- Default category
-        added_at INTEGER,
-        PRIMARY KEY (content_id, category_id),
-        FOREIGN KEY (content_id) REFERENCES contents (id) ON DELETE CASCADE,
-        FOREIGN KEY (category_id) REFERENCES favorite_categories (id) ON DELETE CASCADE
+        id TEXT PRIMARY KEY,
+        cover_url TEXT,
+        added_at INTEGER
       )
     ''');
   }
@@ -225,7 +147,9 @@ class DatabaseHelper {
   void _createDownloadsTable(Batch batch) {
     batch.execute('''
       CREATE TABLE downloads (
-        content_id TEXT PRIMARY KEY,
+        id TEXT PRIMARY KEY,
+        title TEXT,
+        cover_url TEXT,
         download_path TEXT,
         state TEXT NOT NULL, -- queued, downloading, paused, completed, failed, cancelled
         downloaded_pages INTEGER DEFAULT 0,
@@ -233,8 +157,7 @@ class DatabaseHelper {
         start_time INTEGER,
         end_time INTEGER,
         file_size INTEGER,
-        error_message TEXT,
-        FOREIGN KEY (content_id) REFERENCES contents (id) ON DELETE CASCADE
+        error_message TEXT
       )
     ''');
   }
@@ -243,13 +166,14 @@ class DatabaseHelper {
   void _createHistoryTable(Batch batch) {
     batch.execute('''
       CREATE TABLE history (
-        content_id TEXT PRIMARY KEY,
+        id TEXT PRIMARY KEY,
+        title TEXT,
+        cover_url TEXT,
         last_viewed INTEGER,
         last_page INTEGER DEFAULT 1,
         total_pages INTEGER,
         time_spent INTEGER DEFAULT 0, -- in milliseconds
-        is_completed INTEGER DEFAULT 0, -- boolean as integer
-        FOREIGN KEY (content_id) REFERENCES contents (id) ON DELETE CASCADE
+        is_completed INTEGER DEFAULT 0 -- boolean as integer
       )
     ''');
   }
@@ -275,51 +199,9 @@ class DatabaseHelper {
     ''');
   }
 
-  /// Create pagination cache table
-  void _createPaginationCacheTable(Batch batch) {
-    batch.execute('''
-      CREATE TABLE pagination_cache (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        context_key TEXT NOT NULL UNIQUE,
-        current_page INTEGER NOT NULL,
-        total_pages INTEGER NOT NULL,
-        has_next INTEGER NOT NULL, -- boolean as integer
-        has_previous INTEGER NOT NULL, -- boolean as integer
-        total_count INTEGER,
-        next_page INTEGER,
-        previous_page INTEGER,
-        cached_at INTEGER NOT NULL,
-        expires_at INTEGER NOT NULL
-      )
-    ''');
-  }
-
   /// Create database indexes for performance
   void _createIndexes(Batch batch) {
-    // Content indexes
-    batch.execute(
-        'CREATE INDEX idx_contents_upload_date ON contents (upload_date DESC)');
-    batch.execute(
-        'CREATE INDEX idx_contents_favorites ON contents (favorites DESC)');
-    batch.execute('CREATE INDEX idx_contents_language ON contents (language)');
-    batch.execute('CREATE INDEX idx_contents_category ON contents (category)');
-    batch
-        .execute('CREATE INDEX idx_contents_cached_at ON contents (cached_at)');
-
-    // Tag indexes
-    batch.execute('CREATE INDEX idx_tags_name ON tags (name)');
-    batch.execute('CREATE INDEX idx_tags_type ON tags (type)');
-    batch.execute('CREATE INDEX idx_tags_count ON tags (count DESC)');
-
-    // Content tags indexes
-    batch.execute(
-        'CREATE INDEX idx_content_tags_content_id ON content_tags (content_id)');
-    batch.execute(
-        'CREATE INDEX idx_content_tags_tag_id ON content_tags (tag_id)');
-
     // Favorites indexes
-    batch.execute(
-        'CREATE INDEX idx_favorites_category_id ON favorites (category_id)');
     batch.execute(
         'CREATE INDEX idx_favorites_added_at ON favorites (added_at DESC)');
 
@@ -337,30 +219,10 @@ class DatabaseHelper {
     // Search history indexes
     batch.execute(
         'CREATE INDEX idx_search_history_searched_at ON search_history (searched_at DESC)');
-
-    // Pagination cache indexes
-    _createPaginationCacheIndexes(batch);
-  }
-
-  /// Create pagination cache indexes
-  void _createPaginationCacheIndexes(Batch batch) {
-    batch.execute(
-        'CREATE INDEX idx_pagination_cache_context_key ON pagination_cache (context_key)');
-    batch.execute(
-        'CREATE INDEX idx_pagination_cache_expires_at ON pagination_cache (expires_at)');
-    batch.execute(
-        'CREATE INDEX idx_pagination_cache_cached_at ON pagination_cache (cached_at DESC)');
   }
 
   /// Insert default data
   void _insertDefaultData(Batch batch) {
-    // Insert default favorite category
-    batch.insert('favorite_categories', {
-      'id': 1,
-      'name': 'Default',
-      'created_at': DateTime.now().millisecondsSinceEpoch,
-    });
-
     // Insert default preferences
     final defaultPreferences = {
       'theme': 'dark',
@@ -392,16 +254,11 @@ class DatabaseHelper {
   /// Drop all tables (for database recreation)
   Future<void> _dropAllTables(Database db) async {
     final tables = [
-      'pagination_cache',
       'search_history',
       'preferences',
       'history',
       'downloads',
       'favorites',
-      'favorite_categories',
-      'content_tags',
-      'tags',
-      'contents',
     ];
 
     for (final table in tables) {
@@ -424,15 +281,11 @@ class DatabaseHelper {
     final db = await database;
     final batch = db.batch();
 
-    // Clear all tables except preferences and favorite_categories
-    batch.delete('pagination_cache');
+    // Clear all tables except preferences
     batch.delete('search_history');
     batch.delete('history');
     batch.delete('downloads');
     batch.delete('favorites');
-    batch.delete('content_tags');
-    batch.delete('tags');
-    batch.delete('contents');
 
     await batch.commit();
     _logger.i('All data cleared from database');

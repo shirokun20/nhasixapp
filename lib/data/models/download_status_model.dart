@@ -13,10 +13,19 @@ class DownloadStatusModel extends DownloadStatus {
     super.downloadPath,
     super.fileSize = 0,
     super.speed = 0.0,
+    this.title,
+    this.coverUrl,
   });
 
+  final String? title;
+  final String? coverUrl;
+
   /// Create DownloadStatusModel from DownloadStatus entity
-  factory DownloadStatusModel.fromEntity(DownloadStatus status) {
+  factory DownloadStatusModel.fromEntity(
+    DownloadStatus status, {
+    String? title,
+    String? coverUrl,
+  }) {
     return DownloadStatusModel(
       contentId: status.contentId,
       state: status.state,
@@ -28,6 +37,8 @@ class DownloadStatusModel extends DownloadStatus {
       downloadPath: status.downloadPath,
       fileSize: status.fileSize,
       speed: status.speed,
+      title: title,
+      coverUrl: coverUrl,
     );
   }
 
@@ -50,7 +61,7 @@ class DownloadStatusModel extends DownloadStatus {
   /// Create from database map
   factory DownloadStatusModel.fromMap(Map<String, dynamic> map) {
     return DownloadStatusModel(
-      contentId: map['content_id'],
+      contentId: map['id'], // Changed from content_id to id
       state: DownloadState.values.firstWhere(
         (e) => e.name == map['state'],
         orElse: () => DownloadState.queued,
@@ -66,13 +77,17 @@ class DownloadStatusModel extends DownloadStatus {
       error: map['error_message'],
       downloadPath: map['download_path'],
       fileSize: map['file_size'] ?? 0,
+      title: map['title'],
+      coverUrl: map['cover_url'],
     );
   }
 
   /// Convert to database map
   Map<String, dynamic> toMap() {
     return {
-      'content_id': contentId,
+      'id': contentId, // Changed from content_id to id
+      'title': title,
+      'cover_url': coverUrl,
       'state': state.name,
       'downloaded_pages': downloadedPages,
       'total_pages': totalPages,

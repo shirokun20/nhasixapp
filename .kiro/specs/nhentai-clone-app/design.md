@@ -287,64 +287,24 @@ class LocalDataSource {
 ### Database Schema
 
 ```sql
--- Content cache table
-CREATE TABLE contents (
-  id TEXT PRIMARY KEY,
-  title TEXT NOT NULL,
-  english_title TEXT,
-  japanese_title TEXT,
-  cover_url TEXT,
-  artists TEXT, -- JSON array
-  characters TEXT, -- JSON array
-  parodies TEXT, -- JSON array
-  groups TEXT, -- JSON array
-  language TEXT,
-  category TEXT,
-  page_count INTEGER,
-  image_urls TEXT, -- JSON array
-  upload_date INTEGER,
-  favorites INTEGER DEFAULT 0,
-  cached_at INTEGER
-);
+-- SIMPLIFIED DATABASE SCHEMA (removed complex caching and tag management)
+-- REMOVED: Contents table (no longer needed for simplified app)
+-- REMOVED: Tags table (no longer needed for simplified app)  
+-- REMOVED: Content tags relationship (no longer needed for simplified app)
+-- REMOVED: Favorite categories (no longer needed for simplified app)
 
--- Tags table
-CREATE TABLE tags (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL,
-  type TEXT NOT NULL, -- tag, artist, character, parody, group, language, category
-  count INTEGER DEFAULT 0,
-  url TEXT
-);
-
--- Content tags relationship
-CREATE TABLE content_tags (
-  content_id TEXT,
-  tag_id INTEGER,
-  PRIMARY KEY (content_id, tag_id),
-  FOREIGN KEY (content_id) REFERENCES contents (id),
-  FOREIGN KEY (tag_id) REFERENCES tags (id)
-);
-
--- Favorite categories
-CREATE TABLE favorite_categories (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL UNIQUE,
-  created_at INTEGER
-);
-
--- Favorites table with categories
+-- Favorites table (simplified - only id and cover_url)
 CREATE TABLE favorites (
-  content_id TEXT,
-  category_id INTEGER DEFAULT 1, -- Default category
-  added_at INTEGER,
-  PRIMARY KEY (content_id, category_id),
-  FOREIGN KEY (content_id) REFERENCES contents (id),
-  FOREIGN KEY (category_id) REFERENCES favorite_categories (id)
+  id TEXT PRIMARY KEY,
+  cover_url TEXT,
+  added_at INTEGER
 );
 
--- Downloads table with status
+-- Downloads table (with title and cover_url for display)
 CREATE TABLE downloads (
-  content_id TEXT PRIMARY KEY,
+  id TEXT PRIMARY KEY,
+  title TEXT,
+  cover_url TEXT,
   download_path TEXT,
   state TEXT NOT NULL, -- queued, downloading, paused, completed, failed, cancelled
   downloaded_pages INTEGER DEFAULT 0,
@@ -352,17 +312,19 @@ CREATE TABLE downloads (
   start_time INTEGER,
   end_time INTEGER,
   file_size INTEGER,
-  error_message TEXT,
-  FOREIGN KEY (content_id) REFERENCES contents (id)
+  error_message TEXT
 );
 
--- History table
+-- History table (with title and cover_url for display)
 CREATE TABLE history (
-  content_id TEXT PRIMARY KEY,
+  id TEXT PRIMARY KEY,
+  title TEXT,
+  cover_url TEXT,
   last_viewed INTEGER,
   last_page INTEGER DEFAULT 1,
   total_pages INTEGER,
-  FOREIGN KEY (content_id) REFERENCES contents (id)
+  time_spent INTEGER DEFAULT 0, -- in milliseconds
+  is_completed INTEGER DEFAULT 0 -- boolean as integer
 );
 
 -- User preferences

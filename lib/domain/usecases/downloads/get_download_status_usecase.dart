@@ -21,7 +21,7 @@ class GetDownloadStatusUseCase
 
       // Get download status from repository
       final status =
-          await _userDataRepository.getDownloadStatus(params.contentId);
+          await _userDataRepository.getDownloadStatus(params.contentId.value);
 
       return status;
     } on UseCaseException {

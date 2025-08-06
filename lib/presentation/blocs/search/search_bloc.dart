@@ -4,7 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:logger/logger.dart';
 
 import '../../../domain/entities/entities.dart';
-import '../../../domain/usecases/content/content_usecases.dart';
+import '../../../domain/usecases/content/search_content_usecase.dart';
 
 import '../../../data/datasources/local/local_data_source.dart';
 
@@ -523,13 +523,11 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     Emitter<SearchState> emit,
   ) async {
     try {
-      _searchHistory.remove(event.query);
+      // Remove from database directly (simplified)
+      await _localDataSource.deleteSearchHistory(event.query);
 
-      // Update database (reload to sync)
-      await _localDataSource.clearSearchHistory();
-      for (final query in _searchHistory) {
-        await _localDataSource.addSearchHistory(query);
-      }
+      // Update local history
+      _searchHistory.remove(event.query);
 
       emit(SearchHistory(
         history: _searchHistory,
@@ -695,14 +693,14 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Generate tag suggestions based on query
+  /// Generate tag suggestions based on query (simplified - no local tag database)
   Future<List<Tag>> _generateTagSuggestions(String query) async {
     try {
       if (query.length < 2) return [];
 
-      final tags =
-          await _localDataSource.searchTags(query, limit: _maxSuggestions);
-      return tags.map((tagModel) => tagModel.toEntity()).toList();
+      // Since we removed local tag database, return empty list
+      // Tag suggestions would come from TagResolver if needed
+      return [];
     } catch (e) {
       _logger.e('SearchBloc: Error generating tag suggestions', error: e);
       return [];

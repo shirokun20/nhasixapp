@@ -1,6 +1,5 @@
 import '../base_usecase.dart';
 import '../../entities/entities.dart';
-import '../../value_objects/value_objects.dart';
 import '../../repositories/repositories.dart';
 
 /// Use case for downloading content for offline reading
@@ -28,34 +27,27 @@ class DownloadContentUseCase
 
       // Check if already downloaded (optional)
       if (params.checkExisting) {
-        final isDownloaded = await _userDataRepository.isDownloaded(
-          ContentId.fromString(params.content.id),
+        final existingStatus = await _userDataRepository.getDownloadStatus(
+          params.content.id,
         );
 
-        if (isDownloaded) {
+        if (existingStatus != null && existingStatus.isCompleted) {
           if (params.throwIfExists) {
             throw const ValidationException('Content is already downloaded');
           } else {
             // Return existing download status
-            final existingStatus = await _userDataRepository.getDownloadStatus(
-              ContentId.fromString(params.content.id),
-            );
-            return existingStatus ??
-                DownloadStatus.completed(
-                  params.content.id,
-                  params.content.pageCount,
-                  '', // Path will be filled by repository
-                  0, // Size will be filled by repository
-                );
+            return existingStatus;
           }
         }
       }
 
-      // Queue download
-      final downloadStatus = await _userDataRepository.queueDownload(
-        content: params.content,
-        priority: params.priority,
+      // Create initial download status and save it
+      final downloadStatus = DownloadStatus.initial(
+        params.content.id,
+        params.content.pageCount,
       );
+
+      await _userDataRepository.saveDownloadStatus(downloadStatus);
 
       return downloadStatus;
     } on UseCaseException {

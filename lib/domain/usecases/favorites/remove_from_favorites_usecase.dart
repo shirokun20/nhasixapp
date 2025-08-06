@@ -21,8 +21,7 @@ class RemoveFromFavoritesUseCase
       // Check if content is in favorites (optional)
       if (params.checkExists) {
         final isFavorite = await _userDataRepository.isFavorite(
-          contentId: params.contentId,
-          categoryId: params.categoryId,
+          params.contentId.value,
         );
 
         if (!isFavorite) {
@@ -35,10 +34,9 @@ class RemoveFromFavoritesUseCase
         }
       }
 
-      // Remove from favorites
+      // Remove from favorites (simplified)
       await _userDataRepository.removeFromFavorites(
-        contentId: params.contentId,
-        categoryId: params.categoryId,
+        params.contentId.value,
       );
     } on UseCaseException {
       rethrow;
@@ -48,37 +46,32 @@ class RemoveFromFavoritesUseCase
   }
 }
 
-/// Parameters for RemoveFromFavoritesUseCase
+/// Parameters for RemoveFromFavoritesUseCase (simplified)
 class RemoveFromFavoritesParams extends UseCaseParams {
   const RemoveFromFavoritesParams({
     required this.contentId,
-    this.categoryId,
     this.checkExists = true,
     this.throwIfNotExists = false,
   });
 
   final ContentId contentId;
-  final int? categoryId;
   final bool checkExists;
   final bool throwIfNotExists;
 
   @override
   List<Object?> get props => [
         contentId,
-        categoryId,
         checkExists,
         throwIfNotExists,
       ];
 
   RemoveFromFavoritesParams copyWith({
     ContentId? contentId,
-    int? categoryId,
     bool? checkExists,
     bool? throwIfNotExists,
   }) {
     return RemoveFromFavoritesParams(
       contentId: contentId ?? this.contentId,
-      categoryId: categoryId ?? this.categoryId,
       checkExists: checkExists ?? this.checkExists,
       throwIfNotExists: throwIfNotExists ?? this.throwIfNotExists,
     );
@@ -87,13 +80,11 @@ class RemoveFromFavoritesParams extends UseCaseParams {
   /// Create params from string ID
   factory RemoveFromFavoritesParams.fromString(
     String contentId, {
-    int? categoryId,
     bool checkExists = true,
     bool throwIfNotExists = false,
   }) {
     return RemoveFromFavoritesParams(
       contentId: ContentId.fromString(contentId),
-      categoryId: categoryId,
       checkExists: checkExists,
       throwIfNotExists: throwIfNotExists,
     );
@@ -102,32 +93,20 @@ class RemoveFromFavoritesParams extends UseCaseParams {
   /// Create params from int ID
   factory RemoveFromFavoritesParams.fromInt(
     int contentId, {
-    int? categoryId,
     bool checkExists = true,
     bool throwIfNotExists = false,
   }) {
     return RemoveFromFavoritesParams(
       contentId: ContentId.fromInt(contentId),
-      categoryId: categoryId,
       checkExists: checkExists,
       throwIfNotExists: throwIfNotExists,
     );
   }
 
-  /// Create params for removing from all categories
-  factory RemoveFromFavoritesParams.fromAllCategories(ContentId contentId) {
-    return RemoveFromFavoritesParams(
-      contentId: contentId,
-      categoryId: null, // null means remove from all categories
-    );
-  }
-
   /// Create params with existence check disabled
-  factory RemoveFromFavoritesParams.force(ContentId contentId,
-      {int? categoryId}) {
+  factory RemoveFromFavoritesParams.force(ContentId contentId) {
     return RemoveFromFavoritesParams(
       contentId: contentId,
-      categoryId: categoryId,
       checkExists: false,
     );
   }

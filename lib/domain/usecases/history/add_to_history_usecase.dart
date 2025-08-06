@@ -1,4 +1,5 @@
 import '../base_usecase.dart';
+import '../../entities/entities.dart';
 import '../../value_objects/value_objects.dart';
 import '../../repositories/repositories.dart';
 
@@ -34,13 +35,17 @@ class AddToHistoryUseCase extends UseCase<void, AddToHistoryParams> {
         throw const ValidationException('Time spent cannot be negative');
       }
 
-      // Add to history
-      await _userDataRepository.addToHistory(
-        contentId: params.contentId,
-        page: params.page,
+      // Create history entry and save it
+      final history = History(
+        contentId: params.contentId.value,
+        lastViewed: DateTime.now(),
+        lastPage: params.page,
         totalPages: params.totalPages,
-        timeSpent: params.timeSpent,
+        timeSpent: params.timeSpent ?? Duration.zero,
+        isCompleted: params.page >= params.totalPages,
       );
+
+      await _userDataRepository.saveHistory(history);
     } on UseCaseException {
       rethrow;
     } catch (e) {

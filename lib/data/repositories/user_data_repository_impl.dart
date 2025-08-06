@@ -1,15 +1,12 @@
-import 'dart:convert';
 import 'package:logger/logger.dart';
 
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/user_data_repository.dart';
-import '../../domain/value_objects/value_objects.dart';
 import '../datasources/local/local_data_source.dart';
-import '../models/content_model.dart';
 import '../models/download_status_model.dart';
 import '../models/history_model.dart';
 
-/// Implementation of UserDataRepository for local data management
+/// Implementation of UserDataRepository for local data management (simplified)
 class UserDataRepositoryImpl implements UserDataRepository {
   UserDataRepositoryImpl({
     required this.localDataSource,
@@ -19,29 +16,16 @@ class UserDataRepositoryImpl implements UserDataRepository {
   final LocalDataSource localDataSource;
   final Logger _logger;
 
-  static const int defaultPageSize = 20;
-
   // ==================== FAVORITES ====================
 
   @override
   Future<void> addToFavorites({
-    required Content content,
-    int? categoryId,
+    required String id,
+    required String coverUrl,
   }) async {
     try {
-      _logger.i(
-          'Adding content ${content.id} to favorites (category: $categoryId)');
-
-      // Cache the content first to ensure it's available offline
-      final contentModel = ContentModel.fromEntity(content);
-      await localDataSource.cacheContent(contentModel);
-
-      // Add to favorites
-      await localDataSource.addToFavorites(
-        content.id,
-        categoryId: categoryId ?? 1, // Default category
-      );
-
+      _logger.i('Adding content $id to favorites');
+      await localDataSource.addToFavorites(id, coverUrl);
       _logger.d('Successfully added to favorites');
     } catch (e, stackTrace) {
       _logger.e('Failed to add to favorites', error: e, stackTrace: stackTrace);
@@ -50,18 +34,10 @@ class UserDataRepositoryImpl implements UserDataRepository {
   }
 
   @override
-  Future<void> removeFromFavorites({
-    required ContentId contentId,
-    int? categoryId,
-  }) async {
+  Future<void> removeFromFavorites(String id) async {
     try {
-      _logger.i('Removing content ${contentId.value} from favorites');
-
-      await localDataSource.removeFromFavorites(
-        contentId.value,
-        categoryId: categoryId,
-      );
-
+      _logger.i('Removing content $id from favorites');
+      await localDataSource.removeFromFavorites(id);
       _logger.d('Successfully removed from favorites');
     } catch (e, stackTrace) {
       _logger.e('Failed to remove from favorites',
@@ -71,62 +47,28 @@ class UserDataRepositoryImpl implements UserDataRepository {
   }
 
   @override
-  Future<FavoriteListResult> getFavorites({
-    int? categoryId,
+  Future<List<Map<String, dynamic>>> getFavorites({
     int page = 1,
-    FavoriteSortOption sortBy = FavoriteSortOption.dateAdded,
+    int limit = 20,
   }) async {
     try {
-      _logger.i(
-          'Getting favorites - category: $categoryId, page: $page, sort: $sortBy');
-
-      final favoriteModels = await localDataSource.getFavorites(
-        categoryId: categoryId,
+      _logger.i('Getting favorites, page: $page, limit: $limit');
+      final favorites = await localDataSource.getFavorites(
         page: page,
-        limit: defaultPageSize,
+        limit: limit,
       );
-
-      final favorites =
-          favoriteModels.map((model) => model.toEntity()).toList();
-
-      // Apply sorting (local data source returns by date added DESC by default)
-      _sortFavorites(favorites, sortBy);
-
-      final hasNext = favorites.length == defaultPageSize;
-      final hasPrevious = page > 1;
-
-      final result = FavoriteListResult(
-        favorites: favorites,
-        currentPage: page,
-        totalPages: hasNext ? page + 1 : page,
-        totalCount: favorites.length,
-        hasNext: hasNext,
-        hasPrevious: hasPrevious,
-      );
-
       _logger.d('Retrieved ${favorites.length} favorites');
-      return result;
+      return favorites;
     } catch (e, stackTrace) {
       _logger.e('Failed to get favorites', error: e, stackTrace: stackTrace);
-      return const FavoriteListResult(
-        favorites: [],
-        currentPage: 1,
-        totalPages: 0,
-        totalCount: 0,
-      );
+      return [];
     }
   }
 
   @override
-  Future<bool> isFavorite({
-    required ContentId contentId,
-    int? categoryId,
-  }) async {
+  Future<bool> isFavorite(String id) async {
     try {
-      return await localDataSource.isFavorited(
-        contentId.value,
-        categoryId: categoryId,
-      );
+      return await localDataSource.isFavorited(id);
     } catch (e, stackTrace) {
       _logger.e('Failed to check if favorite',
           error: e, stackTrace: stackTrace);
@@ -135,224 +77,37 @@ class UserDataRepositoryImpl implements UserDataRepository {
   }
 
   @override
-  Future<List<FavoriteCategory>> getFavoriteCategories() async {
+  Future<int> getFavoritesCount() async {
     try {
-      _logger.i('Getting favorite categories');
-
-      final categoryMaps = await localDataSource.getFavoriteCategories();
-
-      final categories = categoryMaps
-          .map((map) => FavoriteCategory(
-                id: map['id'],
-                name: map['name'],
-                count: 0, // Would need to be calculated
-                createdAt:
-                    DateTime.fromMillisecondsSinceEpoch(map['created_at']),
-                isDefault: map['id'] == 1,
-              ))
-          .toList();
-
-      _logger.d('Retrieved ${categories.length} favorite categories');
-      return categories;
+      return await localDataSource.getFavoritesCount();
     } catch (e, stackTrace) {
-      _logger.e('Failed to get favorite categories',
+      _logger.e('Failed to get favorites count',
           error: e, stackTrace: stackTrace);
-      return [];
-    }
-  }
-
-  @override
-  Future<FavoriteCategory> createFavoriteCategory(String name) async {
-    try {
-      _logger.i('Creating favorite category: $name');
-
-      final id = await localDataSource.createFavoriteCategory(name);
-
-      final category = FavoriteCategory(
-        id: id,
-        name: name,
-        count: 0,
-        createdAt: DateTime.now(),
-      );
-
-      _logger.d('Created favorite category with ID: $id');
-      return category;
-    } catch (e, stackTrace) {
-      _logger.e('Failed to create favorite category',
-          error: e, stackTrace: stackTrace);
-      rethrow;
-    }
-  }
-
-  @override
-  Future<FavoriteCategory> updateFavoriteCategory({
-    required int categoryId,
-    required String name,
-  }) async {
-    try {
-      _logger.i('Updating favorite category $categoryId to: $name');
-
-      // This would require additional database operations
-      // For now, return updated category
-      final category = FavoriteCategory(
-        id: categoryId,
-        name: name,
-        count: 0,
-        createdAt: DateTime.now(),
-      );
-
-      _logger.d('Updated favorite category');
-      return category;
-    } catch (e, stackTrace) {
-      _logger.e('Failed to update favorite category',
-          error: e, stackTrace: stackTrace);
-      rethrow;
-    }
-  }
-
-  @override
-  Future<void> deleteFavoriteCategory({
-    required int categoryId,
-    bool moveToDefault = true,
-  }) async {
-    try {
-      _logger.i(
-          'Deleting favorite category $categoryId (moveToDefault: $moveToDefault)');
-
-      // This would require additional database operations to handle moving favorites
-      // For now, just log the operation
-
-      _logger.d('Deleted favorite category');
-    } catch (e, stackTrace) {
-      _logger.e('Failed to delete favorite category',
-          error: e, stackTrace: stackTrace);
-      rethrow;
-    }
-  }
-
-  @override
-  Future<void> moveFavoriteToCategory({
-    required ContentId contentId,
-    required int fromCategoryId,
-    required int toCategoryId,
-  }) async {
-    try {
-      _logger.i(
-          'Moving favorite ${contentId.value} from $fromCategoryId to $toCategoryId');
-
-      // Remove from old category and add to new category
-      await localDataSource.removeFromFavorites(
-        contentId.value,
-        categoryId: fromCategoryId,
-      );
-
-      await localDataSource.addToFavorites(
-        contentId.value,
-        categoryId: toCategoryId,
-      );
-
-      _logger.d('Moved favorite to new category');
-    } catch (e, stackTrace) {
-      _logger.e('Failed to move favorite to category',
-          error: e, stackTrace: stackTrace);
-      rethrow;
-    }
-  }
-
-  @override
-  Future<FavoriteStatistics> getFavoriteStatistics() async {
-    try {
-      _logger.i('Getting favorite statistics');
-
-      final stats = await localDataSource.getDatabaseStats();
-      final totalFavorites = stats['favorites'] ?? 0;
-
-      // Get sample favorites to calculate statistics
-      final sampleFavorites = await localDataSource.getFavorites(limit: 100);
-
-      final artistCounts = <String, int>{};
-      final tagCounts = <String, int>{};
-      double totalPages = 0;
-
-      for (final favorite in sampleFavorites) {
-        totalPages += favorite.pageCount;
-
-        for (final artist in favorite.artists) {
-          artistCounts[artist] = (artistCounts[artist] ?? 0) + 1;
-        }
-
-        for (final tag in favorite.tags) {
-          tagCounts[tag.name] = (tagCounts[tag.name] ?? 0) + 1;
-        }
-      }
-
-      final averagePages = sampleFavorites.isNotEmpty
-          ? totalPages / sampleFavorites.length
-          : 0.0;
-
-      return FavoriteStatistics(
-        totalFavorites: totalFavorites,
-        categoriesCount: 1, // Would need to be calculated
-        mostFavoritedArtists: artistCounts,
-        mostFavoritedTags: tagCounts,
-        averagePagesPerFavorite: averagePages,
-        oldestFavorite:
-            sampleFavorites.isNotEmpty ? sampleFavorites.last.uploadDate : null,
-        newestFavorite: sampleFavorites.isNotEmpty
-            ? sampleFavorites.first.uploadDate
-            : null,
-      );
-    } catch (e, stackTrace) {
-      _logger.e('Failed to get favorite statistics',
-          error: e, stackTrace: stackTrace);
-      return const FavoriteStatistics(
-        totalFavorites: 0,
-        categoriesCount: 0,
-        mostFavoritedArtists: {},
-        mostFavoritedTags: {},
-        averagePagesPerFavorite: 0.0,
-      );
+      return 0;
     }
   }
 
   // ==================== DOWNLOADS ====================
 
   @override
-  Future<DownloadStatus> queueDownload({
-    required Content content,
-    int priority = 0,
-  }) async {
+  Future<void> saveDownloadStatus(DownloadStatus status) async {
     try {
-      _logger.i('Queueing download for content: ${content.id}');
+      _logger.d('Saving download status for: ${status.contentId}');
 
-      // Cache the content first
-      final contentModel = ContentModel.fromEntity(content);
-      await localDataSource.cacheContent(contentModel);
-
-      // Create download status
-      final downloadStatus = DownloadStatus(
-        contentId: content.id,
-        state: DownloadState.queued,
-        totalPages: content.pageCount,
-        startTime: DateTime.now(),
-      );
-
-      final statusModel = DownloadStatusModel.fromEntity(downloadStatus);
+      // Create model with additional info if available
+      final statusModel = DownloadStatusModel.fromEntity(status);
       await localDataSource.saveDownloadStatus(statusModel);
-
-      _logger.d('Queued download successfully');
-      return downloadStatus;
     } catch (e, stackTrace) {
-      _logger.e('Failed to queue download', error: e, stackTrace: stackTrace);
+      _logger.e('Failed to save download status',
+          error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
 
   @override
-  Future<DownloadStatus?> getDownloadStatus(ContentId contentId) async {
+  Future<DownloadStatus?> getDownloadStatus(String id) async {
     try {
-      final statusModel =
-          await localDataSource.getDownloadStatus(contentId.value);
+      final statusModel = await localDataSource.getDownloadStatus(id);
       return statusModel?.toEntity();
     } catch (e, stackTrace) {
       _logger.e('Failed to get download status',
@@ -364,21 +119,19 @@ class UserDataRepositoryImpl implements UserDataRepository {
   @override
   Future<List<DownloadStatus>> getAllDownloads({
     DownloadState? state,
-    DownloadSortOption sortBy = DownloadSortOption.dateAdded,
+    int page = 1,
+    int limit = 20,
   }) async {
     try {
-      _logger.i('Getting all downloads - state: $state, sort: $sortBy');
+      _logger.i('Getting all downloads - state: $state, page: $page');
 
       final statusModels = await localDataSource.getAllDownloads(
         state: state,
-        limit: 100, // Get more for sorting
+        page: page,
+        limit: limit,
       );
 
       final downloads = statusModels.map((model) => model.toEntity()).toList();
-
-      // Apply sorting
-      _sortDownloads(downloads, sortBy);
-
       _logger.d('Retrieved ${downloads.length} downloads');
       return downloads;
     } catch (e, stackTrace) {
@@ -389,325 +142,52 @@ class UserDataRepositoryImpl implements UserDataRepository {
   }
 
   @override
-  Future<void> updateDownloadStatus(DownloadStatus status) async {
+  Future<void> deleteDownloadStatus(String id) async {
     try {
-      _logger.d('Updating download status for: ${status.contentId}');
-
-      final statusModel = DownloadStatusModel.fromEntity(status);
-      await localDataSource.saveDownloadStatus(statusModel);
+      _logger.i('Deleting download status: $id');
+      await localDataSource.deleteDownloadStatus(id);
+      _logger.d('Download status deleted');
     } catch (e, stackTrace) {
-      _logger.e('Failed to update download status',
+      _logger.e('Failed to delete download status',
           error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
 
   @override
-  Future<void> pauseDownload(ContentId contentId) async {
+  Future<int> getDownloadsCount({DownloadState? state}) async {
     try {
-      _logger.i('Pausing download: ${contentId.value}');
-
-      final currentStatus = await getDownloadStatus(contentId);
-      if (currentStatus != null &&
-          currentStatus.state == DownloadState.downloading) {
-        final updatedStatus = DownloadStatus(
-          contentId: currentStatus.contentId,
-          state: DownloadState.paused,
-          downloadedPages: currentStatus.downloadedPages,
-          totalPages: currentStatus.totalPages,
-          startTime: currentStatus.startTime,
-          downloadPath: currentStatus.downloadPath,
-          fileSize: currentStatus.fileSize,
-        );
-
-        await updateDownloadStatus(updatedStatus);
-        _logger.d('Download paused');
-      }
+      return await localDataSource.getDownloadsCount(state: state);
     } catch (e, stackTrace) {
-      _logger.e('Failed to pause download', error: e, stackTrace: stackTrace);
-      rethrow;
-    }
-  }
-
-  @override
-  Future<void> resumeDownload(ContentId contentId) async {
-    try {
-      _logger.i('Resuming download: ${contentId.value}');
-
-      final currentStatus = await getDownloadStatus(contentId);
-      if (currentStatus != null &&
-          currentStatus.state == DownloadState.paused) {
-        final updatedStatus = DownloadStatus(
-          contentId: currentStatus.contentId,
-          state: DownloadState.downloading,
-          downloadedPages: currentStatus.downloadedPages,
-          totalPages: currentStatus.totalPages,
-          startTime: currentStatus.startTime,
-          downloadPath: currentStatus.downloadPath,
-          fileSize: currentStatus.fileSize,
-        );
-
-        await updateDownloadStatus(updatedStatus);
-        _logger.d('Download resumed');
-      }
-    } catch (e, stackTrace) {
-      _logger.e('Failed to resume download', error: e, stackTrace: stackTrace);
-      rethrow;
-    }
-  }
-
-  @override
-  Future<void> cancelDownload({
-    required ContentId contentId,
-    bool deleteFiles = true,
-  }) async {
-    try {
-      _logger.i('Cancelling download: ${contentId.value}');
-
-      final currentStatus = await getDownloadStatus(contentId);
-      if (currentStatus != null) {
-        final updatedStatus = DownloadStatus(
-          contentId: currentStatus.contentId,
-          state: DownloadState.cancelled,
-          downloadedPages: currentStatus.downloadedPages,
-          totalPages: currentStatus.totalPages,
-          startTime: currentStatus.startTime,
-          endTime: DateTime.now(),
-          downloadPath: currentStatus.downloadPath,
-          fileSize: currentStatus.fileSize,
-        );
-
-        await updateDownloadStatus(updatedStatus);
-
-        if (deleteFiles) {
-          // File deletion would be handled by a file manager service
-          _logger.d('Download cancelled and files deleted');
-        } else {
-          _logger.d('Download cancelled');
-        }
-      }
-    } catch (e, stackTrace) {
-      _logger.e('Failed to cancel download', error: e, stackTrace: stackTrace);
-      rethrow;
-    }
-  }
-
-  @override
-  Future<void> retryDownload(ContentId contentId) async {
-    try {
-      _logger.i('Retrying download: ${contentId.value}');
-
-      final currentStatus = await getDownloadStatus(contentId);
-      if (currentStatus != null &&
-          currentStatus.state == DownloadState.failed) {
-        final updatedStatus = DownloadStatus(
-          contentId: currentStatus.contentId,
-          state: DownloadState.queued,
-          downloadedPages: 0, // Reset progress
-          totalPages: currentStatus.totalPages,
-          startTime: DateTime.now(),
-          downloadPath: currentStatus.downloadPath,
-          fileSize: 0,
-        );
-
-        await updateDownloadStatus(updatedStatus);
-        _logger.d('Download queued for retry');
-      }
-    } catch (e, stackTrace) {
-      _logger.e('Failed to retry download', error: e, stackTrace: stackTrace);
-      rethrow;
-    }
-  }
-
-  @override
-  Future<DownloadedContentResult> getDownloadedContent({
-    int page = 1,
-    DownloadSortOption sortBy = DownloadSortOption.dateCompleted,
-  }) async {
-    try {
-      _logger.i('Getting downloaded content - page: $page, sort: $sortBy');
-
-      // Get completed downloads
-      final completedDownloads = await localDataSource.getAllDownloads(
-        state: DownloadState.completed,
-        page: page,
-        limit: defaultPageSize,
-      );
-
-      // Get the actual content for each download
-      final contents = <Content>[];
-      for (final download in completedDownloads) {
-        final content =
-            await localDataSource.getContentById(download.contentId);
-        if (content != null) {
-          contents.add(content.toEntity());
-        }
-      }
-
-      final hasNext = contents.length == defaultPageSize;
-      final hasPrevious = page > 1;
-
-      final result = DownloadedContentResult(
-        content: contents,
-        currentPage: page,
-        totalPages: hasNext ? page + 1 : page,
-        totalCount: contents.length,
-        hasNext: hasNext,
-        hasPrevious: hasPrevious,
-      );
-
-      _logger.d('Retrieved ${contents.length} downloaded contents');
-      return result;
-    } catch (e, stackTrace) {
-      _logger.e('Failed to get downloaded content',
+      _logger.e('Failed to get downloads count',
           error: e, stackTrace: stackTrace);
-      return const DownloadedContentResult(
-        content: [],
-        currentPage: 1,
-        totalPages: 0,
-        totalCount: 0,
-      );
-    }
-  }
-
-  @override
-  Future<bool> isDownloaded(ContentId contentId) async {
-    try {
-      final status = await getDownloadStatus(contentId);
-      return status?.state == DownloadState.completed;
-    } catch (e, stackTrace) {
-      _logger.e('Failed to check if downloaded',
-          error: e, stackTrace: stackTrace);
-      return false;
-    }
-  }
-
-  @override
-  Future<void> deleteDownloadedContent({
-    required ContentId contentId,
-    bool deleteFiles = true,
-  }) async {
-    try {
-      _logger.i('Deleting downloaded content: ${contentId.value}');
-
-      await localDataSource.deleteDownloadStatus(contentId.value);
-
-      if (deleteFiles) {
-        // File deletion would be handled by a file manager service
-        _logger.d('Downloaded content and files deleted');
-      } else {
-        _logger.d('Download record deleted');
-      }
-    } catch (e, stackTrace) {
-      _logger.e('Failed to delete downloaded content',
-          error: e, stackTrace: stackTrace);
-      rethrow;
-    }
-  }
-
-  @override
-  Future<DownloadStatistics> getDownloadStatistics() async {
-    try {
-      _logger.i('Getting download statistics');
-
-      final allDownloads = await getAllDownloads();
-
-      final completed =
-          allDownloads.where((d) => d.state == DownloadState.completed).length;
-      final failed =
-          allDownloads.where((d) => d.state == DownloadState.failed).length;
-
-      final totalSize = allDownloads
-          .where((d) => d.state == DownloadState.completed)
-          .fold<int>(0, (sum, d) => sum + d.fileSize);
-
-      // Calculate average download time for completed downloads
-      final completedWithTimes = allDownloads
-          .where((d) =>
-              d.state == DownloadState.completed &&
-              d.startTime != null &&
-              d.endTime != null)
-          .toList();
-
-      Duration averageTime = Duration.zero;
-      if (completedWithTimes.isNotEmpty) {
-        final totalTime = completedWithTimes
-            .map((d) => d.endTime!.difference(d.startTime!))
-            .reduce((a, b) => a + b);
-        averageTime = Duration(
-          milliseconds: totalTime.inMilliseconds ~/ completedWithTimes.length,
-        );
-      }
-
-      return DownloadStatistics(
-        totalDownloads: allDownloads.length,
-        completedDownloads: completed,
-        failedDownloads: failed,
-        totalSizeBytes: totalSize,
-        averageDownloadTime: averageTime,
-        oldestDownload: allDownloads.isNotEmpty
-            ? allDownloads
-                .map((d) => d.startTime)
-                .where((t) => t != null)
-                .reduce((a, b) => a!.isBefore(b!) ? a : b)
-            : null,
-        newestDownload: allDownloads.isNotEmpty
-            ? allDownloads
-                .map((d) => d.startTime)
-                .where((t) => t != null)
-                .reduce((a, b) => a!.isAfter(b!) ? a : b)
-            : null,
-      );
-    } catch (e, stackTrace) {
-      _logger.e('Failed to get download statistics',
-          error: e, stackTrace: stackTrace);
-      return const DownloadStatistics(
-        totalDownloads: 0,
-        completedDownloads: 0,
-        failedDownloads: 0,
-        totalSizeBytes: 0,
-        averageDownloadTime: Duration.zero,
-      );
+      return 0;
     }
   }
 
   // ==================== HISTORY ====================
 
   @override
-  Future<void> addToHistory({
-    required ContentId contentId,
-    required int page,
-    required int totalPages,
-    Duration? timeSpent,
-  }) async {
+  Future<void> saveHistory(History history) async {
     try {
-      _logger.d('Adding to history: ${contentId.value}, page: $page');
+      _logger.d('Saving history for: ${history.contentId}');
 
-      final history = History(
-        contentId: contentId.value,
-        lastViewed: DateTime.now(),
-        lastPage: page,
-        totalPages: totalPages,
-        timeSpent: timeSpent ?? Duration.zero,
-        isCompleted: page >= totalPages,
-      );
-
+      // Create model with additional info if available
       final historyModel = HistoryModel.fromEntity(history);
       await localDataSource.saveHistory(historyModel);
     } catch (e, stackTrace) {
-      _logger.e('Failed to add to history', error: e, stackTrace: stackTrace);
+      _logger.e('Failed to save history', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
 
   @override
-  Future<HistoryListResult> getHistory({
+  Future<List<History>> getHistory({
     int page = 1,
     int limit = 50,
-    HistorySortOption sortBy = HistorySortOption.lastViewed,
   }) async {
     try {
-      _logger.i('Getting history - page: $page, limit: $limit, sort: $sortBy');
+      _logger.i('Getting history - page: $page, limit: $limit');
 
       final historyModels = await localDataSource.getAllHistory(
         page: page,
@@ -715,39 +195,18 @@ class UserDataRepositoryImpl implements UserDataRepository {
       );
 
       final history = historyModels.map((model) => model.toEntity()).toList();
-
-      // Apply sorting
-      _sortHistory(history, sortBy);
-
-      final hasNext = history.length == limit;
-      final hasPrevious = page > 1;
-
-      final result = HistoryListResult(
-        history: history,
-        currentPage: page,
-        totalPages: hasNext ? page + 1 : page,
-        totalCount: history.length,
-        hasNext: hasNext,
-        hasPrevious: hasPrevious,
-      );
-
       _logger.d('Retrieved ${history.length} history entries');
-      return result;
+      return history;
     } catch (e, stackTrace) {
       _logger.e('Failed to get history', error: e, stackTrace: stackTrace);
-      return const HistoryListResult(
-        history: [],
-        currentPage: 1,
-        totalPages: 0,
-        totalCount: 0,
-      );
+      return [];
     }
   }
 
   @override
-  Future<History?> getHistoryEntry(ContentId contentId) async {
+  Future<History?> getHistoryEntry(String id) async {
     try {
-      final historyModel = await localDataSource.getHistory(contentId.value);
+      final historyModel = await localDataSource.getHistory(id);
       return historyModel?.toEntity();
     } catch (e, stackTrace) {
       _logger.e('Failed to get history entry',
@@ -757,68 +216,10 @@ class UserDataRepositoryImpl implements UserDataRepository {
   }
 
   @override
-  Future<void> updateReadingProgress({
-    required ContentId contentId,
-    required int page,
-    Duration? additionalTime,
-  }) async {
+  Future<void> removeFromHistory(String id) async {
     try {
-      _logger.d('Updating reading progress: ${contentId.value}, page: $page');
-
-      final existingHistory = await getHistoryEntry(contentId);
-
-      final updatedHistory = History(
-        contentId: contentId.value,
-        lastViewed: DateTime.now(),
-        lastPage: page,
-        totalPages: existingHistory?.totalPages ?? 0,
-        timeSpent: (existingHistory?.timeSpent ?? Duration.zero) +
-            (additionalTime ?? Duration.zero),
-        isCompleted: existingHistory?.isCompleted ?? false,
-      );
-
-      final historyModel = HistoryModel.fromEntity(updatedHistory);
-      await localDataSource.saveHistory(historyModel);
-    } catch (e, stackTrace) {
-      _logger.e('Failed to update reading progress',
-          error: e, stackTrace: stackTrace);
-      rethrow;
-    }
-  }
-
-  @override
-  Future<void> markAsCompleted(ContentId contentId) async {
-    try {
-      _logger.i('Marking as completed: ${contentId.value}');
-
-      final existingHistory = await getHistoryEntry(contentId);
-
-      if (existingHistory != null) {
-        final completedHistory = History(
-          contentId: contentId.value,
-          lastViewed: DateTime.now(),
-          lastPage: existingHistory.totalPages,
-          totalPages: existingHistory.totalPages,
-          timeSpent: existingHistory.timeSpent,
-          isCompleted: true,
-        );
-
-        final historyModel = HistoryModel.fromEntity(completedHistory);
-        await localDataSource.saveHistory(historyModel);
-      }
-    } catch (e, stackTrace) {
-      _logger.e('Failed to mark as completed',
-          error: e, stackTrace: stackTrace);
-      rethrow;
-    }
-  }
-
-  @override
-  Future<void> removeFromHistory(ContentId contentId) async {
-    try {
-      _logger.i('Removing from history: ${contentId.value}');
-
-      await localDataSource.deleteHistory(contentId.value);
+      _logger.i('Removing from history: $id');
+      await localDataSource.deleteHistory(id);
       _logger.d('Removed from history');
     } catch (e, stackTrace) {
       _logger.e('Failed to remove from history',
@@ -828,15 +229,9 @@ class UserDataRepositoryImpl implements UserDataRepository {
   }
 
   @override
-  Future<void> clearHistory({Duration? olderThan}) async {
+  Future<void> clearHistory() async {
     try {
-      _logger.i('Clearing history - older than: $olderThan');
-
-      if (olderThan != null) {
-        // Would need additional implementation for selective clearing
-        _logger.w('Selective history clearing not implemented, clearing all');
-      }
-
+      _logger.i('Clearing all history');
       await localDataSource.clearHistory();
       _logger.d('History cleared');
     } catch (e, stackTrace) {
@@ -846,379 +241,143 @@ class UserDataRepositoryImpl implements UserDataRepository {
   }
 
   @override
-  Future<ReadingStatistics> getReadingStatistics() async {
+  Future<int> getHistoryCount() async {
     try {
-      _logger.i('Getting reading statistics');
-
-      final allHistory = await localDataSource.getAllHistory(limit: 1000);
-
-      final totalContentRead = allHistory.length;
-      final totalPagesRead =
-          allHistory.fold<int>(0, (sum, h) => sum + h.lastPage);
-      final totalTimeSpent = allHistory.fold<Duration>(
-        Duration.zero,
-        (sum, h) => sum + h.timeSpent,
-      );
-
-      // Get content for additional statistics
-      final artistStats = <String, int>{};
-      final tagStats = <String, int>{};
-      final languageStats = <String, int>{};
-
-      for (final history in allHistory.take(100)) {
-        // Limit for performance
-        final content = await localDataSource.getContentById(history.contentId);
-        if (content != null) {
-          for (final artist in content.artists) {
-            artistStats[artist] = (artistStats[artist] ?? 0) + 1;
-          }
-
-          for (final tag in content.tags) {
-            tagStats[tag.name] = (tagStats[tag.name] ?? 0) + 1;
-          }
-
-          languageStats[content.language] =
-              (languageStats[content.language] ?? 0) + 1;
-        }
-      }
-
-      return ReadingStatistics(
-        totalContentRead: totalContentRead,
-        totalPagesRead: totalPagesRead,
-        totalTimeSpent: totalTimeSpent,
-        favoriteArtists: artistStats,
-        favoriteTags: tagStats,
-        favoriteLanguages: languageStats,
-        averageReadingTime: totalContentRead > 0
-            ? Duration(
-                milliseconds: totalTimeSpent.inMilliseconds ~/ totalContentRead)
-            : Duration.zero,
-        completedContent: allHistory.where((h) => h.isCompleted).length,
-        readingStreak: 0, // Would need additional implementation
-        lastReadDate:
-            allHistory.isNotEmpty ? allHistory.first.lastViewed : null,
-      );
+      return await localDataSource.getHistoryCount();
     } catch (e, stackTrace) {
-      _logger.e('Failed to get reading statistics',
+      _logger.e('Failed to get history count',
           error: e, stackTrace: stackTrace);
-      return ReadingStatistics(
-        totalContentRead: 0,
-        totalPagesRead: 0,
-        totalTimeSpent: Duration.zero,
-        favoriteArtists: const {},
-        favoriteTags: const {},
-        favoriteLanguages: const {},
-        averageReadingTime: Duration.zero,
-        completedContent: 0,
-        readingStreak: 0,
-        lastReadDate: null,
-      );
+      return 0;
     }
   }
 
-  // ==================== BLACKLIST ====================
+  // ==================== PREFERENCES ====================
 
   @override
-  Future<void> addToBlacklist(String tagName) async {
+  Future<void> saveUserPreferences(UserPreferences preferences) async {
     try {
-      _logger.i('Adding tag to blacklist: $tagName');
-
-      final preferences = await localDataSource.getUserPreferences();
-      final updatedBlacklist = [...preferences.blacklistedTags, tagName];
-
-      final updatedPreferences = preferences.copyWith(
-        blacklistedTags: updatedBlacklist,
-      );
-
-      await localDataSource.saveUserPreferences(updatedPreferences);
-      _logger.d('Tag added to blacklist');
+      _logger.i('Saving user preferences');
+      await localDataSource.saveUserPreferences(preferences);
+      _logger.d('User preferences saved');
     } catch (e, stackTrace) {
-      _logger.e('Failed to add to blacklist', error: e, stackTrace: stackTrace);
-      rethrow;
-    }
-  }
-
-  @override
-  Future<void> removeFromBlacklist(String tagName) async {
-    try {
-      _logger.i('Removing tag from blacklist: $tagName');
-
-      final preferences = await localDataSource.getUserPreferences();
-      final updatedBlacklist =
-          preferences.blacklistedTags.where((tag) => tag != tagName).toList();
-
-      final updatedPreferences = preferences.copyWith(
-        blacklistedTags: updatedBlacklist,
-      );
-
-      await localDataSource.saveUserPreferences(updatedPreferences);
-      _logger.d('Tag removed from blacklist');
-    } catch (e, stackTrace) {
-      _logger.e('Failed to remove from blacklist',
+      _logger.e('Failed to save user preferences',
           error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
 
   @override
-  Future<List<String>> getBlacklistedTags() async {
+  Future<UserPreferences> getUserPreferences() async {
     try {
-      final preferences = await localDataSource.getUserPreferences();
-      return preferences.blacklistedTags;
+      return await localDataSource.getUserPreferences();
     } catch (e, stackTrace) {
-      _logger.e('Failed to get blacklisted tags',
+      _logger.e('Failed to get user preferences',
+          error: e, stackTrace: stackTrace);
+      return const UserPreferences(); // Return default preferences
+    }
+  }
+
+  @override
+  Future<void> savePreference(String key, String value) async {
+    try {
+      _logger.d('Saving preference: $key = $value');
+      await localDataSource.savePreference(key, value);
+    } catch (e, stackTrace) {
+      _logger.e('Failed to save preference', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<String?> getPreference(String key) async {
+    try {
+      return await localDataSource.getPreference(key);
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get preference', error: e, stackTrace: stackTrace);
+      return null;
+    }
+  }
+
+  // ==================== SEARCH HISTORY ====================
+
+  @override
+  Future<void> addSearchHistory(String query) async {
+    try {
+      _logger.d('Adding search history: $query');
+      await localDataSource.addSearchHistory(query);
+    } catch (e, stackTrace) {
+      _logger.e('Failed to add search history',
+          error: e, stackTrace: stackTrace);
+    }
+  }
+
+  @override
+  Future<List<String>> getSearchHistory({int limit = 20}) async {
+    try {
+      return await localDataSource.getSearchHistory(limit: limit);
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get search history',
           error: e, stackTrace: stackTrace);
       return [];
     }
   }
 
   @override
-  Future<bool> isTagBlacklisted(String tagName) async {
+  Future<void> clearSearchHistory() async {
     try {
-      final blacklistedTags = await getBlacklistedTags();
-      return blacklistedTags.contains(tagName);
+      _logger.i('Clearing search history');
+      await localDataSource.clearSearchHistory();
+      _logger.d('Search history cleared');
     } catch (e, stackTrace) {
-      _logger.e('Failed to check if tag is blacklisted',
+      _logger.e('Failed to clear search history',
           error: e, stackTrace: stackTrace);
-      return false;
     }
   }
 
-  // ==================== BACKUP & SYNC ====================
+  @override
+  Future<void> deleteSearchHistory(String query) async {
+    try {
+      _logger.d('Deleting search history: $query');
+      await localDataSource.deleteSearchHistory(query);
+    } catch (e, stackTrace) {
+      _logger.e('Failed to delete search history',
+          error: e, stackTrace: stackTrace);
+    }
+  }
+
+  // ==================== UTILITIES ====================
 
   @override
-  Future<String> exportUserData({
-    bool includeHistory = true,
-    bool includeDownloads = false,
-  }) async {
+  Future<Map<String, int>> getDatabaseStats() async {
     try {
-      _logger.i('Exporting user data');
-
-      final data = <String, dynamic>{};
-
-      // Export favorites
-      final favorites = await getFavorites();
-      data['favorites'] = favorites.favorites.map((c) => c.id).toList();
-
-      // Export favorite categories
-      final categories = await getFavoriteCategories();
-      data['favoriteCategories'] = categories
-          .map((c) => {
-                'id': c.id,
-                'name': c.name,
-                'createdAt': c.createdAt.toIso8601String(),
-              })
-          .toList();
-
-      // Export history if requested
-      if (includeHistory) {
-        final history = await getHistory();
-        data['history'] = history.history
-            .map((h) => {
-                  'contentId': h.contentId,
-                  'lastViewed': h.lastViewed.toIso8601String(),
-                  'lastPage': h.lastPage,
-                  'totalPages': h.totalPages,
-                  'timeSpent': h.timeSpent.inMilliseconds,
-                  'isCompleted': h.isCompleted,
-                })
-            .toList();
-      }
-
-      // Export downloads if requested
-      if (includeDownloads) {
-        final downloads = await getAllDownloads();
-        data['downloads'] = downloads
-            .map((d) => {
-                  'contentId': d.contentId,
-                  'state': d.state.name,
-                  'downloadedPages': d.downloadedPages,
-                  'totalPages': d.totalPages,
-                  'startTime': d.startTime?.toIso8601String(),
-                  'endTime': d.endTime?.toIso8601String(),
-                })
-            .toList();
-      }
-
-      // Export preferences
-      final preferences = await localDataSource.getUserPreferences();
-      data['preferences'] = preferences.toJson();
-
-      data['exportedAt'] = DateTime.now().toIso8601String();
-      data['version'] = '1.0';
-
-      final jsonString = jsonEncode(data);
-      _logger.d('User data exported successfully');
-      return jsonString;
+      return await localDataSource.getDatabaseStats();
     } catch (e, stackTrace) {
-      _logger.e('Failed to export user data', error: e, stackTrace: stackTrace);
+      _logger.e('Failed to get database stats',
+          error: e, stackTrace: stackTrace);
+      return {};
+    }
+  }
+
+  @override
+  Future<void> cleanupOldData() async {
+    try {
+      _logger.i('Cleaning up old data');
+      await localDataSource.cleanupOldData();
+      _logger.d('Old data cleaned up');
+    } catch (e, stackTrace) {
+      _logger.e('Failed to cleanup old data', error: e, stackTrace: stackTrace);
+    }
+  }
+
+  @override
+  Future<void> clearAllData() async {
+    try {
+      _logger.i('Clearing all data');
+      await localDataSource.clearAllData();
+      _logger.d('All data cleared');
+    } catch (e, stackTrace) {
+      _logger.e('Failed to clear all data', error: e, stackTrace: stackTrace);
       rethrow;
-    }
-  }
-
-  @override
-  Future<void> importUserData({
-    required String jsonData,
-    bool mergeWithExisting = true,
-  }) async {
-    try {
-      _logger.i('Importing user data (merge: $mergeWithExisting)');
-
-      final data = jsonDecode(jsonData) as Map<String, dynamic>;
-
-      // Import preferences
-      if (data.containsKey('preferences')) {
-        final prefsData = data['preferences'] as Map<String, dynamic>;
-        final preferences = UserPreferences.fromJson(prefsData);
-        await localDataSource.saveUserPreferences(preferences);
-      }
-
-      // Import favorites
-      if (data.containsKey('favorites')) {
-        final favoriteIds = (data['favorites'] as List).cast<String>();
-        // Would need to fetch content and add to favorites
-        // This is a simplified implementation
-        _logger.d('Would import ${favoriteIds.length} favorites');
-      }
-
-      // Import history
-      if (data.containsKey('history')) {
-        final historyData = data['history'] as List;
-        for (final historyItem in historyData) {
-          final history = History(
-            contentId: historyItem['contentId'],
-            lastViewed: DateTime.parse(historyItem['lastViewed']),
-            lastPage: historyItem['lastPage'],
-            totalPages: historyItem['totalPages'],
-            timeSpent: Duration(milliseconds: historyItem['timeSpent']),
-            isCompleted: historyItem['isCompleted'],
-          );
-
-          final historyModel = HistoryModel.fromEntity(history);
-          await localDataSource.saveHistory(historyModel);
-        }
-      }
-
-      _logger.d('User data imported successfully');
-    } catch (e, stackTrace) {
-      _logger.e('Failed to import user data', error: e, stackTrace: stackTrace);
-      rethrow;
-    }
-  }
-
-  @override
-  Future<SyncStatus> getSyncStatus() async {
-    try {
-      // This would be implemented with a sync service
-      return const SyncStatus(
-        lastSyncTime: null,
-        hasPendingChanges: false,
-        pendingFavorites: 0,
-        pendingHistory: 0,
-      );
-    } catch (e, stackTrace) {
-      _logger.e('Failed to get sync status', error: e, stackTrace: stackTrace);
-      return const SyncStatus(
-        lastSyncTime: null,
-        hasPendingChanges: false,
-        pendingFavorites: 0,
-        pendingHistory: 0,
-        syncError: 'Failed to get sync status',
-      );
-    }
-  }
-
-  @override
-  Future<SyncResult> syncUserData() async {
-    try {
-      _logger.i('Syncing user data');
-
-      // This would be implemented with a sync service
-      return SyncResult(
-        success: true,
-        syncedFavorites: 0,
-        syncedHistory: 0,
-        syncTime: DateTime.now(),
-      );
-    } catch (e, stackTrace) {
-      _logger.e('Failed to sync user data', error: e, stackTrace: stackTrace);
-      return SyncResult(
-        success: false,
-        syncedFavorites: 0,
-        syncedHistory: 0,
-        syncTime: DateTime.now(),
-        error: e.toString(),
-      );
-    }
-  }
-
-  // ==================== PRIVATE HELPER METHODS ====================
-
-  /// Sort favorites based on sort option
-  void _sortFavorites(List<Content> favorites, FavoriteSortOption sortBy) {
-    switch (sortBy) {
-      case FavoriteSortOption.dateAdded:
-        // Already sorted by date added DESC from database
-        break;
-      case FavoriteSortOption.title:
-        favorites.sort((a, b) => a.title.compareTo(b.title));
-        break;
-      case FavoriteSortOption.artist:
-        favorites.sort((a, b) {
-          final artistA = a.artists.isNotEmpty ? a.artists.first : '';
-          final artistB = b.artists.isNotEmpty ? b.artists.first : '';
-          return artistA.compareTo(artistB);
-        });
-        break;
-      case FavoriteSortOption.pageCount:
-        favorites.sort((a, b) => b.pageCount.compareTo(a.pageCount));
-        break;
-      case FavoriteSortOption.uploadDate:
-        favorites.sort((a, b) => b.uploadDate.compareTo(a.uploadDate));
-        break;
-    }
-  }
-
-  /// Sort downloads based on sort option
-  void _sortDownloads(
-      List<DownloadStatus> downloads, DownloadSortOption sortBy) {
-    switch (sortBy) {
-      case DownloadSortOption.dateAdded:
-        downloads.sort((a, b) => (b.startTime ?? DateTime.now())
-            .compareTo(a.startTime ?? DateTime.now()));
-        break;
-      case DownloadSortOption.dateCompleted:
-        downloads.sort((a, b) => (b.endTime ?? DateTime.now())
-            .compareTo(a.endTime ?? DateTime.now()));
-        break;
-      case DownloadSortOption.title:
-        // Would need content title, skip for now
-        break;
-      case DownloadSortOption.fileSize:
-        downloads.sort((a, b) => b.fileSize.compareTo(a.fileSize));
-        break;
-      case DownloadSortOption.progress:
-        downloads.sort((a, b) => b.progress.compareTo(a.progress));
-        break;
-    }
-  }
-
-  /// Sort history based on sort option
-  void _sortHistory(List<History> history, HistorySortOption sortBy) {
-    switch (sortBy) {
-      case HistorySortOption.lastViewed:
-        history.sort((a, b) => b.lastViewed.compareTo(a.lastViewed));
-        break;
-      case HistorySortOption.title:
-        // Would need content title, skip for now
-        break;
-      case HistorySortOption.progress:
-        history.sort(
-            (a, b) => b.progressPercentage.compareTo(a.progressPercentage));
-        break;
-      case HistorySortOption.timeSpent:
-        history.sort((a, b) => b.timeSpent.compareTo(a.timeSpent));
-        break;
     }
   }
 }
