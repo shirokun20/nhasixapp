@@ -1,0 +1,505 @@
+import 'package:flutter/material.dart';
+
+import '../../core/constants/colors_const.dart';
+import '../../core/constants/text_style_const.dart';
+
+/// Custom error widget with black theme and contextual information
+class AppErrorWidget extends StatelessWidget {
+  const AppErrorWidget({
+    super.key,
+    required this.title,
+    required this.message,
+    this.icon,
+    this.iconColor,
+    this.onRetry,
+    this.retryText = 'Retry',
+    this.onSecondaryAction,
+    this.secondaryActionText,
+    this.showDetails = false,
+    this.details,
+    this.suggestions = const [],
+  });
+
+  final String title;
+  final String message;
+  final IconData? icon;
+  final Color? iconColor;
+  final VoidCallback? onRetry;
+  final String retryText;
+  final VoidCallback? onSecondaryAction;
+  final String? secondaryActionText;
+  final bool showDetails;
+  final String? details;
+  final List<String> suggestions;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Error icon
+          Icon(
+            icon ?? Icons.error_outline,
+            size: 64,
+            color: iconColor ?? ColorsConst.accentRed,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Error title
+          Text(
+            title,
+            style: TextStyleConst.headingMedium.copyWith(
+              color: ColorsConst.darkTextPrimary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 8),
+
+          // Error message
+          Text(
+            message,
+            style: TextStyleConst.bodyMedium.copyWith(
+              color: ColorsConst.darkTextSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          // Suggestions
+          if (suggestions.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _buildSuggestions(),
+          ],
+
+          // Error details (expandable)
+          if (showDetails && details != null) ...[
+            const SizedBox(height: 16),
+            _buildErrorDetails(),
+          ],
+
+          const SizedBox(height: 24),
+
+          // Action buttons
+          _buildActionButtons(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSuggestions() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: ColorsConst.darkElevated,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: ColorsConst.borderMuted,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Suggestions:',
+            style: TextStyleConst.bodySmall.copyWith(
+              color: ColorsConst.darkTextPrimary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...suggestions.map((suggestion) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '• ',
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: ColorsConst.accentBlue,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        suggestion,
+                        style: TextStyleConst.bodySmall.copyWith(
+                          color: ColorsConst.darkTextSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorDetails() {
+    return ExpansionTile(
+      title: Text(
+        'Error Details',
+        style: TextStyleConst.bodyMedium.copyWith(
+          color: ColorsConst.darkTextSecondary,
+        ),
+      ),
+      iconColor: ColorsConst.darkTextSecondary,
+      collapsedIconColor: ColorsConst.darkTextSecondary,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: ColorsConst.darkBackground,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            details!,
+            style: TextStyleConst.bodySmall.copyWith(
+              color: ColorsConst.darkTextTertiary,
+              fontFamily: 'monospace',
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Column(
+      children: [
+        // Primary action (Retry)
+        if (onRetry != null)
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onRetry,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ColorsConst.accentBlue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                retryText,
+                style: TextStyleConst.buttonMedium.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+
+        // Secondary action
+        if (onSecondaryAction != null && secondaryActionText != null) ...[
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: onSecondaryAction,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: ColorsConst.darkTextSecondary,
+                side: const BorderSide(
+                  color: ColorsConst.borderDefault,
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                secondaryActionText!,
+                style: TextStyleConst.buttonMedium.copyWith(
+                  color: ColorsConst.darkTextSecondary,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Network error widget
+class NetworkErrorWidget extends StatelessWidget {
+  const NetworkErrorWidget({
+    super.key,
+    this.onRetry,
+    this.onGoOffline,
+  });
+
+  final VoidCallback? onRetry;
+  final VoidCallback? onGoOffline;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppErrorWidget(
+      title: 'Connection Problem',
+      message:
+          'Unable to connect to the internet. Please check your connection and try again.',
+      icon: Icons.wifi_off,
+      iconColor: ColorsConst.accentOrange,
+      onRetry: onRetry,
+      retryText: 'Try Again',
+      onSecondaryAction: onGoOffline,
+      secondaryActionText: 'Browse Offline',
+      suggestions: const [
+        'Check your internet connection',
+        'Try switching between WiFi and mobile data',
+        'Restart your router if using WiFi',
+        'Check if the website is down',
+      ],
+    );
+  }
+}
+
+/// Server error widget
+class ServerErrorWidget extends StatelessWidget {
+  const ServerErrorWidget({
+    super.key,
+    this.onRetry,
+    this.statusCode,
+  });
+
+  final VoidCallback? onRetry;
+  final int? statusCode;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppErrorWidget(
+      title: 'Server Error',
+      message: statusCode != null
+          ? 'Server returned error $statusCode. The service might be temporarily unavailable.'
+          : 'The server is currently unavailable. Please try again later.',
+      icon: Icons.dns,
+      iconColor: ColorsConst.accentRed,
+      onRetry: onRetry,
+      suggestions: const [
+        'Wait a few minutes and try again',
+        'Check if the service is under maintenance',
+        'Try refreshing the page',
+      ],
+    );
+  }
+}
+
+/// Cloudflare error widget
+class CloudflareErrorWidget extends StatelessWidget {
+  const CloudflareErrorWidget({
+    super.key,
+    this.onRetry,
+    this.onBypass,
+  });
+
+  final VoidCallback? onRetry;
+  final VoidCallback? onBypass;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppErrorWidget(
+      title: 'Access Blocked',
+      message:
+          'The website is protected by Cloudflare. We\'re trying to bypass the protection.',
+      icon: Icons.security,
+      iconColor: ColorsConst.accentOrange,
+      onRetry: onRetry,
+      retryText: 'Try Again',
+      onSecondaryAction: onBypass,
+      secondaryActionText: 'Force Bypass',
+      suggestions: const [
+        'Wait for automatic bypass to complete',
+        'Try using a VPN if available',
+        'Check back in a few minutes',
+      ],
+    );
+  }
+}
+
+/// Parse error widget
+class ParseErrorWidget extends StatelessWidget {
+  const ParseErrorWidget({
+    super.key,
+    this.onRetry,
+    this.onReport,
+  });
+
+  final VoidCallback? onRetry;
+  final VoidCallback? onReport;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppErrorWidget(
+      title: 'Data Error',
+      message:
+          'Unable to process the received data. The website structure might have changed.',
+      icon: Icons.code_off,
+      iconColor: ColorsConst.accentRed,
+      onRetry: onRetry,
+      retryText: 'Retry',
+      onSecondaryAction: onReport,
+      secondaryActionText: 'Report Issue',
+      suggestions: const [
+        'Try refreshing the content',
+        'Check if the app needs an update',
+        'Report the issue if it persists',
+      ],
+    );
+  }
+}
+
+/// Empty state widget
+class EmptyStateWidget extends StatelessWidget {
+  const EmptyStateWidget({
+    super.key,
+    required this.title,
+    required this.message,
+    this.icon = Icons.inbox_outlined,
+    this.onAction,
+    this.actionText,
+    this.suggestions = const [],
+  });
+
+  final String title;
+  final String message;
+  final IconData icon;
+  final VoidCallback? onAction;
+  final String? actionText;
+  final List<String> suggestions;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: 64,
+            color: ColorsConst.darkTextTertiary,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: TextStyleConst.headingMedium.copyWith(
+              color: ColorsConst.darkTextPrimary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: TextStyleConst.bodyMedium.copyWith(
+              color: ColorsConst.darkTextSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          if (suggestions.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            ...suggestions.map((suggestion) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    '• $suggestion',
+                    style: TextStyleConst.bodySmall.copyWith(
+                      color: ColorsConst.darkTextTertiary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                )),
+          ],
+          if (onAction != null && actionText != null) ...[
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: onAction,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ColorsConst.accentBlue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                actionText!,
+                style: TextStyleConst.buttonMedium.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// No search results widget
+class NoSearchResultsWidget extends StatelessWidget {
+  const NoSearchResultsWidget({
+    super.key,
+    this.query,
+    this.onClearFilters,
+    this.onTryDifferentSearch,
+  });
+
+  final String? query;
+  final VoidCallback? onClearFilters;
+  final VoidCallback? onTryDifferentSearch;
+
+  @override
+  Widget build(BuildContext context) {
+    return EmptyStateWidget(
+      title: 'No Results Found',
+      message: query != null
+          ? 'No content found for "$query". Try adjusting your search terms or filters.'
+          : 'No content found. Try adjusting your search terms or filters.',
+      icon: Icons.search_off,
+      onAction: onClearFilters,
+      actionText: 'Clear Filters',
+      suggestions: const [
+        'Try different keywords',
+        'Remove some filters',
+        'Check spelling',
+        'Use broader search terms',
+      ],
+    );
+  }
+}
+
+/// Maintenance mode widget
+class MaintenanceWidget extends StatelessWidget {
+  const MaintenanceWidget({
+    super.key,
+    this.onCheckAgain,
+  });
+
+  final VoidCallback? onCheckAgain;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppErrorWidget(
+      title: 'Under Maintenance',
+      message:
+          'The service is currently under maintenance. Please check back later.',
+      icon: Icons.build,
+      iconColor: ColorsConst.accentOrange,
+      onRetry: onCheckAgain,
+      retryText: 'Check Again',
+      suggestions: const [
+        'Maintenance usually takes a few hours',
+        'Check social media for updates',
+        'Try again later',
+      ],
+    );
+  }
+}

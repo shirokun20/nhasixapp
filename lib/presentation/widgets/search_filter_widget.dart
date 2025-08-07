@@ -1,0 +1,810 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../../core/constants/colors_const.dart';
+import '../../core/constants/text_style_const.dart';
+import '../../domain/entities/search_filter.dart';
+
+/// Advanced search filter widget with expandable sections
+class SearchFilterWidget extends StatefulWidget {
+  const SearchFilterWidget({
+    super.key,
+    required this.filter,
+    required this.onFilterChanged,
+    this.availableLanguages = const ['english', 'japanese', 'chinese'],
+    this.availableCategories = const [
+      'doujinshi',
+      'manga',
+      'artist cg',
+      'game cg',
+      'western',
+      'non-h',
+      'image set',
+      'cosplay',
+    ],
+    this.popularTags = const [],
+    this.recentSearches = const [],
+    this.showAdvancedOptions = true,
+  });
+
+  final SearchFilter filter;
+  final Function(SearchFilter) onFilterChanged;
+  final List<String> availableLanguages;
+  final List<String> availableCategories;
+  final List<String> popularTags;
+  final List<String> recentSearches;
+  final bool showAdvancedOptions;
+
+  @override
+  State<SearchFilterWidget> createState() => _SearchFilterWidgetState();
+}
+
+class _SearchFilterWidgetState extends State<SearchFilterWidget>
+    with TickerProviderStateMixin {
+  late TextEditingController _queryController;
+  late TextEditingController _includeTagsController;
+  late TextEditingController _excludeTagsController;
+  late TextEditingController _artistsController;
+  late TextEditingController _charactersController;
+  late TextEditingController _parodiesController;
+  late TextEditingController _groupsController;
+  late TextEditingController _minPagesController;
+  late TextEditingController _maxPagesController;
+
+  late AnimationController _expandController;
+  late Animation<double> _expandAnimation;
+
+  bool _isExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeControllers();
+    _setupAnimations();
+  }
+
+  void _initializeControllers() {
+    _queryController = TextEditingController(text: widget.filter.query ?? '');
+    _includeTagsController = TextEditingController(
+      text: widget.filter.includeTags.join(', '),
+    );
+    _excludeTagsController = TextEditingController(
+      text: widget.filter.excludeTags.join(', '),
+    );
+    _artistsController = TextEditingController(
+      text: widget.filter.artists.join(', '),
+    );
+    _charactersController = TextEditingController(
+      text: widget.filter.characters.join(', '),
+    );
+    _parodiesController = TextEditingController(
+      text: widget.filter.parodies.join(', '),
+    );
+    _groupsController = TextEditingController(
+      text: widget.filter.groups.join(', '),
+    );
+    _minPagesController = TextEditingController(
+      text: widget.filter.pageCountRange?.min?.toString() ?? '',
+    );
+    _maxPagesController = TextEditingController(
+      text: widget.filter.pageCountRange?.max?.toString() ?? '',
+    );
+  }
+
+  void _setupAnimations() {
+    _expandController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _expandAnimation = CurvedAnimation(
+      parent: _expandController,
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _queryController.dispose();
+    _includeTagsController.dispose();
+    _excludeTagsController.dispose();
+    _artistsController.dispose();
+    _charactersController.dispose();
+    _parodiesController.dispose();
+    _groupsController.dispose();
+    _minPagesController.dispose();
+    _maxPagesController.dispose();
+    _expandController.dispose();
+    super.dispose();
+  }
+
+  void _updateFilter() {
+    final pageCountRange = _buildPageCountRange();
+
+    final updatedFilter = widget.filter.copyWith(
+      query: _queryController.text.trim().isEmpty
+          ? null
+          : _queryController.text.trim(),
+      includeTags: _parseCommaSeparatedList(_includeTagsController.text),
+      excludeTags: _parseCommaSeparatedList(_excludeTagsController.text),
+      artists: _parseCommaSeparatedList(_artistsController.text),
+      characters: _parseCommaSeparatedList(_charactersController.text),
+      parodies: _parseCommaSeparatedList(_parodiesController.text),
+      groups: _parseCommaSeparatedList(_groupsController.text),
+      pageCountRange: pageCountRange,
+    );
+
+    widget.onFilterChanged(updatedFilter);
+  }
+
+  List<String> _parseCommaSeparatedList(String text) {
+    if (text.trim().isEmpty) return [];
+    return text
+        .split(',')
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
+  }
+
+  IntRange? _buildPageCountRange() {
+    final minText = _minPagesController.text.trim();
+    final maxText = _maxPagesController.text.trim();
+
+    if (minText.isEmpty && maxText.isEmpty) return null;
+
+    final min = minText.isEmpty ? null : int.tryParse(minText);
+    final max = maxText.isEmpty ? null : int.tryParse(maxText);
+
+    return IntRange(min: min, max: max);
+  }
+
+  void _toggleExpanded() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+      if (_isExpanded) {
+        _expandController.forward();
+      } else {
+        _expandController.reverse();
+      }
+    });
+  }
+
+  void _clearAllFilters() {
+    setState(() {
+      _queryController.clear();
+      _includeTagsController.clear();
+      _excludeTagsController.clear();
+      _artistsController.clear();
+      _charactersController.clear();
+      _parodiesController.clear();
+      _groupsController.clear();
+      _minPagesController.clear();
+      _maxPagesController.clear();
+    });
+
+    widget.onFilterChanged(widget.filter.clear());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: ColorsConst.darkCard,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: ColorsConst.borderDefault,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with search query and expand button
+          _buildHeader(),
+
+          // Basic filters (always visible)
+          _buildBasicFilters(),
+
+          // Advanced filters (expandable)
+          if (widget.showAdvancedOptions) _buildAdvancedFilters(),
+
+          // Action buttons
+          _buildActionButtons(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: ColorsConst.borderMuted,
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _queryController,
+              style: TextStyleConst.bodyLarge,
+              decoration: InputDecoration(
+                hintText: 'Search content...',
+                hintStyle: TextStyleConst.placeholderText,
+                prefixIcon: const Icon(
+                  Icons.search,
+                  color: ColorsConst.darkTextSecondary,
+                ),
+                suffixIcon: _queryController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(
+                          Icons.clear,
+                          color: ColorsConst.darkTextSecondary,
+                        ),
+                        onPressed: () {
+                          _queryController.clear();
+                          _updateFilter();
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(
+                    color: ColorsConst.borderDefault,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(
+                    color: ColorsConst.accentBlue,
+                  ),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
+              ),
+              onChanged: (_) => _updateFilter(),
+              onSubmitted: (_) => _updateFilter(),
+            ),
+          ),
+          if (widget.showAdvancedOptions) ...[
+            const SizedBox(width: 12),
+            IconButton(
+              onPressed: _toggleExpanded,
+              icon: AnimatedRotation(
+                turns: _isExpanded ? 0.5 : 0,
+                duration: const Duration(milliseconds: 300),
+                child: const Icon(Icons.expand_more),
+              ),
+              color: ColorsConst.darkTextSecondary,
+              tooltip: _isExpanded ? 'Hide filters' : 'Show more filters',
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBasicFilters() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Sort and Popular toggle
+          Row(
+            children: [
+              Expanded(
+                child: _buildSortDropdown(),
+              ),
+              const SizedBox(width: 12),
+              _buildPopularToggle(),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Language and Category
+          Row(
+            children: [
+              Expanded(
+                child: _buildLanguageDropdown(),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildCategoryDropdown(),
+              ),
+            ],
+          ),
+
+          // Recent searches (if available)
+          if (widget.recentSearches.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _buildRecentSearches(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdvancedFilters() {
+    return SizeTransition(
+      sizeFactor: _expandAnimation,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        decoration: const BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: ColorsConst.borderMuted,
+              width: 1,
+            ),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
+
+            Text(
+              'Advanced Filters',
+              style: TextStyleConst.headingSmall.copyWith(fontSize: 16),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Include/Exclude tags
+            _buildTagFilters(),
+
+            const SizedBox(height: 16),
+
+            // Artists, Characters, Parodies, Groups
+            _buildMetadataFilters(),
+
+            const SizedBox(height: 16),
+
+            // Page count range
+            _buildPageCountFilter(),
+
+            // Popular tags suggestions
+            if (widget.popularTags.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              _buildPopularTags(),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSortDropdown() {
+    return DropdownButtonFormField<SortOption>(
+      value: widget.filter.sortBy,
+      decoration: InputDecoration(
+        labelText: 'Sort by',
+        labelStyle: TextStyleConst.label,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 8,
+        ),
+      ),
+      dropdownColor: ColorsConst.darkCard,
+      style: TextStyleConst.bodyMedium,
+      items: SortOption.values.map((option) {
+        return DropdownMenuItem(
+          value: option,
+          child: Text(option.displayName),
+        );
+      }).toList(),
+      onChanged: (value) {
+        if (value != null) {
+          widget.onFilterChanged(widget.filter.copyWith(sortBy: value));
+        }
+      },
+    );
+  }
+
+  Widget _buildPopularToggle() {
+    return FilterChip(
+      label: const Text('Popular'),
+      selected: widget.filter.popular,
+      onSelected: (selected) {
+        widget.onFilterChanged(widget.filter.copyWith(popular: selected));
+      },
+      selectedColor: ColorsConst.accentBlue.withValues(alpha: 0.2),
+      checkmarkColor: ColorsConst.accentBlue,
+      labelStyle: TextStyleConst.bodySmall.copyWith(
+        color: widget.filter.popular
+            ? ColorsConst.accentBlue
+            : ColorsConst.darkTextSecondary,
+      ),
+    );
+  }
+
+  Widget _buildLanguageDropdown() {
+    return DropdownButtonFormField<String>(
+      value: widget.filter.language,
+      decoration: InputDecoration(
+        labelText: 'Language',
+        labelStyle: TextStyleConst.label,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 8,
+        ),
+      ),
+      dropdownColor: ColorsConst.darkCard,
+      style: TextStyleConst.bodyMedium,
+      items: [
+        const DropdownMenuItem<String>(
+          value: null,
+          child: Text('Any language'),
+        ),
+        ...widget.availableLanguages.map((language) {
+          return DropdownMenuItem(
+            value: language,
+            child: Text(language.capitalize()),
+          );
+        }),
+      ],
+      onChanged: (value) {
+        widget.onFilterChanged(widget.filter.copyWith(language: value));
+      },
+    );
+  }
+
+  Widget _buildCategoryDropdown() {
+    return DropdownButtonFormField<String>(
+      value: widget.filter.category,
+      decoration: InputDecoration(
+        labelText: 'Category',
+        labelStyle: TextStyleConst.label,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 8,
+        ),
+      ),
+      dropdownColor: ColorsConst.darkCard,
+      style: TextStyleConst.bodyMedium,
+      items: [
+        const DropdownMenuItem<String>(
+          value: null,
+          child: Text('Any category'),
+        ),
+        ...widget.availableCategories.map((category) {
+          return DropdownMenuItem(
+            value: category,
+            child: Text(category.capitalize()),
+          );
+        }),
+      ],
+      onChanged: (value) {
+        widget.onFilterChanged(widget.filter.copyWith(category: value));
+      },
+    );
+  }
+
+  Widget _buildRecentSearches() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Recent Searches',
+          style: TextStyleConst.label,
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: widget.recentSearches.take(5).map((search) {
+            return ActionChip(
+              label: Text(search),
+              onPressed: () {
+                _queryController.text = search;
+                _updateFilter();
+              },
+              backgroundColor: ColorsConst.darkElevated,
+              labelStyle: TextStyleConst.bodySmall,
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTagFilters() {
+    return Column(
+      children: [
+        TextField(
+          controller: _includeTagsController,
+          style: TextStyleConst.bodyMedium,
+          decoration: InputDecoration(
+            labelText: 'Include tags (comma separated)',
+            labelStyle: TextStyleConst.label,
+            hintText: 'e.g., romance, comedy, school',
+            hintStyle: TextStyleConst.placeholderText,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            prefixIcon: const Icon(
+              Icons.add_circle_outline,
+              color: ColorsConst.accentGreen,
+            ),
+          ),
+          onChanged: (_) => _updateFilter(),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _excludeTagsController,
+          style: TextStyleConst.bodyMedium,
+          decoration: InputDecoration(
+            labelText: 'Exclude tags (comma separated)',
+            labelStyle: TextStyleConst.label,
+            hintText: 'e.g., horror, violence',
+            hintStyle: TextStyleConst.placeholderText,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            prefixIcon: const Icon(
+              Icons.remove_circle_outline,
+              color: ColorsConst.accentRed,
+            ),
+          ),
+          onChanged: (_) => _updateFilter(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMetadataFilters() {
+    return Column(
+      children: [
+        TextField(
+          controller: _artistsController,
+          style: TextStyleConst.bodyMedium,
+          decoration: InputDecoration(
+            labelText: 'Artists (comma separated)',
+            labelStyle: TextStyleConst.label,
+            hintText: 'e.g., artist1, artist2',
+            hintStyle: TextStyleConst.placeholderText,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            prefixIcon: const Icon(
+              Icons.brush,
+              color: ColorsConst.tagArtist,
+            ),
+          ),
+          onChanged: (_) => _updateFilter(),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _charactersController,
+                style: TextStyleConst.bodyMedium,
+                decoration: InputDecoration(
+                  labelText: 'Characters',
+                  labelStyle: TextStyleConst.label,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.person,
+                    color: ColorsConst.tagCharacter,
+                  ),
+                ),
+                onChanged: (_) => _updateFilter(),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextField(
+                controller: _parodiesController,
+                style: TextStyleConst.bodyMedium,
+                decoration: InputDecoration(
+                  labelText: 'Parodies',
+                  labelStyle: TextStyleConst.label,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.movie,
+                    color: ColorsConst.tagParody,
+                  ),
+                ),
+                onChanged: (_) => _updateFilter(),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _groupsController,
+          style: TextStyleConst.bodyMedium,
+          decoration: InputDecoration(
+            labelText: 'Groups (comma separated)',
+            labelStyle: TextStyleConst.label,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            prefixIcon: const Icon(
+              Icons.group,
+              color: ColorsConst.tagGroup,
+            ),
+          ),
+          onChanged: (_) => _updateFilter(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPageCountFilter() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Page Count Range',
+          style: TextStyleConst.label,
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _minPagesController,
+                style: TextStyleConst.bodyMedium,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: InputDecoration(
+                  labelText: 'Min pages',
+                  labelStyle: TextStyleConst.label,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onChanged: (_) => _updateFilter(),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'to',
+              style: TextStyleConst.bodyMedium,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextField(
+                controller: _maxPagesController,
+                style: TextStyleConst.bodyMedium,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: InputDecoration(
+                  labelText: 'Max pages',
+                  labelStyle: TextStyleConst.label,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onChanged: (_) => _updateFilter(),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPopularTags() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Popular Tags',
+          style: TextStyleConst.label,
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: widget.popularTags.take(10).map((tag) {
+            final isIncluded = widget.filter.includeTags.contains(tag);
+            return FilterChip(
+              label: Text(tag),
+              selected: isIncluded,
+              onSelected: (selected) {
+                final currentTags =
+                    List<String>.from(widget.filter.includeTags);
+                if (selected) {
+                  currentTags.add(tag);
+                } else {
+                  currentTags.remove(tag);
+                }
+                _includeTagsController.text = currentTags.join(', ');
+                widget.onFilterChanged(
+                  widget.filter.copyWith(includeTags: currentTags),
+                );
+              },
+              selectedColor: ColorsConst.accentBlue.withValues(alpha: 0.2),
+              checkmarkColor: ColorsConst.accentBlue,
+              labelStyle: TextStyleConst.bodySmall.copyWith(
+                color: isIncluded
+                    ? ColorsConst.accentBlue
+                    : ColorsConst.darkTextSecondary,
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons() {
+    final hasActiveFilters = widget.filter.hasFilters;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: const BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: ColorsConst.borderMuted,
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Active filters count
+          if (hasActiveFilters)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: ColorsConst.accentBlue.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${widget.filter.activeFilterCount} active',
+                style: TextStyleConst.caption.copyWith(
+                  color: ColorsConst.accentBlue,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+
+          const Spacer(),
+
+          // Clear button
+          if (hasActiveFilters)
+            TextButton(
+              onPressed: _clearAllFilters,
+              child: Text(
+                'Clear All',
+                style: TextStyleConst.buttonMedium.copyWith(
+                  color: ColorsConst.accentRed,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Extension for string capitalization
+extension StringCapitalization on String {
+  String capitalize() {
+    if (isEmpty) return this;
+    return '${this[0].toUpperCase()}${substring(1)}';
+  }
+}
