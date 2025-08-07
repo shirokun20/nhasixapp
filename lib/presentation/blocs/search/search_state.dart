@@ -353,13 +353,15 @@ class SearchHistory extends SearchState {
   const SearchHistory({
     required this.history,
     required this.popularSearches,
+    this.timestamp,
   });
 
   final List<String> history;
   final List<String> popularSearches;
+  final DateTime? timestamp;
 
   @override
-  List<Object> get props => [history, popularSearches];
+  List<Object?> get props => [history, popularSearches, timestamp];
 
   /// Check if has history
   bool get hasHistory => history.isNotEmpty;

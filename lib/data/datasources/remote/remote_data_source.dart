@@ -224,6 +224,9 @@ class RemoteDataSource {
       // Parse search results
       final contents = await scraper.parseSearchResults(html);
 
+      //
+      final totalData = await scraper.parseTotalData(html);
+
       // Parse pagination info
       final paginationInfo = scraper.parsePaginationInfo(html);
 
@@ -233,6 +236,7 @@ class RemoteDataSource {
       return {
         'contents': contents,
         'pagination': paginationInfo,
+        'totalData': totalData,
       };
     } catch (e, stackTrace) {
       _logger.e('Failed to search content with pagination',
@@ -634,8 +638,10 @@ class RemoteDataSource {
       buffer.write('q=');
     }
 
-    // Sort parameter
-    buffer.write('&sort=${filter.sortBy.apiValue}');
+    // Sort parameter (only add if not default/newest)
+    if (filter.sortBy.apiValue.isNotEmpty) {
+      buffer.write('&sort=${filter.sortBy.apiValue}');
+    }
 
     // Page parameter
     if (filter.page > 1) {

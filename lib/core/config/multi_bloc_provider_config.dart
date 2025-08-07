@@ -35,6 +35,10 @@ class MultiBlocProviderConfig {
       create: (context) => getIt<SettingsCubit>(),
     ),
 
+    BlocProvider<DetailCubit>(
+      create: (context) => getIt<DetailCubit>(),
+    ),
+
     // Note: DetailCubit, ReaderCubit, FavoriteCubit akan di-provide secara lokal
     // di screen masing-masing karena mereka screen-specific, bukan app-wide
   ];

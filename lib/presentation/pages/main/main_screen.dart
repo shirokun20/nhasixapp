@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/blocs/content/content_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/home/home_bloc.dart';
@@ -87,41 +88,36 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _buildBody() {
-    return BlocBuilder<ContentBloc, ContentState>(
-      builder: (context, state) {
-        // Use pagination or infinite scroll based on user preference
-        // For now, we'll use pagination with ContentListWidget
-        return Column(
-          children: [
-            Expanded(
-              child: ContentListWidget(
-                onContentTap: _onContentTap,
-                enablePullToRefresh: true, // Allow pull-to-refresh
-                enableInfiniteScroll:
-                    false, // Disable infinite scroll for pagination
+    return Container(
+      color: ColorsConst.darkBackground,
+      child: BlocBuilder<ContentBloc, ContentState>(
+        builder: (context, state) {
+          // Use pagination with ContentListWidget for better UX
+          return Column(
+            children: [
+              // Content area with black theme
+              Expanded(
+                child: Container(
+                  color: ColorsConst.darkBackground,
+                  child: ContentListWidget(
+                    onContentTap: _onContentTap,
+                    enablePullToRefresh: true, // Allow pull-to-refresh
+                    enableInfiniteScroll: false, // Use pagination instead
+                  ),
+                ),
               ),
-            ),
-            _buildContentFooter(state)
-          ],
-        );
-      },
+              // Pagination footer with black theme
+              _buildContentFooter(state),
+            ],
+          );
+        },
+      ),
     );
   }
 
   /// Handle content tap to navigate to detail screen
   void _onContentTap(Content content) {
-    // TODO: Navigate to detail screen with DetailCubit
-    // For now, just show a snackbar
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Tapped: ${content.title}',
-          style: TextStyleConst.bodyMedium.copyWith(color: Colors.white),
-        ),
-        backgroundColor: ColorsConst.accentBlue,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    AppRouter.goToContentDetail(context, content.id);
   }
 
   Widget _buildContentFooter(ContentState state) {
@@ -129,23 +125,34 @@ class _MainScreenState extends State<MainScreen> {
       return const SizedBox.shrink();
     }
 
-    return PaginationWidget(
-      currentPage: state.currentPage,
-      totalPages: state.totalPages,
-      hasNext: state.hasNext,
-      hasPrevious: state.hasPrevious,
-      onNextPage: () {
-        _contentBloc.add(const ContentNextPageEvent());
-      },
-      onPreviousPage: () {
-        _contentBloc.add(const ContentPreviousPageEvent());
-      },
-      onGoToPage: (page) {
-        _contentBloc.add(ContentGoToPageEvent(page));
-      },
-      showProgressBar: true,
-      showPercentage: true,
-      showPageInput: true, // Enable page input for large page counts
+    return Container(
+      decoration: const BoxDecoration(
+        color: ColorsConst.darkSurface,
+        border: Border(
+          top: BorderSide(
+            color: ColorsConst.borderDefault,
+            width: 1,
+          ),
+        ),
+      ),
+      child: PaginationWidget(
+        currentPage: state.currentPage,
+        totalPages: state.totalPages,
+        hasNext: state.hasNext,
+        hasPrevious: state.hasPrevious,
+        onNextPage: () {
+          _contentBloc.add(const ContentNextPageEvent());
+        },
+        onPreviousPage: () {
+          _contentBloc.add(const ContentPreviousPageEvent());
+        },
+        onGoToPage: (page) {
+          _contentBloc.add(ContentGoToPageEvent(page));
+        },
+        showProgressBar: true,
+        showPercentage: true,
+        showPageInput: true, // Enable page input for large page counts
+      ),
     );
   }
 }

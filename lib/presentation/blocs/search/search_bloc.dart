@@ -83,13 +83,23 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       // Load search history
       _searchHistory = await _localDataSource.getSearchHistory();
 
-      // Load popular searches (mock data for now)
+      // Load popular searches based on actual nhentai popular tags
       _popularSearches = [
         'english',
         'big breasts',
         'sole female',
         'sole male',
         'full color',
+        'schoolgirl uniform',
+        'glasses',
+        'stockings',
+        'swimsuit',
+        'teacher',
+        'beauty',
+        'vanilla',
+        'romance',
+        'school',
+        'uniform',
       ];
 
       // Load search presets (from preferences)
@@ -98,6 +108,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       emit(SearchHistory(
         history: _searchHistory,
         popularSearches: _popularSearches,
+        timestamp: DateTime.now(),
       ));
 
       _logger.i(
@@ -187,7 +198,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       _logger.i(
           'SearchBloc: Searching with filters: ${event.filter.toQueryString()}');
 
-      _currentFilter = event.filter.copyWith(page: 1);
+      _currentFilter =
+          event.filter; // ✅ Use the page from event, don't reset to 1
 
       // Show loading state
       emit(const SearchLoading(message: 'Searching with filters...'));
@@ -262,6 +274,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     emit(SearchHistory(
       history: _searchHistory,
       popularSearches: _popularSearches,
+      timestamp: DateTime.now(),
     ));
   }
 
@@ -402,6 +415,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       emit(SearchHistory(
         history: _searchHistory,
         popularSearches: _popularSearches,
+        timestamp: DateTime.now(),
       ));
     }
   }
@@ -467,6 +481,16 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         _searchHistory = _searchHistory.take(_maxHistoryItems).toList();
       }
 
+      // Emit updated state if we're currently showing history
+      if (state is SearchHistory || state is SearchInitial) {
+        emit(SearchHistory(
+          history:
+              List<String>.from(_searchHistory), // Create new list instance
+          popularSearches: List<String>.from(_popularSearches),
+          timestamp: DateTime.now(),
+        ));
+      }
+
       _logger.d('SearchBloc: Added to search history: "${event.query}"');
     } catch (e) {
       _logger.e('SearchBloc: Error adding to search history', error: e);
@@ -484,6 +508,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       emit(SearchHistory(
         history: _searchHistory,
         popularSearches: _popularSearches,
+        timestamp: DateTime.now(),
       ));
 
       _logger.d('SearchBloc: Loaded ${_searchHistory.length} history items');
@@ -493,6 +518,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       emit(SearchHistory(
         history: _searchHistory,
         popularSearches: _popularSearches,
+        timestamp: DateTime.now(),
       ));
     }
   }
@@ -506,9 +532,11 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       await _localDataSource.clearSearchHistory();
       _searchHistory.clear();
 
+      // Force emit new state with empty history
       emit(SearchHistory(
-        history: _searchHistory,
-        popularSearches: _popularSearches,
+        history: List<String>.from(_searchHistory), // Create new list instance
+        popularSearches: List<String>.from(_popularSearches),
+        timestamp: DateTime.now(),
       ));
 
       _logger.d('SearchBloc: Cleared search history');
@@ -529,9 +557,11 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       // Update local history
       _searchHistory.remove(event.query);
 
+      // Force emit new state with updated history
       emit(SearchHistory(
-        history: _searchHistory,
-        popularSearches: _popularSearches,
+        history: List<String>.from(_searchHistory), // Create new list instance
+        popularSearches: List<String>.from(_popularSearches),
+        timestamp: DateTime.now(),
       ));
 
       _logger.d('SearchBloc: Removed from history: "${event.query}"');
@@ -641,6 +671,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     emit(SearchHistory(
       history: _searchHistory,
       popularSearches: _popularSearches,
+      timestamp: DateTime.now(),
     ));
   }
 

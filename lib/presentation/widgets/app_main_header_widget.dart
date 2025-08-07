@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
+import '../../core/routing/app_router.dart';
 
 class AppMainHeaderWidget extends StatelessWidget
     implements PreferredSizeWidget {
   const AppMainHeaderWidget({
     super.key,
     required this.context,
+    this.onSearchPressed,
   });
 
   final BuildContext context;
+  final VoidCallback? onSearchPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -28,11 +31,16 @@ class AppMainHeaderWidget extends StatelessWidget
       }),
       actions: [
         IconButton(
-          onPressed: () {},
+          onPressed: onSearchPressed ??
+              () {
+                // Navigate to dedicated SearchScreen
+                AppRouter.goToSearch(context);
+              },
           color: ColorsConst.darkTextPrimary,
           icon: const Icon(
             Icons.search,
           ),
+          tooltip: 'Search',
         ),
         PopupMenuButton<String>(
           color: ColorsConst.darkCard,

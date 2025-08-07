@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/presentation/pages/splash/splash_screen.dart';
 import 'package:nhasixapp/presentation/pages/main/main_screen.dart';
+import 'package:nhasixapp/presentation/pages/search/search_screen.dart';
+import 'package:nhasixapp/presentation/pages/detail/detail_screen.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -28,9 +30,18 @@ class AppRouter {
       GoRoute(
         path: AppRoute.search,
         name: AppRoute.searchName,
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Search Screen - To be implemented')),
-        ),
+        builder: (context, state) => const SearchScreen(),
+      ),
+
+      GoRoute(
+        path: '${AppRoute.search}/:query',
+        name: AppRoute.searchNameWithQuery,
+        builder: (context, state) {
+          final query = state.pathParameters['query']!;
+          return SearchScreen(
+            query: query
+          );
+        },
       ),
 
       // Content Detail Screen
@@ -39,11 +50,7 @@ class AppRouter {
         name: AppRoute.contentDetailName,
         builder: (context, state) {
           final contentId = state.pathParameters['id']!;
-          return Scaffold(
-            appBar: AppBar(title: Text('Content: $contentId')),
-            body: const Center(
-                child: Text('Content Detail Screen - To be implemented')),
-          );
+          return DetailScreen(contentId: contentId);
         },
       ),
 
@@ -173,16 +180,16 @@ class AppRouter {
   }
 
   static void goToSearch(BuildContext context) {
-    context.go(AppRoute.search);
+    context.push(AppRoute.search);
   }
 
   static void goToContentDetail(BuildContext context, String contentId) {
-    context.go('/content/$contentId');
+    context.push('/content/$contentId');
   }
 
   static void goToReader(BuildContext context, String contentId,
       {int page = 1}) {
-    context.go('/reader/$contentId?page=$page');
+    context.push('/reader/$contentId?page=$page');
   }
 
   static void goToFavorites(BuildContext context) {

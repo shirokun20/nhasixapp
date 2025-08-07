@@ -20,6 +20,7 @@ class ContentModel extends Content {
     super.favorites = 0,
     super.englishTitle,
     super.japaneseTitle,
+    super.relatedContent = const [],
     this.cachedAt,
   });
 
@@ -43,6 +44,7 @@ class ContentModel extends Content {
       favorites: content.favorites,
       englishTitle: content.englishTitle,
       japaneseTitle: content.japaneseTitle,
+      relatedContent: content.relatedContent,
       cachedAt: DateTime.now(),
     );
   }
@@ -65,6 +67,7 @@ class ContentModel extends Content {
       favorites: favorites,
       englishTitle: englishTitle,
       japaneseTitle: japaneseTitle,
+      relatedContent: relatedContent,
     );
   }
 
@@ -132,6 +135,7 @@ class ContentModel extends Content {
       favorites: favorites,
       englishTitle: englishTitle,
       japaneseTitle: japaneseTitle,
+      relatedContent: relatedContent,
       cachedAt: DateTime.now(),
     );
   }

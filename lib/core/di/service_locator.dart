@@ -6,10 +6,17 @@ import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass_no_webview.d
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart'
+    hide ImageCacheManager;
 
 // Core Network
 import 'package:nhasixapp/core/network/http_client_manager.dart';
+
+// Core Utils
+import 'package:nhasixapp/core/utils/image_cache_manager.dart';
+import 'package:nhasixapp/core/utils/image_preloader.dart';
+import 'package:nhasixapp/core/utils/image_optimizer.dart';
+import 'package:nhasixapp/core/utils/content_image_preloader.dart';
 
 // Data Sources
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
@@ -76,6 +83,20 @@ void _setupCore() {
 
   // Cache Manager
   getIt.registerLazySingleton<CacheManager>(() => DefaultCacheManager());
+
+  // Image Cache Manager
+  getIt.registerLazySingleton<ImageCacheManager>(
+      () => ImageCacheManager.instance);
+
+  // Image Preloader
+  getIt.registerLazySingleton<ImagePreloader>(() => ImagePreloader.instance);
+
+  // Image Optimizer
+  getIt.registerLazySingleton<ImageOptimizer>(() => ImageOptimizer.instance);
+
+  // Content Image Preloader
+  getIt.registerLazySingleton<ContentImagePreloader>(
+      () => ContentImagePreloader.instance);
 }
 
 /// Setup data sources (Remote and Local)
@@ -179,6 +200,7 @@ void _setupBlocs() {
         searchContentUseCase: getIt<SearchContentUseCase>(),
         getRandomContentUseCase: getIt<GetRandomContentUseCase>(),
         contentRepository: getIt<ContentRepository>(),
+        contentImagePreloader: getIt<ContentImagePreloader>(),
         logger: getIt<Logger>(),
       ));
 
@@ -209,9 +231,15 @@ void _setupCubits() {
         logger: getIt<Logger>(),
       ));
 
-  // Note: DetailCubit is screen-specific and will be provided locally
-  // in the detail screen rather than registered globally
-  // Same for ReaderCubit and FavoriteCubit when implemented
+  // DetailCubit - Content detail management
+  getIt.registerFactory<DetailCubit>(() => DetailCubit(
+        getContentDetailUseCase: getIt<GetContentDetailUseCase>(),
+        contentRepository: getIt<ContentRepository>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // Note: ReaderCubit and FavoriteCubit will be implemented later
+  // Same pattern will be used for other screen-specific cubits
 }
 
 /// Clean up all registered dependencies

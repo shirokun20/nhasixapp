@@ -1,4 +1,5 @@
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/domain/entities/pagination_info.dart';
 
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/content_repository.dart';
@@ -88,8 +89,8 @@ class ContentRepositoryImpl implements ContentRepository {
             await remoteDataSource.searchContentWithPagination(filter);
 
         final remoteResults = remoteResult['contents'] as List<ContentModel>;
-        final paginationInfo =
-            remoteResult['pagination'] as Map<String, dynamic>;
+        var paginationInfo = remoteResult['pagination'] as Map<String, dynamic>;
+        paginationInfo['totalCount'] = remoteResult['totalData'] as int;
         _logger.i('Found ${remoteResults.length} search results from remote');
 
         final entities =
@@ -260,7 +261,7 @@ class ContentRepositoryImpl implements ContentRepository {
     final hasPrevious = paginationInfo['hasPrevious'] as bool? ?? false;
 
     // Calculate approximate total count based on pages and content per page
-    final totalCount = totalPages * defaultPageSize;
+    final totalCount = paginationInfo['totalCount'] as int? ?? 0;
 
     _logger.d('Built ContentListResult with real pagination: '
         'currentPage=$currentPage, totalPages=$totalPages, '

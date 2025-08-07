@@ -111,23 +111,23 @@
   - [x] Update documentation (design.md, components-list.md)
   - _Requirements: All simplified for better maintainability_
 
-- [ ] 5. Build core UI components
+- [x] 5. Build core UI components
 💡 *Remember to check components-list.md first*
-  - [ ] 5.1 Update AppMainDrawerWidget dengan menu yang sesuai
+  - [x] 5.1 Update AppMainDrawerWidget dengan menu yang sesuai
     - Update drawer dengan 4 menu utama: Downloaded galleries, Random gallery, Favorite galleries, View history
     - Implement navigation untuk setiap menu item
     - Maintain black theme consistency
     - Add proper icons dan styling
     - _Requirements: 6.1_
 
-  - [ ] 5.2 Create reusable widgets
+  - [x] 5.2 Create reusable widgets
     - Implement ContentCard dengan image caching
     - Create SearchFilter widget dengan advanced options
     - Build ProgressIndicator dan ErrorWidget dengan black theme
     - Create PaginationWidget dengan next/previous buttons
     - _Requirements: 6.1_
 
-  - [ ] 5.3 Implement main screens dengan tema hitam
+  - [x] 5.3 Implement main screens dengan tema hitam
     - Update SplashScreen dengan initial loading progress
     - Fix MainScreen dengan content grid dan tema hitam default
     - Implement SearchScreen dengan filters
@@ -135,7 +135,7 @@
     - Replace infinite scroll dengan simple pagination buttons
     - _Requirements: 1.1, 2.1, 3.1, 6.1_
 
-  - [ ] 5.4 Add image loading dan caching
+  - [x] 5.4 Add image loading dan caching
     - Implement progressive image loading
     - Add CachedNetworkImage dengan custom cache
     - Create thumbnail generation

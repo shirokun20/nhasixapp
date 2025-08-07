@@ -19,6 +19,7 @@ class Content extends Equatable {
     this.favorites = 0,
     this.englishTitle,
     this.japaneseTitle,
+    this.relatedContent = const [],
   });
 
   final String id;
@@ -36,6 +37,7 @@ class Content extends Equatable {
   final int favorites; // Popularity count
   final String? englishTitle;
   final String? japaneseTitle;
+  final List<Content> relatedContent;
 
   @override
   List<Object?> get props => [
@@ -54,6 +56,7 @@ class Content extends Equatable {
         favorites,
         englishTitle,
         japaneseTitle,
+        relatedContent,
       ];
 
   Content copyWith({
@@ -72,6 +75,7 @@ class Content extends Equatable {
     int? favorites,
     String? englishTitle,
     String? japaneseTitle,
+    List<Content>? relatedContent,
   }) {
     return Content(
       id: id ?? this.id,
@@ -89,6 +93,7 @@ class Content extends Equatable {
       favorites: favorites ?? this.favorites,
       englishTitle: englishTitle ?? this.englishTitle,
       japaneseTitle: japaneseTitle ?? this.japaneseTitle,
+      relatedContent: relatedContent ?? this.relatedContent,
     );
   }
 

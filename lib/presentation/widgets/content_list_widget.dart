@@ -1,4 +1,3 @@
-import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
@@ -7,20 +6,35 @@ import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/entities.dart';
 import '../blocs/content/content_bloc.dart';
+import 'content_card_widget.dart';
+
+extension StringCapitalize on String {
+  String get capitalize {
+    if (isEmpty) return this;
+    return '${this[0].toUpperCase()}${substring(1).toLowerCase()}';
+  }
+}
 
 /// Widget that displays a grid of content with pagination support
 /// Designed to work with PaginationWidget for page navigation
+///
+/// Usage:
+/// - Main screen: showHeader = false (default) - clean design like nhentai main page
+/// - Search/Browse: showHeader = true - shows metadata and pagination info
+/// - Content cards: showUploadDate controlled per card basis
 class ContentListWidget extends StatefulWidget {
   const ContentListWidget({
     super.key,
     this.onContentTap,
     this.enablePullToRefresh = true,
     this.enableInfiniteScroll = false, // Disabled by default for pagination
+    this.showHeader = false, // Hidden by default for main screen style
   });
 
   final void Function(Content content)? onContentTap;
   final bool enablePullToRefresh;
   final bool enableInfiniteScroll;
+  final bool showHeader;
 
   @override
   State<ContentListWidget> createState() => _ContentListWidgetState();
@@ -380,60 +394,66 @@ class _ContentListWidgetState extends State<ContentListWidget> {
     return CustomScrollView(
       controller: _scrollController,
       slivers: [
-        // Content type header
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        state.contentTypeDescription,
-                        style: TextStyleConst.bodyLarge.copyWith(
-                          color: ColorsConst.darkTextPrimary,
+        // Content type header (conditional based on showHeader parameter)
+        if (widget.showHeader)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          state.contentTypeDescription,
+                          style: TextStyleConst.bodyLarge.copyWith(
+                            color: ColorsConst.darkTextPrimary,
+                          ),
                         ),
-                      ),
-                      Text(
-                        '${state.totalCount} items • Page ${state.currentPage} of ${state.totalPages}',
-                        style: TextStyleConst.bodySmall.copyWith(
-                          color: ColorsConst.darkTextSecondary,
+                        Text(
+                          '${state.totalCount} items • Page ${state.currentPage} of ${state.totalPages}',
+                          style: TextStyleConst.bodySmall.copyWith(
+                            color: ColorsConst.darkTextSecondary,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (state.lastUpdated != null)
-                  Text(
-                    'Updated: ${_formatTime(state.lastUpdated!)}',
-                    style: TextStyleConst.bodySmall.copyWith(
-                      color: ColorsConst.darkTextTertiary,
+                      ],
                     ),
                   ),
-              ],
+                  if (state.lastUpdated != null)
+                    Text(
+                      'Updated: ${_formatTime(state.lastUpdated!)}',
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: ColorsConst.darkTextTertiary,
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
-        ),
 
         // Content grid
-        SliverGrid(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 0.7,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-          ),
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final content = state.contents[index];
-              return ContentCard(
-                content: content,
-                onTap: () => widget.onContentTap?.call(content),
-              );
-            },
-            childCount: state.contents.length,
+        SliverPadding(
+          padding: EdgeInsets.all(widget.showHeader ? 8.0 : 16.0),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.7,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final content = state.contents[index];
+                return ContentCard(
+                  content: content,
+                  onTap: () => widget.onContentTap?.call(content),
+                  // Using default settings (showUploadDate: false) for main screen style
+                  // For search/browse screens, set showUploadDate: true
+                );
+              },
+              childCount: state.contents.length,
+            ),
           ),
         ),
 
@@ -472,116 +492,4 @@ class _ContentListWidgetState extends State<ContentListWidget> {
   }
 }
 
-/// Individual content card widget
-class ContentCard extends StatelessWidget {
-  const ContentCard({
-    super.key,
-    required this.content,
-    this.onTap,
-  });
-
-  final Content content;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      color: ColorsConst.darkCard,
-      elevation: 2,
-      shadowColor: ColorsConst.darkBackground.withValues(alpha: 0.3),
-      child: InkWell(
-        onTap: onTap,
-        splashColor: ColorsConst.accentBlue.withValues(alpha: 0.1),
-        highlightColor: ColorsConst.hoverColor,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Cover image
-            Expanded(
-              flex: 3,
-              child: Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: ColorsConst.darkElevated,
-                ),
-                child: content.coverUrl.isNotEmpty
-                    ? Image.network(
-                        content.coverUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(
-                            Icons.broken_image,
-                            size: 48,
-                            color: ColorsConst.darkTextTertiary,
-                          );
-                        },
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return const Center(
-                            child: CircularProgressIndicator(
-                              color: ColorsConst.accentBlue,
-                              strokeWidth: 2,
-                            ),
-                          );
-                        },
-                      )
-                    : Icon(
-                        Icons.image_not_supported,
-                        size: 48,
-                        color: ColorsConst.darkTextTertiary,
-                      ),
-              ),
-            ),
-
-            // Content info
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title
-                    Text(
-                      content.getDisplayTitle(),
-                      style: TextStyleConst.bodySmall.copyWith(
-                        color: ColorsConst.darkTextPrimary,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-
-                    // Artist
-                    if (content.artists.isNotEmpty)
-                      Text(
-                        content.artists.join(', ').capitalize,
-                        style: TextStyleConst.bodySmall.copyWith(
-                          color: ColorsConst.accentBlue,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-
-                    const Spacer(),
-
-                    // Bottom info
-                    Row(
-                      children: [
-                        const Spacer(),
-                        if (content.language.isNotEmpty)
-                          Image.asset(
-                            'assets/images/${content.language.toLowerCase()}.gif', width: 30,),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// ContentCard is now imported from content_card_widget.dart

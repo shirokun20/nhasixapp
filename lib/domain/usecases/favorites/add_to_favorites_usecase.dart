@@ -1,6 +1,5 @@
 import '../base_usecase.dart';
 import '../../entities/entities.dart';
-import '../../value_objects/value_objects.dart';
 import '../../repositories/repositories.dart';
 
 /// Use case for adding content to favorites

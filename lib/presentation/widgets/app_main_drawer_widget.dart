@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/core/constants/colors_const.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
+import 'package:nhasixapp/core/routing/app_route.dart';
 
 class AppMainDrawerWidget extends StatelessWidget {
   const AppMainDrawerWidget({
@@ -62,10 +64,8 @@ class AppMainDrawerWidget extends StatelessWidget {
               style: TextStyleConst.navigationLabel,
             ),
             onTap: () {
-              // Update the state of the app
-              // ...
-              // Then close the drawer
               Navigator.pop(context);
+              context.push(AppRoute.downloads);
             },
           ),
           ListTile(
@@ -78,10 +78,8 @@ class AppMainDrawerWidget extends StatelessWidget {
               style: TextStyleConst.navigationLabel,
             ),
             onTap: () {
-              // Update the state of the app
-              // ...
-              // Then close the drawer
               Navigator.pop(context);
+              context.push(AppRoute.random);
             },
           ),
           ListTile(
@@ -94,10 +92,8 @@ class AppMainDrawerWidget extends StatelessWidget {
               style: TextStyleConst.navigationLabel,
             ),
             onTap: () {
-              // Update the state of the app
-              // ...
-              // Then close the drawer
               Navigator.pop(context);
+              context.push(AppRoute.favorites);
             },
           ),
           ListTile(
@@ -111,6 +107,7 @@ class AppMainDrawerWidget extends StatelessWidget {
             ),
             onTap: () {
               Navigator.pop(context);
+              context.push(AppRoute.history);
             },
           ),
         ],

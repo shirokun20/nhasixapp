@@ -30,6 +30,7 @@ class AppRoute {
   static const String splashName = 'splash';
   static const String homeName = 'home';
   static const String searchName = 'search';
+  static const String searchNameWithQuery = 'search-query';
   static const String contentDetailName = 'content-detail';
   static const String readerName = 'reader';
   static const String favoritesName = 'favorites';

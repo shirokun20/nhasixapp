@@ -64,15 +64,15 @@ class TagResolver {
             url: _generateTagUrl(tagData['slug'], tagData['type']),
             slug: tagData['slug'],
           ));
-        } catch (e) {
-          _logger.w('Failed to resolve tag ID $tagId: $e');
+        } catch (e, stackTrace) {
+          _logger.w('Failed to resolve tag ID $tagId: $e, and $stackTrace');
         }
       } else {
-        _logger.d('Tag ID $tagId not found in mapping');
+        // _logger.d('Tag ID $tagId not found in mapping');
       }
     }
 
-    _logger.d('Resolved ${tags.length} tags from ${tagIds.length} tag IDs');
+    // _logger.d('Resolved ${tags.length} tags from ${tagIds.length} tag IDs');
     return tags;
   }
 
@@ -132,6 +132,8 @@ class TagResolver {
   }
 
   /// Get tags by type
+  /// contoh penggunaan
+  /// final tags = await tagResolver.getTagsByType('category');
   Future<List<Tag>> getTagsByType(String type, {int limit = 100}) async {
     final tagMapping = await getTagMapping();
     final results = <Tag>[];

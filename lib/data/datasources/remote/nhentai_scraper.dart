@@ -1,6 +1,7 @@
 import 'package:html/parser.dart' as html_parser;
 import 'package:html/dom.dart' as html_dom;
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/domain/entities/entities.dart';
 
 import '../../models/content_model.dart';
 import '../../models/tag_model.dart';
@@ -112,7 +113,7 @@ class NhentaiScraper {
     try {
       final document = html_parser.parse(html);
 
-      // Extract title
+      // Extract titles
       final titleElement = document.querySelector(detailTitleSelector);
       final subtitleElement = document.querySelector(detailSubtitleSelector);
 
@@ -128,11 +129,20 @@ class NhentaiScraper {
       // Extract tags
       final tags = _parseTagsFromDetail(document);
 
-      // Extract metadata
-      final metadata = _parseMetadata(document);
+      // Extract upload date from time element
+      final uploadDate = _parseUploadDateFromTime(document);
+
+      // Extract favorites from button
+      final favorites = _parseFavoritesFromButton(document);
 
       // Extract image URLs
       final imageUrls = _parseImageUrls(document, contentId);
+
+      // Parse page count from dedicated section (not from tags)
+      final pageCount = _parsePageCount(document);
+
+      // Parse related content
+      final relatedContent = _parseRelatedContent(document);
 
       // Determine language
       final language = _extractLanguage(tags);
@@ -155,10 +165,11 @@ class NhentaiScraper {
         parodies: parodies,
         groups: groups,
         language: language,
-        pageCount: imageUrls.length,
+        pageCount: pageCount > 0 ? pageCount : imageUrls.length,
         imageUrls: imageUrls,
-        uploadDate: _parseUploadDate(metadata),
-        favorites: _parseFavorites(metadata),
+        uploadDate: uploadDate,
+        favorites: favorites,
+        relatedContent: relatedContent,
       );
     } catch (e, stackTrace) {
       _logger.e('Failed to parse content detail for ID: $contentId',
@@ -324,6 +335,26 @@ class NhentaiScraper {
   Future<List<ContentModel>> parseSearchResults(String html) async {
     // Search results use the same structure as content list
     return await parseContentList(html);
+  }
+
+  Future<int> parseTotalData(String html) async {
+    try {
+      final document = html_parser.parse(html, encoding: 'utf-8');
+      final h1Text = document.querySelector('h1')?.text ?? '';
+
+      // Gunakan regex untuk ambil angka
+      final match = RegExp(r'[\d,]+').firstMatch(h1Text);
+      final rawNumber = match?.group(0)?.replaceAll(',', '') ?? '0';
+
+      // Konversi ke integer
+      final resultCount = int.tryParse(rawNumber) ?? 0;
+
+      return resultCount;
+    } catch (e, stackTrace) {
+      _logger.e('Failed to parse content list',
+          error: e, stackTrace: stackTrace);
+      return 0;
+    }
   }
 
   /// Parse search results from HTML (sync version without tag resolution)
@@ -552,15 +583,6 @@ class NhentaiScraper {
       // Extract tag IDs from data-tags attribute (if available)
       final tagIds = _parseTagIds(element.attributes['data-tags']);
 
-      // Extract dimensions from cover element attributes
-      final width =
-          int.tryParse(coverElement?.attributes['width'] ?? '0') ?? 250;
-      final height =
-          int.tryParse(coverElement?.attributes['height'] ?? '0') ?? 350;
-
-      // Extract aspect ratio from cover link style
-      final aspectRatio = _extractAspectRatio(linkElement);
-
       // Resolve tag IDs to Tag objects using TagResolver
       final resolvedTags = await _tagResolver.resolveTagIds(tagIds);
 
@@ -589,8 +611,8 @@ class NhentaiScraper {
           languageTags.isNotEmpty ? languageTags.first.name : 'japanese';
 
       // Log extracted data for debugging
-      _logger.d(
-          'Parsed content card - ID: $contentId, TagIDs: $tagIds, Tags: ${resolvedTags.length}, Dimensions: ${width}x$height, AspectRatio: $aspectRatio');
+      // _logger.d(
+      //     'Parsed content card - ID: $contentId, TagIDs: $tagIds, Tags: ${resolvedTags.length}, Dimensions: ${width}x$height, AspectRatio: $aspectRatio');
 
       // Create content model with resolved tags
       return ContentModel(
@@ -607,6 +629,7 @@ class NhentaiScraper {
         imageUrls: const [],
         uploadDate: DateTime.now(), // Will be populated from detail
         favorites: 0,
+        relatedContent: const [],
         cachedAt: DateTime.now(),
       );
     } catch (e) {
@@ -670,6 +693,7 @@ class NhentaiScraper {
         imageUrls: const [],
         uploadDate: DateTime.now(), // Will be populated from detail
         favorites: 0,
+        relatedContent: const [],
         cachedAt: DateTime.now(),
       );
     } catch (e) {
@@ -734,12 +758,27 @@ class NhentaiScraper {
     final tags = <Tag>[];
 
     try {
-      final tagElements = document.querySelectorAll(detailTagsSelector);
+      // Parse tags from specific sections, excluding Pages and Uploaded
+      final tagContainers = document.querySelectorAll('#tags .tag-container');
 
-      for (final element in tagElements) {
-        final tag = _parseTagFromElement(element);
-        if (tag != null) {
-          tags.add(tag);
+      for (final container in tagContainers) {
+        // Skip Pages and Uploaded sections
+        final fieldName = container.text.trim();
+        if (fieldName.startsWith('Pages:') ||
+            fieldName.startsWith('Uploaded:')) {
+          continue;
+        }
+
+        final tagElements = container.querySelectorAll('.tag');
+        for (final element in tagElements) {
+          final tag = _parseTagFromElement(element);
+          if (tag != null) {
+            // Filter out "translated" from languages - only keep actual languages
+            if (tag.type == 'language' && tag.name == 'translated') {
+              continue;
+            }
+            tags.add(tag);
+          }
         }
       }
     } catch (e) {
@@ -761,14 +800,8 @@ class NhentaiScraper {
 
       if (name == null || href == null) return null;
 
-      // Parse count
-      int count = 0;
-      if (countText != null) {
-        final countMatch = RegExp(r'(\d+)').firstMatch(countText);
-        if (countMatch != null) {
-          count = int.tryParse(countMatch.group(1)!) ?? 0;
-        }
-      }
+      // Parse count with K/M suffix support
+      int count = _parseCountWithSuffix(countText);
 
       // Determine tag type from URL
       String type = 'tag';
@@ -798,6 +831,42 @@ class NhentaiScraper {
     }
   }
 
+  /// Parse count with K/M suffix support (e.g., "93K" -> 93000)
+  int _parseCountWithSuffix(String? countText) {
+    if (countText == null || countText.isEmpty) return 0;
+
+    try {
+      // Remove any parentheses and trim
+      final cleanText = countText.replaceAll(RegExp(r'[()]'), '').trim();
+
+      if (cleanText.isEmpty) return 0;
+
+      // Check for K suffix (thousands)
+      if (cleanText.endsWith('K')) {
+        final numberPart = cleanText.substring(0, cleanText.length - 1);
+        final number = double.tryParse(numberPart);
+        if (number != null) {
+          return (number * 1000).round();
+        }
+      }
+
+      // Check for M suffix (millions)
+      if (cleanText.endsWith('M')) {
+        final numberPart = cleanText.substring(0, cleanText.length - 1);
+        final number = double.tryParse(numberPart);
+        if (number != null) {
+          return (number * 1000000).round();
+        }
+      }
+
+      // Try to parse as regular number
+      return int.tryParse(cleanText) ?? 0;
+    } catch (e) {
+      _logger.w('Failed to parse count with suffix: $countText');
+      return 0;
+    }
+  }
+
   /// Parse tag element from tags page
   TagModel? _parseTagElement(html_dom.Element element, String? type) {
     try {
@@ -810,14 +879,8 @@ class NhentaiScraper {
 
       if (name == null || href == null) return null;
 
-      // Parse count
-      int count = 0;
-      if (countText != null) {
-        final countMatch = RegExp(r'(\d+)').firstMatch(countText);
-        if (countMatch != null) {
-          count = int.tryParse(countMatch.group(1)!) ?? 0;
-        }
-      }
+      // Parse count with K/M suffix support
+      int count = _parseCountWithSuffix(countText);
 
       return TagModel(
         name: name,
@@ -966,7 +1029,108 @@ class NhentaiScraper {
         .toList();
   }
 
-  /// Parse upload date from metadata
+  /// Parse upload date from time element with datetime attribute
+  DateTime _parseUploadDateFromTime(html_dom.Document document) {
+    try {
+      final timeElement = document.querySelector('time[datetime]');
+      if (timeElement != null) {
+        final datetimeAttr = timeElement.attributes['datetime'];
+        if (datetimeAttr != null) {
+          return DateTime.parse(datetimeAttr);
+        }
+      }
+    } catch (e) {
+      _logger.w('Failed to parse upload date from time element: $e');
+    }
+    return DateTime.now();
+  }
+
+  /// Parse favorites count from button text
+  int _parseFavoritesFromButton(html_dom.Document document) {
+    try {
+      final favoriteButton = document.querySelector('.btn .nobold');
+      if (favoriteButton != null) {
+        final text = favoriteButton.text.trim();
+        // Extract number from text like "(296)"
+        final match = RegExp(r'\((\d+)\)').firstMatch(text);
+        if (match != null) {
+          return int.tryParse(match.group(1)!) ?? 0;
+        }
+      }
+    } catch (e) {
+      _logger.w('Failed to parse favorites from button: $e');
+    }
+    return 0;
+  }
+
+  /// Parse related content from "More Like This" section
+  List<ContentModel> _parseRelatedContent(html_dom.Document document) {
+    final relatedContent = <ContentModel>[];
+
+    try {
+      final relatedContainer = document.querySelector('#related-container');
+      if (relatedContainer != null) {
+        final galleries = relatedContainer.querySelectorAll('.gallery');
+
+        for (final gallery in galleries) {
+          try {
+            final linkElement = gallery.querySelector('a.cover');
+            final href = linkElement?.attributes['href'];
+            if (href == null) continue;
+
+            final match = RegExp(contentUrlPattern).firstMatch(href);
+            if (match == null) continue;
+
+            final contentId = match.group(1)!;
+
+            // Extract title
+            final titleElement = gallery.querySelector('.caption');
+            final title = (titleElement?.text)?.trim() ?? 'Unknown Title';
+
+            // Extract cover URL
+            final coverElement = linkElement?.querySelector('img');
+            final coverUrl = _extractImageUrl(
+                coverElement?.attributes['data-src'] ??
+                    coverElement?.attributes['src'] ??
+                    '');
+
+            // Extract tag IDs from data-tags attribute
+            final tagIds = _parseTagIds(gallery.attributes['data-tags']);
+
+            // Create minimal content for related items
+            final content = ContentModel(
+              id: contentId,
+              title: title,
+              coverUrl: coverUrl,
+              tags: const [], // Will be resolved later if needed
+              artists: const [],
+              characters: const [],
+              parodies: const [],
+              groups: const [],
+              language: 'unknown',
+              pageCount: 0,
+              imageUrls: const [],
+              uploadDate: DateTime.now(),
+              favorites: 0,
+              relatedContent: const [],
+            );
+
+            relatedContent.add(content);
+          } catch (e) {
+            _logger.w('Failed to parse related content item: $e');
+            continue;
+          }
+        }
+      }
+    } catch (e) {
+      _logger.w('Failed to parse related content: $e');
+    }
+
+    _logger.d('Parsed ${relatedContent.length} related content items');
+    return relatedContent;
+  }
+
+  /// Parse upload date from metadata (legacy method)
   DateTime _parseUploadDate(Map<String, String> metadata) {
     final uploadedText = metadata['uploaded'];
     if (uploadedText != null) {
@@ -981,7 +1145,7 @@ class NhentaiScraper {
     return DateTime.now();
   }
 
-  /// Parse favorites count from metadata
+  /// Parse favorites count from metadata (legacy method)
   int _parseFavorites(Map<String, String> metadata) {
     final favoritesText = metadata['favorites'];
     if (favoritesText != null) {
@@ -1105,7 +1269,30 @@ class NhentaiScraper {
       favorites: baseContent.favorites,
       englishTitle: baseContent.englishTitle,
       japaneseTitle: baseContent.japaneseTitle,
+      relatedContent: baseContent.relatedContent,
       cachedAt: baseContent.cachedAt,
     );
+  }
+
+  /// Parse page count from dedicated Pages section
+  int _parsePageCount(html_dom.Document document) {
+    try {
+      // Look for Pages section specifically
+      final tagContainers = document.querySelectorAll('#tags .tag-container');
+
+      for (final container in tagContainers) {
+        final fieldName = container.text.trim();
+        if (fieldName.startsWith('Pages:')) {
+          final pageElement = container.querySelector('.tag .name');
+          if (pageElement != null) {
+            final pageText = pageElement.text.trim();
+            return int.tryParse(pageText) ?? 0;
+          }
+        }
+      }
+    } catch (e) {
+      _logger.w('Failed to parse page count: $e');
+    }
+    return 0;
   }
 }

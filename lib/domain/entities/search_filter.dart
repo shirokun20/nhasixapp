@@ -204,7 +204,7 @@ extension SortOptionExtension on SortOption {
   String get apiValue {
     switch (this) {
       case SortOption.newest:
-        return 'date';
+        return ''; // Recent is default, no sort parameter needed
       case SortOption.popular:
         return 'popular';
       case SortOption.popularWeek:
