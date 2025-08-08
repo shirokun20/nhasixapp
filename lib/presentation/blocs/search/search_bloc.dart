@@ -2,11 +2,13 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:logger/logger.dart';
+import 'package:collection/collection.dart';
 
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/content/search_content_usecase.dart';
 
 import '../../../data/datasources/local/local_data_source.dart';
+import '../../../data/datasources/local/tag_data_source.dart';
 
 part 'search_event.dart';
 part 'search_state.dart';
@@ -17,9 +19,11 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   SearchBloc({
     required SearchContentUseCase searchContentUseCase,
     required LocalDataSource localDataSource,
+    required TagDataSource tagDataSource,
     required Logger logger,
   })  : _searchContentUseCase = searchContentUseCase,
         _localDataSource = localDataSource,
+        _tagDataSource = tagDataSource,
         _logger = logger,
         super(const SearchInitial()) {
     // Register event handlers
@@ -27,6 +31,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     on<SearchQueryEvent>(_onSearchQuery, transformer: _debounceTransformer());
     on<SearchWithFiltersEvent>(_onSearchWithFilters);
     on<SearchUpdateFilterEvent>(_onSearchUpdateFilter);
+    on<SearchSubmittedEvent>(_onSearchSubmitted);
     on<SearchClearEvent>(_onSearchClear);
     on<SearchLoadMoreEvent>(_onSearchLoadMore);
     on<SearchRefreshEvent>(_onSearchRefresh);
@@ -50,6 +55,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
   final SearchContentUseCase _searchContentUseCase;
   final LocalDataSource _localDataSource;
+  final TagDataSource _tagDataSource;
   final Logger _logger;
 
   // Internal state tracking
@@ -104,6 +110,27 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
       // Load search presets (from preferences)
       await _loadSearchPresets();
+
+      // Load last search filter state if exists
+      final lastFilterData = await _localDataSource.getLastSearchFilter();
+      if (lastFilterData != null) {
+        try {
+          _currentFilter = SearchFilter.fromJson(lastFilterData);
+          _logger.i('SearchBloc: Loaded last search filter state');
+
+          // If there was a previous search, emit the filter updated state
+          if (_currentFilter.hasFilters) {
+            emit(SearchFilterUpdated(
+              filter: _currentFilter,
+              timestamp: DateTime.now(),
+            ));
+            return;
+          }
+        } catch (e) {
+          _logger.e('SearchBloc: Error loading search filter state: $e');
+          // Continue with default initialization
+        }
+      }
 
       emit(SearchHistory(
         history: _searchHistory,
@@ -247,18 +274,78 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Update search filter without performing search
+  /// Update search filter without performing search (new flow)
   Future<void> _onSearchUpdateFilter(
     SearchUpdateFilterEvent event,
     Emitter<SearchState> emit,
   ) async {
-    _logger.i('SearchBloc: Updating filter');
-
     _currentFilter = event.filter;
 
-    final currentState = state;
-    if (currentState is SearchLoaded) {
-      emit(currentState.copyWithNewFilter(_currentFilter));
+    _logger.i(
+        'SearchBloc: Update data OnSearchUpdateFilter: ${event.filter.toJson()}');
+
+    // Emit a state that shows the filter has been updated but no search performed yet
+    emit(SearchFilterUpdated(
+      filter: _currentFilter,
+      timestamp: DateTime.now(),
+    ));
+  }
+
+  /// Submit search with current filter (new flow - triggers API call)
+  Future<void> _onSearchSubmitted(
+    SearchSubmittedEvent event,
+    Emitter<SearchState> emit,
+  ) async {
+    try {
+      _logger.i(
+          'SearchBloc: Submitting search with filter: ${_currentFilter.toQueryString()}');
+
+      // Show loading state
+      emit(const SearchLoading(message: 'Searching...'));
+
+      // Save search filter state to local datasource for persistence
+      await _localDataSource.saveSearchFilter(_currentFilter.toJson());
+
+      // Perform search
+      final result = await _searchContentUseCase(_currentFilter);
+
+      // Add query to history if present
+      if (_currentFilter.query != null && _currentFilter.query!.isNotEmpty) {
+        add(SearchAddToHistoryEvent(_currentFilter.query!));
+      }
+
+      if (result.isEmpty) {
+        emit(SearchEmpty(
+          filter: _currentFilter,
+          message: 'No results found with current filters',
+        ));
+        return;
+      }
+
+      emit(SearchLoaded(
+        results: result.contents,
+        filter: _currentFilter,
+        currentPage: result.currentPage,
+        totalPages: result.totalPages,
+        totalCount: result.totalCount,
+        hasNext: result.hasNext,
+        hasPrevious: result.hasPrevious,
+        lastUpdated: DateTime.now(),
+      ));
+
+      _logger.i('SearchBloc: Found ${result.contents.length} results');
+    } catch (e, stackTrace) {
+      _logger.e('SearchBloc: Error submitting search',
+          error: e, stackTrace: stackTrace);
+
+      final errorType = _determineErrorType(e);
+      emit(SearchError(
+        message: e.toString(),
+        errorType: errorType,
+        canRetry: errorType.isRetryable,
+        filter: _currentFilter,
+        stackTrace: stackTrace,
+      ));
     }
   }
 
@@ -270,6 +357,13 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     _logger.i('SearchBloc: Clearing search');
 
     _currentFilter = const SearchFilter();
+
+    // Clear search filter state from local datasource
+    try {
+      await _localDataSource.clearSearchFilter();
+    } catch (e) {
+      _logger.e('SearchBloc: Error clearing search filter state: $e');
+    }
 
     emit(SearchHistory(
       history: _searchHistory,
@@ -580,17 +674,21 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     SearchFilter newFilter = _currentFilter;
 
     if (event.tag != null) {
-      final tags = List<String>.from(newFilter.includeTags);
-      if (!tags.contains(event.tag!)) {
-        tags.add(event.tag!);
+      final tags = List<FilterItem>.from(newFilter.tags);
+      final existingTag =
+          tags.where((item) => item.value == event.tag!).firstOrNull;
+      if (existingTag == null) {
+        tags.add(FilterItem.include(event.tag!));
       }
-      newFilter = newFilter.copyWith(includeTags: tags);
+      newFilter = newFilter.copyWith(tags: tags);
     }
 
     if (event.artist != null) {
-      final artists = List<String>.from(newFilter.artists);
-      if (!artists.contains(event.artist!)) {
-        artists.add(event.artist!);
+      final artists = List<FilterItem>.from(newFilter.artists);
+      final existingArtist =
+          artists.where((item) => item.value == event.artist!).firstOrNull;
+      if (existingArtist == null) {
+        artists.add(FilterItem.include(event.artist!));
       }
       newFilter = newFilter.copyWith(artists: artists);
     }
@@ -603,7 +701,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       newFilter = newFilter.copyWith(category: event.category);
     }
 
-    add(SearchWithFiltersEvent(newFilter));
+    add(SearchUpdateFilterEvent(newFilter));
   }
 
   /// Toggle advanced search mode
@@ -724,14 +822,19 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Generate tag suggestions based on query (simplified - no local tag database)
+  /// Generate tag suggestions based on query from assets/json/tags.json
   Future<List<Tag>> _generateTagSuggestions(String query) async {
     try {
       if (query.length < 2) return [];
 
-      // Since we removed local tag database, return empty list
-      // Tag suggestions would come from TagResolver if needed
-      return [];
+      _logger.d('SearchBloc: Generating tag suggestions for: "$query"');
+
+      // Use TagDataSource to search tags from assets/json/tags.json
+      final suggestions =
+          await _tagDataSource.searchTags(query, limit: _maxSuggestions);
+
+      _logger.d('SearchBloc: Found ${suggestions.length} tag suggestions');
+      return suggestions;
     } catch (e) {
       _logger.e('SearchBloc: Error generating tag suggestions', error: e);
       return [];
@@ -799,6 +902,20 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
   /// Get search history
   List<String> get searchHistory => List.unmodifiable(_searchHistory);
+
+  /// Get last search filter from local datasource
+  Future<SearchFilter?> getLastSearchFilter() async {
+    try {
+      final filterData = await _localDataSource.getLastSearchFilter();
+      if (filterData != null) {
+        return SearchFilter.fromJson(filterData);
+      }
+      return null;
+    } catch (e) {
+      _logger.e('SearchBloc: Error getting last search filter: $e');
+      return null;
+    }
+  }
 
   @override
   Future<void> close() {

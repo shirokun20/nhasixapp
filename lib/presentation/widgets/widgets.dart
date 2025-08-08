@@ -6,4 +6,5 @@ export 'content_list_widget.dart';
 export 'error_widget.dart';
 export 'pagination_widget.dart';
 export 'progress_indicator_widget.dart';
+export 'progressive_image_widget.dart';
 export 'search_filter_widget.dart';

@@ -1,11 +1,63 @@
 import 'package:equatable/equatable.dart';
 
+/// Filter item with include/exclude functionality
+class FilterItem extends Equatable {
+  const FilterItem({
+    required this.value,
+    this.isExcluded = false,
+  });
+
+  final String value;
+  final bool isExcluded; // true = exclude, false = include
+
+  @override
+  List<Object?> get props => [value, isExcluded];
+
+  FilterItem copyWith({
+    String? value,
+    bool? isExcluded,
+  }) {
+    return FilterItem(
+      value: value ?? this.value,
+      isExcluded: isExcluded ?? this.isExcluded,
+    );
+  }
+
+  /// Create include filter item
+  factory FilterItem.include(String value) {
+    return FilterItem(value: value, isExcluded: false);
+  }
+
+  /// Create exclude filter item
+  factory FilterItem.exclude(String value) {
+    return FilterItem(value: value, isExcluded: true);
+  }
+
+  /// Get prefix for query string
+  String get prefix => isExcluded ? '-' : '';
+
+  /// Convert to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'value': value,
+      'isExcluded': isExcluded,
+    };
+  }
+
+  /// Create from JSON
+  factory FilterItem.fromJson(Map<String, dynamic> json) {
+    return FilterItem(
+      value: json['value'] as String,
+      isExcluded: json['isExcluded'] as bool? ?? false,
+    );
+  }
+}
+
 /// Search filter entity for advanced content filtering
 class SearchFilter extends Equatable {
   const SearchFilter({
     this.query,
-    this.includeTags = const [],
-    this.excludeTags = const [],
+    this.tags = const [],
     this.artists = const [],
     this.characters = const [],
     this.parodies = const [],
@@ -19,14 +71,13 @@ class SearchFilter extends Equatable {
   });
 
   final String? query;
-  final List<String> includeTags;
-  final List<String> excludeTags;
-  final List<String> artists;
-  final List<String> characters;
-  final List<String> parodies;
-  final List<String> groups;
-  final String? language;
-  final String? category;
+  final List<FilterItem> tags;
+  final List<FilterItem> artists;
+  final List<FilterItem> characters;
+  final List<FilterItem> parodies;
+  final List<FilterItem> groups;
+  final String? language; // Single select only
+  final String? category; // Single select only
   final int page;
   final SortOption sortBy;
   final bool popular; // Popular filter
@@ -35,8 +86,7 @@ class SearchFilter extends Equatable {
   @override
   List<Object?> get props => [
         query,
-        includeTags,
-        excludeTags,
+        tags,
         artists,
         characters,
         parodies,
@@ -49,16 +99,17 @@ class SearchFilter extends Equatable {
         pageCountRange,
       ];
 
+  static const _undefined = Object();
+
   SearchFilter copyWith({
     String? query,
-    List<String>? includeTags,
-    List<String>? excludeTags,
-    List<String>? artists,
-    List<String>? characters,
-    List<String>? parodies,
-    List<String>? groups,
-    String? language,
-    String? category,
+    List<FilterItem>? tags,
+    List<FilterItem>? artists,
+    List<FilterItem>? characters,
+    List<FilterItem>? parodies,
+    List<FilterItem>? groups,
+    Object? language = _undefined,
+    Object? category = _undefined,
     int? page,
     SortOption? sortBy,
     bool? popular,
@@ -66,14 +117,13 @@ class SearchFilter extends Equatable {
   }) {
     return SearchFilter(
       query: query ?? this.query,
-      includeTags: includeTags ?? this.includeTags,
-      excludeTags: excludeTags ?? this.excludeTags,
+      tags: tags ?? this.tags,
       artists: artists ?? this.artists,
       characters: characters ?? this.characters,
       parodies: parodies ?? this.parodies,
       groups: groups ?? this.groups,
-      language: language ?? this.language,
-      category: category ?? this.category,
+      language: language == _undefined ? this.language : language as String?,
+      category: category == _undefined ? this.category : category as String?,
       page: page ?? this.page,
       sortBy: sortBy ?? this.sortBy,
       popular: popular ?? this.popular,
@@ -84,8 +134,7 @@ class SearchFilter extends Equatable {
   /// Check if filter is empty (no criteria set)
   bool get isEmpty {
     return query == null &&
-        includeTags.isEmpty &&
-        excludeTags.isEmpty &&
+        tags.isEmpty &&
         artists.isEmpty &&
         characters.isEmpty &&
         parodies.isEmpty &&
@@ -103,8 +152,7 @@ class SearchFilter extends Equatable {
   int get activeFilterCount {
     int count = 0;
     if (query != null && query!.isNotEmpty) count++;
-    if (includeTags.isNotEmpty) count++;
-    if (excludeTags.isNotEmpty) count++;
+    if (tags.isNotEmpty) count++;
     if (artists.isNotEmpty) count++;
     if (characters.isNotEmpty) count++;
     if (parodies.isNotEmpty) count++;
@@ -136,32 +184,54 @@ class SearchFilter extends Equatable {
     return copyWith(page: page > 1 ? page - 1 : 1);
   }
 
-  /// Convert to query string for URL
+  /// Convert to query string for URL (new format with FilterItem)
   String toQueryString() {
-    final params = <String>[];
+    final queryParts = <String>[];
 
+    // Add text query if present
     if (query != null && query!.isNotEmpty) {
-      params.add('q=${Uri.encodeComponent(query!)}');
+      queryParts.add(query!);
     }
 
-    if (includeTags.isNotEmpty) {
-      params.add('tags=${Uri.encodeComponent(includeTags.join(','))}');
+    // Add tags with include/exclude
+    for (final tag in tags) {
+      queryParts.add('${tag.prefix}tag:"${tag.value}"');
     }
 
-    if (excludeTags.isNotEmpty) {
-      params.add('exclude=${Uri.encodeComponent(excludeTags.join(','))}');
+    // Add artists with include/exclude
+    for (final artist in artists) {
+      queryParts.add('${artist.prefix}artist:"${artist.value}"');
     }
 
-    if (artists.isNotEmpty) {
-      params.add('artists=${Uri.encodeComponent(artists.join(','))}');
+    // Add characters with include/exclude
+    for (final character in characters) {
+      queryParts.add('${character.prefix}character:"${character.value}"');
     }
 
+    // Add parodies with include/exclude
+    for (final parody in parodies) {
+      queryParts.add('${parody.prefix}parody:"${parody.value}"');
+    }
+
+    // Add groups with include/exclude
+    for (final group in groups) {
+      queryParts.add('${group.prefix}group:"${group.value}"');
+    }
+
+    // Add single select filters
     if (language != null) {
-      params.add('language=${Uri.encodeComponent(language!)}');
+      queryParts.add('language:"$language"');
     }
 
     if (category != null) {
-      params.add('category=${Uri.encodeComponent(category!)}');
+      queryParts.add('category:"$category"');
+    }
+
+    final params = <String>[];
+
+    // Combine all query parts
+    if (queryParts.isNotEmpty) {
+      params.add('q=${Uri.encodeComponent(queryParts.join(' '))}');
     }
 
     if (popular) {
@@ -172,6 +242,62 @@ class SearchFilter extends Equatable {
     params.add('page=$page');
 
     return params.join('&');
+  }
+
+  /// Convert to JSON for persistence
+  Map<String, dynamic> toJson() {
+    return {
+      'query': query,
+      'tags': tags.map((item) => item.toJson()).toList(),
+      'artists': artists.map((item) => item.toJson()).toList(),
+      'characters': characters.map((item) => item.toJson()).toList(),
+      'parodies': parodies.map((item) => item.toJson()).toList(),
+      'groups': groups.map((item) => item.toJson()).toList(),
+      'language': language,
+      'category': category,
+      'page': page,
+      'sortBy': sortBy.name,
+      'popular': popular,
+      'pageCountRange': pageCountRange?.toJson(),
+    };
+  }
+
+  /// Create from JSON for persistence
+  factory SearchFilter.fromJson(Map<String, dynamic> json) {
+    return SearchFilter(
+      query: json['query'] as String?,
+      tags: (json['tags'] as List<dynamic>?)
+              ?.map((item) => FilterItem.fromJson(item as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      artists: (json['artists'] as List<dynamic>?)
+              ?.map((item) => FilterItem.fromJson(item as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      characters: (json['characters'] as List<dynamic>?)
+              ?.map((item) => FilterItem.fromJson(item as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      parodies: (json['parodies'] as List<dynamic>?)
+              ?.map((item) => FilterItem.fromJson(item as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      groups: (json['groups'] as List<dynamic>?)
+              ?.map((item) => FilterItem.fromJson(item as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      language: json['language'] as String?,
+      category: json['category'] as String?,
+      page: json['page'] as int? ?? 1,
+      sortBy: SortOption.values.firstWhere(
+        (e) => e.name == json['sortBy'],
+        orElse: () => SortOption.newest,
+      ),
+      popular: json['popular'] as bool? ?? false,
+      pageCountRange: json['pageCountRange'] != null
+          ? IntRange.fromJson(json['pageCountRange'] as Map<String, dynamic>)
+          : null,
+    );
   }
 }
 
@@ -261,5 +387,21 @@ class IntRange extends Equatable {
       return 'Up to $max pages';
     }
     return '';
+  }
+
+  /// Convert to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'min': min,
+      'max': max,
+    };
+  }
+
+  /// Create from JSON
+  factory IntRange.fromJson(Map<String, dynamic> json) {
+    return IntRange(
+      min: json['min'] as int?,
+      max: json['max'] as int?,
+    );
   }
 }

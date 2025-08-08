@@ -259,24 +259,24 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                 Icon(
                   Icons.inbox_outlined,
                   size: 64,
-                  color: Theme.of(context).colorScheme.outline,
+                  color: ColorsConst.accentRed,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   state.contextualMessage,
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium,
+                  style: TextStyleConst.bodyMedium,
                 ),
                 const SizedBox(height: 8),
                 if (state.suggestions.isNotEmpty) ...[
                   Text(
                     'Suggestions:',
-                    style: Theme.of(context).textTheme.titleSmall,
+                    style: TextStyleConst.bodyMedium,
                   ),
                   const SizedBox(height: 4),
                   ...state.suggestions.map((suggestion) => Text(
                         '• $suggestion',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: TextStyleConst.bodyMedium,
                       )),
                 ],
                 if (state.canRetry) ...[

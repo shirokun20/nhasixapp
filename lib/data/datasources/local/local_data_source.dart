@@ -632,6 +632,76 @@ class LocalDataSource {
     }
   }
 
+  // ==================== SEARCH FILTER STATE PERSISTENCE ====================
+
+  /// Save search filter state for persistence
+  Future<void> saveSearchFilter(Map<String, dynamic> filterData) async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) {
+        _logger.e('Database not available, cannot save search filter');
+        return;
+      }
+
+      await db.insert(
+        'search_filter_state',
+        {
+          'id': 1, // Always use ID 1 for single state
+          'filter_data': jsonEncode(filterData),
+          'saved_at': DateTime.now().millisecondsSinceEpoch,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+
+      _logger.d('Saved search filter state');
+    } catch (e) {
+      _logger.e('Error saving search filter: $e');
+      rethrow;
+    }
+  }
+
+  /// Get last search filter state
+  Future<Map<String, dynamic>?> getLastSearchFilter() async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) {
+        _logger.e('Database not available, cannot get search filter');
+        return null;
+      }
+
+      final result = await db.query(
+        'search_filter_state',
+        where: 'id = ?',
+        whereArgs: [1],
+        limit: 1,
+      );
+
+      if (result.isEmpty) return null;
+
+      final filterDataString = result.first['filter_data'] as String;
+      return jsonDecode(filterDataString) as Map<String, dynamic>;
+    } catch (e) {
+      _logger.e('Error getting search filter: $e');
+      return null;
+    }
+  }
+
+  /// Clear search filter state
+  Future<void> clearSearchFilter() async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) {
+        _logger.e('Database not available, cannot clear search filter');
+        return;
+      }
+
+      await db.delete('search_filter_state');
+      _logger.d('Cleared search filter state');
+    } catch (e) {
+      _logger.e('Error clearing search filter: $e');
+    }
+  }
+
   // ==================== UTILITY OPERATIONS ====================
 
   /// Get database statistics

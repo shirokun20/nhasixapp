@@ -22,6 +22,7 @@ import 'package:nhasixapp/core/utils/content_image_preloader.dart';
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/anti_detection.dart';
 import 'package:nhasixapp/data/datasources/remote/nhentai_scraper.dart';
+import 'package:nhasixapp/data/datasources/local/tag_data_source.dart';
 
 // BLoCs
 import 'package:nhasixapp/presentation/blocs/splash/splash_bloc.dart';
@@ -133,6 +134,10 @@ void _setupDataSources() {
   // Local Data Source
   getIt.registerLazySingleton<LocalDataSource>(
       () => LocalDataSource(getIt<DatabaseHelper>()));
+
+  // Tag Data Source
+  getIt.registerLazySingleton<TagDataSource>(
+      () => TagDataSource(logger: getIt<Logger>()));
 }
 
 /// Setup repository implementations
@@ -208,6 +213,7 @@ void _setupBlocs() {
   getIt.registerFactory<SearchBloc>(() => SearchBloc(
         searchContentUseCase: getIt<SearchContentUseCase>(),
         localDataSource: getIt<LocalDataSource>(),
+        tagDataSource: getIt<TagDataSource>(),
         logger: getIt<Logger>(),
       ));
 

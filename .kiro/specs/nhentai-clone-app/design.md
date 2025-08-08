@@ -71,7 +71,7 @@ Aplikasi menggunakan BLoC (Business Logic Component) pattern dengan flutter_bloc
 ```dart
 // Complex State Management (BLoCs)
 ContentBloc: Mengelola state untuk daftar konten dengan pagination kompleks
-SearchBloc: Mengelola pencarian dan filter dengan debouncing
+SearchBloc: Mengelola pencarian dan filter tanpa langsung mengirim API request, dengan events UpdateSearchFilter dan SearchSubmitted
 DownloadBloc: Mengelola download queue dan concurrent operations
 SplashBloc: Mengelola initial loading dan bypass logic
 
@@ -112,19 +112,26 @@ class Tag {
   final String url;
 }
 
+class FilterItem {
+  final String value;
+  final bool isExcluded; // true = exclude, false = include
+
+  FilterItem({required this.value, this.isExcluded = false});
+}
+
 class SearchFilter {
   final String? query;
-  final List<String> includeTags;
-  final List<String> excludeTags;
-  final List<String> artists;
-  final List<String> characters;
-  final List<String> parodies;
-  final List<String> groups;
-  final String? language;
-  final String? category;
+  final List<FilterItem> tags;
+  final List<FilterItem> artists;
+  final List<FilterItem> characters;
+  final List<FilterItem> parodies;
+  final List<FilterItem> groups;
+  final String? language;   // Single select only
+  final String? category;   // Single select only
   final int page;
   final SortOption sortBy;
   final bool popular; // Popular filter
+  final IntRange? pageCountRange;
 }
 
 class UserPreferences {
@@ -248,6 +255,11 @@ abstract class UserDataRepository {
   Future<void> addSearchHistory(String query);
   Future<List<String>> getSearchHistory({int limit = 20});
   Future<void> clearSearchHistory();
+  
+  // Search State Persistence
+  Future<void> saveSearchFilter(SearchFilter filter);
+  Future<SearchFilter?> getLastSearchFilter();
+  Future<void> clearSearchFilter();
 }
 ```
 
@@ -370,6 +382,13 @@ CREATE TABLE search_history (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   query TEXT NOT NULL,
   searched_at INTEGER
+);
+
+-- Search filter state persistence
+CREATE TABLE search_filter_state (
+  id INTEGER PRIMARY KEY DEFAULT 1,
+  filter_data TEXT, -- JSON serialized SearchFilter
+  saved_at INTEGER
 );
 ```
 

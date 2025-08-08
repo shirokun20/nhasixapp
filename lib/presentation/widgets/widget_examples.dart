@@ -25,9 +25,9 @@ class _WidgetExamplesScreenState extends State<WidgetExamplesScreen> {
     japaneseTitle: 'サンプル日本語タイトル',
     coverUrl: 'https://example.com/cover.jpg',
     tags: [
-      const Tag(name: 'romance', type: 'tag', count: 1000, url: ''),
-      const Tag(name: 'comedy', type: 'tag', count: 500, url: ''),
-      const Tag(name: 'school', type: 'tag', count: 300, url: ''),
+      const Tag(id: 1, name: 'romance', type: 'tag', count: 1000, url: ''),
+      const Tag(id: 2, name: 'comedy', type: 'tag', count: 500, url: ''),
+      const Tag(id: 3, name: 'school', type: 'tag', count: 300, url: ''),
     ],
     artists: ['Artist Name'],
     characters: ['Character 1', 'Character 2'],

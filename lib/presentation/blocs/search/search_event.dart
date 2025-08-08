@@ -33,7 +33,7 @@ class SearchWithFiltersEvent extends SearchEvent {
   List<Object> get props => [filter];
 }
 
-/// Event to update search filter
+/// Event to update search filter without triggering API call
 class SearchUpdateFilterEvent extends SearchEvent {
   const SearchUpdateFilterEvent(this.filter);
 
@@ -41,6 +41,11 @@ class SearchUpdateFilterEvent extends SearchEvent {
 
   @override
   List<Object> get props => [filter];
+}
+
+/// Event to submit search with current filter (triggers API call)
+class SearchSubmittedEvent extends SearchEvent {
+  const SearchSubmittedEvent();
 }
 
 /// Event to clear search

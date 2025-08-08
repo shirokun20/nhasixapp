@@ -466,6 +466,12 @@ class NhentaiScraper {
             totalPages = int.tryParse(match.group(1)!) ?? 1;
           }
         }
+      } else {
+        final currentPageElement =
+            paginationSection.querySelector('a.page.current');
+        if (currentPageElement != null) {
+          totalPages = int.tryParse(currentPageElement.text.trim()) ?? 1;
+        }
       }
 
       // Extract next page
@@ -820,6 +826,7 @@ class NhentaiScraper {
       }
 
       return Tag(
+        id: 0, // Default ID for scraped tags
         name: name,
         type: type,
         count: count,
@@ -883,6 +890,7 @@ class NhentaiScraper {
       int count = _parseCountWithSuffix(countText);
 
       return TagModel(
+        id: 0, // Default ID for scraped tags
         name: name,
         type: type ?? 'tag',
         count: count,
@@ -892,36 +900,6 @@ class NhentaiScraper {
       _logger.w('Failed to parse tag element: $e');
       return null;
     }
-  }
-
-  /// Parse metadata from detail page
-  Map<String, String> _parseMetadata(html_dom.Document document) {
-    final metadata = <String, String>{};
-
-    try {
-      final infoElement = document.querySelector(detailInfoSelector);
-      if (infoElement != null) {
-        // Extract various metadata fields
-        final text = infoElement.text;
-
-        // Extract favorites count
-        final favoritesMatch = RegExp(r'Favorites:\s*(\d+)').firstMatch(text);
-        if (favoritesMatch != null) {
-          metadata['favorites'] = favoritesMatch.group(1)!;
-        }
-
-        // Extract upload date
-        final uploadMatch =
-            RegExp(r'Uploaded:\s*(.+?)(?:\n|$)').firstMatch(text);
-        if (uploadMatch != null) {
-          metadata['uploaded'] = uploadMatch.group(1)!.trim();
-        }
-      }
-    } catch (e) {
-      _logger.w('Failed to parse metadata: $e');
-    }
-
-    return metadata;
   }
 
   /// Parse image URLs from detail page
@@ -1095,7 +1073,7 @@ class NhentaiScraper {
                     '');
 
             // Extract tag IDs from data-tags attribute
-            final tagIds = _parseTagIds(gallery.attributes['data-tags']);
+            // final tagIds = _parseTagIds(gallery.attributes['data-tags']);
 
             // Create minimal content for related items
             final content = ContentModel(
@@ -1130,30 +1108,6 @@ class NhentaiScraper {
     return relatedContent;
   }
 
-  /// Parse upload date from metadata (legacy method)
-  DateTime _parseUploadDate(Map<String, String> metadata) {
-    final uploadedText = metadata['uploaded'];
-    if (uploadedText != null) {
-      try {
-        // Try to parse various date formats
-        // This is a simplified parser - you might need to handle more formats
-        return DateTime.tryParse(uploadedText) ?? DateTime.now();
-      } catch (e) {
-        _logger.w('Failed to parse upload date: $uploadedText');
-      }
-    }
-    return DateTime.now();
-  }
-
-  /// Parse favorites count from metadata (legacy method)
-  int _parseFavorites(Map<String, String> metadata) {
-    final favoritesText = metadata['favorites'];
-    if (favoritesText != null) {
-      return int.tryParse(favoritesText) ?? 0;
-    }
-    return 0;
-  }
-
   /// Check if text is English
   bool _isEnglish(String text) {
     // Simple heuristic - check for ASCII characters
@@ -1180,6 +1134,7 @@ class NhentaiScraper {
       if (tagData != null) {
         try {
           tags.add(Tag(
+            id: tagData['id'] ?? 0,
             name: tagData['name'] ?? 'Unknown',
             type: tagData['type'] ?? 'tag',
             count: tagData['count'] ?? 0,

@@ -7,7 +7,7 @@ import 'package:logger/logger.dart';
 /// Database helper class for managing SQLite database
 class DatabaseHelper {
   static const String _databaseName = 'nhasix_app.db';
-  static const int _databaseVersion = 2;
+  static const int _databaseVersion = 3;
 
   static Database? _database;
   static final Logger _logger = Logger();
@@ -107,6 +107,7 @@ class DatabaseHelper {
     _createHistoryTable(batch);
     _createPreferencesTable(batch);
     _createSearchHistoryTable(batch);
+    _createSearchFilterStateTable(batch);
 
     // Create indexes
     _createIndexes(batch);
@@ -122,11 +123,21 @@ class DatabaseHelper {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     _logger.i('Upgrading database from version $oldVersion to $newVersion');
 
-    // Handle specific version upgrades if needed
-    // Currently no version-specific upgrades needed
+    // Handle specific version upgrades
+    if (oldVersion < 3 && newVersion >= 3) {
+      // Add search_filter_state table in version 3
+      await db.execute('''
+        CREATE TABLE search_filter_state (
+          id INTEGER PRIMARY KEY DEFAULT 1,
+          filter_data TEXT, -- JSON serialized SearchFilter
+          saved_at INTEGER
+        )
+      ''');
+      _logger.i('Added search_filter_state table in database upgrade');
+    }
 
     // For major version changes, recreate database
-    if (oldVersion < newVersion && (newVersion - oldVersion) > 1) {
+    if (oldVersion < newVersion && (newVersion - oldVersion) > 2) {
       await _dropAllTables(db);
       await _onCreate(db, newVersion);
     }
@@ -199,6 +210,17 @@ class DatabaseHelper {
     ''');
   }
 
+  /// Create search filter state table
+  void _createSearchFilterStateTable(Batch batch) {
+    batch.execute('''
+      CREATE TABLE search_filter_state (
+        id INTEGER PRIMARY KEY DEFAULT 1,
+        filter_data TEXT, -- JSON serialized SearchFilter
+        saved_at INTEGER
+      )
+    ''');
+  }
+
   /// Create database indexes for performance
   void _createIndexes(Batch batch) {
     // Favorites indexes
@@ -254,6 +276,7 @@ class DatabaseHelper {
   /// Drop all tables (for database recreation)
   Future<void> _dropAllTables(Database db) async {
     final tables = [
+      'search_filter_state',
       'search_history',
       'preferences',
       'history',
@@ -282,6 +305,7 @@ class DatabaseHelper {
     final batch = db.batch();
 
     // Clear all tables except preferences
+    batch.delete('search_filter_state');
     batch.delete('search_history');
     batch.delete('history');
     batch.delete('downloads');

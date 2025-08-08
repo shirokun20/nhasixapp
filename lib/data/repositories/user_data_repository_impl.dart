@@ -380,4 +380,46 @@ class UserDataRepositoryImpl implements UserDataRepository {
       rethrow;
     }
   }
+
+  // ==================== SEARCH STATE PERSISTENCE ====================
+
+  @override
+  Future<void> saveSearchFilter(SearchFilter filter) async {
+    try {
+      _logger.d('Saving search filter state');
+      await localDataSource.saveSearchFilter(filter.toJson());
+      _logger.d('Search filter state saved');
+    } catch (e, stackTrace) {
+      _logger.e('Failed to save search filter',
+          error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<SearchFilter?> getLastSearchFilter() async {
+    try {
+      final filterData = await localDataSource.getLastSearchFilter();
+      if (filterData != null) {
+        return SearchFilter.fromJson(filterData);
+      }
+      return null;
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get last search filter',
+          error: e, stackTrace: stackTrace);
+      return null;
+    }
+  }
+
+  @override
+  Future<void> clearSearchFilter() async {
+    try {
+      _logger.d('Clearing search filter state');
+      await localDataSource.clearSearchFilter();
+      _logger.d('Search filter state cleared');
+    } catch (e, stackTrace) {
+      _logger.e('Failed to clear search filter',
+          error: e, stackTrace: stackTrace);
+    }
+  }
 }

@@ -99,7 +99,7 @@ class SearchContentParams extends UseCaseParams {
   }) {
     return SearchContentParams(
       filter: SearchFilter(
-        includeTags: tags,
+        tags: tags.map((tag) => FilterItem.include(tag)).toList(),
         sortBy: sortBy,
       ),
       requireFilters: requireFilters,
@@ -114,7 +114,7 @@ class SearchContentParams extends UseCaseParams {
   }) {
     return SearchContentParams(
       filter: SearchFilter(
-        artists: [artist],
+        artists: [FilterItem.include(artist)],
         sortBy: sortBy,
       ),
       requireFilters: requireFilters,

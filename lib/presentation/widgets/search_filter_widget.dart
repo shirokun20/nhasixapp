@@ -66,22 +66,28 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
   void _initializeControllers() {
     _queryController = TextEditingController(text: widget.filter.query ?? '');
     _includeTagsController = TextEditingController(
-      text: widget.filter.includeTags.join(', '),
+      text: widget.filter.tags
+          .where((item) => !item.isExcluded)
+          .map((item) => item.value)
+          .join(', '),
     );
     _excludeTagsController = TextEditingController(
-      text: widget.filter.excludeTags.join(', '),
+      text: widget.filter.tags
+          .where((item) => item.isExcluded)
+          .map((item) => item.value)
+          .join(', '),
     );
     _artistsController = TextEditingController(
-      text: widget.filter.artists.join(', '),
+      text: widget.filter.artists.map((item) => item.value).join(', '),
     );
     _charactersController = TextEditingController(
-      text: widget.filter.characters.join(', '),
+      text: widget.filter.characters.map((item) => item.value).join(', '),
     );
     _parodiesController = TextEditingController(
-      text: widget.filter.parodies.join(', '),
+      text: widget.filter.parodies.map((item) => item.value).join(', '),
     );
     _groupsController = TextEditingController(
-      text: widget.filter.groups.join(', '),
+      text: widget.filter.groups.map((item) => item.value).join(', '),
     );
     _minPagesController = TextEditingController(
       text: widget.filter.pageCountRange?.min?.toString() ?? '',
@@ -120,16 +126,32 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
   void _updateFilter() {
     final pageCountRange = _buildPageCountRange();
 
+    // Build tags with include/exclude
+    final includeTags = _parseCommaSeparatedList(_includeTagsController.text)
+        .map((tag) => FilterItem.include(tag))
+        .toList();
+    final excludeTags = _parseCommaSeparatedList(_excludeTagsController.text)
+        .map((tag) => FilterItem.exclude(tag))
+        .toList();
+    final allTags = [...includeTags, ...excludeTags];
+
     final updatedFilter = widget.filter.copyWith(
       query: _queryController.text.trim().isEmpty
           ? null
           : _queryController.text.trim(),
-      includeTags: _parseCommaSeparatedList(_includeTagsController.text),
-      excludeTags: _parseCommaSeparatedList(_excludeTagsController.text),
-      artists: _parseCommaSeparatedList(_artistsController.text),
-      characters: _parseCommaSeparatedList(_charactersController.text),
-      parodies: _parseCommaSeparatedList(_parodiesController.text),
-      groups: _parseCommaSeparatedList(_groupsController.text),
+      tags: allTags,
+      artists: _parseCommaSeparatedList(_artistsController.text)
+          .map((artist) => FilterItem.include(artist))
+          .toList(),
+      characters: _parseCommaSeparatedList(_charactersController.text)
+          .map((character) => FilterItem.include(character))
+          .toList(),
+      parodies: _parseCommaSeparatedList(_parodiesController.text)
+          .map((parody) => FilterItem.include(parody))
+          .toList(),
+      groups: _parseCommaSeparatedList(_groupsController.text)
+          .map((group) => FilterItem.include(group))
+          .toList(),
       pageCountRange: pageCountRange,
     );
 
@@ -719,21 +741,34 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
           spacing: 8,
           runSpacing: 4,
           children: widget.popularTags.take(10).map((tag) {
-            final isIncluded = widget.filter.includeTags.contains(tag);
+            final isIncluded = widget.filter.tags
+                .any((item) => item.value == tag && !item.isExcluded);
             return FilterChip(
               label: Text(tag),
               selected: isIncluded,
               onSelected: (selected) {
-                final currentTags =
-                    List<String>.from(widget.filter.includeTags);
+                final currentIncludeTags = widget.filter.tags
+                    .where((item) => !item.isExcluded)
+                    .map((item) => item.value)
+                    .toList();
                 if (selected) {
-                  currentTags.add(tag);
+                  currentIncludeTags.add(tag);
                 } else {
-                  currentTags.remove(tag);
+                  currentIncludeTags.remove(tag);
                 }
-                _includeTagsController.text = currentTags.join(', ');
+                _includeTagsController.text = currentIncludeTags.join(', ');
+
+                // Rebuild tags list
+                final excludeTags = widget.filter.tags
+                    .where((item) => item.isExcluded)
+                    .toList();
+                final includeTags = currentIncludeTags
+                    .map((tag) => FilterItem.include(tag))
+                    .toList();
+
                 widget.onFilterChanged(
-                  widget.filter.copyWith(includeTags: currentTags),
+                  widget.filter
+                      .copyWith(tags: [...includeTags, ...excludeTags]),
                 );
               },
               selectedColor: ColorsConst.accentBlue.withValues(alpha: 0.2),

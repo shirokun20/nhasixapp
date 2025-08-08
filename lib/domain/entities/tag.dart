@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 /// Tag entity representing content metadata tags
 class Tag extends Equatable {
   const Tag({
+    required this.id,
     required this.name,
     required this.type,
     required this.count,
@@ -10,6 +11,7 @@ class Tag extends Equatable {
     this.slug,
   });
 
+  final int id;
   final String name;
   final String
       type; // tag, artist, character, parody, group, language, category
@@ -18,9 +20,10 @@ class Tag extends Equatable {
   final String? slug;
 
   @override
-  List<Object> get props => [name, type, count, url];
+  List<Object> get props => [id, name, type, count, url];
 
   Tag copyWith({
+    int? id,
     String? name,
     String? type,
     int? count,
@@ -28,6 +31,7 @@ class Tag extends Equatable {
     String? slug,
   }) {
     return Tag(
+      id: id ?? this.id,
       name: name ?? this.name,
       type: type ?? this.type,
       count: count ?? this.count,

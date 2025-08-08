@@ -156,6 +156,21 @@ abstract class UserDataRepository {
   /// [query] - Search query to delete
   Future<void> deleteSearchHistory(String query);
 
+  // ==================== SEARCH STATE PERSISTENCE ====================
+
+  /// Save search filter state for persistence
+  ///
+  /// [filter] - Search filter to save
+  Future<void> saveSearchFilter(SearchFilter filter);
+
+  /// Get last search filter state
+  ///
+  /// Returns last saved search filter or null if none exists
+  Future<SearchFilter?> getLastSearchFilter();
+
+  /// Clear search filter state
+  Future<void> clearSearchFilter();
+
   // ==================== UTILITIES ====================
 
   /// Get database statistics

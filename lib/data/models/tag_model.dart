@@ -3,76 +3,78 @@ import '../../domain/entities/tag.dart';
 /// Data model for Tag entity with database serialization
 class TagModel extends Tag {
   const TagModel({
+    required int id,
     required super.name,
     required super.type,
     required super.count,
     required super.url,
-    this.id,
-  });
-
-  final int? id; // Database ID
+    super.slug,
+  }) : super(id: id);
 
   /// Create TagModel from Tag entity
   factory TagModel.fromEntity(Tag tag) {
     return TagModel(
+      id: tag.id,
       name: tag.name,
       type: tag.type,
       count: tag.count,
       url: tag.url,
+      slug: tag.slug,
     );
   }
 
   /// Convert to Tag entity
   Tag toEntity() {
     return Tag(
+      id: id,
       name: name,
       type: type,
       count: count,
       url: url,
+      slug: slug,
     );
   }
 
   /// Create from database map
   factory TagModel.fromMap(Map<String, dynamic> map) {
     return TagModel(
-      id: map['id'],
-      name: map['name'],
-      type: map['type'],
+      id: map['id'] ?? 0,
+      name: map['name'] ?? '',
+      type: map['type'] ?? 'tag',
       count: map['count'] ?? 0,
       url: map['url'] ?? '',
+      slug: map['slug'],
     );
   }
 
   /// Convert to database map
   Map<String, dynamic> toMap() {
-    final map = <String, dynamic>{
+    return <String, dynamic>{
+      'id': id,
       'name': name,
       'type': type,
       'count': count,
       'url': url,
+      'slug': slug,
     };
-
-    if (id != null) {
-      map['id'] = id;
-    }
-
-    return map;
   }
 
-  /// Create copy with database ID
-  TagModel copyWithId(int id) {
+  /// Create copy with new values
+  TagModel copyWith({
+    int? id,
+    String? name,
+    String? type,
+    int? count,
+    String? url,
+    String? slug,
+  }) {
     return TagModel(
-      id: id,
-      name: name,
-      type: type,
-      count: count,
-      url: url,
+      id: id ?? this.id,
+      name: name ?? this.name,
+      type: type ?? this.type,
+      count: count ?? this.count,
+      url: url ?? this.url,
+      slug: slug ?? this.slug,
     );
   }
-
-  @override
-  List<Object> get props => [
-        ...super.props,
-        id ?? 0, // Use 0 as default for null id
-      ];
 }

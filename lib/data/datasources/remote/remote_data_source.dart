@@ -631,21 +631,13 @@ class RemoteDataSource {
   String _buildSearchUrl(SearchFilter filter) {
     final buffer = StringBuffer('$baseUrl/search/?');
 
-    // Query parameter
-    if (filter.query != null && filter.query!.isNotEmpty) {
-      buffer.write('q=${Uri.encodeComponent(filter.query!)}');
+    // Use the full query string from SearchFilter.toQueryString()
+    final queryString = filter.toQueryString();
+
+    if (queryString.isNotEmpty) {
+      buffer.write(queryString);
     } else {
       buffer.write('q=');
-    }
-
-    // Sort parameter (only add if not default/newest)
-    if (filter.sortBy.apiValue.isNotEmpty) {
-      buffer.write('&sort=${filter.sortBy.apiValue}');
-    }
-
-    // Page parameter
-    if (filter.page > 1) {
-      buffer.write('&page=${filter.page}');
     }
 
     return buffer.toString();

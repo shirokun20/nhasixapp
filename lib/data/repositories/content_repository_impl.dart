@@ -1,5 +1,4 @@
 import 'package:logger/logger.dart';
-import 'package:nhasixapp/domain/entities/pagination_info.dart';
 
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/content_repository.dart';
@@ -167,7 +166,7 @@ class ContentRepositoryImpl implements ContentRepository {
 
       // Create search filter for tag
       final filter = SearchFilter(
-        includeTags: [tag.name],
+        tags: [FilterItem.include(tag.name)],
         page: page,
         sortBy: sortBy,
       );

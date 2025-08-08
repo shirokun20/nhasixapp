@@ -19,16 +19,17 @@ Aplikasi NhentaiApp adalah sebuah aplikasi mobile Flutter yang berfungsi sebagai
 
 ### Requirement 2
 
-**User Story:** Sebagai pengguna, saya ingin dapat mencari konten berdasarkan berbagai kriteria seperti tag, artist, language, sehingga saya dapat menemukan konten yang sesuai dengan preferensi saya.
+**User Story:** Sebagai pengguna, saya ingin dapat mencari konten berdasarkan berbagai kriteria seperti tag, artist, language dengan alur pencarian yang tidak langsung mengirim request, sehingga saya dapat menyusun filter dengan tenang sebelum melakukan pencarian.
 
 #### Acceptance Criteria
 
-1. WHEN pengguna mengakses fitur pencarian THEN sistem SHALL menampilkan form pencarian dengan opsi filter
-2. WHEN pengguna memasukkan kata kunci pencarian THEN sistem SHALL menampilkan hasil pencarian yang relevan
-3. WHEN pengguna memilih filter tag THEN sistem SHALL menampilkan daftar tag yang tersedia untuk dipilih
-4. WHEN pengguna memilih filter artist THEN sistem SHALL menampilkan daftar artist yang tersedia
-5. WHEN pengguna memilih filter language THEN sistem SHALL menampilkan opsi bahasa yang tersedia
-6. WHEN pengguna menerapkan multiple filter THEN sistem SHALL menampilkan hasil yang sesuai dengan semua filter yang dipilih
+1. WHEN pengguna mengakses fitur pencarian THEN sistem SHALL menampilkan form pencarian dengan opsi filter tanpa langsung mengirim API request
+2. WHEN pengguna memasukkan kata kunci pencarian THEN sistem SHALL menyimpan input di state tanpa memicu API call
+3. WHEN pengguna memilih filter tag, artist, character, parody, atau group THEN sistem SHALL menampilkan interface pencarian untuk data tersebut dari assets/json/tags.json
+4. WHEN pengguna memilih multiple filter THEN sistem SHALL menyimpan semua filter di state dengan opsi include/exclude
+5. WHEN pengguna memilih filter language atau category THEN sistem SHALL hanya mengizinkan satu pilihan
+6. WHEN pengguna menekan tombol "Search" atau "Apply" THEN sistem SHALL mengirim API request, menyimpan state pencarian ke local datasource, dan kembali ke MainScreen dengan hasil pencarian
+7. WHEN aplikasi dibuka ulang THEN sistem SHALL memuat state pencarian terakhir dari local datasource dan menampilkan hasil di MainScreen
 
 ### Requirement 3
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -106,12 +108,13 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
           if (state is SplashSuccess) {
             // Stop dots animation and start success animation
             _dotsAnimationController.stop();
-            _successAnimationController.forward().then((_) async {
+            _successAnimationController.forward().then((_) {
               // Navigate after success animation completes
-              await Future.delayed(const Duration(milliseconds: 1200));
-              if (mounted) {
-                context.go(AppRoute.main);
-              }
+              Timer(const Duration(milliseconds: 1200), () {
+                if (mounted) {
+                  context.go(AppRoute.main);
+                }
+              });
             });
           } else if (state is SplashError) {
             // Stop dots animation on error
@@ -123,59 +126,133 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // App Logo
-                const Image(
-                  height: 250,
-                  width: 250,
-                  image: AssetImage('assets/icons/ic_launcher-web.png'),
+                // App Logo with enhanced styling
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: ColorsConst.darkCard.withValues(alpha: 0.3),
+                    border: Border.all(
+                      color: ColorsConst.accentBlue.withValues(alpha: 0.2),
+                      width: 2,
+                    ),
+                  ),
+                  child: const Image(
+                    height: 200,
+                    width: 200,
+                    image: AssetImage('assets/icons/ic_launcher-web.png'),
+                  ),
                 ),
 
                 const SizedBox(height: 40),
 
-                // Loading States
+                // App title
+                Text(
+                  'NhentaiApp',
+                  style: TextStyleConst.headingLarge.copyWith(
+                    color: ColorsConst.darkTextPrimary,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Enhanced Reading Experience',
+                  style: TextStyleConst.bodyMedium.copyWith(
+                    color: ColorsConst.darkTextSecondary,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+
+                const SizedBox(height: 40),
+
+                // Loading States with enhanced progress indicators
                 if (state is SplashInitializing ||
                     state is SplashBypassInProgress)
                   Column(
                     children: [
-                      // Animated loading indicator
-                      SizedBox(
-                        width: 60,
-                        height: 60,
-                        child: CircularProgressIndicator(
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            ColorsConst.accentBlue,
+                      // Enhanced loading indicator with progress
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          SizedBox(
+                            width: 80,
+                            height: 80,
+                            child: CircularProgressIndicator(
+                              value: state is SplashInitializing
+                                  ? 0.3
+                                  : 0.7, // Show progress
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                ColorsConst.accentBlue,
+                              ),
+                              strokeWidth: 4,
+                              backgroundColor: ColorsConst.darkCard,
+                            ),
                           ),
-                          strokeWidth: 3,
-                          backgroundColor: ColorsConst.darkCard,
-                        ),
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: ColorsConst.darkBackground,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: ColorsConst.accentBlue
+                                    .withValues(alpha: 0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Icon(
+                              state is SplashInitializing
+                                  ? Icons.settings
+                                  : Icons.security,
+                              color: ColorsConst.accentBlue,
+                              size: 24,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 32),
 
-                      // Loading status text
-                      Text(
-                        state is SplashInitializing
-                            ? 'Initializing Application...'
-                            : (state as SplashBypassInProgress).message,
-                        style: TextStyleConst.headingSmall.copyWith(
-                          color: ColorsConst.darkTextPrimary,
+                      // Loading status text with better styling
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
                         ),
-                        textAlign: TextAlign.center,
+                        decoration: BoxDecoration(
+                          color: ColorsConst.darkCard.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: ColorsConst.borderDefault,
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          state is SplashInitializing
+                              ? 'Initializing Application...'
+                              : (state as SplashBypassInProgress).message,
+                          style: TextStyleConst.headingSmall.copyWith(
+                            color: ColorsConst.darkTextPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 16),
 
                       // Detailed progress text
                       Text(
                         state is SplashInitializing
                             ? 'Setting up components and checking connection...'
                             : 'Bypassing protection and establishing connection...',
-                        style: TextStyleConst.bodySmall.copyWith(
+                        style: TextStyleConst.bodyMedium.copyWith(
                           color: ColorsConst.darkTextSecondary,
                         ),
                         textAlign: TextAlign.center,
                       ),
 
-                      // Progress dots animation
-                      const SizedBox(height: 16),
+                      // Enhanced progress dots animation
+                      const SizedBox(height: 20),
                       _buildProgressDots(),
                     ],
                   ),

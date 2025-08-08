@@ -8,7 +8,6 @@ import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
-import 'package:nhasixapp/presentation/widgets/search_filter_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
 
 class DetailScreen extends StatefulWidget {
@@ -84,28 +83,112 @@ class _DetailScreenState extends State<DetailScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Loading...',
+          'Loading Content',
           style: TextStyleConst.headingMedium.copyWith(
             color: ColorsConst.darkTextPrimary,
           ),
         ),
       ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(
-              color: ColorsConst.accentBlue,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Loading content details...',
-              style: TextStyle(
-                color: ColorsConst.darkTextSecondary,
-                fontSize: 16,
+      body: Container(
+        color: ColorsConst.darkBackground,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Enhanced loading indicator with animation
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: 100,
+                    height: 100,
+                    child: CircularProgressIndicator(
+                      color: ColorsConst.accentBlue,
+                      strokeWidth: 5,
+                      backgroundColor: ColorsConst.darkCard,
+                    ),
+                  ),
+                  Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      color: ColorsConst.darkBackground,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: ColorsConst.accentBlue.withValues(alpha: 0.3),
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: ColorsConst.accentBlue.withValues(alpha: 0.2),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.menu_book,
+                      color: ColorsConst.accentBlue,
+                      size: 32,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 40),
+
+              // Loading text with enhanced styling
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: ColorsConst.darkCard,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: ColorsConst.borderDefault,
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: ColorsConst.darkBackground.withValues(alpha: 0.5),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Loading Content Details',
+                      style: TextStyleConst.headingSmall.copyWith(
+                        color: ColorsConst.darkTextPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Fetching metadata and images...',
+                      style: TextStyleConst.bodyMedium.copyWith(
+                        color: ColorsConst.darkTextSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Additional loading info
+              Text(
+                'This may take a few moments',
+                style: TextStyleConst.bodySmall.copyWith(
+                  color: ColorsConst.darkTextTertiary,
+                  fontStyle: FontStyle.italic,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -316,46 +399,94 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Widget _buildMetadataSection(Content content) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: ColorsConst.darkCard,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: ColorsConst.borderDefault),
+        boxShadow: [
+          BoxShadow(
+            color: ColorsConst.darkBackground.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildMetadataRow('ID', content.id),
-          _buildMetadataRow('Pages', '${content.pageCount}'),
+          // Section header
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: ColorsConst.accentBlue,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Content Information',
+                style: TextStyleConst.headingSmall.copyWith(
+                  color: ColorsConst.darkTextPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Metadata rows with enhanced styling
+          _buildMetadataRow('ID', content.id, Icons.tag),
+          _buildMetadataRow('Pages', '${content.pageCount}', Icons.menu_book),
           _buildMetadataRow(
-              'Language', content.language.toLowerCase().capitalize()),
+              'Language', content.language.toLowerCase(), Icons.language),
           if (content.artists.isNotEmpty)
-            _buildMetadataRow('Artist', content.artists.join(', ')),
+            _buildMetadataRow(
+                'Artist', content.artists.join(', '), Icons.person),
           if (content.characters.isNotEmpty)
-            _buildMetadataRow('Characters', content.characters.join(', ')),
+            _buildMetadataRow(
+                'Characters', content.characters.join(', '), Icons.people),
           if (content.parodies.isNotEmpty)
-            _buildMetadataRow('Parodies', content.parodies.join(', ')),
+            _buildMetadataRow(
+                'Parodies', content.parodies.join(', '), Icons.movie),
           if (content.groups.isNotEmpty)
-            _buildMetadataRow('Groups', content.groups.join(', ')),
-          _buildMetadataRow('Uploaded', _formatDate(content.uploadDate)),
-          _buildMetadataRow('Favorites', '${content.favorites}'),
+            _buildMetadataRow('Groups', content.groups.join(', '), Icons.group),
+          _buildMetadataRow(
+              'Uploaded', _formatDate(content.uploadDate), Icons.schedule),
+          _buildMetadataRow(
+              'Favorites', _formatNumber(content.favorites), Icons.favorite),
         ],
       ),
     );
   }
 
-  Widget _buildMetadataRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+  Widget _buildMetadataRow(String label, String value, [IconData? icon]) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: ColorsConst.darkBackground,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: ColorsConst.borderMuted),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (icon != null) ...[
+            Icon(
+              icon,
+              color: ColorsConst.darkTextSecondary,
+              size: 18,
+            ),
+            const SizedBox(width: 12),
+          ],
           SizedBox(
             width: 80,
             child: Text(
               label,
               style: TextStyleConst.bodySmall.copyWith(
                 color: ColorsConst.darkTextSecondary,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -365,6 +496,7 @@ class _DetailScreenState extends State<DetailScreen> {
               value,
               style: TextStyleConst.bodyMedium.copyWith(
                 color: ColorsConst.darkTextPrimary,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
@@ -435,44 +567,75 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Widget _buildActionButtons(Content content) {
-    return Row(
-      children: [
-        // Read button
-        Expanded(
-          flex: 2,
-          child: ElevatedButton.icon(
-            onPressed: () => _readContent(content),
-            icon: const Icon(Icons.menu_book),
-            label: const Text('Read'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: ColorsConst.accentBlue,
-              foregroundColor: ColorsConst.darkBackground,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: ColorsConst.darkCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: ColorsConst.borderDefault),
+      ),
+      child: Row(
+        children: [
+          // Read button - primary action
+          Expanded(
+            flex: 2,
+            child: SizedBox(
+              height: 56,
+              child: ElevatedButton.icon(
+                onPressed: () => _readContent(content),
+                icon: const Icon(Icons.menu_book, size: 24),
+                label: Text(
+                  'Read Now',
+                  style: TextStyleConst.buttonLarge.copyWith(
+                    color: ColorsConst.darkBackground,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ColorsConst.accentBlue,
+                  foregroundColor: ColorsConst.darkBackground,
+                  elevation: 4,
+                  shadowColor: ColorsConst.accentBlue.withValues(alpha: 0.3),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-        const SizedBox(width: 12),
+          const SizedBox(width: 8),
 
-        // Download button
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () => _downloadContent(content),
-            icon: const Icon(Icons.download),
-            label: const Text('Download'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: ColorsConst.accentBlue,
-              side: const BorderSide(color: ColorsConst.accentBlue),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          // Download button - secondary action
+          Expanded(
+            child: SizedBox(
+              height: 56,
+              child: OutlinedButton.icon(
+                onPressed: () => _downloadContent(content),
+                icon: const Icon(Icons.download, size: 20),
+                label: Text(
+                  'Download',
+                  style: TextStyleConst.buttonMedium.copyWith(
+                    color: ColorsConst.accentGreen,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: ColorsConst.accentGreen,
+                  backgroundColor:
+                      ColorsConst.accentGreen.withValues(alpha: 0.1),
+                  side: BorderSide(
+                    color: ColorsConst.accentGreen,
+                    width: 1.5,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -684,55 +847,129 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Widget _buildErrorState(DetailError state) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: ColorsConst.accentRed,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Failed to load content',
-              style: TextStyleConst.headingSmall.copyWith(
-                color: ColorsConst.accentRed,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              state.message,
-              style: TextStyleConst.bodySmall.copyWith(
-                color: ColorsConst.darkTextTertiary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            if (state.canRetry) ...[
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: () => _detailCubit.retryLoading(),
-                icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: ColorsConst.accentBlue,
-                  foregroundColor: ColorsConst.darkBackground,
+    return Scaffold(
+      backgroundColor: ColorsConst.darkBackground,
+      appBar: AppBar(
+        backgroundColor: ColorsConst.darkSurface,
+        elevation: 0,
+        leading: IconButton(
+          icon:
+              const Icon(Icons.arrow_back, color: ColorsConst.darkTextPrimary),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          'Error',
+          style: TextStyleConst.headingMedium.copyWith(
+            color: ColorsConst.darkTextPrimary,
+          ),
+        ),
+      ),
+      body: Container(
+        color: ColorsConst.darkBackground,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Error icon with enhanced styling
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: ColorsConst.accentRed.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: ColorsConst.accentRed.withValues(alpha: 0.3),
+                      width: 2,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: ColorsConst.accentRed,
+                  ),
                 ),
-              ),
-            ],
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: () => context.pop(),
-              icon: const Icon(Icons.arrow_back),
-              label: const Text('Go Back'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: ColorsConst.darkTextSecondary,
-                side: const BorderSide(color: ColorsConst.borderDefault),
-              ),
+                const SizedBox(height: 32),
+
+                // Error title
+                Text(
+                  'Failed to load content',
+                  style: TextStyleConst.headingMedium.copyWith(
+                    color: ColorsConst.accentRed,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+
+                // Error message in a container
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: ColorsConst.darkCard,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: ColorsConst.borderDefault,
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    state.message,
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: ColorsConst.darkTextPrimary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Action buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (state.canRetry) ...[
+                      ElevatedButton.icon(
+                        onPressed: () => _detailCubit.retryLoading(),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Retry'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: ColorsConst.accentBlue,
+                          foregroundColor: ColorsConst.darkBackground,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                    ],
+                    OutlinedButton.icon(
+                      onPressed: () => context.pop(),
+                      icon: const Icon(Icons.arrow_back),
+                      label: const Text('Go Back'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: ColorsConst.darkTextSecondary,
+                        side:
+                            const BorderSide(color: ColorsConst.borderDefault),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
