@@ -19,7 +19,7 @@ Mengubah alur fitur pencarian agar:
 ## ✅ Alur Baru (Sesudah)
 1. User mengetik query atau memilih filter → nilai disimpan di state `SearchBloc`
 2. Tidak ada permintaan ke API saat input/ubah filter
-3. Ada pencarian untuk `Filter Tags, Artists, Characters, Parodies dan Groups` (ini terserah bentuknya gimana yang penting modern) karena datanya banyak, bisa di check di `assets/json/tags.json` 
+3. Ada pencarian untuk kumpulan data `Filter Tags, Artists, Characters, Parodies dan Groups` yang dipindahkan ke halaman baru [Filter Data](./filter-data.md) (ini terserah bentuknya gimana yang penting modern) karena datanya banyak, bisa di check di `assets/json/tags.json` 
 4. Saat user menekan tombol "Search atau Apply":
    - Semua query dan filter digabung
    - Disimpan di `local datasource`

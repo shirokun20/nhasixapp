@@ -46,8 +46,9 @@ Aplikasi menggunakan BLoC (Business Logic Component) pattern dengan flutter_bloc
 
 #### Pages
 - **SplashScreen**: Menangani initial loading
-- **MainScreen**: Menampilkan konten terbaru dengan tema hitam default dan navigasi sederhana
-- **SearchScreen**: Interface untuk pencarian dengan filter advanced
+- **MainScreen**: Menampilkan konten terbaru dengan tema hitam default, navigasi sederhana, dan sorting options
+- **SearchScreen**: Interface untuk pencarian dengan filter advanced yang tidak langsung trigger API
+- **FilterDataScreen**: Halaman terpisah modern untuk mencari dan memilih Tags, Artists, Characters, Parodies, Groups
 - **DetailScreen**: Menampilkan detail konten dan metadata lengkap
 - **ReaderScreen**: Mode baca dengan navigasi halaman dan zoom
 - **FavoritesScreen**: Daftar konten yang di-bookmark dengan kategori
@@ -61,7 +62,9 @@ Aplikasi menggunakan BLoC (Business Logic Component) pattern dengan flutter_bloc
 
 #### Widgets
 - **ContentCard**: Card component untuk menampilkan preview konten
-- **SearchFilter**: Widget untuk filter pencarian
+- **SearchFilter**: Widget untuk filter pencarian (simplified)
+- **FilterDataWidget**: Modern widget untuk filter data selection dengan search
+- **SortingWidget**: Widget untuk sorting options di MainScreen
 - **ImageViewer**: Component untuk menampilkan gambar dengan zoom
 - **ProgressIndicator**: Custom loading indicators
 - **ErrorWidget**: Standardized error display
@@ -70,7 +73,7 @@ Aplikasi menggunakan BLoC (Business Logic Component) pattern dengan flutter_bloc
 #### BLoCs & Cubits
 ```dart
 // Complex State Management (BLoCs)
-ContentBloc: Mengelola state untuk daftar konten dengan pagination kompleks
+ContentBloc: Mengelola state untuk daftar konten dengan pagination kompleks dan sorting
 SearchBloc: Mengelola pencarian dan filter tanpa langsung mengirim API request, dengan events UpdateSearchFilter dan SearchSubmitted
 DownloadBloc: Mengelola download queue dan concurrent operations
 SplashBloc: Mengelola initial loading dan bypass logic
@@ -81,6 +84,7 @@ ReaderCubit: Mengelola state reader mode dan navigation
 FavoriteCubit: Mengelola bookmark/favorites CRUD operations
 SettingsCubit: Mengelola pengaturan aplikasi
 NetworkCubit: Mengelola status koneksi sederhana
+FilterDataCubit: Mengelola state untuk halaman filter data terpisah
 ```
 
 ### 2. Domain Layer
@@ -117,6 +121,14 @@ class FilterItem {
   final bool isExcluded; // true = exclude, false = include
 
   FilterItem({required this.value, this.isExcluded = false});
+  
+  // Factory constructors for clarity
+  FilterItem.include(String value) : this(value: value, isExcluded: false);
+  FilterItem.exclude(String value) : this(value: value, isExcluded: true);
+  
+  // Helper methods
+  String get prefix => isExcluded ? '-' : '';
+  String toQueryString(String filterType) => '$prefix$filterType:"$value"';
 }
 
 class SearchFilter {
@@ -221,9 +233,16 @@ DeleteSearchHistoryUseCase: Delete specific search entry
 #### Repositories
 ```dart
 abstract class ContentRepository {
-  Future<ContentListResult> getContentList({int page = 1});
+  Future<ContentListResult> getContentList({int page = 1, SortOption sortBy = SortOption.newest});
   Future<Content> getContentDetail(String id);
   Future<ContentListResult> searchContent(SearchFilter filter);
+}
+
+abstract class FilterDataRepository {
+  Future<List<Tag>> searchTags(String query, {int limit = 20});
+  Future<List<Tag>> getTagsByType(String type, {int limit = 50});
+  Future<List<Tag>> getAllTags();
+  Future<void> cacheTagData();
 }
 
 abstract class UserDataRepository {
@@ -260,6 +279,10 @@ abstract class UserDataRepository {
   Future<void> saveSearchFilter(SearchFilter filter);
   Future<SearchFilter?> getLastSearchFilter();
   Future<void> clearSearchFilter();
+  
+  // Sorting Preferences
+  Future<void> saveSortingPreference(SortOption sortBy);
+  Future<SortOption> getSortingPreference();
 }
 ```
 
@@ -663,6 +686,13 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const SearchScreen(),
     ),
     GoRoute(
+      path: '/filter-data',
+      builder: (context, state) => FilterDataScreen(
+        filterType: state.uri.queryParameters['type'] ?? 'tag',
+        selectedFilters: state.extra as List<FilterItem>? ?? [],
+      ),
+    ),
+    GoRoute(
       path: '/content/:id',
       builder: (context, state) => ContentDetailScreen(
         contentId: state.pathParameters['id']!,
@@ -955,6 +985,140 @@ class NotificationManager {
   Future<void> showDownloadProgress(String contentTitle, int progress);
   Future<void> scheduleDownloadNotification();
   Future<void> cancelAllNotifications();
+}
+```
+
+## Filter Data Architecture
+
+### FilterDataScreen Design
+```dart
+class FilterDataScreen extends StatefulWidget {
+  final String filterType; // 'tag', 'artist', 'character', 'parody', 'group'
+  final List<FilterItem> selectedFilters;
+  
+  const FilterDataScreen({
+    required this.filterType,
+    required this.selectedFilters,
+  });
+}
+
+class FilterDataCubit extends Cubit<FilterDataState> {
+  final TagResolver tagResolver;
+  
+  Future<void> searchFilterData(String query);
+  Future<void> loadFilterDataByType(String type);
+  void toggleFilterItem(FilterItem item);
+  void clearAllFilters();
+  List<FilterItem> getSelectedFilters();
+}
+
+class FilterDataState extends Equatable {
+  final List<Tag> searchResults;
+  final List<FilterItem> selectedFilters;
+  final bool isLoading;
+  final String? error;
+  final String currentQuery;
+}
+```
+
+### Modern Filter Data UI Components
+```dart
+class FilterDataSearchWidget extends StatelessWidget {
+  // Modern search input dengan debouncing
+  // Real-time search results dari assets/json/tags.json
+  // Visual feedback untuk search state
+}
+
+class FilterItemCard extends StatelessWidget {
+  // Modern card design untuk setiap filter item
+  // Include/exclude toggle dengan visual yang jelas
+  // Tag count dan popularity information
+}
+
+class SelectedFiltersWidget extends StatelessWidget {
+  // Horizontal scrollable list dari selected filters
+  // Easy removal dengan swipe atau tap
+  // Visual distinction antara include dan exclude
+}
+
+class FilterTypeTabBar extends StatelessWidget {
+  // Tab bar untuk switch antara Tags, Artists, Characters, dll
+  // Modern design dengan smooth transitions
+  // Badge indicators untuk selected count per type
+}
+```
+
+### Matrix Filter Support Rules
+Sesuai dengan `docs/perubahan-alur-search.md`, sistem harus mengikuti aturan berikut:
+
+| Filter      | Multiple | Prefix Format   | Keterangan              |
+|-------------|----------|------------------|--------------------------|
+| Tag         | ✅       | `tag:"..."`     | Bisa include/exclude     |
+| Artist      | ✅       | `artist:"..."`  | Bisa include/exclude     |
+| Character   | ✅       | `character:"..."` | Bisa include/exclude     |
+| Parody      | ✅       | `parody:"..."`    | Bisa include/exclude     |
+| Group       | ✅       | `group:"..."`     | Bisa include/exclude     |
+| Language    | ❎       | `language:"..."`  | Hanya satu boleh dipilih |
+| Category    | ❎       | `category:"..."`  | Hanya satu boleh dipilih |
+
+### Query Format Implementation
+```dart
+class SearchQueryBuilder {
+  static String buildQuery(SearchFilter filter) {
+    final queryParts = <String>[];
+    
+    // Add base query if exists
+    if (filter.query != null && filter.query!.isNotEmpty) {
+      queryParts.add(filter.query!);
+    }
+    
+    // Add multiple filters with include/exclude support
+    queryParts.addAll(_buildMultipleFilters('tag', filter.tags));
+    queryParts.addAll(_buildMultipleFilters('artist', filter.artists));
+    queryParts.addAll(_buildMultipleFilters('character', filter.characters));
+    queryParts.addAll(_buildMultipleFilters('parody', filter.parodies));
+    queryParts.addAll(_buildMultipleFilters('group', filter.groups));
+    
+    // Add single select filters
+    if (filter.language != null) {
+      queryParts.add('language:"${filter.language}"');
+    }
+    if (filter.category != null) {
+      queryParts.add('category:"${filter.category}"');
+    }
+    
+    return queryParts.join(' ');
+  }
+  
+  static List<String> _buildMultipleFilters(String type, List<FilterItem> items) {
+    return items.map((item) {
+      final prefix = item.isExcluded ? '-' : '';
+      return '$prefix$type:"${item.value}"';
+    }).toList();
+  }
+}
+
+// Example output: "+-tag:"a1"+-artist:"b1"+-tag:"a2"+language:"english"+-tag:"a3""
+```
+
+### Assets Integration
+```dart
+class TagDataManager {
+  static const String TAGS_JSON_PATH = 'assets/json/tags.json';
+  
+  Future<List<Tag>> loadTagsFromAssets();
+  Future<List<Tag>> searchTags(String query, String type);
+  Future<List<Tag>> getPopularTags(String type, int limit);
+  Future<void> cacheTagData();
+  
+  // Filter validation based on Matrix Filter Support
+  bool isMultipleSelectionAllowed(String filterType) {
+    return ['tag', 'artist', 'character', 'parody', 'group'].contains(filterType);
+  }
+  
+  bool isSingleSelectionOnly(String filterType) {
+    return ['language', 'category'].contains(filterType);
+  }
 }
 ```
 

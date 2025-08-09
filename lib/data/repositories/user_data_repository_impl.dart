@@ -422,4 +422,38 @@ class UserDataRepositoryImpl implements UserDataRepository {
           error: e, stackTrace: stackTrace);
     }
   }
+
+  // ==================== SORTING PREFERENCES ====================
+
+  @override
+  Future<void> saveSortingPreference(SortOption sortBy) async {
+    try {
+      _logger.d('Saving sorting preference: ${sortBy.name}');
+      await localDataSource.savePreference('sorting_preference', sortBy.name);
+      _logger.d('Sorting preference saved');
+    } catch (e, stackTrace) {
+      _logger.e('Failed to save sorting preference',
+          error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<SortOption> getSortingPreference() async {
+    try {
+      final sortName =
+          await localDataSource.getPreference('sorting_preference');
+      if (sortName != null) {
+        return SortOption.values.firstWhere(
+          (e) => e.name == sortName,
+          orElse: () => SortOption.newest,
+        );
+      }
+      return SortOption.newest; // Default sort option
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get sorting preference',
+          error: e, stackTrace: stackTrace);
+      return SortOption.newest; // Default sort option
+    }
+  }
 }

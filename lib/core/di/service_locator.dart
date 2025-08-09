@@ -17,6 +17,7 @@ import 'package:nhasixapp/core/utils/image_cache_manager.dart';
 import 'package:nhasixapp/core/utils/image_preloader.dart';
 import 'package:nhasixapp/core/utils/image_optimizer.dart';
 import 'package:nhasixapp/core/utils/content_image_preloader.dart';
+import 'package:nhasixapp/core/utils/tag_data_manager.dart';
 
 // Data Sources
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
@@ -36,6 +37,7 @@ import 'package:nhasixapp/presentation/cubits/cubits.dart';
 // Repositories
 import 'package:nhasixapp/domain/repositories/repositories.dart';
 import 'package:nhasixapp/data/repositories/content_repository_impl.dart';
+import 'package:nhasixapp/data/repositories/user_data_repository_impl.dart';
 
 // Use Cases
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
@@ -98,6 +100,10 @@ void _setupCore() {
   // Content Image Preloader
   getIt.registerLazySingleton<ContentImagePreloader>(
       () => ContentImagePreloader.instance);
+
+  // Tag Data Manager
+  getIt.registerLazySingleton<TagDataManager>(
+      () => TagDataManager(logger: getIt<Logger>()));
 }
 
 /// Setup data sources (Remote and Local)
@@ -150,10 +156,10 @@ void _setupRepositories() {
       ));
 
   // User Data Repository
-  // getIt.registerLazySingleton<UserDataRepository>(() => UserDataRepositoryImpl(
-  //   localDataSource: getIt(),
-  //   logger: getIt(),
-  // ));
+  getIt.registerLazySingleton<UserDataRepository>(() => UserDataRepositoryImpl(
+        localDataSource: getIt(),
+        logger: getIt(),
+      ));
 
   // Settings Repository
   // getIt.registerLazySingleton<SettingsRepository>(() => SettingsRepositoryImpl(
@@ -241,6 +247,12 @@ void _setupCubits() {
   getIt.registerFactory<DetailCubit>(() => DetailCubit(
         getContentDetailUseCase: getIt<GetContentDetailUseCase>(),
         contentRepository: getIt<ContentRepository>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // FilterDataCubit - Filter data screen management
+  getIt.registerFactory<FilterDataCubit>(() => FilterDataCubit(
+        tagDataManager: getIt<TagDataManager>(),
         logger: getIt<Logger>(),
       ));
 

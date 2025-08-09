@@ -16,6 +16,8 @@ import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_header_widget.dart';
 import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
 import 'package:nhasixapp/presentation/widgets/pagination_widget.dart';
+import 'package:nhasixapp/presentation/widgets/sorting_widget.dart';
+import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -31,6 +33,7 @@ class _MainScreenState extends State<MainScreen> {
 
   bool _isShowingSearchResults = false;
   SearchFilter? _currentSearchFilter;
+  SortOption _currentSortOption = SortOption.newest;
 
   @override
   void initState() {
@@ -50,6 +53,10 @@ class _MainScreenState extends State<MainScreen> {
   /// Initialize content - check for saved search state first
   Future<void> _initializeContent() async {
     try {
+      // Load saved sorting preference
+      final userDataRepository = getIt<UserDataRepository>();
+      _currentSortOption = await userDataRepository.getSortingPreference();
+
       // Check if there's a saved search filter from local storage
       final savedFilterData =
           await getIt<LocalDataSource>().getLastSearchFilter();
@@ -59,22 +66,26 @@ class _MainScreenState extends State<MainScreen> {
         final savedFilter = SearchFilter.fromJson(savedFilterData);
 
         if (savedFilter.hasFilters) {
-          // Load search results if there's a saved filter
-          _currentSearchFilter = savedFilter;
+          // Load search results if there's a saved filter, but use current sort option
+          _currentSearchFilter =
+              savedFilter.copyWith(sortBy: _currentSortOption);
           _isShowingSearchResults = true;
-          _contentBloc.add(ContentSearchEvent(savedFilter));
-          Logger().i('MainScreen: Loading saved search results');
+          _contentBloc.add(ContentSearchEvent(_currentSearchFilter!));
+          Logger().i(
+              'MainScreen: Loading saved search results with sort: $_currentSortOption');
         } else {
-          // Load normal content list
+          // Load normal content list with saved sort option
           _isShowingSearchResults = false;
-          _contentBloc.add(const ContentLoadEvent(sortBy: SortOption.newest));
-          Logger().i('MainScreen: Loading normal content list');
+          _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
+          Logger().i(
+              'MainScreen: Loading normal content list with sort: $_currentSortOption');
         }
       } else {
-        // Load normal content list
+        // Load normal content list with saved sort option
         _isShowingSearchResults = false;
-        _contentBloc.add(const ContentLoadEvent(sortBy: SortOption.newest));
-        Logger().i('MainScreen: Loading normal content list');
+        _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
+        Logger().i(
+            'MainScreen: Loading normal content list with sort: $_currentSortOption');
       }
 
       setState(() {});
@@ -82,7 +93,7 @@ class _MainScreenState extends State<MainScreen> {
       Logger().e('MainScreen: Error initializing content: $e');
       // Fallback to normal content loading
       _isShowingSearchResults = false;
-      _contentBloc.add(const ContentLoadEvent(sortBy: SortOption.newest));
+      _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
     }
   }
 
@@ -161,6 +172,13 @@ class _MainScreenState extends State<MainScreen> {
               // Search results header (if showing search results)
               if (_isShowingSearchResults) _buildSearchResultsHeader(),
 
+              // Sorting widget - only visible when there's data
+              if (_shouldShowSorting(state))
+                SortingWidget(
+                  currentSort: _currentSortOption,
+                  onSortChanged: _onSortingChanged,
+                ),
+
               // Content area with black theme
               Expanded(
                 child: Container(
@@ -184,6 +202,52 @@ class _MainScreenState extends State<MainScreen> {
   /// Handle content tap to navigate to detail screen
   void _onContentTap(Content content) {
     AppRouter.goToContentDetail(context, content.id);
+  }
+
+  /// Handle sorting option change
+  Future<void> _onSortingChanged(SortOption newSort) async {
+    if (_currentSortOption == newSort) return;
+
+    setState(() {
+      _currentSortOption = newSort;
+    });
+
+    try {
+      // Save sorting preference
+      final userDataRepository = getIt<UserDataRepository>();
+      await userDataRepository.saveSortingPreference(newSort);
+
+      // Apply sorting using ContentBloc event
+      _contentBloc.add(ContentSortChangedEvent(newSort));
+      Logger().i('MainScreen: Applied sorting $newSort');
+
+      // Update current search filter if showing search results
+      if (_isShowingSearchResults && _currentSearchFilter != null) {
+        _currentSearchFilter = _currentSearchFilter!.copyWith(
+          sortBy: newSort,
+          page: 1, // Reset to first page when sorting changes
+        );
+      }
+    } catch (e) {
+      Logger().e('MainScreen: Error changing sorting: $e');
+      // Revert sort option on error
+      setState(() {
+        _currentSortOption = _currentSortOption;
+      });
+    }
+  }
+
+  /// Check if sorting should be shown
+  bool _shouldShowSorting(ContentState state) {
+    // Show sorting only when there's data (loaded state with content)
+    if (state is ContentLoaded && state.contents.isNotEmpty) {
+      return true;
+    }
+    // Also show when loading more or refreshing (to maintain UI consistency)
+    if (state is ContentLoadingMore || state is ContentRefreshing) {
+      return true;
+    }
+    return false;
   }
 
   /// Build search results header
@@ -412,9 +476,9 @@ class _MainScreenState extends State<MainScreen> {
       Logger().e('MainScreen: Error clearing search filter: $e');
     }
 
-    // Load normal content
-    _contentBloc.add(
-        const ContentLoadEvent(sortBy: SortOption.newest, forceRefresh: true));
+    // Load normal content with current sort option
+    _contentBloc
+        .add(ContentLoadEvent(sortBy: _currentSortOption, forceRefresh: true));
   }
 
   Widget _buildContentFooter(ContentState state) {
@@ -440,8 +504,10 @@ class _MainScreenState extends State<MainScreen> {
         onNextPage: () {
           if (_isShowingSearchResults && _currentSearchFilter != null) {
             // For search results, update the filter with new page
-            final newFilter =
-                _currentSearchFilter!.copyWith(page: state.currentPage + 1);
+            final newFilter = _currentSearchFilter!.copyWith(
+              page: state.currentPage + 1,
+              sortBy: _currentSortOption, // Ensure current sort is maintained
+            );
             _contentBloc.add(ContentSearchEvent(newFilter));
           } else {
             // For normal content
@@ -451,8 +517,10 @@ class _MainScreenState extends State<MainScreen> {
         onPreviousPage: () {
           if (_isShowingSearchResults && _currentSearchFilter != null) {
             // For search results, update the filter with new page
-            final newFilter =
-                _currentSearchFilter!.copyWith(page: state.currentPage - 1);
+            final newFilter = _currentSearchFilter!.copyWith(
+              page: state.currentPage - 1,
+              sortBy: _currentSortOption, // Ensure current sort is maintained
+            );
             _contentBloc.add(ContentSearchEvent(newFilter));
           } else {
             // For normal content
@@ -462,7 +530,10 @@ class _MainScreenState extends State<MainScreen> {
         onGoToPage: (page) {
           if (_isShowingSearchResults && _currentSearchFilter != null) {
             // For search results, update the filter with new page
-            final newFilter = _currentSearchFilter!.copyWith(page: page);
+            final newFilter = _currentSearchFilter!.copyWith(
+              page: page,
+              sortBy: _currentSortOption, // Ensure current sort is maintained
+            );
             _contentBloc.add(ContentSearchEvent(newFilter));
           } else {
             // For normal content

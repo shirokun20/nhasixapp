@@ -35,20 +35,8 @@ class _SearchScreenState extends State<SearchScreen> {
   // Current search filter state (not triggering API calls)
   SearchFilter _currentFilter = const SearchFilter();
 
-  // Tag search controllers
-  final TextEditingController _tagSearchController = TextEditingController();
-  final TextEditingController _artistSearchController = TextEditingController();
-  final TextEditingController _characterSearchController =
-      TextEditingController();
-  final TextEditingController _parodySearchController = TextEditingController();
-  final TextEditingController _groupSearchController = TextEditingController();
-
-  // Tag search results
-  List<Tag> _tagSearchResults = [];
-  List<Tag> _artistSearchResults = [];
-  List<Tag> _characterSearchResults = [];
-  List<Tag> _parodySearchResults = [];
-  List<Tag> _groupSearchResults = [];
+  // Removed complex filter search controllers and results
+  // These are now handled by FilterDataScreen
 
   // Available options for single select
   List<Tag> _languages = [];
@@ -124,112 +112,214 @@ class _SearchScreenState extends State<SearchScreen> {
       _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
     });
 
-    // Tag search listeners
-    _tagSearchController.addListener(() => _searchTags('tag'));
-    _artistSearchController.addListener(() => _searchTags('artist'));
-    _characterSearchController.addListener(() => _searchTags('character'));
-    _parodySearchController.addListener(() => _searchTags('parody'));
-    _groupSearchController.addListener(() => _searchTags('group'));
+    // Removed complex tag search listeners - now handled by FilterDataScreen
   }
 
-  /// Search tags by type with debouncing
-  void _searchTags(String type) {
-    _tagSearchTimer?.cancel();
-    _tagSearchTimer = Timer(const Duration(milliseconds: 300), () async {
-      final query = _getSearchControllerForType(type).text.trim();
-      if (query.isEmpty) {
-        _clearSearchResultsForType(type);
-        return;
-      }
-
-      try {
-        final results = await _tagResolver.searchTags(query, limit: 20);
-        final filteredResults =
-            results.where((tag) => tag.type == type).toList();
-
-        setState(() {
-          _setSearchResultsForType(type, filteredResults);
-        });
-      } catch (e) {
-        Logger().e('Error searching $type tags: $e');
-      }
-    });
-  }
-
-  /// Get search controller for tag type
-  TextEditingController _getSearchControllerForType(String type) {
-    switch (type) {
-      case 'tag':
-        return _tagSearchController;
-      case 'artist':
-        return _artistSearchController;
-      case 'character':
-        return _characterSearchController;
-      case 'parody':
-        return _parodySearchController;
-      case 'group':
-        return _groupSearchController;
-      default:
-        return _tagSearchController;
-    }
-  }
-
-  /// Set search results for tag type
-  void _setSearchResultsForType(String type, List<Tag> results) {
-    switch (type) {
-      case 'tag':
-        _tagSearchResults = results;
-        break;
-      case 'artist':
-        _artistSearchResults = results;
-        break;
-      case 'character':
-        _characterSearchResults = results;
-        break;
-      case 'parody':
-        _parodySearchResults = results;
-        break;
-      case 'group':
-        _groupSearchResults = results;
-        break;
-    }
-  }
-
-  /// Clear search results for tag type
-  void _clearSearchResultsForType(String type) {
-    setState(() {
-      switch (type) {
-        case 'tag':
-          _tagSearchResults.clear();
-          break;
-        case 'artist':
-          _artistSearchResults.clear();
-          break;
-        case 'character':
-          _characterSearchResults.clear();
-          break;
-        case 'parody':
-          _parodySearchResults.clear();
-          break;
-        case 'group':
-          _groupSearchResults.clear();
-          break;
-      }
-    });
-  }
+  // Removed complex tag search methods - now handled by FilterDataScreen
 
   @override
   void dispose() {
     _tagSearchTimer?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
-    _tagSearchController.dispose();
-    _artistSearchController.dispose();
-    _characterSearchController.dispose();
-    _parodySearchController.dispose();
-    _groupSearchController.dispose();
+    // Removed complex filter controllers disposal - now handled by FilterDataScreen
     _searchBloc.close();
     super.dispose();
+  }
+
+  /// Build navigation buttons for complex filter types
+  Widget _buildFilterNavigationButtons() {
+    final filterTypes = [
+      {
+        'type': 'tag',
+        'label': 'Tags',
+        'icon': Icons.label,
+        'filters': _currentFilter.tags
+      },
+      {
+        'type': 'artist',
+        'label': 'Artists',
+        'icon': Icons.person,
+        'filters': _currentFilter.artists
+      },
+      {
+        'type': 'character',
+        'label': 'Characters',
+        'icon': Icons.face,
+        'filters': _currentFilter.characters
+      },
+      {
+        'type': 'parody',
+        'label': 'Parodies',
+        'icon': Icons.movie,
+        'filters': _currentFilter.parodies
+      },
+      {
+        'type': 'group',
+        'label': 'Groups',
+        'icon': Icons.group,
+        'filters': _currentFilter.groups
+      },
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Filter Categories',
+          style: TextStyleConst.bodyMedium.copyWith(
+            color: ColorsConst.darkTextSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 12),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 3.5,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 8,
+          ),
+          itemCount: filterTypes.length,
+          itemBuilder: (context, index) {
+            final filterType = filterTypes[index];
+            final type = filterType['type'] as String;
+            final label = filterType['label'] as String;
+            final icon = filterType['icon'] as IconData;
+            final filters = filterType['filters'] as List<FilterItem>;
+            final hasFilters = filters.isNotEmpty;
+
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => _navigateToFilterData(type, filters),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: hasFilters
+                        ? ColorsConst.accentBlue.withValues(alpha: 0.1)
+                        : ColorsConst.darkSurface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: hasFilters
+                          ? ColorsConst.accentBlue
+                          : ColorsConst.borderDefault,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        icon,
+                        size: 20,
+                        color: hasFilters
+                            ? ColorsConst.accentBlue
+                            : ColorsConst.darkTextSecondary,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          label,
+                          style: TextStyleConst.bodySmall.copyWith(
+                            color: hasFilters
+                                ? ColorsConst.accentBlue
+                                : ColorsConst.darkTextPrimary,
+                            fontWeight: hasFilters
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                      if (hasFilters) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: ColorsConst.accentBlue,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            filters.length.toString(),
+                            style: TextStyleConst.caption.copyWith(
+                              color: ColorsConst.darkBackground,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                      ] else ...[
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: 14,
+                          color: ColorsConst.darkTextTertiary,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  /// Navigate to FilterDataScreen for advanced filter selection
+  Future<void> _navigateToFilterData(
+      String filterType, List<FilterItem> selectedFilters) async {
+    try {
+      final result = await AppRouter.goToFilterData(
+        context,
+        filterType: filterType,
+        selectedFilters: selectedFilters,
+      );
+
+      if (result != null && result.isNotEmpty) {
+        // Update the current filter with the returned filters
+        switch (filterType.toLowerCase()) {
+          case 'tag':
+            _currentFilter = _currentFilter.copyWith(tags: result);
+            break;
+          case 'artist':
+            _currentFilter = _currentFilter.copyWith(artists: result);
+            break;
+          case 'character':
+            _currentFilter = _currentFilter.copyWith(characters: result);
+            break;
+          case 'parody':
+            _currentFilter = _currentFilter.copyWith(parodies: result);
+            break;
+          case 'group':
+            _currentFilter = _currentFilter.copyWith(groups: result);
+            break;
+        }
+
+        // Update the search bloc with the new filter
+        _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
+
+        // Update UI
+        setState(() {});
+
+        Logger().i(
+            'SearchScreen: Updated $filterType filters with ${result.length} items');
+      }
+    } catch (e) {
+      Logger().e('SearchScreen: Error navigating to filter data: $e');
+
+      // Show error snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error opening filter selection: $e'),
+            backgroundColor: ColorsConst.accentRed,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -281,6 +371,7 @@ class _SearchScreenState extends State<SearchScreen> {
           },
         ),
         IconButton(
+          tooltip: 'Clear all filters',
           icon:
               const Icon(Icons.clear_all, color: ColorsConst.darkTextSecondary),
           onPressed: _clearAllFilters,
@@ -348,57 +439,6 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
           ),
-
-          // Sort options
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Text(
-                'Sort by:',
-                style: TextStyleConst.bodySmall.copyWith(
-                  color: ColorsConst.darkTextSecondary,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: SortOption.values.map((sort) {
-                      final isSelected = _currentFilter.sortBy == sort;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: FilterChip(
-                          label: Text(_getSortLabel(sort)),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            _currentFilter =
-                                _currentFilter.copyWith(sortBy: sort);
-                            _searchBloc
-                                .add(SearchUpdateFilterEvent(_currentFilter));
-                            setState(() {});
-                          },
-                          backgroundColor: ColorsConst.darkCard,
-                          selectedColor:
-                              ColorsConst.accentBlue.withValues(alpha: 0.2),
-                          labelStyle: TextStyleConst.bodySmall.copyWith(
-                            color: isSelected
-                                ? ColorsConst.accentBlue
-                                : ColorsConst.darkTextSecondary,
-                          ),
-                          side: BorderSide(
-                            color: isSelected
-                                ? ColorsConst.accentBlue
-                                : ColorsConst.borderDefault,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -407,9 +447,8 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildAdvancedFilters() {
     return Container(
       width: double.infinity,
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height *
-            0.3, // Limit height to 60% of screen
+      constraints: const BoxConstraints(
+        maxHeight: 400, // Limit height to prevent overflow
       ),
       decoration: const BoxDecoration(
         color: ColorsConst.darkCard,
@@ -421,236 +460,47 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       ),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Advanced Filters',
-              style: TextStyleConst.headingSmall.copyWith(
-                color: ColorsConst.darkTextPrimary,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Advanced Filters',
+                style: TextStyleConst.headingSmall.copyWith(
+                  color: ColorsConst.darkTextPrimary,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // Multiple select filters
-            _buildMultipleSelectFilter(
-              'Tags',
-              'tag',
-              _tagSearchController,
-              _tagSearchResults,
-              _currentFilter.tags,
-            ),
-            const SizedBox(height: 16),
-            _buildMultipleSelectFilter(
-                'Artists',
-                'artist',
-                _artistSearchController,
-                _artistSearchResults,
-                _currentFilter.artists),
-            const SizedBox(height: 16),
-            _buildMultipleSelectFilter(
-                'Characters',
-                'character',
-                _characterSearchController,
-                _characterSearchResults,
-                _currentFilter.characters),
-            const SizedBox(height: 16),
-            _buildMultipleSelectFilter(
-                'Parodies',
-                'parody',
-                _parodySearchController,
-                _parodySearchResults,
-                _currentFilter.parodies),
-            const SizedBox(height: 16),
-            _buildMultipleSelectFilter(
-                'Groups',
-                'group',
-                _groupSearchController,
-                _groupSearchResults,
-                _currentFilter.groups),
-            const SizedBox(height: 16),
+              // Navigation buttons for complex filters
+              _buildFilterNavigationButtons(),
+              const SizedBox(height: 16),
 
-            // Single select filters
-            _buildSingleSelectFilter(
-                'Language', _languages, _currentFilter.language, (value) {
-              _currentFilter = _currentFilter.copyWith(language: value);
-              Logger().i(_currentFilter.language);
-              _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
-              setState(() {});
-            }),
-            const SizedBox(height: 16),
-            _buildSingleSelectFilter(
-                'Category', _categories, _currentFilter.category, (value) {
-              _currentFilter = _currentFilter.copyWith(category: value);
-              _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
-              setState(() {});
-            }),
-            const SizedBox(height: 16), // Extra padding at bottom
-          ],
+              // Single select filters (kept in SearchScreen)
+              _buildSingleSelectFilter(
+                  'Language', _languages, _currentFilter.language, (value) {
+                _currentFilter = _currentFilter.copyWith(language: value);
+                Logger().i(_currentFilter.language);
+                _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
+                setState(() {});
+              }),
+              const SizedBox(height: 16),
+              _buildSingleSelectFilter(
+                  'Category', _categories, _currentFilter.category, (value) {
+                _currentFilter = _currentFilter.copyWith(category: value);
+                _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
+                setState(() {});
+              }),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildMultipleSelectFilter(
-    String title,
-    String type,
-    TextEditingController controller,
-    List<Tag> searchResults,
-    List<FilterItem> selectedItems,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyleConst.bodyMedium.copyWith(
-            color: ColorsConst.darkTextPrimary,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Search input
-        TextField(
-          controller: controller,
-          style: TextStyleConst.bodySmall.copyWith(
-            color: ColorsConst.darkTextPrimary,
-          ),
-          decoration: InputDecoration(
-            hintText: 'Search $title...',
-            hintStyle: TextStyleConst.bodySmall.copyWith(
-              color: ColorsConst.darkTextTertiary,
-            ),
-            prefixIcon: const Icon(
-              Icons.search,
-              color: ColorsConst.darkTextSecondary,
-              size: 20,
-            ),
-            filled: true,
-            fillColor: ColorsConst.darkSurface,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: ColorsConst.borderDefault),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: ColorsConst.borderDefault),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide:
-                  const BorderSide(color: ColorsConst.accentBlue, width: 2),
-            ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          ),
-        ),
-
-        // Selected items
-        if (selectedItems.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: selectedItems.map((item) {
-              return FilterChip(
-                label: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (item.isExcluded)
-                      const Icon(Icons.remove,
-                          size: 16, color: ColorsConst.accentRed),
-                    Text(item.value),
-                  ],
-                ),
-                selected: true,
-                onSelected: (selected) {
-                  _removeFilterItem(type, item);
-                },
-                backgroundColor: item.isExcluded
-                    ? ColorsConst.accentRed.withValues(alpha: 0.2)
-                    : ColorsConst.accentGreen.withValues(alpha: 0.2),
-                selectedColor: item.isExcluded
-                    ? ColorsConst.accentRed.withValues(alpha: 0.3)
-                    : ColorsConst.accentGreen.withValues(alpha: 0.3),
-                labelStyle: TextStyleConst.bodySmall.copyWith(
-                  color: item.isExcluded
-                      ? ColorsConst.accentRed
-                      : ColorsConst.accentGreen,
-                ),
-                side: BorderSide(
-                  color: item.isExcluded
-                      ? ColorsConst.accentRed
-                      : ColorsConst.accentGreen,
-                ),
-                deleteIcon: const Icon(Icons.close, size: 16),
-                onDeleted: () => _removeFilterItem(type, item),
-              );
-            }).toList(),
-          ),
-        ],
-
-        // Search results
-        if (searchResults.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Container(
-            constraints: const BoxConstraints(maxHeight: 200),
-            child: SingleChildScrollView(
-              child: Column(
-                children: searchResults.map((tag) {
-                  final isAlreadySelected =
-                      selectedItems.any((item) => item.value == tag.name);
-                  return ListTile(
-                    dense: true,
-                    title: Text(
-                      tag.name,
-                      style: TextStyleConst.bodySmall.copyWith(
-                        color: ColorsConst.darkTextPrimary,
-                      ),
-                    ),
-                    subtitle: Text(
-                      '${tag.count} items',
-                      style: TextStyleConst.caption.copyWith(
-                        color: ColorsConst.darkTextTertiary,
-                      ),
-                    ),
-                    trailing: isAlreadySelected
-                        ? const Icon(Icons.check,
-                            color: ColorsConst.accentGreen, size: 20)
-                        : Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.add,
-                                    color: ColorsConst.accentGreen, size: 20),
-                                onPressed: () => _addFilterItem(
-                                    type, FilterItem.include(tag.name)),
-                                tooltip: 'Include',
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.remove,
-                                    color: ColorsConst.accentRed, size: 20),
-                                onPressed: () => _addFilterItem(
-                                    type, FilterItem.exclude(tag.name)),
-                                tooltip: 'Exclude',
-                              ),
-                            ],
-                          ),
-                    onTap: isAlreadySelected
-                        ? null
-                        : () =>
-                            _addFilterItem(type, FilterItem.include(tag.name)),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
+  // Removed _buildMultipleSelectFilter method - complex filters now handled by FilterDataScreen
 
   Widget _buildSingleSelectFilter(
     String title,
@@ -1223,87 +1073,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  // Helper methods
-  void _addFilterItem(String type, FilterItem item) {
-    List<FilterItem> currentItems;
-
-    switch (type) {
-      case 'tag':
-        currentItems = List.from(_currentFilter.tags);
-        break;
-      case 'artist':
-        currentItems = List.from(_currentFilter.artists);
-        break;
-      case 'character':
-        currentItems = List.from(_currentFilter.characters);
-        break;
-      case 'parody':
-        currentItems = List.from(_currentFilter.parodies);
-        break;
-      case 'group':
-        currentItems = List.from(_currentFilter.groups);
-        break;
-      default:
-        return;
-    }
-
-    // Remove existing item with same value
-    currentItems.removeWhere((existing) => existing.value == item.value);
-    // Add new item
-    currentItems.add(item);
-
-    _updateFilterItems(type, currentItems);
-  }
-
-  void _removeFilterItem(String type, FilterItem item) {
-    List<FilterItem> currentItems;
-
-    switch (type) {
-      case 'tag':
-        currentItems = List.from(_currentFilter.tags);
-        break;
-      case 'artist':
-        currentItems = List.from(_currentFilter.artists);
-        break;
-      case 'character':
-        currentItems = List.from(_currentFilter.characters);
-        break;
-      case 'parody':
-        currentItems = List.from(_currentFilter.parodies);
-        break;
-      case 'group':
-        currentItems = List.from(_currentFilter.groups);
-        break;
-      default:
-        return;
-    }
-
-    currentItems.removeWhere((existing) => existing.value == item.value);
-    _updateFilterItems(type, currentItems);
-  }
-
-  void _updateFilterItems(String type, List<FilterItem> items) {
-    switch (type) {
-      case 'tag':
-        _currentFilter = _currentFilter.copyWith(tags: items);
-        break;
-      case 'artist':
-        _currentFilter = _currentFilter.copyWith(artists: items);
-        break;
-      case 'character':
-        _currentFilter = _currentFilter.copyWith(characters: items);
-        break;
-      case 'parody':
-        _currentFilter = _currentFilter.copyWith(parodies: items);
-        break;
-      case 'group':
-        _currentFilter = _currentFilter.copyWith(groups: items);
-        break;
-    }
-
-    _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
-    setState(() {});
-  }
+  // Removed helper methods for complex filter management - now handled by FilterDataScreen
 
   void _performSearch() async {
     try {
@@ -1336,22 +1106,14 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _clearAllFilters() {
     _searchController.clear();
-    _tagSearchController.clear();
-    _artistSearchController.clear();
-    _characterSearchController.clear();
-    _parodySearchController.clear();
-    _groupSearchController.clear();
+    // Removed complex filter controllers clearing - now handled by FilterDataScreen
 
     _currentFilter = const SearchFilter();
     _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
     _searchBloc.add(const SearchClearEvent());
 
     setState(() {
-      _tagSearchResults.clear();
-      _artistSearchResults.clear();
-      _characterSearchResults.clear();
-      _parodySearchResults.clear();
-      _groupSearchResults.clear();
+      // Removed complex filter results clearing - now handled by FilterDataScreen
     });
   }
 
@@ -1363,21 +1125,6 @@ class _SearchScreenState extends State<SearchScreen> {
         return ColorsConst.tagCategory;
       default:
         return ColorsConst.accentBlue;
-    }
-  }
-
-  String _getSortLabel(SortOption sort) {
-    switch (sort) {
-      case SortOption.newest:
-        return 'Recent';
-      case SortOption.popular:
-        return 'Popular All Time';
-      case SortOption.popularWeek:
-        return 'Popular Week';
-      case SortOption.popularToday:
-        return 'Popular Today';
-      case SortOption.random:
-        return 'Random';
     }
   }
 }

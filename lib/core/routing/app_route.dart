@@ -17,6 +17,7 @@ class AppRoute {
   static const String settings = '/settings';
   static const String tags = '/tags';
   static const String artists = '/artists';
+  static const String filterData = '/filter-data';
 
   // Utility routes
   static const String random = '/random';
@@ -39,6 +40,7 @@ class AppRoute {
   static const String settingsName = 'settings';
   static const String tagsName = 'tags';
   static const String artistsName = 'artists';
+  static const String filterDataName = 'filter-data';
   static const String randomName = 'random';
   static const String statusName = 'status';
   static const String mainName = 'main';

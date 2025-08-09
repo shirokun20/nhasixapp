@@ -279,6 +279,28 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     SearchUpdateFilterEvent event,
     Emitter<SearchState> emit,
   ) async {
+    // Validate filter before updating
+    final validationResult = event.filter.validate();
+
+    if (!validationResult.isValid) {
+      _logger.w(
+          'SearchBloc: Filter validation failed: ${validationResult.issuesText}');
+
+      emit(SearchError(
+        message: 'Invalid filter: ${validationResult.errors.join(', ')}',
+        errorType: SearchErrorType.validation,
+        canRetry: false,
+        filter: _currentFilter,
+      ));
+      return;
+    }
+
+    // Log warnings if any
+    if (validationResult.warnings.isNotEmpty) {
+      _logger.w(
+          'SearchBloc: Filter validation warnings: ${validationResult.warnings.join(', ')}');
+    }
+
     _currentFilter = event.filter;
 
     _logger.i(
@@ -297,6 +319,29 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     Emitter<SearchState> emit,
   ) async {
     try {
+      // Validate filter before submitting
+      final validationResult = _currentFilter.validate();
+
+      if (!validationResult.isValid) {
+        _logger.w(
+            'SearchBloc: Filter validation failed on submit: ${validationResult.issuesText}');
+
+        emit(SearchError(
+          message:
+              'Invalid search filter: ${validationResult.errors.join(', ')}',
+          errorType: SearchErrorType.validation,
+          canRetry: false,
+          filter: _currentFilter,
+        ));
+        return;
+      }
+
+      // Log warnings if any
+      if (validationResult.warnings.isNotEmpty) {
+        _logger.w(
+            'SearchBloc: Filter validation warnings on submit: ${validationResult.warnings.join(', ')}');
+      }
+
       _logger.i(
           'SearchBloc: Submitting search with filter: ${_currentFilter.toQueryString()}');
 

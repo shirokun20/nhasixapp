@@ -177,6 +177,60 @@
     - Add migration untuk table baru jika diperlukan
     - _Requirements: 2.1_
 
+  - [x] 6.5 Implement Matrix Filter Support sesuai perubahan-alur-search.md
+    - Update SearchFilter model untuk menggunakan FilterItem dengan include/exclude support
+    - Implement SearchQueryBuilder class untuk build query sesuai Matrix Filter Support rules
+    - Add validation untuk multiple vs single select filters (Tags multiple, Language single)
+    - Update SearchBloc untuk handle FilterItem properly dengan prefix formatting
+    - Ensure query output format: "+-tag:"a1"+-artist:"b1"+language:"english""
+    - _Requirements: 2.4, 2.5, 9.7_
+
+  - [x] 6.6 Create FilterDataScreen untuk advanced filters
+    - Create FilterDataScreen sebagai halaman terpisah dengan modern UI
+    - Implement FilterDataCubit untuk mengelola state filter data
+    - Build FilterDataSearchWidget dengan real-time search dari assets/json/tags.json
+    - Create FilterItemCard dengan modern design dan include/exclude toggle
+    - Add SelectedFiltersWidget untuk horizontal scrollable selected filters
+    - Implement FilterTypeTabBar untuk switch antara Tags, Artists, Characters, dll
+    - Add navigation dari SearchScreen ke FilterDataScreen dengan proper routing
+    - Implement return functionality dengan selected filters ke SearchScreen
+    - _Requirements: 2.8, 2.9, 9.1, 9.2, 9.3, 9.4, 9.5_
+
+  - [x] 6.7 Implement TagDataManager untuk assets integration
+    - Create TagDataManager class untuk load data dari assets/json/tags.json
+    - Implement searchTags method dengan filtering by type (tag, artist, character, dll)
+    - Add cacheTagData functionality untuk performance optimization
+    - Implement getPopularTags method untuk popular suggestions
+    - Add validation methods untuk Matrix Filter Support rules
+    - Ensure proper error handling untuk asset loading
+    - _Requirements: 2.9, 9.3_
+
+  - [x] 6.8 Move sorting functionality to MainScreen
+    - Remove sorting options dari SearchScreen header (_buildSearchHeader)
+    - Create SortingWidget untuk MainScreen dengan modern design
+    - Add sorting options ke MainScreen yang dapat digunakan untuk normal content dan search results
+    - Update ContentBloc untuk handle sorting changes pada kedua mode (normal dan search)
+    - Implement sorting state persistence di UserDataRepository
+    - Ensure sorting works properly dengan search results dan normal content
+    - _Requirements: 6.7, 6.8_
+
+  - [x] 6.9 Improve _buildAdvancedFilters implementation
+    - Refactor _buildAdvancedFilters untuk mengurangi kompleksitas dan height constraints
+    - Move complex filter selection (Tags, Artists, Characters, dll) ke FilterDataScreen
+    - Simplify SearchScreen dengan fokus pada basic search dan navigation buttons ke filter data
+    - Keep only Language dan Category selection di SearchScreen (single select filters)
+    - Add navigation buttons untuk each filter type ke FilterDataScreen
+    - Improve performance dan user experience dengan reduced widget tree complexity
+    - _Requirements: 9.6_
+
+  - [x] 6.10 Update routing dan navigation untuk FilterDataScreen
+    - Add `/filter-data` route ke Go Router configuration
+    - Implement proper parameter passing (filter type, selected filters)
+    - Add navigation methods di AppRouter untuk FilterDataScreen
+    - Ensure proper back navigation dengan result passing
+    - Test navigation flow: SearchScreen → FilterDataScreen → SearchScreen dengan selected filters
+    - _Requirements: 9.4, 9.5_
+
 - [ ] 7. Implement reader functionality
 💡 *Remember to check components-list.md first*
   - [ ] 7.1 Create basic reader screen dengan ReaderCubit

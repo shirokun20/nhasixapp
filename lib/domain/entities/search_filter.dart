@@ -184,41 +184,194 @@ class SearchFilter extends Equatable {
     return copyWith(page: page > 1 ? page - 1 : 1);
   }
 
-  /// Convert to query string for URL (new format with FilterItem)
+  /// Validate filter according to Matrix Filter Support rules
+  FilterValidationResult validate() {
+    final errors = <String>[];
+    final warnings = <String>[];
+
+    // Validate single select filters
+    if (language != null && language!.isEmpty) {
+      errors.add('Language cannot be empty');
+    }
+
+    if (category != null && category!.isEmpty) {
+      errors.add('Category cannot be empty');
+    }
+
+    // Validate multiple select filters
+    if (tags.any((item) => item.value.isEmpty)) {
+      errors.add('Tag values cannot be empty');
+    }
+
+    if (artists.any((item) => item.value.isEmpty)) {
+      errors.add('Artist values cannot be empty');
+    }
+
+    if (characters.any((item) => item.value.isEmpty)) {
+      errors.add('Character values cannot be empty');
+    }
+
+    if (parodies.any((item) => item.value.isEmpty)) {
+      errors.add('Parody values cannot be empty');
+    }
+
+    if (groups.any((item) => item.value.isEmpty)) {
+      errors.add('Group values cannot be empty');
+    }
+
+    // Check for duplicate values in multiple select filters
+    final tagValues = tags.map((item) => item.value).toList();
+    if (tagValues.length != tagValues.toSet().length) {
+      warnings.add('Duplicate tag values detected');
+    }
+
+    final artistValues = artists.map((item) => item.value).toList();
+    if (artistValues.length != artistValues.toSet().length) {
+      warnings.add('Duplicate artist values detected');
+    }
+
+    final characterValues = characters.map((item) => item.value).toList();
+    if (characterValues.length != characterValues.toSet().length) {
+      warnings.add('Duplicate character values detected');
+    }
+
+    final parodyValues = parodies.map((item) => item.value).toList();
+    if (parodyValues.length != parodyValues.toSet().length) {
+      warnings.add('Duplicate parody values detected');
+    }
+
+    final groupValues = groups.map((item) => item.value).toList();
+    if (groupValues.length != groupValues.toSet().length) {
+      warnings.add('Duplicate group values detected');
+    }
+
+    // Validate page range
+    if (page < 1) {
+      errors.add('Page number must be greater than 0');
+    }
+
+    // Validate page count range
+    if (pageCountRange != null) {
+      final range = pageCountRange!;
+      if (range.min != null && range.min! < 1) {
+        errors.add('Minimum page count must be greater than 0');
+      }
+      if (range.max != null && range.max! < 1) {
+        errors.add('Maximum page count must be greater than 0');
+      }
+      if (range.min != null && range.max != null && range.min! > range.max!) {
+        errors.add('Minimum page count cannot be greater than maximum');
+      }
+    }
+
+    return FilterValidationResult(
+      isValid: errors.isEmpty,
+      errors: errors,
+      warnings: warnings,
+    );
+  }
+
+  /// Check if filter type supports multiple values
+  static bool isMultipleSelectFilter(String filterType) {
+    switch (filterType.toLowerCase()) {
+      case 'tag':
+      case 'artist':
+      case 'character':
+      case 'parody':
+      case 'group':
+        return true;
+      case 'language':
+      case 'category':
+        return false;
+      default:
+        return false;
+    }
+  }
+
+  /// Check if filter type supports include/exclude
+  static bool supportsIncludeExclude(String filterType) {
+    switch (filterType.toLowerCase()) {
+      case 'tag':
+      case 'artist':
+      case 'character':
+      case 'parody':
+      case 'group':
+        return true;
+      case 'language':
+      case 'category':
+        return false;
+      default:
+        return false;
+    }
+  }
+
+  /// Convert to query string for URL (using SearchQueryBuilder)
   String toQueryString() {
+    return _buildUrlQuery();
+  }
+
+  /// Build query string according to Matrix Filter Support rules
+  /// Output format: "+-tag:"a1"+-artist:"b1"+language:"english""
+  String buildQueryString() {
+    return _buildQuery();
+  }
+
+  /// Build URL query string with all parameters
+  String _buildUrlQuery() {
+    final params = <String>[];
+
+    // Build main query part using SearchQueryBuilder
+    final queryString = _buildQuery();
+    if (queryString.isNotEmpty) {
+      params.add('q=${Uri.encodeComponent(queryString)}');
+    }
+
+    // Add other parameters
+    if (popular) {
+      params.add('popular=true');
+    }
+
+    params.add('sort=${sortBy.apiValue}');
+    params.add('page=$page');
+
+    return params.join('&');
+  }
+
+  /// Build query string from SearchFilter according to Matrix Filter Support rules
+  String _buildQuery() {
     final queryParts = <String>[];
 
-    // Add text query if present
+    // Add text query if present (no prefix)
     if (query != null && query!.isNotEmpty) {
       queryParts.add(query!);
     }
 
-    // Add tags with include/exclude
+    // Add tags with include/exclude (multiple allowed)
     for (final tag in tags) {
       queryParts.add('${tag.prefix}tag:"${tag.value}"');
     }
 
-    // Add artists with include/exclude
+    // Add artists with include/exclude (multiple allowed)
     for (final artist in artists) {
       queryParts.add('${artist.prefix}artist:"${artist.value}"');
     }
 
-    // Add characters with include/exclude
+    // Add characters with include/exclude (multiple allowed)
     for (final character in characters) {
       queryParts.add('${character.prefix}character:"${character.value}"');
     }
 
-    // Add parodies with include/exclude
+    // Add parodies with include/exclude (multiple allowed)
     for (final parody in parodies) {
       queryParts.add('${parody.prefix}parody:"${parody.value}"');
     }
 
-    // Add groups with include/exclude
+    // Add groups with include/exclude (multiple allowed)
     for (final group in groups) {
       queryParts.add('${group.prefix}group:"${group.value}"');
     }
 
-    // Add single select filters
+    // Add single select filters (no prefix, only one allowed)
     if (language != null) {
       queryParts.add('language:"$language"');
     }
@@ -227,21 +380,7 @@ class SearchFilter extends Equatable {
       queryParts.add('category:"$category"');
     }
 
-    final params = <String>[];
-
-    // Combine all query parts
-    if (queryParts.isNotEmpty) {
-      params.add('q=${Uri.encodeComponent(queryParts.join(' '))}');
-    }
-
-    if (popular) {
-      params.add('popular=true');
-    }
-
-    params.add('sort=${sortBy.name}');
-    params.add('page=$page');
-
-    return params.join('&');
+    return queryParts.join(' ');
   }
 
   /// Convert to JSON for persistence
@@ -403,5 +542,39 @@ class IntRange extends Equatable {
       min: json['min'] as int?,
       max: json['max'] as int?,
     );
+  }
+}
+
+/// Result of filter validation
+class FilterValidationResult extends Equatable {
+  const FilterValidationResult({
+    required this.isValid,
+    required this.errors,
+    required this.warnings,
+  });
+
+  final bool isValid;
+  final List<String> errors;
+  final List<String> warnings;
+
+  @override
+  List<Object> get props => [isValid, errors, warnings];
+
+  /// Check if has any issues
+  bool get hasIssues => errors.isNotEmpty || warnings.isNotEmpty;
+
+  /// Get all issues as formatted string
+  String get issuesText {
+    final issues = <String>[];
+
+    if (errors.isNotEmpty) {
+      issues.add('Errors: ${errors.join(', ')}');
+    }
+
+    if (warnings.isNotEmpty) {
+      issues.add('Warnings: ${warnings.join(', ')}');
+    }
+
+    return issues.join('\n');
   }
 }

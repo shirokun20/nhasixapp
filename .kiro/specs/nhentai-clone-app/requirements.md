@@ -25,11 +25,13 @@ Aplikasi NhentaiApp adalah sebuah aplikasi mobile Flutter yang berfungsi sebagai
 
 1. WHEN pengguna mengakses fitur pencarian THEN sistem SHALL menampilkan form pencarian dengan opsi filter tanpa langsung mengirim API request
 2. WHEN pengguna memasukkan kata kunci pencarian THEN sistem SHALL menyimpan input di state tanpa memicu API call
-3. WHEN pengguna memilih filter tag, artist, character, parody, atau group THEN sistem SHALL menampilkan interface pencarian untuk data tersebut dari assets/json/tags.json
-4. WHEN pengguna memilih multiple filter THEN sistem SHALL menyimpan semua filter di state dengan opsi include/exclude
+3. WHEN pengguna memilih filter tag, artist, character, parody, atau group THEN sistem SHALL menampilkan interface pencarian untuk data tersebut dari assets/json/tags.json dengan halaman terpisah yang modern
+4. WHEN pengguna memilih multiple filter THEN sistem SHALL menyimpan semua filter di state dengan opsi include/exclude menggunakan FilterItem
 5. WHEN pengguna memilih filter language atau category THEN sistem SHALL hanya mengizinkan satu pilihan
 6. WHEN pengguna menekan tombol "Search" atau "Apply" THEN sistem SHALL mengirim API request, menyimpan state pencarian ke local datasource, dan kembali ke MainScreen dengan hasil pencarian
 7. WHEN aplikasi dibuka ulang THEN sistem SHALL memuat state pencarian terakhir dari local datasource dan menampilkan hasil di MainScreen
+8. WHEN pengguna mengakses filter data THEN sistem SHALL menampilkan halaman terpisah dengan pencarian untuk Tags, Artists, Characters, Parodies, dan Groups dengan UI yang modern
+9. WHEN pengguna melakukan pencarian filter data THEN sistem SHALL menggunakan data dari assets/json/tags.json untuk memberikan hasil yang akurat
 
 ### Requirement 3
 
@@ -79,6 +81,8 @@ Aplikasi NhentaiApp adalah sebuah aplikasi mobile Flutter yang berfungsi sebagai
 4. WHEN pengguna melakukan navigasi THEN sistem SHALL menggunakan tombol next/previous untuk pagination tanpa infinite scroll
 5. WHEN terjadi loading data THEN sistem SHALL menampilkan loading indicator yang informatif
 6. WHEN pengguna mengakses drawer menu THEN sistem SHALL menampilkan menu dengan fitur: Downloaded galleries, Random gallery, Favorite galleries, dan View history
+7. WHEN pengguna berada di MainScreen THEN sistem SHALL menampilkan opsi sorting (newest, popular, etc.) yang dapat digunakan baik untuk konten normal maupun hasil pencarian
+8. WHEN pengguna mengubah sorting di MainScreen THEN sistem SHALL menerapkan sorting tersebut pada konten yang sedang ditampilkan (normal atau hasil pencarian)
 
 ### Requirement 7
 
@@ -106,6 +110,20 @@ Aplikasi NhentaiApp adalah sebuah aplikasi mobile Flutter yang berfungsi sebagai
 6. WHEN aplikasi menggunakan HTTP client THEN sistem SHALL tidak dispose dio/httpClient untuk menghindari error koneksi
 
 ### Requirement 9
+
+**User Story:** Sebagai pengguna, saya ingin dapat mengakses filter data yang lengkap dengan interface yang modern dan mudah digunakan, sehingga saya dapat menemukan konten yang spesifik dengan mudah.
+
+#### Acceptance Criteria
+
+1. WHEN pengguna mengakses advanced filters THEN sistem SHALL menyediakan opsi untuk membuka halaman filter data terpisah
+2. WHEN pengguna berada di halaman filter data THEN sistem SHALL menampilkan interface modern untuk mencari Tags, Artists, Characters, Parodies, dan Groups
+3. WHEN pengguna mencari dalam filter data THEN sistem SHALL menggunakan data dari assets/json/tags.json untuk memberikan hasil yang akurat dan cepat
+4. WHEN pengguna memilih item dari filter data THEN sistem SHALL memberikan opsi include/exclude dengan visual yang jelas
+5. WHEN pengguna selesai memilih filter THEN sistem SHALL dapat kembali ke SearchScreen dengan filter yang telah dipilih
+6. WHEN _buildAdvancedFilters terlalu kompleks THEN sistem SHALL memindahkan fungsi tersebut ke halaman terpisah untuk meningkatkan UX
+7. WHEN pengguna menggunakan filter data THEN sistem SHALL menyimpan pilihan filter dengan format FilterItem yang mendukung include/exclude
+
+### Requirement 10
 
 **User Story:** Sebagai developer, saya ingin semua fitur aplikasi ditest tidak hanya melalui analisis kode tetapi juga pada perangkat nyata, sehingga saya dapat memastikan aplikasi berfungsi dengan baik di lingkungan produksi.
 

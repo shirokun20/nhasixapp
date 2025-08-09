@@ -171,6 +171,18 @@ abstract class UserDataRepository {
   /// Clear search filter state
   Future<void> clearSearchFilter();
 
+  // ==================== SORTING PREFERENCES ====================
+
+  /// Save sorting preference for persistence
+  ///
+  /// [sortBy] - Sort option to save
+  Future<void> saveSortingPreference(SortOption sortBy);
+
+  /// Get saved sorting preference
+  ///
+  /// Returns saved sort option or default (newest) if none exists
+  Future<SortOption> getSortingPreference();
+
   // ==================== UTILITIES ====================
 
   /// Get database statistics

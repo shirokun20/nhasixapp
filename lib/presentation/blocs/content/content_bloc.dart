@@ -347,9 +347,39 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     if (_currentSortBy == event.sortBy) return;
 
     _logger.i('ContentBloc: Sort changed to: ${event.sortBy}');
+    _currentSortBy = event.sortBy;
 
-    // Load content with new sort option
-    add(ContentLoadEvent(sortBy: event.sortBy, forceRefresh: true));
+    final currentState = state;
+    if (currentState is ContentLoaded) {
+      // Apply sorting based on current context
+      if (currentState.searchFilter != null) {
+        // Apply sorting to search results
+        final updatedFilter = currentState.searchFilter!.copyWith(
+          sortBy: event.sortBy,
+          page: 1, // Reset to first page when sorting changes
+        );
+        add(ContentSearchEvent(updatedFilter));
+      } else if (currentState.tag != null) {
+        // Apply sorting to tag-based content
+        add(ContentLoadByTagEvent(
+          tag: currentState.tag!,
+          sortBy: event.sortBy,
+          forceRefresh: true,
+        ));
+      } else if (currentState.timeframe != null) {
+        // Popular content doesn't support custom sorting, reload with popular
+        add(ContentLoadPopularEvent(
+          timeframe: currentState.timeframe!,
+          forceRefresh: true,
+        ));
+      } else {
+        // Apply sorting to normal content
+        add(ContentLoadEvent(sortBy: event.sortBy, forceRefresh: true));
+      }
+    } else {
+      // Load content with new sort option
+      add(ContentLoadEvent(sortBy: event.sortBy, forceRefresh: true));
+    }
   }
 
   /// Retry loading content after error

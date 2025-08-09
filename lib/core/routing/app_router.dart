@@ -5,6 +5,8 @@ import 'package:nhasixapp/presentation/pages/splash/splash_screen.dart';
 import 'package:nhasixapp/presentation/pages/main/main_screen.dart';
 import 'package:nhasixapp/presentation/pages/search/search_screen.dart';
 import 'package:nhasixapp/presentation/pages/detail/detail_screen.dart';
+import 'package:nhasixapp/presentation/pages/filter_data/filter_data_screen.dart';
+import 'package:nhasixapp/domain/entities/entities.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -33,14 +35,26 @@ class AppRouter {
         builder: (context, state) => const SearchScreen(),
       ),
 
+      // Filter Data Screen
+      GoRoute(
+        path: AppRoute.filterData,
+        name: AppRoute.filterDataName,
+        builder: (context, state) {
+          final filterType = state.uri.queryParameters['type'] ?? 'tag';
+          final selectedFilters = state.extra as List<FilterItem>? ?? [];
+          return FilterDataScreen(
+            filterType: filterType,
+            selectedFilters: selectedFilters,
+          );
+        },
+      ),
+
       GoRoute(
         path: '${AppRoute.search}/:query',
         name: AppRoute.searchNameWithQuery,
         builder: (context, state) {
           final query = state.pathParameters['query']!;
-          return SearchScreen(
-            query: query
-          );
+          return SearchScreen(query: query);
         },
       ),
 
@@ -222,5 +236,40 @@ class AppRouter {
 
   static void goToStatus(BuildContext context) {
     context.go(AppRoute.status);
+  }
+
+  static Future<List<FilterItem>?> goToFilterData(
+    BuildContext context, {
+    required String filterType,
+    required List<FilterItem> selectedFilters,
+  }) async {
+    return await context.push<List<FilterItem>>(
+      '${AppRoute.filterData}?type=$filterType',
+      extra: selectedFilters,
+    );
+  }
+
+  // Additional navigation helper methods for better navigation flow
+  static void goBackWithResult<T>(BuildContext context, T result) {
+    context.pop(result);
+  }
+
+  static void goBack(BuildContext context) {
+    context.pop();
+  }
+
+  static bool canPop(BuildContext context) {
+    return context.canPop();
+  }
+
+  // Navigation method specifically for returning from FilterDataScreen
+  static void returnFromFilterData(
+      BuildContext context, List<FilterItem> selectedFilters) {
+    context.pop(selectedFilters);
+  }
+
+  // Navigation method for canceling FilterDataScreen
+  static void cancelFilterData(BuildContext context) {
+    context.pop();
   }
 }
