@@ -1,72 +1,62 @@
 part of 'filter_data_cubit.dart';
 
 /// Base state for filter data screen
-abstract class FilterDataState extends Equatable {
-  const FilterDataState();
-
-  @override
-  List<Object?> get props => [];
-}
-
-/// Initial state
-class FilterDataInitial extends FilterDataState {
-  const FilterDataInitial();
-}
-
-/// Loading state
-class FilterDataLoading extends FilterDataState {
-  const FilterDataLoading();
-}
-
-/// Loaded state with filter data
-class FilterDataLoaded extends FilterDataState {
-  const FilterDataLoaded({
-    required this.filterType,
-    required this.searchResults,
-    required this.selectedFilters,
-    required this.searchQuery,
-    required this.isSearching,
+class FilterDataState extends Equatable {
+  const FilterDataState({
+    this.filterType,
+    this.searchResults,
+    this.selectedFilters,
+    this.searchQuery,
+    this.isSearching,
+    this.lastUpdated,
+    this.message,
   });
 
-  final String filterType;
-  final List<Tag> searchResults;
-  final List<FilterItem> selectedFilters;
-  final String searchQuery;
-  final bool isSearching;
+  final String? filterType;
+  final List<Tag>? searchResults;
+  final List<FilterItem>? selectedFilters;
+  final String? searchQuery;
+  final bool? isSearching;
+  final DateTime? lastUpdated;
+  final String? message;
 
   @override
   List<Object?> get props => [
         filterType,
         searchResults,
-        selectedFilters
-            .length, // Use length instead of list for better comparison
-        selectedFilters
-            .map((e) => '${e.value}_${e.isExcluded}')
-            .join(','), // Create unique string
+        selectedFilters,
         searchQuery,
         isSearching,
       ];
 
-  FilterDataLoaded copyWith({
-    String? filterType,
+  static const _undefined = Object();
+
+  FilterDataState copyWith({
+    Object? filterType = _undefined,
     List<Tag>? searchResults,
     List<FilterItem>? selectedFilters,
-    String? searchQuery,
+    Object? searchQuery = _undefined,
     bool? isSearching,
+    DateTime? lastUpdated,
+    Object? message = _undefined,
   }) {
-    return FilterDataLoaded(
-      filterType: filterType ?? this.filterType,
+    return FilterDataState(
+      filterType:
+          filterType == _undefined ? this.filterType : filterType as String?,
       searchResults: searchResults ?? this.searchResults,
       selectedFilters: selectedFilters ?? this.selectedFilters,
-      searchQuery: searchQuery ?? this.searchQuery,
+      searchQuery:
+          searchQuery == _undefined ? this.searchQuery : searchQuery as String?,
       isSearching: isSearching ?? this.isSearching,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+      message: message == _undefined ? this.message : message as String?,
     );
   }
 
   /// Check if tag is selected
   FilterItem? getSelectedFilterItem(String tagName) {
     try {
-      return selectedFilters.firstWhere((item) => item.value == tagName);
+      return selectedFilters?.firstWhere((item) => item.value == tagName);
     } catch (e) {
       return null;
     }
@@ -90,31 +80,57 @@ class FilterDataLoaded extends FilterDataState {
   }
 
   /// Get selected filters count
-  int get selectedCount => selectedFilters.length;
+  int get selectedCount => selectedFilters?.length ?? 0;
 
   /// Check if has selected filters
-  bool get hasSelectedFilters => selectedFilters.isNotEmpty;
+  bool get hasSelectedFilters => selectedFilters != null && selectedCount > 0;
 
   /// Get selected filters by type
   List<FilterItem> get includeFilters =>
-      selectedFilters.where((item) => !item.isExcluded).toList();
+      (selectedFilters ?? []).where((item) => !item.isExcluded).toList();
 
   List<FilterItem> get excludeFilters =>
-      selectedFilters.where((item) => item.isExcluded).toList();
+      (selectedFilters ?? []).where((item) => item.isExcluded).toList();
+}
+
+/// Initial state
+class FilterDataInitial extends FilterDataState {
+  const FilterDataInitial();
+}
+
+/// Loading state
+class FilterDataLoading extends FilterDataState {
+  FilterDataLoading(FilterDataState prevState)
+      : super(
+          filterType: prevState.filterType,
+          searchResults: prevState.searchResults,
+          selectedFilters: prevState.selectedFilters,
+          searchQuery: prevState.searchQuery,
+          isSearching: prevState.isSearching,
+          lastUpdated: prevState.lastUpdated,
+          message: prevState.message,
+        );
+}
+
+/// Loaded state with filter data
+class FilterDataLoaded extends FilterDataState {
+  FilterDataLoaded(FilterDataState prevState)
+      : super(
+          filterType: prevState.filterType,
+          searchResults: prevState.searchResults,
+          selectedFilters: prevState.selectedFilters,
+          searchQuery: prevState.searchQuery,
+          isSearching: prevState.isSearching,
+          lastUpdated: prevState.lastUpdated,
+        );
 }
 
 /// Error state
 class FilterDataError extends FilterDataState {
-  const FilterDataError({
-    required this.message,
-    required this.filterType,
-    required this.selectedFilters,
-  });
-
-  final String message;
-  final String filterType;
-  final List<FilterItem> selectedFilters;
-
-  @override
-  List<Object?> get props => [message, filterType, selectedFilters];
+  FilterDataError(FilterDataState prevState)
+      : super(
+          filterType: prevState.filterType,
+          message: prevState.message,
+          selectedFilters: prevState.selectedFilters,
+        );
 }

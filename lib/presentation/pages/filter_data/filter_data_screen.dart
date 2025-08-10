@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:logger/logger.dart';
-import 'package:nhasixapp/core/utils/tag_data_manager.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 
 import '../../../core/constants/colors_const.dart';
@@ -50,10 +48,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
   @override
   void initState() {
     super.initState();
-    _filterDataCubit = FilterDataCubit(
-      tagDataManager: getIt<TagDataManager>(),
-      logger: getIt<Logger>(),
-    );
+    _filterDataCubit = getIt<FilterDataCubit>();
     _searchController = TextEditingController();
     _searchFocusNode = FocusNode();
 
@@ -128,18 +123,13 @@ class _FilterDataScreenState extends State<FilterDataScreen>
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<FilterDataCubit>(
-      create: (context) => _filterDataCubit,
+    return BlocProvider.value(
+      value: _filterDataCubit,
       child: BlocListener<FilterDataCubit, FilterDataState>(
         listener: (context, state) {
-          print('FilterDataScreen: State changed to ${state.runtimeType}');
+          debugPrint('FilterDataScreen: State changed to ${state.runtimeType}');
           if (state is FilterDataLoaded) {
-            print(
-                'FilterDataScreen: Selected filters count: ${state.selectedFilters.length}');
-            for (final filter in state.selectedFilters) {
-              print(
-                  'FilterDataScreen: - ${filter.value} (${filter.isExcluded ? 'exclude' : 'include'})');
-            }
+            debugPrint("FilterDataScreen: lastUpdated: ${state.lastUpdated}");
           }
         },
         child: Scaffold(
@@ -187,8 +177,11 @@ class _FilterDataScreenState extends State<FilterDataScreen>
           buildWhen: (previous, current) {
             // Always rebuild when state changes
             if (previous != current) {
-              print(
+              debugPrint(
                   'FilterDataScreen: AppBar Clear All button rebuilding - ${current.runtimeType}');
+              if (current is FilterDataLoaded && previous is FilterDataLoaded) {
+                return current.lastUpdated != previous.lastUpdated;
+              }
             }
             return true;
           },
@@ -242,11 +235,11 @@ class _FilterDataScreenState extends State<FilterDataScreen>
       buildWhen: (previous, current) {
         // Always rebuild when state changes
         if (previous != current) {
-          print(
+          debugPrint(
               'FilterDataScreen: Selected filters section rebuilding - ${current.runtimeType}');
           if (current is FilterDataLoaded) {
-            print(
-                'FilterDataScreen: Selected filters count: ${current.selectedFilters.length}');
+            debugPrint(
+                'FilterDataScreen: Selected filters count: ${current.selectedFilters?.length ?? 0}');
           }
         }
         return true;
@@ -268,7 +261,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                   ),
                 ),
                 SelectedFiltersWidget(
-                  selectedFilters: state.selectedFilters,
+                  selectedFilters: state.selectedFilters ?? [],
                   onRemove: _onRemoveSelectedFilter,
                 ),
                 const Divider(height: 1, color: ColorsConst.borderDefault),
@@ -286,13 +279,13 @@ class _FilterDataScreenState extends State<FilterDataScreen>
       buildWhen: (previous, current) {
         // Always rebuild when state changes
         if (previous != current) {
-          print(
+          debugPrint(
               'FilterDataScreen: Filter results rebuilding - ${current.runtimeType}');
           if (current is FilterDataLoaded) {
-            print(
-                'FilterDataScreen: Search results count: ${current.searchResults.length}');
-            print(
-                'FilterDataScreen: Selected filters count: ${current.selectedFilters.length}');
+            debugPrint(
+                'FilterDataScreen: Search results count: ${current.searchResults?.length ?? 0}');
+            debugPrint(
+                'FilterDataScreen: Selected filters count: ${current.selectedFilters?.length ?? 0}');
           }
         }
         return true;
@@ -325,7 +318,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  state.message,
+                  state.message ?? "Unknown error",
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: ColorsConst.darkTextSecondary,
                   ),
@@ -347,7 +340,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
         }
 
         if (state is FilterDataLoaded) {
-          if (state.searchResults.isEmpty) {
+          if (state.searchResults?.isEmpty == true) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -359,14 +352,14 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    state.searchQuery.isEmpty
+                    state.searchQuery?.isEmpty == true
                         ? 'No ${_getCurrentFilterTypeDisplayName().toLowerCase()} available'
                         : 'No results found for "${state.searchQuery}"',
                     style: TextStyleConst.headingMedium.copyWith(
                       color: ColorsConst.darkTextPrimary,
                     ),
                   ),
-                  if (state.searchQuery.isNotEmpty) ...[
+                  if (state.searchQuery?.isNotEmpty == true) ...[
                     const SizedBox(height: 8),
                     Text(
                       'Try a different search term',
@@ -382,13 +375,13 @@ class _FilterDataScreenState extends State<FilterDataScreen>
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: state.searchResults.length,
+            itemCount: state.searchResults?.length,
             itemBuilder: (context, index) {
-              final tag = state.searchResults[index];
+              final tag = state.searchResults![index];
               final isIncluded = state.isIncluded(tag.name);
               final isExcluded = state.isExcluded(tag.name);
 
-              print(
+              debugPrint(
                   'FilterDataScreen: Building FilterItemCard for ${tag.name} - included: $isIncluded, excluded: $isExcluded');
 
               return Padding(
@@ -417,7 +410,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
       buildWhen: (previous, current) {
         // Always rebuild when state changes
         if (previous != current) {
-          print(
+          debugPrint(
               'FilterDataScreen: Bottom actions rebuilding - ${current.runtimeType}');
         }
         return true;
