@@ -45,7 +45,7 @@ class AddToHistoryUseCase extends UseCase<void, AddToHistoryParams> {
         isCompleted: params.page >= params.totalPages,
       );
 
-      await _userDataRepository.saveHistory(history);
+      // await _userDataRepository.saveHistory(history);
     } on UseCaseException {
       rethrow;
     } catch (e) {

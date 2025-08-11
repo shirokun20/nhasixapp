@@ -3,6 +3,8 @@ import 'package:dio/dio.dart';
 import 'package:nhasixapp/data/datasources/local/database_helper.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass_no_webview.dart';
+import 'package:nhasixapp/presentation/cubits/reader/reader_cubit.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -38,9 +40,11 @@ import 'package:nhasixapp/presentation/cubits/cubits.dart';
 import 'package:nhasixapp/domain/repositories/repositories.dart';
 import 'package:nhasixapp/data/repositories/content_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/user_data_repository_impl.dart';
+import 'package:nhasixapp/data/repositories/reader_settings_repository_impl.dart';
 
 // Use Cases
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
+import 'package:nhasixapp/domain/usecases/history/add_to_history_usecase.dart';
 
 final getIt = GetIt.instance;
 
@@ -161,6 +165,12 @@ void _setupRepositories() {
         logger: getIt(),
       ));
 
+  // Reader Settings Repository
+  getIt.registerLazySingleton<ReaderSettingsRepository>(
+      () => ReaderSettingsRepositoryImpl(
+            getIt<SharedPreferences>(),
+          ));
+
   // Settings Repository
   // getIt.registerLazySingleton<SettingsRepository>(() => SettingsRepositoryImpl(
   //   sharedPreferences: getIt(),
@@ -190,7 +200,8 @@ void _setupUseCases() {
   // getIt.registerLazySingleton<GetDownloadStatusUseCase>(() => GetDownloadStatusUseCase(getIt()));
 
   // History Use Cases
-  // getIt.registerLazySingleton<AddToHistoryUseCase>(() => AddToHistoryUseCase(getIt()));
+  getIt.registerLazySingleton<AddToHistoryUseCase>(
+      () => AddToHistoryUseCase(getIt()));
 }
 
 /// Setup BLoCs
@@ -256,7 +267,14 @@ void _setupCubits() {
         logger: getIt<Logger>(),
       ));
 
-  // Note: ReaderCubit and FavoriteCubit will be implemented later
+  // ReaderCubit - Reader screen management
+  getIt.registerFactory<ReaderCubit>(() => ReaderCubit(
+        getContentDetailUseCase: getIt<GetContentDetailUseCase>(),
+        addToHistoryUseCase: getIt<AddToHistoryUseCase>(),
+        readerSettingsRepository: getIt<ReaderSettingsRepository>(),
+      ));
+
+  // Note: FavoriteCubit will be implemented later
   // Same pattern will be used for other screen-specific cubits
 }
 

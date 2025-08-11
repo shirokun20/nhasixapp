@@ -916,11 +916,9 @@ class NhentaiScraper {
 
         if (thumbUrl != null) {
           // Convert thumbnail URL to full image URL
-          final fullImageUrl =
-              _convertThumbnailToFullImage(thumbUrl, contentId, i + 1);
-          if (fullImageUrl != null) {
-            imageUrls.add(fullImageUrl);
-          }
+          // _logger.i("url sebelum: ${thumbUrl}");
+          final fullImageUrl = _convertThumbnailToFull(thumbUrl);
+          imageUrls.add(fullImageUrl);
         }
       }
 
@@ -938,31 +936,30 @@ class NhentaiScraper {
     return imageUrls;
   }
 
-  /// Convert thumbnail URL to full image URL
-  String? _convertThumbnailToFullImage(
-      String thumbUrl, String contentId, int page) {
-    try {
-      // nhentai thumbnail pattern: https://t.nhentai.net/galleries/{id}/{page}t.{ext}
-      // Full image pattern: https://i.nhentai.net/galleries/{id}/{page}.{ext}
+  /// Parse image URLs using media ID for accurate URL generation
+  String _convertThumbnailToFull(String thumbUrl) {
+    // Pastikan url mulai dari https
+    String url = thumbUrl.replaceFirst('//', 'https://');
 
-      final match = RegExp(
-              r'https://t\.nhentai\.net/galleries/(\d+)/(\d+)t\.(jpg|png|gif)')
-          .firstMatch(thumbUrl);
+    // Ganti domain tX -> iX
+    url = url.replaceFirstMapped(RegExp(r'//t(\d)\.nhentai\.net'), (match) {
+      return '//i${match.group(1)}.nhentai.net';
+    });
 
-      if (match != null) {
-        final galleryId = match.group(1)!;
-        final pageNum = match.group(2)!;
-        final extension = match.group(3)!;
+    // Hilangkan huruf 't' sebelum ekstensi gambar
+    url = url.replaceFirstMapped(
+      RegExp(r'(\d+)t\.(webp|jpg|png|gif|jpeg)'),
+      (match) => '${match.group(1)}.${match.group(2)}',
+    );
 
-        return 'https://i.nhentai.net/galleries/$galleryId/$pageNum.$extension';
-      }
+    // Hapus ekstensi ganda (misal .webp.webp -> .webp)
+    url = url.replaceAllMapped(
+      RegExp(r'\.(webp|jpg|png|gif|jpeg)\.(webp|jpg|png|gif|jpeg)$'),
+      (match) => '.${match.group(1)}',
+    );
 
-      // Fallback to generated URL
-      return _generateImageUrl(contentId, page);
-    } catch (e) {
-      _logger.w('Failed to convert thumbnail URL: $e');
-      return null;
-    }
+    // _logger.i(url);
+    return url;
   }
 
   /// Generate image URL based on content ID and page number

@@ -464,13 +464,19 @@ class LocalDataSource {
         final key = row['key'] as String;
         final value = row['value'] as String;
 
-        // Handle special cases for lists
-        if (key == 'blacklistedTags') {
+        // Handle special cases for different data types
+        if (key == 'blacklistedTags' || key == 'favoriteCategories') {
           try {
             prefsMap[key] = jsonDecode(value);
           } catch (e) {
             prefsMap[key] = <String>[];
           }
+        } else if (_isBooleanField(key)) {
+          prefsMap[key] = value.toLowerCase() == 'true';
+        } else if (_isIntField(key)) {
+          prefsMap[key] = int.tryParse(value) ?? _getDefaultIntValue(key);
+        } else if (_isDoubleField(key)) {
+          prefsMap[key] = double.tryParse(value) ?? _getDefaultDoubleValue(key);
         } else {
           prefsMap[key] = value;
         }
@@ -480,6 +486,73 @@ class LocalDataSource {
     } catch (e) {
       _logger.e('Error getting user preferences: $e');
       return const UserPreferences(); // Return default preferences
+    }
+  }
+
+  /// Check if field should be boolean
+  bool _isBooleanField(String key) {
+    const boolFields = {
+      'autoDownload',
+      'showTitles',
+      'blurThumbnails',
+      'usePagination',
+      'useVolumeKeys',
+      'keepScreenOn',
+      'showSystemUI',
+      'autoBackup',
+      'showNsfwContent',
+      'readerInvertColors',
+      'readerShowPageNumbers',
+      'readerShowProgressBar',
+      'readerAutoHideUI',
+      'readerHideOnTap',
+      'readerHideOnSwipe',
+    };
+    return boolFields.contains(key);
+  }
+
+  /// Check if field should be integer
+  bool _isIntField(String key) {
+    const intFields = {
+      'columnsPortrait',
+      'columnsLandscape',
+      'maxConcurrentDownloads',
+      'readerAutoHideDelay',
+    };
+    return intFields.contains(key);
+  }
+
+  /// Check if field should be double
+  bool _isDoubleField(String key) {
+    const doubleFields = {
+      'readerBrightness',
+    };
+    return doubleFields.contains(key);
+  }
+
+  /// Get default integer value for field
+  int _getDefaultIntValue(String key) {
+    switch (key) {
+      case 'columnsPortrait':
+        return 2;
+      case 'columnsLandscape':
+        return 3;
+      case 'maxConcurrentDownloads':
+        return 3;
+      case 'readerAutoHideDelay':
+        return 3;
+      default:
+        return 0;
+    }
+  }
+
+  /// Get default double value for field
+  double _getDefaultDoubleValue(String key) {
+    switch (key) {
+      case 'readerBrightness':
+        return 1.0;
+      default:
+        return 0.0;
     }
   }
 

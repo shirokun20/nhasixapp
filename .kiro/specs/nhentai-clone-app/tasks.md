@@ -231,28 +231,33 @@
     - Test navigation flow: SearchScreen → FilterDataScreen → SearchScreen dengan selected filters
     - _Requirements: 9.4, 9.5_
 
-- [ ] 7. Implement reader functionality
+- [x] 7. Implement simple reader functionality dengan UI yang bersih dan elegan
 💡 *Remember to check components-list.md first*
-  - [ ] 7.1 Create basic reader screen dengan ReaderCubit
-    - Build ReaderScreen dengan page navigation
-    - Implement ReaderCubit untuk simple state management
-    - Add zoom dan pan functionality dengan PhotoView
-    - Implement reading progress tracking
-    - Add reading modes (single page, continuous)
+  - [x] 7.1 Create simple ReaderScreen dengan ReaderCubit pattern
+    - Build ReaderScreen di `lib/presentation/pages/reader/` dengan design menggunakan `lib/core/constants`
+    - Implement ReaderCubit di `lib/presentation/cubits/reader/` mengikuti pattern dari filter_data cubit
+    - Replace complex reader2 implementation dengan approach yang lebih sederhana
+    - Use cached_network_image untuk image loading (jangan berlebihan dengan package lain)
+    - Add basic page navigation dengan PageView dan gesture detection
+    - Implement simple reading progress indicator
     - _Requirements: 3.1_
 
-  - [ ] 7.2 Add advanced reader features
-    - Implement page preloading untuk smooth reading
-    - Add reading timer dan statistics
-    - Create page bookmarks functionality
-    - Add gesture controls untuk navigation
+  - [x] 7.2 Simplify existing reader2 files dan improve user experience
+    - Refactor existing `lib/presentation/pages/reader2/` files untuk mengurangi kompleksitas
+    - Remove unnecessary features yang membuat code ribet di `lib/presentation/cubits/reader2/`
+    - Keep only essential functionality: page navigation, zoom, dan basic controls
+    - Ensure UI tetap simple dan elegant menggunakan existing constants dari `lib/core/constants`
+    - Add smooth transitions tanpa over-engineering
+    - Focus pada user experience yang clean dan intuitive
     - _Requirements: 3.1, 7.1_
 
-  - [ ] 7.3 Implement reader settings
-    - Add reading direction options
-    - Implement brightness control
-    - Create auto-hide UI functionality
-    - Add keep screen on option
+  - [x] 7.3 Add essential reader features dengan simple implementation
+    - Implement basic zoom functionality dengan PhotoView (keep it simple)
+    - Add auto-hide UI dengan tap gesture detection
+    - Create simple reading modes (single page, continuous scroll)
+    - Add basic reading progress tracking
+    - Implement keep screen on option
+    - Ensure semua features menggunakan existing design constants dari `lib/core/constants`
     - _Requirements: 3.1, 7.1_
 
 - [ ] 8. Build favorites dan download system

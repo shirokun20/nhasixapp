@@ -1,0 +1,234 @@
+import 'dart:async';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:logger/logger.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:equatable/equatable.dart';
+import '../../../domain/entities/content.dart';
+import '../../../domain/usecases/content/get_content_detail_usecase.dart';
+import '../../../domain/usecases/history/add_to_history_usecase.dart';
+import '../../../domain/repositories/reader_settings_repository.dart';
+import '../../../data/models/reader_settings_model.dart';
+
+part 'reader_state.dart';
+
+/// Simple cubit for managing reader functionality
+class ReaderCubit extends Cubit<ReaderState> {
+  ReaderCubit({
+    required this.getContentDetailUseCase,
+    required this.addToHistoryUseCase,
+    required this.readerSettingsRepository,
+  }) : super(const ReaderInitial());
+
+  final GetContentDetailUseCase getContentDetailUseCase;
+  final AddToHistoryUseCase addToHistoryUseCase;
+  final ReaderSettingsRepository readerSettingsRepository;
+  final Logger _logger = Logger();
+
+  Timer? _readingTimer;
+  Timer? _autoHideTimer;
+
+  /// Load content for reading
+  Future<void> loadContent(String contentId, {int initialPage = 1}) async {
+    try {
+      _stopAutoHideTimer();
+
+      emit(ReaderLoading(state));
+
+      // Get content details
+      final params = GetContentDetailParams.fromString(contentId);
+      final content = await getContentDetailUseCase(params);
+
+      // Load saved settings
+      final savedSettings = await readerSettingsRepository.getReaderSettings();
+
+      // Emit loaded state with saved settings
+      emit(state.copyWith(
+        content: content,
+        currentPage: initialPage,
+        readingMode: savedSettings.readingMode,
+        showUI: savedSettings.showUI,
+        keepScreenOn: savedSettings.keepScreenOn,
+        readingTimer: Duration.zero,
+      ));
+
+      emit(ReaderLoaded(state));
+
+      // Apply keep screen on setting
+      if (savedSettings.keepScreenOn) {
+        await WakelockPlus.enable();
+      }
+
+      // Start reading timer
+      _startReadingTimer();
+
+      // Save to history
+      await _saveToHistory();
+    } catch (e, stackTrace) {
+      _logger.e("Reader Cubit: $e, $stackTrace");
+      _stopAutoHideTimer();
+
+      final errorState = state.copyWith(
+        message: 'Failed to load content: ${e.toString()}',
+      );
+      emit(ReaderError(errorState));
+    }
+  }
+
+  /// Navigate to next page
+  void nextPage() {
+    if (!state.isLastPage) {
+      final newPage = (state.currentPage ?? 1) + 1;
+      emit(state.copyWith(currentPage: newPage));
+      _saveToHistory();
+    }
+  }
+
+  /// Navigate to previous page
+  void previousPage() {
+    if (!state.isFirstPage) {
+      final newPage = (state.currentPage ?? 1) - 1;
+      emit(state.copyWith(currentPage: newPage));
+      _saveToHistory();
+    }
+  }
+
+  /// Jump to specific page
+  void jumpToPage(int page) {
+    if (page >= 1 && page <= state.content!.pageCount) {
+      emit(state.copyWith(currentPage: page));
+      _saveToHistory();
+    }
+  }
+
+  /// Toggle UI visibility
+  void toggleUI() {
+    final newShowUI = !(state.showUI ?? true);
+    emit(state.copyWith(showUI: newShowUI));
+
+    // Save to preferences
+    readerSettingsRepository.saveShowUI(newShowUI);
+
+    // Start auto-hide timer if UI is shown
+    if (newShowUI) {
+      _startAutoHideTimer();
+    } else {
+      _stopAutoHideTimer();
+    }
+  }
+
+  /// Show UI temporarily
+  void showUI() {
+    emit(state.copyWith(showUI: true));
+    _startAutoHideTimer();
+  }
+
+  /// Hide UI
+  void hideUI() {
+    emit(state.copyWith(showUI: false));
+    _stopAutoHideTimer();
+  }
+
+  /// Change reading mode
+  Future<void> changeReadingMode(ReadingMode mode) async {
+    emit(state.copyWith(readingMode: mode));
+
+    // Save to preferences
+    await readerSettingsRepository.saveReadingMode(mode);
+  }
+
+  /// Toggle keep screen on
+  Future<void> toggleKeepScreenOn() async {
+    final newKeepScreenOn = !(state.keepScreenOn ?? false);
+
+    if (newKeepScreenOn) {
+      await WakelockPlus.enable();
+    } else {
+      await WakelockPlus.disable();
+    }
+
+    emit(state.copyWith(keepScreenOn: newKeepScreenOn));
+
+    // Save to preferences
+    await readerSettingsRepository.saveKeepScreenOn(newKeepScreenOn);
+  }
+
+  /// Reset all reader settings to defaults
+  Future<void> resetReaderSettings() async {
+    await readerSettingsRepository.resetToDefaults();
+
+    // Apply default settings to current state
+    emit(state.copyWith(
+      readingMode: ReadingMode.singlePage,
+      keepScreenOn: false,
+      showUI: true,
+    ));
+
+    // Disable wakelock
+    await WakelockPlus.disable();
+  }
+
+  /// Save current reading progress to history
+  Future<void> _saveToHistory() async {
+    try {
+      final params = AddToHistoryParams.fromString(
+        state.content!.id,
+        state.currentPage ?? 1,
+        state.content!.pageCount,
+        timeSpent: state.readingTimer ?? Duration.zero,
+      );
+      await addToHistoryUseCase(params);
+    } catch (e) {
+      // Log error but don't emit error state for history saving
+    }
+  }
+
+  /// Start reading timer
+  void _startReadingTimer() {
+    _logger.i("start reading timer");
+    _readingTimer?.cancel();
+    _readingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      final currentTimer = state.readingTimer ?? Duration.zero;
+      emit(state.copyWith(
+        readingTimer: currentTimer + const Duration(seconds: 1),
+      ));
+    });
+    _logger.i("end reading timer");
+  }
+
+  /// Stop reading timer
+  void _stopReadingTimer() {
+    _readingTimer?.cancel();
+    _readingTimer = null;
+  }
+
+  /// Start auto-hide UI timer
+  void _startAutoHideTimer() {
+    _stopAutoHideTimer();
+    _autoHideTimer = Timer(const Duration(seconds: 3), () {
+      if (state.showUI ?? false) {
+        hideUI();
+      }
+    });
+  }
+
+  /// Stop auto-hide UI timer
+  void _stopAutoHideTimer() {
+    _autoHideTimer?.cancel();
+    _autoHideTimer = null;
+  }
+
+  @override
+  Future<void> close() async {
+    // Stop timers
+    _stopReadingTimer();
+    _stopAutoHideTimer();
+
+    // Save final reading progress
+    await _saveToHistory();
+
+    // Disable wakelock
+    await WakelockPlus.disable();
+
+    return super.close();
+  }
+}

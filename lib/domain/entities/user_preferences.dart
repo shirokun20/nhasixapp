@@ -13,7 +13,7 @@ class UserPreferences extends Equatable {
     this.columnsPortrait = 2,
     this.columnsLandscape = 3,
     this.useVolumeKeys = false,
-    this.readingDirection = ReadingDirection.leftToRight,
+    this.readingDirection = ReadingDirection.vertical,
     this.keepScreenOn = false,
     this.showSystemUI = true,
     this.downloadPath,
@@ -22,6 +22,15 @@ class UserPreferences extends Equatable {
     this.showNsfwContent = true,
     this.blacklistedTags = const [],
     this.favoriteCategories = const [],
+    // Reader settings
+    this.readerBrightness = 1.0,
+    this.readerInvertColors = false,
+    this.readerShowPageNumbers = true,
+    this.readerShowProgressBar = true,
+    this.readerAutoHideUI = true,
+    this.readerAutoHideDelay = 3,
+    this.readerHideOnTap = true,
+    this.readerHideOnSwipe = true,
   });
 
   final String theme; // light, dark, amoled
@@ -43,6 +52,15 @@ class UserPreferences extends Equatable {
   final bool showNsfwContent;
   final List<String> blacklistedTags;
   final List<String> favoriteCategories;
+  // Reader settings
+  final double readerBrightness;
+  final bool readerInvertColors;
+  final bool readerShowPageNumbers;
+  final bool readerShowProgressBar;
+  final bool readerAutoHideUI;
+  final int readerAutoHideDelay; // in seconds
+  final bool readerHideOnTap;
+  final bool readerHideOnSwipe;
 
   @override
   List<Object?> get props => [
@@ -65,6 +83,14 @@ class UserPreferences extends Equatable {
         showNsfwContent,
         blacklistedTags,
         favoriteCategories,
+        readerBrightness,
+        readerInvertColors,
+        readerShowPageNumbers,
+        readerShowProgressBar,
+        readerAutoHideUI,
+        readerAutoHideDelay,
+        readerHideOnTap,
+        readerHideOnSwipe,
       ];
 
   UserPreferences copyWith({
@@ -87,6 +113,14 @@ class UserPreferences extends Equatable {
     bool? showNsfwContent,
     List<String>? blacklistedTags,
     List<String>? favoriteCategories,
+    double? readerBrightness,
+    bool? readerInvertColors,
+    bool? readerShowPageNumbers,
+    bool? readerShowProgressBar,
+    bool? readerAutoHideUI,
+    int? readerAutoHideDelay,
+    bool? readerHideOnTap,
+    bool? readerHideOnSwipe,
   }) {
     return UserPreferences(
       theme: theme ?? this.theme,
@@ -109,6 +143,16 @@ class UserPreferences extends Equatable {
       showNsfwContent: showNsfwContent ?? this.showNsfwContent,
       blacklistedTags: blacklistedTags ?? this.blacklistedTags,
       favoriteCategories: favoriteCategories ?? this.favoriteCategories,
+      readerBrightness: readerBrightness ?? this.readerBrightness,
+      readerInvertColors: readerInvertColors ?? this.readerInvertColors,
+      readerShowPageNumbers:
+          readerShowPageNumbers ?? this.readerShowPageNumbers,
+      readerShowProgressBar:
+          readerShowProgressBar ?? this.readerShowProgressBar,
+      readerAutoHideUI: readerAutoHideUI ?? this.readerAutoHideUI,
+      readerAutoHideDelay: readerAutoHideDelay ?? this.readerAutoHideDelay,
+      readerHideOnTap: readerHideOnTap ?? this.readerHideOnTap,
+      readerHideOnSwipe: readerHideOnSwipe ?? this.readerHideOnSwipe,
     );
   }
 
@@ -199,6 +243,14 @@ class UserPreferences extends Equatable {
       'showNsfwContent': showNsfwContent,
       'blacklistedTags': blacklistedTags,
       'favoriteCategories': favoriteCategories,
+      'readerBrightness': readerBrightness,
+      'readerInvertColors': readerInvertColors,
+      'readerShowPageNumbers': readerShowPageNumbers,
+      'readerShowProgressBar': readerShowProgressBar,
+      'readerAutoHideUI': readerAutoHideUI,
+      'readerAutoHideDelay': readerAutoHideDelay,
+      'readerHideOnTap': readerHideOnTap,
+      'readerHideOnSwipe': readerHideOnSwipe,
     };
   }
 
@@ -227,6 +279,14 @@ class UserPreferences extends Equatable {
       showNsfwContent: json['showNsfwContent'] ?? true,
       blacklistedTags: List<String>.from(json['blacklistedTags'] ?? []),
       favoriteCategories: List<String>.from(json['favoriteCategories'] ?? []),
+      readerBrightness: (json['readerBrightness'] ?? 1.0).toDouble(),
+      readerInvertColors: json['readerInvertColors'] ?? false,
+      readerShowPageNumbers: json['readerShowPageNumbers'] ?? true,
+      readerShowProgressBar: json['readerShowProgressBar'] ?? true,
+      readerAutoHideUI: json['readerAutoHideUI'] ?? true,
+      readerAutoHideDelay: json['readerAutoHideDelay'] ?? 3,
+      readerHideOnTap: json['readerHideOnTap'] ?? true,
+      readerHideOnSwipe: json['readerHideOnSwipe'] ?? true,
     );
   }
 }

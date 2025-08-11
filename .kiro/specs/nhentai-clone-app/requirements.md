@@ -35,15 +35,20 @@ Aplikasi NhentaiApp adalah sebuah aplikasi mobile Flutter yang berfungsi sebagai
 
 ### Requirement 3
 
-**User Story:** Sebagai pengguna, saya ingin dapat melihat detail konten dan membaca manga/doujinshi, sehingga saya dapat menikmati konten yang saya pilih.
+**User Story:** Sebagai pengguna, saya ingin dapat melihat detail konten dan membaca manga/doujinshi dengan berbagai mode reading yang dapat disesuaikan, sehingga saya dapat menikmati konten sesuai preferensi saya.
 
 #### Acceptance Criteria
 
 1. WHEN pengguna memilih sebuah konten THEN sistem SHALL menampilkan halaman detail dengan informasi lengkap
 2. WHEN pengguna berada di halaman detail THEN sistem SHALL menampilkan cover, title, tags, artist, language, dan jumlah halaman
 3. WHEN pengguna menekan tombol "Read" THEN sistem SHALL membuka reader mode untuk membaca konten
-4. WHEN pengguna berada di reader mode THEN sistem SHALL menampilkan halaman-halaman manga dengan navigasi yang mudah
-5. WHEN pengguna swipe atau tap THEN sistem SHALL berpindah ke halaman selanjutnya atau sebelumnya
+4. WHEN pengguna berada di reader mode THEN sistem SHALL menyediakan 3 mode reading: Horizontal Pages, Vertical Pages, dan Continuous Scroll
+5. WHEN pengguna menggunakan Horizontal Pages mode THEN sistem SHALL menampilkan satu halaman per layar dengan navigasi swipe kiri-kanan atau tap sisi layar
+6. WHEN pengguna menggunakan Vertical Pages mode THEN sistem SHALL menampilkan satu halaman per layar dengan navigasi swipe atas-bawah atau tap area atas/bawah layar
+7. WHEN pengguna menggunakan Continuous Scroll mode THEN sistem SHALL menampilkan semua halaman dalam scroll vertikal tanpa bottom bar untuk menghindari blocking
+8. WHEN pengguna berada di Continuous Scroll mode THEN sistem SHALL menampilkan progress indicator di top bar dan update current page berdasarkan scroll position
+9. WHEN pengguna mengubah reading mode THEN sistem SHALL menyimpan preferensi tersebut dan menerapkannya untuk konten selanjutnya
+10. WHEN pengguna mengakses reader settings THEN sistem SHALL menyediakan opsi untuk mengubah reading mode, keep screen on, dan pengaturan lainnya
 
 ### Requirement 4
 
@@ -124,6 +129,20 @@ Aplikasi NhentaiApp adalah sebuah aplikasi mobile Flutter yang berfungsi sebagai
 7. WHEN pengguna menggunakan filter data THEN sistem SHALL menyimpan pilihan filter dengan format FilterItem yang mendukung include/exclude
 
 ### Requirement 10
+
+**User Story:** Sebagai pengguna, saya ingin dapat menyimpan dan mengelola pengaturan reader saya, sehingga preferensi reading saya dapat dipertahankan antar sesi dan konten.
+
+#### Acceptance Criteria
+
+1. WHEN pengguna mengubah reading mode THEN sistem SHALL menyimpan preferensi reading mode secara otomatis
+2. WHEN pengguna mengaktifkan keep screen on THEN sistem SHALL menyimpan pengaturan tersebut dan menerapkannya untuk semua konten
+3. WHEN pengguna membuka konten baru THEN sistem SHALL menggunakan reading mode yang terakhir dipilih sebagai default
+4. WHEN pengguna mengakses reader settings THEN sistem SHALL menampilkan semua pengaturan yang tersimpan dengan nilai yang benar
+5. WHEN aplikasi ditutup dan dibuka kembali THEN sistem SHALL mempertahankan semua pengaturan reader yang telah disimpan
+6. WHEN pengguna mereset pengaturan THEN sistem SHALL mengembalikan semua pengaturan reader ke nilai default
+7. WHEN terjadi error saat menyimpan pengaturan THEN sistem SHALL menampilkan pesan error dan tetap menggunakan pengaturan sebelumnya
+
+### Requirement 11
 
 **User Story:** Sebagai developer, saya ingin semua fitur aplikasi ditest tidak hanya melalui analisis kode tetapi juga pada perangkat nyata, sehingga saya dapat memastikan aplikasi berfungsi dengan baik di lingkungan produksi.
 

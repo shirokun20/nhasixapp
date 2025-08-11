@@ -10,6 +10,7 @@ import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
 
 // Cubits (Simple State Management)
 import 'package:nhasixapp/presentation/cubits/cubits.dart';
+import 'package:nhasixapp/presentation/cubits/reader/reader_cubit.dart';
 
 class MultiBlocProviderConfig {
   static List<BlocProvider> data = [
@@ -41,6 +42,10 @@ class MultiBlocProviderConfig {
 
     BlocProvider<FilterDataCubit>(
       create: (context) => getIt<FilterDataCubit>(),
+    ),
+
+    BlocProvider<ReaderCubit>(
+      create: (context) => getIt<ReaderCubit>(),
     ),
 
     // Note: DetailCubit, ReaderCubit, FavoriteCubit akan di-provide secara lokal

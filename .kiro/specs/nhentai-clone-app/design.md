@@ -80,9 +80,9 @@ SplashBloc: Mengelola initial loading dan bypass logic
 
 // Simple State Management (Cubits)
 DetailCubit: Mengelola detail konten dan favorite toggle
-ReaderCubit: Mengelola state reader mode dan navigation
+ReaderCubit: Mengelola state reader mode dengan 3 reading modes (horizontal, vertical, continuous scroll), navigation, dan settings persistence
 FavoriteCubit: Mengelola bookmark/favorites CRUD operations
-SettingsCubit: Mengelola pengaturan aplikasi
+SettingsCubit: Mengelola pengaturan aplikasi termasuk reader preferences
 NetworkCubit: Mengelola status koneksi sederhana
 FilterDataCubit: Mengelola state untuk halaman filter data terpisah
 ```

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
+import 'package:nhasixapp/presentation/pages/reader/reader_screen.dart';
 import 'package:nhasixapp/presentation/pages/splash/splash_screen.dart';
 import 'package:nhasixapp/presentation/pages/main/main_screen.dart';
 import 'package:nhasixapp/presentation/pages/search/search_screen.dart';
@@ -76,10 +77,9 @@ class AppRouter {
           final contentId = state.pathParameters['id']!;
           final page =
               int.tryParse(state.uri.queryParameters['page'] ?? '1') ?? 1;
-          return Scaffold(
-            appBar: AppBar(title: Text('Reading: $contentId - Page $page')),
-            body:
-                const Center(child: Text('Reader Screen - To be implemented')),
+          return ReaderScreen(
+            contentId: contentId,
+            initialPage: page,
           );
         },
       ),
