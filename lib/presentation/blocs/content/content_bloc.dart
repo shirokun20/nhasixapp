@@ -7,7 +7,6 @@ import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/content/content_usecases.dart';
 import '../../../domain/usecases/favorites/favorites_usecases.dart';
 import '../../../domain/repositories/repositories.dart';
-import '../../../core/utils/content_image_preloader.dart';
 
 part 'content_event.dart';
 part 'content_state.dart';
@@ -20,7 +19,6 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     required GetRandomContentUseCase getRandomContentUseCase,
     required ContentRepository contentRepository,
     required Logger logger,
-    ContentImagePreloader? contentImagePreloader,
     AddToFavoritesUseCase? addToFavoritesUseCase,
     RemoveFromFavoritesUseCase? removeFromFavoritesUseCase,
   })  : _getContentListUseCase = getContentListUseCase,
@@ -29,8 +27,6 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         _contentRepository = contentRepository,
         _addToFavoritesUseCase = addToFavoritesUseCase,
         _removeFromFavoritesUseCase = removeFromFavoritesUseCase,
-        _contentImagePreloader =
-            contentImagePreloader ?? ContentImagePreloader.instance,
         _logger = logger,
         super(const ContentInitial()) {
     // Register event handlers
@@ -60,7 +56,6 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
   final AddToFavoritesUseCase? _addToFavoritesUseCase; // TODO: Implement later
   final RemoveFromFavoritesUseCase?
       _removeFromFavoritesUseCase; // TODO: Implement later
-  final ContentImagePreloader _contentImagePreloader;
   final Logger _logger;
 
   // Internal state tracking

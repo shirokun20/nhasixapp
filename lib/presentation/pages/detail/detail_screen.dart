@@ -8,7 +8,7 @@ import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
-import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class DetailScreen extends StatefulWidget {
   final String contentId;
@@ -275,10 +275,10 @@ class _DetailScreenState extends State<DetailScreen> {
               fit: StackFit.expand,
               children: [
                 // Cover image
-                EnhancedCachedNetworkImage(
+                CachedNetworkImage(
                   imageUrl: content.coverUrl,
                   fit: BoxFit.cover,
-                  placeholder: Container(
+                  placeholder: (context, url) => Container(
                     color: ColorsConst.darkCard,
                     child: const Center(
                       child: CircularProgressIndicator(
@@ -286,7 +286,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       ),
                     ),
                   ),
-                  errorWidget: Container(
+                  errorWidget: (context, url, error) => Container(
                     color: ColorsConst.darkCard,
                     child: const Center(
                       child: Icon(
@@ -296,8 +296,6 @@ class _DetailScreenState extends State<DetailScreen> {
                       ),
                     ),
                   ),
-                  useProgressiveLoading: true,
-                  compressionQuality: 90, // Higher quality for detail view
                   memCacheWidth: 800,
                   memCacheHeight: 1200,
                 ),
@@ -758,35 +756,35 @@ class _DetailScreenState extends State<DetailScreen> {
                 borderRadius: BorderRadius.circular(8),
                 color: ColorsConst.darkCard,
               ),
-              child: EnhancedCachedNetworkImage(
-                imageUrl: relatedContent.coverUrl,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: 200,
+              child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                placeholder: Container(
-                  color: ColorsConst.darkCard,
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      color: ColorsConst.accentBlue,
-                      strokeWidth: 2,
+                child: CachedNetworkImage(
+                  imageUrl: relatedContent.coverUrl,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: 200,
+                  placeholder: (context, url) => Container(
+                    color: ColorsConst.darkCard,
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        color: ColorsConst.accentBlue,
+                        strokeWidth: 2,
+                      ),
                     ),
                   ),
-                ),
-                errorWidget: Container(
-                  color: ColorsConst.darkCard,
-                  child: const Center(
-                    child: Icon(
-                      Icons.broken_image,
-                      size: 32,
-                      color: ColorsConst.darkTextTertiary,
+                  errorWidget: (context, url, error) => Container(
+                    color: ColorsConst.darkCard,
+                    child: const Center(
+                      child: Icon(
+                        Icons.broken_image,
+                        size: 32,
+                        color: ColorsConst.darkTextTertiary,
+                      ),
                     ),
                   ),
+                  memCacheWidth: 320,
+                  memCacheHeight: 400,
                 ),
-                useProgressiveLoading: true,
-                compressionQuality: 80,
-                memCacheWidth: 320,
-                memCacheHeight: 400,
               ),
             ),
             const SizedBox(height: 8),

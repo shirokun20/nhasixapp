@@ -38,8 +38,16 @@ class ReaderCubit extends Cubit<ReaderState> {
       final params = GetContentDetailParams.fromString(contentId);
       final content = await getContentDetailUseCase(params);
 
-      // Load saved settings
-      final savedSettings = await readerSettingsRepository.getReaderSettings();
+      // Load saved settings with error handling
+      ReaderSettings savedSettings;
+      try {
+        savedSettings = await readerSettingsRepository.getReaderSettings();
+        _logger.i("Successfully loaded reader settings: $savedSettings");
+      } catch (e, stackTrace) {
+        _logger.e("Failed to load reader settings, using defaults: $e",
+            error: e, stackTrace: stackTrace);
+        savedSettings = const ReaderSettings(); // Use defaults
+      }
 
       // Emit loaded state with saved settings
       emit(state.copyWith(
@@ -105,8 +113,12 @@ class ReaderCubit extends Cubit<ReaderState> {
     final newShowUI = !(state.showUI ?? true);
     emit(state.copyWith(showUI: newShowUI));
 
-    // Save to preferences
-    readerSettingsRepository.saveShowUI(newShowUI);
+    // Save to preferences with error handling
+    readerSettingsRepository.saveShowUI(newShowUI).catchError((e, stackTrace) {
+      _logger.e("Failed to save show UI setting: $e",
+          error: e, stackTrace: stackTrace);
+      // Settings will still apply for current session
+    });
 
     // Start auto-hide timer if UI is shown
     if (newShowUI) {
@@ -132,39 +144,88 @@ class ReaderCubit extends Cubit<ReaderState> {
   Future<void> changeReadingMode(ReadingMode mode) async {
     emit(state.copyWith(readingMode: mode));
 
-    // Save to preferences
-    await readerSettingsRepository.saveReadingMode(mode);
+    // Save to preferences with error handling
+    try {
+      await readerSettingsRepository.saveReadingMode(mode);
+      _logger.i("Successfully saved reading mode: ${mode.name}");
+    } catch (e, stackTrace) {
+      _logger.e("Failed to save reading mode: $e",
+          error: e, stackTrace: stackTrace);
+      // Settings will still apply for current session
+    }
   }
 
   /// Toggle keep screen on
   Future<void> toggleKeepScreenOn() async {
     final newKeepScreenOn = !(state.keepScreenOn ?? false);
 
-    if (newKeepScreenOn) {
-      await WakelockPlus.enable();
-    } else {
-      await WakelockPlus.disable();
+    try {
+      if (newKeepScreenOn) {
+        await WakelockPlus.enable();
+      } else {
+        await WakelockPlus.disable();
+      }
+
+      emit(state.copyWith(keepScreenOn: newKeepScreenOn));
+
+      // Save to preferences with error handling
+      try {
+        await readerSettingsRepository.saveKeepScreenOn(newKeepScreenOn);
+        _logger.i("Successfully saved keep screen on: $newKeepScreenOn");
+      } catch (e, stackTrace) {
+        _logger.e("Failed to save keep screen on setting: $e",
+            error: e, stackTrace: stackTrace);
+        // Settings will still apply for current session
+      }
+    } catch (e, stackTrace) {
+      _logger.e("Failed to toggle wakelock: $e",
+          error: e, stackTrace: stackTrace);
+      // Don't update state if wakelock operation failed
     }
-
-    emit(state.copyWith(keepScreenOn: newKeepScreenOn));
-
-    // Save to preferences
-    await readerSettingsRepository.saveKeepScreenOn(newKeepScreenOn);
   }
 
   /// Reset all reader settings to defaults
   Future<void> resetReaderSettings() async {
-    await readerSettingsRepository.resetToDefaults();
+    try {
+      await readerSettingsRepository.resetToDefaults();
+      _logger.i("Successfully reset reader settings to defaults");
 
-    // Apply default settings to current state
-    emit(state.copyWith(
-      readingMode: ReadingMode.singlePage,
-      keepScreenOn: false,
-      showUI: true,
-    ));
+      // Apply default settings to current state
+      emit(state.copyWith(
+        readingMode: ReadingMode.singlePage,
+        keepScreenOn: false,
+        showUI: true,
+      ));
 
-    // Disable wakelock
-    await WakelockPlus.disable();
+      // Disable wakelock
+      try {
+        await WakelockPlus.disable();
+      } catch (e, stackTrace) {
+        _logger.e("Failed to disable wakelock during reset: $e",
+            error: e, stackTrace: stackTrace);
+      }
+    } catch (e, stackTrace) {
+      _logger.e("Failed to reset reader settings: $e",
+          error: e, stackTrace: stackTrace);
+
+      // Still apply default settings to current state even if persistence failed
+      emit(state.copyWith(
+        readingMode: ReadingMode.singlePage,
+        keepScreenOn: false,
+        showUI: true,
+      ));
+
+      // Try to disable wakelock anyway
+      try {
+        await WakelockPlus.disable();
+      } catch (wakelockError) {
+        _logger
+            .e("Failed to disable wakelock after reset error: $wakelockError");
+      }
+
+      // Re-throw to let UI handle the error
+      rethrow;
+    }
   }
 
   /// Save current reading progress to history

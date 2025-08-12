@@ -298,6 +298,30 @@ class LocalDataSource {
       _logger.d('Saved history for ${history.contentId}');
     } catch (e) {
       _logger.e('Error saving history: $e');
+
+      // If it's a schema error, try to fix it
+      if (e.toString().contains('no column named id') ||
+          e.toString().contains('table history has no column named id')) {
+        _logger.w(
+            'Detected history table schema issue, attempting to reset database...');
+        try {
+          await _databaseHelper.resetDatabase();
+          // Retry the operation after reset
+          final newDb = await _getSafeDatabase();
+          if (newDb != null) {
+            await newDb.insert(
+              'history',
+              history.toMap(),
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+            _logger.i('Successfully saved history after database reset');
+            return;
+          }
+        } catch (resetError) {
+          _logger.e('Failed to reset database: $resetError');
+        }
+      }
+
       rethrow;
     }
   }

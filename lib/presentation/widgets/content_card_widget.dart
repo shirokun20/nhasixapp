@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/content.dart';
-import 'progressive_image_widget.dart';
 
 /// Enhanced content card widget with image caching and improved UI
 ///
@@ -132,17 +132,15 @@ class ContentCard extends StatelessWidget {
         color: ColorsConst.darkElevated,
       ),
       child: content.coverUrl.isNotEmpty
-          ? EnhancedCachedNetworkImage(
+          ? CachedNetworkImage(
               imageUrl: content.coverUrl,
               fit: BoxFit.cover,
-              placeholder: _buildImagePlaceholder(),
-              errorWidget: _buildImageError(),
+              placeholder: (context, url) => _buildImagePlaceholder(),
+              errorWidget: (context, url, error) => _buildImageError(),
               memCacheWidth: 400, // Optimize memory usage
               memCacheHeight: 600,
               fadeInDuration: const Duration(milliseconds: 300),
               fadeOutDuration: const Duration(milliseconds: 100),
-              useProgressiveLoading: true,
-              compressionQuality: 85,
             )
           : _buildImageError(),
     );
@@ -447,12 +445,12 @@ class CompactContentCard extends StatelessWidget {
                 child: SizedBox(
                   width: 60,
                   height: 80,
-                  child: EnhancedCachedNetworkImage(
+                  child: CachedNetworkImage(
                     imageUrl: content.coverUrl,
                     fit: BoxFit.cover,
                     width: 60,
                     height: 80,
-                    placeholder: Container(
+                    placeholder: (context, url) => Container(
                       color: ColorsConst.darkElevated,
                       child: const Center(
                         child: CircularProgressIndicator(
@@ -461,7 +459,7 @@ class CompactContentCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    errorWidget: Container(
+                    errorWidget: (context, url, error) => Container(
                       color: ColorsConst.darkElevated,
                       child: Icon(
                         Icons.broken_image,
@@ -469,8 +467,6 @@ class CompactContentCard extends StatelessWidget {
                         size: 24,
                       ),
                     ),
-                    useProgressiveLoading: true,
-                    compressionQuality: 75, // Lower quality for thumbnails
                     memCacheWidth: 120,
                     memCacheHeight: 160,
                   ),

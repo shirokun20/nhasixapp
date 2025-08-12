@@ -755,6 +755,30 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 ),
               ),
 
+              const SizedBox(height: 24),
+
+              // Reset settings button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _showResetConfirmationDialog(),
+                  icon: const Icon(
+                    Icons.restore,
+                    color: ColorsConst.accentRed,
+                  ),
+                  label: Text(
+                    'Reset to Defaults',
+                    style: TextStyleConst.buttonMedium.copyWith(
+                      color: ColorsConst.accentRed,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: ColorsConst.accentRed),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+
               const SizedBox(height: 16),
             ],
           ),
@@ -782,6 +806,111 @@ class _ReaderScreenState extends State<ReaderScreen> {
         return 'Vertical Pages';
       case ReadingMode.continuousScroll:
         return 'Continuous Scroll';
+    }
+  }
+
+  void _showResetConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: ColorsConst.darkSurface,
+        title: Text(
+          'Reset Reader Settings',
+          style: TextStyleConst.headingMedium.copyWith(
+            color: ColorsConst.darkTextPrimary,
+          ),
+        ),
+        content: Text(
+          'This will reset all reader settings to their default values:\n\n'
+          '• Reading Mode: Horizontal Pages\n'
+          '• Keep Screen On: Off\n'
+          '• Show UI: On\n\n'
+          'Are you sure you want to continue?',
+          style: TextStyleConst.bodyMedium.copyWith(
+            color: ColorsConst.darkTextSecondary,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'Cancel',
+              style: TextStyleConst.buttonMedium.copyWith(
+                color: ColorsConst.darkTextSecondary,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _resetReaderSettings();
+            },
+            child: Text(
+              'Reset',
+              style: TextStyleConst.buttonMedium.copyWith(
+                color: ColorsConst.accentRed,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _resetReaderSettings() async {
+    try {
+      // Close the settings modal first
+      Navigator.of(context).pop();
+
+      // Reset the settings
+      await _readerCubit.resetReaderSettings();
+
+      // Show success notification
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Reader settings have been reset to defaults',
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: ColorsConst.darkTextPrimary,
+              ),
+            ),
+            backgroundColor: ColorsConst.accentGreen,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Handle reset errors gracefully
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to reset settings: ${e.toString()}',
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: ColorsConst.darkTextPrimary,
+              ),
+            ),
+            backgroundColor: ColorsConst.accentRed,
+            duration: const Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: ColorsConst.darkTextPrimary,
+              onPressed: () => _resetReaderSettings(),
+            ),
+          ),
+        );
+      }
     }
   }
 }

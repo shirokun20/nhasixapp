@@ -7,7 +7,7 @@ import 'package:logger/logger.dart';
 /// Database helper class for managing SQLite database
 class DatabaseHelper {
   static const String _databaseName = 'nhasix_app.db';
-  static const int _databaseVersion = 3;
+  static const int _databaseVersion = 4;
 
   static Database? _database;
   static final Logger _logger = Logger();
@@ -134,6 +134,63 @@ class DatabaseHelper {
         )
       ''');
       _logger.i('Added search_filter_state table in database upgrade');
+    }
+
+    // Fix history table schema if needed (for any version upgrade)
+    try {
+      // Check if history table has the correct schema
+      final historyColumns = await db.rawQuery("PRAGMA table_info(history)");
+      final hasIdColumn = historyColumns.any((col) => col['name'] == 'id');
+
+      if (!hasIdColumn) {
+        _logger.w('History table missing id column, recreating table...');
+
+        // Backup existing data
+        final existingData = await db.query('history');
+
+        // Drop and recreate history table
+        await db.execute('DROP TABLE IF EXISTS history');
+        await db.execute('''
+          CREATE TABLE history (
+            id TEXT PRIMARY KEY,
+            title TEXT,
+            cover_url TEXT,
+            last_viewed INTEGER,
+            last_page INTEGER DEFAULT 1,
+            total_pages INTEGER,
+            time_spent INTEGER DEFAULT 0,
+            is_completed INTEGER DEFAULT 0
+          )
+        ''');
+
+        // Restore data with proper column mapping
+        for (final row in existingData) {
+          await db.insert('history', {
+            'id': row['content_id'] ??
+                row['id'], // Handle both old and new column names
+            'title': row['title'],
+            'cover_url': row['cover_url'],
+            'last_viewed': row['last_viewed'],
+            'last_page': row['last_page'] ?? 1,
+            'total_pages': row['total_pages'] ?? 0,
+            'time_spent': row['time_spent'] ?? 0,
+            'is_completed': row['is_completed'] ?? 0,
+          });
+        }
+
+        // Recreate index
+        await db.execute(
+            'CREATE INDEX idx_history_last_viewed ON history (last_viewed DESC)');
+        await db.execute(
+            'CREATE INDEX idx_history_is_completed ON history (is_completed)');
+
+        _logger.i('History table schema fixed successfully');
+      }
+    } catch (e) {
+      _logger.e('Error fixing history table schema: $e');
+      // If fixing fails, recreate the entire database
+      await _dropAllTables(db);
+      await _onCreate(db, newVersion);
     }
 
     // For major version changes, recreate database

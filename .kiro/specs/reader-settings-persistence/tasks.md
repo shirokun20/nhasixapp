@@ -17,7 +17,7 @@
   - Add backward compatibility support for individual keys
   - _Requirements: 1.1, 2.1, 3.1, 4.1, 5.1_
 
-- [ ] 3. Update ReaderCubit to integrate with settings repository
+- [x] 3. Update ReaderCubit to integrate with settings repository
   - Add ReaderSettingsRepository dependency to ReaderCubit constructor
   - Modify loadContent method to load and apply saved settings
   - Update changeReadingMode method to save settings after state change
@@ -27,20 +27,20 @@
   - Ensure wakelock is properly managed based on keepScreenOn setting
   - _Requirements: 1.1, 1.3, 2.1, 2.3, 4.2_
 
-- [ ] 4. Update service locator registration
+- [x] 4. Update service locator registration
   - Register ReaderSettingsRepository in service locator
   - Update ReaderCubit registration to include new dependency
   - Ensure SharedPreferences is available for repository
   - _Requirements: 1.1, 2.1_
 
-- [ ] 5. Add settings reset functionality to UI
+- [x] 5. Add settings reset functionality to UI
   - Add reset button to reader settings modal
   - Implement confirmation dialog for reset action
   - Show success notification after reset
   - Handle reset errors gracefully
   - _Requirements: 3.1, 3.2, 3.3, 3.5_
 
-- [ ] 6. Implement error handling and edge cases
+- [x] 6. Implement error handling and edge cases
   - Add try-catch blocks for all SharedPreferences operations
   - Implement fallback to defaults when data is corrupt
   - Add logging for debugging settings issues

@@ -15,10 +15,6 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart'
 import 'package:nhasixapp/core/network/http_client_manager.dart';
 
 // Core Utils
-import 'package:nhasixapp/core/utils/image_cache_manager.dart';
-import 'package:nhasixapp/core/utils/image_preloader.dart';
-import 'package:nhasixapp/core/utils/image_optimizer.dart';
-import 'package:nhasixapp/core/utils/content_image_preloader.dart';
 import 'package:nhasixapp/core/utils/tag_data_manager.dart';
 
 // Data Sources
@@ -90,20 +86,6 @@ void _setupCore() {
 
   // Cache Manager
   getIt.registerLazySingleton<CacheManager>(() => DefaultCacheManager());
-
-  // Image Cache Manager
-  getIt.registerLazySingleton<ImageCacheManager>(
-      () => ImageCacheManager.instance);
-
-  // Image Preloader
-  getIt.registerLazySingleton<ImagePreloader>(() => ImagePreloader.instance);
-
-  // Image Optimizer
-  getIt.registerLazySingleton<ImageOptimizer>(() => ImageOptimizer.instance);
-
-  // Content Image Preloader
-  getIt.registerLazySingleton<ContentImagePreloader>(
-      () => ContentImagePreloader.instance);
 
   // Tag Data Manager
   getIt.registerLazySingleton<TagDataManager>(
@@ -222,7 +204,6 @@ void _setupBlocs() {
         searchContentUseCase: getIt<SearchContentUseCase>(),
         getRandomContentUseCase: getIt<GetRandomContentUseCase>(),
         contentRepository: getIt<ContentRepository>(),
-        contentImagePreloader: getIt<ContentImagePreloader>(),
         logger: getIt<Logger>(),
       ));
 

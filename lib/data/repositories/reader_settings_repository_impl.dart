@@ -1,11 +1,13 @@
-import 'dart:convert';
+import 'dart:async';
 import 'dart:developer' as developer;
+import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/repositories/reader_settings_repository.dart';
 import '../models/reader_settings_model.dart';
 
 /// Implementation of ReaderSettingsRepository using SharedPreferences
+/// with comprehensive error handling and edge case management
 class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
   const ReaderSettingsRepositoryImpl(this._prefs);
 
@@ -16,151 +18,463 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
   static const String _keyReadingMode = 'reading_mode';
   static const String _keyKeepScreenOn = 'keep_screen_on';
   static const String _keyShowUI = 'show_ui';
+  static const String _keyCorruptDataFlag = 'reader_settings_corrupt';
 
-  @override
-  Future<ReaderSettings> getReaderSettings() async {
+  // Error handling constants
+  static const int _maxRetryAttempts = 3;
+  static const Duration _retryDelay = Duration(milliseconds: 100);
+  static const Duration _operationTimeout = Duration(seconds: 5);
+
+  // Concurrent access protection
+  static final Map<String, Completer<void>> _operationLocks = {};
+
+  /// Log error with consistent formatting and context
+  void _logError(String operation, dynamic error, [StackTrace? stackTrace]) {
+    developer.log(
+      'ReaderSettingsRepository.$operation failed: $error',
+      name: 'ReaderSettingsRepository',
+      error: error,
+      stackTrace: stackTrace,
+      level: 1000, // Error level
+    );
+  }
+
+  /// Log warning with consistent formatting
+  void _logWarning(String operation, String message) {
+    developer.log(
+      'ReaderSettingsRepository.$operation warning: $message',
+      name: 'ReaderSettingsRepository',
+      level: 900, // Warning level
+    );
+  }
+
+  /// Log info for debugging
+  void _logInfo(String operation, String message) {
+    developer.log(
+      'ReaderSettingsRepository.$operation: $message',
+      name: 'ReaderSettingsRepository',
+      level: 800, // Info level
+    );
+  }
+
+  /// Execute operation with concurrent access protection
+  Future<T> _withLock<T>(String lockKey, Future<T> Function() operation) async {
+    // Check if operation is already in progress
+    if (_operationLocks.containsKey(lockKey)) {
+      _logInfo(
+          'getReaderSettings', 'Waiting for concurrent operation to complete');
+      await _operationLocks[lockKey]!.future;
+    }
+
+    // Create new lock for this operation
+    final completer = Completer<void>();
+    _operationLocks[lockKey] = completer;
+
     try {
-      // Try to get complete settings first (new format)
-      final settingsJson = _prefs.getString(_keyReaderSettings);
-      if (settingsJson != null && settingsJson.isNotEmpty) {
-        return ReaderSettings.fromJsonString(settingsJson);
+      final result = await operation().timeout(_operationTimeout);
+      return result;
+    } finally {
+      // Always release the lock
+      _operationLocks.remove(lockKey);
+      completer.complete();
+    }
+  }
+
+  /// Check if SharedPreferences is available and accessible
+  Future<bool> _isSharedPreferencesAvailable() async {
+    try {
+      // Try a simple read operation to test availability
+      _prefs.getString('_test_key');
+      return true;
+    } catch (e) {
+      _logError('isSharedPreferencesAvailable', e);
+      return false;
+    }
+  }
+
+  /// Detect and handle corrupt data
+  Future<bool> _isDataCorrupt() async {
+    try {
+      // Check if we've previously detected corrupt data
+      final corruptFlag = _prefs.getBool(_keyCorruptDataFlag) ?? false;
+      if (corruptFlag) {
+        _logWarning(
+            'isDataCorrupt', 'Previously detected corrupt data flag is set');
+        return true;
       }
 
-      // Fallback to individual keys for backward compatibility (old format)
-      final readingModeString = _prefs.getString(_keyReadingMode);
-      final keepScreenOn = _prefs.getBool(_keyKeepScreenOn);
-      final showUI = _prefs.getBool(_keyShowUI);
-
-      // Parse reading mode with fallback to default
-      ReadingMode readingMode = ReadingMode.singlePage;
-      if (readingModeString != null) {
+      // Try to parse the main settings JSON if it exists
+      final settingsJson = _prefs.getString(_keyReaderSettings);
+      if (settingsJson != null && settingsJson.isNotEmpty) {
         try {
-          readingMode = ReadingMode.values.firstWhere(
-            (mode) => mode.name == readingModeString,
-            orElse: () => ReadingMode.singlePage,
-          );
+          ReaderSettings.fromJsonString(settingsJson);
+          return false; // Data is valid
         } catch (e) {
-          developer.log(
-            'Invalid reading mode in preferences: $readingModeString',
-            name: 'ReaderSettingsRepository',
-          );
+          _logError('isDataCorrupt',
+              'Failed to parse settings JSON: $settingsJson', null);
+          await _markDataAsCorrupt();
+          return true;
         }
       }
 
-      return ReaderSettings(
-        readingMode: readingMode,
-        keepScreenOn: keepScreenOn ?? false,
-        showUI: showUI ?? true,
-      );
-    } catch (e, stackTrace) {
-      // Log error and return defaults for graceful degradation
-      developer.log(
-        'Error loading reader settings: $e',
-        name: 'ReaderSettingsRepository',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      return const ReaderSettings();
+      // No JSON data found, not necessarily corrupt
+      return false;
+    } catch (e) {
+      _logError('isDataCorrupt', e);
+      return false; // Don't assume corrupt if we can't check properly
     }
   }
 
-  @override
-  Future<void> saveReaderSettings(ReaderSettings settings) async {
+  /// Mark data as corrupt and clear it
+  Future<void> _markDataAsCorrupt() async {
     try {
-      // Save as complete JSON object (new format)
-      final settingsJson = settings.toJsonString();
-      await _prefs.setString(_keyReaderSettings, settingsJson);
-
-      // Also save individual keys for backward compatibility
-      await Future.wait([
-        _prefs.setString(_keyReadingMode, settings.readingMode.name),
-        _prefs.setBool(_keyKeepScreenOn, settings.keepScreenOn),
-        _prefs.setBool(_keyShowUI, settings.showUI),
-      ]);
-    } catch (e, stackTrace) {
-      // Log error but don't throw to avoid breaking the app
-      developer.log(
-        'Error saving reader settings: $e',
-        name: 'ReaderSettingsRepository',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      await _prefs.setBool(_keyCorruptDataFlag, true);
+      _logWarning('markDataAsCorrupt', 'Marked settings data as corrupt');
+    } catch (e) {
+      _logError('markDataAsCorrupt', e);
     }
   }
 
-  @override
-  Future<void> saveReadingMode(ReadingMode mode) async {
+  /// Clear corrupt data and reset flag
+  Future<void> _clearCorruptData() async {
     try {
-      // Get current settings and update only reading mode
-      final currentSettings = await getReaderSettings();
-      final updatedSettings = currentSettings.copyWith(readingMode: mode);
-      await saveReaderSettings(updatedSettings);
-    } catch (e, stackTrace) {
-      // Log error but don't throw to avoid breaking the app
-      developer.log(
-        'Error saving reading mode: $e',
-        name: 'ReaderSettingsRepository',
-        error: e,
-        stackTrace: stackTrace,
-      );
-    }
-  }
-
-  @override
-  Future<void> saveKeepScreenOn(bool keepScreenOn) async {
-    try {
-      // Get current settings and update only keep screen on
-      final currentSettings = await getReaderSettings();
-      final updatedSettings =
-          currentSettings.copyWith(keepScreenOn: keepScreenOn);
-      await saveReaderSettings(updatedSettings);
-    } catch (e, stackTrace) {
-      // Log error but don't throw to avoid breaking the app
-      developer.log(
-        'Error saving keep screen on setting: $e',
-        name: 'ReaderSettingsRepository',
-        error: e,
-        stackTrace: stackTrace,
-      );
-    }
-  }
-
-  @override
-  Future<void> saveShowUI(bool showUI) async {
-    try {
-      // Get current settings and update only show UI
-      final currentSettings = await getReaderSettings();
-      final updatedSettings = currentSettings.copyWith(showUI: showUI);
-      await saveReaderSettings(updatedSettings);
-    } catch (e, stackTrace) {
-      // Log error but don't throw to avoid breaking the app
-      developer.log(
-        'Error saving show UI setting: $e',
-        name: 'ReaderSettingsRepository',
-        error: e,
-        stackTrace: stackTrace,
-      );
-    }
-  }
-
-  @override
-  Future<void> resetToDefaults() async {
-    try {
-      // Remove all reader settings keys
       await Future.wait([
         _prefs.remove(_keyReaderSettings),
         _prefs.remove(_keyReadingMode),
         _prefs.remove(_keyKeepScreenOn),
         _prefs.remove(_keyShowUI),
+        _prefs.remove(_keyCorruptDataFlag),
       ]);
-    } catch (e, stackTrace) {
-      // Log error but don't throw to avoid breaking the app
-      developer.log(
-        'Error resetting reader settings to defaults: $e',
-        name: 'ReaderSettingsRepository',
-        error: e,
-        stackTrace: stackTrace,
+      _logInfo('clearCorruptData', 'Cleared corrupt settings data');
+    } catch (e) {
+      _logError('clearCorruptData', e);
+    }
+  }
+
+  /// Retry operation with exponential backoff
+  Future<T> _retryOperation<T>(
+    String operationName,
+    Future<T> Function() operation,
+    T fallbackValue,
+  ) async {
+    for (int attempt = 1; attempt <= _maxRetryAttempts; attempt++) {
+      try {
+        return await operation();
+      } catch (e) {
+        _logError('$operationName (attempt $attempt)', e);
+
+        if (attempt == _maxRetryAttempts) {
+          _logError('$operationName (final attempt)',
+              'All retry attempts failed, using fallback');
+          return fallbackValue;
+        }
+
+        // Wait before retrying with exponential backoff
+        await Future.delayed(_retryDelay * attempt);
+      }
+    }
+
+    return fallbackValue; // Should never reach here, but just in case
+  }
+
+  @override
+  Future<ReaderSettings> getReaderSettings() async {
+    return _withLock('getReaderSettings', () async {
+      return _retryOperation(
+        'getReaderSettings',
+        () async {
+          _logInfo('getReaderSettings', 'Loading reader settings');
+
+          // Check if SharedPreferences is available
+          if (!await _isSharedPreferencesAvailable()) {
+            _logError(
+                'getReaderSettings', 'SharedPreferences is not available');
+            return const ReaderSettings();
+          }
+
+          // Check for corrupt data
+          if (await _isDataCorrupt()) {
+            _logWarning('getReaderSettings',
+                'Corrupt data detected, clearing and using defaults');
+            await _clearCorruptData();
+            return const ReaderSettings();
+          }
+
+          try {
+            // Try to get complete settings first (new format)
+            final settingsJson = _prefs.getString(_keyReaderSettings);
+            if (settingsJson != null && settingsJson.isNotEmpty) {
+              _logInfo('getReaderSettings', 'Found complete settings JSON');
+              final settings = ReaderSettings.fromJsonString(settingsJson);
+
+              // Validate the loaded settings
+              final validatedSettings = settings.validate();
+              if (validatedSettings != settings) {
+                _logWarning('getReaderSettings',
+                    'Settings required validation correction');
+              }
+
+              return validatedSettings;
+            }
+
+            // Fallback to individual keys for backward compatibility (old format)
+            _logInfo('getReaderSettings', 'Using backward compatibility mode');
+            final readingModeString = _prefs.getString(_keyReadingMode);
+            final keepScreenOn = _prefs.getBool(_keyKeepScreenOn);
+            final showUI = _prefs.getBool(_keyShowUI);
+
+            // Parse reading mode with fallback to default
+            ReadingMode readingMode = ReadingMode.singlePage;
+            if (readingModeString != null) {
+              try {
+                readingMode = ReadingMode.values.firstWhere(
+                  (mode) => mode.name == readingModeString,
+                  orElse: () => ReadingMode.singlePage,
+                );
+              } catch (e) {
+                _logError('getReaderSettings',
+                    'Invalid reading mode: $readingModeString');
+                readingMode = ReadingMode.singlePage;
+              }
+            }
+
+            final settings = ReaderSettings(
+              readingMode: readingMode,
+              keepScreenOn: keepScreenOn ?? false,
+              showUI: showUI ?? true,
+            );
+
+            _logInfo(
+                'getReaderSettings', 'Successfully loaded settings: $settings');
+            return settings;
+          } catch (e, stackTrace) {
+            _logError('getReaderSettings', e, stackTrace);
+
+            // If we get here, the data might be corrupt
+            await _markDataAsCorrupt();
+            throw e; // Re-throw to trigger retry mechanism
+          }
+        },
+        const ReaderSettings(), // Fallback to defaults
       );
+    });
+  }
+
+  @override
+  Future<void> saveReaderSettings(ReaderSettings settings) async {
+    await _withLock('saveReaderSettings', () async {
+      await _retryOperation(
+        'saveReaderSettings',
+        () async {
+          _logInfo('saveReaderSettings', 'Saving reader settings: $settings');
+
+          // Check if SharedPreferences is available
+          if (!await _isSharedPreferencesAvailable()) {
+            throw Exception('SharedPreferences is not available');
+          }
+
+          // Validate settings before saving
+          final validatedSettings = settings.validate();
+          if (validatedSettings != settings) {
+            _logWarning('saveReaderSettings',
+                'Settings were corrected during validation');
+          }
+
+          try {
+            // Save as complete JSON object (new format)
+            final settingsJson = validatedSettings.toJsonString();
+            if (settingsJson.isEmpty || settingsJson == '{}') {
+              throw Exception('Failed to serialize settings to JSON');
+            }
+
+            // Use atomic operations where possible
+            final futures = <Future<bool>>[
+              _prefs.setString(_keyReaderSettings, settingsJson),
+              _prefs.setString(
+                  _keyReadingMode, validatedSettings.readingMode.name),
+              _prefs.setBool(_keyKeepScreenOn, validatedSettings.keepScreenOn),
+              _prefs.setBool(_keyShowUI, validatedSettings.showUI),
+            ];
+
+            // Clear corrupt flag if it was set
+            if (_prefs.getBool(_keyCorruptDataFlag) == true) {
+              futures.add(_prefs.remove(_keyCorruptDataFlag));
+            }
+
+            final results = await Future.wait(futures);
+
+            // Check if all operations succeeded
+            if (results.any((result) => result != true)) {
+              throw Exception('Some save operations failed');
+            }
+
+            _logInfo(
+                'saveReaderSettings', 'Successfully saved reader settings');
+          } catch (e, stackTrace) {
+            _logError('saveReaderSettings', e, stackTrace);
+
+            // Check for specific error types
+            if (e is FileSystemException) {
+              _logError('saveReaderSettings',
+                  'File system error - possibly low storage space');
+            } else if (e is TimeoutException) {
+              _logError('saveReaderSettings', 'Operation timed out');
+            }
+
+            throw e; // Re-throw to trigger retry mechanism
+          }
+        },
+        null, // No meaningful fallback for save operations
+      );
+    });
+  }
+
+  @override
+  Future<void> saveReadingMode(ReadingMode mode) async {
+    await _withLock('saveReadingMode', () async {
+      await _retryOperation(
+        'saveReadingMode',
+        () async {
+          _logInfo('saveReadingMode', 'Saving reading mode: ${mode.name}');
+
+          try {
+            // Get current settings and update only reading mode
+            final currentSettings = await getReaderSettings();
+            final updatedSettings = currentSettings.copyWith(readingMode: mode);
+            await saveReaderSettings(updatedSettings);
+
+            _logInfo('saveReadingMode', 'Successfully saved reading mode');
+          } catch (e, stackTrace) {
+            _logError('saveReadingMode', e, stackTrace);
+            throw e; // Re-throw to trigger retry mechanism
+          }
+        },
+        null, // No meaningful fallback for save operations
+      );
+    });
+  }
+
+  @override
+  Future<void> saveKeepScreenOn(bool keepScreenOn) async {
+    await _withLock('saveKeepScreenOn', () async {
+      await _retryOperation(
+        'saveKeepScreenOn',
+        () async {
+          _logInfo('saveKeepScreenOn', 'Saving keep screen on: $keepScreenOn');
+
+          try {
+            // Get current settings and update only keep screen on
+            final currentSettings = await getReaderSettings();
+            final updatedSettings =
+                currentSettings.copyWith(keepScreenOn: keepScreenOn);
+            await saveReaderSettings(updatedSettings);
+
+            _logInfo('saveKeepScreenOn',
+                'Successfully saved keep screen on setting');
+          } catch (e, stackTrace) {
+            _logError('saveKeepScreenOn', e, stackTrace);
+            throw e; // Re-throw to trigger retry mechanism
+          }
+        },
+        null, // No meaningful fallback for save operations
+      );
+    });
+  }
+
+  @override
+  Future<void> saveShowUI(bool showUI) async {
+    await _withLock('saveShowUI', () async {
+      await _retryOperation(
+        'saveShowUI',
+        () async {
+          _logInfo('saveShowUI', 'Saving show UI: $showUI');
+
+          try {
+            // Get current settings and update only show UI
+            final currentSettings = await getReaderSettings();
+            final updatedSettings = currentSettings.copyWith(showUI: showUI);
+            await saveReaderSettings(updatedSettings);
+
+            _logInfo('saveShowUI', 'Successfully saved show UI setting');
+          } catch (e, stackTrace) {
+            _logError('saveShowUI', e, stackTrace);
+            throw e; // Re-throw to trigger retry mechanism
+          }
+        },
+        null, // No meaningful fallback for save operations
+      );
+    });
+  }
+
+  @override
+  Future<void> resetToDefaults() async {
+    await _withLock('resetToDefaults', () async {
+      await _retryOperation(
+        'resetToDefaults',
+        () async {
+          _logInfo('resetToDefaults', 'Resetting reader settings to defaults');
+
+          // Check if SharedPreferences is available
+          if (!await _isSharedPreferencesAvailable()) {
+            throw Exception('SharedPreferences is not available');
+          }
+
+          try {
+            // Remove all reader settings keys including corrupt flag
+            final futures = [
+              _prefs.remove(_keyReaderSettings),
+              _prefs.remove(_keyReadingMode),
+              _prefs.remove(_keyKeepScreenOn),
+              _prefs.remove(_keyShowUI),
+              _prefs.remove(_keyCorruptDataFlag),
+            ];
+
+            await Future.wait(futures);
+
+            _logInfo('resetToDefaults',
+                'Successfully reset reader settings to defaults');
+          } catch (e, stackTrace) {
+            _logError('resetToDefaults', e, stackTrace);
+
+            // Check for specific error types
+            if (e is FileSystemException) {
+              _logError('resetToDefaults', 'File system error during reset');
+            } else if (e is TimeoutException) {
+              _logError('resetToDefaults', 'Reset operation timed out');
+            }
+
+            throw e; // Re-throw to trigger retry mechanism
+          }
+        },
+        null, // No meaningful fallback for reset operations
+      );
+    });
+  }
+
+  /// Get diagnostic information about the repository state
+  Future<Map<String, dynamic>> getDiagnosticInfo() async {
+    try {
+      final isAvailable = await _isSharedPreferencesAvailable();
+      final isCorrupt = await _isDataCorrupt();
+      final hasSettings = _prefs.containsKey(_keyReaderSettings);
+      final hasLegacyKeys = _prefs.containsKey(_keyReadingMode) ||
+          _prefs.containsKey(_keyKeepScreenOn) ||
+          _prefs.containsKey(_keyShowUI);
+
+      return {
+        'isSharedPreferencesAvailable': isAvailable,
+        'isDataCorrupt': isCorrupt,
+        'hasSettings': hasSettings,
+        'hasLegacyKeys': hasLegacyKeys,
+        'activeLocks': _operationLocks.keys.toList(),
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+    } catch (e) {
+      _logError('getDiagnosticInfo', e);
+      return {
+        'error': e.toString(),
+        'timestamp': DateTime.now().toIso8601String(),
+      };
     }
   }
 }
