@@ -216,8 +216,9 @@ class AppRouter {
     context.push(AppRoute.search);
   }
 
-  static void goToContentDetail(BuildContext context, String contentId) {
-    context.push('/content/$contentId');
+  static Future<SearchFilter?> goToContentDetail(
+      BuildContext context, String contentId) async {
+    return await context.push<SearchFilter>('/content/$contentId');
   }
 
   static void goToReader(BuildContext context, String contentId,

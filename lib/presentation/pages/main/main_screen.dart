@@ -200,8 +200,20 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   /// Handle content tap to navigate to detail screen
-  void _onContentTap(Content content) {
-    AppRouter.goToContentDetail(context, content.id);
+  void _onContentTap(Content content) async {
+    final searchFilter = await AppRouter.goToContentDetail(context, content.id);
+
+    // If user searched by tag from detail screen, trigger search
+    if (searchFilter != null && mounted) {
+      setState(() {
+        _isShowingSearchResults = true;
+        _currentSearchFilter = searchFilter;
+      });
+
+      // Trigger search with the filter
+      _contentBloc.add(ContentSearchEvent(searchFilter));
+      Logger().i('MainScreen: Loading search results from tag tap');
+    }
   }
 
   /// Handle sorting option change

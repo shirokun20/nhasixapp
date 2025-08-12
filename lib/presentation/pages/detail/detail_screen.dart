@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logger/web.dart';
 import 'package:nhasixapp/core/constants/colors_const.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
@@ -8,6 +9,7 @@ import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
+import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class DetailScreen extends StatefulWidget {
@@ -37,6 +39,37 @@ class _DetailScreenState extends State<DetailScreen> {
     _scrollController.dispose();
     _detailCubit.close();
     super.dispose();
+  }
+
+  /// Navigate to search with specific tag filter
+  void _searchByTag(String tagName) async {
+    try {
+      // Create SearchFilter with query (safer approach for mixed tag types)
+      final searchFilter = SearchFilter(
+        query: tagName,
+      );
+
+      // Save filter to local storage (same as SearchScreen does)
+      await getIt<LocalDataSource>().saveSearchFilter(searchFilter.toJson());
+
+      // Navigate back to MainScreen and pass search flag
+      if (mounted) {
+        // Use pop to go back to MainScreen, then trigger search
+        context.pop(searchFilter);
+      }
+    } catch (e, stackTrace) {
+      Logger().e("Error searching for tag: $tagName",
+          error: e, stackTrace: stackTrace);
+      // Handle error gracefully
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error searching for tag: $tagName'),
+            backgroundColor: ColorsConst.accentRed,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -1028,12 +1061,6 @@ class _DetailScreenState extends State<DetailScreen> {
         backgroundColor: ColorsConst.accentBlue,
       ),
     );
-  }
-
-  void _searchByTag(String tagName) {
-    // context.pop(); // Go back to previous screen
-    context.push('${AppRoute.search}/$tagName');
-    // TODO: Pass tag as search parameter
   }
 
   void _handleMenuAction(String action, Content content) {

@@ -446,7 +446,6 @@ enum SortOption {
   popular,
   popularWeek,
   popularToday,
-  random,
 }
 
 /// Extension for SortOption display names
@@ -461,8 +460,6 @@ extension SortOptionExtension on SortOption {
         return 'Popular This Week';
       case SortOption.popularToday:
         return 'Popular Today';
-      case SortOption.random:
-        return 'Random';
     }
   }
 
@@ -476,8 +473,6 @@ extension SortOptionExtension on SortOption {
         return 'popular-week';
       case SortOption.popularToday:
         return 'popular-today';
-      case SortOption.random:
-        return 'random';
     }
   }
 }

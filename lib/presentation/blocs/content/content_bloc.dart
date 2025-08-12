@@ -566,7 +566,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         totalCount: contents.length,
         hasNext: false,
         hasPrevious: false,
-        sortBy: SortOption.random,
+        sortBy: SortOption.newest,
         lastUpdated: _lastFetchTime,
       ));
 
