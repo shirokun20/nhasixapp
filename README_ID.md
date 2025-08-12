@@ -186,78 +186,50 @@ ContentLoadingMore → ContentLoaded (infinite scroll)
 
 ## 📋 Progress Pengembangan
 
-### ✅ **Tugas Selesai**
+### ✅ **Fitur Utama Selesai (~70%)**
+- [x] **Arsitektur Inti**: Clean Architecture dengan pola BLoC/Cubit
+- [x] **Sistem Pencarian**: SearchBloc, FilterDataScreen, TagDataManager, Matrix Filter Support
+- [x] **Sistem Reader**: ReaderCubit dengan 3 mode baca, persistensi pengaturan, pelacakan progress
+- [x] **Framework UI**: Widget komprehensif dengan desain modern (ColorsConst, TextStyleConst)
+- [x] **Navigasi**: Go Router dengan deep linking dan parameter passing
+- [x] **Database**: SQLite dengan persistensi state pencarian dan pengaturan reader
+- [x] **Web Scraping**: NhentaiScraper dengan anti-deteksi dan TagResolver
+
+### ✅ **Tugas Selesai (1-7)**
 - [x] **Tugas 1**: Setup struktur proyek dan dependensi inti
 - [x] **Tugas 2**: Implementasi layer domain inti
-  - [x] Entitas domain dan value object
-  - [x] Interface repository
-  - [x] Use case dengan logika bisnis komprehensif
-- [x] **Tugas 3**: Fondasi layer data (Minggu 1)
-  - [x] Implementasi repository dengan arsitektur offline-first
-  - [x] Sumber data lokal dengan integrasi SQLite (implementasi EXCELLENT!)
-  - [x] Sumber data remote dengan kemampuan web scraping
-  - [x] Model data dengan konversi entitas
-  - [x] Strategi caching dan error handling
-- [x] **Tugas 4.1**: Implementasi SplashBloc yang ditingkatkan ✨
-  - [x] Manajemen state komprehensif untuk inisialisasi aplikasi
-  - [x] Integrasi bypass Cloudflare dengan error handling yang tepat
-  - [x] Validasi konektivitas jaringan dan mekanisme retry
-  - [x] UI yang ditingkatkan dengan loading state dan indikator progress
-  - [x] Unit testing komprehensif dengan mocking
-- [x] **Tugas 4.2**: ContentBloc untuk manajemen konten ✨
-  - [x] Pagination lanjutan dengan infinite scrolling
-  - [x] Fungsi pull-to-refresh dengan SmartRefresher
-  - [x] Manajemen state komprehensif (loading, loaded, error)
-  - [x] Integrasi LocalDataSource siap pakai
-  - [x] Suite testing lengkap (10 unit + 8 integration test)
-  - [x] Verifikasi koneksi real nhentai.net
-- [x] **Tugas 4.3**: SearchBloc untuk fungsi pencarian lanjutan ✨
-  - [x] Pencarian lanjutan dengan dukungan filter komprehensif (query, tag, artis, bahasa, kategori)
-  - [x] Manajemen riwayat pencarian dengan penyimpanan persisten (maks 50 item, FIFO)
-  - [x] Pencarian debounced dengan delay 500ms untuk optimisasi performa
-  - [x] Saran tag real-time dengan request debounced
-  - [x] Kombinasi filter kompleks dan manajemen state
-  - [x] Suite testing komprehensif (38+ test meliputi unit, real API, dan integration)
+- [x] **Tugas 3**: Fondasi layer data (Disederhanakan)
+- [x] **Tugas 4**: Manajemen state BLoC inti
+  - [x] SplashBloc, ContentBloc, SearchBloc, HomeBloc
+  - [x] DetailCubit, ReaderCubit, FilterDataCubit
+- [x] **Tugas 5**: Komponen UI inti
+  - [x] AppMainDrawerWidget, AppMainHeaderWidget, ContentListWidget
+  - [x] PaginationWidget, SortingWidget, FilterDataSearchWidget
+- [x] **Tugas 6**: Alur pencarian lanjutan
+  - [x] SearchScreen, FilterDataScreen, TagDataManager
+  - [x] Matrix Filter Support, persistensi state
+- [x] **Tugas 7**: Fungsi reader
+  - [x] ReaderScreen dengan 3 mode baca
+  - [x] Persistensi pengaturan, pelacakan progress, navigasi gesture
 
-- [x] **Tugas 4**: Manajemen state BLoC inti (Minggu 2) - 🚧 SEDANG BERLANGSUNG
-  - [x] **Tugas 4.1**: SplashBloc untuk initial loading ✅
-    - [x] Logika bypass Cloudflare dengan alur komprehensif
-    - [x] Loading state dan error handling dengan mekanisme retry
-    - [x] Navigasi setelah bypass berhasil
-    - [x] Validasi konektivitas jaringan
-  - [x] **Tugas 4.2**: ContentBloc untuk manajemen konten ✅
-    - [x] Dukungan pagination dengan infinite scrolling
-    - [x] Loading, loaded, error state dengan transisi yang tepat
-    - [x] Fungsi pull-to-refresh dengan SmartRefresher
-    - [x] Manajemen konten lanjutan (sort, search, popular, random, tags)
-  - [x] **Tugas 4.3**: SearchBloc untuk pencarian lanjutan ✅
-    - [x] Pencarian lanjutan dengan dukungan filter komprehensif
-    - [x] Fungsi riwayat pencarian dengan penyimpanan persisten
-    - [x] Pencarian debounced dengan optimisasi delay 500ms
-    - [x] Saran tag real-time dengan optimisasi performa
-
-### ✅ **Baru Saja Selesai**
-- [x] **Tugas 4.4**: Cubit sederhana untuk manajemen state dasar ✨
-  - [x] NetworkCubit untuk pelacakan status koneksi
-  - [x] DetailCubit untuk detail konten dan toggle favorit
-  - [x] Kelas Cubit dasar dengan fungsi umum
-  - [x] Setup provider Cubit dalam MultiBlocProviderConfig
-
-### 📅 **Selanjutnya**
-- [ ] **Tugas 5**: Komponen UI inti (Minggu 3)
-  - [ ] Update AppMainDrawerWidget dengan menu yang sesuai
-  - [ ] Buat widget yang dapat digunakan ulang (ContentCard, SearchFilter, dll)
-  - [ ] Implementasi layar utama dengan tema hitam
-  - [ ] Tambah loading dan caching gambar
-
-### 📅 **Tugas Mendatang** (roadmap 12 minggu)
-- [ ] **Tugas 6**: Fungsi pembaca (Minggu 4)
-- [ ] **Tugas 7**: Sistem favorit & download (Minggu 5)
-- [ ] **Tugas 8**: Pengaturan & preferensi (Minggu 6)
-- [ ] **Tugas 9**: Fitur lanjutan (Minggu 7)
-- [ ] **Tugas 10**: Optimisasi performa & testing (Minggu 8)
-- [ ] **Tugas 11**: Polish & persiapan deployment (Minggu 9)
-- [ ] **Tugas 12**: Dokumentasi & sumber belajar (Minggu 10)
+### 🎯 **Fitur Prioritas Berikutnya (30% Tersisa)**
+- [ ] **Tugas 8**: Sistem favorit dan download
+  - [ ] FavoritesScreen dengan FavoriteCubit
+  - [ ] DownloadBloc dengan sistem antrian
+  - [ ] Kemampuan membaca offline
+- [ ] **Tugas 9**: Pengaturan dan preferensi
+  - [ ] SettingsScreen dengan SettingsCubit
+  - [ ] Kustomisasi tema dan fungsi backup
+- [ ] **Tugas 10**: Fitur lanjutan dan manajemen jaringan
+  - [ ] NetworkCubit untuk monitoring konektivitas
+  - [ ] Manajemen tag dan statistik riwayat
+- [ ] **Tugas 11**: Optimisasi performa dan testing
+  - [ ] Manajemen memori dan testing perangkat nyata
+  - [ ] Pembersihan proyek dan dokumentasi
+- [ ] **Tugas 12**: Polish UI dan aksesibilitas
+  - [ ] Animasi, loading skeleton, fitur aksesibilitas
+- [ ] **Tugas 13**: Persiapan deployment
+  - [ ] Branding aplikasi, konfigurasi build, testing rilis
 
 ## 🚀 Memulai
 
@@ -326,7 +298,57 @@ flutter analyze
 
 ## 📱 Screenshot
 
-*Screenshot akan ditambahkan seiring progress pengembangan*
+### 🏠 Beranda & Detail
+<div align="center">
+  <img src="screenshots/flutter_01.png" width="250" alt="Layar Beranda"/>
+  <img src="screenshots/flutter_02.png" width="250" alt="Grid Konten"/>
+  <img src="screenshots/flutter_03.png" width="250" alt="List Konten"/>
+</div>
+
+### 🔍 Halaman Baca, detail & Mode Baca
+<div align="center">
+  <img src="screenshots/flutter_04.png" width="250" alt="Layar Pencarian"/>
+  <img src="screenshots/flutter_05.png" width="250" alt="Filter Lanjutan"/>
+  <img src="screenshots/flutter_06.png" width="250" alt="Pemilihan Tag"/>
+</div>
+
+### 📖 Halaman Baca, Menu samping, Filter & Pencarian
+<div align="center">
+  <img src="screenshots/flutter_07.png" width="250" alt="Detail Konten"/>
+  <img src="screenshots/flutter_08.png" width="250" alt="Mode Reader"/>
+  <img src="screenshots/flutter_09.png" width="250" alt="Pengaturan Reader"/>
+</div>
+
+### ⚙️ Pencarian & Filter
+<div align="center">
+  <img src="screenshots/flutter_10.png" width="250" alt="Pengaturan Aplikasi"/>
+  <img src="screenshots/flutter_11.png" width="250" alt="Opsi Tema"/>
+</div>
+
+> **Catatan**: Screenshot menampilkan progress pengembangan saat ini dengan komponen UI Material Design 3 modern dan layout responsif.
+
+## 📚 Referensi Pengembangan
+
+Proyek ini mencakup materi referensi komprehensif untuk pengembangan dan testing:
+
+### **File Referensi HTML**
+Terletak di direktori `references/`, file-file ini berisi struktur website asli untuk pengembangan:
+
+- **`halaman_utama.html`** - Struktur halaman utama dan layout grid konten
+- **`halaman_search.html`** - Halaman hasil pencarian dengan opsi filtering
+- **`halaman_detail.html`** - Halaman detail konten dengan metadata dan tag
+- **`halaman_baca.html`** - Halaman reader dengan struktur galeri gambar
+- **`halaman_last_page.html`** - Struktur pagination dan navigasi
+
+### **Referensi Data JSON**
+- **`halaman_detail.json`** - Metadata konten terstruktur untuk pengembangan API
+
+### **Penggunaan dalam Pengembangan**
+File referensi ini digunakan untuk:
+- **Pengembangan Web Scraping** - Memahami struktur HTML untuk parsing
+- **Referensi Desain UI/UX** - Mencocokkan layout dan fungsi website asli
+- **Data Testing** - Menyediakan skenario test yang realistis
+- **Perencanaan Struktur API** - Mendefinisikan model data dan format response
 
 ## 🤝 Kontribusi
 
@@ -336,6 +358,8 @@ Proyek ini mengikuti prinsip Clean Architecture dan menggunakan BLoC untuk manaj
 2. Tulis test komprehensif untuk fitur baru
 3. Update dokumentasi untuk perubahan signifikan
 4. Ikuti panduan style Dart/Flutter
+5. Gunakan file referensi di `references/` untuk memahami struktur website
+6. Test dengan skenario data real menggunakan sampel HTML yang disediakan
 
 ## ⚖️ Pemberitahuan Hukum
 
@@ -364,14 +388,14 @@ Proyek ini dilisensikan di bawah MIT License - lihat file [LICENSE](LICENSE) unt
 ## 📊 Statistik Proyek
 
 - **Arsitektur**: Clean Architecture dengan 3 layer
-- **Manajemen State**: Pola BLoC dengan testing komprehensif
+- **Manajemen State**: Pola BLoC/Cubit dengan pemisahan yang tepat
 - **Dependensi**: 45+ package yang dipilih dengan hati-hati
 - **Cakupan Test**: Unit test dengan mocking untuk komponen kritis
-- **Progress Pengembangan**: 58% selesai (7/12 tugas)
-- **Estimasi Waktu Pengembangan**: 12 minggu (1 tugas per minggu)
+- **Progress Pengembangan**: 70% selesai (7/13 tugas)
+- **Status Implementasi**: Fitur inti operasional
 - **Platform Target**: Android
 - **SDK Minimum**: Android API 21+ (Android 5.0)
-- **Pencapaian Terbaru**: Simplifikasi database lengkap dan sistem manajemen state BLoC dengan Cubit ✨
+- **Pencapaian Terbaru**: Sistem pencarian lengkap dan fungsi reader dengan fitur lanjutan ✨
 
 ---
 

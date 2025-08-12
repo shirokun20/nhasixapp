@@ -42,7 +42,26 @@ class AppRouter {
         name: AppRoute.filterDataName,
         builder: (context, state) {
           final filterType = state.uri.queryParameters['type'] ?? 'tag';
-          final selectedFilters = state.extra as List<FilterItem>? ?? [];
+
+          // Safe type casting for List<FilterItem>
+          List<FilterItem> selectedFilters = [];
+          if (state.extra != null) {
+            try {
+              if (state.extra is List<FilterItem>) {
+                selectedFilters = state.extra as List<FilterItem>;
+              } else if (state.extra is List<dynamic>) {
+                // Convert List<dynamic> to List<FilterItem>
+                final dynamicList = state.extra as List<dynamic>?;
+                selectedFilters = (dynamicList ?? <dynamic>[])
+                    .whereType<FilterItem>()
+                    .toList();
+              }
+            } catch (e) {
+              // If casting fails, use empty list
+              selectedFilters = [];
+            }
+          }
+
           return FilterDataScreen(
             filterType: filterType,
             selectedFilters: selectedFilters,
@@ -243,10 +262,26 @@ class AppRouter {
     required String filterType,
     required List<FilterItem> selectedFilters,
   }) async {
-    return await context.push<List<FilterItem>>(
-      '${AppRoute.filterData}?type=$filterType',
-      extra: selectedFilters,
-    );
+    try {
+      final result = await context.push<List<FilterItem>>(
+        '${AppRoute.filterData}?type=$filterType',
+        extra: selectedFilters,
+      );
+
+      // Ensure result is properly typed
+      if (result is List<FilterItem>) {
+        return result;
+      } else if (result is List<dynamic>) {
+        // Convert List<dynamic> to List<FilterItem> if needed
+        return result ?? [];
+      }
+
+      return result;
+    } catch (e) {
+      // Log error and return null
+      debugPrint('AppRouter.goToFilterData error: $e');
+      return null;
+    }
   }
 
   // Additional navigation helper methods for better navigation flow
@@ -265,7 +300,14 @@ class AppRouter {
   // Navigation method specifically for returning from FilterDataScreen
   static void returnFromFilterData(
       BuildContext context, List<FilterItem> selectedFilters) {
-    context.pop(selectedFilters);
+    try {
+      // Ensure we're passing the correct type
+      final typedFilters = List<FilterItem>.from(selectedFilters);
+      context.pop(typedFilters);
+    } catch (e) {
+      debugPrint('AppRouter.returnFromFilterData error: $e');
+      context.pop(<FilterItem>[]);
+    }
   }
 
   // Navigation method for canceling FilterDataScreen

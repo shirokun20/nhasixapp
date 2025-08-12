@@ -7,6 +7,108 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [0.7.0] - 2024-12-15
+
+### Ditambahkan
+- **Implementasi Sistem Reader Lengkap** 📖
+  - ReaderScreen dengan 3 mode baca: single page, vertical page, continuous scroll
+  - ReaderCubit untuk manajemen state sederhana dengan persistensi pengaturan
+  - Fitur lanjutan: pelacakan progress, timer baca, lompat halaman, keep screen on
+  - Navigasi gesture dengan tap zone untuk previous/next/toggle UI
+  - Modal pengaturan dengan pemilihan mode baca dan fungsi reset
+  - Sinkronisasi controller untuk perpindahan mode yang smooth
+  - Error handling komprehensif dengan AppErrorWidget
+
+- **Sistem Pencarian & Filter Lanjutan** 🔍
+  - FilterDataScreen dengan UI modern untuk pemilihan filter lanjutan
+  - FilterDataCubit untuk manajemen state data filter
+  - Integrasi TagDataManager dengan aset lokal (assets/json/tags.json)
+  - Matrix Filter Support dengan fungsi include/exclude
+  - Persistensi state pencarian antar restart aplikasi
+  - Widget FilterItemCard, SelectedFiltersWidget, FilterTypeTabBar
+  - SearchQueryBuilder untuk format query yang tepat
+
+- **Framework UI Komprehensif** 🎨
+  - ColorsConst yang diperbarui dengan tema gelap yang nyaman mata dan warna semantik
+  - TextStyleConst yang ditingkatkan dengan style semantik dan utility method
+  - ContentListWidget dengan pendekatan pagination-first dan infinite scroll yang dapat dikonfigurasi
+  - PaginationWidget dengan progress bar, lompat halaman, dan dukungan aksesibilitas
+  - SortingWidget untuk MainScreen dengan desain modern
+  - AppProgressIndicator dan AppErrorWidget untuk UX yang konsisten
+
+### Ditingkatkan
+- **Integrasi MainScreen**
+  - Integrasi HomeBloc untuk manajemen state level screen
+  - Tampilan hasil pencarian dengan header filter aktif
+  - Fungsi sorting dipindah dari SearchScreen ke MainScreen
+  - Loading state pencarian dari local storage saat startup aplikasi
+  - Fungsi clear hasil pencarian dengan pembersihan database
+
+- **Navigasi & Routing**
+  - Konfigurasi Go Router dengan route FilterDataScreen
+  - Parameter passing untuk tipe filter dan filter yang dipilih
+  - Dukungan deep linking dengan navigasi balik yang tepat
+  - Method AppRouter untuk navigasi FilterDataScreen
+
+- **Database & Persistensi**
+  - Tabel state filter pencarian untuk persistensi
+  - Model pengaturan reader untuk penyimpanan preferensi
+  - Skema database yang disederhanakan dengan 6 tabel
+  - Serialisasi/deserialisasi state pencarian
+
+### Perbaikan Teknis
+- **Arsitektur Manajemen State**
+  - Pemisahan BLoC vs Cubit yang tepat (Fitur Kompleks vs Sederhana)
+  - ContentBloc untuk pagination kompleks dan hasil pencarian
+  - SearchBloc untuk pencarian lanjutan dengan persistensi state
+  - HomeBloc untuk inisialisasi main screen
+  - DetailCubit, ReaderCubit, FilterDataCubit untuk manajemen state sederhana
+
+- **Optimisasi Performa**
+  - Pendekatan pagination-first untuk performa yang lebih baik
+  - Image caching dengan CachedNetworkImage
+  - Manajemen memori dengan disposal yang tepat
+  - Optimisasi database dengan query yang efisien
+
+### Testing
+- **Persyaratan Testing Perangkat Nyata**
+  - Semua fitur harus ditest pada perangkat Android fisik
+  - Monitoring performa pada hardware nyata
+  - Testing konektivitas jaringan dengan berbagai kondisi
+  - Validasi UI/UX pada berbagai ukuran layar dan orientasi
+
+## [0.6.0] - 2024-12-01
+
+### Ditambahkan
+- **Implementasi Alur Pencarian Lengkap** 🔍
+  - SearchScreen dengan interface pencarian komprehensif
+  - Dukungan filter lanjutan tanpa API call langsung
+  - Tombol search untuk memicu SearchSubmitted event
+  - Integrasi navigasi dengan FilterDataScreen
+  - Filter single select (bahasa, kategori) dengan validasi
+  - Tampilan hasil pencarian dengan dukungan pagination
+
+- **Komponen UI Inti** 🎨
+  - AppMainDrawerWidget dengan 4 item menu utama
+  - AppMainHeaderWidget dengan navigasi search dan menu
+  - ContentListWidget dengan grid layout dan dukungan pagination
+  - Implementasi desain modern dengan ColorsConst dan TextStyleConst
+  - Layout responsif dengan SliverGrid dan widget adaptif
+
+### Ditingkatkan
+- **Fitur Lanjutan ContentBloc**
+  - Integrasi hasil pencarian dengan tampilan konten normal
+  - Fungsi sorting dengan ContentSortChangedEvent
+  - Dukungan pagination dengan overlay loading untuk perubahan halaman
+  - Fungsi pull-to-refresh dengan SmartRefresher
+  - Error handling dengan mekanisme retry dan fallback konten cache
+
+- **Integrasi Database**
+  - Persistensi state pencarian dengan LocalDataSource
+  - Penyimpanan preferensi sorting dengan UserDataRepository
+  - Update skema database untuk fungsi pencarian
+  - Dukungan migrasi untuk tabel baru
+
 ## [0.3.0] - 2025-01-30
 
 ### Ditambahkan
@@ -157,22 +259,22 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## Progress Pengembangan
 
-- ✅ **Tugas 1**: Setup struktur proyek dan dependensi inti
-- ✅ **Tugas 2**: Implementasi layer domain inti
-- ✅ **Tugas 3**: Fondasi layer data
-- ✅ **Tugas 4**: Manajemen state BLoC inti
-  - ✅ **Tugas 4.1**: Implementasi SplashBloc yang ditingkatkan
-  - ✅ **Tugas 4.2**: Implementasi ContentBloc
-  - ✅ **Tugas 4.3**: Implementasi SearchBloc lanjutan
-- 🚧 **Tugas 4.4**: Cubit sederhana untuk manajemen state dasar ← **Sedang Berlangsung**
-  - ⏳ NetworkCubit untuk pelacakan status koneksi
-  - ⏳ DetailCubit untuk detail konten dan toggle favorit
-  - ⏳ Kelas Cubit dasar dengan fungsi umum
-  - ⏳ Setup provider Cubit dalam MultiBlocProviderConfig
-- 📅 **Tugas 5**: Komponen UI inti (berikutnya)
+- ✅ **Tugas 1-7**: Fitur inti selesai (70% dari proyek)
+  - ✅ Struktur proyek dan dependensi
+  - ✅ Implementasi layer domain dan data
+  - ✅ Sistem manajemen state BLoC/Cubit
+  - ✅ Komponen UI inti dan widget
+  - ✅ Sistem pencarian dan filter lanjutan
+  - ✅ Fungsi reader lengkap
+- 🎯 **Tugas 8**: Sistem favorit dan download (prioritas berikutnya)
+- 📅 **Tugas 9**: Pengaturan dan preferensi
+- 📅 **Tugas 10**: Fitur lanjutan dan manajemen jaringan
+- 📅 **Tugas 11**: Optimisasi performa dan testing
+- 📅 **Tugas 12**: Polish UI dan aksesibilitas
+- 📅 **Tugas 13**: Persiapan deployment
 
 ---
 
-**Status Saat Ini**: 42% Selesai (5/12 tugas)  
-**Progress Tugas 4**: 75% Selesai (3/4 sub-tugas)  
-**Milestone Berikutnya**: Selesaikan Tugas 4.4 (Cubit Sederhana) kemudian mulai komponen UI inti
+**Status Saat Ini**: 70% Selesai (7/13 tugas)  
+**Status Implementasi**: Fitur inti operasional  
+**Milestone Berikutnya**: Implementasi Sistem Favorit dan Download

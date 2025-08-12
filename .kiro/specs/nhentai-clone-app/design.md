@@ -45,46 +45,48 @@ Aplikasi menggunakan BLoC (Business Logic Component) pattern dengan flutter_bloc
 ### 1. Presentation Layer
 
 #### Pages
-- **SplashScreen**: Menangani initial loading
-- **MainScreen**: Menampilkan konten terbaru dengan tema hitam default, navigasi sederhana, dan sorting options
-- **SearchScreen**: Interface untuk pencarian dengan filter advanced yang tidak langsung trigger API
-- **FilterDataScreen**: Halaman terpisah modern untuk mencari dan memilih Tags, Artists, Characters, Parodies, Groups
-- **DetailScreen**: Menampilkan detail konten dan metadata lengkap
-- **ReaderScreen**: Mode baca dengan navigasi halaman dan zoom
-- **FavoritesScreen**: Daftar konten yang di-bookmark dengan kategori
-- **DownloadsScreen**: Konten yang tersimpan offline dengan status
-- **SettingsScreen**: Pengaturan aplikasi lengkap
-- **TagScreen**: Daftar semua tag dengan popularity count
-- **ArtistScreen**: Daftar artist dengan karya mereka
-- **RandomScreen**: Random content discovery
-- **HistoryScreen**: Riwayat konten yang pernah dibuka
-- **StatusScreen**: Status download dan background tasks
+- **SplashScreen**: ✅ Menangani initial loading dengan SplashBloc dan modern UI
+- **MainScreen**: ✅ Menampilkan konten dengan HomeBloc, ContentBloc, search results support, dan SortingWidget
+- **SearchScreen**: ✅ Interface pencarian dengan SearchBloc, filter advanced, dan navigation ke FilterDataScreen
+- **FilterDataScreen**: ✅ Halaman terpisah modern dengan FilterDataCubit untuk Tags, Artists, Characters, Parodies, Groups
+- **DetailScreen**: ✅ Menampilkan detail konten dengan DetailCubit dan metadata lengkap
+- **ReaderScreen**: ✅ Mode baca dengan ReaderCubit, 3 reading modes, dan settings persistence
+- **FavoritesScreen**: ⏳ Daftar konten favorit (planned)
+- **DownloadsScreen**: ⏳ Konten offline (planned)
+- **SettingsScreen**: ⏳ Pengaturan aplikasi (planned)
+- **TagScreen**: ⏳ Daftar tag (planned)
+- **ArtistScreen**: ⏳ Daftar artist (planned)
+- **RandomScreen**: ⏳ Random content (planned)
+- **HistoryScreen**: ⏳ Riwayat konten (planned)
 
 #### Widgets
-- **ContentCard**: Card component untuk menampilkan preview konten
-- **SearchFilter**: Widget untuk filter pencarian (simplified)
-- **FilterDataWidget**: Modern widget untuk filter data selection dengan search
-- **SortingWidget**: Widget untuk sorting options di MainScreen
-- **ImageViewer**: Component untuk menampilkan gambar dengan zoom
-- **ProgressIndicator**: Custom loading indicators
-- **ErrorWidget**: Standardized error display
-- **NavigationDrawer**: Side navigation menu
+- **ContentCard**: ✅ Card component untuk preview konten dengan image caching
+- **ContentListWidget**: ✅ Grid layout dengan pagination support dan pull-to-refresh
+- **AppMainHeaderWidget**: ✅ Header dengan search dan menu navigation
+- **AppMainDrawerWidget**: ✅ Side navigation dengan 4 menu utama
+- **PaginationWidget**: ✅ Advanced pagination dengan progress bar dan page jumping
+- **SortingWidget**: ✅ Widget untuk sorting options di MainScreen
+- **FilterDataSearchWidget**: ✅ Search widget untuk FilterDataScreen
+- **FilterItemCard**: ✅ Modern card untuk filter selection dengan include/exclude
+- **SelectedFiltersWidget**: ✅ Horizontal scrollable selected filters
+- **FilterTypeTabBar**: ✅ Tab bar untuk filter types
+- **AppProgressIndicator**: ✅ Custom loading indicators
+- **AppErrorWidget**: ✅ Standardized error display
 
 #### BLoCs & Cubits
 ```dart
-// Complex State Management (BLoCs)
-ContentBloc: Mengelola state untuk daftar konten dengan pagination kompleks dan sorting
-SearchBloc: Mengelola pencarian dan filter tanpa langsung mengirim API request, dengan events UpdateSearchFilter dan SearchSubmitted
-DownloadBloc: Mengelola download queue dan concurrent operations
-SplashBloc: Mengelola initial loading dan bypass logic
+// Complex State Management (BLoCs) - IMPLEMENTED
+ContentBloc: ✅ Mengelola state untuk daftar konten dengan pagination kompleks, sorting, dan search results
+SearchBloc: ✅ Mengelola pencarian dengan events UpdateSearchFilter dan SearchSubmitted, state persistence
+HomeBloc: ✅ Mengelola main screen state dan initialization
+SplashBloc: ✅ Mengelola initial loading, bypass logic, dan navigation
 
-// Simple State Management (Cubits)
-DetailCubit: Mengelola detail konten dan favorite toggle
-ReaderCubit: Mengelola state reader mode dengan 3 reading modes (horizontal, vertical, continuous scroll), navigation, dan settings persistence
-FavoriteCubit: Mengelola bookmark/favorites CRUD operations
-SettingsCubit: Mengelola pengaturan aplikasi termasuk reader preferences
-NetworkCubit: Mengelola status koneksi sederhana
-FilterDataCubit: Mengelola state untuk halaman filter data terpisah
+// Simple State Management (Cubits) - IMPLEMENTED & PLANNED
+DetailCubit: ✅ Mengelola detail konten dan favorite toggle dengan simple CRUD operations
+ReaderCubit: ✅ Mengelola reader mode dengan 3 reading modes (singlePage, verticalPage, continuousScroll), navigation, settings persistence
+FilterDataCubit: ✅ Mengelola state untuk FilterDataScreen dengan tag searching dan selection
+NetworkCubit: ⏳ Mengelola status koneksi sederhana (planned)
+SettingsCubit: ⏳ Mengelola pengaturan aplikasi (planned)
 ```
 
 ### 2. Domain Layer

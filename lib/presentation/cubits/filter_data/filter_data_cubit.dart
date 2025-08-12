@@ -34,7 +34,7 @@ class FilterDataCubit extends Cubit<FilterDataState> {
       _logger.i('FilterDataCubit: Initializing with type: $filterType');
 
       _currentFilterType = filterType;
-      _selectedFilters = List.from(selectedFilters);
+      _selectedFilters = List<FilterItem>.from(selectedFilters);
       emit(FilterDataLoading(state));
       // Ensure tag data is cached
       await _tagDataManager.cacheTagData();
@@ -269,7 +269,7 @@ class FilterDataCubit extends Cubit<FilterDataState> {
 
   /// Get selected filters
   List<FilterItem> getSelectedFilters() {
-    return List.from(_selectedFilters);
+    return List<FilterItem>.from(_selectedFilters);
   }
 
   /// Check if tag is selected

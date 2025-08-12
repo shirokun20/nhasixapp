@@ -12,10 +12,10 @@ Aplikasi NhentaiApp adalah sebuah aplikasi mobile Flutter yang berfungsi sebagai
 
 #### Acceptance Criteria
 
-1. WHEN aplikasi dibuka THEN sistem SHALL menampilkan splash screen dengan proses initial loading
-2. WHEN proses initial loading berhasil THEN sistem SHALL mengarahkan pengguna ke main screen
-3. IF proses initial loading gagal THEN sistem SHALL menampilkan pesan error dan opsi untuk mencoba lagi
-4. WHEN pengguna berada di main screen THEN sistem SHALL menampilkan daftar konten terbaru dari nhentai.net dengan tema hitam default
+1. WHEN aplikasi dibuka THEN sistem SHALL menampilkan SplashScreen dengan SplashBloc untuk initial loading dan bypass logic
+2. WHEN proses initial loading berhasil THEN sistem SHALL mengarahkan pengguna ke MainScreen menggunakan Go Router navigation
+3. IF proses initial loading gagal THEN sistem SHALL menampilkan error state dengan retry option menggunakan SplashBloc error handling
+4. WHEN pengguna berada di main screen THEN sistem SHALL menampilkan ContentListWidget dengan HomeBloc dan ContentBloc integration menggunakan tema hitam dari ColorsConst
 
 ### Requirement 2
 
@@ -23,15 +23,15 @@ Aplikasi NhentaiApp adalah sebuah aplikasi mobile Flutter yang berfungsi sebagai
 
 #### Acceptance Criteria
 
-1. WHEN pengguna mengakses fitur pencarian THEN sistem SHALL menampilkan form pencarian dengan opsi filter tanpa langsung mengirim API request
-2. WHEN pengguna memasukkan kata kunci pencarian THEN sistem SHALL menyimpan input di state tanpa memicu API call
-3. WHEN pengguna memilih filter tag, artist, character, parody, atau group THEN sistem SHALL menampilkan interface pencarian untuk data tersebut dari assets/json/tags.json dengan halaman terpisah yang modern
-4. WHEN pengguna memilih multiple filter THEN sistem SHALL menyimpan semua filter di state dengan opsi include/exclude menggunakan FilterItem
-5. WHEN pengguna memilih filter language atau category THEN sistem SHALL hanya mengizinkan satu pilihan
-6. WHEN pengguna menekan tombol "Search" atau "Apply" THEN sistem SHALL mengirim API request, menyimpan state pencarian ke local datasource, dan kembali ke MainScreen dengan hasil pencarian
-7. WHEN aplikasi dibuka ulang THEN sistem SHALL memuat state pencarian terakhir dari local datasource dan menampilkan hasil di MainScreen
-8. WHEN pengguna mengakses filter data THEN sistem SHALL menampilkan halaman terpisah dengan pencarian untuk Tags, Artists, Characters, Parodies, dan Groups dengan UI yang modern
-9. WHEN pengguna melakukan pencarian filter data THEN sistem SHALL menggunakan data dari assets/json/tags.json untuk memberikan hasil yang akurat
+1. WHEN pengguna mengakses fitur pencarian THEN sistem SHALL menampilkan SearchScreen dengan SearchBloc untuk state management tanpa langsung mengirim API request
+2. WHEN pengguna memasukkan kata kunci pencarian THEN sistem SHALL menyimpan input menggunakan UpdateSearchFilter event tanpa memicu API call
+3. WHEN pengguna memilih filter tag, artist, character, parody, atau group THEN sistem SHALL membuka FilterDataScreen dengan FilterDataCubit untuk pencarian data dari assets/json/tags.json
+4. WHEN pengguna memilih multiple filter THEN sistem SHALL menyimpan semua filter menggunakan FilterItem class dengan opsi include/exclude dan TagDataManager untuk validasi
+5. WHEN pengguna memilih filter language atau category THEN sistem SHALL hanya mengizinkan satu pilihan menggunakan single select validation
+6. WHEN pengguna menekan tombol "Search" atau "Apply" THEN sistem SHALL mengirim SearchSubmitted event, menyimpan state ke LocalDataSource, dan kembali ke MainScreen dengan hasil
+7. WHEN aplikasi dibuka ulang THEN sistem SHALL memuat state pencarian dari getLastSearchFilter() dan menampilkan hasil di MainScreen menggunakan ContentSearchEvent
+8. WHEN pengguna mengakses filter data THEN sistem SHALL menampilkan FilterDataScreen dengan modern UI menggunakan FilterTypeTabBar dan FilterItemCard widgets
+9. WHEN pengguna melakukan pencarian filter data THEN sistem SHALL menggunakan TagDataManager.searchTags() untuk memberikan hasil yang akurat dari assets/json/tags.json
 
 ### Requirement 3
 
@@ -39,16 +39,16 @@ Aplikasi NhentaiApp adalah sebuah aplikasi mobile Flutter yang berfungsi sebagai
 
 #### Acceptance Criteria
 
-1. WHEN pengguna memilih sebuah konten THEN sistem SHALL menampilkan halaman detail dengan informasi lengkap
-2. WHEN pengguna berada di halaman detail THEN sistem SHALL menampilkan cover, title, tags, artist, language, dan jumlah halaman
-3. WHEN pengguna menekan tombol "Read" THEN sistem SHALL membuka reader mode untuk membaca konten
-4. WHEN pengguna berada di reader mode THEN sistem SHALL menyediakan 3 mode reading: Horizontal Pages, Vertical Pages, dan Continuous Scroll
-5. WHEN pengguna menggunakan Horizontal Pages mode THEN sistem SHALL menampilkan satu halaman per layar dengan navigasi swipe kiri-kanan atau tap sisi layar
-6. WHEN pengguna menggunakan Vertical Pages mode THEN sistem SHALL menampilkan satu halaman per layar dengan navigasi swipe atas-bawah atau tap area atas/bawah layar
-7. WHEN pengguna menggunakan Continuous Scroll mode THEN sistem SHALL menampilkan semua halaman dalam scroll vertikal tanpa bottom bar untuk menghindari blocking
-8. WHEN pengguna berada di Continuous Scroll mode THEN sistem SHALL menampilkan progress indicator di top bar dan update current page berdasarkan scroll position
-9. WHEN pengguna mengubah reading mode THEN sistem SHALL menyimpan preferensi tersebut dan menerapkannya untuk konten selanjutnya
-10. WHEN pengguna mengakses reader settings THEN sistem SHALL menyediakan opsi untuk mengubah reading mode, keep screen on, dan pengaturan lainnya
+1. WHEN pengguna memilih sebuah konten THEN sistem SHALL menampilkan halaman detail dengan informasi lengkap menggunakan DetailScreen dan DetailCubit
+2. WHEN pengguna berada di halaman detail THEN sistem SHALL menampilkan cover, title, tags, artist, language, dan jumlah halaman dengan UI yang konsisten menggunakan ColorsConst dan TextStyleConst
+3. WHEN pengguna menekan tombol "Read" THEN sistem SHALL membuka ReaderScreen dengan ReaderCubit untuk state management
+4. WHEN pengguna berada di reader mode THEN sistem SHALL menyediakan 3 mode reading: Single Page (horizontal), Vertical Page, dan Continuous Scroll menggunakan enum ReadingMode
+5. WHEN pengguna menggunakan Single Page mode THEN sistem SHALL menampilkan satu halaman per layar dengan PageController horizontal dan navigasi tap gesture
+6. WHEN pengguna menggunakan Vertical Page mode THEN sistem SHALL menampilkan satu halaman per layar dengan PageController vertikal dan navigasi tap gesture
+7. WHEN pengguna menggunakan Continuous Scroll mode THEN sistem SHALL menampilkan semua halaman dalam ListView dengan ScrollController tanpa bottom bar
+8. WHEN pengguna berada di Continuous Scroll mode THEN sistem SHALL menampilkan progress indicator di top bar dan update current page berdasarkan scroll position secara otomatis
+9. WHEN pengguna mengubah reading mode THEN sistem SHALL menyimpan preferensi menggunakan ReaderSettingsModel dan menerapkannya untuk konten selanjutnya
+10. WHEN pengguna mengakses reader settings THEN sistem SHALL menyediakan modal bottom sheet dengan opsi reading mode, keep screen on, dan reset settings
 
 ### Requirement 4
 
@@ -80,14 +80,14 @@ Aplikasi NhentaiApp adalah sebuah aplikasi mobile Flutter yang berfungsi sebagai
 
 #### Acceptance Criteria
 
-1. WHEN aplikasi dibuka THEN sistem SHALL menampilkan UI dengan tema hitam default dan design yang konsisten
-2. WHEN pengguna berinteraksi dengan elemen UI THEN sistem SHALL memberikan feedback visual yang jelas
-3. WHEN aplikasi digunakan di berbagai ukuran layar THEN sistem SHALL menyesuaikan layout secara responsif
-4. WHEN pengguna melakukan navigasi THEN sistem SHALL menggunakan tombol next/previous untuk pagination tanpa infinite scroll
-5. WHEN terjadi loading data THEN sistem SHALL menampilkan loading indicator yang informatif
-6. WHEN pengguna mengakses drawer menu THEN sistem SHALL menampilkan menu dengan fitur: Downloaded galleries, Random gallery, Favorite galleries, dan View history
-7. WHEN pengguna berada di MainScreen THEN sistem SHALL menampilkan opsi sorting (newest, popular, etc.) yang dapat digunakan baik untuk konten normal maupun hasil pencarian
-8. WHEN pengguna mengubah sorting di MainScreen THEN sistem SHALL menerapkan sorting tersebut pada konten yang sedang ditampilkan (normal atau hasil pencarian)
+1. WHEN aplikasi dibuka THEN sistem SHALL menampilkan UI dengan tema hitam dari ColorsConst dan design yang konsisten menggunakan TextStyleConst
+2. WHEN pengguna berinteraksi dengan elemen UI THEN sistem SHALL memberikan feedback visual menggunakan hover, pressed, dan focus colors dari ColorsConst
+3. WHEN aplikasi digunakan di berbagai ukuran layar THEN sistem SHALL menyesuaikan layout secara responsif menggunakan SliverGrid dan adaptive widgets
+4. WHEN pengguna melakukan navigasi THEN sistem SHALL menggunakan PaginationWidget dengan next/previous buttons dan page jumping tanpa infinite scroll
+5. WHEN terjadi loading data THEN sistem SHALL menampilkan AppProgressIndicator dan loading states dengan overlay untuk pagination changes
+6. WHEN pengguna mengakses drawer menu THEN sistem SHALL menampilkan AppMainDrawerWidget dengan 4 menu utama: Downloaded galleries, Random gallery, Favorite galleries, dan View history
+7. WHEN pengguna berada di MainScreen THEN sistem SHALL menampilkan SortingWidget dengan opsi sorting yang dapat digunakan untuk konten normal dan hasil pencarian
+8. WHEN pengguna mengubah sorting di MainScreen THEN sistem SHALL menerapkan ContentSortChangedEvent dan menyimpan preferensi menggunakan UserDataRepository
 
 ### Requirement 7
 
