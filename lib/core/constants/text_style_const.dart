@@ -271,4 +271,70 @@ class TextStyleConst {
 
     return baseStyle;
   }
+
+  // ===== MATERIAL DESIGN 3 TEXT STYLES =====
+
+  /// Display text styles (largest)
+  static TextStyle get displayLarge => styleBold(
+        textColor: ColorsConst.darkTextPrimary,
+        size: 57,
+      );
+
+  static TextStyle get displayMedium => styleBold(
+        textColor: ColorsConst.darkTextPrimary,
+        size: 45,
+      );
+
+  static TextStyle get displaySmall => styleBold(
+        textColor: ColorsConst.darkTextPrimary,
+        size: 36,
+      );
+
+  /// Headline text styles
+  static TextStyle get headlineLarge => styleBold(
+        textColor: ColorsConst.darkTextPrimary,
+        size: 32,
+      );
+
+  static TextStyle get headlineMedium => styleSemiBold(
+        textColor: ColorsConst.darkTextPrimary,
+        size: 28,
+      );
+
+  static TextStyle get headlineSmall => styleSemiBold(
+        textColor: ColorsConst.darkTextPrimary,
+        size: 24,
+      );
+
+  /// Title text styles
+  static TextStyle get titleLarge => styleSemiBold(
+        textColor: ColorsConst.darkTextPrimary,
+        size: 22,
+      );
+
+  static TextStyle get titleMedium => styleMedium(
+        textColor: ColorsConst.darkTextPrimary,
+        size: 16,
+      );
+
+  static TextStyle get titleSmall => styleMedium(
+        textColor: ColorsConst.darkTextPrimary,
+        size: 14,
+      );
+
+  /// Label text styles
+  static TextStyle get labelLarge => styleMedium(
+        textColor: ColorsConst.darkTextPrimary,
+        size: 14,
+      );
+
+  static TextStyle get labelMedium => styleMedium(
+        textColor: ColorsConst.darkTextPrimary,
+        size: 12,
+      );
+
+  static TextStyle get labelSmall => styleMedium(
+        textColor: ColorsConst.darkTextPrimary,
+        size: 11,
+      );
 }

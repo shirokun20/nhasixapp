@@ -284,9 +284,9 @@
     - ✅ Ensure semua features menggunakan consistent design dari ColorsConst dan TextStyleConst
     - _Requirements: 3.1, 3.9, 3.10, 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7_
 
-- [ ] 8. Build favorites dan download system (NEXT PRIORITY)
+- [-] 8. Build favorites dan download system (NEXT PRIORITY)
 💡 *Remember to check components-list.md first*
-  - [ ] 8.1 Implement favorites management dengan FavoriteCubit
+  - [x] 8.1 Implement favorites management dengan FavoriteCubit
     - Create FavoriteCubit untuk simple CRUD operations menggunakan existing UserDataRepository
     - Build FavoritesScreen dengan modern UI menggunakan ColorsConst dan TextStyleConst
     - Add favorite categories management dengan database support
@@ -295,7 +295,7 @@
     - Integrate dengan existing DetailCubit untuk favorite toggle
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-  - [ ] 8.2 Create download manager dengan DownloadBloc
+  - [x] 8.2 Create download manager dengan DownloadBloc
     - Implement DownloadBloc dengan queue system (Complex - tetap BLoC)
     - Build DownloadsScreen dengan status tracking dan progress indicators
     - Add concurrent download support dengan configurable limits
@@ -305,7 +305,7 @@
     - Integrate dengan existing database schema untuk download tracking
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-  - [ ] 8.3 Add offline reading capabilities
+  - [x] 8.3 Add offline reading capabilities
     - Implement offline content detection dalam ReaderScreen
     - Create offline reader mode dengan existing ReaderCubit
     - Add offline search dalam downloaded content

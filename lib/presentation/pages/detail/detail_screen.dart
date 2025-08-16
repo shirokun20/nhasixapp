@@ -9,6 +9,7 @@ import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
+import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -1038,16 +1039,40 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   void _downloadContent(Content content) {
-    // TODO: Implement download functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Download functionality will be implemented in task 7.2',
-          style: TextStyleConst.bodyMedium.copyWith(color: Colors.white),
+    try {
+      // Queue the download using DownloadBloc
+      context.read<DownloadBloc>().add(DownloadQueueEvent(
+            content: content,
+            priority: 0, // Normal priority
+          ));
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${content.title} has been added to download queue',
+            style: TextStyleConst.bodyMedium.copyWith(color: Colors.white),
+          ),
+          backgroundColor: ColorsConst.accentGreen,
+          action: SnackBarAction(
+            label: 'View Downloads',
+            textColor: Colors.white,
+            onPressed: () {
+              context.push('/downloads');
+            },
+          ),
         ),
-        backgroundColor: ColorsConst.accentOrange,
-      ),
-    );
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Failed to queue download: ${e.toString()}',
+            style: TextStyleConst.bodyMedium.copyWith(color: Colors.white),
+          ),
+          backgroundColor: ColorsConst.accentRed,
+        ),
+      );
+    }
   }
 
   void _shareContent(Content content) {

@@ -183,6 +183,28 @@ abstract class UserDataRepository {
   /// Returns saved sort option or default (newest) if none exists
   Future<SortOption> getSortingPreference();
 
+  // ==================== OFFLINE SYNC ====================
+
+  /// Sync offline favorites and history when coming back online
+  ///
+  /// This method handles syncing local changes made while offline
+  Future<void> syncOfflineData();
+
+  /// Mark data as needing sync when offline changes are made
+  ///
+  /// [dataType] - Type of data that needs sync ('favorites', 'history', etc.)
+  /// [operation] - Operation performed ('add', 'remove', 'update')
+  /// [contentId] - ID of content affected
+  Future<void> markForSync(String dataType, String operation, String contentId);
+
+  /// Get items that need to be synced
+  ///
+  /// Returns list of sync operations to perform when online
+  Future<List<Map<String, dynamic>>> getPendingSyncItems();
+
+  /// Clear sync queue after successful sync
+  Future<void> clearSyncQueue();
+
   // ==================== UTILITIES ====================
 
   /// Get database statistics

@@ -4,6 +4,7 @@ import 'package:nhasixapp/data/datasources/local/database_helper.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass_no_webview.dart';
 import 'package:nhasixapp/presentation/cubits/reader/reader_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/favorite/favorite_cubit.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
@@ -16,6 +17,7 @@ import 'package:nhasixapp/core/network/http_client_manager.dart';
 
 // Core Utils
 import 'package:nhasixapp/core/utils/tag_data_manager.dart';
+import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 
 // Data Sources
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
@@ -28,9 +30,11 @@ import 'package:nhasixapp/presentation/blocs/splash/splash_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/home/home_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/content/content_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
+import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 
 // Cubits
 import 'package:nhasixapp/presentation/cubits/cubits.dart';
+import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
 
 // Repositories
 import 'package:nhasixapp/domain/repositories/repositories.dart';
@@ -40,6 +44,8 @@ import 'package:nhasixapp/data/repositories/reader_settings_repository_impl.dart
 
 // Use Cases
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
+import 'package:nhasixapp/domain/usecases/favorites/favorites_usecases.dart';
+import 'package:nhasixapp/domain/usecases/downloads/downloads_usecases.dart';
 import 'package:nhasixapp/domain/usecases/history/add_to_history_usecase.dart';
 
 final getIt = GetIt.instance;
@@ -158,6 +164,13 @@ void _setupRepositories() {
   //   sharedPreferences: getIt(),
   //   logger: getIt(),
   // ));
+
+  // Offline Content Manager (depends on UserDataRepository)
+  getIt
+      .registerLazySingleton<OfflineContentManager>(() => OfflineContentManager(
+            userDataRepository: getIt<UserDataRepository>(),
+            logger: getIt<Logger>(),
+          ));
 }
 
 /// Setup use cases
@@ -173,13 +186,20 @@ void _setupUseCases() {
       () => GetRandomContentUseCase(getIt()));
 
   // Favorites Use Cases
-  // getIt.registerLazySingleton<AddToFavoritesUseCase>(() => AddToFavoritesUseCase(getIt()));
-  // getIt.registerLazySingleton<RemoveFromFavoritesUseCase>(() => RemoveFromFavoritesUseCase(getIt()));
-  // getIt.registerLazySingleton<GetFavoritesUseCase>(() => GetFavoritesUseCase(getIt()));
+  getIt.registerLazySingleton<AddToFavoritesUseCase>(
+      () => AddToFavoritesUseCase(getIt()));
+  getIt.registerLazySingleton<RemoveFromFavoritesUseCase>(
+      () => RemoveFromFavoritesUseCase(getIt()));
+  getIt.registerLazySingleton<GetFavoritesUseCase>(
+      () => GetFavoritesUseCase(getIt()));
 
   // Download Use Cases
-  // getIt.registerLazySingleton<DownloadContentUseCase>(() => DownloadContentUseCase(getIt()));
-  // getIt.registerLazySingleton<GetDownloadStatusUseCase>(() => GetDownloadStatusUseCase(getIt()));
+  getIt.registerLazySingleton<DownloadContentUseCase>(
+      () => DownloadContentUseCase(getIt()));
+  getIt.registerLazySingleton<GetDownloadStatusUseCase>(
+      () => GetDownloadStatusUseCase(getIt()));
+  getIt.registerLazySingleton<GetAllDownloadsUseCase>(
+      () => GetAllDownloadsUseCase(getIt()));
 
   // History Use Cases
   getIt.registerLazySingleton<AddToHistoryUseCase>(
@@ -215,9 +235,20 @@ void _setupBlocs() {
         logger: getIt<Logger>(),
       ));
 
+  // Register DownloadBloc
+  getIt.registerFactory<DownloadBloc>(() => DownloadBloc(
+        downloadContentUseCase: getIt<DownloadContentUseCase>(),
+        getDownloadStatusUseCase: getIt<GetDownloadStatusUseCase>(),
+        getContentDetailUseCase: getIt<GetContentDetailUseCase>(),
+        userDataRepository: getIt<UserDataRepository>(),
+        contentRepository: getIt<ContentRepository>(),
+        httpClient: getIt<Dio>(),
+        logger: getIt<Logger>(),
+        connectivity: getIt<Connectivity>(),
+      ));
+
   // TODO: Register other BLoCs when implemented
   // getIt.registerFactory<FavoriteBloc>(() => FavoriteBloc(getIt()));
-  // getIt.registerFactory<DownloadBloc>(() => DownloadBloc(getIt()));
   // getIt.registerFactory<SettingsBloc>(() => SettingsBloc(getIt()));
 }
 
@@ -238,7 +269,9 @@ void _setupCubits() {
   // DetailCubit - Content detail management
   getIt.registerFactory<DetailCubit>(() => DetailCubit(
         getContentDetailUseCase: getIt<GetContentDetailUseCase>(),
-        contentRepository: getIt<ContentRepository>(),
+        addToFavoritesUseCase: getIt<AddToFavoritesUseCase>(),
+        removeFromFavoritesUseCase: getIt<RemoveFromFavoritesUseCase>(),
+        userDataRepository: getIt<UserDataRepository>(),
         logger: getIt<Logger>(),
       ));
 
@@ -253,10 +286,24 @@ void _setupCubits() {
         getContentDetailUseCase: getIt<GetContentDetailUseCase>(),
         addToHistoryUseCase: getIt<AddToHistoryUseCase>(),
         readerSettingsRepository: getIt<ReaderSettingsRepository>(),
+        offlineContentManager: getIt<OfflineContentManager>(),
+        networkCubit: getIt<NetworkCubit>(),
       ));
 
-  // Note: FavoriteCubit will be implemented later
-  // Same pattern will be used for other screen-specific cubits
+  // OfflineSearchCubit - Offline content search
+  getIt.registerFactory<OfflineSearchCubit>(() => OfflineSearchCubit(
+        offlineContentManager: getIt<OfflineContentManager>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // FavoriteCubit - Favorites management
+  getIt.registerFactory<FavoriteCubit>(() => FavoriteCubit(
+        addToFavoritesUseCase: getIt<AddToFavoritesUseCase>(),
+        getFavoritesUseCase: getIt<GetFavoritesUseCase>(),
+        removeFromFavoritesUseCase: getIt<RemoveFromFavoritesUseCase>(),
+        userDataRepository: getIt<UserDataRepository>(),
+        logger: getIt<Logger>(),
+      ));
 }
 
 /// Clean up all registered dependencies

@@ -17,6 +17,7 @@ import 'package:nhasixapp/presentation/widgets/app_main_header_widget.dart';
 import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
 import 'package:nhasixapp/presentation/widgets/pagination_widget.dart';
 import 'package:nhasixapp/presentation/widgets/sorting_widget.dart';
+import 'package:nhasixapp/presentation/widgets/offline_indicator_widget.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 
 class MainScreen extends StatefulWidget {
@@ -169,6 +170,9 @@ class _MainScreenState extends State<MainScreen> {
         builder: (context, state) {
           return Column(
             children: [
+              // Offline banner
+              const OfflineBanner(),
+
               // Search results header (if showing search results)
               if (_isShowingSearchResults) _buildSearchResultsHeader(),
 

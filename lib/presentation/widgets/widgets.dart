@@ -13,3 +13,8 @@ export 'filter_item_card_widget.dart';
 export 'selected_filters_widget.dart';
 export 'filter_type_tab_bar_widget.dart';
 export 'sorting_widget.dart';
+
+// Download widgets
+export 'download_item_widget.dart';
+export 'download_stats_widget.dart';
+export 'download_settings_widget.dart';

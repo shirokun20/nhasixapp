@@ -7,6 +7,9 @@ import 'package:nhasixapp/presentation/pages/main/main_screen.dart';
 import 'package:nhasixapp/presentation/pages/search/search_screen.dart';
 import 'package:nhasixapp/presentation/pages/detail/detail_screen.dart';
 import 'package:nhasixapp/presentation/pages/filter_data/filter_data_screen.dart';
+import 'package:nhasixapp/presentation/pages/favorites/favorites_screen.dart';
+import 'package:nhasixapp/presentation/pages/downloads/downloads_screen.dart';
+import 'package:nhasixapp/presentation/pages/offline/offline_content_screen.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 
 class AppRouter {
@@ -107,18 +110,21 @@ class AppRouter {
       GoRoute(
         path: AppRoute.favorites,
         name: AppRoute.favoritesName,
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Favorites Screen - To be implemented')),
-        ),
+        builder: (context, state) => const FavoritesScreen(),
       ),
 
       // Downloads Screen
       GoRoute(
         path: AppRoute.downloads,
         name: AppRoute.downloadsName,
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Downloads Screen - To be implemented')),
-        ),
+        builder: (context, state) => const DownloadsScreen(),
+      ),
+
+      // Offline Content Screen
+      GoRoute(
+        path: AppRoute.offline,
+        name: AppRoute.offlineName,
+        builder: (context, state) => const OfflineContentScreen(),
       ),
 
       // History Screen
@@ -232,6 +238,10 @@ class AppRouter {
 
   static void goToDownloads(BuildContext context) {
     context.go(AppRoute.downloads);
+  }
+
+  static void goToOffline(BuildContext context) {
+    context.go(AppRoute.offline);
   }
 
   static void goToHistory(BuildContext context) {

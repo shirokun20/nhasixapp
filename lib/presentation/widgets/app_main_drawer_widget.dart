@@ -69,6 +69,20 @@ class AppMainDrawerWidget extends StatelessWidget {
             },
           ),
           ListTile(
+            leading: Icon(
+              Icons.offline_bolt,
+              color: ColorsConst.accentGreen,
+            ),
+            title: Text(
+              'Offline content',
+              style: TextStyleConst.navigationLabel,
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              context.push('/offline');
+            },
+          ),
+          ListTile(
             leading: const Icon(
               Icons.shuffle,
               color: ColorsConst.darkTextSecondary,

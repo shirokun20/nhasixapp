@@ -29,6 +29,7 @@ class ContentCard extends StatelessWidget {
     this.showTags = false,
     this.showUploadDate = false, // Hidden by default for main screen
     this.maxTagsToShow = 3,
+    this.showOfflineIndicator = false,
   });
 
   final Content content;
@@ -45,6 +46,7 @@ class ContentCard extends StatelessWidget {
   final bool showTags;
   final bool showUploadDate;
   final int maxTagsToShow;
+  final bool showOfflineIndicator;
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +82,8 @@ class ContentCard extends StatelessWidget {
                       _buildDownloadProgressOverlay(),
 
                     // Top overlay with favorite button and page count
-                    if (content.pageCount > 0) _buildTopOverlay(),
+                    if (content.pageCount > 0 || showOfflineIndicator)
+                      _buildTopOverlay(),
 
                     // Bottom gradient overlay for better text readability
                     _buildBottomGradientOverlay(),
@@ -217,22 +220,61 @@ class ContentCard extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Page count badge
-          if (showPageCount)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: ColorsConst.darkBackground.withValues(alpha: 0.8),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${content.pageCount}p',
-                style: TextStyleConst.caption.copyWith(
-                  color: ColorsConst.darkTextPrimary,
-                  fontWeight: FontWeight.bold,
+          // Left side badges
+          Row(
+            children: [
+              // Page count badge
+              if (showPageCount && content.pageCount > 0)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: ColorsConst.darkBackground.withValues(alpha: 0.8),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${content.pageCount}p',
+                    style: TextStyleConst.caption.copyWith(
+                      color: ColorsConst.darkTextPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-              ),
-            ),
+
+              // Offline indicator badge
+              if (showOfflineIndicator) ...[
+                if (showPageCount && content.pageCount > 0)
+                  const SizedBox(width: 4),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: ColorsConst.accentGreen.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.offline_bolt,
+                        size: 10,
+                        color: ColorsConst.darkTextPrimary,
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        'OFFLINE',
+                        style: TextStyleConst.caption.copyWith(
+                          color: ColorsConst.darkTextPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 8,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
 
           // Favorite button
           if (showFavoriteButton)
@@ -407,6 +449,81 @@ class ContentCard extends StatelessWidget {
     } else {
       return 'now';
     }
+  }
+
+  /// Static method to build image widget for reuse in other components
+  static Widget buildImage({
+    required String imageUrl,
+    BoxFit fit = BoxFit.cover,
+    double? width,
+    double? height,
+    int? memCacheWidth,
+    int? memCacheHeight,
+  }) {
+    if (imageUrl.isEmpty) {
+      return Container(
+        width: width,
+        height: height,
+        color: ColorsConst.darkElevated,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.broken_image_outlined,
+              size: 32,
+              color: ColorsConst.darkTextTertiary,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'No image',
+              style: TextStyleConst.caption,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      width: width,
+      height: height,
+      fit: fit,
+      memCacheWidth: memCacheWidth ?? 400,
+      memCacheHeight: memCacheHeight ?? 600,
+      placeholder: (context, url) => Shimmer.fromColors(
+        baseColor: ColorsConst.darkElevated,
+        highlightColor: ColorsConst.darkCard,
+        child: Container(
+          width: width,
+          height: height,
+          color: ColorsConst.darkElevated,
+        ),
+      ),
+      errorWidget: (context, url, error) => Container(
+        width: width,
+        height: height,
+        color: ColorsConst.darkElevated,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.broken_image_outlined,
+              size: 32,
+              color: ColorsConst.darkTextTertiary,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Failed to load',
+              style: TextStyleConst.caption,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+      fadeInDuration: const Duration(milliseconds: 300),
+      fadeOutDuration: const Duration(milliseconds: 100),
+    );
   }
 }
 

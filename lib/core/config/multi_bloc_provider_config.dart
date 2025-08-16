@@ -6,7 +6,7 @@ import 'package:nhasixapp/presentation/blocs/splash/splash_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/home/home_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/content/content_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
-// import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart'; // Will be added later
+import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 
 // Cubits (Simple State Management)
 import 'package:nhasixapp/presentation/cubits/cubits.dart';
@@ -26,6 +26,9 @@ class MultiBlocProviderConfig {
     ),
     BlocProvider<SearchBloc>(
       create: (context) => getIt<SearchBloc>(),
+    ),
+    BlocProvider<DownloadBloc>(
+      create: (context) => getIt<DownloadBloc>(),
     ),
 
     // Simple State Management (Cubits)

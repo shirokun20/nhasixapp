@@ -10,6 +10,7 @@ class ReaderState extends Equatable {
     this.keepScreenOn,
     this.readingTimer,
     this.message,
+    this.isOfflineMode,
   });
 
   final Content? content;
@@ -19,6 +20,7 @@ class ReaderState extends Equatable {
   final bool? keepScreenOn;
   final Duration? readingTimer;
   final String? message;
+  final bool? isOfflineMode;
 
   @override
   List<Object?> get props => [
@@ -29,6 +31,7 @@ class ReaderState extends Equatable {
         keepScreenOn,
         readingTimer,
         message,
+        isOfflineMode,
       ];
 
   static const _undefined = Object();
@@ -41,6 +44,7 @@ class ReaderState extends Equatable {
     Object? keepScreenOn = _undefined,
     Duration? readingTimer,
     Object? message = _undefined,
+    Object? isOfflineMode = _undefined,
   }) {
     return ReaderState(
       content: content ?? this.content,
@@ -53,6 +57,9 @@ class ReaderState extends Equatable {
           : keepScreenOn as bool?,
       readingTimer: readingTimer ?? this.readingTimer,
       message: message == _undefined ? this.message : message as String?,
+      isOfflineMode: isOfflineMode == _undefined
+          ? this.isOfflineMode
+          : isOfflineMode as bool?,
     );
   }
 
@@ -101,6 +108,7 @@ class ReaderLoading extends ReaderState {
           keepScreenOn: prevState.keepScreenOn,
           readingTimer: prevState.readingTimer,
           message: prevState.message,
+          isOfflineMode: prevState.isOfflineMode,
         );
 }
 
@@ -115,6 +123,7 @@ class ReaderLoaded extends ReaderState {
           keepScreenOn: prevState.keepScreenOn ?? false,
           readingTimer: prevState.readingTimer ?? Duration.zero,
           message: prevState.message,
+          isOfflineMode: prevState.isOfflineMode ?? false,
         );
 }
 
@@ -129,5 +138,6 @@ class ReaderError extends ReaderState {
           keepScreenOn: prevState.keepScreenOn,
           readingTimer: prevState.readingTimer,
           message: prevState.message,
+          isOfflineMode: prevState.isOfflineMode,
         );
 }

@@ -8,35 +8,82 @@ import '../../../domain/usecases/content/get_content_detail_usecase.dart';
 import '../../../domain/usecases/history/add_to_history_usecase.dart';
 import '../../../domain/repositories/reader_settings_repository.dart';
 import '../../../data/models/reader_settings_model.dart';
+import '../../../core/utils/offline_content_manager.dart';
+import '../network/network_cubit.dart';
 
 part 'reader_state.dart';
 
-/// Simple cubit for managing reader functionality
+/// Simple cubit for managing reader functionality with offline support
 class ReaderCubit extends Cubit<ReaderState> {
   ReaderCubit({
     required this.getContentDetailUseCase,
     required this.addToHistoryUseCase,
     required this.readerSettingsRepository,
+    required this.offlineContentManager,
+    required this.networkCubit,
   }) : super(const ReaderInitial());
 
   final GetContentDetailUseCase getContentDetailUseCase;
   final AddToHistoryUseCase addToHistoryUseCase;
   final ReaderSettingsRepository readerSettingsRepository;
+  final OfflineContentManager offlineContentManager;
+  final NetworkCubit networkCubit;
   final Logger _logger = Logger();
 
   Timer? _readingTimer;
   Timer? _autoHideTimer;
 
-  /// Load content for reading
+  /// Load content for reading with offline support
   Future<void> loadContent(String contentId, {int initialPage = 1}) async {
     try {
       _stopAutoHideTimer();
 
       emit(ReaderLoading(state));
 
-      // Get content details
-      final params = GetContentDetailParams.fromString(contentId);
-      final content = await getContentDetailUseCase(params);
+      Content? content;
+      bool isOfflineMode = false;
+
+      // Check if content is available offline first
+      final isOfflineAvailable =
+          await offlineContentManager.isContentAvailableOffline(contentId);
+      final isConnected = networkCubit.isConnected;
+
+      if (isOfflineAvailable && (!isConnected || _shouldPreferOffline())) {
+        _logger.i("Loading content from offline storage: $contentId");
+        content = await offlineContentManager.createOfflineContent(contentId);
+        isOfflineMode = true;
+      }
+
+      // If offline content not available or failed, try online
+      if (content == null && isConnected) {
+        _logger.i("Loading content from online source: $contentId");
+        try {
+          final params = GetContentDetailParams.fromString(contentId);
+          content = await getContentDetailUseCase(params);
+          isOfflineMode = false;
+        } catch (e) {
+          _logger
+              .w("Failed to load online content, trying offline fallback: $e");
+          if (isOfflineAvailable) {
+            content =
+                await offlineContentManager.createOfflineContent(contentId);
+            isOfflineMode = true;
+          } else {
+            rethrow;
+          }
+        }
+      }
+
+      // If still no content and offline available, use offline
+      if (content == null && isOfflineAvailable) {
+        _logger.i("Using offline content as fallback: $contentId");
+        content = await offlineContentManager.createOfflineContent(contentId);
+        isOfflineMode = true;
+      }
+
+      if (content == null) {
+        throw Exception('Content not available online or offline');
+      }
 
       // Load saved settings with error handling
       ReaderSettings savedSettings;
@@ -49,7 +96,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         savedSettings = const ReaderSettings(); // Use defaults
       }
 
-      // Emit loaded state with saved settings
+      // Emit loaded state with saved settings and offline mode info
       emit(state.copyWith(
         content: content,
         currentPage: initialPage,
@@ -57,6 +104,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         showUI: savedSettings.showUI,
         keepScreenOn: savedSettings.keepScreenOn,
         readingTimer: Duration.zero,
+        isOfflineMode: isOfflineMode,
       ));
 
       emit(ReaderLoaded(state));
@@ -80,6 +128,13 @@ class ReaderCubit extends Cubit<ReaderState> {
       );
       emit(ReaderError(errorState));
     }
+  }
+
+  /// Check if offline mode should be preferred
+  bool _shouldPreferOffline() {
+    // Prefer offline if on mobile data to save bandwidth
+    final connectionType = networkCubit.connectionType;
+    return connectionType == NetworkConnectionType.mobile;
   }
 
   /// Navigate to next page

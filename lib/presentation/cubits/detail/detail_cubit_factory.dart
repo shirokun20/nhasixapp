@@ -2,6 +2,7 @@ import 'package:logger/logger.dart';
 
 import '../../../core/di/service_locator.dart';
 import '../../../domain/usecases/content/content_usecases.dart';
+import '../../../domain/usecases/favorites/favorites_usecases.dart';
 import '../../../domain/repositories/repositories.dart';
 import 'detail_cubit.dart';
 
@@ -13,7 +14,9 @@ class DetailCubitFactory {
   static DetailCubit create() {
     return DetailCubit(
       getContentDetailUseCase: getIt<GetContentDetailUseCase>(),
-      contentRepository: getIt<ContentRepository>(),
+      addToFavoritesUseCase: getIt<AddToFavoritesUseCase>(),
+      removeFromFavoritesUseCase: getIt<RemoveFromFavoritesUseCase>(),
+      userDataRepository: getIt<UserDataRepository>(),
       logger: getIt<Logger>(),
     );
   }

@@ -3,6 +3,7 @@ import 'package:logger/logger.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/content/content_usecases.dart';
 import '../../../domain/usecases/content/get_content_detail_usecase.dart';
+import '../../../domain/usecases/favorites/favorites_usecases.dart';
 import '../../../domain/repositories/repositories.dart';
 import '../base/base_cubit.dart';
 
@@ -13,18 +14,23 @@ part 'detail_state.dart';
 class DetailCubit extends BaseCubit<DetailState> {
   DetailCubit({
     required GetContentDetailUseCase getContentDetailUseCase,
-    required ContentRepository contentRepository,
+    required AddToFavoritesUseCase addToFavoritesUseCase,
+    required RemoveFromFavoritesUseCase removeFromFavoritesUseCase,
+    required UserDataRepository userDataRepository,
     required Logger logger,
   })  : _getContentDetailUseCase = getContentDetailUseCase,
-        _contentRepository = contentRepository,
+        _addToFavoritesUseCase = addToFavoritesUseCase,
+        _removeFromFavoritesUseCase = removeFromFavoritesUseCase,
+        _userDataRepository = userDataRepository,
         super(
           initialState: const DetailInitial(),
           logger: logger,
         );
 
   final GetContentDetailUseCase _getContentDetailUseCase;
-  // Note: _contentRepository kept for future use in favorite operations
-  final ContentRepository _contentRepository;
+  final AddToFavoritesUseCase _addToFavoritesUseCase;
+  final RemoveFromFavoritesUseCase _removeFromFavoritesUseCase;
+  final UserDataRepository _userDataRepository;
 
   /// Load content detail by ID
   Future<void> loadContentDetail(String contentId) async {
@@ -135,37 +141,33 @@ class DetailCubit extends BaseCubit<DetailState> {
     }
   }
 
-  /// Check if content is favorited (placeholder implementation)
+  /// Check if content is favorited
   Future<bool> _checkIfFavorited(String contentId) async {
     try {
-      // TODO: Implement actual favorite check when UserDataRepository is available
-      // For now, return false as placeholder
-      return false;
+      return await _userDataRepository.isFavorite(contentId);
     } catch (e) {
       logWarning('Failed to check favorite status: ${e.toString()}');
       return false;
     }
   }
 
-  /// Add content to favorites (placeholder implementation)
+  /// Add content to favorites
   Future<void> _addToFavorites(Content content) async {
     try {
-      // TODO: Implement actual add to favorites when use cases are available
-      // For now, simulate async operation
-      await Future.delayed(const Duration(milliseconds: 500));
-      logDebug('Added to favorites (placeholder): ${content.title}');
+      final params = AddToFavoritesParams.create(content);
+      await _addToFavoritesUseCase(params);
+      logDebug('Added to favorites: ${content.title}');
     } catch (e) {
       throw Exception('Failed to add to favorites: ${e.toString()}');
     }
   }
 
-  /// Remove content from favorites (placeholder implementation)
+  /// Remove content from favorites
   Future<void> _removeFromFavorites(String contentId) async {
     try {
-      // TODO: Implement actual remove from favorites when use cases are available
-      // For now, simulate async operation
-      await Future.delayed(const Duration(milliseconds: 500));
-      logDebug('Removed from favorites (placeholder): $contentId');
+      final params = RemoveFromFavoritesParams.fromString(contentId);
+      await _removeFromFavoritesUseCase(params);
+      logDebug('Removed from favorites: $contentId');
     } catch (e) {
       throw Exception('Failed to remove from favorites: ${e.toString()}');
     }

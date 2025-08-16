@@ -456,4 +456,80 @@ class UserDataRepositoryImpl implements UserDataRepository {
       return SortOption.newest; // Default sort option
     }
   }
+
+  // ==================== OFFLINE SYNC ====================
+
+  @override
+  Future<void> syncOfflineData() async {
+    try {
+      _logger.i('Starting offline data sync');
+
+      final pendingItems = await getPendingSyncItems();
+      if (pendingItems.isEmpty) {
+        _logger.d('No pending sync items found');
+        return;
+      }
+
+      _logger.i('Found ${pendingItems.length} items to sync');
+
+      // For now, just clear the sync queue since we don't have a remote server
+      // In a real implementation, this would sync with a remote server
+      await clearSyncQueue();
+
+      _logger.i('Offline data sync completed');
+    } catch (e, stackTrace) {
+      _logger.e('Failed to sync offline data',
+          error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> markForSync(
+      String dataType, String operation, String contentId) async {
+    try {
+      _logger.d('Marking for sync: $dataType $operation $contentId');
+
+      // Store sync operation in preferences for simplicity
+      // In a real implementation, this would use a dedicated sync table
+      final syncData = {
+        'dataType': dataType,
+        'operation': operation,
+        'contentId': contentId,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      };
+
+      await localDataSource.savePreference(
+        'sync_${dataType}_${contentId}_${operation}',
+        syncData.toString(),
+      );
+    } catch (e, stackTrace) {
+      _logger.e('Failed to mark for sync', error: e, stackTrace: stackTrace);
+      // Don't rethrow - sync marking is not critical
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getPendingSyncItems() async {
+    try {
+      // For simplicity, return empty list
+      // In a real implementation, this would query a sync table
+      return [];
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get pending sync items',
+          error: e, stackTrace: stackTrace);
+      return [];
+    }
+  }
+
+  @override
+  Future<void> clearSyncQueue() async {
+    try {
+      _logger.d('Clearing sync queue');
+      // For simplicity, do nothing
+      // In a real implementation, this would clear the sync table
+    } catch (e, stackTrace) {
+      _logger.e('Failed to clear sync queue', error: e, stackTrace: stackTrace);
+    }
+  }
 }

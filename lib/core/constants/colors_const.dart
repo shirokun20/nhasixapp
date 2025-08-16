@@ -33,6 +33,7 @@ class ColorsConst {
   /// Accent Colors - Vibrant but not overwhelming
   static const Color accentBlue = Color(0xFF58A6FF); // GitHub blue
   static const Color accentGreen = Color(0xFF3FB950); // Success green
+  static const Color accentYellow = Color(0xFFD29922); // Yellow accent
   static const Color accentOrange = Color(0xFFD29922); // Warning orange
   static const Color accentRed = Color(0xFFF85149); // Error red
   static const Color accentPurple = Color(0xFFA5A2FF); // Purple accent
@@ -131,7 +132,7 @@ class ColorsConst {
 
   /// Get color with opacity for overlays
   static Color withOpacity(Color color, double opacity) {
-    return color.withOpacity(opacity);
+    return color.withValues(alpha: opacity);
   }
 
   /// Get appropriate text color based on background
@@ -197,4 +198,51 @@ class ColorsConst {
         return progressUnread;
     }
   }
+
+  // ===== MATERIAL DESIGN 3 COLORS (For consistency with Flutter widgets) =====
+
+  /// Primary colors
+  static const Color primary = accentBlue;
+  static const Color onPrimary = Color(0xFFFFFFFF);
+  static const Color primaryContainer = Color(0xFF1C2128);
+  static const Color onPrimaryContainer = accentBlue;
+
+  /// Secondary colors
+  static const Color secondary = Color(0xFF8B949E);
+  static const Color onSecondary = Color(0xFF24292F);
+  static const Color secondaryContainer = Color(0xFF30363D);
+  static const Color onSecondaryContainer = Color(0xFFF0F6FC);
+
+  /// Surface colors
+  static const Color surface = darkSurface;
+  static const Color onSurface = darkTextPrimary;
+  static const Color surfaceVariant = darkCard;
+  static const Color onSurfaceVariant = darkTextSecondary;
+
+  /// Background colors
+  static const Color background = darkBackground;
+  static const Color onBackground = darkTextPrimary;
+
+  /// Error colors
+  static const Color error = accentRed;
+  static const Color onError = Color(0xFFFFFFFF);
+  static const Color errorContainer = errorBackground;
+  static const Color onErrorContainer = accentRed;
+
+  /// Additional semantic colors for widgets
+  static const Color success = accentGreen;
+  static const Color onSuccess = Color(0xFFFFFFFF);
+  static const Color warning = accentOrange;
+  static const Color onWarning = Color(0xFF24292F);
+  static const Color info = accentBlue;
+  static const Color onInfo = Color(0xFFFFFFFF);
+
+  /// Outline colors
+  static const Color outline = borderDefault;
+  static const Color outlineVariant = borderMuted;
+
+  /// Inverse colors
+  static const Color inverseSurface = lightSurface;
+  static const Color onInverseSurface = lightTextPrimary;
+  static const Color inversePrimary = Color(0xFF0969DA);
 }

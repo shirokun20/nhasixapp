@@ -9,6 +9,8 @@ class History extends Equatable {
     this.totalPages = 0,
     this.timeSpent = Duration.zero,
     this.isCompleted = false,
+    this.title,
+    this.coverUrl,
   });
 
   final String contentId;
@@ -17,15 +19,19 @@ class History extends Equatable {
   final int totalPages;
   final Duration timeSpent;
   final bool isCompleted;
+  final String? title;
+  final String? coverUrl;
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         contentId,
         lastViewed,
         lastPage,
         totalPages,
         timeSpent,
         isCompleted,
+        title,
+        coverUrl,
       ];
 
   History copyWith({
@@ -35,6 +41,8 @@ class History extends Equatable {
     int? totalPages,
     Duration? timeSpent,
     bool? isCompleted,
+    String? title,
+    String? coverUrl,
   }) {
     return History(
       contentId: contentId ?? this.contentId,
@@ -43,6 +51,8 @@ class History extends Equatable {
       totalPages: totalPages ?? this.totalPages,
       timeSpent: timeSpent ?? this.timeSpent,
       isCompleted: isCompleted ?? this.isCompleted,
+      title: title ?? this.title,
+      coverUrl: coverUrl ?? this.coverUrl,
     );
   }
 
@@ -146,11 +156,14 @@ class History extends Equatable {
   }
 
   /// Create initial history entry
-  factory History.initial(String contentId, int totalPages) {
+  factory History.initial(String contentId, int totalPages,
+      {String? title, String? coverUrl}) {
     return History(
       contentId: contentId,
       lastViewed: DateTime.now(),
       totalPages: totalPages,
+      title: title,
+      coverUrl: coverUrl,
     );
   }
 
@@ -163,6 +176,8 @@ class History extends Equatable {
       'totalPages': totalPages,
       'timeSpent': timeSpent.inMilliseconds,
       'isCompleted': isCompleted,
+      'title': title,
+      'coverUrl': coverUrl,
     };
   }
 
@@ -175,6 +190,8 @@ class History extends Equatable {
       totalPages: json['totalPages'] ?? 0,
       timeSpent: Duration(milliseconds: json['timeSpent'] ?? 0),
       isCompleted: json['isCompleted'] ?? false,
+      title: json['title'],
+      coverUrl: json['coverUrl'],
     );
   }
 }

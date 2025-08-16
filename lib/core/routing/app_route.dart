@@ -12,6 +12,7 @@ class AppRoute {
   static const String favorites = '/favorites';
   static const String downloads = '/downloads';
   static const String history = '/history';
+  static const String offline = '/offline';
 
   // Settings and management
   static const String settings = '/settings';
@@ -37,6 +38,7 @@ class AppRoute {
   static const String favoritesName = 'favorites';
   static const String downloadsName = 'downloads';
   static const String historyName = 'history';
+  static const String offlineName = 'offline';
   static const String settingsName = 'settings';
   static const String tagsName = 'tags';
   static const String artistsName = 'artists';

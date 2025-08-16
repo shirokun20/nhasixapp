@@ -104,6 +104,9 @@ class DownloadStatus extends Equatable {
   /// Check if download can be cancelled
   bool get canCancel => !isCompleted && !isCancelled;
 
+  /// Check if download can be retried
+  bool get canRetry => isFailed || isCancelled;
+
   /// Get estimated time remaining
   Duration? get estimatedTimeRemaining {
     if (!isInProgress || speed <= 0 || totalPages == 0) return null;

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -286,71 +287,126 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   Widget _buildImageViewer(String imageUrl, int pageNumber,
       {bool isContinuous = false}) {
-    if (isContinuous) {
-      // For continuous scroll, use a simple image with InteractiveViewer
-      return Container(
-        margin:
-            const EdgeInsets.only(bottom: 8.0), // Reduce margin between images
-        child: InteractiveViewer(
-          minScale: 0.5,
-          maxScale: 3.0,
-          child: CachedNetworkImage(
-            imageUrl: imageUrl,
-            fit: BoxFit.fitWidth, // Better fit for continuous scroll
-            placeholder: (context, url) => SizedBox(
-              height: MediaQuery.of(context).size.height * 0.8,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    AppProgressIndicator(
-                      message: 'Loading page $pageNumber...',
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Page $pageNumber',
-                      style: TextStyleConst.bodySmall.copyWith(
-                        color: ColorsConst.darkTextSecondary,
-                      ),
-                    ),
-                  ],
-                ),
+    return BlocBuilder<ReaderCubit, ReaderState>(
+      builder: (context, state) {
+        final isOffline = state.isOfflineMode ?? false;
+
+        if (isContinuous) {
+          // For continuous scroll, use a simple image with InteractiveViewer
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8.0),
+            child: InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 3.0,
+              child: _buildImageWidget(
+                imageUrl,
+                pageNumber,
+                isOffline,
+                fit: BoxFit.fitWidth,
+                height: MediaQuery.of(context).size.height * 0.8,
               ),
             ),
-            errorWidget: (context, url, error) => SizedBox(
-              height: MediaQuery.of(context).size.height * 0.5,
-              child: Center(
+          );
+        } else {
+          // For single page, use PhotoView for offline files or CachedNetworkImage for online
+          if (isOffline) {
+            return PhotoView.customChild(
+              child: _buildImageWidget(imageUrl, pageNumber, isOffline),
+              backgroundDecoration: const BoxDecoration(
+                color: ColorsConst.darkBackground,
+              ),
+              minScale: PhotoViewComputedScale.contained,
+              maxScale: PhotoViewComputedScale.covered * 3.0,
+              initialScale: PhotoViewComputedScale.contained,
+              heroAttributes: PhotoViewHeroAttributes(tag: imageUrl),
+            );
+          } else {
+            return PhotoView(
+              imageProvider: CachedNetworkImageProvider(imageUrl),
+              backgroundDecoration: const BoxDecoration(
+                color: ColorsConst.darkBackground,
+              ),
+              minScale: PhotoViewComputedScale.contained,
+              maxScale: PhotoViewComputedScale.covered * 3.0,
+              initialScale: PhotoViewComputedScale.contained,
+              heroAttributes: PhotoViewHeroAttributes(tag: imageUrl),
+              loadingBuilder: (context, event) => Center(
+                child: AppProgressIndicator(
+                  message: 'Loading page $pageNumber...',
+                ),
+              ),
+              errorBuilder: (context, error, stackTrace) => Center(
                 child: AppErrorWidget(
                   title: 'Image Error',
                   message: 'Failed to load page $pageNumber',
                   onRetry: () => setState(() {}),
                 ),
               ),
+            );
+          }
+        }
+      },
+    );
+  }
+
+  Widget _buildImageWidget(
+    String imageUrl,
+    int pageNumber,
+    bool isOffline, {
+    BoxFit? fit,
+    double? height,
+  }) {
+    if (isOffline) {
+      // Load from local file system
+      return Image.file(
+        File(imageUrl),
+        fit: fit ?? BoxFit.contain,
+        height: height,
+        errorBuilder: (context, error, stackTrace) => SizedBox(
+          height: height ?? MediaQuery.of(context).size.height * 0.5,
+          child: Center(
+            child: AppErrorWidget(
+              title: 'Offline Image Error',
+              message: 'Failed to load offline page $pageNumber',
+              onRetry: () => setState(() {}),
             ),
           ),
         ),
       );
     } else {
-      // For single page, use PhotoView as before
-      return PhotoView(
-        imageProvider: CachedNetworkImageProvider(imageUrl),
-        backgroundDecoration: const BoxDecoration(
-          color: ColorsConst.darkBackground,
-        ),
-        minScale: PhotoViewComputedScale.contained,
-        maxScale: PhotoViewComputedScale.covered * 3.0,
-        initialScale: PhotoViewComputedScale.contained,
-        heroAttributes: PhotoViewHeroAttributes(tag: imageUrl),
-        loadingBuilder: (context, event) => Center(
-          child: AppProgressIndicator(
-            message: 'Loading page $pageNumber...',
+      // Load from network
+      return CachedNetworkImage(
+        imageUrl: imageUrl,
+        fit: fit ?? BoxFit.contain,
+        height: height,
+        placeholder: (context, url) => SizedBox(
+          height: height ?? MediaQuery.of(context).size.height * 0.8,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AppProgressIndicator(
+                  message: 'Loading page $pageNumber...',
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Page $pageNumber',
+                  style: TextStyleConst.bodySmall.copyWith(
+                    color: ColorsConst.darkTextSecondary,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        errorBuilder: (context, error, stackTrace) => Center(
-          child: AppErrorWidget(
-            title: 'Image Error',
-            message: 'Failed to load page $pageNumber',
-            onRetry: () => setState(() {}),
+        errorWidget: (context, url, error) => SizedBox(
+          height: height ?? MediaQuery.of(context).size.height * 0.5,
+          child: Center(
+            child: AppErrorWidget(
+              title: 'Image Error',
+              message: 'Failed to load page $pageNumber',
+              onRetry: () => setState(() {}),
+            ),
           ),
         ),
       );
@@ -397,13 +453,52 @@ class _ReaderScreenState extends State<ReaderScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  state.content?.getDisplayTitle() ?? 'Loading...',
-                  style: TextStyleConst.headingMedium.copyWith(
-                    color: ColorsConst.darkTextPrimary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        state.content?.getDisplayTitle() ?? 'Loading...',
+                        style: TextStyleConst.headingMedium.copyWith(
+                          color: ColorsConst.darkTextPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    // Offline indicator
+                    if (state.isOfflineMode ?? false) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: ColorsConst.accentGreen.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                              color: ColorsConst.accentGreen, width: 1),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.offline_bolt,
+                              size: 12,
+                              color: ColorsConst.accentGreen,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              'OFFLINE',
+                              style: TextStyleConst.bodySmall.copyWith(
+                                color: ColorsConst.accentGreen,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 Row(
                   children: [
