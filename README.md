@@ -14,6 +14,31 @@ A comprehensive Flutter Android application that serves as a clone of nhentai.ne
 
 ## 🚀 Features
 
+### 🆕 Recent Updates
+
+- [x] Comprehensive dependency injection setup using get_it for better scalability
+- [x] Added external dependencies like SharedPreferences and Connectivity
+- [x] Configured core utilities including Logger, Dio HTTP client, CacheManager, TagDataManager
+- [x] Setup data sources for remote scraping, anti-detection, cloudflare bypass, and local database
+- [x] Implemented repository registrations for content, user data, reader settings, and offline content
+- [x] Registered use cases for content, favorites, downloads, and history management
+- [x] Configured BLoCs for splash, home, content, search, and download features
+- [x] Setup Cubits for network, settings, detail, filter data, reader, offline search, and favorites
+- [x] Updated MultiBlocProvider configuration for all BLoCs and Cubits
+- [x] Updated dependencies in pubspec.yaml to support new features
+- Comprehensive dependency injection setup using get_it for better scalability
+- Added external dependencies like SharedPreferences and Connectivity
+- Core utilities configured: Logger, Dio HTTP client, CacheManager, TagDataManager
+- Data sources for remote scraping, anti-detection, cloudflare bypass, and local database
+- Repository implementations for content, user data, reader settings, and offline content
+- Use cases for content, favorites, downloads, and history management
+- BLoCs for splash, home, content, search, and download features
+- Cubits for network, settings, detail, filter data, reader, offline search, and favorites
+- Updated MultiBlocProvider configuration for all BLoCs and Cubits
+- Updated dependencies in pubspec.yaml to support new features
+
+## 🚀 Features
+
 ### 📖 Core Reading Experience
 - **Content Browsing** - Browse latest, popular, and random content
 - **Advanced Search** - Filter by tags, artists, characters, language, and more
@@ -39,6 +64,24 @@ A comprehensive Flutter Android application that serves as a clone of nhentai.ne
 - **Background Downloads** - Continue downloads in background
 - **Statistics Dashboard** - Reading statistics and analytics
 - **Backup & Sync** - Export/import user data and settings
+
+## 🏗️ Architecture
+
+## 🛠️ Development Progress
+
+- [x] Comprehensive dependency injection setup using get_it for better scalability
+- [x] Added external dependencies like SharedPreferences and Connectivity
+- [x] Configured core utilities including Logger, Dio HTTP client, CacheManager, TagDataManager
+- [x] Setup data sources for remote scraping, anti-detection, cloudflare bypass, and local database
+- [x] Implemented repository registrations for content, user data, reader settings, and offline content
+- [x] Registered use cases for content, favorites, downloads, and history management
+- [x] Configured BLoCs for splash, home, content, search, and download features
+- [x] Setup Cubits for network, settings, detail, filter data, reader, offline search, and favorites
+- [x] Updated MultiBlocProvider configuration for all BLoCs and Cubits
+- [x] Updated dependencies in pubspec.yaml to support new features
+- [x] Added Cloudflare bypass and web scraping features
+- [x] Implemented background download support
+- [x] Added statistics dashboard and backup & sync functionality
 
 ## 🏗️ Architecture
 
@@ -204,12 +247,12 @@ ContentLoadingMore → ContentLoaded (infinite scroll)
 - [x] **Task 7**: Reader functionality
   - [x] ReaderScreen with 3 reading modes
   - [x] Settings persistence, progress tracking, gesture navigation
+- [x] **Task 8**: Favorites and download system
+  - [x] FavoritesScreen with FavoriteCubit
+  - [x] DownloadBloc with queue system
+  - [x] Offline reading capabilities
 
 ### 🎯 **Next Priority Features (30% Remaining)**
-- [ ] **Task 8**: Favorites and download system
-  - [ ] FavoritesScreen with FavoriteCubit
-  - [ ] DownloadBloc with queue system
-  - [ ] Offline reading capabilities
 - [ ] **Task 9**: Settings and preferences
   - [ ] SettingsScreen with SettingsCubit
   - [ ] Theme customization and backup functionality

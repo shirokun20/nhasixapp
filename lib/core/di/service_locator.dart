@@ -48,12 +48,18 @@ import 'package:nhasixapp/domain/usecases/favorites/favorites_usecases.dart';
 import 'package:nhasixapp/domain/usecases/downloads/downloads_usecases.dart';
 import 'package:nhasixapp/domain/usecases/history/add_to_history_usecase.dart';
 
+// Services
+import 'package:nhasixapp/services/download_service.dart';
+import 'package:nhasixapp/services/notification_service.dart';
+import 'package:nhasixapp/services/pdf_service.dart';
+
 final getIt = GetIt.instance;
 
 /// Initialize all dependencies
 Future<void> setupLocator() async {
   await _setupExternalDependencies();
   _setupCore();
+  _setupServices();
   _setupDataSources();
   _setupRepositories();
   _setupUseCases();
@@ -96,6 +102,24 @@ void _setupCore() {
   // Tag Data Manager
   getIt.registerLazySingleton<TagDataManager>(
       () => TagDataManager(logger: getIt<Logger>()));
+}
+
+/// Setup services
+void _setupServices() {
+  // Notification Service
+  getIt.registerLazySingleton<NotificationService>(
+      () => NotificationService(logger: getIt<Logger>()));
+
+  // PDF Service
+  getIt.registerLazySingleton<PdfService>(
+      () => PdfService(logger: getIt<Logger>()));
+
+  // Download Service
+  getIt.registerLazySingleton<DownloadService>(() => DownloadService(
+        httpClient: getIt<Dio>(),
+        notificationService: getIt<NotificationService>(),
+        logger: getIt<Logger>(),
+      ));
 }
 
 /// Setup data sources (Remote and Local)
@@ -195,7 +219,12 @@ void _setupUseCases() {
 
   // Download Use Cases
   getIt.registerLazySingleton<DownloadContentUseCase>(
-      () => DownloadContentUseCase(getIt()));
+      () => DownloadContentUseCase(
+            getIt<UserDataRepository>(),
+            getIt<DownloadService>(),
+            getIt<PdfService>(),
+            logger: getIt<Logger>(),
+          ));
   getIt.registerLazySingleton<GetDownloadStatusUseCase>(
       () => GetDownloadStatusUseCase(getIt()));
   getIt.registerLazySingleton<GetAllDownloadsUseCase>(
@@ -245,6 +274,7 @@ void _setupBlocs() {
         httpClient: getIt<Dio>(),
         logger: getIt<Logger>(),
         connectivity: getIt<Connectivity>(),
+        notificationService: getIt<NotificationService>(),
       ));
 
   // TODO: Register other BLoCs when implemented

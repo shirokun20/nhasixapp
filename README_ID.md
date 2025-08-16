@@ -14,6 +14,31 @@ Aplikasi Android Flutter yang komprehensif yang berfungsi sebagai clone dari nhe
 
 ## 🚀 Fitur
 
+### 🆕 Pembaruan Terbaru
+
+- [x] Setup dependency injection komprehensif menggunakan get_it untuk skalabilitas lebih baik
+- [x] Menambahkan dependensi eksternal seperti SharedPreferences dan Connectivity
+- [x] Konfigurasi utilitas inti: Logger, Dio HTTP client, CacheManager, TagDataManager
+- [x] Data source untuk scraping remote, anti-detection, bypass cloudflare, dan database lokal
+- [x] Implementasi repository untuk konten, data pengguna, pengaturan pembaca, dan konten offline
+- [x] Use case untuk konten, favorit, unduhan, dan manajemen riwayat
+- [x] BLoC untuk splash, home, konten, pencarian, dan fitur unduhan
+- [x] Cubit untuk network, pengaturan, detail, filter data, pembaca, pencarian offline, dan favorit
+- [x] Konfigurasi MultiBlocProvider diperbarui untuk semua BLoC dan Cubit
+- [x] Dependensi di pubspec.yaml diperbarui untuk mendukung fitur baru
+- Setup dependency injection komprehensif menggunakan get_it untuk skalabilitas lebih baik
+- Menambahkan dependensi eksternal seperti SharedPreferences dan Connectivity
+- Konfigurasi utilitas inti: Logger, Dio HTTP client, CacheManager, TagDataManager
+- Data source untuk scraping remote, anti-detection, bypass cloudflare, dan database lokal
+- Implementasi repository untuk konten, data pengguna, pengaturan pembaca, dan konten offline
+- Use case untuk konten, favorit, unduhan, dan manajemen riwayat
+- BLoC untuk splash, home, konten, pencarian, dan fitur unduhan
+- Cubit untuk network, pengaturan, detail, filter data, pembaca, pencarian offline, dan favorit
+- Konfigurasi MultiBlocProvider diperbarui untuk semua BLoC dan Cubit
+- Dependensi di pubspec.yaml diperbarui untuk mendukung fitur baru
+
+## 🚀 Fitur
+
 ### 📖 Pengalaman Membaca Inti
 - **Browsing Konten** - Jelajahi konten terbaru, populer, dan acak
 - **Pencarian Lanjutan** - Filter berdasarkan tag, artis, karakter, bahasa, dan lainnya
@@ -39,6 +64,24 @@ Aplikasi Android Flutter yang komprehensif yang berfungsi sebagai clone dari nhe
 - **Download Background** - Lanjutkan download di background
 - **Dashboard Statistik** - Statistik dan analitik membaca
 - **Backup & Sync** - Export/import data pengguna dan pengaturan
+
+## 🏗️ Arsitektur
+
+## 🛠️ Progres Pengembangan
+
+- [x] Setup dependency injection komprehensif menggunakan get_it untuk skalabilitas lebih baik
+- [x] Menambahkan dependensi eksternal seperti SharedPreferences dan Connectivity
+- [x] Konfigurasi utilitas inti: Logger, Dio HTTP client, CacheManager, TagDataManager
+- [x] Data source untuk scraping remote, anti-detection, bypass cloudflare, dan database lokal
+- [x] Implementasi repository untuk konten, data pengguna, pengaturan pembaca, dan konten offline
+- [x] Use case untuk konten, favorit, unduhan, dan manajemen riwayat
+- [x] BLoC untuk splash, home, konten, pencarian, dan fitur unduhan
+- [x] Cubit untuk network, pengaturan, detail, filter data, pembaca, pencarian offline, dan favorit
+- [x] Konfigurasi MultiBlocProvider diperbarui untuk semua BLoC dan Cubit
+- [x] Dependensi di pubspec.yaml diperbarui untuk mendukung fitur baru
+- [x] Menambahkan fitur bypass Cloudflare dan web scraping
+- [x] Implementasi dukungan download di background
+- [x] Menambahkan dashboard statistik dan fungsi backup & sync
 
 ## 🏗️ Arsitektur
 
@@ -211,12 +254,11 @@ ContentLoadingMore → ContentLoaded (infinite scroll)
 - [x] **Tugas 7**: Fungsi reader
   - [x] ReaderScreen dengan 3 mode baca
   - [x] Persistensi pengaturan, pelacakan progress, navigasi gesture
-
+- [x] **Tugas 8**: Sistem favorit dan download
+  - [x] FavoritesScreen dengan FavoriteCubit
+  - [x] DownloadBloc dengan sistem antrian
+  - [x] Kemampuan membaca offline
 ### 🎯 **Fitur Prioritas Berikutnya (30% Tersisa)**
-- [ ] **Tugas 8**: Sistem favorit dan download
-  - [ ] FavoritesScreen dengan FavoriteCubit
-  - [ ] DownloadBloc dengan sistem antrian
-  - [ ] Kemampuan membaca offline
 - [ ] **Tugas 9**: Pengaturan dan preferensi
   - [ ] SettingsScreen dengan SettingsCubit
   - [ ] Kustomisasi tema dan fungsi backup

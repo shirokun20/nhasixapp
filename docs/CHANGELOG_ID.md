@@ -7,6 +7,19 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+### Ditambahkan
+- Setup dependency injection komprehensif menggunakan get_it untuk skalabilitas lebih baik
+- Menambahkan dependensi eksternal seperti SharedPreferences dan Connectivity
+- Konfigurasi utilitas inti: Logger, Dio HTTP client, CacheManager, TagDataManager
+- Data source untuk scraping remote, anti-detection, bypass cloudflare, dan database lokal
+- Implementasi repository untuk konten, data pengguna, pengaturan pembaca, dan konten offline
+- Use case untuk konten, favorit, unduhan, dan manajemen riwayat
+- BLoC untuk splash, home, konten, pencarian, dan fitur unduhan
+- Cubit untuk network, pengaturan, detail, filter data, pembaca, pencarian offline, dan favorit
+- Konfigurasi MultiBlocProvider diperbarui untuk semua BLoC dan Cubit
+- Dependensi di pubspec.yaml diperbarui untuk mendukung fitur baru
+
+
 ## [0.7.0] - 2024-12-15
 
 ### Ditambahkan

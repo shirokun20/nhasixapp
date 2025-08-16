@@ -1040,21 +1040,24 @@ class _DetailScreenState extends State<DetailScreen> {
 
   void _downloadContent(Content content) {
     try {
-      // Queue the download using DownloadBloc
+      // Queue and start the download immediately using DownloadBloc
       context.read<DownloadBloc>().add(DownloadQueueEvent(
             content: content,
             priority: 0, // Normal priority
           ));
 
+      // Start download immediately
+      context.read<DownloadBloc>().add(DownloadStartEvent(content.id));
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '${content.title} has been added to download queue',
+            'Download started: ${content.title}',
             style: TextStyleConst.bodyMedium.copyWith(color: Colors.white),
           ),
           backgroundColor: ColorsConst.accentGreen,
           action: SnackBarAction(
-            label: 'View Downloads',
+            label: 'View Progress',
             textColor: Colors.white,
             onPressed: () {
               context.push('/downloads');
@@ -1066,7 +1069,7 @@ class _DetailScreenState extends State<DetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Failed to queue download: ${e.toString()}',
+            'Failed to start download: ${e.toString()}',
             style: TextStyleConst.bodyMedium.copyWith(color: Colors.white),
           ),
           backgroundColor: ColorsConst.accentRed,

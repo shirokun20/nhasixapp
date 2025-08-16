@@ -1,17 +1,15 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:logger/logger.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/downloads/downloads_usecases.dart';
 import '../../../domain/usecases/content/content_usecases.dart';
 import '../../../domain/repositories/repositories.dart';
+import '../../../services/notification_service.dart';
 
 part 'download_event.dart';
 part 'download_state.dart';
@@ -27,7 +25,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     required Dio httpClient,
     required Logger logger,
     required Connectivity connectivity,
-    FlutterLocalNotificationsPlugin? notificationsPlugin,
+    required NotificationService notificationService,
   })  : _downloadContentUseCase = downloadContentUseCase,
         _getDownloadStatusUseCase = getDownloadStatusUseCase,
         _getContentDetailUseCase = getContentDetailUseCase,
@@ -36,8 +34,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _httpClient = httpClient,
         _logger = logger,
         _connectivity = connectivity,
-        _notificationsPlugin =
-            notificationsPlugin ?? FlutterLocalNotificationsPlugin(),
+        _notificationService = notificationService,
         super(const DownloadInitial()) {
     // Register event handlers
     on<DownloadInitializeEvent>(_onInitialize);
@@ -51,7 +48,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     on<DownloadSettingsUpdateEvent>(_onSettingsUpdate);
 
     // Initialize notifications
-    _initializeNotifications();
+    _notificationService.initialize();
   }
 
   final DownloadContentUseCase _downloadContentUseCase;
@@ -62,7 +59,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   final Dio _httpClient;
   final Logger _logger;
   final Connectivity _connectivity;
-  final FlutterLocalNotificationsPlugin _notificationsPlugin;
+  final NotificationService _notificationService;
 
   // Internal state
   DownloadSettings _settings = DownloadSettings.defaultSettings();
@@ -171,22 +168,33 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         return;
       }
 
-      // Update status to downloading
-      final updatedDownload = download.copyWith(
-        state: DownloadState.downloading,
-        startTime: DateTime.now(),
-        error: null,
+      // Get content details for download
+      final content = await _getContentDetailUseCase.call(
+        GetContentDetailParams.fromString(event.contentId),
       );
 
-      await _userDataRepository.saveDownloadStatus(updatedDownload);
+      // Create cancel token for this download
+      final cancelToken = CancelToken();
+      _activeCancelTokens[event.contentId] = cancelToken;
 
-      // Refresh downloads
+      // Start actual download using use case
+      final downloadParams = DownloadContentParams.immediate(content);
+      await _downloadContentUseCase.call(downloadParams);
+
+      // Remove cancel token
+      _activeCancelTokens.remove(event.contentId);
+
+      // Refresh downloads to show updated status
       add(const DownloadRefreshEvent());
 
       _logger.i('DownloadBloc: Started download for ${event.contentId}');
     } catch (e, stackTrace) {
       _logger.e('DownloadBloc: Error starting download',
           error: e, stackTrace: stackTrace);
+
+      // Remove cancel token on error
+      _activeCancelTokens.remove(event.contentId);
+
       emit(DownloadError(
         message: 'Failed to start download: ${e.toString()}',
         errorType: _determineErrorType(e),
@@ -444,25 +452,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   }
 
   // Helper methods
-
-  /// Initialize notifications
-  Future<void> _initializeNotifications() async {
-    try {
-      const androidSettings =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
-      const iosSettings = DarwinInitializationSettings();
-      const initSettings = InitializationSettings(
-        android: androidSettings,
-        iOS: iosSettings,
-      );
-
-      await _notificationsPlugin.initialize(initSettings);
-
-      _logger.i('DownloadBloc: Notifications initialized');
-    } catch (e) {
-      _logger.e('DownloadBloc: Error initializing notifications: $e');
-    }
-  }
 
   /// Cancel download task
   void _cancelDownloadTask(String contentId) {

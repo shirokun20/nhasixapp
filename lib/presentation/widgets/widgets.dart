@@ -18,3 +18,4 @@ export 'sorting_widget.dart';
 export 'download_item_widget.dart';
 export 'download_stats_widget.dart';
 export 'download_settings_widget.dart';
+export 'download_button_widget.dart';

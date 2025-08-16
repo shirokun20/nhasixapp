@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Comprehensive dependency injection setup using get_it for better scalability
+- Added external dependencies like SharedPreferences and Connectivity
+- Configured core utilities including Logger, Dio HTTP client, CacheManager, TagDataManager
+- Setup data sources for remote scraping, anti-detection, cloudflare bypass, and local database
+- Implemented repository registrations for content, user data, reader settings, and offline content management
+- Registered use cases for content, favorites, downloads, and history management
+- Configured BLoCs for splash, home, content, search, and download features
+- Setup Cubits for network, settings, detail, filter data, reader, offline search, and favorites
+- Updated MultiBlocProvider configuration for all BLoCs and Cubits
+- Updated dependencies in pubspec.yaml to support new features
+
+
 ## [0.7.0] - 2024-12-15
 
 ### Added
