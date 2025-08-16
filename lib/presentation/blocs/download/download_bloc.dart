@@ -369,6 +369,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // Remove from database
       await _userDataRepository.deleteDownloadStatus(event.contentId);
+      await _downloadContentUseCase.deleteCall(event.contentId);
 
       // Refresh downloads
       add(const DownloadRefreshEvent());

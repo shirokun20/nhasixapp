@@ -192,6 +192,7 @@ class DownloadService {
       'tags': content.tags.map((t) => t.name).toList(),
       'artists': content.artists,
       'language': content.language,
+      'cover_url': content.coverUrl,
     };
 
     final metadataFile =
@@ -269,6 +270,23 @@ class DownloadService {
     }
   }
 
+  /// Delete downloaded by content id tapi hanya delete isi dari folder contentid
+  Future<void> deleteDownloadedContent(String contentId) async {
+    try {
+      final downloadPath = await getDownloadPath(contentId);
+      if (downloadPath != null) {
+
+        // ini akan muncul path apa? 
+        final contentDir = Directory(downloadPath);
+        if (await contentDir.exists()) {
+          await contentDir.delete(recursive: true);
+        }
+      }
+    } catch (e) {
+      _logger.e('Error deleting downloaded content: $e');
+    }
+  }
+
   /// Check if content is already downloaded
   Future<bool> isContentDownloaded(String contentId) async {
     final downloadPath = await getDownloadPath(contentId);
@@ -279,24 +297,6 @@ class DownloadService {
 
     final files = await imagesDir.list().toList();
     return files.isNotEmpty;
-  }
-
-  /// Delete downloaded content
-  Future<bool> deleteDownloadedContent(String contentId) async {
-    try {
-      final downloadPath = await getDownloadPath(contentId);
-      if (downloadPath == null) return false;
-
-      final contentDir = Directory(downloadPath).parent;
-      if (await contentDir.exists()) {
-        await contentDir.delete(recursive: true);
-        return true;
-      }
-      return false;
-    } catch (e) {
-      _logger.e('Error deleting downloaded content: $e');
-      return false;
-    }
   }
 
   /// Get downloaded files for content

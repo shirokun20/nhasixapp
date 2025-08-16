@@ -289,6 +289,8 @@ class LocalDataSource {
         return;
       }
 
+      _logger.i("isi datanya: ${history.toMap()}");
+
       await db.insert(
         'history',
         history.toMap(),

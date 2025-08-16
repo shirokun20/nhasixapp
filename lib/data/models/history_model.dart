@@ -9,12 +9,9 @@ class HistoryModel extends History {
     super.totalPages = 0,
     super.timeSpent = Duration.zero,
     super.isCompleted = false,
-    this.title,
-    this.coverUrl,
+    super.title,
+    super.coverUrl,
   });
-
-  final String? title;
-  final String? coverUrl;
 
   /// Create HistoryModel from History entity
   factory HistoryModel.fromEntity(
@@ -43,6 +40,8 @@ class HistoryModel extends History {
       totalPages: totalPages,
       timeSpent: timeSpent,
       isCompleted: isCompleted,
+      title: title,
+      coverUrl: coverUrl,
     );
   }
 

@@ -173,7 +173,11 @@ class UserDataRepositoryImpl implements UserDataRepository {
       _logger.d('Saving history for: ${history.contentId}');
 
       // Create model with additional info if available
-      final historyModel = HistoryModel.fromEntity(history);
+      final historyModel = HistoryModel.fromEntity(
+        history,
+        coverUrl: history.coverUrl,
+        title: history.title,
+      );
       await localDataSource.saveHistory(historyModel);
     } catch (e, stackTrace) {
       _logger.e('Failed to save history', error: e, stackTrace: stackTrace);
@@ -207,6 +211,8 @@ class UserDataRepositoryImpl implements UserDataRepository {
   Future<History?> getHistoryEntry(String id) async {
     try {
       final historyModel = await localDataSource.getHistory(id);
+      _logger
+          .w("isi file dari getHistoryEntry db: ${historyModel?.toEntity()}");
       return historyModel?.toEntity();
     } catch (e, stackTrace) {
       _logger.e('Failed to get history entry',

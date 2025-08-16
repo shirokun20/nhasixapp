@@ -76,6 +76,19 @@ class DownloadContentUseCase
     }
   }
 
+  // make features for delete folder by content id
+  Future<void> deleteCall(String contentId) async {
+    try {
+      // Remove download status from repository
+      await _userDataRepository.deleteDownloadStatus(contentId);
+
+      // Remove downloaded files from storage
+      await _downloadService.deleteDownloadedContent(contentId);
+    } catch (e) {
+      _logger.e('Failed to delete downloaded content: $contentId', error: e);
+    }
+  }
+
   /// Perform the actual download process
   Future<DownloadStatus> _performActualDownload(
     Content content,
@@ -92,8 +105,7 @@ class DownloadContentUseCase
       await _userDataRepository.saveDownloadStatus(currentStatus);
 
       // Convert thumbnail URLs to full image URLs
-      final fullImageUrls =
-          content.imageUrls.map((url) => _convertThumbnailToFull(url)).toList();
+      final fullImageUrls = content.imageUrls.map((url) => url).toList();
       final contentWithFullUrls = content.copyWith(imageUrls: fullImageUrls);
 
       // Perform download with progress tracking
@@ -118,9 +130,9 @@ class DownloadContentUseCase
         );
 
         // Convert to PDF if requested
-        if (downloadResult.downloadPath != null) {
-          await _convertToPdfIfRequested(content, downloadResult.downloadPath!);
-        }
+        // if (downloadResult.downloadPath != null) {
+        //   await _convertToPdfIfRequested(content, downloadResult.downloadPath!);
+        // }
       } else {
         // Update status to failed
         currentStatus = currentStatus.copyWith(
@@ -147,32 +159,8 @@ class DownloadContentUseCase
     }
   }
 
-  /// Convert thumbnail URL to full image URL
-  String _convertThumbnailToFull(String thumbUrl) {
-    // Pastikan url mulai dari https
-    String url = thumbUrl.replaceFirst('//', 'https://');
-
-    // Ganti domain tX -> iX
-    url = url.replaceFirstMapped(RegExp(r'//t(\d)\.nhentai\.net'), (match) {
-      return '//i${match.group(1)}.nhentai.net';
-    });
-
-    // Hilangkan huruf 't' sebelum ekstensi gambar
-    url = url.replaceFirstMapped(
-      RegExp(r'(\d+)t\.(webp|jpg|png|gif|jpeg)'),
-      (match) => '${match.group(1)}.${match.group(2)}',
-    );
-
-    // Hapus ekstensi ganda (misal .webp.webp -> .webp)
-    url = url.replaceAllMapped(
-      RegExp(r'\.(webp|jpg|png|gif|jpeg)\.(webp|jpg|png|gif|jpeg)'),
-      (match) => '.${match.group(1)}',
-    );
-
-    return url;
-  }
-
   /// Convert downloaded images to PDF if requested
+  /// Hide dulu karena nanti di implementasi pas button
   Future<void> _convertToPdfIfRequested(
       Content content, String downloadPath) async {
     try {

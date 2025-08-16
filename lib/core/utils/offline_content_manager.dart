@@ -55,6 +55,7 @@ class OfflineContentManager {
     try {
       final downloadStatus =
           await _userDataRepository.getDownloadStatus(contentId);
+      _logger.i("Location: path: ${downloadStatus?.downloadPath}");
       return downloadStatus?.downloadPath;
     } catch (e, stackTrace) {
       _logger.e('Error getting offline content path for $contentId',
@@ -102,6 +103,7 @@ class OfflineContentManager {
 
       for (final download in downloads) {
         if (await isContentAvailableOffline(download.contentId)) {
+          _logger.i("isi file nya: ${download}");
           offlineIds.add(download.contentId);
         }
       }
@@ -175,7 +177,7 @@ class OfflineContentManager {
       final favorites = await _userDataRepository.getFavorites(limit: 1000);
       final favorite =
           favorites.where((fav) => fav['id'] == contentId).firstOrNull;
-
+      _logger.i("apakah data dari favorite? ${favorite != null}");
       if (favorite != null) {
         return {
           'id': contentId,
@@ -187,6 +189,8 @@ class OfflineContentManager {
 
       // Try to get from history
       final historyEntry = await _userDataRepository.getHistoryEntry(contentId);
+      _logger.i("apakah data dari history? ${historyEntry != null}");
+      _logger.i("isi file history nya: ${historyEntry}");
       if (historyEntry != null) {
         return {
           'id': contentId,
@@ -217,6 +221,7 @@ class OfflineContentManager {
       if (metadata == null) return null;
 
       final imageUrls = await getOfflineImageUrls(contentId);
+      _logger.i("apakah ada gambarnya? ${imageUrls.isEmpty}");
       if (imageUrls.isEmpty) return null;
 
       return Content(
@@ -228,7 +233,7 @@ class OfflineContentManager {
         characters: [], // No characters available offline
         parodies: [], // No parodies available offline
         groups: [], // No groups available offline
-        language: 'unknown', // No language info offline
+        language: '', // No language info offline
         pageCount: imageUrls.length,
         imageUrls: imageUrls,
         uploadDate: DateTime.now(), // Fallback date

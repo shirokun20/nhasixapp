@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logger/logger.dart';
 
 import '../../../core/constants/colors_const.dart';
 import '../../../core/constants/text_style_const.dart';
@@ -319,6 +320,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
               itemCount: state.results.length,
               itemBuilder: (context, index) {
                 final content = state.results[index];
+                Logger().i(content);
                 return ContentCard(
                   content: content,
                   onTap: () => context.push('/reader/${content.id}'),

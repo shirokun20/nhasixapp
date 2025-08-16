@@ -291,6 +291,8 @@ class ReaderCubit extends Cubit<ReaderState> {
         state.currentPage ?? 1,
         state.content!.pageCount,
         timeSpent: state.readingTimer ?? Duration.zero,
+        title: state.content!.title,
+        coverUrl: state.content!.coverUrl,
       );
       await addToHistoryUseCase(params);
     } catch (e) {

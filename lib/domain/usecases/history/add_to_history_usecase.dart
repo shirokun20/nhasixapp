@@ -43,6 +43,8 @@ class AddToHistoryUseCase extends UseCase<void, AddToHistoryParams> {
         totalPages: params.totalPages,
         timeSpent: params.timeSpent ?? Duration.zero,
         isCompleted: params.page >= params.totalPages,
+        coverUrl: params.coverUrl,
+        title: params.title,
       );
 
       await _userDataRepository.saveHistory(history);
@@ -61,12 +63,16 @@ class AddToHistoryParams extends UseCaseParams {
     required this.page,
     required this.totalPages,
     this.timeSpent,
+    this.coverUrl,
+    this.title,
   });
 
   final ContentId contentId;
   final int page;
   final int totalPages;
   final Duration? timeSpent;
+  final String? coverUrl;
+  final String? title;
 
   @override
   List<Object?> get props => [contentId, page, totalPages, timeSpent];
@@ -76,12 +82,16 @@ class AddToHistoryParams extends UseCaseParams {
     int? page,
     int? totalPages,
     Duration? timeSpent,
+    String? coverUrl,
+    String? title,
   }) {
     return AddToHistoryParams(
       contentId: contentId ?? this.contentId,
       page: page ?? this.page,
       totalPages: totalPages ?? this.totalPages,
       timeSpent: timeSpent ?? this.timeSpent,
+      title: title,
+      coverUrl: coverUrl,
     );
   }
 
@@ -91,12 +101,16 @@ class AddToHistoryParams extends UseCaseParams {
     int page,
     int totalPages, {
     Duration? timeSpent,
+    String? coverUrl,
+    String? title,
   }) {
     return AddToHistoryParams(
       contentId: ContentId.fromString(contentId),
       page: page,
       totalPages: totalPages,
       timeSpent: timeSpent,
+      title: title,
+      coverUrl: coverUrl,
     );
   }
 
@@ -106,12 +120,16 @@ class AddToHistoryParams extends UseCaseParams {
     int page,
     int totalPages, {
     Duration? timeSpent,
+    String? coverUrl,
+    String? title,
   }) {
     return AddToHistoryParams(
       contentId: ContentId.fromInt(contentId),
       page: page,
       totalPages: totalPages,
       timeSpent: timeSpent,
+      title: title,
+      coverUrl: coverUrl,
     );
   }
 
@@ -132,12 +150,16 @@ class AddToHistoryParams extends UseCaseParams {
     ContentId contentId,
     int totalPages, {
     Duration? timeSpent,
+    String? coverUrl,
+    String? title,
   }) {
     return AddToHistoryParams(
       contentId: contentId,
       page: totalPages,
       totalPages: totalPages,
       timeSpent: timeSpent,
+      title: title,
+      coverUrl: coverUrl,
     );
   }
 
