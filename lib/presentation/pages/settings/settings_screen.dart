@@ -32,71 +32,139 @@ class SettingsScreen extends StatelessWidget {
                 ListTile(
                   tileColor: ColorsConst.surface,
                   title: Text('Theme', style: TextStyleConst.bodyLarge),
-                  trailing: DropdownButton<String>(
-                    value: prefs.theme,
-                    items: ThemeOption.all.map((theme) {
-                      return DropdownMenuItem<String>(
-                        value: theme,
-                        child: Text(ThemeOption.getDisplayName(theme)),
-                      );
-                    }).toList(),
-                    onChanged: (theme) {
-                      if (theme != null) {
-                        getIt<SettingsCubit>().updateTheme(theme);
-                      }
-                    },
+                  trailing: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                    margin: const EdgeInsets.symmetric(vertical: 5),
+                    decoration: BoxDecoration(
+                      color: ColorsConst.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: ColorsConst.borderDefault, width: 1.2),
+                    ),
+                    child: DropdownButton<String>(
+                      value: prefs.theme,
+                      underline: const SizedBox(),
+                      icon: const Icon(Icons.arrow_drop_down, color: ColorsConst.borderDefault),
+                      style: TextStyleConst.bodyLarge.copyWith(color: ColorsConst.darkTextPrimary),
+                      dropdownColor: ColorsConst.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      items: ThemeOption.all.map((theme) {
+                        return DropdownMenuItem<String>(
+                          value: theme,
+                          child: Text(
+                            ThemeOption.getDisplayName(theme),
+                            style: TextStyleConst.bodyLarge.copyWith(color: ColorsConst.darkTextPrimary),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (theme) {
+                        if (theme != null) {
+                          getIt<SettingsCubit>().updateTheme(theme);
+                        }
+                      },
+                    ),
                   ),
                 ),
                 ListTile(
                   tileColor: ColorsConst.surface,
                   title: Text('Language', style: TextStyleConst.bodyLarge),
-                  trailing: DropdownButton<String>(
-                    value: prefs.defaultLanguage,
-                    items: const [
-                      DropdownMenuItem(value: 'english', child: Text('English')),
-                      DropdownMenuItem(value: 'japanese', child: Text('Japanese')),
-                    ],
-                    onChanged: (lang) {
-                      if (lang != null) {
-                        getIt<SettingsCubit>().updateDefaultLanguage(lang);
-                      }
-                    },
+                  trailing: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                    margin: const EdgeInsets.symmetric(vertical: 5),
+                    decoration: BoxDecoration(
+                      color: ColorsConst.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: ColorsConst.borderDefault, width: 1.2),
+                    ),
+                    child: DropdownButton<String>(
+                      value: prefs.defaultLanguage,
+                      underline: const SizedBox(),
+                      icon: const Icon(Icons.arrow_drop_down, color: ColorsConst.borderDefault),
+                      style: TextStyleConst.bodyLarge.copyWith(color: ColorsConst.darkTextPrimary),
+                      dropdownColor: ColorsConst.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      items: [
+                        DropdownMenuItem(
+                          value: 'english',
+                          child: Text('English', style: TextStyleConst.bodyLarge),
+                        ),
+                        DropdownMenuItem(
+                          value: 'japanese',
+                          child: Text('Japanese', style: TextStyleConst.bodyLarge),
+                        ),
+                      ],
+                      onChanged: (lang) {
+                        if (lang != null) {
+                          getIt<SettingsCubit>().updateDefaultLanguage(lang);
+                        }
+                      },
+                    ),
                   ),
                 ),
                 ListTile(
                   tileColor: ColorsConst.surface,
                   title: Text('Image Quality', style: TextStyleConst.bodyLarge),
-                  trailing: DropdownButton<String>(
-                    value: prefs.imageQuality,
-                    items: ImageQuality.all.map((q) {
-                      return DropdownMenuItem<String>(
-                        value: q,
-                        child: Text(ImageQuality.getDisplayName(q)),
-                      );
-                    }).toList(),
-                    onChanged: (q) {
-                      if (q != null) {
-                        getIt<SettingsCubit>().updateImageQuality(q);
-                      }
-                    },
+                  trailing: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                    margin: const EdgeInsets.symmetric(vertical: 5),
+                    decoration: BoxDecoration(
+                      color: ColorsConst.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: ColorsConst.borderDefault, width: 1.2),
+                    ),
+                    child: DropdownButton<String>(
+                      value: prefs.imageQuality,
+                      underline: const SizedBox(),
+                      icon: const Icon(Icons.arrow_drop_down, color: ColorsConst.borderDefault),
+                      style: TextStyleConst.bodyLarge.copyWith(color: ColorsConst.darkTextPrimary),
+                      dropdownColor: ColorsConst.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      items: ImageQuality.all.map((q) {
+                        return DropdownMenuItem<String>(
+                          value: q,
+                          child: Text(
+                            ImageQuality.getDisplayName(q),
+                            style: TextStyleConst.bodyLarge.copyWith(color: ColorsConst.darkTextPrimary),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (q) {
+                        if (q != null) {
+                          getIt<SettingsCubit>().updateImageQuality(q);
+                        }
+                      },
+                    ),
                   ),
                 ),
                 ListTile(
                   tileColor: ColorsConst.surface,
                   title: Text('Grid Columns (Portrait)', style: TextStyleConst.bodyLarge),
-                  trailing: DropdownButton<int>(
-                    value: prefs.columnsPortrait,
-                    items: [2, 3, 4].map((count) {
-                      return DropdownMenuItem<int>(
-                        value: count,
-                        child: Text('$count'),
-                      );
-                    }).toList(),
-                    onChanged: (count) {
-                      if (count != null) {
-                        getIt<SettingsCubit>().updateColumnsPortrait(count);
-                      }
-                    },
+                  trailing: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                    margin: const EdgeInsets.symmetric(vertical: 5),
+                    decoration: BoxDecoration(
+                      color: ColorsConst.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: ColorsConst.borderDefault, width: 1.2),
+                    ),
+                    child: DropdownButton<int>(
+                      value: prefs.columnsPortrait,
+                      underline: const SizedBox(),
+                      icon: const Icon(Icons.arrow_drop_down, color: ColorsConst.borderDefault),
+                      style: TextStyleConst.bodyLarge.copyWith(color: ColorsConst.darkTextPrimary),
+                      dropdownColor: ColorsConst.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      items: [2, 3, 4].map((count) {
+                        return DropdownMenuItem<int>(
+                          value: count,
+                          child: Text('$count', style: TextStyleConst.bodyLarge.copyWith(color: ColorsConst.darkTextPrimary)),
+                        );
+                      }).toList(),
+                      onChanged: (count) {
+                        if (count != null) {
+                          getIt<SettingsCubit>().updateColumnsPortrait(count);
+                        }
+                      },
+                    ),
                   ),
                 ),
                 Padding(
@@ -139,7 +207,7 @@ class SettingsScreen extends StatelessWidget {
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(ctx, false),
-                              child: Text('Batal', style: TextStyleConst.bodyLarge.copyWith(color: ColorsConst.accentBlue)),
+                              child: Text('Batal', style: TextStyleConst.bodyLarge.copyWith(color: ColorsConst.borderDefault)),
                             ),
                             ElevatedButton(
                               style: ElevatedButton.styleFrom(
