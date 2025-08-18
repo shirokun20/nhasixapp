@@ -37,7 +37,7 @@ class MultiBlocProviderConfig {
     ),
     BlocProvider<SettingsCubit>(
       create: (context) => getIt<SettingsCubit>(),
-    ),
+    ), // SettingsCubit for settings screen
 
     BlocProvider<DetailCubit>(
       create: (context) => getIt<DetailCubit>(),

@@ -47,6 +47,8 @@ import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
 import 'package:nhasixapp/domain/usecases/favorites/favorites_usecases.dart';
 import 'package:nhasixapp/domain/usecases/downloads/downloads_usecases.dart';
 import 'package:nhasixapp/domain/usecases/history/add_to_history_usecase.dart';
+import 'package:nhasixapp/domain/usecases/settings/get_user_preferences_usecase.dart';
+import 'package:nhasixapp/domain/usecases/settings/save_user_preferences_usecase.dart';
 
 // Services
 import 'package:nhasixapp/services/download_service.dart';
@@ -199,6 +201,11 @@ void _setupRepositories() {
 
 /// Setup use cases
 void _setupUseCases() {
+  // Settings Use Cases
+  getIt.registerLazySingleton<GetUserPreferencesUseCase>(
+    () => GetUserPreferencesUseCase(getIt<SettingsRepository>()));
+  getIt.registerLazySingleton<SaveUserPreferencesUseCase>(
+    () => SaveUserPreferencesUseCase(getIt<SettingsRepository>()));
   // Content Use Cases
   getIt.registerLazySingleton<GetContentListUseCase>(
       () => GetContentListUseCase(getIt()));

@@ -124,6 +124,20 @@ class AppMainDrawerWidget extends StatelessWidget {
               context.push(AppRoute.history);
             },
           ),
+          ListTile(
+            leading: const Icon(
+              Icons.settings,
+              color: ColorsConst.accentBlue,
+            ),
+            title: Text(
+              'Settings',
+              style: TextStyleConst.navigationLabel,
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              context.push(AppRoute.settings);
+            },
+          ),
         ],
       ),
     );
