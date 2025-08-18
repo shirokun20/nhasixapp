@@ -1039,15 +1039,18 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   void _downloadContent(Content content) {
-    try {
-      // Queue and start the download immediately using DownloadBloc
-      context.read<DownloadBloc>().add(DownloadQueueEvent(
-            content: content,
-            priority: 0, // Normal priority
-          ));
-
-      // Start download immediately
-      context.read<DownloadBloc>().add(DownloadStartEvent(content.id));
+    final bloc = context.read<DownloadBloc>();
+    final state = bloc.state;
+    if (state is DownloadInitial || state is DownloadInitializing) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Sedang menyiapkan download, silakan coba lagi.')),
+      );
+      bloc.add(DownloadInitializeEvent());
+    } else {
+      // Sudah siap, lanjutkan download
+      bloc.add(DownloadQueueEvent(content: content, priority: 0));
+      bloc.add(DownloadStartEvent(content.id));
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1063,16 +1066,6 @@ class _DetailScreenState extends State<DetailScreen> {
               context.push('/downloads');
             },
           ),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Failed to start download: ${e.toString()}',
-            style: TextStyleConst.bodyMedium.copyWith(color: Colors.white),
-          ),
-          backgroundColor: ColorsConst.accentRed,
         ),
       );
     }

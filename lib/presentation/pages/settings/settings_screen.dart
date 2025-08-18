@@ -58,7 +58,7 @@ class SettingsScreen extends StatelessWidget {
                       }).toList(),
                       onChanged: (theme) {
                         if (theme != null) {
-                          getIt<SettingsCubit>().updateTheme(theme);
+                          context.read<SettingsCubit>().updateTheme(theme);
                         }
                       },
                     ),
@@ -94,7 +94,7 @@ class SettingsScreen extends StatelessWidget {
                       ],
                       onChanged: (lang) {
                         if (lang != null) {
-                          getIt<SettingsCubit>().updateDefaultLanguage(lang);
+                          context.read<SettingsCubit>().updateDefaultLanguage(lang);
                         }
                       },
                     ),
@@ -129,7 +129,7 @@ class SettingsScreen extends StatelessWidget {
                       }).toList(),
                       onChanged: (q) {
                         if (q != null) {
-                          getIt<SettingsCubit>().updateImageQuality(q);
+                          context.read<SettingsCubit>().updateImageQuality(q);
                         }
                       },
                     ),
@@ -161,7 +161,7 @@ class SettingsScreen extends StatelessWidget {
                       }).toList(),
                       onChanged: (count) {
                         if (count != null) {
-                          getIt<SettingsCubit>().updateColumnsPortrait(count);
+                          context.read<SettingsCubit>().updateColumnsPortrait(count);
                         }
                       },
                     ),
@@ -177,7 +177,7 @@ class SettingsScreen extends StatelessWidget {
                   title: Text('Show System UI in Reader', style: TextStyleConst.bodyLarge),
                   value: prefs.showSystemUI,
                   onChanged: (val) {
-                    getIt<SettingsCubit>().updateShowSystemUI(val);
+                    context.read<SettingsCubit>().updateShowSystemUI(val);
                   },
                 ),
                 // Tambahkan pengaturan reader lain di sini
@@ -221,7 +221,7 @@ class SettingsScreen extends StatelessWidget {
                         ),
                       );
                       if (confirm == true) {
-                        getIt<SettingsCubit>().resetToDefaults();
+                        context.read<SettingsCubit>().resetToDefaults();
                       }
                     },
                   ),

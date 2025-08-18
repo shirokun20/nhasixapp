@@ -46,6 +46,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     on<DownloadRemoveEvent>(_onRemove);
     on<DownloadRefreshEvent>(_onRefresh);
     on<DownloadSettingsUpdateEvent>(_onSettingsUpdate);
+    on<DownloadPauseAllEvent>(_onPauseAll);
+    on<DownloadResumeAllEvent>(_onResumeAll);
+    on<DownloadCancelAllEvent>(_onCancelAll);
+    on<DownloadClearCompletedEvent>(_onClearCompleted);
 
     // Initialize notifications
     _notificationService.initialize();
@@ -71,7 +75,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   static const String _downloadChannelDescription =
       'Download progress notifications';
 
-  /// Initialize download manager
+    /// Initialize download manager
   Future<void> _onInitialize(
     DownloadInitializeEvent event,
     Emitter<DownloadBlocState> emit,
@@ -82,6 +86,18 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // Load existing downloads
       final downloads = await _userDataRepository.getAllDownloads();
+      
+      // Load settings (use existing settings)
+      final userPrefs = await _userDataRepository.getUserPreferences();
+      _settings = DownloadSettings(
+        maxConcurrentDownloads: userPrefs.maxConcurrentDownloads,
+        downloadPath: userPrefs.downloadPath ?? '',
+        imageQuality: userPrefs.imageQuality,
+        autoRetry: true, // Default to true
+        retryAttempts: 3,  // Default to 3
+        enableNotifications: true, // Default to true
+        wifiOnly: false,   // Default to false
+      );
 
       emit(DownloadLoaded(
         downloads: downloads,
@@ -90,14 +106,61 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       ));
 
       _logger.i('DownloadBloc: Initialized with ${downloads.length} downloads');
+      
+      // Process queue - auto-start any queued downloads if needed
+      _processQueue();
     } catch (e, stackTrace) {
       _logger.e('DownloadBloc: Error initializing',
           error: e, stackTrace: stackTrace);
       emit(DownloadError(
         message: 'Failed to initialize download manager: ${e.toString()}',
-        errorType: DownloadErrorType.unknown,
+        errorType: _determineErrorType(e),
         stackTrace: stackTrace,
       ));
+    }
+  }
+  
+  /// Process the download queue, starting downloads if possible
+  Future<void> _processQueue() async {
+    if (state is! DownloadLoaded) return;
+    final currentState = state as DownloadLoaded;
+    
+    try {
+      // Get queued and active downloads
+      final queuedDownloads = currentState.queuedDownloads;
+      final activeDownloads = currentState.activeDownloads;
+      
+      // Check if we can start more downloads
+      if (queuedDownloads.isEmpty) {
+        _logger.d('DownloadBloc: No queued downloads to process');
+        return;
+      }
+      
+      // Get max concurrent downloads from settings
+      final maxConcurrent = currentState.settings.maxConcurrentDownloads;
+      
+      // Check if we're at the limit
+      if (activeDownloads.length >= maxConcurrent) {
+        _logger.d('DownloadBloc: Already at max concurrent downloads: $maxConcurrent');
+        return;
+      }
+      
+      // Sort queued downloads by priority (implement priority later)
+      final sortedQueue = List<DownloadStatus>.from(queuedDownloads);
+      
+      // Calculate how many new downloads we can start
+      final availableSlots = maxConcurrent - activeDownloads.length;
+      final toStart = sortedQueue.take(availableSlots).toList();
+      
+      _logger.i('DownloadBloc: Starting ${toStart.length} downloads from queue');
+      
+      // Start each download
+      for (final download in toStart) {
+        add(DownloadStartEvent(download.contentId));
+      }
+    } catch (e, stackTrace) {
+      _logger.e('DownloadBloc: Error processing queue',
+          error: e, stackTrace: stackTrace);
     }
   }
 
@@ -107,7 +170,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     Emitter<DownloadBlocState> emit,
   ) async {
     final currentState = state;
-    if (currentState is! DownloadLoaded) return;
+    if (currentState is! DownloadLoaded) {
+      _logger.w('DownloadBloc: Cannot queue download - not in loaded state');
+      return;
+    }
 
     try {
       _logger.i('DownloadBloc: Queuing download for ${event.content.id}');
@@ -118,12 +184,18 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           .firstOrNull;
 
       if (existingDownload != null) {
-        _logger.w(
-            'DownloadBloc: Content ${event.content.id} already in download list');
+        _logger.w('DownloadBloc: Content ${event.content.id} already in download list');
+        
+        // If download failed or was cancelled, retry it
+        if (existingDownload.canRetry) {
+          _logger.i('DownloadBloc: Retrying existing download for ${event.content.id}');
+          add(DownloadRetryEvent(event.content.id));
+        }
+        
         return;
       }
 
-      // Create download status
+      // Create download status with priority
       final downloadStatus = DownloadStatus.initial(
         event.content.id,
         event.content.pageCount,
@@ -132,10 +204,25 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Save to database
       await _userDataRepository.saveDownloadStatus(downloadStatus);
 
-      // Refresh downloads
-      add(const DownloadRefreshEvent());
+      // Update state with new download added
+      final updatedDownloads = [...currentState.downloads, downloadStatus];
+      emit(currentState.copyWith(
+        downloads: updatedDownloads,
+        lastUpdated: DateTime.now(),
+      ));
+
+      // Send notification
+      if (currentState.settings.enableNotifications) {
+        _notificationService.showDownloadStarted(
+          contentId: event.content.id,
+          title: event.content.title,
+        );
+      }
 
       _logger.i('DownloadBloc: Queued download for ${event.content.id}');
+      
+      // Check if we can start downloading right away
+      _processQueue();
     } catch (e, stackTrace) {
       _logger.e('DownloadBloc: Error queuing download',
           error: e, stackTrace: stackTrace);
@@ -154,7 +241,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     Emitter<DownloadBlocState> emit,
   ) async {
     final currentState = state;
-    if (currentState is! DownloadLoaded) return;
+    if (currentState is! DownloadLoaded) {
+      _logger.w('DownloadBloc: Cannot start download - not in loaded state');
+      return;
+    }
 
     try {
       _logger.i('DownloadBloc: Starting download for ${event.contentId}');
@@ -167,6 +257,31 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _logger.w('DownloadBloc: Download not found: ${event.contentId}');
         return;
       }
+      
+      // Skip if already downloading
+      if (download.isInProgress) {
+        _logger.i('DownloadBloc: Download already in progress: ${event.contentId}');
+        return;
+      }
+
+      // Update status to downloading
+      var updatedDownload = download.copyWith(
+        state: DownloadState.downloading,
+        startTime: DateTime.now(),
+        error: null,
+      );
+      
+      await _userDataRepository.saveDownloadStatus(updatedDownload);
+      
+      // Update state immediately to show downloading
+      final updatedDownloads = currentState.downloads.map((d) => 
+        d.contentId == event.contentId ? updatedDownload : d
+      ).toList();
+      
+      emit(currentState.copyWith(
+        downloads: updatedDownloads,
+        lastUpdated: DateTime.now(),
+      ));
 
       // Get content details for download
       final content = await _getContentDetailUseCase.call(
@@ -176,31 +291,82 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Create cancel token for this download
       final cancelToken = CancelToken();
       _activeCancelTokens[event.contentId] = cancelToken;
+      
+      // Show notification
+      if (currentState.settings.enableNotifications) {
+        _notificationService.showDownloadStarted(
+          contentId: event.contentId,
+          title: content.title,
+        );
+      }
 
       // Start actual download using use case
       final downloadParams = DownloadContentParams.immediate(content);
-      await _downloadContentUseCase.call(downloadParams);
+      final result = await _downloadContentUseCase.call(downloadParams);
 
       // Remove cancel token
       _activeCancelTokens.remove(event.contentId);
+      
+      // Show completion notification
+      if (currentState.settings.enableNotifications && result.isCompleted) {
+        _notificationService.showDownloadCompleted(
+          contentId: event.contentId,
+          title: content.title,
+          downloadPath: result.downloadPath ?? '',
+        );
+      }
 
-      // Refresh downloads to show updated status
-      add(const DownloadRefreshEvent());
+      // Process queue to start next download
+      _processQueue();
 
-      _logger.i('DownloadBloc: Started download for ${event.contentId}');
+      _logger.i('DownloadBloc: Completed download for ${event.contentId}');
     } catch (e, stackTrace) {
       _logger.e('DownloadBloc: Error starting download',
           error: e, stackTrace: stackTrace);
 
       // Remove cancel token on error
       _activeCancelTokens.remove(event.contentId);
-
-      emit(DownloadError(
-        message: 'Failed to start download: ${e.toString()}',
-        errorType: _determineErrorType(e),
-        previousState: currentState,
-        stackTrace: stackTrace,
-      ));
+      
+      // Update download status to failed
+      if (currentState.getDownload(event.contentId) != null) {
+        final failedDownload = currentState.getDownload(event.contentId)!.copyWith(
+          state: DownloadState.failed,
+          error: e.toString(),
+          endTime: DateTime.now(),
+        );
+        
+        await _userDataRepository.saveDownloadStatus(failedDownload);
+        
+        // Show error notification
+        if (currentState.settings.enableNotifications) {
+          _notificationService.showDownloadError(
+            contentId: event.contentId,
+            title: failedDownload.contentId, // Use content ID if we don't have title
+            error: e.toString(),
+          );
+        }
+        
+        // Update state with failed download
+        final updatedDownloads = currentState.downloads.map((d) => 
+          d.contentId == event.contentId ? failedDownload : d
+        ).toList();
+        
+        emit(currentState.copyWith(
+          downloads: updatedDownloads,
+          lastUpdated: DateTime.now(),
+        ));
+        
+        // Process queue to start next download
+        _processQueue();
+      } else {
+        // Emit error state only if we can't update the download status
+        emit(DownloadError(
+          message: 'Failed to start download: ${e.toString()}',
+          errorType: _determineErrorType(e),
+          previousState: currentState,
+          stackTrace: stackTrace,
+        ));
+      }
     }
   }
 
@@ -392,27 +558,46 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     DownloadRefreshEvent event,
     Emitter<DownloadBlocState> emit,
   ) async {
+    final currentState = state;
+    
     try {
       _logger.i('DownloadBloc: Refreshing download list');
 
       // Reload downloads from database
       final downloads = await _userDataRepository.getAllDownloads();
-
-      emit(DownloadLoaded(
-        downloads: downloads,
-        settings: _settings,
-        lastUpdated: DateTime.now(),
-      ));
+      
+      if (currentState is DownloadLoaded) {
+        // Update existing state with new downloads
+        emit(currentState.copyWith(
+          downloads: downloads,
+          lastUpdated: DateTime.now(),
+        ));
+      } else {
+        // Create new state if not in loaded state
+        emit(DownloadLoaded(
+          downloads: downloads,
+          settings: _settings,
+          lastUpdated: DateTime.now(),
+        ));
+      }
 
       _logger.i('DownloadBloc: Refreshed with ${downloads.length} downloads');
+      
+      // Process queue after refresh
+      _processQueue();
     } catch (e, stackTrace) {
       _logger.e('DownloadBloc: Error refreshing downloads',
           error: e, stackTrace: stackTrace);
-      emit(DownloadError(
-        message: 'Failed to refresh downloads: ${e.toString()}',
-        errorType: _determineErrorType(e),
-        stackTrace: stackTrace,
-      ));
+          
+      // Only emit error if we don't have a valid state to preserve
+      if (currentState is! DownloadLoaded) {
+        emit(DownloadError(
+          message: 'Failed to refresh downloads: ${e.toString()}',
+          errorType: _determineErrorType(e),
+          previousState: currentState is DownloadLoaded ? currentState : null,
+          stackTrace: stackTrace,
+        ));
+      }
     }
   }
 
@@ -492,6 +677,225 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     }
   }
 
+  /// Pause all active downloads
+  Future<void> _onPauseAll(
+    DownloadPauseAllEvent event,
+    Emitter<DownloadBlocState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! DownloadLoaded) return;
+
+    try {
+      _logger.i('DownloadBloc: Pausing all downloads');
+      
+      emit(DownloadProcessing(
+        downloads: currentState.downloads,
+        settings: currentState.settings,
+        operation: 'Pausing all downloads',
+        lastUpdated: currentState.lastUpdated,
+      ));
+
+      // Get all active downloads
+      final activeDownloads = currentState.activeDownloads;
+      
+      if (activeDownloads.isEmpty) {
+        _logger.i('DownloadBloc: No active downloads to pause');
+        emit(currentState.copyWith(lastUpdated: DateTime.now()));
+        return;
+      }
+
+      // Cancel all active download tasks
+      for (final download in activeDownloads) {
+        _cancelDownloadTask(download.contentId);
+        
+        // Update status to paused
+        final updatedDownload = download.copyWith(
+          state: DownloadState.paused,
+          endTime: DateTime.now(),
+        );
+        
+        await _userDataRepository.saveDownloadStatus(updatedDownload);
+      }
+
+      // Refresh downloads
+      add(const DownloadRefreshEvent());
+
+      _logger.i('DownloadBloc: Paused all downloads');
+    } catch (e, stackTrace) {
+      _logger.e('DownloadBloc: Error pausing all downloads',
+          error: e, stackTrace: stackTrace);
+      emit(DownloadError(
+        message: 'Failed to pause all downloads: ${e.toString()}',
+        errorType: _determineErrorType(e),
+        previousState: currentState,
+        stackTrace: stackTrace,
+      ));
+    }
+  }
+
+  /// Resume all paused downloads
+  Future<void> _onResumeAll(
+    DownloadResumeAllEvent event,
+    Emitter<DownloadBlocState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! DownloadLoaded) return;
+
+    try {
+      _logger.i('DownloadBloc: Resuming all paused downloads');
+      
+      emit(DownloadProcessing(
+        downloads: currentState.downloads,
+        settings: currentState.settings,
+        operation: 'Resuming all downloads',
+        lastUpdated: currentState.lastUpdated,
+      ));
+
+      // Get all paused downloads
+      final pausedDownloads = currentState.pausedDownloads;
+      
+      if (pausedDownloads.isEmpty) {
+        _logger.i('DownloadBloc: No paused downloads to resume');
+        emit(currentState.copyWith(lastUpdated: DateTime.now()));
+        return;
+      }
+
+      // Update each paused download to queued
+      for (final download in pausedDownloads) {
+        final updatedDownload = download.copyWith(
+          state: DownloadState.queued,
+          startTime: DateTime.now(),
+          endTime: null,
+        );
+        
+        await _userDataRepository.saveDownloadStatus(updatedDownload);
+      }
+
+      // Refresh downloads and process queue
+      add(const DownloadRefreshEvent());
+      _processQueue();
+
+      _logger.i('DownloadBloc: Resumed all paused downloads');
+    } catch (e, stackTrace) {
+      _logger.e('DownloadBloc: Error resuming all downloads',
+          error: e, stackTrace: stackTrace);
+      emit(DownloadError(
+        message: 'Failed to resume all downloads: ${e.toString()}',
+        errorType: _determineErrorType(e),
+        previousState: currentState,
+        stackTrace: stackTrace,
+      ));
+    }
+  }
+
+  /// Cancel all active downloads
+  Future<void> _onCancelAll(
+    DownloadCancelAllEvent event,
+    Emitter<DownloadBlocState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! DownloadLoaded) return;
+
+    try {
+      _logger.i('DownloadBloc: Cancelling all downloads');
+      
+      emit(DownloadProcessing(
+        downloads: currentState.downloads,
+        settings: currentState.settings,
+        operation: 'Cancelling all downloads',
+        lastUpdated: currentState.lastUpdated,
+      ));
+
+      // Get all active and queued downloads
+      final activeDownloads = [
+        ...currentState.activeDownloads,
+        ...currentState.queuedDownloads
+      ];
+      
+      if (activeDownloads.isEmpty) {
+        _logger.i('DownloadBloc: No active or queued downloads to cancel');
+        emit(currentState.copyWith(lastUpdated: DateTime.now()));
+        return;
+      }
+
+      // Cancel all active download tasks
+      for (final download in activeDownloads) {
+        _cancelDownloadTask(download.contentId);
+        
+        // Update status to cancelled
+        final updatedDownload = download.copyWith(
+          state: DownloadState.cancelled,
+          endTime: DateTime.now(),
+        );
+        
+        await _userDataRepository.saveDownloadStatus(updatedDownload);
+      }
+
+      // Refresh downloads
+      add(const DownloadRefreshEvent());
+
+      _logger.i('DownloadBloc: Cancelled all downloads');
+    } catch (e, stackTrace) {
+      _logger.e('DownloadBloc: Error cancelling all downloads',
+          error: e, stackTrace: stackTrace);
+      emit(DownloadError(
+        message: 'Failed to cancel all downloads: ${e.toString()}',
+        errorType: _determineErrorType(e),
+        previousState: currentState,
+        stackTrace: stackTrace,
+      ));
+    }
+  }
+  
+  /// Clear completed downloads
+  Future<void> _onClearCompleted(
+    DownloadClearCompletedEvent event,
+    Emitter<DownloadBlocState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! DownloadLoaded) return;
+
+    try {
+      _logger.i('DownloadBloc: Clearing completed downloads');
+      
+      emit(DownloadProcessing(
+        downloads: currentState.downloads,
+        settings: currentState.settings,
+        operation: 'Clearing completed downloads',
+        lastUpdated: currentState.lastUpdated,
+      ));
+
+      // Get all completed downloads
+      final completedDownloads = currentState.completedDownloads;
+      
+      if (completedDownloads.isEmpty) {
+        _logger.i('DownloadBloc: No completed downloads to clear');
+        emit(currentState.copyWith(lastUpdated: DateTime.now()));
+        return;
+      }
+
+      // Remove each completed download
+      for (final download in completedDownloads) {
+        await _userDataRepository.deleteDownloadStatus(download.contentId);
+      }
+
+      // Refresh downloads
+      add(const DownloadRefreshEvent());
+
+      _logger.i('DownloadBloc: Cleared ${completedDownloads.length} completed downloads');
+    } catch (e, stackTrace) {
+      _logger.e('DownloadBloc: Error clearing completed downloads',
+          error: e, stackTrace: stackTrace);
+      emit(DownloadError(
+        message: 'Failed to clear completed downloads: ${e.toString()}',
+        errorType: _determineErrorType(e),
+        previousState: currentState,
+        stackTrace: stackTrace,
+      ));
+    }
+  }
+
+  /// Cleanup resources when BLoC is closed
   @override
   Future<void> close() {
     // Cancel all active downloads

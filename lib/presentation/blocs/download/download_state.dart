@@ -6,6 +6,21 @@ abstract class DownloadBlocState extends Equatable {
 
   @override
   List<Object?> get props => [];
+  
+  /// Get all downloads - Implemented by subclasses
+  List<DownloadStatus> get downloads => [];
+  
+  /// Get download settings - Implemented by subclasses
+  DownloadSettings get settings => DownloadSettings.defaultSettings();
+  
+  /// Get lastUpdated - Implemented by subclasses
+  DateTime? get lastUpdated => null;
+  
+  /// Get isProcessing - Implemented by subclasses
+  bool get isProcessing => false;
+  
+  /// Get download by content ID - Implemented by subclasses
+  DownloadStatus? getDownload(String contentId) => null;
 }
 
 /// Initial state when download manager is not initialized
@@ -27,9 +42,16 @@ class DownloadLoaded extends DownloadBlocState {
     this.isProcessing = false,
   });
 
+  @override
   final List<DownloadStatus> downloads;
+  
+  @override
   final DownloadSettings settings;
+  
+  @override
   final DateTime? lastUpdated;
+  
+  @override
   final bool isProcessing;
 
   @override
@@ -201,7 +223,7 @@ class DownloadProcessing extends DownloadLoaded {
   }
 }
 
-/// State when an error occurs
+/// State when an error occurs - Keeps previous state data
 class DownloadError extends DownloadBlocState {
   const DownloadError({
     required this.message,
@@ -225,6 +247,28 @@ class DownloadError extends DownloadBlocState {
         previousState,
         stackTrace,
       ];
+      
+  /// Keeps access to downloads from previous state
+  @override
+  List<DownloadStatus> get downloads => previousState?.downloads ?? [];
+  
+  /// Keeps access to settings from previous state
+  @override
+  DownloadSettings get settings => previousState?.settings ?? DownloadSettings.defaultSettings();
+  
+  /// Keeps access to lastUpdated from previous state
+  @override
+  DateTime? get lastUpdated => previousState?.lastUpdated;
+  
+  /// Keeps access to isProcessing - always false for errors
+  @override
+  bool get isProcessing => false;
+  
+  /// Get download by content ID - preserved from previous state
+  @override
+  DownloadStatus? getDownload(String contentId) {
+    return previousState?.getDownload(contentId);
+  }
 }
 
 /// Download settings configuration
