@@ -34,7 +34,7 @@ class SettingsScreen extends StatelessWidget {
                   title: Text('Theme', style: TextStyleConst.bodyLarge),
                   trailing: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                    margin: const EdgeInsets.symmetric(vertical: 5),
+                    margin: const EdgeInsets.symmetric(vertical: 7),
                     decoration: BoxDecoration(
                       color: ColorsConst.surface,
                       borderRadius: BorderRadius.circular(8),
@@ -69,7 +69,7 @@ class SettingsScreen extends StatelessWidget {
                   title: Text('Language', style: TextStyleConst.bodyLarge),
                   trailing: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                    margin: const EdgeInsets.symmetric(vertical: 5),
+                    margin: const EdgeInsets.symmetric(vertical: 7),
                     decoration: BoxDecoration(
                       color: ColorsConst.surface,
                       borderRadius: BorderRadius.circular(8),
@@ -105,7 +105,7 @@ class SettingsScreen extends StatelessWidget {
                   title: Text('Image Quality', style: TextStyleConst.bodyLarge),
                   trailing: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                    margin: const EdgeInsets.symmetric(vertical: 5),
+                    margin: const EdgeInsets.symmetric(vertical: 7),
                     decoration: BoxDecoration(
                       color: ColorsConst.surface,
                       borderRadius: BorderRadius.circular(8),
@@ -140,7 +140,7 @@ class SettingsScreen extends StatelessWidget {
                   title: Text('Grid Columns (Portrait)', style: TextStyleConst.bodyLarge),
                   trailing: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                    margin: const EdgeInsets.symmetric(vertical: 5),
+                    margin: const EdgeInsets.symmetric(vertical: 7),
                     decoration: BoxDecoration(
                       color: ColorsConst.surface,
                       borderRadius: BorderRadius.circular(8),
