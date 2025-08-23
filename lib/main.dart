@@ -4,6 +4,7 @@ import 'package:nhasixapp/core/config/multi_bloc_provider_config.dart';
 import 'package:nhasixapp/core/constants/colors_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
+import 'package:nhasixapp/presentation/cubits/theme/theme_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,13 +19,16 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: MultiBlocProviderConfig.data,
-      child: MaterialApp.router(
-        title: "Nhentai Flutter App",
-        debugShowCheckedModeBanner: true,
-        routerConfig: AppRouter.router,
-        theme: ThemeData(
-          primaryColor: ColorsConst.primaryColor,
-        ),
+      child: BlocBuilder<ThemeCubit, ThemeState>(
+        builder: (context, themeState) {
+          return MaterialApp.router(
+            title: "Nhentai Flutter App",
+            debugShowCheckedModeBanner: false,
+            routerConfig: AppRouter.router,
+            theme: themeState.themeData,
+            themeMode: themeState.themeMode,
+          );
+        },
       ),
     );
   }

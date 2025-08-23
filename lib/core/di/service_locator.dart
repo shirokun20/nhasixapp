@@ -35,6 +35,7 @@ import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 // Cubits
 import 'package:nhasixapp/presentation/cubits/cubits.dart';
 import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/theme/theme_cubit.dart';
 
 // Repositories
 import 'package:nhasixapp/domain/repositories/repositories.dart';
@@ -300,6 +301,12 @@ void _setupCubits() {
   // SettingsCubit - App-wide settings management
   getIt.registerLazySingleton<SettingsCubit>(() => SettingsCubit(
         sharedPreferences: getIt<SharedPreferences>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // ThemeCubit - App-wide theme management
+  getIt.registerLazySingleton<ThemeCubit>(() => ThemeCubit(
+        settingsCubit: getIt<SettingsCubit>(),
         logger: getIt<Logger>(),
       ));
 

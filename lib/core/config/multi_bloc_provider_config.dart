@@ -11,6 +11,7 @@ import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 // Cubits (Simple State Management)
 import 'package:nhasixapp/presentation/cubits/cubits.dart';
 import 'package:nhasixapp/presentation/cubits/reader/reader_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/theme/theme_cubit.dart';
 
 class MultiBlocProviderConfig {
   static List<BlocProvider> data = [
@@ -38,6 +39,10 @@ class MultiBlocProviderConfig {
     BlocProvider<SettingsCubit>(
       create: (context) => getIt<SettingsCubit>(),
     ), // SettingsCubit for settings screen
+
+    BlocProvider<ThemeCubit>(
+      create: (context) => getIt<ThemeCubit>(),
+    ), // ThemeCubit for reactive theme management
 
     BlocProvider<DetailCubit>(
       create: (context) => getIt<DetailCubit>(),

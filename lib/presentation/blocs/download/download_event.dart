@@ -82,6 +82,35 @@ class DownloadRefreshEvent extends DownloadEvent {
   const DownloadRefreshEvent();
 }
 
+/// Event to update download progress in real-time
+class DownloadProgressUpdateEvent extends DownloadEvent {
+  const DownloadProgressUpdateEvent({
+    required this.contentId,
+    required this.downloadedPages,
+    required this.totalPages,
+    this.downloadSpeed,
+    this.estimatedTimeRemaining,
+  });
+
+  final String contentId;
+  final int downloadedPages;
+  final int totalPages;
+  final double? downloadSpeed; // bytes per second
+  final Duration? estimatedTimeRemaining;
+
+  double get progressPercentage => 
+      totalPages > 0 ? (downloadedPages / totalPages) * 100 : 0;
+
+  @override
+  List<Object?> get props => [
+        contentId,
+        downloadedPages,
+        totalPages,
+        downloadSpeed,
+        estimatedTimeRemaining,
+      ];
+}
+
 /// Event to update download settings
 class DownloadSettingsUpdateEvent extends DownloadEvent {
   const DownloadSettingsUpdateEvent({

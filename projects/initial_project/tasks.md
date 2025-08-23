@@ -284,60 +284,56 @@
     - ✅ Ensure semua features menggunakan consistent design dari ColorsConst dan TextStyleConst
     - _Requirements: 3.1, 3.9, 3.10, 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7_
 
-- [x] 8. Build favorites dan download system (COMPLETED - FULL IMPLEMENTATION)
+- [-] 8. Build favorites dan download system (NEXT PRIORITY)
 💡 *Remember to check components-list.md first*
   - [x] 8.1 Implement favorites management dengan FavoriteCubit
-    - ✅ Create FavoriteCubit untuk simple CRUD operations menggunakan existing UserDataRepository
-    - ✅ Build FavoritesScreen dengan modern UI menggunakan ColorsConst dan TextStyleConst
-    - ✅ Add favorite categories management dengan database support
-    - ✅ Implement batch favorite operations dan search dalam favorites
-    - ✅ Add favorites export/import functionality
-    - ✅ Integrate dengan existing DetailCubit untuk favorite toggle
+    - Create FavoriteCubit untuk simple CRUD operations menggunakan existing UserDataRepository
+    - Build FavoritesScreen dengan modern UI menggunakan ColorsConst dan TextStyleConst
+    - Add favorite categories management dengan database support
+    - Implement batch favorite operations dan search dalam favorites
+    - Add favorites export/import functionality
+    - Integrate dengan existing DetailCubit untuk favorite toggle
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-  - [x] 8.2 Create download manager dengan DownloadBloc (COMPLETED - FULL IMPLEMENTATION)
-    - ✅ Implement DownloadBloc dengan queue system (Complex - tetap BLoC)
-    - ✅ Build DownloadsScreen dengan status tracking dan progress indicators
-    - ✅ Add concurrent download support dengan configurable limits
-    - ✅ Create download progress notifications menggunakan flutter_local_notifications
-    - ✅ Implement real-time download progress updates tanpa pull refresh
-    - ✅ Add DownloadProgressUpdateEvent untuk streaming progress updates
-    - ✅ Implement download resume/pause functionality
-    - ✅ Add download storage management dan cleanup
-    - ✅ Integrate dengan existing database schema untuk download tracking
+  - [x] 8.2 Create download manager dengan DownloadBloc
+    - Implement DownloadBloc dengan queue system (Complex - tetap BLoC)
+    - Build DownloadsScreen dengan status tracking dan progress indicators
+    - Add concurrent download support dengan configurable limits
+    - Create download progress notifications menggunakan flutter_local_notifications
+    - Implement download resume/pause functionality
+    - Add download storage management dan cleanup
+    - Integrate dengan existing database schema untuk download tracking
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
   - [x] 8.3 Add offline reading capabilities
-    - ✅ Implement offline content detection dalam ReaderScreen
-    - ✅ Create offline reader mode dengan existing ReaderCubit
-    - ✅ Add offline search dalam downloaded content
-    - ✅ Build offline content management dengan storage optimization
-    - ✅ Implement offline favorites dan history sync
-    - ✅ Add offline indicator dalam UI components
+    - Implement offline content detection dalam ReaderScreen
+    - Create offline reader mode dengan existing ReaderCubit
+    - Add offline search dalam downloaded content
+    - Build offline content management dengan storage optimization
+    - Implement offline favorites dan history sync
+    - Add offline indicator dalam UI components
     - _Requirements: 5.1, 5.5_
 
-- [x] 9. Implement settings dan preferences (COMPLETED - FULL IMPLEMENTATION)
+- [x] 9. Implement settings dan preferences (NEXT PRIORITY)
 💡 *Remember to check components-list.md first*
-  - [x] 9.1 Create settings screen dengan SettingsCubit (COMPLETED - FULL IMPLEMENTATION)
-    - ✅ Build SettingsScreen dengan organized sections menggunakan modern UI design
-    - ✅ Implement SettingsCubit untuk simple state management dengan existing UserDataRepository
-    - ✅ Add theme selection (dark/AMOLED) dengan ColorsConst integration
-    - ✅ Implement reactive theme system dengan ThemeCubit dan MaterialApp integration  
-    - ✅ Create real-time theme switching tanpa restart aplikasi
-    - ✅ Implement reader preferences integration dengan existing ReaderCubit
-    - ✅ Create image quality settings dan caching preferences
-    - ✅ Add app behavior settings (auto-refresh, pagination preferences)
-    - ✅ Integrate dengan existing search preferences dan sorting options
+  - [x] 9.1 Create settings screen dengan SettingsCubit
+    - Build SettingsScreen dengan organized sections menggunakan modern UI design
+    - Implement SettingsCubit untuk simple state management dengan existing UserDataRepository
+    - Add theme selection (dark/AMOLED) dengan ColorsConst integration
+    - Implement reader preferences integration dengan existing ReaderCubit
+    - Create image quality settings dan caching preferences
+    - Add app behavior settings (auto-refresh, pagination preferences)
+    - Integrate dengan existing search preferences dan sorting options
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-  - [x] 9.2 Add advanced customization dan backup (COMPLETED - FULL IMPLEMENTATION)
-    - ✅ Implement reactive theme system dengan real-time switching
-    - ✅ Add grid layout customization untuk ContentListWidget
-    - ✅ Create gesture customization untuk ReaderScreen
-    - ✅ Build backup dan restore functionality untuk all user data
-    - ✅ Add settings export/import dengan JSON format
-    - ✅ Implement settings reset functionality dengan confirmation
-    - ✅ Add advanced developer options untuk debugging
+  - [x] 9.2 Add advanced customization dan backup
+    - Implement custom theme creation dengan color picker
+    - Add grid layout customization untuk ContentListWidget
+    - Create gesture customization untuk ReaderScreen
+    - Build backup dan restore functionality untuk all user data
+    - Add settings export/import dengan JSON format
+    - Implement settings reset functionality dengan confirmation
+    - Add advanced developer options untuk debugging
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
 - [ ] 10. Add advanced features dan community (NEXT PRIORITY)

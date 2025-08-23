@@ -45,6 +45,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     on<DownloadRetryEvent>(_onRetry);
     on<DownloadRemoveEvent>(_onRemove);
     on<DownloadRefreshEvent>(_onRefresh);
+    on<DownloadProgressUpdateEvent>(_onProgressUpdate);
     on<DownloadSettingsUpdateEvent>(_onSettingsUpdate);
     on<DownloadPauseAllEvent>(_onPauseAll);
     on<DownloadResumeAllEvent>(_onResumeAll);
@@ -598,6 +599,61 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           stackTrace: stackTrace,
         ));
       }
+    }
+  }
+
+  /// Update download progress in real-time
+  Future<void> _onProgressUpdate(
+    DownloadProgressUpdateEvent event,
+    Emitter<DownloadBlocState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! DownloadLoaded) return;
+
+    try {
+      // Find the download and update its progress
+      final downloadIndex = currentState.downloads.indexWhere(
+        (d) => d.contentId == event.contentId,
+      );
+
+      if (downloadIndex == -1) {
+        _logger.w('DownloadBloc: Download not found for progress update: ${event.contentId}');
+        return;
+      }
+
+      final currentDownload = currentState.downloads[downloadIndex];
+      
+      // Update progress only if download is still in progress
+      if (!currentDownload.isInProgress) {
+        _logger.d('DownloadBloc: Ignoring progress update for non-active download: ${event.contentId}');
+        return;
+      }
+
+      // Create updated download with new progress
+      final updatedDownload = currentDownload.copyWith(
+        downloadedPages: event.downloadedPages,
+      );
+
+      // Update downloads list
+      final updatedDownloads = List<DownloadStatus>.from(currentState.downloads);
+      updatedDownloads[downloadIndex] = updatedDownload;
+
+      // Emit new state with updated progress
+      emit(currentState.copyWith(
+        downloads: updatedDownloads,
+        lastUpdated: DateTime.now(),
+      ));
+
+      // Save progress to database (but don't await to keep it fast)
+      _userDataRepository.saveDownloadStatus(updatedDownload).catchError((e) {
+        _logger.w('DownloadBloc: Failed to save progress to database: $e');
+      });
+
+      _logger.d('DownloadBloc: Updated progress for ${event.contentId}: ${event.downloadedPages}/${event.totalPages}');
+    } catch (e, stackTrace) {
+      _logger.e('DownloadBloc: Error updating progress',
+          error: e, stackTrace: stackTrace);
+      // Don't emit error state for progress updates to avoid disrupting downloads
     }
   }
 
