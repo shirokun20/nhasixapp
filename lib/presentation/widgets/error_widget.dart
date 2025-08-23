@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
 
 /// Custom error widget with black theme and contextual information
@@ -43,7 +42,7 @@ class AppErrorWidget extends StatelessWidget {
           Icon(
             icon ?? Icons.error_outline,
             size: 64,
-            color: iconColor ?? ColorsConst.accentRed,
+            color: iconColor ?? Theme.of(context).colorScheme.error,
           ),
 
           const SizedBox(height: 16),
@@ -52,7 +51,7 @@ class AppErrorWidget extends StatelessWidget {
           Text(
             title,
             style: TextStyleConst.headingMedium.copyWith(
-              color: ColorsConst.darkTextPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
             textAlign: TextAlign.center,
           ),
@@ -63,7 +62,7 @@ class AppErrorWidget extends StatelessWidget {
           Text(
             message,
             style: TextStyleConst.bodyMedium.copyWith(
-              color: ColorsConst.darkTextSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
           ),
@@ -71,32 +70,32 @@ class AppErrorWidget extends StatelessWidget {
           // Suggestions
           if (suggestions.isNotEmpty) ...[
             const SizedBox(height: 16),
-            _buildSuggestions(),
+            _buildSuggestions(context),
           ],
 
           // Error details (expandable)
           if (showDetails && details != null) ...[
             const SizedBox(height: 16),
-            _buildErrorDetails(),
+            _buildErrorDetails(context),
           ],
 
           const SizedBox(height: 24),
 
           // Action buttons
-          _buildActionButtons(),
+          _buildActionButtons(context),
         ],
       ),
     );
   }
 
-  Widget _buildSuggestions() {
+  Widget _buildSuggestions(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: ColorsConst.darkElevated,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: ColorsConst.borderMuted,
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
           width: 1,
         ),
       ),
@@ -106,7 +105,7 @@ class AppErrorWidget extends StatelessWidget {
           Text(
             'Suggestions:',
             style: TextStyleConst.bodySmall.copyWith(
-              color: ColorsConst.darkTextPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -119,14 +118,14 @@ class AppErrorWidget extends StatelessWidget {
                     Text(
                       '• ',
                       style: TextStyleConst.bodySmall.copyWith(
-                        color: ColorsConst.accentBlue,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
                     Expanded(
                       child: Text(
                         suggestion,
                         style: TextStyleConst.bodySmall.copyWith(
-                          color: ColorsConst.darkTextSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
@@ -138,28 +137,28 @@ class AppErrorWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildErrorDetails() {
+  Widget _buildErrorDetails(BuildContext context) {
     return ExpansionTile(
       title: Text(
         'Error Details',
         style: TextStyleConst.bodyMedium.copyWith(
-          color: ColorsConst.darkTextSecondary,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
-      iconColor: ColorsConst.darkTextSecondary,
-      collapsedIconColor: ColorsConst.darkTextSecondary,
+      iconColor: Theme.of(context).colorScheme.onSurfaceVariant,
+      collapsedIconColor: Theme.of(context).colorScheme.onSurfaceVariant,
       children: [
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: ColorsConst.darkBackground,
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
             details!,
             style: TextStyleConst.bodySmall.copyWith(
-              color: ColorsConst.darkTextTertiary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontFamily: 'monospace',
             ),
           ),
@@ -168,7 +167,7 @@ class AppErrorWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(BuildContext context) {
     return Column(
       children: [
         // Primary action (Retry)
@@ -178,8 +177,8 @@ class AppErrorWidget extends StatelessWidget {
             child: ElevatedButton(
               onPressed: onRetry,
               style: ElevatedButton.styleFrom(
-                backgroundColor: ColorsConst.accentBlue,
-                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -188,7 +187,7 @@ class AppErrorWidget extends StatelessWidget {
               child: Text(
                 retryText,
                 style: TextStyleConst.buttonMedium.copyWith(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onPrimary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -203,9 +202,9 @@ class AppErrorWidget extends StatelessWidget {
             child: OutlinedButton(
               onPressed: onSecondaryAction,
               style: OutlinedButton.styleFrom(
-                foregroundColor: ColorsConst.darkTextSecondary,
-                side: const BorderSide(
-                  color: ColorsConst.borderDefault,
+                foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                side: BorderSide(
+                  color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -215,7 +214,7 @@ class AppErrorWidget extends StatelessWidget {
               child: Text(
                 secondaryActionText!,
                 style: TextStyleConst.buttonMedium.copyWith(
-                  color: ColorsConst.darkTextSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ),
@@ -244,7 +243,7 @@ class NetworkErrorWidget extends StatelessWidget {
       message:
           'Unable to connect to the internet. Please check your connection and try again.',
       icon: Icons.wifi_off,
-      iconColor: ColorsConst.accentOrange,
+      iconColor: Colors.orange,
       onRetry: onRetry,
       retryText: 'Try Again',
       onSecondaryAction: onGoOffline,
@@ -278,7 +277,7 @@ class ServerErrorWidget extends StatelessWidget {
           ? 'Server returned error $statusCode. The service might be temporarily unavailable.'
           : 'The server is currently unavailable. Please try again later.',
       icon: Icons.dns,
-      iconColor: ColorsConst.accentRed,
+      iconColor: Colors.red,
       onRetry: onRetry,
       suggestions: const [
         'Wait a few minutes and try again',
@@ -307,7 +306,7 @@ class CloudflareErrorWidget extends StatelessWidget {
       message:
           'The website is protected by Cloudflare. We\'re trying to bypass the protection.',
       icon: Icons.security,
-      iconColor: ColorsConst.accentOrange,
+      iconColor: Colors.orange,
       onRetry: onRetry,
       retryText: 'Try Again',
       onSecondaryAction: onBypass,
@@ -339,7 +338,7 @@ class ParseErrorWidget extends StatelessWidget {
       message:
           'Unable to process the received data. The website structure might have changed.',
       icon: Icons.code_off,
-      iconColor: ColorsConst.accentRed,
+      iconColor: Colors.red,
       onRetry: onRetry,
       retryText: 'Retry',
       onSecondaryAction: onReport,
@@ -382,13 +381,13 @@ class EmptyStateWidget extends StatelessWidget {
           Icon(
             icon,
             size: 64,
-            color: ColorsConst.darkTextTertiary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           const SizedBox(height: 16),
           Text(
             title,
             style: TextStyleConst.headingMedium.copyWith(
-              color: ColorsConst.darkTextPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
             textAlign: TextAlign.center,
           ),
@@ -396,7 +395,7 @@ class EmptyStateWidget extends StatelessWidget {
           Text(
             message,
             style: TextStyleConst.bodyMedium.copyWith(
-              color: ColorsConst.darkTextSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
           ),
@@ -407,7 +406,7 @@ class EmptyStateWidget extends StatelessWidget {
                   child: Text(
                     '• $suggestion',
                     style: TextStyleConst.bodySmall.copyWith(
-                      color: ColorsConst.darkTextTertiary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -418,8 +417,8 @@ class EmptyStateWidget extends StatelessWidget {
             ElevatedButton(
               onPressed: onAction,
               style: ElevatedButton.styleFrom(
-                backgroundColor: ColorsConst.accentBlue,
-                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
                   vertical: 12,
@@ -431,7 +430,7 @@ class EmptyStateWidget extends StatelessWidget {
               child: Text(
                 actionText!,
                 style: TextStyleConst.buttonMedium.copyWith(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onPrimary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -492,7 +491,7 @@ class MaintenanceWidget extends StatelessWidget {
       message:
           'The service is currently under maintenance. Please check back later.',
       icon: Icons.build,
-      iconColor: ColorsConst.accentOrange,
+      iconColor: Colors.orange,
       onRetry: onCheckAgain,
       retryText: 'Check Again',
       suggestions: const [

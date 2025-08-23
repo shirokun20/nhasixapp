@@ -167,12 +167,12 @@ class _FilterDataSearchWithSuggestionsState
     return Container(
       constraints: const BoxConstraints(maxHeight: 200),
       decoration: BoxDecoration(
-        color: ColorsConst.darkSurface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: ColorsConst.borderDefault),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Theme.of(context).shadowColor.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -188,12 +188,12 @@ class _FilterDataSearchWithSuggestionsState
             leading: Icon(
               Icons.search,
               size: 20,
-              color: ColorsConst.darkTextSecondary,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
             title: Text(
               suggestion,
               style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.darkTextPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             onTap: () => _onSuggestionTap(suggestion),

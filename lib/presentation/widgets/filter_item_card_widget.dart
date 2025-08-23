@@ -27,11 +27,11 @@ class FilterItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      color: _getCardColor(),
+      color: _getCardColor(context),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: _getBorderColor(),
+          color: _getBorderColor(context),
           width: _getBorderWidth(),
         ),
       ),
@@ -56,13 +56,13 @@ class FilterItemCard extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: _getTagTypeColor().withValues(alpha: 0.2),
+                            color: _getTagTypeColor(context).withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             TagType.getDisplayName(tag.type),
                             style: TextStyleConst.label.copyWith(
-                              color: _getTagTypeColor(),
+                              color: _getTagTypeColor(context),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -73,7 +73,7 @@ class FilterItemCard extends StatelessWidget {
                           Icon(
                             Icons.star,
                             size: 16,
-                            color: Colors.amber,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                           const SizedBox(width: 4),
                         ],
@@ -84,7 +84,7 @@ class FilterItemCard extends StatelessWidget {
                     Text(
                       tag.name,
                       style: TextStyleConst.contentTitle.copyWith(
-                        color: ColorsConst.darkTextPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -93,7 +93,7 @@ class FilterItemCard extends StatelessWidget {
                     Text(
                       '${tag.count} items',
                       style: TextStyleConst.bodySmall.copyWith(
-                        color: ColorsConst.darkTextSecondary,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
@@ -111,140 +111,147 @@ class FilterItemCard extends StatelessWidget {
   }
 
   Widget _buildActionButtons() {
-    if (isIncluded || isExcluded) {
-      // Show selected state with remove option
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Status indicator
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 6,
-            ),
-            decoration: BoxDecoration(
-              color: isIncluded
-                  ? ColorsConst.accentBlue.withValues(alpha: 0.1)
-                  : ColorsConst.accentRed.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  isIncluded ? Icons.add : Icons.remove,
-                  size: 16,
+    return Builder(
+      builder: (context) {
+        if (isIncluded || isExcluded) {
+          // Show selected state with remove option
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Status indicator
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
                   color: isIncluded
-                      ? ColorsConst.accentBlue
-                      : ColorsConst.accentRed,
+                      ? ColorsConst.accentBlue.withValues(alpha: 0.1)
+                      : ColorsConst.accentRed.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  isIncluded ? 'Include' : 'Exclude',
-                  style: TextStyleConst.label.copyWith(
-                    color: isIncluded
-                        ? ColorsConst.accentBlue
-                        : ColorsConst.accentRed,
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isIncluded ? Icons.add : Icons.remove,
+                      size: 16,
+                      color: isIncluded
+                          ? ColorsConst.accentBlue
+                          : ColorsConst.accentRed,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      isIncluded ? 'Include' : 'Exclude',
+                      style: TextStyleConst.label.copyWith(
+                        color: isIncluded
+                            ? ColorsConst.accentBlue
+                            : ColorsConst.accentRed,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Remove button
-          IconButton(
-            onPressed: onTap, // Tap to remove/toggle
-            icon: Icon(
-              Icons.close,
-              size: 20,
-              color: ColorsConst.darkTextSecondary,
-            ),
-            style: IconButton.styleFrom(
-              backgroundColor: ColorsConst.darkCard,
-              padding: const EdgeInsets.all(8),
-              minimumSize: const Size(36, 36),
-            ),
-          ),
-        ],
-      );
-    } else {
-      // Show include/exclude options
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Include button
-          IconButton(
-            onPressed: onInclude,
-            icon: Icon(
-              Icons.add,
-              size: 20,
-              color: ColorsConst.accentBlue,
-            ),
-            style: IconButton.styleFrom(
-              backgroundColor: ColorsConst.accentBlue.withValues(alpha: 0.1),
-              padding: const EdgeInsets.all(8),
-              minimumSize: const Size(36, 36),
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Exclude button
-          IconButton(
-            onPressed: onExclude,
-            icon: Icon(
-              Icons.remove,
-              size: 20,
-              color: ColorsConst.accentRed,
-            ),
-            style: IconButton.styleFrom(
-              backgroundColor: ColorsConst.accentRed.withValues(alpha: 0.1),
-              padding: const EdgeInsets.all(8),
-              minimumSize: const Size(36, 36),
-            ),
-          ),
-        ],
-      );
-    }
+              ),
+              const SizedBox(width: 8),
+              // Remove button
+              IconButton(
+                onPressed: onTap, // Tap to remove/toggle
+                icon: Icon(
+                  Icons.close,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+                style: IconButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.surface,
+                  padding: const EdgeInsets.all(8),
+                  minimumSize: const Size(36, 36),
+                ),
+              ),
+            ],
+          );
+        } else {
+          // Show include/exclude options
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Include button
+              IconButton(
+                onPressed: onInclude,
+                icon: Icon(
+                  Icons.add,
+                  size: 20,
+                  color: ColorsConst.accentBlue,
+                ),
+                style: IconButton.styleFrom(
+                  backgroundColor: ColorsConst.accentBlue.withValues(alpha: 0.1),
+                  padding: const EdgeInsets.all(8),
+                  minimumSize: const Size(36, 36),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Exclude button
+              IconButton(
+                onPressed: onExclude,
+                icon: Icon(
+                  Icons.remove,
+                  size: 20,
+                  color: ColorsConst.accentRed,
+                ),
+                style: IconButton.styleFrom(
+                  backgroundColor: ColorsConst.accentRed.withValues(alpha: 0.1),
+                  padding: const EdgeInsets.all(8),
+                  minimumSize: const Size(36, 36),
+                ),
+              ),
+            ],
+          );
+        }
+      },
+    );
   }
 
-  Color _getCardColor() {
+  Color _getCardColor(BuildContext context) {
     if (isIncluded) {
       return ColorsConst.accentBlue.withValues(alpha: 0.05);
     } else if (isExcluded) {
       return ColorsConst.accentRed.withValues(alpha: 0.05);
     }
-    return ColorsConst.darkSurface;
+    return Theme.of(context).colorScheme.surface;
   }
 
-  Color _getBorderColor() {
+  Color _getBorderColor(BuildContext context) {
     if (isIncluded) {
       return ColorsConst.accentBlue;
     } else if (isExcluded) {
       return ColorsConst.accentRed;
     }
-    return ColorsConst.borderDefault;
+    return Theme.of(context).colorScheme.outline;
   }
 
   double _getBorderWidth() {
     return (isIncluded || isExcluded) ? 2 : 1;
   }
 
-  Color _getTagTypeColor() {
+  Color _getTagTypeColor(BuildContext context) {
+    // Use theme-adaptive colors that work in both light and dark modes
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     switch (tag.type.toLowerCase()) {
       case 'artist':
-        return const Color(0xFFFF6B6B); // Red
+        return isDark ? const Color(0xFFFF6B6B) : const Color(0xFFE53E3E); // Red
       case 'character':
-        return const Color(0xFF4ECDC4); // Teal
+        return isDark ? const Color(0xFF4ECDC4) : const Color(0xFF319795); // Teal
       case 'parody':
-        return const Color(0xFF45B7D1); // Blue
+        return isDark ? const Color(0xFF45B7D1) : const Color(0xFF3182CE); // Blue
       case 'group':
-        return const Color(0xFF96CEB4); // Green
+        return isDark ? const Color(0xFF96CEB4) : const Color(0xFF38A169); // Green
       case 'language':
-        return const Color(0xFFFFA726); // Orange
+        return isDark ? const Color(0xFFFFA726) : const Color(0xFFD69E2E); // Orange
       case 'category':
-        return const Color(0xFFBA68C8); // Purple
+        return isDark ? const Color(0xFFBA68C8) : const Color(0xFF9F7AEA); // Purple
       default:
-        return ColorsConst.accentBlue; // Default blue
+        return Theme.of(context).colorScheme.primary; // Default theme primary
     }
   }
 }

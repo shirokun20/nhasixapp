@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:nhasixapp/core/constants/colors_const.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
-import 'package:nhasixapp/core/routing/app_route.dart';
+import '../../core/routing/app_route.dart';
 
 class AppMainDrawerWidget extends StatelessWidget {
   const AppMainDrawerWidget({
@@ -14,14 +13,16 @@ class AppMainDrawerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Drawer(
-      backgroundColor: ColorsConst.darkSurface,
+      backgroundColor: theme.scaffoldBackgroundColor,
       child: ListView(
         padding: EdgeInsets.zero,
         children: <Widget>[
           Container(
-            decoration: const BoxDecoration(
-              color: ColorsConst.darkCard,
+            decoration: BoxDecoration(
+              color: theme.cardColor,
             ),
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -43,25 +44,28 @@ class AppMainDrawerWidget extends StatelessWidget {
                   'Nhentai',
                   style: TextStyleConst.headingLarge.copyWith(
                     fontSize: 30,
+                    color: theme.textTheme.headlineLarge?.color,
                   ),
                 ),
                 Text(
                   'Nhentai unofficial client',
                   style: TextStyleConst.caption.copyWith(
-                    color: ColorsConst.darkTextSecondary,
+                    color: theme.textTheme.bodySmall?.color,
                   ),
                 ),
               ],
             ),
           ),
           ListTile(
-            leading: const Icon(
+            leading: Icon(
               Icons.download,
-              color: ColorsConst.darkTextSecondary,
+              color: theme.iconTheme.color,
             ),
             title: Text(
               'Downloaded galleries',
-              style: TextStyleConst.navigationLabel,
+              style: TextStyleConst.navigationLabel.copyWith(
+                color: theme.textTheme.titleMedium?.color,
+              ),
             ),
             onTap: () {
               Navigator.pop(context);
@@ -71,11 +75,13 @@ class AppMainDrawerWidget extends StatelessWidget {
           ListTile(
             leading: Icon(
               Icons.offline_bolt,
-              color: ColorsConst.accentGreen,
+              color: theme.iconTheme.color,
             ),
             title: Text(
               'Offline content',
-              style: TextStyleConst.navigationLabel,
+              style: TextStyleConst.navigationLabel.copyWith(
+                color: theme.textTheme.titleMedium?.color,
+              ),
             ),
             onTap: () {
               Navigator.pop(context);
@@ -83,13 +89,15 @@ class AppMainDrawerWidget extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(
+            leading: Icon(
               Icons.shuffle,
-              color: ColorsConst.darkTextSecondary,
+              color: theme.iconTheme.color,
             ),
             title: Text(
               'Random gallery',
-              style: TextStyleConst.navigationLabel,
+              style: TextStyleConst.navigationLabel.copyWith(
+                color: theme.textTheme.titleMedium?.color,
+              ),
             ),
             onTap: () {
               Navigator.pop(context);
@@ -99,11 +107,13 @@ class AppMainDrawerWidget extends StatelessWidget {
           ListTile(
             leading: Icon(
               Icons.favorite,
-              color: ColorsConst.accentPink,
+              color: theme.iconTheme.color,
             ),
             title: Text(
               'Favorite galleries',
-              style: TextStyleConst.navigationLabel,
+              style: TextStyleConst.navigationLabel.copyWith(
+                color: theme.textTheme.titleMedium?.color,
+              ),
             ),
             onTap: () {
               Navigator.pop(context);
@@ -111,13 +121,15 @@ class AppMainDrawerWidget extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(
+            leading: Icon(
               Icons.history,
-              color: ColorsConst.darkTextSecondary,
+              color: theme.iconTheme.color,
             ),
             title: Text(
               'View history',
-              style: TextStyleConst.navigationLabel,
+              style: TextStyleConst.navigationLabel.copyWith(
+                color: theme.textTheme.titleMedium?.color,
+              ),
             ),
             onTap: () {
               Navigator.pop(context);
@@ -125,13 +137,15 @@ class AppMainDrawerWidget extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(
+            leading: Icon(
               Icons.settings,
-              color: ColorsConst.accentBlue,
+              color: theme.iconTheme.color,
             ),
             title: Text(
               'Settings',
-              style: TextStyleConst.navigationLabel,
+              style: TextStyleConst.navigationLabel.copyWith(
+                color: theme.textTheme.titleMedium?.color,
+              ),
             ),
             onTap: () {
               Navigator.pop(context);

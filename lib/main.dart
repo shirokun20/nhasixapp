@@ -21,6 +21,7 @@ class MyApp extends StatelessWidget {
       providers: MultiBlocProviderConfig.data,
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, themeState) {
+          print('🎨 MaterialApp rebuilt with theme: ${themeState.currentTheme}, mode: ${themeState.themeMode}, brightness: ${themeState.themeData.brightness}');
           return MaterialApp.router(
             title: "Nhentai Flutter App",
             debugShowCheckedModeBanner: false,

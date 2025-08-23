@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
-import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/entities.dart';
 import '../blocs/content/content_bloc.dart';
@@ -176,7 +175,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                 ),
                 // Loading overlay
                 Container(
-                  color: ColorsConst.darkBackground.withValues(alpha: 0.7),
+                  color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.7),
                   child: Center(
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -184,12 +183,11 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                         vertical: 16,
                       ),
                       decoration: BoxDecoration(
-                        color: ColorsConst.darkCard,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: ColorsConst.darkBackground
-                                .withValues(alpha: 0.5),
+                            color: Theme.of(context).shadowColor.withValues(alpha: 0.5),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
@@ -202,7 +200,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                             width: 24,
                             height: 24,
                             child: CircularProgressIndicator(
-                              color: ColorsConst.accentBlue,
+                              color: Theme.of(context).colorScheme.primary,
                               strokeWidth: 2.5,
                             ),
                           ),
@@ -212,7 +210,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                                 ? state.message
                                 : 'Loading...',
                             style: TextStyleConst.bodyMedium.copyWith(
-                              color: ColorsConst.darkTextPrimary,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -227,13 +225,13 @@ class _ContentListWidgetState extends State<ContentListWidget> {
 
           // Full loading for initial load
           return Container(
-            color: ColorsConst.darkBackground,
+            color: Theme.of(context).colorScheme.background,
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const CircularProgressIndicator(
-                    color: ColorsConst.accentBlue,
+                  CircularProgressIndicator(
+                    color: Theme.of(context).colorScheme.primary,
                     strokeWidth: 3,
                   ),
                   const SizedBox(height: 24),
@@ -242,7 +240,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                         ? state.message
                         : 'Loading content...',
                     style: TextStyleConst.bodyLarge.copyWith(
-                      color: ColorsConst.darkTextPrimary,
+                      color: Theme.of(context).colorScheme.onBackground,
                     ),
                   ),
                 ],
@@ -259,7 +257,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                 Icon(
                   Icons.inbox_outlined,
                   size: 64,
-                  color: ColorsConst.accentRed,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -360,8 +358,8 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                   if (mode == LoadStatus.idle) {
                     body = const Text("Pull up to load more");
                   } else if (mode == LoadStatus.loading) {
-                    body = const CircularProgressIndicator(
-                        color: ColorsConst.accentBlue);
+                    body = CircularProgressIndicator(
+                        color: Theme.of(context).colorScheme.primary);
                   } else if (mode == LoadStatus.failed) {
                     body = const Text("Load Failed! Click retry!");
                   } else if (mode == LoadStatus.canLoading) {
@@ -408,13 +406,13 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                         Text(
                           state.contentTypeDescription,
                           style: TextStyleConst.bodyLarge.copyWith(
-                            color: ColorsConst.darkTextPrimary,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         Text(
                           '${state.totalCount} items • Page ${state.currentPage} of ${state.totalPages}',
                           style: TextStyleConst.bodySmall.copyWith(
-                            color: ColorsConst.darkTextSecondary,
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                           ),
                         ),
                       ],
@@ -424,7 +422,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                     Text(
                       'Updated: ${_formatTime(state.lastUpdated!)}',
                       style: TextStyleConst.bodySmall.copyWith(
-                        color: ColorsConst.darkTextTertiary,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                     ),
                 ],
@@ -459,11 +457,11 @@ class _ContentListWidgetState extends State<ContentListWidget> {
 
         // Loading more indicator (only for infinite scroll)
         if (widget.enableInfiniteScroll && state.isLoadingMore)
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16.0),
               child: Center(
-                child: CircularProgressIndicator(color: ColorsConst.accentBlue),
+                child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
               ),
             ),
           ),

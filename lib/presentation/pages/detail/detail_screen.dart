@@ -335,15 +335,15 @@ class _DetailScreenState extends State<DetailScreen> {
                 ),
                 // Gradient overlay
                 Container(
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
                         Colors.transparent,
-                        Color(0x88000000),
-                        Color(0xCC000000),
+                        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
                       ],
                     ),
                   ),
@@ -1056,12 +1056,12 @@ class _DetailScreenState extends State<DetailScreen> {
         SnackBar(
           content: Text(
             'Download started: ${content.title}',
-            style: TextStyleConst.bodyMedium.copyWith(color: Colors.white),
+            style: TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onPrimary),
           ),
           backgroundColor: ColorsConst.accentGreen,
           action: SnackBarAction(
             label: 'View Progress',
-            textColor: Colors.white,
+            textColor: Theme.of(context).colorScheme.onPrimary,
             onPressed: () {
               context.push('/downloads');
             },
@@ -1077,7 +1077,7 @@ class _DetailScreenState extends State<DetailScreen> {
       SnackBar(
         content: Text(
           'Share functionality will be implemented later',
-          style: TextStyleConst.bodyMedium.copyWith(color: Colors.white),
+          style: TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onPrimary),
         ),
         backgroundColor: ColorsConst.accentBlue,
       ),
@@ -1095,7 +1095,7 @@ class _DetailScreenState extends State<DetailScreen> {
           SnackBar(
             content: Text(
               'Link copied to clipboard',
-              style: TextStyleConst.bodyMedium.copyWith(color: Colors.white),
+              style: TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onPrimary),
             ),
             backgroundColor: ColorsConst.accentGreen,
           ),

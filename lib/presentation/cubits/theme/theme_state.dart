@@ -76,18 +76,18 @@ class ThemeState {
     );
   }
 
-  @override
+    @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is ThemeState &&
           runtimeType == other.runtimeType &&
-          themeData == other.themeData &&
           themeMode == other.themeMode &&
-          currentTheme == other.currentTheme;
+          currentTheme == other.currentTheme &&
+          lastUpdated == other.lastUpdated;
 
   @override
   int get hashCode =>
-      themeData.hashCode ^
       themeMode.hashCode ^
-      currentTheme.hashCode;
+      currentTheme.hashCode ^
+      lastUpdated.hashCode;
 }

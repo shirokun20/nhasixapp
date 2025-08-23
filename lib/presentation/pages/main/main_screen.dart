@@ -10,7 +10,6 @@ import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/blocs/content/content_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/home/home_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
-import 'package:nhasixapp/core/constants/colors_const.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_header_widget.dart';
@@ -119,19 +118,19 @@ class _MainScreenState extends State<MainScreen> {
           // Show full screen loading during home initialization
           if (homeState is HomeLoading) {
             return Scaffold(
-              backgroundColor: ColorsConst.darkBackground,
+              backgroundColor: Theme.of(context).colorScheme.background,
               body: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const CircularProgressIndicator(
-                      color: ColorsConst.accentBlue,
+                    CircularProgressIndicator(
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'Initializing...',
                       style: TextStyleConst.styleMedium(
-                        textColor: ColorsConst.darkTextPrimary,
+                        textColor: Theme.of(context).colorScheme.onSurface,
                         size: 16,
                       ),
                     ),
@@ -143,7 +142,7 @@ class _MainScreenState extends State<MainScreen> {
 
           // Main screen UI when home is loaded
           return Scaffold(
-            backgroundColor: ColorsConst.darkBackground,
+            backgroundColor: Theme.of(context).colorScheme.background,
             appBar: AppMainHeaderWidget(
               context: context,
               onSearchPressed: () async {
@@ -165,7 +164,7 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildBody() {
     return Container(
-      color: ColorsConst.darkBackground,
+      color: Theme.of(context).colorScheme.background,
       child: BlocBuilder<ContentBloc, ContentState>(
         builder: (context, state) {
           return Column(
@@ -183,10 +182,10 @@ class _MainScreenState extends State<MainScreen> {
                   onSortChanged: _onSortingChanged,
                 ),
 
-              // Content area with black theme
+              // Content area with theme background
               Expanded(
                 child: Container(
-                  color: ColorsConst.darkBackground,
+                  color: Theme.of(context).colorScheme.background,
                   child: ContentListWidget(
                     onContentTap: _onContentTap,
                     enablePullToRefresh: true, // Allow pull-to-refresh
@@ -194,7 +193,7 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                 ),
               ),
-              // Pagination footer with black theme
+              // Pagination footer with theme background
               _buildContentFooter(state),
             ],
           );
@@ -275,16 +274,16 @@ class _MainScreenState extends State<MainScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: ColorsConst.darkSurface,
-        border: const Border(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
           bottom: BorderSide(
-            color: ColorsConst.borderDefault,
+            color: Theme.of(context).colorScheme.outline,
             width: 1,
           ),
         ),
         boxShadow: [
           BoxShadow(
-            color: ColorsConst.darkBackground.withValues(alpha: 0.5),
+            color: Theme.of(context).shadowColor.withValues(alpha: 0.5),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -298,12 +297,12 @@ class _MainScreenState extends State<MainScreen> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: ColorsConst.accentBlue.withValues(alpha: 0.1),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(
                   Icons.search,
-                  color: ColorsConst.accentBlue,
+                  color: Theme.of(context).colorScheme.primary,
                   size: 18,
                 ),
               ),
@@ -315,14 +314,14 @@ class _MainScreenState extends State<MainScreen> {
                     Text(
                       'Search Results',
                       style: TextStyleConst.headingSmall.copyWith(
-                        color: ColorsConst.darkTextPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     Text(
                       'Showing filtered content',
                       style: TextStyleConst.bodySmall.copyWith(
-                        color: ColorsConst.darkTextSecondary,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
@@ -333,8 +332,8 @@ class _MainScreenState extends State<MainScreen> {
                 icon: const Icon(Icons.clear, size: 16),
                 label: const Text('Clear'),
                 style: TextButton.styleFrom(
-                  foregroundColor: ColorsConst.accentRed,
-                  backgroundColor: ColorsConst.accentRed.withValues(alpha: 0.1),
+                  foregroundColor: Theme.of(context).colorScheme.error,
+                  backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   shape: RoundedRectangleBorder(
@@ -349,9 +348,9 @@ class _MainScreenState extends State<MainScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: ColorsConst.darkCard,
+              color: Theme.of(context).colorScheme.surfaceContainer,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: ColorsConst.borderDefault),
+              border: Border.all(color: Theme.of(context).colorScheme.outline),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,7 +358,7 @@ class _MainScreenState extends State<MainScreen> {
                 Text(
                   'Active Filters:',
                   style: TextStyleConst.bodySmall.copyWith(
-                    color: ColorsConst.darkTextSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -367,7 +366,7 @@ class _MainScreenState extends State<MainScreen> {
                 Text(
                   _getSearchFilterSummary(_currentSearchFilter!),
                   style: TextStyleConst.bodySmall.copyWith(
-                    color: ColorsConst.darkTextPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ],
@@ -503,11 +502,11 @@ class _MainScreenState extends State<MainScreen> {
     }
 
     return Container(
-      decoration: const BoxDecoration(
-        color: ColorsConst.darkSurface,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
         border: Border(
           top: BorderSide(
-            color: ColorsConst.borderDefault,
+            color: Theme.of(context).colorScheme.outline,
             width: 1,
           ),
         ),

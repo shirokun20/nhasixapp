@@ -306,15 +306,17 @@ class ContentCard extends StatelessWidget {
       left: 0,
       right: 0,
       height: 40,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.transparent,
-              ColorsConst.darkBackground.withValues(alpha: 0.6),
-            ],
+      child: Builder(
+        builder: (context) => Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.transparent,
+                Theme.of(context).colorScheme.surface.withValues(alpha: 0.6),
+              ],
+            ),
           ),
         ),
       ),

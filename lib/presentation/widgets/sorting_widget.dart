@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:nhasixapp/core/constants/colors_const.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 
@@ -19,20 +18,20 @@ class SortingWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isCompact) {
-      return _buildCompactSorting();
+      return _buildCompactSorting(context);
     } else {
-      return _buildFullSorting();
+      return _buildFullSorting(context);
     }
   }
 
   /// Build compact sorting for smaller spaces
-  Widget _buildCompactSorting() {
+  Widget _buildCompactSorting(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: ColorsConst.darkSurface,
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: ColorsConst.borderDefault),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -40,13 +39,13 @@ class SortingWidget extends StatelessWidget {
           Icon(
             Icons.sort,
             size: 16,
-            color: ColorsConst.darkTextSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: 6),
           Text(
             currentSort.displayName,
             style: TextStyleConst.bodySmall.copyWith(
-              color: ColorsConst.darkTextPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -54,7 +53,7 @@ class SortingWidget extends StatelessWidget {
           Icon(
             Icons.keyboard_arrow_down,
             size: 16,
-            color: ColorsConst.darkTextSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ],
       ),
@@ -62,14 +61,14 @@ class SortingWidget extends StatelessWidget {
   }
 
   /// Build full sorting with all options visible
-  Widget _buildFullSorting() {
+  Widget _buildFullSorting(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: ColorsConst.darkSurface,
-        border: const Border(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        border: Border(
           bottom: BorderSide(
-            color: ColorsConst.borderDefault,
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
             width: 1,
           ),
         ),
@@ -82,12 +81,12 @@ class SortingWidget extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: ColorsConst.accentBlue.withValues(alpha: 0.1),
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(
                   Icons.sort,
-                  color: ColorsConst.accentBlue,
+                  color: Theme.of(context).colorScheme.primary,
                   size: 18,
                 ),
               ),
@@ -95,7 +94,7 @@ class SortingWidget extends StatelessWidget {
               Text(
                 'Sort by',
                 style: TextStyleConst.headingSmall.copyWith(
-                  color: ColorsConst.darkTextPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -117,20 +116,20 @@ class SortingWidget extends StatelessWidget {
                         onSortChanged(sort);
                       }
                     },
-                    backgroundColor: ColorsConst.darkCard,
+                    backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
                     selectedColor:
-                        ColorsConst.accentBlue.withValues(alpha: 0.2),
+                        Theme.of(context).colorScheme.primary.withOpacity(0.2),
                     labelStyle: TextStyleConst.bodySmall.copyWith(
                       color: isSelected
-                          ? ColorsConst.accentBlue
-                          : ColorsConst.darkTextSecondary,
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.normal,
                     ),
                     side: BorderSide(
                       color: isSelected
-                          ? ColorsConst.accentBlue
-                          : ColorsConst.borderDefault,
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.outline.withOpacity(0.3),
                       width: isSelected ? 2 : 1,
                     ),
                     elevation: isSelected ? 2 : 0,
@@ -162,17 +161,17 @@ class SortingDropdown extends StatelessWidget {
     return PopupMenuButton<SortOption>(
       initialValue: currentSort,
       onSelected: onSortChanged,
-      color: ColorsConst.darkSurface,
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
-        side: const BorderSide(color: ColorsConst.borderDefault),
+        side: BorderSide(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: ColorsConst.darkSurface,
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: ColorsConst.borderDefault),
+          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -180,13 +179,13 @@ class SortingDropdown extends StatelessWidget {
             Icon(
               Icons.sort,
               size: 16,
-              color: ColorsConst.darkTextSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: 6),
             Text(
               currentSort.displayName,
               style: TextStyleConst.bodySmall.copyWith(
-                color: ColorsConst.darkTextPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -194,7 +193,7 @@ class SortingDropdown extends StatelessWidget {
             Icon(
               Icons.keyboard_arrow_down,
               size: 16,
-              color: ColorsConst.darkTextSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ],
         ),
@@ -209,7 +208,7 @@ class SortingDropdown extends StatelessWidget {
                 Icon(
                   Icons.check,
                   size: 16,
-                  color: ColorsConst.accentBlue,
+                  color: Theme.of(context).colorScheme.primary,
                 )
               else
                 const SizedBox(width: 16),
@@ -219,8 +218,8 @@ class SortingDropdown extends StatelessWidget {
                   sort.displayName,
                   style: TextStyleConst.bodySmall.copyWith(
                     color: isSelected
-                        ? ColorsConst.accentBlue
-                        : ColorsConst.darkTextPrimary,
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.onSurface,
                     fontWeight:
                         isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),

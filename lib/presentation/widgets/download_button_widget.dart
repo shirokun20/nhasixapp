@@ -209,7 +209,7 @@ class DownloadButtonWidget extends StatelessWidget {
             label: showText ? Text(text) : const SizedBox.shrink(),
             style: ElevatedButton.styleFrom(
               backgroundColor: color,
-              foregroundColor: Colors.white,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
               padding: EdgeInsets.symmetric(
                 horizontal: showText ? 16 : 12,
                 vertical: 8,
@@ -249,7 +249,7 @@ class DownloadButtonWidget extends StatelessWidget {
             label: Text(text, style: TextStyleConst.labelLarge),
             style: ElevatedButton.styleFrom(
               backgroundColor: color,
-              foregroundColor: Colors.white,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
           ),
@@ -288,7 +288,7 @@ class DownloadButtonWidget extends StatelessWidget {
                 : const SizedBox.shrink(),
             style: ElevatedButton.styleFrom(
               backgroundColor: ColorsConst.primary,
-              foregroundColor: Colors.white,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
               padding: EdgeInsets.symmetric(
                 horizontal: showText ? 16 : 12,
                 vertical: 8,

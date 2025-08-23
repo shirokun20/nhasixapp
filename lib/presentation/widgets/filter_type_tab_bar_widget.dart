@@ -201,8 +201,8 @@ class FilterTypeSegmentedControl extends StatelessWidget {
                     TagType.getDisplayName(type),
                     style: TextStyleConst.label.copyWith(
                       color: isSelected
-                          ? ColorsConst.darkTextPrimary
-                          : ColorsConst.darkTextSecondary,
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.w500,
                     ),
