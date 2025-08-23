@@ -142,54 +142,6 @@ void _onProgressUpdate(event, emit) {
 }
 ```
 
-## 📋 Implementation Plan
-
-### Phase 1: Stream-Based Progress Updates
-1. **Create DownloadManager Service**
-   - StreamController untuk progress updates
-   - Global download state management
-   - Integration dengan existing DownloadService
-
-2. **Modify DownloadBloc**
-   - Subscribe to progress stream
-   - Auto-emit progress updates
-   - Handle stream errors
-
-3. **Update DownloadContentUseCase**
-   - Emit progress ke stream instead of hanya save database
-   - Maintain backward compatibility
-
-### Phase 2: Improve Cancel/Pause Mechanism
-1. **Create DownloadTask Class**
-   - Track individual download state
-   - Proper cancellation handling
-   - Pause/resume capability
-
-2. **Modify DownloadService**
-   - Check pause state in download loop
-   - Proper cancel token handling
-   - Cleanup on cancellation
-
-3. **Update DownloadBloc**
-   - Proper task management
-   - Better error handling
-
-### Phase 3: Notification Permission
-1. **Add Permission Handling**
-   - Request notification permission
-   - Handle permission denied scenarios
-   - Graceful fallback
-
-2. **Update NotificationService**
-   - Check permission before showing notifications
-   - Better error handling
-
-### Phase 4: State Management Improvements
-1. **Flexible State Handling**
-   - Remove strict state checks
-   - Better error recovery
-   - Consistent state updates
-
 ## 🆕 Convert to PDF Feature
 
 ### Requirements
@@ -681,6 +633,54 @@ class AppScaffoldWithOffline extends StatelessWidget {
 - Queue operations for when online
 - Background sync when connection restored
 - Seamless online/offline mode transitions
+
+## 📋 Implementation Plan
+
+### Phase 1: Stream-Based Progress Updates
+1. **Create DownloadManager Service**
+   - StreamController untuk progress updates
+   - Global download state management
+   - Integration dengan existing DownloadService
+
+2. **Modify DownloadBloc**
+   - Subscribe to progress stream
+   - Auto-emit progress updates
+   - Handle stream errors
+
+3. **Update DownloadContentUseCase**
+   - Emit progress ke stream instead of hanya save database
+   - Maintain backward compatibility
+
+### Phase 2: Improve Cancel/Pause Mechanism
+1. **Create DownloadTask Class**
+   - Track individual download state
+   - Proper cancellation handling
+   - Pause/resume capability
+
+2. **Modify DownloadService**
+   - Check pause state in download loop
+   - Proper cancel token handling
+   - Cleanup on cancellation
+
+3. **Update DownloadBloc**
+   - Proper task management
+   - Better error handling
+
+### Phase 3: Notification Permission
+1. **Add Permission Handling**
+   - Request notification permission
+   - Handle permission denied scenarios
+   - Graceful fallback
+
+2. **Update NotificationService**
+   - Check permission before showing notifications
+   - Better error handling
+
+### Phase 4: State Management Improvements
+1. **Flexible State Handling**
+   - Remove strict state checks
+   - Better error recovery
+   - Consistent state updates
 
 ## 📁 Files to Modify
 
