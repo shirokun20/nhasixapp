@@ -528,6 +528,12 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   imageQuality: newSettings.imageQuality,
                   autoRetry: newSettings.autoRetry,
                   retryAttempts: newSettings.retryAttempts,
+                  retryDelay: newSettings.retryDelay,
+                  timeoutDuration: newSettings.timeoutDuration,
+                  enableNotifications: newSettings.enableNotifications,
+                  wifiOnly: newSettings.wifiOnly,
+                  autoCleanup: newSettings.autoCleanup,
+                  maxStorageSize: newSettings.maxStorageSize,
                 ));
           },
         ),

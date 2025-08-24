@@ -69,7 +69,7 @@ class DownloadContentUseCase
       // Start actual download if not just queuing
       if (params.startImmediately) {
         downloadStatus =
-            await _performActualDownload(params.content, downloadStatus, params.convertToPdf);
+            await _performActualDownload(params.content, downloadStatus, params.convertToPdf, params.imageQuality, params.timeoutDuration);
       }
 
       return downloadStatus;
@@ -98,6 +98,8 @@ class DownloadContentUseCase
     Content content,
     DownloadStatus initialStatus,
     bool convertToPdf,
+    String imageQuality,
+    Duration? timeoutDuration,
   ) async {
     var currentStatus = initialStatus;
 
@@ -116,14 +118,11 @@ class DownloadContentUseCase
       // Perform download with progress tracking
       final downloadResult = await _downloadService.downloadContent(
         content: contentWithFullUrls,
+        imageQuality: imageQuality,
+        timeoutDuration: timeoutDuration,
         onProgress: (progress) async {
-          // Update download status with progress
-          currentStatus = currentStatus.copyWith(
-            downloadedPages: progress.downloadedPages,
-          );
-          await _userDataRepository.saveDownloadStatus(currentStatus);
-          
-          // Emit to stream for real-time updates
+          // ✅ FIXED: Only emit to stream, let DownloadBloc handle database saves
+          // This prevents race condition between multiple save operations
           DownloadManager().emitProgress(DownloadProgressUpdate(
             contentId: content.id,
             downloadedPages: progress.downloadedPages,
@@ -168,6 +167,13 @@ class DownloadContentUseCase
       }
 
       await _userDataRepository.saveDownloadStatus(currentStatus);
+      
+      // ✅ FIXED: Emit completion event to notify DownloadBloc to refresh
+      // This ensures UI updates immediately when download completes
+      if (currentStatus.isCompleted || currentStatus.isFailed) {
+        DownloadManager().emitCompletion(content.id, currentStatus.state);
+      }
+      
       return currentStatus;
     } catch (e) {
       _logger.e('Download failed for content: ${content.id}', error: e);
@@ -272,6 +278,8 @@ class DownloadContentParams extends UseCaseParams {
     this.throwIfExists = false,
     this.startImmediately = false,
     this.convertToPdf = false,
+    this.imageQuality = 'high',
+    this.timeoutDuration,
   });
 
   final Content content;
@@ -280,15 +288,19 @@ class DownloadContentParams extends UseCaseParams {
   final bool throwIfExists;
   final bool startImmediately;
   final bool convertToPdf;
+  final String imageQuality;
+  final Duration? timeoutDuration;
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         content,
         priority,
         checkExisting,
         throwIfExists,
         startImmediately,
         convertToPdf,
+        imageQuality,
+        timeoutDuration,
       ];
 
   DownloadContentParams copyWith({
@@ -298,6 +310,8 @@ class DownloadContentParams extends UseCaseParams {
     bool? throwIfExists,
     bool? startImmediately,
     bool? convertToPdf,
+    String? imageQuality,
+    Duration? timeoutDuration,
   }) {
     return DownloadContentParams(
       content: content ?? this.content,
@@ -306,6 +320,8 @@ class DownloadContentParams extends UseCaseParams {
       throwIfExists: throwIfExists ?? this.throwIfExists,
       startImmediately: startImmediately ?? this.startImmediately,
       convertToPdf: convertToPdf ?? this.convertToPdf,
+      imageQuality: imageQuality ?? this.imageQuality,
+      timeoutDuration: timeoutDuration ?? this.timeoutDuration,
     );
   }
 
@@ -345,12 +361,14 @@ class DownloadContentParams extends UseCaseParams {
 
   /// Create params for immediate download with images
   factory DownloadContentParams.immediate(Content content,
-      {bool convertToPdf = false}) {
+      {bool convertToPdf = false, String imageQuality = 'high', Duration? timeoutDuration}) {
     return DownloadContentParams(
       content: content,
       priority: 5,
       startImmediately: true,
       convertToPdf: convertToPdf,
+      imageQuality: imageQuality,
+      timeoutDuration: timeoutDuration,
     );
   }
 

@@ -38,6 +38,19 @@ android {
             signingConfig = signingConfigs.debug
         }
     }
+
+    // Custom APK naming: nhasix_[version]_[date].apk
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            def versionName = variant.versionName
+            def buildType = variant.buildType.name
+            def date = new Date().format('yyyyMMdd')
+            
+            // Custom filename format: nhasix_[version]_[date]_[buildType].apk
+            def fileName = "nhasix_${versionName}_${date}_${buildType}.apk"
+            outputFileName = fileName
+        }
+    }
 }
 
 flutter {

@@ -234,9 +234,16 @@ class DownloadItemWidget extends StatelessWidget {
         action = 'start';
         break;
       case DownloadState.downloading:
-        icon = Icons.pause;
-        color = ColorsConst.primary;
-        action = 'pause';
+        // If progress is 100%, show as completed even if state hasn't updated yet
+        if (download.progressPercentage >= 100) {
+          icon = Icons.check_circle;
+          color = ColorsConst.success;
+          action = 'details';
+        } else {
+          icon = Icons.pause;
+          color = ColorsConst.primary;
+          action = 'pause';
+        }
         break;
       case DownloadState.paused:
         icon = Icons.play_arrow;
@@ -396,6 +403,10 @@ class DownloadItemWidget extends StatelessWidget {
       case DownloadState.queued:
         return ColorsConst.onSurface.withValues(alpha: 0.6);
       case DownloadState.downloading:
+        // If progress is 100%, show success color even if state hasn't updated yet
+        if (download.progressPercentage >= 100) {
+          return ColorsConst.success;
+        }
         return ColorsConst.primary;
       case DownloadState.paused:
         return ColorsConst.warning;
@@ -411,6 +422,10 @@ class DownloadItemWidget extends StatelessWidget {
   Color _getProgressColor() {
     switch (download.state) {
       case DownloadState.downloading:
+        // If progress is 100%, show success color even if state hasn't updated yet
+        if (download.progressPercentage >= 100) {
+          return ColorsConst.success;
+        }
         return ColorsConst.primary;
       case DownloadState.paused:
         return ColorsConst.warning;

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:logger/logger.dart';
 
 import '../domain/entities/download_task.dart';
+import '../domain/entities/download_status.dart';
 
 /// Represents a progress update for a download
 class DownloadProgressUpdate {
@@ -84,6 +85,24 @@ class DownloadManager {
       _logger.d('DownloadManager: Emitted progress update: $update');
     } else {
       _logger.w('DownloadManager: Cannot emit progress - controller is closed');
+    }
+  }
+  
+  /// Emit a completion event to notify listeners of download completion
+  void emitCompletion(String contentId, DownloadState state) {
+    if (!_progressController.isClosed) {
+      // Create a completion update with special marker
+      final completionUpdate = DownloadProgressUpdate(
+        contentId: contentId,
+        downloadedPages: -1, // Special marker for completion
+        totalPages: -1,
+        downloadSpeed: 0.0,
+        estimatedTimeRemaining: Duration.zero,
+      );
+      _progressController.add(completionUpdate);
+      _logger.d('DownloadManager: Emitted completion event for $contentId with state: $state');
+    } else {
+      _logger.w('DownloadManager: Cannot emit completion - controller is closed');
     }
   }
   

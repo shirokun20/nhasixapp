@@ -4,6 +4,7 @@ import 'package:nhasixapp/core/config/multi_bloc_provider_config.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/presentation/cubits/theme/theme_cubit.dart';
+import 'package:nhasixapp/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

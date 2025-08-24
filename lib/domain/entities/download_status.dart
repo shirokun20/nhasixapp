@@ -13,6 +13,7 @@ class DownloadStatus extends Equatable {
     this.downloadPath,
     this.fileSize = 0,
     this.speed = 0.0,
+    this.retryCount = 0,
   });
 
   final String contentId;
@@ -25,6 +26,7 @@ class DownloadStatus extends Equatable {
   final String? downloadPath;
   final int fileSize; // in bytes
   final double speed; // bytes per second
+  final int retryCount; // number of retry attempts made
 
   @override
   List<Object?> get props => [
@@ -38,6 +40,7 @@ class DownloadStatus extends Equatable {
         downloadPath,
         fileSize,
         speed,
+        retryCount,
       ];
 
   DownloadStatus copyWith({
@@ -51,6 +54,7 @@ class DownloadStatus extends Equatable {
     String? downloadPath,
     int? fileSize,
     double? speed,
+    int? retryCount,
   }) {
     return DownloadStatus(
       contentId: contentId ?? this.contentId,
@@ -63,6 +67,7 @@ class DownloadStatus extends Equatable {
       downloadPath: downloadPath ?? this.downloadPath,
       fileSize: fileSize ?? this.fileSize,
       speed: speed ?? this.speed,
+      retryCount: retryCount ?? this.retryCount,
     );
   }
 

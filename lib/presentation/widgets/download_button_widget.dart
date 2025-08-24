@@ -31,6 +31,7 @@ class DownloadButtonWidget extends StatelessWidget {
             icon: Icons.download,
             text: 'Download',
             onPressed: null,
+            color: ColorsConst.accentGreen,
           );
         }
 
@@ -39,12 +40,13 @@ class DownloadButtonWidget extends StatelessWidget {
             state.downloads.where((d) => d.contentId == content.id).firstOrNull;
 
         if (download == null) {
-          // Not downloaded, show download button
+          // Not downloaded, show download button with green color to match DetailScreen
           return _buildButton(
             context: context,
             icon: Icons.download,
             text: 'Download',
             onPressed: () => _startDownload(context),
+            color: ColorsConst.accentGreen,
           );
         }
 
@@ -60,6 +62,16 @@ class DownloadButtonWidget extends StatelessWidget {
             );
 
           case DownloadState.downloading:
+            // If progress is 100%, show as completed even if state hasn't updated yet
+            if (download.progressPercentage >= 100) {
+              return _buildButton(
+                context: context,
+                icon: Icons.check_circle,
+                text: 'Downloaded',
+                onPressed: () => _openDownload(context),
+                color: ColorsConst.success,
+              );
+            }
             return _buildProgressButton(
               context: context,
               download: download,
@@ -100,6 +112,7 @@ class DownloadButtonWidget extends StatelessWidget {
               icon: Icons.download,
               text: 'Download',
               onPressed: () => _startDownload(context),
+              color: ColorsConst.accentGreen,
             );
         }
       },
@@ -115,7 +128,6 @@ class DownloadButtonWidget extends StatelessWidget {
     double? progress,
   }) {
     final buttonColor = color ?? ColorsConst.primary;
-    final isEnabled = onPressed != null;
 
     switch (size) {
       case DownloadButtonSize.small:
@@ -229,6 +241,9 @@ class DownloadButtonWidget extends StatelessWidget {
     required Color color,
     double? progress,
   }) {
+    // For download state, use outlined style to match DetailScreen design
+    final isDownloadButton = icon == Icons.download;
+    
     return SizedBox(
       width: double.infinity,
       height: 48,
@@ -243,16 +258,46 @@ class DownloadButtonWidget extends StatelessWidget {
                     AlwaysStoppedAnimation<Color>(color.withValues(alpha: 0.3)),
               ),
             ),
-          ElevatedButton.icon(
-            onPressed: onPressed,
-            icon: Icon(icon, size: 20),
-            label: Text(text, style: TextStyleConst.labelLarge),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: color,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          if (isDownloadButton)
+            // Use outlined style for download button to match DetailScreen
+            OutlinedButton.icon(
+              onPressed: onPressed,
+              icon: Icon(icon, size: 20),
+              label: Text(
+                text,
+                style: TextStyleConst.buttonMedium.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: color,
+                backgroundColor: color.withValues(alpha: 0.1),
+                side: BorderSide(
+                  color: color,
+                  width: 1.5,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            )
+          else
+            // Use elevated style for other states
+            ElevatedButton.icon(
+              onPressed: onPressed,
+              icon: Icon(icon, size: 20),
+              label: Text(text, style: TextStyleConst.labelLarge),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: color,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -264,34 +309,74 @@ class DownloadButtonWidget extends StatelessWidget {
     required VoidCallback onPressed,
   }) {
     final progress = download.progressPercentage / 100;
+    final isLarge = size == DownloadButtonSize.large;
+    final buttonHeight = isLarge ? 48.0 : 40.0;
+    
+    // Use more vibrant colors for better visibility
+    final progressColor = ColorsConst.primary;
+    final backgroundColor = progressColor.withValues(alpha: 0.15);
+    final progressValueColor = progressColor.withValues(alpha: 0.8);
 
     return SizedBox(
-      height: size == DownloadButtonSize.large ? 48 : 40,
+      height: buttonHeight,
       child: Stack(
         children: [
-          // Progress background
+          // Enhanced progress background with rounded corners
           Positioned.fill(
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: ColorsConst.primary.withValues(alpha: 0.1),
-              valueColor: AlwaysStoppedAnimation<Color>(
-                ColorsConst.primary.withValues(alpha: 0.3),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(isLarge ? 12 : 8),
+                color: backgroundColor,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(isLarge ? 12 : 8),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(progressValueColor),
+                  minHeight: buttonHeight,
+                ),
               ),
             ),
           ),
-          // Button
-          ElevatedButton.icon(
-            onPressed: onPressed,
-            icon: const Icon(Icons.pause, size: 18),
-            label: showText
-                ? Text('${download.progressPercentage.toInt()}%')
-                : const SizedBox.shrink(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: ColorsConst.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              padding: EdgeInsets.symmetric(
-                horizontal: showText ? 16 : 12,
-                vertical: 8,
+          // Enhanced button with better styling
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(isLarge ? 12 : 8),
+              border: Border.all(
+                color: progressColor.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: ElevatedButton.icon(
+              onPressed: onPressed,
+              icon: Icon(
+                Icons.pause, 
+                size: isLarge ? 20 : 18,
+                color: Colors.white,
+              ),
+              label: showText
+                  ? Text(
+                      '${download.progressPercentage.toInt()}%',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: isLarge ? 16 : 14,
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: progressColor,
+                foregroundColor: Colors.white,
+                elevation: 2,
+                shadowColor: progressColor.withValues(alpha: 0.3),
+                padding: EdgeInsets.symmetric(
+                  horizontal: showText ? (isLarge ? 24 : 16) : (isLarge ? 16 : 12),
+                  vertical: isLarge ? 12 : 8,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(isLarge ? 12 : 8),
+                ),
               ),
             ),
           ),

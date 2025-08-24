@@ -107,13 +107,16 @@ class PdfConversionService {
             );
           }
           
-          // Konversi part ini ke PDF
-          // Convert this part to PDF
-          final result = await _pdfService.convertToPdf(
+          // Konversi part ini ke PDF dengan part number di isolate terpisah
+          // Convert this part to PDF with part number in separate isolate
+          _logger.d('PdfConversionService: Processing part $part in isolate...');
+          
+          final result = await _pdfService.convertToPdfInIsolate(
             contentId: contentId,
             title: '$title (Part $part)',
             imagePaths: partImages,
             outputDir: pdfOutputDir.path,
+            partNumber: part, // Pass part number for unique filename
           );
           
           if (result.success && result.pdfPath != null) {
@@ -123,15 +126,17 @@ class PdfConversionService {
           }
         }
       } else {
-        // Single PDF file - tidak perlu splitting
-        // Single PDF file - no splitting needed
+        // Single PDF file - tidak perlu splitting, gunakan isolate
+        // Single PDF file - no splitting needed, use isolate
         await _notificationService.updatePdfConversionProgress(
           contentId: contentId,
           progress: 50,
           title: title,
         );
         
-        final result = await _pdfService.convertToPdf(
+        _logger.d('PdfConversionService: Processing single PDF in isolate...');
+        
+        final result = await _pdfService.convertToPdfInIsolate(
           contentId: contentId,
           title: title,
           imagePaths: imagePaths,

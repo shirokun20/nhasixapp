@@ -12,6 +12,7 @@ import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:nhasixapp/core/utils/app_state_manager.dart';
+import '../../widgets/download_button_widget.dart';
 
 class DetailScreen extends StatefulWidget {
   final String contentId;
@@ -33,6 +34,12 @@ class _DetailScreenState extends State<DetailScreen> {
   void initState() {
     super.initState();
     _detailCubit = getIt<DetailCubit>()..loadContentDetail(widget.contentId);
+    
+    // Initialize download manager if not already initialized
+    final downloadBloc = context.read<DownloadBloc>();
+    if (downloadBloc.state is DownloadInitial) {
+      downloadBloc.add(const DownloadInitializeEvent());
+    }
   }
 
   @override
@@ -677,12 +684,14 @@ class _DetailScreenState extends State<DetailScreen> {
         border: Border.all(color: ColorsConst.borderDefault),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Read button - primary action
           Expanded(
             flex: 2,
             child: SizedBox(
-              height: 56,
+              height: 48,
               child: ElevatedButton.icon(
                 onPressed: () => _readContent(content),
                 icon: const Icon(Icons.menu_book, size: 24),
@@ -706,33 +715,15 @@ class _DetailScreenState extends State<DetailScreen> {
             ),
           ),
           const SizedBox(width: 8),
-
           // Download button - secondary action
           Expanded(
             child: SizedBox(
-              height: 56,
-              child: OutlinedButton.icon(
-                onPressed: () => _downloadContent(content),
-                icon: const Icon(Icons.download, size: 20),
-                label: Text(
-                  'Download',
-                  style: TextStyleConst.buttonMedium.copyWith(
-                    color: ColorsConst.accentGreen,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: ColorsConst.accentGreen,
-                  backgroundColor:
-                      ColorsConst.accentGreen.withValues(alpha: 0.1),
-                  side: BorderSide(
-                    color: ColorsConst.accentGreen,
-                    width: 1.5,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+              height: 48,
+              child: DownloadButtonWidget(
+                content: content,
+                size: DownloadButtonSize.large,
+                showText: true,
+                showProgress: true,
               ),
             ),
           ),
@@ -1108,40 +1099,6 @@ class _DetailScreenState extends State<DetailScreen> {
     AppRouter.goToReader(context, content.id);
   }
 
-  void _downloadContent(Content content) {
-    final bloc = context.read<DownloadBloc>();
-    final state = bloc.state;
-    if (state is DownloadInitial || state is DownloadInitializing) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Sedang menyiapkan download, silakan coba lagi.')),
-      );
-      bloc.add(DownloadInitializeEvent());
-    } else {
-      // Sudah siap, lanjutkan download
-      bloc.add(DownloadQueueEvent(content: content, priority: 0));
-      bloc.add(DownloadStartEvent(content.id));
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Download started: ${content.title}',
-            style: TextStyleConst.bodyMedium
-                .copyWith(color: Theme.of(context).colorScheme.onPrimary),
-          ),
-          backgroundColor: ColorsConst.accentGreen,
-          action: SnackBarAction(
-            label: 'View Progress',
-            textColor: Theme.of(context).colorScheme.onPrimary,
-            onPressed: () {
-              context.push('/downloads');
-            },
-          ),
-        ),
-      );
-    }
-  }
-
   void _shareContent(Content content) {
     // TODO: Implement share functionality
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1159,7 +1116,17 @@ class _DetailScreenState extends State<DetailScreen> {
   void _handleMenuAction(String action, Content content) {
     switch (action) {
       case 'download':
-        _downloadContent(content);
+        // Download functionality is now handled by DownloadButtonWidget
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Use the download button below to start download',
+              style: TextStyleConst.bodyMedium
+                  .copyWith(color: Theme.of(context).colorScheme.onPrimary),
+            ),
+            backgroundColor: ColorsConst.accentGreen,
+          ),
+        );
         break;
       case 'copy_link':
         // TODO: Implement copy link functionality

@@ -164,16 +164,24 @@ class NotificationService {
             autoCancel: true,
             showProgress: false,
             icon: '@drawable/ic_pdf',
+            largeIcon: DrawableResourceAndroidBitmap('@drawable/ic_pdf'),
+            styleInformation: BigTextStyleInformation(
+              message,
+              contentTitle: 'PDF Created Successfully',
+              summaryText: 'Tap to open or use buttons below',
+            ),
             actions: [
               AndroidNotificationAction(
                 'open_pdf',
                 'Open PDF',
                 icon: DrawableResourceAndroidBitmap('@drawable/ic_open'),
+                showsUserInterface: true,
               ),
               AndroidNotificationAction(
                 'share_pdf',
                 'Share',
                 icon: DrawableResourceAndroidBitmap('@drawable/ic_share'),
+                showsUserInterface: true,
               ),
             ],
           ),
@@ -187,6 +195,15 @@ class NotificationService {
       );
 
       _logger.i('PDF conversion completed notification shown for: $contentId');
+      _logger.i('📋 Notification created with actions: [open_pdf, share_pdf] for PDF: ${pdfPaths.isNotEmpty ? pdfPaths.first : "unknown"}');
+      
+      // Log the exact actions we're creating for debugging
+      _logger.i('🔧 Action 1: open_pdf - "Open PDF" with icon @drawable/ic_open');
+      _logger.i('🔧 Action 2: share_pdf - "Share" with icon @drawable/ic_share');
+      _logger.i('🔧 Notification ID: ${contentId.hashCode}');
+      _logger.i('🔧 Channel: download_channel (Importance.high)');
+      _logger.i('🔧 Style: BigTextStyleInformation with summaryText');
+      _logger.i('🔧 showsUserInterface: true for both actions');
     } catch (e) {
       _logger.e('Failed to show PDF conversion completed notification: $e');
     }
@@ -297,9 +314,10 @@ class NotificationService {
       _downloadChannelId,
       _downloadChannelName,
       description: _downloadChannelDescription,
-      importance: Importance.low, // Low importance for progress notifications
-      enableVibration: false,
-      playSound: false,
+      importance: Importance.high, // High importance for action buttons to work
+      enableVibration: true,
+      playSound: true,
+      showBadge: true,
     );
 
     await _notificationsPlugin
@@ -310,7 +328,7 @@ class NotificationService {
 
   /// Handle notification tap
   void _onNotificationTapped(NotificationResponse response) {
-    _logger.d('Notification tapped: ${response.payload}');
+    _logger.i('🔔 Notification tapped! ActionId: "${response.actionId}", Payload: "${response.payload}"');
 
     // Handle different notification actions
     switch (response.actionId) {
@@ -331,83 +349,96 @@ class NotificationService {
         // TODO: Implement open downloaded content
         break;
       case 'open_pdf':
-        _logger.d('Open PDF action tapped for: ${response.payload}');
+        _logger.i('📂 Open PDF action tapped for: ${response.payload}');
         _openPdfFile(response.payload);
         break;
       case 'share_pdf':
-        _logger.d('Share PDF action tapped for: ${response.payload}');
+        _logger.i('📤 Share PDF action tapped for: ${response.payload}');
         _sharePdfFile(response.payload);
         break;
       case 'retry_pdf':
         _logger.d('Retry PDF action tapped for: ${response.payload}');
         // TODO: Implement retry PDF conversion
         break;
-      default:
-        _logger.d('Default notification tap for: ${response.payload}');
+      case null:
+        _logger.i('📱 Default notification body tapped for: ${response.payload}');
         // Check if payload is a PDF file path and open it
         if (response.payload != null && response.payload!.endsWith('.pdf')) {
-          _logger.d('Opening PDF from default tap: ${response.payload}');
+          _logger.i('📂 Opening PDF from default tap: ${response.payload}');
           _openPdfFile(response.payload);
         } else {
           // TODO: Navigate to downloads screen
           _logger.d('Navigate to downloads screen for: ${response.payload}');
         }
         break;
+      default:
+        _logger.w('⚠️ Unknown action tapped: "${response.actionId}" for: ${response.payload}');
+        break;
     }
   }
 
   /// Open PDF file using system default app
   Future<void> _openPdfFile(String? filePath) async {
+    _logger.i('🔍 _openPdfFile called with: "$filePath"');
+    
     if (filePath == null || filePath.isEmpty) {
-      _logger.w('Cannot open PDF: file path is null or empty');
+      _logger.w('❌ Cannot open PDF: file path is null or empty');
       return;
     }
 
     try {
       final file = File(filePath);
+      _logger.i('📁 Checking if file exists: ${file.path}');
+      
       if (!await file.exists()) {
-        _logger.w('Cannot open PDF: file does not exist at $filePath');
+        _logger.w('❌ Cannot open PDF: file does not exist at $filePath');
         return;
       }
 
+      _logger.i('✅ File exists, attempting to open: $filePath');
       final result = await OpenFile.open(filePath);
       
       switch (result.type) {
         case ResultType.done:
-          _logger.i('PDF opened successfully: $filePath');
+          _logger.i('✅ PDF opened successfully: $filePath');
           break;
         case ResultType.fileNotFound:
-          _logger.w('PDF file not found: $filePath');
+          _logger.w('❌ PDF file not found: $filePath');
           break;
         case ResultType.noAppToOpen:
-          _logger.w('No app available to open PDF: $filePath');
+          _logger.w('❌ No app available to open PDF: $filePath');
           break;
         case ResultType.permissionDenied:
-          _logger.w('Permission denied to open PDF: $filePath');
+          _logger.w('❌ Permission denied to open PDF: $filePath');
           break;
         case ResultType.error:
-          _logger.e('Error opening PDF: ${result.message}');
+          _logger.e('❌ Error opening PDF: ${result.message}');
           break;
       }
     } catch (e) {
-      _logger.e('Exception opening PDF file: $e');
+      _logger.e('💥 Exception opening PDF file: $e');
     }
   }
 
   /// Share PDF file using system share sheet
   Future<void> _sharePdfFile(String? filePath) async {
+    _logger.i('📤 _sharePdfFile called with: "$filePath"');
+    
     if (filePath == null || filePath.isEmpty) {
-      _logger.w('Cannot share PDF: file path is null or empty');
+      _logger.w('❌ Cannot share PDF: file path is null or empty');
       return;
     }
 
     try {
       final file = File(filePath);
+      _logger.i('📁 Checking if file exists: ${file.path}');
+      
       if (!await file.exists()) {
-        _logger.w('Cannot share PDF: file does not exist at $filePath');
+        _logger.w('❌ Cannot share PDF: file does not exist at $filePath');
         return;
       }
 
+      _logger.i('✅ File exists, attempting to share: $filePath');
       final xFile = XFile(filePath);
       await Share.shareXFiles(
         [xFile],
@@ -415,9 +446,9 @@ class NotificationService {
         subject: 'PDF Document',
       );
       
-      _logger.i('PDF shared successfully: $filePath');
+      _logger.i('✅ PDF shared successfully: $filePath');
     } catch (e) {
-      _logger.e('Exception sharing PDF file: $e');
+      _logger.e('💥 Exception sharing PDF file: $e');
     }
   }
 
@@ -702,5 +733,61 @@ class NotificationService {
       _logger.e('Failed to request notification permissions: $e');
       return false;
     }
+  }
+
+  /// Test action buttons functionality
+  Future<void> showTestActionNotification() async {
+    if (!isEnabled) return;
+
+    try {
+      await _notificationsPlugin.show(
+        99999, // Fixed test ID
+        'Test Action Buttons',
+        'This is a test notification with action buttons',
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            _downloadChannelId,
+            _downloadChannelName,
+            channelDescription: _downloadChannelDescription,
+            importance: Importance.high,
+            priority: Priority.high,
+            ongoing: false,
+            autoCancel: true,
+            icon: '@drawable/ic_pdf',
+            styleInformation: const BigTextStyleInformation(
+              'Tap the action buttons below to test functionality',
+              contentTitle: 'Test Action Buttons',
+              summaryText: 'Testing...',
+            ),
+            actions: [
+              AndroidNotificationAction(
+                'open_pdf',
+                'Test Open',
+                icon: DrawableResourceAndroidBitmap('@drawable/ic_open'),
+                showsUserInterface: true,
+              ),
+              AndroidNotificationAction(
+                'share_pdf',
+                'Test Share',
+                icon: DrawableResourceAndroidBitmap('@drawable/ic_share'),
+                showsUserInterface: true,
+              ),
+            ],
+          ),
+        ),
+        payload: '/test/path/test.pdf',
+      );
+
+      _logger.i('🧪 Test action notification created');
+    } catch (e) {
+      _logger.e('Failed to show test action notification: $e');
+    }
+  }
+
+  /// Quick test method to be called from main for debugging
+  static Future<void> testNotificationActions() async {
+    final service = NotificationService();
+    await service.initialize();
+    await service.showTestActionNotification();
   }
 }

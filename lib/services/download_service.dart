@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../domain/entities/entities.dart';
+import '../domain/value_objects/image_url.dart' as img;
 import 'notification_service.dart';
 import 'download_manager.dart';
 
@@ -29,6 +30,8 @@ class DownloadService {
     required Content content,
     required Function(DownloadProgress) onProgress,
     CancelToken? cancelToken,
+    String imageQuality = 'high', // Default to high quality
+    Duration? timeoutDuration, // Optional timeout override
   }) async {
     try {
       _logger.i('Starting download for content: ${content.id}');
@@ -39,15 +42,20 @@ class DownloadService {
       // Create download directory
       final downloadDir = await _createDownloadDirectory(content.id);
 
+      // ✅ FIXED: Check existing downloaded files for proper resume
+      final existingFiles = await _getExistingDownloadedFiles(downloadDir);
+      final totalImages = content.imageUrls.length;
+      var downloadedCount = existingFiles.length; // Start from existing count
+
+      _logger.i('Found ${existingFiles.length} existing files, continuing from page ${downloadedCount + 1}');
+
       // Show start notification
       await _notificationService.showDownloadStarted(
         contentId: content.id,
         title: content.title,
       );
 
-      final downloadedFiles = <String>[];
-      final totalImages = content.imageUrls.length;
-      var downloadedCount = 0;
+      final downloadedFiles = List<String>.from(existingFiles); // Include existing files
 
       // Download each image
       for (int i = 0; i < content.imageUrls.length; i++) {
@@ -73,15 +81,26 @@ class DownloadService {
         }
 
         final imageUrl = content.imageUrls[i];
+        
+        // Apply image quality setting
+        final optimizedImageUrl = _getOptimizedImageUrl(imageUrl, imageQuality);
+        
         final fileName = 'page_${(i + 1).toString().padLeft(3, '0')}.jpg';
         final filePath = path.join(downloadDir.path, fileName);
 
+        // ✅ FIXED: Skip if file already exists (for proper resume)
+        if (await File(filePath).exists()) {
+          _logger.d('Skipping existing file: $fileName');
+          continue;
+        }
+
         try {
-          // Download single image
+          // Download single image with optimized URL
           await _downloadSingleImage(
-            imageUrl: imageUrl,
+            imageUrl: optimizedImageUrl,
             filePath: filePath,
             cancelToken: cancelToken,
+            timeoutDuration: timeoutDuration,
           );
 
           downloadedFiles.add(filePath);
@@ -97,12 +116,8 @@ class DownloadService {
 
           onProgress(progress);
 
-          // Update notification progress
-          await _notificationService.updateDownloadProgress(
-            contentId: content.id,
-            progress: (downloadedCount / totalImages * 100).round(),
-            title: content.title,
-          );
+          // ✅ REMOVED: Direct notification update to prevent race condition
+          // Notification will be updated through DownloadBloc for better synchronization
 
           _logger.d('Downloaded image ${i + 1}/$totalImages: $fileName');
         } catch (e, stackTrace) {
@@ -155,8 +170,18 @@ class DownloadService {
     required String imageUrl,
     required String filePath,
     CancelToken? cancelToken,
+    Duration? timeoutDuration,
   }) async {
-    final response = await _httpClient.get<List<int>>(
+    // Create dio instance with custom timeout if provided
+    final dio = timeoutDuration != null 
+      ? Dio(BaseOptions(
+          connectTimeout: timeoutDuration,
+          receiveTimeout: timeoutDuration,
+          sendTimeout: timeoutDuration,
+        ))
+      : _httpClient;
+    
+    final response = await dio.get<List<int>>(
       imageUrl,
       options: Options(
         responseType: ResponseType.bytes,
@@ -173,6 +198,32 @@ class DownloadService {
       await file.writeAsBytes(response.data!);
     } else {
       throw Exception('No data received for image: $imageUrl');
+    }
+  }
+
+  /// ✅ NEW: Get existing downloaded files for proper resume
+  Future<List<String>> _getExistingDownloadedFiles(Directory downloadDir) async {
+    try {
+      if (!await downloadDir.exists()) {
+        return [];
+      }
+
+      final files = await downloadDir
+          .list()
+          .where((entity) => entity is File && entity.path.endsWith('.jpg'))
+          .cast<File>()
+          .toList();
+
+      // Sort files by name to maintain page order
+      files.sort((a, b) => path.basename(a.path).compareTo(path.basename(b.path)));
+
+      final filePaths = files.map((f) => f.path).toList();
+      _logger.d('Found ${filePaths.length} existing downloaded files');
+      
+      return filePaths;
+    } catch (e) {
+      _logger.w('Error checking existing files: $e');
+      return [];
     }
   }
 
@@ -438,6 +489,34 @@ class DownloadService {
       _logger.e('Error getting downloaded files: $e');
       return [];
     }
+  }
+  
+  /// Get optimized image URL based on quality setting
+  String _getOptimizedImageUrl(String originalUrl, String imageQuality) {
+    // Convert string quality to ImageQuality enum
+    img.ImageQuality quality;
+    switch (imageQuality.toLowerCase()) {
+      case 'low':
+        quality = img.ImageQuality.low;
+        break;
+      case 'medium':
+        quality = img.ImageQuality.medium;
+        break;
+      case 'high':
+        quality = img.ImageQuality.high;
+        break;
+      case 'original':
+        quality = img.ImageQuality.original;
+        break;
+      default:
+        quality = img.ImageQuality.high; // Default to high quality
+    }
+    
+    // Create ImageUrl object and get optimized version
+    final imageUrl = img.ImageUrl(originalUrl);
+    final optimizedUrl = imageUrl.getOptimized(quality);
+    
+    return optimizedUrl.value;
   }
 }
 

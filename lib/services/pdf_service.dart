@@ -1,15 +1,209 @@
 import 'dart:io';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:logger/logger.dart';
 import 'package:image/image.dart' as img;
 import 'package:pdf/widgets.dart' as pw;
+
+import 'pdf_isolate_worker.dart';
 
 /// Service untuk convert downloaded images ke PDF
 class PdfService {
   PdfService({Logger? logger}) : _logger = logger ?? Logger();
 
   final Logger _logger;
+
+  /// Static function untuk compute() - berjalan di isolate terpisah
+  /// Static function for compute() - runs in separate isolate
+  static Future<PdfProcessingResult> _processPdfTask(PdfProcessingTask task) async {
+    try {
+      final processedImages = <Uint8List>[];
+      
+      // Process each image
+      for (int i = 0; i < task.imagePaths.length; i++) {
+        final imagePath = task.imagePaths[i];
+        
+        try {
+          final imageBytes = await _processImageStatic(
+            imagePath,
+            maxWidth: task.maxWidth,
+            quality: task.quality,
+          );
+          
+          if (imageBytes != null) {
+            processedImages.add(imageBytes);
+          }
+        } catch (e) {
+          // Skip failed images, continue processing
+          debugPrint('Failed to process image $imagePath: $e');
+          continue;
+        }
+      }
+      
+      if (processedImages.isEmpty) {
+        throw Exception('No images could be processed for PDF');
+      }
+      
+      // Create PDF
+      final pdfBytes = await _createPdfStatic(processedImages, task.title);
+      
+      // Save PDF file
+      final pdfFile = File(task.outputPath);
+      await pdfFile.writeAsBytes(pdfBytes);
+      
+      final fileSize = await pdfFile.length();
+      
+      return PdfProcessingResult.success(
+        pdfPath: task.outputPath,
+        fileSize: fileSize,
+        pageCount: processedImages.length,
+      );
+    } catch (e, stackTrace) {
+      return PdfProcessingResult.error(
+        error: e.toString(),
+        stackTrace: stackTrace.toString(),
+      );
+    }
+  }
+
+  /// Static image processing function for isolate
+  static Future<Uint8List?> _processImageStatic(
+    String imagePath, {
+    required int maxWidth,
+    required int quality,
+  }) async {
+    try {
+      final file = File(imagePath);
+      if (!await file.exists()) {
+        throw Exception('Image file not found: $imagePath');
+      }
+
+      final imageBytes = await file.readAsBytes();
+      final image = img.decodeImage(imageBytes);
+
+      if (image == null) {
+        throw Exception('Could not decode image: $imagePath');
+      }
+
+      // Resize image if needed
+      img.Image processedImage = image;
+      if (image.width > maxWidth) {
+        final aspectRatio = image.height / image.width;
+        final newHeight = (maxWidth * aspectRatio).round();
+
+        processedImage = img.copyResize(
+          image,
+          width: maxWidth,
+          height: newHeight,
+          interpolation: img.Interpolation.linear,
+        );
+      }
+
+      // Encode as JPEG with specified quality
+      final compressedBytes = img.encodeJpg(processedImage, quality: quality);
+
+      return Uint8List.fromList(compressedBytes);
+    } catch (e) {
+      debugPrint('Error processing image $imagePath: $e');
+      return null;
+    }
+  }
+
+  /// Static PDF creation function for isolate
+  static Future<Uint8List> _createPdfStatic(
+    List<Uint8List> images,
+    String title,
+  ) async {
+    try {
+      final pdf = pw.Document();
+
+      // Add each image as a page
+      for (final imageBytes in images) {
+        final image = pw.MemoryImage(imageBytes);
+
+        pdf.addPage(
+          pw.Page(
+            margin: const pw.EdgeInsets.all(0),
+            build: (pw.Context context) {
+              return pw.Center(
+                child: pw.Image(
+                  image,
+                  fit: pw.BoxFit.contain,
+                ),
+              );
+            },
+          ),
+        );
+      }
+
+      // Generate PDF bytes
+      return await pdf.save();
+    } catch (e) {
+      throw Exception('Error creating PDF: $e');
+    }
+  }
+
+  /// Convert downloaded images to PDF using compute() for background processing
+  Future<PdfResult> convertToPdfInIsolate({
+    required String contentId,
+    required String title,
+    required List<String> imagePaths,
+    required String outputDir,
+    int? maxWidth,
+    int? quality,
+    int? partNumber,
+  }) async {
+    try {
+      _logger.i('Starting PDF conversion using compute() for content: $contentId');
+
+      if (imagePaths.isEmpty) {
+        throw Exception('No images to convert to PDF');
+      }
+
+      // Create safe filename with part number support
+      final safeTitle = _createSafeFilename(title);
+      final pdfFileName = partNumber != null 
+          ? '${contentId}_${safeTitle}_part${partNumber}.pdf'
+          : '${contentId}_$safeTitle.pdf';
+      final pdfPath = path.join(outputDir, pdfFileName);
+
+      // Create task for compute
+      final task = PdfProcessingTask(
+        imagePaths: imagePaths,
+        outputPath: pdfPath,
+        title: title,
+        maxWidth: maxWidth ?? 1200,
+        quality: quality ?? 85,
+      );
+
+      // Use compute() to run heavy processing in isolate
+      final result = await compute(_processPdfTask, task);
+
+      if (result.success) {
+        _logger.i('PDF created successfully using compute(): ${result.pdfPath} (${_formatFileSize(result.fileSize!)})');
+
+        return PdfResult(
+          success: true,
+          pdfPath: result.pdfPath!,
+          fileSize: result.fileSize!,
+          pageCount: result.pageCount!,
+        );
+      } else {
+        throw Exception(result.error ?? 'Unknown error in compute processing');
+      }
+
+    } catch (e) {
+      _logger.e('PDF conversion failed using compute() for content: $contentId', error: e);
+
+      return PdfResult(
+        success: false,
+        error: e.toString(),
+        pdfPath: null,
+        fileSize: 0,
+        pageCount: 0,
+      );
+    }
+  }
 
   /// Convert downloaded images to PDF
   Future<PdfResult> convertToPdf({
@@ -19,6 +213,7 @@ class PdfService {
     required String outputDir,
     int? maxWidth,
     int? quality,
+    int? partNumber, // NEW: Part number for multi-part PDFs
   }) async {
     try {
       _logger.i('Starting PDF conversion for content: $contentId');
@@ -27,9 +222,11 @@ class PdfService {
         throw Exception('No images to convert to PDF');
       }
 
-      // Create safe filename
+      // Create safe filename with part number support
       final safeTitle = _createSafeFilename(title);
-      final pdfFileName = '${contentId}_$safeTitle.pdf';
+      final pdfFileName = partNumber != null 
+          ? '${contentId}_${safeTitle}_part${partNumber}.pdf'
+          : '${contentId}_$safeTitle.pdf';
       final pdfPath = path.join(outputDir, pdfFileName);
 
       // Process images and create PDF
@@ -201,74 +398,152 @@ class PdfService {
   }
 
   /// Check if PDF exists for content
-  Future<bool> pdfExists(String contentId, String outputDir) async {
+  Future<bool> pdfExists(String contentId, String outputDir, {int? partNumber}) async {
     try {
       final directory = Directory(outputDir);
       if (!await directory.exists()) return false;
 
       final files = await directory.list().toList();
-      return files.any((file) =>
-          file is File &&
-          path.basename(file.path).startsWith('${contentId}_') &&
-          path.extension(file.path).toLowerCase() == '.pdf');
+      
+      if (partNumber != null) {
+        // Check for specific part
+        return files.any((file) =>
+            file is File &&
+            path.basename(file.path).startsWith('${contentId}_') &&
+            path.basename(file.path).contains('_part$partNumber') &&
+            path.extension(file.path).toLowerCase() == '.pdf');
+      } else {
+        // Check for any PDF with this contentId
+        return files.any((file) =>
+            file is File &&
+            path.basename(file.path).startsWith('${contentId}_') &&
+            path.extension(file.path).toLowerCase() == '.pdf');
+      }
     } catch (e) {
       _logger.e('Error checking PDF existence: $e');
       return false;
     }
   }
 
-  /// Get PDF path for content
-  Future<String?> getPdfPath(String contentId, String outputDir) async {
+  /// Get PDF path for content (returns first found PDF or specific part)
+  Future<String?> getPdfPath(String contentId, String outputDir, {int? partNumber}) async {
     try {
       final directory = Directory(outputDir);
       if (!await directory.exists()) return null;
 
       final files = await directory.list().toList();
-      final pdfFile = files.firstWhere(
-        (file) =>
-            file is File &&
-            path.basename(file.path).startsWith('${contentId}_') &&
-            path.extension(file.path).toLowerCase() == '.pdf',
-        orElse: () => throw StateError('PDF not found'),
-      );
-
-      return (pdfFile as File).path;
+      
+      if (partNumber != null) {
+        // Look for specific part
+        final pdfFile = files.firstWhere(
+          (file) =>
+              file is File &&
+              path.basename(file.path).startsWith('${contentId}_') &&
+              path.basename(file.path).contains('_part$partNumber') &&
+              path.extension(file.path).toLowerCase() == '.pdf',
+          orElse: () => throw StateError('PDF part $partNumber not found'),
+        );
+        return (pdfFile as File).path;
+      } else {
+        // Look for any PDF with this contentId (returns first found)
+        final pdfFile = files.firstWhere(
+          (file) =>
+              file is File &&
+              path.basename(file.path).startsWith('${contentId}_') &&
+              path.extension(file.path).toLowerCase() == '.pdf',
+          orElse: () => throw StateError('PDF not found'),
+        );
+        return (pdfFile as File).path;
+      }
     } catch (e) {
-      _logger.d('PDF not found for content: $contentId');
+      _logger.d('PDF not found for content: $contentId${partNumber != null ? ' part $partNumber' : ''}');
       return null;
     }
   }
 
-  /// Delete PDF for content
-  Future<bool> deletePdf(String contentId, String outputDir) async {
+  /// Delete PDF for content (all parts or specific part)
+  Future<bool> deletePdf(String contentId, String outputDir, {int? partNumber}) async {
     try {
-      final pdfPath = await getPdfPath(contentId, outputDir);
-      if (pdfPath == null) return false;
+      final directory = Directory(outputDir);
+      if (!await directory.exists()) return false;
 
-      final file = File(pdfPath);
-      if (await file.exists()) {
-        await file.delete();
-        _logger.d('PDF deleted: $pdfPath');
-        return true;
+      final files = await directory.list().toList();
+      bool deleted = false;
+
+      for (final file in files) {
+        if (file is File &&
+            path.basename(file.path).startsWith('${contentId}_') &&
+            path.extension(file.path).toLowerCase() == '.pdf') {
+          
+          if (partNumber != null) {
+            // Delete specific part only
+            if (path.basename(file.path).contains('_part$partNumber')) {
+              await file.delete();
+              _logger.d('PDF part $partNumber deleted: ${file.path}');
+              deleted = true;
+            }
+          } else {
+            // Delete all PDF files for this content
+            await file.delete();
+            _logger.d('PDF deleted: ${file.path}');
+            deleted = true;
+          }
+        }
       }
-      return false;
+
+      return deleted;
     } catch (e) {
       _logger.e('Error deleting PDF: $e');
       return false;
     }
   }
 
-  /// Get PDF file size
+  /// Get all PDF paths for content (useful for multi-part PDFs)
+  Future<List<String>> getAllPdfPaths(String contentId, String outputDir) async {
+    try {
+      final directory = Directory(outputDir);
+      if (!await directory.exists()) return [];
+
+      final files = await directory.list().toList();
+      final pdfPaths = <String>[];
+
+      for (final file in files) {
+        if (file is File &&
+            path.basename(file.path).startsWith('${contentId}_') &&
+            path.extension(file.path).toLowerCase() == '.pdf') {
+          pdfPaths.add(file.path);
+        }
+      }
+
+      // Sort paths to ensure correct part order (part1, part2, etc.)
+      pdfPaths.sort();
+      
+      _logger.d('Found ${pdfPaths.length} PDF file(s) for content: $contentId');
+      return pdfPaths;
+    } catch (e) {
+      _logger.e('Error getting all PDF paths: $e');
+      return [];
+    }
+  }
+
+  /// Get total PDF file size for content (all parts combined)
   Future<int> getPdfSize(String contentId, String outputDir) async {
     try {
-      final pdfPath = await getPdfPath(contentId, outputDir);
-      if (pdfPath == null) return 0;
+      final directory = Directory(outputDir);
+      if (!await directory.exists()) return 0;
 
-      final file = File(pdfPath);
-      if (await file.exists()) {
-        return await file.length();
+      final files = await directory.list().toList();
+      int totalSize = 0;
+
+      for (final file in files) {
+        if (file is File &&
+            path.basename(file.path).startsWith('${contentId}_') &&
+            path.extension(file.path).toLowerCase() == '.pdf') {
+          totalSize += await file.length();
+        }
       }
-      return 0;
+
+      return totalSize;
     } catch (e) {
       _logger.e('Error getting PDF size: $e');
       return 0;
