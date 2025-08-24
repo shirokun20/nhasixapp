@@ -14,6 +14,7 @@ import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
 import 'package:nhasixapp/presentation/widgets/content_card_widget.dart';
 import 'package:nhasixapp/presentation/widgets/pagination_widget.dart';
+import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
 
 class SearchScreen extends StatefulWidget {
   final String? query;
@@ -326,9 +327,9 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _searchBloc,
-      child: Scaffold(
+      child: AppScaffoldWithOffline(
+        title: 'Search',
         backgroundColor: ColorsConst.darkBackground,
-        resizeToAvoidBottomInset: false,
         appBar: _buildAppBar(),
         body: Column(
           children: [

@@ -14,6 +14,7 @@ import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_header_widget.dart';
 import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
+import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
 import 'package:nhasixapp/presentation/widgets/pagination_widget.dart';
 import 'package:nhasixapp/presentation/widgets/sorting_widget.dart';
 import 'package:nhasixapp/presentation/widgets/offline_indicator_widget.dart';
@@ -117,8 +118,8 @@ class _MainScreenState extends State<MainScreen> {
         builder: (context, homeState) {
           // Show full screen loading during home initialization
           if (homeState is HomeLoading) {
-            return Scaffold(
-              backgroundColor: Theme.of(context).colorScheme.background,
+            return SimpleOfflineScaffold(
+              title: 'NhaSix',
               body: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -141,8 +142,8 @@ class _MainScreenState extends State<MainScreen> {
           }
 
           // Main screen UI when home is loaded
-          return Scaffold(
-            backgroundColor: Theme.of(context).colorScheme.background,
+          return AppScaffoldWithOffline(
+            title: 'NhaSix',
             appBar: AppMainHeaderWidget(
               context: context,
               onSearchPressed: () async {

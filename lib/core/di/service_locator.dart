@@ -55,6 +55,7 @@ import 'package:nhasixapp/domain/usecases/settings/save_user_preferences_usecase
 import 'package:nhasixapp/services/download_service.dart';
 import 'package:nhasixapp/services/notification_service.dart';
 import 'package:nhasixapp/services/pdf_service.dart';
+import 'package:nhasixapp/services/pdf_conversion_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -116,6 +117,15 @@ void _setupServices() {
   // PDF Service
   getIt.registerLazySingleton<PdfService>(
       () => PdfService(logger: getIt<Logger>()));
+
+  // PDF Conversion Service - High-level orchestration service for background PDF processing
+  getIt.registerLazySingleton<PdfConversionService>(
+      () => PdfConversionService(
+        pdfService: getIt<PdfService>(),
+        notificationService: getIt<NotificationService>(),
+        userDataRepository: getIt<UserDataRepository>(),
+        logger: getIt<Logger>(),
+      ));
 
   // Download Service
   getIt.registerLazySingleton<DownloadService>(() => DownloadService(
@@ -248,6 +258,7 @@ void _setupBlocs() {
   // Splash BLoC
   getIt.registerFactory<SplashBloc>(() => SplashBloc(
         remoteDataSource: getIt<RemoteDataSource>(),
+        userDataRepository: getIt<UserDataRepository>(),
         logger: getIt<Logger>(),
         connectivity: getIt<Connectivity>(),
       ));
@@ -283,6 +294,7 @@ void _setupBlocs() {
         logger: getIt<Logger>(),
         connectivity: getIt<Connectivity>(),
         notificationService: getIt<NotificationService>(),
+        pdfConversionService: getIt<PdfConversionService>(),
       ));
 
   // TODO: Register other BLoCs when implemented

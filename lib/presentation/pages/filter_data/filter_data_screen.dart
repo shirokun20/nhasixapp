@@ -11,6 +11,7 @@ import '../../widgets/filter_data_search_widget.dart';
 import '../../widgets/filter_item_card_widget.dart';
 import '../../widgets/selected_filters_widget.dart';
 import '../../widgets/filter_type_tab_bar_widget.dart';
+import '../../widgets/app_scaffold_with_offline.dart';
 
 /// Screen for advanced filter data selection with modern UI
 class FilterDataScreen extends StatefulWidget {
@@ -132,7 +133,8 @@ class _FilterDataScreenState extends State<FilterDataScreen>
             debugPrint("FilterDataScreen: lastUpdated: ${state.lastUpdated}");
           }
         },
-        child: Scaffold(
+        child: AppScaffoldWithOffline(
+          title: 'Filter Data',
           backgroundColor: ColorsConst.darkBackground,
           appBar: _buildAppBar(),
           body: Column(

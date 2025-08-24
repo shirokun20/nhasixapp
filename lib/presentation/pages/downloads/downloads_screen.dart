@@ -7,6 +7,7 @@ import '../../../core/constants/text_style_const.dart';
 import '../../../domain/entities/entities.dart';
 import '../../blocs/download/download_bloc.dart';
 import '../../widgets/widgets.dart';
+import '../../widgets/app_scaffold_with_offline.dart';
 
 /// Screen for managing downloads with status tracking and progress indicators
 class DownloadsScreen extends StatefulWidget {
@@ -40,9 +41,10 @@ class _DownloadsScreenState extends State<DownloadsScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffoldWithOffline(
+      title: 'Downloads',
       backgroundColor: ColorsConst.background,
-      appBar: _buildAppBar(),
+      appBar: _buildAppBar(), // Use custom AppBar with menu actions
       body: BlocConsumer<DownloadBloc, DownloadBlocState>(
         listener: (context, state) {
           if (state is DownloadError) {
@@ -351,6 +353,17 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         break;
       case 'details':
         _showDownloadDetails(download);
+        break;
+      case 'convert_pdf':
+        // Handle PDF conversion request
+        // This triggers the PDF conversion process in background
+        downloadBloc.add(DownloadConvertToPdfEvent(download.contentId));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('PDF conversion started'),
+            duration: Duration(seconds: 2),
+          ),
+        );
         break;
     }
   }

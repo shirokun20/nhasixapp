@@ -4,9 +4,11 @@ import 'package:dio/dio.dart';
 import 'package:path/path.dart' as path;
 import 'package:logger/logger.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../domain/entities/entities.dart';
 import 'notification_service.dart';
+import 'download_manager.dart';
 
 /// Service untuk handle actual file download
 class DownloadService {
@@ -49,11 +51,25 @@ class DownloadService {
 
       // Download each image
       for (int i = 0; i < content.imageUrls.length; i++) {
+        // Check for cancellation
         if (cancelToken?.isCancelled == true) {
           throw DioException(
             requestOptions: RequestOptions(path: ''),
             type: DioExceptionType.cancel,
           );
+        }
+
+        // Check for pause state - wait until resumed or cancelled
+        while (DownloadManager().isPaused(content.id)) {
+          await Future.delayed(const Duration(seconds: 1));
+          // Check if cancelled while paused
+          if (DownloadManager().isCancelled(content.id) || 
+              cancelToken?.isCancelled == true) {
+            throw DioException(
+              requestOptions: RequestOptions(path: ''),
+              type: DioExceptionType.cancel,
+            );
+          }
         }
 
         final imageUrl = content.imageUrls[i];
@@ -162,9 +178,9 @@ class DownloadService {
 
   /// Create download directory structure
   Future<Directory> _createDownloadDirectory(String contentId) async {
-    // Use public Downloads directory: /storage/emulated/0/Download/nhasix/
-    const publicDownloadsPath = '/storage/emulated/0/Download';
-    final nhasixDir = Directory(path.join(publicDownloadsPath, 'nhasix'));
+    // Use smart Downloads directory detection
+    final downloadsPath = await _getDownloadsDirectory();
+    final nhasixDir = Directory(path.join(downloadsPath, 'nhasix'));
     final contentDir = Directory(path.join(nhasixDir.path, contentId));
     final imagesDir = Directory(path.join(contentDir.path, 'images'));
 
@@ -174,6 +190,105 @@ class DownloadService {
     }
 
     return imagesDir;
+  }
+
+  /// Smart Downloads directory detection
+  /// Tries multiple possible Downloads folder names and locations
+  Future<String> _getDownloadsDirectory() async {
+    try {
+      // First, try to get external storage directory
+      Directory? externalDir;
+      try {
+        externalDir = await getExternalStorageDirectory();
+      } catch (e) {
+        _logger.w('Could not get external storage directory: $e');
+      }
+
+      if (externalDir != null) {
+        // Try to find Downloads folder in external storage root
+        final externalRoot = externalDir.path.split('/Android')[0];
+        
+        // Common Downloads folder names (English, Indonesian, Spanish, etc.)
+        final downloadsFolderNames = [
+          'Download',     // English (most common)
+          'Downloads',    // English alternative
+          'Unduhan',      // Indonesian
+          'Descargas',    // Spanish
+          'Téléchargements', // French
+          'Downloads',    // German uses English
+          'ダウンロード',     // Japanese
+        ];
+
+        // Try each possible Downloads folder
+        for (final folderName in downloadsFolderNames) {
+          final downloadsDir = Directory(path.join(externalRoot, folderName));
+          if (await downloadsDir.exists()) {
+            _logger.i('Found Downloads directory: ${downloadsDir.path}');
+            return downloadsDir.path;
+          }
+        }
+
+        // If no Downloads folder found, create one in external storage root
+        final defaultDownloadsDir = Directory(path.join(externalRoot, 'Download'));
+        try {
+          if (!await defaultDownloadsDir.exists()) {
+            await defaultDownloadsDir.create(recursive: true);
+            _logger.i('Created Downloads directory: ${defaultDownloadsDir.path}');
+          }
+          return defaultDownloadsDir.path;
+        } catch (e) {
+          _logger.w('Could not create Downloads directory in external storage: $e');
+        }
+      }
+
+      // Fallback 1: Try hardcoded common paths
+      final commonPaths = [
+        '/storage/emulated/0/Download',
+        '/storage/emulated/0/Downloads',
+        '/storage/emulated/0/Unduhan',
+        '/sdcard/Download',
+        '/sdcard/Downloads',
+      ];
+
+      for (final commonPath in commonPaths) {
+        final dir = Directory(commonPath);
+        if (await dir.exists()) {
+          _logger.i('Found Downloads directory at common path: $commonPath');
+          return commonPath;
+        }
+      }
+
+      // Fallback 2: Use app-specific external storage
+      if (externalDir != null) {
+        final appDownloadsDir = Directory(path.join(externalDir.path, 'downloads'));
+        if (!await appDownloadsDir.exists()) {
+          await appDownloadsDir.create(recursive: true);
+        }
+        _logger.i('Using app-specific downloads directory: ${appDownloadsDir.path}');
+        return appDownloadsDir.path;
+      }
+
+      // Fallback 3: Use application documents directory
+      final documentsDir = await getApplicationDocumentsDirectory();
+      final documentsDownloadsDir = Directory(path.join(documentsDir.path, 'downloads'));
+      if (!await documentsDownloadsDir.exists()) {
+        await documentsDownloadsDir.create(recursive: true);
+      }
+      _logger.i('Using app documents downloads directory: ${documentsDownloadsDir.path}');
+      return documentsDownloadsDir.path;
+
+    } catch (e) {
+      _logger.e('Error detecting Downloads directory: $e');
+      
+      // Emergency fallback: use app documents
+      final documentsDir = await getApplicationDocumentsDirectory();
+      final emergencyDir = Directory(path.join(documentsDir.path, 'downloads'));
+      if (!await emergencyDir.exists()) {
+        await emergencyDir.create(recursive: true);
+      }
+      _logger.w('Using emergency fallback directory: ${emergencyDir.path}');
+      return emergencyDir.path;
+    }
   }
 
   /// Save download metadata
@@ -206,17 +321,17 @@ class DownloadService {
   Future<void> _checkPermissions() async {
     try {
       // For Android 13+ (API 33+), we need different permissions
-      // Check if we can write to the public Downloads directory
+      // Check if we can write to the Downloads directory
 
-      // Try to create a test directory first
-      const publicDownloadsPath = '/storage/emulated/0/Download';
-      final testDir = Directory(path.join(publicDownloadsPath, 'nhasix'));
+      // Get the Downloads directory path using smart detection
+      final downloadsPath = await _getDownloadsDirectory();
+      final testDir = Directory(path.join(downloadsPath, 'nhasix'));
 
       // Try to create directory - this will fail if no permission
       if (!await testDir.exists()) {
         try {
           await testDir.create(recursive: true);
-          _logger.i('Successfully created download directory');
+          _logger.i('Successfully created download directory at: ${testDir.path}');
         } catch (e) {
           _logger.e('Failed to create download directory: $e');
 
@@ -255,9 +370,9 @@ class DownloadService {
   /// Get download directory path for content
   Future<String?> getDownloadPath(String contentId) async {
     try {
-      const publicDownloadsPath = '/storage/emulated/0/Download';
+      final downloadsPath = await _getDownloadsDirectory();
       final contentDir = Directory(
-        path.join(publicDownloadsPath, 'nhasix', contentId),
+        path.join(downloadsPath, 'nhasix', contentId),
       );
 
       if (await contentDir.exists()) {

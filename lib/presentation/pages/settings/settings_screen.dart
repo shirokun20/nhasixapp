@@ -3,22 +3,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import '../../../domain/entities/user_preferences.dart';
 import '../../cubits/settings/settings_cubit.dart';
+import '../../widgets/app_scaffold_with_offline.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        title: Text('Settings', style: TextStyleConst.headingMedium.copyWith(
-          color: Theme.of(context).colorScheme.onSurface,
-        )),
-        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
-        elevation: 0,
-      ),
+    return SimpleOfflineScaffold(
+      title: 'Settings',
       body: BlocBuilder<SettingsCubit, SettingsState>(
         builder: (context, state) {
           if (state is SettingsLoaded) {

@@ -1,7 +1,3 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:logger/logger.dart';
-import 'package:equatable/equatable.dart';
-
 import '../../../core/utils/offline_content_manager.dart';
 import '../../../domain/entities/content.dart';
 import '../base/base_cubit.dart';
@@ -12,11 +8,10 @@ part 'offline_search_state.dart';
 class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   OfflineSearchCubit({
     required OfflineContentManager offlineContentManager,
-    required Logger logger,
+    required super.logger,
   })  : _offlineContentManager = offlineContentManager,
         super(
           initialState: const OfflineSearchInitial(),
-          logger: logger,
         );
 
   final OfflineContentManager _offlineContentManager;

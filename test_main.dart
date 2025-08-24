@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logger/logger.dart';
-import 'package:dio/dio.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 
 import 'lib/core/di/service_locator.dart';
 import 'lib/domain/entities/entities.dart';

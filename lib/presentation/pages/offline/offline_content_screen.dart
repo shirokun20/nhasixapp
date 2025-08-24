@@ -10,6 +10,7 @@ import '../../cubits/offline_search/offline_search_cubit.dart';
 import '../../widgets/content_card_widget.dart';
 import '../../widgets/progress_indicator_widget.dart';
 import '../../widgets/error_widget.dart';
+import '../../widgets/app_scaffold_with_offline.dart';
 
 /// Screen for browsing offline/downloaded content
 class OfflineContentScreen extends StatefulWidget {
@@ -44,7 +45,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
   Widget build(BuildContext context) {
     return BlocProvider<OfflineSearchCubit>(
       create: (context) => _offlineSearchCubit,
-      child: Scaffold(
+      child: AppScaffoldWithOffline(
+        title: 'Offline Content',
         backgroundColor: ColorsConst.darkBackground,
         appBar: _buildAppBar(),
         body: Column(

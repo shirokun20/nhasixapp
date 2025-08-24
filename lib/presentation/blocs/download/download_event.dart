@@ -67,6 +67,16 @@ class DownloadRetryEvent extends DownloadEvent {
   List<Object?> get props => [contentId];
 }
 
+/// Event to resume a paused download
+class DownloadResumeEvent extends DownloadEvent {
+  const DownloadResumeEvent(this.contentId);
+
+  final String contentId;
+
+  @override
+  List<Object?> get props => [contentId];
+}
+
 /// Event to remove a download from the list
 class DownloadRemoveEvent extends DownloadEvent {
   const DownloadRemoveEvent(this.contentId);
@@ -165,4 +175,15 @@ class DownloadCleanupStorageEvent extends DownloadEvent {
 /// Event to export download list
 class DownloadExportEvent extends DownloadEvent {
   const DownloadExportEvent();
+}
+
+/// Event to convert completed download to PDF
+/// This triggers background PDF conversion with notifications
+class DownloadConvertToPdfEvent extends DownloadEvent {
+  const DownloadConvertToPdfEvent(this.contentId);
+
+  final String contentId;
+
+  @override
+  List<Object?> get props => [contentId];
 }

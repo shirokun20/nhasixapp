@@ -6,6 +6,7 @@ import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
 import '../../cubits/favorite/favorite_cubit.dart';
 import '../../widgets/widgets.dart';
+import '../../widgets/app_scaffold_with_offline.dart';
 
 /// Screen for managing user's favorite content
 /// Features: favorites list, search, batch operations, export/import
@@ -245,7 +246,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => getIt<FavoriteCubit>()..loadFavorites(),
-      child: Scaffold(
+      child: AppScaffoldWithOffline(
+        title: 'Favorites',
         backgroundColor: ColorsConst.darkBackground,
         appBar: _buildAppBar(),
         body: BlocBuilder<FavoriteCubit, FavoriteState>(

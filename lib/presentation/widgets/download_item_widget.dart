@@ -334,6 +334,16 @@ class DownloadItemWidget extends StatelessWidget {
                 action: 'retry',
               ),
 
+            // Add PDF conversion option for completed downloads
+            // This allows users to convert downloaded images to PDF
+            if (download.state == DownloadState.completed)
+              _buildActionTile(
+                context,
+                icon: Icons.picture_as_pdf,
+                title: 'Convert to PDF',
+                action: 'convert_pdf',
+              ),
+
             _buildActionTile(
               context,
               icon: Icons.info_outline,

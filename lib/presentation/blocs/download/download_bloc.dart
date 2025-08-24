@@ -1,15 +1,21 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:logger/logger.dart';
 import 'package:dio/dio.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 
 import '../../../domain/entities/entities.dart';
+import '../../../domain/entities/download_task.dart';
 import '../../../domain/usecases/downloads/downloads_usecases.dart';
 import '../../../domain/usecases/content/content_usecases.dart';
 import '../../../domain/repositories/repositories.dart';
 import '../../../services/notification_service.dart';
+import '../../../services/download_manager.dart';
+import '../../../services/pdf_conversion_service.dart';
 
 part 'download_event.dart';
 part 'download_state.dart';
@@ -26,6 +32,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     required Logger logger,
     required Connectivity connectivity,
     required NotificationService notificationService,
+    required PdfConversionService pdfConversionService,
   })  : _downloadContentUseCase = downloadContentUseCase,
         _getDownloadStatusUseCase = getDownloadStatusUseCase,
         _getContentDetailUseCase = getContentDetailUseCase,
@@ -35,6 +42,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _logger = logger,
         _connectivity = connectivity,
         _notificationService = notificationService,
+        _pdfConversionService = pdfConversionService,
         super(const DownloadInitial()) {
     // Register event handlers
     on<DownloadInitializeEvent>(_onInitialize);
@@ -43,6 +51,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     on<DownloadPauseEvent>(_onPause);
     on<DownloadCancelEvent>(_onCancel);
     on<DownloadRetryEvent>(_onRetry);
+    on<DownloadResumeEvent>(_onResume);
     on<DownloadRemoveEvent>(_onRemove);
     on<DownloadRefreshEvent>(_onRefresh);
     on<DownloadProgressUpdateEvent>(_onProgressUpdate);
@@ -51,9 +60,13 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     on<DownloadResumeAllEvent>(_onResumeAll);
     on<DownloadCancelAllEvent>(_onCancelAll);
     on<DownloadClearCompletedEvent>(_onClearCompleted);
+    on<DownloadConvertToPdfEvent>(_onConvertToPdf);
 
     // Initialize notifications
     _notificationService.initialize();
+    
+    // Initialize progress stream subscription
+    _initializeProgressStream();
   }
 
   final DownloadContentUseCase _downloadContentUseCase;
@@ -65,16 +78,38 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   final Logger _logger;
   final Connectivity _connectivity;
   final NotificationService _notificationService;
+  final PdfConversionService _pdfConversionService;
 
   // Internal state
   DownloadSettings _settings = DownloadSettings.defaultSettings();
-  final Map<String, CancelToken> _activeCancelTokens = {};
+  final Map<String, DownloadTask> _activeTasks = {};
+  StreamSubscription<DownloadProgressUpdate>? _progressSubscription;
 
   // Constants
   static const String _downloadChannelId = 'download_channel';
   static const String _downloadChannelName = 'Downloads';
   static const String _downloadChannelDescription =
       'Download progress notifications';
+
+  /// Initialize progress stream subscription for real-time updates
+  void _initializeProgressStream() {
+    _progressSubscription = DownloadManager().progressStream.listen(
+      (update) {
+        _logger.d('DownloadBloc: Received progress update: $update');
+        add(DownloadProgressUpdateEvent(
+          contentId: update.contentId,
+          downloadedPages: update.downloadedPages,
+          totalPages: update.totalPages,
+          downloadSpeed: update.downloadSpeed,
+          estimatedTimeRemaining: update.estimatedTimeRemaining,
+        ));
+      },
+      onError: (error) {
+        _logger.e('DownloadBloc: Progress stream error: $error');
+      },
+    );
+    _logger.i('DownloadBloc: Progress stream subscription initialized');
+  }
 
     /// Initialize download manager
   Future<void> _onInitialize(
@@ -289,9 +324,15 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         GetContentDetailParams.fromString(event.contentId),
       );
 
-      // Create cancel token for this download
-      final cancelToken = CancelToken();
-      _activeCancelTokens[event.contentId] = cancelToken;
+      // Create download task for this download
+      final task = DownloadTask(
+        contentId: event.contentId,
+        title: content.title,
+      );
+      _activeTasks[event.contentId] = task;
+      
+      // Register task with DownloadManager for global access
+      DownloadManager().registerTask(task);
       
       // Show notification
       if (currentState.settings.enableNotifications) {
@@ -305,8 +346,11 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       final downloadParams = DownloadContentParams.immediate(content);
       final result = await _downloadContentUseCase.call(downloadParams);
 
-      // Remove cancel token
-      _activeCancelTokens.remove(event.contentId);
+      // Remove task
+      _activeTasks.remove(event.contentId);
+      
+      // Unregister task from DownloadManager
+      DownloadManager().unregisterTask(event.contentId);
       
       // Show completion notification
       if (currentState.settings.enableNotifications && result.isCompleted) {
@@ -325,8 +369,11 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _logger.e('DownloadBloc: Error starting download',
           error: e, stackTrace: stackTrace);
 
-      // Remove cancel token on error
-      _activeCancelTokens.remove(event.contentId);
+      // Remove task on error
+      _activeTasks.remove(event.contentId);
+      
+      // Unregister task from DownloadManager
+      DownloadManager().unregisterTask(event.contentId);
       
       // Update download status to failed
       if (currentState.getDownload(event.contentId) != null) {
@@ -391,8 +438,12 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         return;
       }
 
-      // Cancel the download task
-      _cancelDownloadTask(event.contentId);
+      // Pause the download task
+      final task = _activeTasks[event.contentId];
+      if (task != null) {
+        task.pause();
+        _logger.i('DownloadBloc: Paused task for ${event.contentId}');
+      }
 
       // Update status to paused
       final updatedDownload = download.copyWith(
@@ -509,6 +560,59 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     }
   }
 
+  /// Resume a paused download
+  Future<void> _onResume(
+    DownloadResumeEvent event,
+    Emitter<DownloadBlocState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! DownloadLoaded) return;
+
+    try {
+      _logger.i('DownloadBloc: Resuming download for ${event.contentId}');
+
+      final download = currentState.downloads
+          .where((d) => d.contentId == event.contentId)
+          .firstOrNull;
+
+      if (download == null || download.state != DownloadState.paused) {
+        _logger.w('DownloadBloc: Cannot resume download: ${event.contentId}');
+        return;
+      }
+
+      // Resume the task if it exists
+      final task = _activeTasks[event.contentId];
+      if (task != null) {
+        task.resume();
+        _logger.i('DownloadBloc: Resumed task for ${event.contentId}');
+      }
+
+      // Update status to queued for resume
+      final updatedDownload = download.copyWith(
+        state: DownloadState.queued,
+        startTime: DateTime.now(),
+        endTime: null,
+      );
+
+      await _userDataRepository.saveDownloadStatus(updatedDownload);
+
+      // Refresh downloads and process queue
+      add(const DownloadRefreshEvent());
+      _processQueue();
+
+      _logger.i('DownloadBloc: Resumed download for ${event.contentId}');
+    } catch (e, stackTrace) {
+      _logger.e('DownloadBloc: Error resuming download',
+          error: e, stackTrace: stackTrace);
+      emit(DownloadError(
+        message: 'Failed to resume download: ${e.toString()}',
+        errorType: _determineErrorType(e),
+        previousState: currentState,
+        stackTrace: stackTrace,
+      ));
+    }
+  }
+
   /// Remove a download from the list
   Future<void> _onRemove(
     DownloadRemoveEvent event,
@@ -608,11 +712,27 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     Emitter<DownloadBlocState> emit,
   ) async {
     final currentState = state;
-    if (currentState is! DownloadLoaded) return;
+    
+    // Handle different state types more flexibly
+    List<DownloadStatus> downloads;
+    DownloadSettings settings;
+    
+    if (currentState is DownloadLoaded) {
+      downloads = currentState.downloads;
+      settings = currentState.settings;
+    } else if (currentState is DownloadProcessing) {
+      downloads = currentState.downloads;
+      settings = currentState.settings;
+    } else {
+      // If not in a state where we can update progress, try to refresh first
+      _logger.d('DownloadBloc: Not in updatable state, refreshing downloads for progress update');
+      add(const DownloadRefreshEvent());
+      return;
+    }
 
     try {
       // Find the download and update its progress
-      final downloadIndex = currentState.downloads.indexWhere(
+      final downloadIndex = downloads.indexWhere(
         (d) => d.contentId == event.contentId,
       );
 
@@ -621,7 +741,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         return;
       }
 
-      final currentDownload = currentState.downloads[downloadIndex];
+      final currentDownload = downloads[downloadIndex];
       
       // Update progress only if download is still in progress
       if (!currentDownload.isInProgress) {
@@ -632,17 +752,26 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Create updated download with new progress
       final updatedDownload = currentDownload.copyWith(
         downloadedPages: event.downloadedPages,
+        speed: event.downloadSpeed,
       );
 
       // Update downloads list
-      final updatedDownloads = List<DownloadStatus>.from(currentState.downloads);
+      final updatedDownloads = List<DownloadStatus>.from(downloads);
       updatedDownloads[downloadIndex] = updatedDownload;
 
-      // Emit new state with updated progress
-      emit(currentState.copyWith(
-        downloads: updatedDownloads,
-        lastUpdated: DateTime.now(),
-      ));
+      // Emit appropriate state based on current state type
+      if (currentState is DownloadLoaded) {
+        emit(currentState.copyWith(
+          downloads: updatedDownloads,
+          lastUpdated: DateTime.now(),
+        ));
+      } else if (currentState is DownloadProcessing) {
+        emit(DownloadLoaded(
+          downloads: updatedDownloads,
+          settings: settings,
+          lastUpdated: DateTime.now(),
+        ));
+      }
 
       // Save progress to database (but don't await to keep it fast)
       _userDataRepository.saveDownloadStatus(updatedDownload).catchError((e) {
@@ -697,10 +826,14 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
   /// Cancel download task
   void _cancelDownloadTask(String contentId) {
-    final cancelToken = _activeCancelTokens[contentId];
-    if (cancelToken != null && !cancelToken.isCancelled) {
-      cancelToken.cancel('Download cancelled by user');
-      _activeCancelTokens.remove(contentId);
+    final task = _activeTasks[contentId];
+    if (task != null && !task.isCancelled) {
+      task.cancel('Download cancelled by user');
+      _activeTasks.remove(contentId);
+      
+      // Unregister task from DownloadManager
+      DownloadManager().unregisterTask(contentId);
+      _logger.d('DownloadBloc: Cancelled task for $contentId');
     }
   }
 
@@ -951,16 +1084,230 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     }
   }
 
+  /// Convert completed download to PDF with background processing
+  /// This handler triggers PDF conversion using PdfConversionService
+  /// which handles splitting, notifications, and background processing
+  Future<void> _onConvertToPdf(
+    DownloadConvertToPdfEvent event,
+    Emitter<DownloadBlocState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! DownloadLoaded) {
+      _logger.w('DownloadBloc: Cannot convert to PDF - not in loaded state');
+      return;
+    }
+
+    try {
+      _logger.i('DownloadBloc: Starting PDF conversion for ${event.contentId}');
+      
+      // Find the download status for this content
+      final download = currentState.downloads.firstWhere(
+        (d) => d.contentId == event.contentId,
+        orElse: () => throw Exception('Download not found for content: ${event.contentId}'),
+      );
+
+      // Check if download is completed
+      if (!download.isCompleted) {
+        _logger.w('DownloadBloc: Cannot convert incomplete download to PDF: ${event.contentId}');
+        await _notificationService.showPdfConversionError(
+          contentId: event.contentId,
+          title: event.contentId,
+          error: 'Download is not completed yet',
+        );
+        return;
+      }
+
+      // Get content details for proper title
+      final content = await _getContentDetailUseCase.call(
+        GetContentDetailParams.fromString(event.contentId),
+      );
+
+      // Get downloaded image paths from content repository or download service
+      // For now, we'll use a placeholder path construction
+      final imagePaths = await _getDownloadedImagePaths(event.contentId);
+      
+      if (imagePaths.isEmpty) {
+        _logger.w('DownloadBloc: No downloaded images found for PDF conversion: ${event.contentId}');
+        await _notificationService.showPdfConversionError(
+          contentId: event.contentId,
+          title: content.title,
+          error: 'No images found for conversion',
+        );
+        return;
+      }
+
+      // Start PDF conversion in background using PdfConversionService
+      await _pdfConversionService.convertToPdfInBackground(
+        contentId: event.contentId,
+        title: content.title,
+        imagePaths: imagePaths,
+        maxPagesPerFile: 50, // Split into 50-page chunks
+      );
+
+      _logger.i('DownloadBloc: PDF conversion started for ${event.contentId}');
+      
+      // The actual conversion happens in background via PdfConversionService
+      // User will be notified via notifications about progress and completion
+      
+    } catch (e, stackTrace) {
+      _logger.e('DownloadBloc: Error during PDF conversion for ${event.contentId}', 
+          error: e, stackTrace: stackTrace);
+      
+      // Show error notification to user
+      await _notificationService.showPdfConversionError(
+        contentId: event.contentId,
+        title: event.contentId,
+        error: e.toString(),
+      );
+    }
+  }
+
+  /// Helper method to get downloaded image paths for a content
+  /// This method retrieves all image files from the download directory
+  Future<List<String>> _getDownloadedImagePaths(String contentId) async {
+    try {
+      _logger.d('DownloadBloc: Getting image paths for content: $contentId');
+      
+      // Use smart Downloads directory detection (same as DownloadService)
+      final downloadsPath = await _getDownloadsDirectory();
+      final imagesDir = Directory(path.join(
+        downloadsPath, 
+        'nhasix', 
+        contentId, 
+        'images'
+      ));
+      
+      // Check if directory exists
+      if (!await imagesDir.exists()) {
+        _logger.w('DownloadBloc: Images directory does not exist: ${imagesDir.path}');
+        return <String>[];
+      }
+      
+      // List all files in the images directory
+      final files = await imagesDir.list().toList();
+      
+      // Filter only image files and sort them
+      final imagePaths = files
+          .whereType<File>()
+          .where((file) {
+            final extension = path.extension(file.path).toLowerCase();
+            return ['.jpg', '.jpeg', '.png', '.gif', '.webp'].contains(extension);
+          })
+          .map((file) => file.path)
+          .toList();
+      
+      // Sort by filename to maintain page order
+      imagePaths.sort();
+      
+      _logger.i('DownloadBloc: Found ${imagePaths.length} image files for content: $contentId');
+      
+      if (imagePaths.isEmpty) {
+        _logger.w('DownloadBloc: No downloaded images found for PDF conversion: $contentId, folder download image ada di ${imagesDir.path}');
+      } else {
+        _logger.d('DownloadBloc: Image files: ${imagePaths.take(5).join(', ')}${imagePaths.length > 5 ? '...' : ''}');
+      }
+      
+      return imagePaths;
+    } catch (e) {
+      _logger.e('DownloadBloc: Error getting downloaded image paths: $e');
+      return <String>[];
+    }
+  }
+
+  /// Smart Downloads directory detection (same as DownloadService)
+  /// Tries multiple possible Downloads folder names and locations
+  Future<String> _getDownloadsDirectory() async {
+    try {
+      // First, try to get external storage directory
+      Directory? externalDir;
+      try {
+        externalDir = await getExternalStorageDirectory();
+      } catch (e) {
+        _logger.w('Could not get external storage directory: $e');
+      }
+
+      if (externalDir != null) {
+        // Try to find Downloads folder in external storage root
+        final externalRoot = externalDir.path.split('/Android')[0];
+        
+        // Common Downloads folder names (English, Indonesian, Spanish, etc.)
+        final downloadsFolderNames = [
+          'Download',     // English (most common)
+          'Downloads',    // English alternative
+          'Unduhan',      // Indonesian
+          'Descargas',    // Spanish
+          'Téléchargements', // French
+          'Downloads',    // German uses English
+          'ダウンロード',     // Japanese
+        ];
+
+        // Try each possible Downloads folder
+        for (final folderName in downloadsFolderNames) {
+          final downloadsDir = Directory(path.join(externalRoot, folderName));
+          if (await downloadsDir.exists()) {
+            _logger.d('DownloadBloc: Found Downloads directory: ${downloadsDir.path}');
+            return downloadsDir.path;
+          }
+        }
+
+        // If no Downloads folder found, check for app-specific external storage
+        final appDownloadsDir = Directory(path.join(externalDir.path, 'downloads'));
+        if (await appDownloadsDir.exists()) {
+          _logger.d('DownloadBloc: Using app-specific downloads directory: ${appDownloadsDir.path}');
+          return appDownloadsDir.path;
+        }
+      }
+
+      // Fallback 1: Try hardcoded common paths
+      final commonPaths = [
+        '/storage/emulated/0/Download',
+        '/storage/emulated/0/Downloads',
+        '/storage/emulated/0/Unduhan',
+        '/sdcard/Download',
+        '/sdcard/Downloads',
+      ];
+
+      for (final commonPath in commonPaths) {
+        final dir = Directory(commonPath);
+        if (await dir.exists()) {
+          _logger.d('DownloadBloc: Found Downloads directory at common path: $commonPath');
+          return commonPath;
+        }
+      }
+
+      // Fallback 2: Use application documents directory
+      final documentsDir = await getApplicationDocumentsDirectory();
+      final documentsDownloadsDir = Directory(path.join(documentsDir.path, 'downloads'));
+      _logger.d('DownloadBloc: Using app documents downloads directory: ${documentsDownloadsDir.path}');
+      return documentsDownloadsDir.path;
+
+    } catch (e) {
+      _logger.e('DownloadBloc: Error detecting Downloads directory: $e');
+      
+      // Emergency fallback: use app documents
+      final documentsDir = await getApplicationDocumentsDirectory();
+      final emergencyDir = Directory(path.join(documentsDir.path, 'downloads'));
+      _logger.w('DownloadBloc: Using emergency fallback directory: ${emergencyDir.path}');
+      return emergencyDir.path;
+    }
+  }
+
   /// Cleanup resources when BLoC is closed
   @override
   Future<void> close() {
+    // Cancel progress stream subscription
+    _progressSubscription?.cancel();
+    _logger.i('DownloadBloc: Progress stream subscription cancelled');
+    
     // Cancel all active downloads
-    for (final cancelToken in _activeCancelTokens.values) {
-      if (!cancelToken.isCancelled) {
-        cancelToken.cancel('BLoC is closing');
+    for (final task in _activeTasks.values) {
+      if (!task.isCancelled) {
+        task.cancel('BLoC is closing');
       }
+      // Unregister from DownloadManager
+      DownloadManager().unregisterTask(task.contentId);
     }
-    _activeCancelTokens.clear();
+    _activeTasks.clear();
 
     return super.close();
   }

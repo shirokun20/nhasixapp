@@ -5,13 +5,13 @@ import 'package:logger/web.dart';
 import 'package:nhasixapp/core/constants/colors_const.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
-import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:nhasixapp/core/utils/app_state_manager.dart';
 
 class DetailScreen extends StatefulWidget {
   final String contentId;
@@ -87,17 +87,26 @@ class _DetailScreenState extends State<DetailScreen> {
         },
         child: Scaffold(
           backgroundColor: ColorsConst.darkBackground,
-          body: BlocBuilder<DetailCubit, DetailState>(
-            builder: (context, state) {
-              if (state is DetailLoading) {
-                return _buildLoadingState(context);
-              } else if (state is DetailLoaded) {
-                return _buildDetailContent(state);
-              } else if (state is DetailError) {
-                return _buildErrorState(state);
-              }
+          body: StreamBuilder<bool>(
+            // Listen to offline mode changes
+            stream: AppStateManager().offlineModeStream,
+            initialData: AppStateManager().isOfflineMode,
+            builder: (context, offlineSnapshot) {
+              final isOfflineMode = offlineSnapshot.data ?? false;
 
-              return const SizedBox.shrink();
+              return BlocBuilder<DetailCubit, DetailState>(
+                builder: (context, state) {
+                  if (state is DetailLoading) {
+                    return _buildLoadingState(context);
+                  } else if (state is DetailLoaded) {
+                    return _buildDetailContent(state, isOfflineMode);
+                  } else if (state is DetailError) {
+                    return _buildErrorState(state);
+                  }
+
+                  return const SizedBox.shrink();
+                },
+              );
             },
           ),
         ),
@@ -228,169 +237,230 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  Widget _buildDetailContent(DetailLoaded state) {
+  Widget _buildDetailContent(DetailLoaded state, bool isOfflineMode) {
     final content = state.content;
 
-    return CustomScrollView(
-      controller: _scrollController,
-      slivers: [
-        // App bar with cover image
-        SliverAppBar(
-          expandedHeight: 300,
-          pinned: true,
-          backgroundColor: ColorsConst.darkSurface,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back,
-                color: ColorsConst.darkTextPrimary),
-            onPressed: () => context.pop(),
-          ),
-          actions: [
-            // Favorite button
-            IconButton(
-              icon: Icon(
-                state.isFavorited ? Icons.favorite : Icons.favorite_border,
-                color: state.isFavorited
-                    ? ColorsConst.accentPink
-                    : ColorsConst.darkTextPrimary,
+    return Column(children: [
+      // Offline banner
+      if (isOfflineMode)
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      color: ColorsConst.accentYellow.withValues(alpha: 0.1),
+          child: Row(
+            children: [
+              Icon(
+                Icons.wifi_off,
+                color: ColorsConst.accentYellow,
+                size: 16,
               ),
-              onPressed: state.isTogglingFavorite
-                  ? null
-                  : () => _detailCubit.toggleFavorite(),
-            ),
-            // Share button
-            IconButton(
-              icon: const Icon(Icons.share, color: ColorsConst.darkTextPrimary),
-              onPressed: () => _shareContent(content),
-            ),
-            // More options
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert,
-                  color: ColorsConst.darkTextPrimary),
-              color: ColorsConst.darkCard,
-              onSelected: (value) => _handleMenuAction(value, content),
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: 'download',
-                  child: Row(
-                    children: [
-                      const Icon(Icons.download,
-                          color: ColorsConst.darkTextPrimary),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Download',
-                        style: TextStyleConst.bodyMedium.copyWith(
-                          color: ColorsConst.darkTextPrimary,
-                        ),
-                      ),
-                    ],
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'You are offline. Some features may be limited.',
+                  style: TextStyleConst.bodySmall.copyWith(
+                    color: ColorsConst.accentYellow,
                   ),
                 ),
-                PopupMenuItem(
-                  value: 'copy_link',
-                  child: Row(
-                    children: [
-                      const Icon(Icons.link,
-                          color: ColorsConst.darkTextPrimary),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Copy Link',
-                        style: TextStyleConst.bodyMedium.copyWith(
-                          color: ColorsConst.darkTextPrimary,
-                        ),
-                      ),
-                    ],
+              ),
+              TextButton(
+                onPressed: () => _showGoOnlineDialog(context),
+                child: Text(
+                  'Go Online',
+                  style: TextStyleConst.bodySmall.copyWith(
+                    color: ColorsConst.accentYellow,
+                    fontWeight: FontWeight.bold,
                   ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      // Main content
+      Expanded(
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            // App bar with cover image
+            SliverAppBar(
+              expandedHeight: 300,
+              pinned: true,
+              backgroundColor: ColorsConst.darkSurface,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back,
+                    color: ColorsConst.darkTextPrimary),
+                onPressed: () => context.pop(),
+              ),
+              actions: [
+                // Offline indicator badge
+                if (isOfflineMode)
+                  Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.wifi_off,
+                        color: ColorsConst.accentYellow,
+                        size: 20,
+                      ),
+                      onPressed: () => _showGoOnlineDialog(context),
+                      tooltip: 'You are offline. Tap to go online.',
+                    ),
+                  ),
+                // Favorite button
+                IconButton(
+                  icon: Icon(
+                    state.isFavorited ? Icons.favorite : Icons.favorite_border,
+                    color: state.isFavorited
+                        ? ColorsConst.accentPink
+                        : ColorsConst.darkTextPrimary,
+                  ),
+                  onPressed: state.isTogglingFavorite
+                      ? null
+                      : () => _detailCubit.toggleFavorite(),
+                ),
+                // Share button
+                IconButton(
+                  icon: const Icon(Icons.share,
+                      color: ColorsConst.darkTextPrimary),
+                  onPressed: () => _shareContent(content),
+                ),
+                // More options
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert,
+                      color: ColorsConst.darkTextPrimary),
+                  color: ColorsConst.darkCard,
+                  onSelected: (value) => _handleMenuAction(value, content),
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'download',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.download,
+                              color: ColorsConst.darkTextPrimary),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Download',
+                            style: TextStyleConst.bodyMedium.copyWith(
+                              color: ColorsConst.darkTextPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'copy_link',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.link,
+                              color: ColorsConst.darkTextPrimary),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Copy Link',
+                            style: TextStyleConst.bodyMedium.copyWith(
+                              color: ColorsConst.darkTextPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
+              flexibleSpace: FlexibleSpaceBar(
+                background: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Cover image
+                    CachedNetworkImage(
+                      imageUrl: content.coverUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: ColorsConst.darkCard,
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            color: ColorsConst.accentBlue,
+                          ),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: ColorsConst.darkCard,
+                        child: const Center(
+                          child: Icon(
+                            Icons.broken_image,
+                            size: 64,
+                            color: ColorsConst.darkTextTertiary,
+                          ),
+                        ),
+                      ),
+                      memCacheWidth: 800,
+                      memCacheHeight: 1200,
+                    ),
+                    // Gradient overlay
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.transparent,
+                            Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.5),
+                            Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.8),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Content details
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title section
+                    _buildTitleSection(content),
+                    const SizedBox(height: 24),
+
+                    // Metadata section
+                    _buildMetadataSection(content),
+                    const SizedBox(height: 24),
+
+                    // Tags section
+                    _buildTagsSection(content),
+                    const SizedBox(height: 24),
+
+                    // Action buttons
+                    _buildActionButtons(content),
+                    const SizedBox(height: 24),
+
+                    // Statistics section
+                    _buildStatisticsSection(content),
+                    const SizedBox(height: 32),
+
+                    // Related content section
+                    if (content.relatedContent.isNotEmpty) ...[
+                      _buildRelatedContentSection(content),
+                      const SizedBox(height: 32),
+                    ],
+                  ],
+                ),
+              ),
             ),
           ],
-          flexibleSpace: FlexibleSpaceBar(
-            background: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Cover image
-                CachedNetworkImage(
-                  imageUrl: content.coverUrl,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    color: ColorsConst.darkCard,
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        color: ColorsConst.accentBlue,
-                      ),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: ColorsConst.darkCard,
-                    child: const Center(
-                      child: Icon(
-                        Icons.broken_image,
-                        size: 64,
-                        color: ColorsConst.darkTextTertiary,
-                      ),
-                    ),
-                  ),
-                  memCacheWidth: 800,
-                  memCacheHeight: 1200,
-                ),
-                // Gradient overlay
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.transparent,
-                        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
-
-        // Content details
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title section
-                _buildTitleSection(content),
-                const SizedBox(height: 24),
-
-                // Metadata section
-                _buildMetadataSection(content),
-                const SizedBox(height: 24),
-
-                // Tags section
-                _buildTagsSection(content),
-                const SizedBox(height: 24),
-
-                // Action buttons
-                _buildActionButtons(content),
-                const SizedBox(height: 24),
-
-                // Statistics section
-                _buildStatisticsSection(content),
-                const SizedBox(height: 32),
-
-                // Related content section
-                if (content.relatedContent.isNotEmpty) ...[
-                  _buildRelatedContentSection(content),
-                  const SizedBox(height: 32),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
+      ),
+    ]);
   }
 
   Widget _buildTitleSection(Content content) {
@@ -1056,7 +1126,8 @@ class _DetailScreenState extends State<DetailScreen> {
         SnackBar(
           content: Text(
             'Download started: ${content.title}',
-            style: TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onPrimary),
+            style: TextStyleConst.bodyMedium
+                .copyWith(color: Theme.of(context).colorScheme.onPrimary),
           ),
           backgroundColor: ColorsConst.accentGreen,
           action: SnackBarAction(
@@ -1077,7 +1148,8 @@ class _DetailScreenState extends State<DetailScreen> {
       SnackBar(
         content: Text(
           'Share functionality will be implemented later',
-          style: TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onPrimary),
+          style: TextStyleConst.bodyMedium
+              .copyWith(color: Theme.of(context).colorScheme.onPrimary),
         ),
         backgroundColor: ColorsConst.accentBlue,
       ),
@@ -1095,7 +1167,8 @@ class _DetailScreenState extends State<DetailScreen> {
           SnackBar(
             content: Text(
               'Link copied to clipboard',
-              style: TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onPrimary),
+              style: TextStyleConst.bodyMedium
+                  .copyWith(color: Theme.of(context).colorScheme.onPrimary),
             ),
             backgroundColor: ColorsConst.accentGreen,
           ),
@@ -1106,5 +1179,63 @@ class _DetailScreenState extends State<DetailScreen> {
 
   void _navigateToRelatedContent(Content relatedContent) {
     AppRouter.goToContentDetail(context, relatedContent.id);
+  }
+
+  void _showGoOnlineDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: ColorsConst.darkCard,
+        title: Text(
+          'Go Online',
+          style: TextStyleConst.headingSmall.copyWith(
+            color: ColorsConst.darkTextPrimary,
+          ),
+        ),
+        content: Text(
+          'You are currently in offline mode. Would you like to go online to access the latest content?',
+          style: TextStyleConst.bodyMedium.copyWith(
+            color: ColorsConst.darkTextSecondary,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'Cancel',
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: ColorsConst.darkTextSecondary,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              AppStateManager().setOfflineMode(false);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Going online...',
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: ColorsConst.darkTextPrimary,
+                    ),
+                  ),
+                  backgroundColor: ColorsConst.accentGreen,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ColorsConst.accentBlue,
+            ),
+            child: Text(
+              'Go Online',
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: ColorsConst.darkTextPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -1,11 +1,15 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:logger/logger.dart';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 
 import '../base_usecase.dart';
 import '../../entities/entities.dart';
 import '../../repositories/repositories.dart';
 import '../../../services/download_service.dart';
 import '../../../services/pdf_service.dart';
+import '../../../services/download_manager.dart';
 
 /// Use case for downloading content for offline reading
 class DownloadContentUseCase
@@ -65,7 +69,7 @@ class DownloadContentUseCase
       // Start actual download if not just queuing
       if (params.startImmediately) {
         downloadStatus =
-            await _performActualDownload(params.content, downloadStatus);
+            await _performActualDownload(params.content, downloadStatus, params.convertToPdf);
       }
 
       return downloadStatus;
@@ -93,6 +97,7 @@ class DownloadContentUseCase
   Future<DownloadStatus> _performActualDownload(
     Content content,
     DownloadStatus initialStatus,
+    bool convertToPdf,
   ) async {
     var currentStatus = initialStatus;
 
@@ -117,6 +122,15 @@ class DownloadContentUseCase
             downloadedPages: progress.downloadedPages,
           );
           await _userDataRepository.saveDownloadStatus(currentStatus);
+          
+          // Emit to stream for real-time updates
+          DownloadManager().emitProgress(DownloadProgressUpdate(
+            contentId: content.id,
+            downloadedPages: progress.downloadedPages,
+            totalPages: progress.totalPages,
+            downloadSpeed: progress.speed,
+            estimatedTimeRemaining: progress.estimatedTimeRemaining,
+          ));
         },
       );
 
@@ -130,9 +144,20 @@ class DownloadContentUseCase
         );
 
         // Convert to PDF if requested
-        // if (downloadResult.downloadPath != null) {
-        //   await _convertToPdfIfRequested(content, downloadResult.downloadPath!);
-        // }
+        if (downloadResult.downloadPath != null && convertToPdf) {
+          _logger.i('Starting PDF conversion for content: ${content.id}');
+          
+          // Notify about PDF conversion start
+          DownloadManager().emitProgress(DownloadProgressUpdate(
+            contentId: content.id,
+            downloadedPages: content.pageCount,
+            totalPages: content.pageCount,
+            downloadSpeed: 0.0, // PDF conversion doesn't have speed
+            estimatedTimeRemaining: const Duration(seconds: 30), // Estimated
+          ));
+          
+          await _convertToPdfIfRequested(content, downloadResult.downloadPath!);
+        }
       } else {
         // Update status to failed
         currentStatus = currentStatus.copyWith(
@@ -160,30 +185,80 @@ class DownloadContentUseCase
   }
 
   /// Convert downloaded images to PDF if requested
-  /// Hide dulu karena nanti di implementasi pas button
+  /// Enhanced with progress reporting via DownloadManager
+  /// PDF disimpan di folder khusus: nhasix-generate/pdf/
   Future<void> _convertToPdfIfRequested(
       Content content, String downloadPath) async {
     try {
+      _logger.i('Starting PDF conversion for content: ${content.id}');
+
       // Get downloaded image files
       final imageFiles = await _downloadService.getDownloadedFiles(content.id);
-      if (imageFiles.isEmpty) return;
+      if (imageFiles.isEmpty) {
+        _logger.w('No images found for PDF conversion: ${content.id}');
+        return;
+      }
 
-      // Convert to PDF
+      _logger.i('Converting ${imageFiles.length} images to PDF for: ${content.id}');
+
+      // Create PDF folder: nhasix-generate/pdf/
+      final pdfOutputPath = await _createPdfOutputPath(content.id, content.title);
+
+      // Emit progress for PDF conversion start
+      DownloadManager().emitProgress(DownloadProgressUpdate(
+        contentId: content.id,
+        downloadedPages: content.pageCount,
+        totalPages: content.pageCount,
+        downloadSpeed: 0.0,
+        estimatedTimeRemaining: Duration(seconds: imageFiles.length * 2), // Estimate 2s per image
+      ));
+
+      // Convert to PDF with custom output path
       final pdfResult = await _pdfService.convertToPdf(
         contentId: content.id,
         title: content.title,
         imagePaths: imageFiles,
-        outputDir: downloadPath,
+        outputDir: pdfOutputPath, // Use PDF folder instead of download folder
       );
 
       if (pdfResult.success) {
-        _logger.i('PDF created successfully for content: ${content.id}');
+        _logger.i('PDF created successfully for content: ${content.id} at: $pdfOutputPath');
+        
+        // Emit final progress for PDF completion
+        DownloadManager().emitProgress(DownloadProgressUpdate(
+          contentId: content.id,
+          downloadedPages: content.pageCount,
+          totalPages: content.pageCount,
+          downloadSpeed: 0.0,
+          estimatedTimeRemaining: Duration.zero,
+        ));
       } else {
         _logger.w(
             'PDF conversion failed for content: ${content.id} - ${pdfResult.error}');
       }
     } catch (e) {
       _logger.e('Error during PDF conversion: $e');
+    }
+  }
+
+  /// Create PDF output path in nhasix-generate/pdf/ folder
+  Future<String> _createPdfOutputPath(String contentId, String title) async {
+    try {
+      // Get app documents directory
+      final appDocDir = await getApplicationDocumentsDirectory();
+      
+      // Create nhasix-generate/pdf/ folder
+      final pdfFolder = Directory(path.join(appDocDir.path, 'nhasix-generate', 'pdf'));
+      
+      if (!await pdfFolder.exists()) {
+        await pdfFolder.create(recursive: true);
+        _logger.i('Created PDF folder: ${pdfFolder.path}');
+      }
+      
+      return pdfFolder.path;
+    } catch (e) {
+      _logger.e('Error creating PDF folder: $e');
+      rethrow;
     }
   }
 }

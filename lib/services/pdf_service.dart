@@ -172,9 +172,9 @@ class PdfService {
 
   /// Create safe filename from title
   String _createSafeFilename(String title) {
-    // Remove or replace invalid characters
+    // Remove or replace invalid characters including special symbols
     String safe = title
-        .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
+        .replaceAll(RegExp(r'[<>:"/\\|?*!@#$%^&()]'), '_')
         .replaceAll(RegExp(r'\s+'), '_')
         .replaceAll(RegExp(r'_+'), '_')
         .trim();
