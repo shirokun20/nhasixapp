@@ -143,7 +143,7 @@ class _MainScreenState extends State<MainScreen> {
 
           // Main screen UI when home is loaded
           return AppScaffoldWithOffline(
-            title: 'NhaSix',
+            title: 'Nhentai',
             appBar: AppMainHeaderWidget(
               context: context,
               onSearchPressed: () async {

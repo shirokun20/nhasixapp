@@ -8,6 +8,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:open_file/open_file.dart';
 
 import '../../../domain/entities/entities.dart';
 import '../../../domain/entities/download_task.dart';
@@ -1271,20 +1272,36 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         return;
       }
 
-      // Get content details for proper title
-      final content = await _getContentDetailUseCase.call(
-        GetContentDetailParams.fromString(event.contentId),
-      );
+      // Try to get content details from local metadata first
+      String contentTitle = event.contentId; // Fallback title
+      final localMetadata = await _readLocalMetadata(event.contentId);
+      
+      if (localMetadata != null) {
+        // Use local metadata for offline support
+        contentTitle = localMetadata['title'] as String? ?? event.contentId;
+        _logger.i('DownloadBloc: Using local metadata for PDF conversion - Title: $contentTitle');
+      } else {
+        // Fallback to API if no local metadata (online mode)
+        try {
+          final content = await _getContentDetailUseCase.call(
+            GetContentDetailParams.fromString(event.contentId),
+          );
+          contentTitle = content.title;
+          _logger.i('DownloadBloc: Using API content details for PDF conversion - Title: $contentTitle');
+        } catch (e) {
+          _logger.w('DownloadBloc: Failed to get content details from API, using contentId as title: $e');
+          // Keep using contentId as fallback title
+        }
+      }
 
       // Get downloaded image paths from content repository or download service
-      // For now, we'll use a placeholder path construction
       final imagePaths = await _getDownloadedImagePaths(event.contentId);
       
       if (imagePaths.isEmpty) {
         _logger.w('DownloadBloc: No downloaded images found for PDF conversion: ${event.contentId}');
         await _notificationService.showPdfConversionError(
           contentId: event.contentId,
-          title: content.title,
+          title: contentTitle,
           error: 'No images found for conversion',
         );
         return;
@@ -1293,7 +1310,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Start PDF conversion in background using PdfConversionService
       await _pdfConversionService.convertToPdfInBackground(
         contentId: event.contentId,
-        title: content.title,
+        title: contentTitle,
         imagePaths: imagePaths,
         maxPagesPerFile: 50, // Split into 50-page chunks
       );
@@ -1310,9 +1327,44 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Show error notification to user
       await _notificationService.showPdfConversionError(
         contentId: event.contentId,
-        title: event.contentId,
+        title: event.contentId, // Use contentId as fallback title in error case
         error: e.toString(),
       );
+    }
+  }
+
+  /// Helper method to read local metadata.json for a content
+  /// Returns metadata map if file exists and is valid, null otherwise
+  Future<Map<String, dynamic>?> _readLocalMetadata(String contentId) async {
+    try {
+      _logger.d('DownloadBloc: Reading local metadata for content: $contentId');
+      
+      // Use smart Downloads directory detection (same as DownloadService)
+      final downloadsPath = await _getDownloadsDirectory();
+      final metadataFile = File(path.join(
+        downloadsPath, 
+        'nhasix', 
+        contentId, 
+        'metadata.json'
+      ));
+      
+      // Check if metadata file exists
+      if (!await metadataFile.exists()) {
+        _logger.w('DownloadBloc: Metadata file does not exist: ${metadataFile.path}');
+        return null;
+      }
+      
+      // Read and parse metadata
+      final metadataContent = await metadataFile.readAsString();
+      final metadata = jsonDecode(metadataContent) as Map<String, dynamic>;
+      
+      _logger.i('DownloadBloc: Successfully read local metadata for $contentId');
+      _logger.d('DownloadBloc: Metadata title: ${metadata['title']}');
+      
+      return metadata;
+    } catch (e) {
+      _logger.e('DownloadBloc: Error reading local metadata for $contentId: $e');
+      return null;
     }
   }
 
@@ -1665,15 +1717,67 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       if (download.state == DownloadState.completed && download.downloadPath != null) {
         final directory = Directory(download.downloadPath!);
         if (await directory.exists()) {
-          // Try to open the download directory
-          // Note: This is platform-specific implementation
-          // For now, just log the action
           _logger.i('DownloadBloc: Opening download directory: ${download.downloadPath}');
           
-          // TODO: Implement platform-specific directory opening
-          // On Android: Could use intent to open file manager
-          // On iOS: Could use share sheet or document viewer
-          // For now, this serves as a placeholder for the actual implementation
+          // Try multiple strategies to open the downloaded content on Android
+          bool opened = false;
+          
+          // Strategy 1: Try to open the main download directory
+          try {
+            final result = await OpenFile.open(download.downloadPath!);
+            if (result.type == ResultType.done) {
+              _logger.i('DownloadBloc: Successfully opened download directory');
+              opened = true;
+            } else {
+              _logger.w('DownloadBloc: Failed to open directory: ${result.message}');
+            }
+          } catch (e) {
+            _logger.w('DownloadBloc: Error opening directory: $e');
+          }
+          
+          // Strategy 2: If directory opening failed, try opening the images subdirectory
+          if (!opened) {
+            try {
+              final imagesDir = Directory(path.join(download.downloadPath!, 'images'));
+              if (await imagesDir.exists()) {
+                final result = await OpenFile.open(imagesDir.path);
+                if (result.type == ResultType.done) {
+                  _logger.i('DownloadBloc: Successfully opened images directory');
+                  opened = true;
+                } else {
+                  _logger.w('DownloadBloc: Failed to open images directory: ${result.message}');
+                }
+              }
+            } catch (e) {
+              _logger.w('DownloadBloc: Error opening images directory: $e');
+            }
+          }
+          
+          // Strategy 3: If still not opened, try opening the first image file
+          if (!opened) {
+            try {
+              final imagePaths = await _getDownloadedImagePaths(contentId);
+              if (imagePaths.isNotEmpty) {
+                final firstImage = imagePaths.first;
+                final result = await OpenFile.open(firstImage);
+                if (result.type == ResultType.done) {
+                  _logger.i('DownloadBloc: Successfully opened first image: $firstImage');
+                  opened = true;
+                } else {
+                  _logger.w('DownloadBloc: Failed to open first image: ${result.message}');
+                }
+              }
+            } catch (e) {
+              _logger.w('DownloadBloc: Error opening first image: $e');
+            }
+          }
+          
+          // If all strategies failed, show error
+          if (!opened) {
+            _logger.e('DownloadBloc: All strategies failed to open downloaded content for $contentId');
+            // TODO: Could show a user-facing error notification here
+          }
+          
         } else {
           _logger.w('DownloadBloc: Download directory not found: ${download.downloadPath}');
         }

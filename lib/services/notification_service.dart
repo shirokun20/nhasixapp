@@ -658,24 +658,24 @@ class NotificationService {
               AndroidNotificationAction(
                 'resume',
                 'Resume',
-                showsUserInterface: false,
+                showsUserInterface: true,
               ),
               AndroidNotificationAction(
                 'cancel',
                 'Cancel',
-                showsUserInterface: false,
+                showsUserInterface: true,
               ),
             ] : [
               // Show pause action when downloading
               AndroidNotificationAction(
                 'pause',
                 'Pause',
-                showsUserInterface: false,
+                showsUserInterface: true,
               ),
               AndroidNotificationAction(
                 'cancel',
                 'Cancel',
-                showsUserInterface: false,
+                showsUserInterface: true,
               ),
             ],
           ),
@@ -783,7 +783,7 @@ class NotificationService {
               AndroidNotificationAction(
                 'retry',
                 'Retry',
-                showsUserInterface: false,
+                showsUserInterface: true,
               ),
             ],
           ),

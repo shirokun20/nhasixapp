@@ -57,7 +57,7 @@ class HttpClientManager {
       LogInterceptor(
         requestBody: false,
         responseBody: false,
-        logPrint: (obj) => _logger?.d(obj),
+        // logPrint: (obj) => _logger?.d(obj),
       ),
     );
 
