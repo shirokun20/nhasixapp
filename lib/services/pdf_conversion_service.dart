@@ -96,14 +96,16 @@ class PdfConversionService {
           final endIndex = (startIndex + maxPagesPerFile).clamp(0, totalPages);
           final partImages = imagePaths.sublist(startIndex, endIndex);
           
-          // Update progress notification untuk setiap part
-          // Update progress notification for each part
-          final progressPercent = ((part - 1) / totalParts * 100).round();
-          await _notificationService.updatePdfConversionProgress(
-            contentId: contentId,
-            progress: progressPercent,
-            title: '$title (Part $part/$totalParts)',
-          );
+          // Update progress notification hanya di pertengahan proses (tidak setiap part)
+          // Update progress notification only in the middle of process (not every part)
+          if (part == 1 || part == (totalParts ~/ 2) || part == totalParts) {
+            final progressPercent = ((part - 1) / totalParts * 100).round();
+            await _notificationService.updatePdfConversionProgress(
+              contentId: contentId,
+              progress: progressPercent,
+              title: '$title (Part $part/$totalParts)',
+            );
+          }
           
           // Konversi part ini ke PDF
           // Convert this part to PDF

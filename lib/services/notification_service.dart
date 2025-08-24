@@ -52,7 +52,7 @@ class NotificationService {
     if (!isEnabled) return;
 
     try {
-      final notificationId = _getNotificationId('pdf_start_$contentId');
+      final notificationId = _getNotificationId('pdf_$contentId');
       await _notificationsPlugin.show(
         notificationId,
         'Converting to PDF',
@@ -96,7 +96,7 @@ class NotificationService {
     if (!isEnabled) return;
 
     try {
-      final notificationId = _getNotificationId('pdf_progress_$contentId');
+      final notificationId = _getNotificationId('pdf_$contentId');
       await _notificationsPlugin.show(
         notificationId,
         'Converting to PDF ($progress%)',
@@ -141,7 +141,7 @@ class NotificationService {
     if (!isEnabled) return;
 
     try {
-      final notificationId = _getNotificationId('pdf_complete_$contentId');
+      final notificationId = _getNotificationId('pdf_$contentId');
       final message = partsCount > 1 
           ? '${_truncateTitle(title)} converted to $partsCount PDF files'
           : '${_truncateTitle(title)} converted to PDF';
@@ -199,7 +199,7 @@ class NotificationService {
     if (!isEnabled) return;
 
     try {
-      final notificationId = _getNotificationId('pdf_error_$contentId');
+      final notificationId = _getNotificationId('pdf_$contentId');
       await _notificationsPlugin.show(
         notificationId,
         'PDF Conversion Failed',
