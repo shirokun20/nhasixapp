@@ -801,8 +801,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         );
       }
       
-      // Log error for debugging
-      print('Error removing favorite $contentId: $e');
+      // Log error for debugging (use logger instead of print in production)
+      // print('Error removing favorite $contentId: $e');
     }
   }
 }

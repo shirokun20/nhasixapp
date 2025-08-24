@@ -139,7 +139,6 @@ class ThemeCubit extends Cubit<ThemeState> {
         seedColor: ColorsConst.primaryColor,
         brightness: Brightness.dark,
         surface: ColorsConst.surface,
-        background: ColorsConst.background,
       ),
       useMaterial3: true,
     );
@@ -175,8 +174,7 @@ class ThemeCubit extends Cubit<ThemeState> {
       colorScheme: ColorScheme.fromSeed(
         seedColor: ColorsConst.primaryColor,
         brightness: Brightness.dark,
-        surface: const Color(0xFF111111),
-        background: Colors.black,
+        surface: Colors.black,
       ),
       useMaterial3: true,
     );

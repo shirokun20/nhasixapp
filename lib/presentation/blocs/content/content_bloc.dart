@@ -5,7 +5,6 @@ import 'package:logger/logger.dart';
 
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/content/content_usecases.dart';
-import '../../../domain/usecases/favorites/favorites_usecases.dart';
 import '../../../domain/repositories/repositories.dart';
 
 part 'content_event.dart';
@@ -19,14 +18,10 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     required GetRandomContentUseCase getRandomContentUseCase,
     required ContentRepository contentRepository,
     required Logger logger,
-    AddToFavoritesUseCase? addToFavoritesUseCase,
-    RemoveFromFavoritesUseCase? removeFromFavoritesUseCase,
   })  : _getContentListUseCase = getContentListUseCase,
         _searchContentUseCase = searchContentUseCase,
         _getRandomContentUseCase = getRandomContentUseCase,
         _contentRepository = contentRepository,
-        _addToFavoritesUseCase = addToFavoritesUseCase,
-        _removeFromFavoritesUseCase = removeFromFavoritesUseCase,
         _logger = logger,
         super(const ContentInitial()) {
     // Register event handlers
@@ -40,10 +35,6 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     on<ContentLoadPopularEvent>(_onContentLoadPopular);
     on<ContentLoadRandomEvent>(_onContentLoadRandom);
     on<ContentLoadByTagEvent>(_onContentLoadByTag);
-    on<ContentToggleFavoriteEvent>(
-        _onContentToggleFavorite); // TODO: Implement later
-    on<ContentUpdateEvent>(_onContentUpdate); // TODO: Implement later
-    on<ContentRemoveEvent>(_onContentRemove); // TODO: Implement later
     on<ContentNextPageEvent>(_onContentNextPage);
     on<ContentPreviousPageEvent>(_onContentPreviousPage);
     on<ContentGoToPageEvent>(_onContentGoToPage);
@@ -53,24 +44,11 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
   final SearchContentUseCase _searchContentUseCase;
   final GetRandomContentUseCase _getRandomContentUseCase;
   final ContentRepository _contentRepository;
-  final AddToFavoritesUseCase? _addToFavoritesUseCase; // TODO: Implement later
-  final RemoveFromFavoritesUseCase?
-      _removeFromFavoritesUseCase; // TODO: Implement later
   final Logger _logger;
 
   // Internal state tracking
   SortOption _currentSortBy = SortOption.newest;
-  SearchFilter? _currentSearchFilter;
-  Tag? _currentTag;
-  PopularTimeframe? _currentTimeframe;
-  Timer? _debounceTimer; // TODO: Implement later
   DateTime? _lastFetchTime; // Track when data was actually fetched from server
-
-  // Configuration constants
-  static const Duration _debounceDelay =
-      Duration(milliseconds: 500); // TODO: Implement later
-  static const int _defaultPageSize = 25; // TODO: Implement later
-  static const int _maxRetryAttempts = 3; // TODO: Implement later
 
   /// Load initial content list
   Future<void> _onContentLoad(
@@ -83,9 +61,6 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
       // Clear previous state if force refresh or sort changed
       if (event.forceRefresh || _currentSortBy != event.sortBy) {
         _currentSortBy = event.sortBy;
-        _currentSearchFilter = null;
-        _currentTag = null;
-        _currentTimeframe = null;
       }
 
       // Show loading state if no previous content
@@ -409,10 +384,6 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
   ) async {
     _logger.i('ContentBloc: Clearing content');
 
-    _currentSearchFilter = null;
-    _currentTag = null;
-    _currentTimeframe = null;
-
     emit(const ContentInitial());
   }
 
@@ -424,10 +395,6 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     try {
       _logger.i(
           'ContentBloc: Searching content with filter: ${event.filter.toQueryString()}');
-
-      _currentSearchFilter = event.filter;
-      _currentTag = null;
-      _currentTimeframe = null;
 
       // Show loading state
       emit(const ContentLoading(message: 'Searching content...'));
@@ -479,10 +446,6 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
   ) async {
     try {
       _logger.i('ContentBloc: Loading popular content: ${event.timeframe}');
-
-      _currentTimeframe = event.timeframe;
-      _currentSearchFilter = null;
-      _currentTag = null;
 
       // Show loading state if no previous content or force refresh
       if (state is! ContentLoaded || event.forceRefresh) {
@@ -540,10 +503,6 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     try {
       _logger.i('ContentBloc: Loading ${event.count} random contents');
 
-      _currentSearchFilter = null;
-      _currentTag = null;
-      _currentTimeframe = null;
-
       emit(const ContentLoading(message: 'Loading random content...'));
 
       final contents = await _getRandomContentUseCase(event.count);
@@ -593,10 +552,6 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     try {
       _logger.i('ContentBloc: Loading content by tag: ${event.tag.name}');
 
-      _currentTag = event.tag;
-      _currentSearchFilter = null;
-      _currentTimeframe = null;
-
       // Show loading state if no previous content or force refresh
       if (state is! ContentLoaded || event.forceRefresh) {
         emit(const ContentLoading(message: 'Loading content by tag...'));
@@ -645,66 +600,6 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         stackTrace: stackTrace,
       ));
     }
-  }
-
-  /// Toggle favorite status of content
-  // TODO: Implement later - requires favorite use cases implementation
-  Future<void> _onContentToggleFavorite(
-    ContentToggleFavoriteEvent event,
-    Emitter<ContentState> emit,
-  ) async {
-    final currentState = state;
-    if (currentState is! ContentLoaded) return;
-
-    try {
-      _logger
-          .i('ContentBloc: Toggling favorite for content: ${event.contentId}');
-
-      // Find the content in current list
-      final contentIndex = currentState.contents
-          .indexWhere((content) => content.id == event.contentId);
-
-      if (contentIndex == -1) return;
-
-      final content = currentState.contents[contentIndex];
-
-      // TODO: Implement favorite status check and toggle
-      // This would require additional use cases or repository methods
-      // For now, we'll just log the action
-
-      _logger.i('ContentBloc: Favorite toggled for: ${content.title}');
-    } catch (e, stackTrace) {
-      _logger.e('ContentBloc: Error toggling favorite',
-          error: e, stackTrace: stackTrace);
-    }
-  }
-
-  /// Update content in list
-  // TODO: Implement later - currently not triggered from UI
-  Future<void> _onContentUpdate(
-    ContentUpdateEvent event,
-    Emitter<ContentState> emit,
-  ) async {
-    final currentState = state;
-    if (currentState is! ContentLoaded) return;
-
-    _logger.i('ContentBloc: Updating content: ${event.content.id}');
-
-    emit(currentState.copyWithUpdatedContent(event.content));
-  }
-
-  /// Remove content from list
-  // TODO: Implement later - currently not triggered from UI
-  Future<void> _onContentRemove(
-    ContentRemoveEvent event,
-    Emitter<ContentState> emit,
-  ) async {
-    final currentState = state;
-    if (currentState is! ContentLoaded) return;
-
-    _logger.i('ContentBloc: Removing content: ${event.contentId}');
-
-    emit(currentState.copyWithRemovedContent(event.contentId));
   }
 
   /// Determine error type from exception
@@ -873,11 +768,5 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         stackTrace: stackTrace,
       ));
     }
-  }
-
-  @override
-  Future<void> close() {
-    _debounceTimer?.cancel();
-    return super.close();
   }
 }

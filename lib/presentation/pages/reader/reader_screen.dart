@@ -311,7 +311,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
           // For single page, use PhotoView for offline files or CachedNetworkImage for online
           if (isOffline) {
             return PhotoView.customChild(
-              child: _buildImageWidget(imageUrl, pageNumber, isOffline),
               backgroundDecoration: const BoxDecoration(
                 color: ColorsConst.darkBackground,
               ),
@@ -319,6 +318,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               maxScale: PhotoViewComputedScale.covered * 3.0,
               initialScale: PhotoViewComputedScale.contained,
               heroAttributes: PhotoViewHeroAttributes(tag: imageUrl),
+              child: _buildImageWidget(imageUrl, pageNumber, isOffline),
             );
           } else {
             return PhotoView(

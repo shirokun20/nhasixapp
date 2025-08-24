@@ -103,7 +103,7 @@ class OfflineContentManager {
 
       for (final download in downloads) {
         if (await isContentAvailableOffline(download.contentId)) {
-          _logger.i("isi file nya: ${download}");
+          _logger.i("isi file nya: $download");
           offlineIds.add(download.contentId);
         }
       }
@@ -190,7 +190,7 @@ class OfflineContentManager {
       // Try to get from history
       final historyEntry = await _userDataRepository.getHistoryEntry(contentId);
       _logger.i("apakah data dari history? ${historyEntry != null}");
-      _logger.i("isi file history nya: ${historyEntry}");
+      _logger.i("isi file history nya: $historyEntry");
       if (historyEntry != null) {
         return {
           'id': contentId,

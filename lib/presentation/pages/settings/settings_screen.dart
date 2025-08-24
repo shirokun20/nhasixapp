@@ -6,7 +6,7 @@ import '../../cubits/settings/settings_cubit.dart';
 import '../../widgets/app_scaffold_with_offline.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({Key? key}) : super(key: key);
+  const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

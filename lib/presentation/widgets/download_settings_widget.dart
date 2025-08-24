@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
@@ -115,7 +114,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: TextButton.styleFrom(
-                      foregroundColor: ColorsConst.onSurface.withOpacity(0.7),
+                      foregroundColor: ColorsConst.onSurface.withValues(alpha: 0.7),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(
@@ -192,7 +191,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
           max: 10,
           divisions: 9,
           activeColor: ColorsConst.primary,
-          inactiveColor: ColorsConst.onSurface.withOpacity(0.2),
+          inactiveColor: ColorsConst.onSurface.withValues(alpha: 0.2),
           onChanged: (value) {
             setState(() {
               _settings = _settings.copyWith(
@@ -204,7 +203,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
         Text(
           'Higher values may consume more bandwidth and device resources',
           style: TextStyleConst.bodySmall.copyWith(
-            color: ColorsConst.onSurface.withOpacity(0.6),
+            color: ColorsConst.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -228,12 +227,12 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide:
-                  BorderSide(color: ColorsConst.onSurface.withOpacity(0.3)),
+                  BorderSide(color: ColorsConst.onSurface.withValues(alpha: 0.3)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide:
-                  BorderSide(color: ColorsConst.onSurface.withOpacity(0.3)),
+                  BorderSide(color: ColorsConst.onSurface.withValues(alpha: 0.3)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -281,7 +280,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
               Text(
                 'Automatically retry failed downloads',
                 style: TextStyleConst.bodySmall.copyWith(
-                  color: ColorsConst.onSurface.withOpacity(0.6),
+                  color: ColorsConst.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -329,7 +328,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
           max: 10,
           divisions: 9,
           activeColor: ColorsConst.primary,
-          inactiveColor: ColorsConst.onSurface.withOpacity(0.2),
+          inactiveColor: ColorsConst.onSurface.withValues(alpha: 0.2),
           onChanged: (value) {
             setState(() {
               _settings = _settings.copyWith(retryAttempts: value.toInt());
@@ -356,7 +355,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
               Text(
                 'Only download when connected to WiFi',
                 style: TextStyleConst.bodySmall.copyWith(
-                  color: ColorsConst.onSurface.withOpacity(0.6),
+                  color: ColorsConst.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -404,7 +403,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
           max: 30,
           divisions: 29,
           activeColor: ColorsConst.primary,
-          inactiveColor: ColorsConst.onSurface.withOpacity(0.2),
+          inactiveColor: ColorsConst.onSurface.withValues(alpha: 0.2),
           onChanged: (value) {
             setState(() {
               _settings = _settings.copyWith(
@@ -433,7 +432,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
               Text(
                 'Show notifications for download progress',
                 style: TextStyleConst.bodySmall.copyWith(
-                  color: ColorsConst.onSurface.withOpacity(0.6),
+                  color: ColorsConst.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],

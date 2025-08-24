@@ -1,4 +1,3 @@
-import 'package:logger/logger.dart';
 
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/favorites/favorites_usecases.dart';
@@ -15,14 +14,13 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     required GetFavoritesUseCase getFavoritesUseCase,
     required RemoveFromFavoritesUseCase removeFromFavoritesUseCase,
     required UserDataRepository userDataRepository,
-    required Logger logger,
+    required super.logger,
   })  : _addToFavoritesUseCase = addToFavoritesUseCase,
         _getFavoritesUseCase = getFavoritesUseCase,
         _removeFromFavoritesUseCase = removeFromFavoritesUseCase,
         _userDataRepository = userDataRepository,
         super(
           initialState: const FavoriteInitial(),
-          logger: logger,
         );
 
   final AddToFavoritesUseCase _addToFavoritesUseCase;

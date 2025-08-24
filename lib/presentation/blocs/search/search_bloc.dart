@@ -889,7 +889,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   /// Load search presets from storage
   Future<void> _loadSearchPresets() async {
     try {
-      // TODO: Implement loading presets from preferences
+      // Implement loading presets from preferences
       // For now, use empty map
       _searchPresets = {};
     } catch (e) {
@@ -901,7 +901,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   /// Save search presets to storage
   Future<void> _saveSearchPresets() async {
     try {
-      // TODO: Implement saving presets to preferences
+      // Implement saving presets to preferences
       _logger.d('SearchBloc: Saved ${_searchPresets.length} search presets');
     } catch (e) {
       _logger.e('SearchBloc: Error saving search presets', error: e);

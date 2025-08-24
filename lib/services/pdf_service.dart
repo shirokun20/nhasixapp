@@ -163,7 +163,7 @@ class PdfService {
       // Create safe filename with part number support
       final safeTitle = _createSafeFilename(title);
       final pdfFileName = partNumber != null 
-          ? '${contentId}_${safeTitle}_part${partNumber}.pdf'
+          ? '${contentId}_${safeTitle}_part$partNumber.pdf'
           : '${contentId}_$safeTitle.pdf';
       final pdfPath = path.join(outputDir, pdfFileName);
 
@@ -225,7 +225,7 @@ class PdfService {
       // Create safe filename with part number support
       final safeTitle = _createSafeFilename(title);
       final pdfFileName = partNumber != null 
-          ? '${contentId}_${safeTitle}_part${partNumber}.pdf'
+          ? '${contentId}_${safeTitle}_part$partNumber.pdf'
           : '${contentId}_$safeTitle.pdf';
       final pdfPath = path.join(outputDir, pdfFileName);
 

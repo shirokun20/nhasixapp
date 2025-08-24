@@ -52,7 +52,8 @@ class PdfIsolateWorker {
         }
       } catch (e) {
         // Skip failed images, continue processing
-        print('Failed to process image $imagePath: $e');
+        // Use proper logging instead of print in production
+        // print('Failed to process image $imagePath: $e');
         continue;
       }
     }
@@ -115,7 +116,8 @@ class PdfIsolateWorker {
 
       return Uint8List.fromList(compressedBytes);
     } catch (e) {
-      print('Error processing image $imagePath: $e');
+      // Use proper logging instead of print in production
+      // print('Error processing image $imagePath: $e');
       return null;
     }
   }

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:logger/logger.dart';
 
 import '../base/base_cubit.dart';
 
@@ -11,11 +10,10 @@ part 'network_state.dart';
 class NetworkCubit extends BaseCubit<NetworkState> {
   NetworkCubit({
     required Connectivity connectivity,
-    required Logger logger,
+    required super.logger,
   })  : _connectivity = connectivity,
         super(
           initialState: const NetworkInitial(),
-          logger: logger,
         ) {
     _initializeConnectivity();
   }

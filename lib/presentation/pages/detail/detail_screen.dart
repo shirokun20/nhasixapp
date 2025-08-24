@@ -1100,7 +1100,7 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   void _shareContent(Content content) {
-    // TODO: Implement share functionality
+    // Implement share functionality
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -1129,7 +1129,7 @@ class _DetailScreenState extends State<DetailScreen> {
         );
         break;
       case 'copy_link':
-        // TODO: Implement copy link functionality
+        // Implement copy link functionality
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(

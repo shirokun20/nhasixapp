@@ -1,5 +1,4 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:logger/logger.dart';
 
 import '../../../domain/entities/entities.dart';
 import '../base/base_cubit.dart';
@@ -11,11 +10,10 @@ part 'settings_state.dart';
 class SettingsCubit extends BaseCubit<SettingsState> {
   SettingsCubit({
     required SharedPreferences sharedPreferences,
-    required Logger logger,
+    required super.logger,
   })  : _sharedPreferences = sharedPreferences,
         super(
           initialState: const SettingsInitial(),
-          logger: logger,
         ) {
     _loadSettings();
   }
@@ -280,7 +278,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
     try {
       logInfo('Importing settings');
 
-      // TODO: Implement proper JSON parsing when json_annotation is available
+      // Implement proper JSON parsing when json_annotation is available
       // For now, just reload current settings
       await _loadSettings();
 

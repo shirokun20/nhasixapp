@@ -252,7 +252,7 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
 
             // If we get here, the data might be corrupt
             await _markDataAsCorrupt();
-            throw e; // Re-throw to trigger retry mechanism
+            rethrow; // Re-throw to trigger retry mechanism
           }
         },
         const ReaderSettings(), // Fallback to defaults
@@ -321,7 +321,7 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
               _logError('saveReaderSettings', 'Operation timed out');
             }
 
-            throw e; // Re-throw to trigger retry mechanism
+            rethrow; // Re-throw to trigger retry mechanism
           }
         },
         null, // No meaningful fallback for save operations
@@ -346,7 +346,7 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
             _logInfo('saveReadingMode', 'Successfully saved reading mode');
           } catch (e, stackTrace) {
             _logError('saveReadingMode', e, stackTrace);
-            throw e; // Re-throw to trigger retry mechanism
+            rethrow; // Re-throw to trigger retry mechanism
           }
         },
         null, // No meaningful fallback for save operations
@@ -373,7 +373,7 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
                 'Successfully saved keep screen on setting');
           } catch (e, stackTrace) {
             _logError('saveKeepScreenOn', e, stackTrace);
-            throw e; // Re-throw to trigger retry mechanism
+            rethrow; // Re-throw to trigger retry mechanism
           }
         },
         null, // No meaningful fallback for save operations
@@ -398,7 +398,7 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
             _logInfo('saveShowUI', 'Successfully saved show UI setting');
           } catch (e, stackTrace) {
             _logError('saveShowUI', e, stackTrace);
-            throw e; // Re-throw to trigger retry mechanism
+            rethrow; // Re-throw to trigger retry mechanism
           }
         },
         null, // No meaningful fallback for save operations
@@ -443,7 +443,7 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
               _logError('resetToDefaults', 'Reset operation timed out');
             }
 
-            throw e; // Re-throw to trigger retry mechanism
+            rethrow; // Re-throw to trigger retry mechanism
           }
         },
         null, // No meaningful fallback for reset operations

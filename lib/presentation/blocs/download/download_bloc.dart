@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:logger/logger.dart';
-import 'package:dio/dio.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
@@ -26,21 +25,15 @@ part 'download_state.dart';
 class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   DownloadBloc({
     required DownloadContentUseCase downloadContentUseCase,
-    required GetDownloadStatusUseCase getDownloadStatusUseCase,
     required GetContentDetailUseCase getContentDetailUseCase,
     required UserDataRepository userDataRepository,
-    required ContentRepository contentRepository,
-    required Dio httpClient,
     required Logger logger,
     required Connectivity connectivity,
     required NotificationService notificationService,
     required PdfConversionService pdfConversionService,
   })  : _downloadContentUseCase = downloadContentUseCase,
-        _getDownloadStatusUseCase = getDownloadStatusUseCase,
         _getContentDetailUseCase = getContentDetailUseCase,
         _userDataRepository = userDataRepository,
-        _contentRepository = contentRepository,
-        _httpClient = httpClient,
         _logger = logger,
         _connectivity = connectivity,
         _notificationService = notificationService,
@@ -69,16 +62,16 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     // Initialize notifications
     _notificationService.initialize();
     
+    // Setup notification action callbacks
+    _setupNotificationCallbacks();
+    
     // Initialize progress stream subscription
     _initializeProgressStream();
   }
 
   final DownloadContentUseCase _downloadContentUseCase;
-  final GetDownloadStatusUseCase _getDownloadStatusUseCase;
   final GetContentDetailUseCase _getContentDetailUseCase;
   final UserDataRepository _userDataRepository;
-  final ContentRepository _contentRepository;
-  final Dio _httpClient;
   final Logger _logger;
   final Connectivity _connectivity;
   final NotificationService _notificationService;
@@ -88,12 +81,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   DownloadSettings _settings = DownloadSettings.defaultSettings();
   final Map<String, DownloadTask> _activeTasks = {};
   StreamSubscription<DownloadProgressUpdate>? _progressSubscription;
-
-  // Constants
-  static const String _downloadChannelId = 'download_channel';
-  static const String _downloadChannelName = 'Downloads';
-  static const String _downloadChannelDescription =
-      'Download progress notifications';
 
   /// Initialize progress stream subscription for real-time updates
   void _initializeProgressStream() {
@@ -121,6 +108,45 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       },
     );
     _logger.i('DownloadBloc: Progress stream subscription initialized');
+  }
+
+  /// Setup notification action callbacks to handle user interactions from notifications
+  void _setupNotificationCallbacks() {
+    _notificationService.setCallbacks(
+      onDownloadPause: (contentId) {
+        _logger.i('NotificationAction: Pause requested for $contentId');
+        add(DownloadPauseEvent(contentId));
+      },
+      onDownloadResume: (contentId) {
+        _logger.i('NotificationAction: Resume requested for $contentId');
+        add(DownloadResumeEvent(contentId));
+      },
+      onDownloadCancel: (contentId) {
+        _logger.i('NotificationAction: Cancel requested for $contentId');
+        add(DownloadCancelEvent(contentId));
+      },
+      onDownloadRetry: (contentId) {
+        _logger.i('NotificationAction: Retry requested for $contentId');
+        add(DownloadRetryEvent(contentId));
+      },
+      onPdfRetry: (contentId) {
+        _logger.i('NotificationAction: PDF retry requested for $contentId');
+        // Get content and retry PDF conversion
+        _retryPdfConversion(contentId);
+      },
+      onOpenDownload: (contentId) {
+        _logger.i('NotificationAction: Open download requested for $contentId');
+        // Open the downloaded content folder or file
+        _openDownloadedContent(contentId);
+      },
+      onNavigateToDownloads: (contentId) {
+        _logger.i('NotificationAction: Navigate to downloads requested for $contentId');
+        // Navigate to downloads screen - this should be handled by the UI layer
+        // For now, just log and potentially show the downloads list via BLoC state
+        add(const DownloadRefreshEvent());
+      },
+    );
+    _logger.i('DownloadBloc: Notification callbacks configured');
   }
 
     /// Initialize download manager
@@ -1603,6 +1629,59 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       }
     } catch (e) {
       _logger.w('DownloadBloc: Error cleaning temp files in: ${directory.path}, error: $e');
+    }
+  }
+
+  /// Helper method untuk retry PDF conversion dari notification action
+  Future<void> _retryPdfConversion(String contentId) async {
+    try {
+      final downloads = await _userDataRepository.getAllDownloads();
+      final download = downloads.firstWhere(
+        (d) => d.contentId == contentId,
+        orElse: () => throw Exception('Download not found for content: $contentId'),
+      );
+
+      if (download.state == DownloadState.completed) {
+        // Trigger PDF conversion event
+        add(DownloadConvertToPdfEvent(contentId));
+        _logger.i('DownloadBloc: PDF retry initiated for $contentId');
+      } else {
+        _logger.w('DownloadBloc: Cannot retry PDF - download not completed for $contentId');
+      }
+    } catch (e) {
+      _logger.e('DownloadBloc: Error retrying PDF conversion: $e');
+    }
+  }
+
+  /// Helper method untuk open downloaded content dari notification action
+  Future<void> _openDownloadedContent(String contentId) async {
+    try {
+      final downloads = await _userDataRepository.getAllDownloads();
+      final download = downloads.firstWhere(
+        (d) => d.contentId == contentId,
+        orElse: () => throw Exception('Download not found for content: $contentId'),
+      );
+
+      if (download.state == DownloadState.completed && download.downloadPath != null) {
+        final directory = Directory(download.downloadPath!);
+        if (await directory.exists()) {
+          // Try to open the download directory
+          // Note: This is platform-specific implementation
+          // For now, just log the action
+          _logger.i('DownloadBloc: Opening download directory: ${download.downloadPath}');
+          
+          // TODO: Implement platform-specific directory opening
+          // On Android: Could use intent to open file manager
+          // On iOS: Could use share sheet or document viewer
+          // For now, this serves as a placeholder for the actual implementation
+        } else {
+          _logger.w('DownloadBloc: Download directory not found: ${download.downloadPath}');
+        }
+      } else {
+        _logger.w('DownloadBloc: Cannot open - download not completed or path missing for $contentId');
+      }
+    } catch (e) {
+      _logger.e('DownloadBloc: Error opening downloaded content: $e');
     }
   }
 

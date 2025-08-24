@@ -225,7 +225,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
 
           // Full loading for initial load
           return Container(
-            color: Theme.of(context).colorScheme.background,
+            color: Theme.of(context).colorScheme.surface,
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -240,7 +240,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                         ? state.message
                         : 'Loading content...',
                     style: TextStyleConst.bodyLarge.copyWith(
-                      color: Theme.of(context).colorScheme.onBackground,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ],

@@ -1,4 +1,3 @@
-import 'package:logger/logger.dart';
 
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/content/content_usecases.dart';
@@ -17,14 +16,13 @@ class DetailCubit extends BaseCubit<DetailState> {
     required AddToFavoritesUseCase addToFavoritesUseCase,
     required RemoveFromFavoritesUseCase removeFromFavoritesUseCase,
     required UserDataRepository userDataRepository,
-    required Logger logger,
+    required super.logger,
   })  : _getContentDetailUseCase = getContentDetailUseCase,
         _addToFavoritesUseCase = addToFavoritesUseCase,
         _removeFromFavoritesUseCase = removeFromFavoritesUseCase,
         _userDataRepository = userDataRepository,
         super(
           initialState: const DetailInitial(),
-          logger: logger,
         );
 
   final GetContentDetailUseCase _getContentDetailUseCase;

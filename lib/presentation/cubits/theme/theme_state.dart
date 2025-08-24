@@ -55,7 +55,6 @@ class ThemeState {
         seedColor: ColorsConst.primaryColor,
         brightness: Brightness.dark,
         surface: ColorsConst.surface,
-        background: ColorsConst.background,
       ),
       useMaterial3: true,
     );

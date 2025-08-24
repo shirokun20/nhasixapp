@@ -506,7 +506,7 @@ class UserDataRepositoryImpl implements UserDataRepository {
       };
 
       await localDataSource.savePreference(
-        'sync_${dataType}_${contentId}_${operation}',
+        'sync_${dataType}_${contentId}_$operation',
         syncData.toString(),
       );
     } catch (e, stackTrace) {

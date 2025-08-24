@@ -3,13 +3,13 @@ import '../../domain/entities/tag.dart';
 /// Data model for Tag entity with database serialization
 class TagModel extends Tag {
   const TagModel({
-    required int id,
+    required super.id,
     required super.name,
     required super.type,
     required super.count,
     required super.url,
     super.slug,
-  }) : super(id: id);
+  });
 
   /// Create TagModel from Tag entity
   factory TagModel.fromEntity(Tag tag) {
@@ -60,6 +60,7 @@ class TagModel extends Tag {
   }
 
   /// Create copy with new values
+  @override
   TagModel copyWith({
     int? id,
     String? name,

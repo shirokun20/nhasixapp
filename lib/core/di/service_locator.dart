@@ -286,18 +286,15 @@ void _setupBlocs() {
   // Register DownloadBloc
   getIt.registerFactory<DownloadBloc>(() => DownloadBloc(
         downloadContentUseCase: getIt<DownloadContentUseCase>(),
-        getDownloadStatusUseCase: getIt<GetDownloadStatusUseCase>(),
         getContentDetailUseCase: getIt<GetContentDetailUseCase>(),
         userDataRepository: getIt<UserDataRepository>(),
-        contentRepository: getIt<ContentRepository>(),
-        httpClient: getIt<Dio>(),
         logger: getIt<Logger>(),
         connectivity: getIt<Connectivity>(),
         notificationService: getIt<NotificationService>(),
         pdfConversionService: getIt<PdfConversionService>(),
       ));
 
-  // TODO: Register other BLoCs when implemented
+  // Register other BLoCs when implemented
   // getIt.registerFactory<FavoriteBloc>(() => FavoriteBloc(getIt()));
   // getIt.registerFactory<SettingsBloc>(() => SettingsBloc(getIt()));
 }

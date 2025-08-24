@@ -95,7 +95,7 @@ class AppErrorWidget extends StatelessWidget {
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -204,7 +204,7 @@ class AppErrorWidget extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
                 side: BorderSide(
-                  color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(

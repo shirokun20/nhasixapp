@@ -389,7 +389,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: FilterItemCard(
-                  key: ValueKey('${tag.name}_${isIncluded}_${isExcluded}'),
+                  key: ValueKey('${tag.name}_${isIncluded}_$isExcluded'),
                   tag: tag,
                   isIncluded: isIncluded,
                   isExcluded: isExcluded,

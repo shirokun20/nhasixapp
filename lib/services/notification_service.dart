@@ -6,12 +6,56 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 
 /// Service untuk handle local notifications untuk download
+/// 
+/// Cara penggunaan dengan DownloadBloc:
+/// ```dart
+/// final notificationService = NotificationService.withCallbacks(
+///   logger: logger,
+///   onDownloadPause: (contentId) => downloadBloc.add(DownloadPauseEvent(contentId)),
+///   onDownloadResume: (contentId) => downloadBloc.add(DownloadResumeEvent(contentId)),
+///   onDownloadCancel: (contentId) => downloadBloc.add(DownloadCancelEvent(contentId)),
+///   onDownloadRetry: (contentId) => downloadBloc.add(DownloadRetryEvent(contentId)),
+///   onPdfRetry: (contentId) => pdfConversionService.retry(contentId),
+///   onOpenDownload: (contentId) => openDownloadedFile(contentId),
+///   onNavigateToDownloads: (contentId) => navigateToDownloadsScreen(contentId),
+/// );
+/// await notificationService.initialize();
+/// ```
+///
+/// Action IDs yang didukung:
+/// - `pause`: Pause download
+/// - `resume`: Resume download  
+/// - `cancel`: Cancel download
+/// - `retry`: Retry failed download
+/// - `open`: Open downloaded content
+/// - `open_pdf`: Open PDF file
+/// - `share_pdf`: Share PDF file
+/// - `retry_pdf`: Retry PDF conversion
+/// - `null` (default): Navigate to downloads screen atau open PDF
 class NotificationService {
-  NotificationService({Logger? logger}) : _logger = logger ?? Logger();
+  NotificationService({
+    Logger? logger,
+    this.onDownloadPause,
+    this.onDownloadResume,
+    this.onDownloadCancel,
+    this.onDownloadRetry,
+    this.onPdfRetry,
+    this.onOpenDownload,
+    this.onNavigateToDownloads,
+  }) : _logger = logger ?? Logger();
 
   final Logger _logger;
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  
+  // Callback functions for handling notification actions
+  void Function(String contentId)? onDownloadPause;
+  void Function(String contentId)? onDownloadResume;
+  void Function(String contentId)? onDownloadCancel;
+  void Function(String contentId)? onDownloadRetry;
+  void Function(String contentId)? onPdfRetry;
+  void Function(String contentId)? onOpenDownload;
+  void Function(String? contentId)? onNavigateToDownloads;
   
   bool _permissionGranted = false;
   bool _initialized = false;
@@ -333,33 +377,101 @@ class NotificationService {
     // Handle different notification actions
     switch (response.actionId) {
       case 'pause':
-        _logger.d('Pause action tapped for: ${response.payload}');
-        // TODO: Implement pause action
+        _logger.i('⏸️ Pause action tapped for: ${response.payload}');
+        if (response.payload != null && onDownloadPause != null) {
+          try {
+            onDownloadPause!(response.payload!);
+            _logger.i('✅ Download pause triggered for: ${response.payload}');
+          } catch (e) {
+            _logger.e('❌ Error pausing download: $e');
+          }
+        } else {
+          _logger.w('⚠️ Cannot pause: payload is null or callback not set');
+        }
         break;
+        
       case 'resume':
-        _logger.d('Resume action tapped for: ${response.payload}');
-        // TODO: Implement resume action
+        _logger.i('▶️ Resume action tapped for: ${response.payload}');
+        if (response.payload != null && onDownloadResume != null) {
+          try {
+            onDownloadResume!(response.payload!);
+            _logger.i('✅ Download resume triggered for: ${response.payload}');
+          } catch (e) {
+            _logger.e('❌ Error resuming download: $e');
+          }
+        } else {
+          _logger.w('⚠️ Cannot resume: payload is null or callback not set');
+        }
         break;
+        
       case 'cancel':
-        _logger.d('Cancel action tapped for: ${response.payload}');
-        // TODO: Implement cancel action
+        _logger.i('❌ Cancel action tapped for: ${response.payload}');
+        if (response.payload != null && onDownloadCancel != null) {
+          try {
+            onDownloadCancel!(response.payload!);
+            _logger.i('✅ Download cancel triggered for: ${response.payload}');
+            // Also cancel the notification
+            cancelDownloadNotification(response.payload!);
+          } catch (e) {
+            _logger.e('❌ Error cancelling download: $e');
+          }
+        } else {
+          _logger.w('⚠️ Cannot cancel: payload is null or callback not set');
+        }
         break;
+        
+      case 'retry':
+        _logger.i('🔄 Retry download action tapped for: ${response.payload}');
+        if (response.payload != null && onDownloadRetry != null) {
+          try {
+            onDownloadRetry!(response.payload!);
+            _logger.i('✅ Download retry triggered for: ${response.payload}');
+          } catch (e) {
+            _logger.e('❌ Error retrying download: $e');
+          }
+        } else {
+          _logger.w('⚠️ Cannot retry: payload is null or callback not set');
+        }
+        break;
+        
       case 'open':
-        _logger.d('Open action tapped for: ${response.payload}');
-        // TODO: Implement open downloaded content
+        _logger.i('📂 Open downloaded content action tapped for: ${response.payload}');
+        if (response.payload != null && onOpenDownload != null) {
+          try {
+            onOpenDownload!(response.payload!);
+            _logger.i('✅ Open download triggered for: ${response.payload}');
+          } catch (e) {
+            _logger.e('❌ Error opening download: $e');
+          }
+        } else {
+          _logger.w('⚠️ Cannot open: payload is null or callback not set');
+        }
         break;
+        
       case 'open_pdf':
         _logger.i('📂 Open PDF action tapped for: ${response.payload}');
         _openPdfFile(response.payload);
         break;
+        
       case 'share_pdf':
         _logger.i('📤 Share PDF action tapped for: ${response.payload}');
         _sharePdfFile(response.payload);
         break;
+        
       case 'retry_pdf':
-        _logger.d('Retry PDF action tapped for: ${response.payload}');
-        // TODO: Implement retry PDF conversion
+        _logger.i('🔄 Retry PDF conversion action tapped for: ${response.payload}');
+        if (response.payload != null && onPdfRetry != null) {
+          try {
+            onPdfRetry!(response.payload!);
+            _logger.i('✅ PDF retry triggered for: ${response.payload}');
+          } catch (e) {
+            _logger.e('❌ Error retrying PDF conversion: $e');
+          }
+        } else {
+          _logger.w('⚠️ Cannot retry PDF: payload is null or callback not set');
+        }
         break;
+        
       case null:
         _logger.i('📱 Default notification body tapped for: ${response.payload}');
         // Check if payload is a PDF file path and open it
@@ -367,10 +479,21 @@ class NotificationService {
           _logger.i('📂 Opening PDF from default tap: ${response.payload}');
           _openPdfFile(response.payload);
         } else {
-          // TODO: Navigate to downloads screen
-          _logger.d('Navigate to downloads screen for: ${response.payload}');
+          // Navigate to downloads screen
+          _logger.i('📱 Navigating to downloads screen for: ${response.payload}');
+          if (onNavigateToDownloads != null) {
+            try {
+              onNavigateToDownloads!(response.payload);
+              _logger.i('✅ Navigation to downloads screen triggered');
+            } catch (e) {
+              _logger.e('❌ Error navigating to downloads screen: $e');
+            }
+          } else {
+            _logger.w('⚠️ Cannot navigate: callback not set');
+          }
         }
         break;
+        
       default:
         _logger.w('⚠️ Unknown action tapped: "${response.actionId}" for: ${response.payload}');
         break;
@@ -530,7 +653,31 @@ class NotificationService {
             showProgress: true,
             maxProgress: 100,
             progress: progress,
-            // Remove actions to avoid drawable resource errors
+            actions: isPaused ? [
+              // Show resume action when paused
+              AndroidNotificationAction(
+                'resume',
+                'Resume',
+                showsUserInterface: false,
+              ),
+              AndroidNotificationAction(
+                'cancel',
+                'Cancel',
+                showsUserInterface: false,
+              ),
+            ] : [
+              // Show pause action when downloading
+              AndroidNotificationAction(
+                'pause',
+                'Pause',
+                showsUserInterface: false,
+              ),
+              AndroidNotificationAction(
+                'cancel',
+                'Cancel',
+                showsUserInterface: false,
+              ),
+            ],
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: false,
@@ -577,7 +724,13 @@ class NotificationService {
             priority: Priority.defaultPriority,
             ongoing: false,
             autoCancel: true,
-            // Remove actions to avoid drawable resource errors
+            actions: [
+              AndroidNotificationAction(
+                'open',
+                'Open',
+                showsUserInterface: true,
+              ),
+            ],
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -626,7 +779,13 @@ class NotificationService {
               contentTitle: 'Download Failed',
               summaryText: _truncateTitle(title),
             ),
-            // Remove actions to avoid drawable resource errors
+            actions: [
+              AndroidNotificationAction(
+                'retry',
+                'Retry',
+                showsUserInterface: false,
+              ),
+            ],
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -789,5 +948,50 @@ class NotificationService {
     final service = NotificationService();
     await service.initialize();
     await service.showTestActionNotification();
+  }
+
+  /// Factory constructor untuk setup NotificationService dengan DownloadBloc
+  /// Ini memudahkan integrasi dengan DownloadBloc tanpa tight coupling
+  static NotificationService withCallbacks({
+    required Logger logger,
+    required void Function(String contentId) onDownloadPause,
+    required void Function(String contentId) onDownloadResume,
+    required void Function(String contentId) onDownloadCancel,
+    required void Function(String contentId) onDownloadRetry,
+    required void Function(String contentId) onPdfRetry,
+    required void Function(String contentId) onOpenDownload,
+    required void Function(String? contentId) onNavigateToDownloads,
+  }) {
+    return NotificationService(
+      logger: logger,
+      onDownloadPause: onDownloadPause,
+      onDownloadResume: onDownloadResume,
+      onDownloadCancel: onDownloadCancel,
+      onDownloadRetry: onDownloadRetry,
+      onPdfRetry: onPdfRetry,
+      onOpenDownload: onOpenDownload,
+      onNavigateToDownloads: onNavigateToDownloads,
+    );
+  }
+
+  /// Set callbacks after initialization (for dependency injection scenarios)
+  void setCallbacks({
+    void Function(String contentId)? onDownloadPause,
+    void Function(String contentId)? onDownloadResume,
+    void Function(String contentId)? onDownloadCancel,
+    void Function(String contentId)? onDownloadRetry,
+    void Function(String contentId)? onPdfRetry,
+    void Function(String contentId)? onOpenDownload,
+    void Function(String? contentId)? onNavigateToDownloads,
+  }) {
+    if (onDownloadPause != null) this.onDownloadPause = onDownloadPause;
+    if (onDownloadResume != null) this.onDownloadResume = onDownloadResume;
+    if (onDownloadCancel != null) this.onDownloadCancel = onDownloadCancel;
+    if (onDownloadRetry != null) this.onDownloadRetry = onDownloadRetry;
+    if (onPdfRetry != null) this.onPdfRetry = onPdfRetry;
+    if (onOpenDownload != null) this.onOpenDownload = onOpenDownload;
+    if (onNavigateToDownloads != null) this.onNavigateToDownloads = onNavigateToDownloads;
+    
+    _logger.i('NotificationService: Callbacks updated');
   }
 }

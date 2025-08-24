@@ -63,6 +63,7 @@ class DownloadLoaded extends DownloadBlocState {
       ];
 
   /// Get download by content ID
+  @override
   DownloadStatus? getDownload(String contentId) {
     try {
       return downloads.firstWhere((d) => d.contentId == contentId);

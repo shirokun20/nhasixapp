@@ -165,7 +165,7 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildBody() {
     return Container(
-      color: Theme.of(context).colorScheme.background,
+      color: Theme.of(context).colorScheme.surface,
       child: BlocBuilder<ContentBloc, ContentState>(
         builder: (context, state) {
           return Column(
@@ -186,7 +186,7 @@ class _MainScreenState extends State<MainScreen> {
               // Content area with theme background
               Expanded(
                 child: Container(
-                  color: Theme.of(context).colorScheme.background,
+                  color: Theme.of(context).colorScheme.surface,
                   child: ContentListWidget(
                     onContentTap: _onContentTap,
                     enablePullToRefresh: true, // Allow pull-to-refresh
