@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:logger/logger.dart';
+import 'package:open_file/open_file.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:share_plus/share_plus.dart';
 
 /// Service untuk handle local notifications untuk download
 class NotificationService {
@@ -327,10 +330,94 @@ class NotificationService {
         _logger.d('Open action tapped for: ${response.payload}');
         // TODO: Implement open downloaded content
         break;
+      case 'open_pdf':
+        _logger.d('Open PDF action tapped for: ${response.payload}');
+        _openPdfFile(response.payload);
+        break;
+      case 'share_pdf':
+        _logger.d('Share PDF action tapped for: ${response.payload}');
+        _sharePdfFile(response.payload);
+        break;
+      case 'retry_pdf':
+        _logger.d('Retry PDF action tapped for: ${response.payload}');
+        // TODO: Implement retry PDF conversion
+        break;
       default:
         _logger.d('Default notification tap for: ${response.payload}');
-        // TODO: Navigate to downloads screen
+        // Check if payload is a PDF file path and open it
+        if (response.payload != null && response.payload!.endsWith('.pdf')) {
+          _logger.d('Opening PDF from default tap: ${response.payload}');
+          _openPdfFile(response.payload);
+        } else {
+          // TODO: Navigate to downloads screen
+          _logger.d('Navigate to downloads screen for: ${response.payload}');
+        }
         break;
+    }
+  }
+
+  /// Open PDF file using system default app
+  Future<void> _openPdfFile(String? filePath) async {
+    if (filePath == null || filePath.isEmpty) {
+      _logger.w('Cannot open PDF: file path is null or empty');
+      return;
+    }
+
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) {
+        _logger.w('Cannot open PDF: file does not exist at $filePath');
+        return;
+      }
+
+      final result = await OpenFile.open(filePath);
+      
+      switch (result.type) {
+        case ResultType.done:
+          _logger.i('PDF opened successfully: $filePath');
+          break;
+        case ResultType.fileNotFound:
+          _logger.w('PDF file not found: $filePath');
+          break;
+        case ResultType.noAppToOpen:
+          _logger.w('No app available to open PDF: $filePath');
+          break;
+        case ResultType.permissionDenied:
+          _logger.w('Permission denied to open PDF: $filePath');
+          break;
+        case ResultType.error:
+          _logger.e('Error opening PDF: ${result.message}');
+          break;
+      }
+    } catch (e) {
+      _logger.e('Exception opening PDF file: $e');
+    }
+  }
+
+  /// Share PDF file using system share sheet
+  Future<void> _sharePdfFile(String? filePath) async {
+    if (filePath == null || filePath.isEmpty) {
+      _logger.w('Cannot share PDF: file path is null or empty');
+      return;
+    }
+
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) {
+        _logger.w('Cannot share PDF: file does not exist at $filePath');
+        return;
+      }
+
+      final xFile = XFile(filePath);
+      await Share.shareXFiles(
+        [xFile],
+        text: 'Sharing PDF document',
+        subject: 'PDF Document',
+      );
+      
+      _logger.i('PDF shared successfully: $filePath');
+    } catch (e) {
+      _logger.e('Exception sharing PDF file: $e');
     }
   }
 
