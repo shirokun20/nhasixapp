@@ -105,17 +105,6 @@ abstract class SettingsRepository {
   /// [settings] - New download settings
   Future<void> updateDownloadSettings(DownloadSettings settings);
 
-  /// Get available download paths
-  ///
-  /// Returns list of available storage locations
-  Future<List<StorageLocation>> getAvailableDownloadPaths();
-
-  /// Validate download path
-  ///
-  /// [path] - Path to validate
-  /// Returns validation result
-  Future<PathValidationResult> validateDownloadPath(String path);
-
   // ==================== PRIVACY SETTINGS ====================
 
   /// Get privacy settings
@@ -389,7 +378,6 @@ class TapZones {
 /// Download settings configuration
 class DownloadSettings {
   const DownloadSettings({
-    required this.downloadPath,
     required this.maxConcurrentDownloads,
     required this.autoRetryFailed,
     required this.wifiOnlyDownload,
@@ -398,49 +386,12 @@ class DownloadSettings {
     this.downloadQuality = 'high',
   });
 
-  final String downloadPath;
   final int maxConcurrentDownloads;
   final bool autoRetryFailed;
   final bool wifiOnlyDownload;
   final bool deleteAfterReading;
   final int maxRetryAttempts;
   final String downloadQuality;
-}
-
-/// Storage location information
-class StorageLocation {
-  const StorageLocation({
-    required this.path,
-    required this.name,
-    required this.availableSpace,
-    required this.totalSpace,
-    required this.isWritable,
-  });
-
-  final String path;
-  final String name;
-  final int availableSpace;
-  final int totalSpace;
-  final bool isWritable;
-
-  double get usagePercentage => (totalSpace - availableSpace) / totalSpace;
-}
-
-/// Path validation result
-class PathValidationResult {
-  const PathValidationResult({
-    required this.isValid,
-    required this.isWritable,
-    required this.hasPermission,
-    this.error,
-  });
-
-  final bool isValid;
-  final bool isWritable;
-  final bool hasPermission;
-  final String? error;
-
-  bool get canUse => isValid && isWritable && hasPermission;
 }
 
 /// Privacy settings configuration

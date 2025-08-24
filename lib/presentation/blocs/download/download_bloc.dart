@@ -139,7 +139,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       final userPrefs = await _userDataRepository.getUserPreferences();
       _settings = DownloadSettings(
         maxConcurrentDownloads: userPrefs.maxConcurrentDownloads,
-        downloadPath: userPrefs.downloadPath ?? '',
         imageQuality: userPrefs.imageQuality,
         autoRetry: true, // Default to true
         retryAttempts: 3,  // Default to 3
@@ -926,7 +925,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Update settings with all available fields
       _settings = _settings.copyWith(
         maxConcurrentDownloads: event.maxConcurrentDownloads,
-        downloadPath: event.downloadPath,
         imageQuality: event.imageQuality,
         autoRetry: event.autoRetry,
         retryAttempts: event.retryAttempts,
@@ -934,8 +932,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         timeoutDuration: event.timeoutDuration,
         enableNotifications: event.enableNotifications,
         wifiOnly: event.wifiOnly,
-        autoCleanup: event.autoCleanup,
-        maxStorageSize: event.maxStorageSize,
       );
 
       // Update state

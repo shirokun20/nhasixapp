@@ -275,7 +275,6 @@ class DownloadError extends DownloadBlocState {
 class DownloadSettings extends Equatable {
   const DownloadSettings({
     this.maxConcurrentDownloads = 3,
-    this.downloadPath = '',
     this.imageQuality = 'high',
     this.autoRetry = true,
     this.retryAttempts = 3,
@@ -283,12 +282,9 @@ class DownloadSettings extends Equatable {
     this.timeoutDuration = const Duration(minutes: 5),
     this.enableNotifications = true,
     this.wifiOnly = false,
-    this.autoCleanup = true,
-    this.maxStorageSize = 5368709120, // 5GB in bytes
   });
 
   final int maxConcurrentDownloads;
-  final String downloadPath;
   final String imageQuality;
   final bool autoRetry;
   final int retryAttempts;
@@ -296,13 +292,10 @@ class DownloadSettings extends Equatable {
   final Duration timeoutDuration;
   final bool enableNotifications;
   final bool wifiOnly;
-  final bool autoCleanup;
-  final int maxStorageSize; // in bytes
 
   @override
   List<Object?> get props => [
         maxConcurrentDownloads,
-        downloadPath,
         imageQuality,
         autoRetry,
         retryAttempts,
@@ -310,30 +303,11 @@ class DownloadSettings extends Equatable {
         timeoutDuration,
         enableNotifications,
         wifiOnly,
-        autoCleanup,
-        maxStorageSize,
       ];
-
-  /// Get formatted max storage size
-  String get formattedMaxStorageSize {
-    if (maxStorageSize == 0) return '0 B';
-
-    const suffixes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    var size = maxStorageSize.toDouble();
-    var suffixIndex = 0;
-
-    while (size >= 1024 && suffixIndex < suffixes.length - 1) {
-      size /= 1024;
-      suffixIndex++;
-    }
-
-    return '${size.toStringAsFixed(1)} ${suffixes[suffixIndex]}';
-  }
 
   /// Copy with updated values
   DownloadSettings copyWith({
     int? maxConcurrentDownloads,
-    String? downloadPath,
     String? imageQuality,
     bool? autoRetry,
     int? retryAttempts,
@@ -341,13 +315,10 @@ class DownloadSettings extends Equatable {
     Duration? timeoutDuration,
     bool? enableNotifications,
     bool? wifiOnly,
-    bool? autoCleanup,
-    int? maxStorageSize,
   }) {
     return DownloadSettings(
       maxConcurrentDownloads:
           maxConcurrentDownloads ?? this.maxConcurrentDownloads,
-      downloadPath: downloadPath ?? this.downloadPath,
       imageQuality: imageQuality ?? this.imageQuality,
       autoRetry: autoRetry ?? this.autoRetry,
       retryAttempts: retryAttempts ?? this.retryAttempts,
@@ -355,8 +326,6 @@ class DownloadSettings extends Equatable {
       timeoutDuration: timeoutDuration ?? this.timeoutDuration,
       enableNotifications: enableNotifications ?? this.enableNotifications,
       wifiOnly: wifiOnly ?? this.wifiOnly,
-      autoCleanup: autoCleanup ?? this.autoCleanup,
-      maxStorageSize: maxStorageSize ?? this.maxStorageSize,
     );
   }
 

@@ -125,7 +125,6 @@ class DownloadProgressUpdateEvent extends DownloadEvent {
 class DownloadSettingsUpdateEvent extends DownloadEvent {
   const DownloadSettingsUpdateEvent({
     this.maxConcurrentDownloads,
-    this.downloadPath,
     this.imageQuality,
     this.autoRetry,
     this.retryAttempts,
@@ -133,12 +132,9 @@ class DownloadSettingsUpdateEvent extends DownloadEvent {
     this.timeoutDuration,
     this.enableNotifications,
     this.wifiOnly,
-    this.autoCleanup,
-    this.maxStorageSize,
   });
 
   final int? maxConcurrentDownloads;
-  final String? downloadPath;
   final String? imageQuality;
   final bool? autoRetry;
   final int? retryAttempts;
@@ -146,13 +142,10 @@ class DownloadSettingsUpdateEvent extends DownloadEvent {
   final Duration? timeoutDuration;
   final bool? enableNotifications;
   final bool? wifiOnly;
-  final bool? autoCleanup;
-  final int? maxStorageSize;
 
   @override
   List<Object?> get props => [
         maxConcurrentDownloads,
-        downloadPath,
         imageQuality,
         autoRetry,
         retryAttempts,
@@ -160,8 +153,6 @@ class DownloadSettingsUpdateEvent extends DownloadEvent {
         timeoutDuration,
         enableNotifications,
         wifiOnly,
-        autoCleanup,
-        maxStorageSize,
       ];
 }
 

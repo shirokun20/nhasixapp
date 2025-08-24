@@ -153,27 +153,48 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
   /// Remove content from favorites
   Future<void> removeFromFavorites(String contentId) async {
     try {
-      logInfo('Removing content from favorites: $contentId');
+      logInfo('Starting removal of content from favorites: $contentId');
+
+      // First check if content exists in favorites
+      final isFavorite = await _userDataRepository.isFavorite(contentId);
+      if (!isFavorite) {
+        logWarning('Content $contentId is not in favorites, skipping removal');
+        return;
+      }
 
       final params = RemoveFromFavoritesParams.fromString(contentId);
+      logInfo('Calling removeFromFavoritesUseCase with params: $params');
+      
       await _removeFromFavoritesUseCase(params);
+      logInfo('Successfully called removeFromFavoritesUseCase');
 
       // Update current state if loaded
       final currentState = state;
       if (currentState is FavoriteLoaded) {
+        logInfo('Updating favorites list in state, removing contentId: $contentId');
+        
+        final beforeCount = currentState.favorites.length;
         final updatedFavorites = currentState.favorites
             .where((favorite) => favorite['id'] != contentId)
             .toList();
+        final afterCount = updatedFavorites.length;
+        
+        logInfo('Favorites count: before=$beforeCount, after=$afterCount');
 
         emit(currentState.copyWith(
           favorites: updatedFavorites,
           totalCount: currentState.totalCount - 1,
           lastUpdated: DateTime.now(),
         ));
+        
+        logInfo('State updated successfully');
+      } else {
+        logWarning('Current state is not FavoriteLoaded, state type: ${state.runtimeType}');
       }
 
       logInfo('Successfully removed from favorites: $contentId');
     } catch (e, stackTrace) {
+      logWarning('Error removing content $contentId from favorites: $e');
       handleError(e, stackTrace, 'remove from favorites');
       rethrow; // Let the calling widget handle the error
     }

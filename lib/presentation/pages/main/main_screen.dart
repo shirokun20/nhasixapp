@@ -255,11 +255,16 @@ class _MainScreenState extends State<MainScreen> {
 
   /// Check if sorting should be shown
   bool _shouldShowSorting(ContentState state) {
-    // Show sorting only when there's data (loaded state with content)
+    // Only show sorting when there's an active search/filter AND there's data
+    if (!_isShowingSearchResults) {
+      return false; // Hide sorting for normal content browsing
+    }
+    
+    // Show sorting only when there's data (loaded state with content) and search is active
     if (state is ContentLoaded && state.contents.isNotEmpty) {
       return true;
     }
-    // Also show when loading more or refreshing (to maintain UI consistency)
+    // Also show when loading more or refreshing (to maintain UI consistency) and search is active
     if (state is ContentLoadingMore || state is ContentRefreshing) {
       return true;
     }

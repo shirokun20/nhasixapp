@@ -457,8 +457,6 @@ class SettingsRepositoryImpl implements SettingsRepository {
       if (jsonString != null) {
         final json = jsonDecode(jsonString) as Map<String, dynamic>;
         return DownloadSettings(
-          downloadPath:
-              json['downloadPath'] ?? '/storage/emulated/0/Download/NhentaiApp',
           maxConcurrentDownloads: json['maxConcurrentDownloads'] ?? 3,
           autoRetryFailed: json['autoRetryFailed'] ?? true,
           wifiOnlyDownload: json['wifiOnlyDownload'] ?? false,
@@ -470,7 +468,6 @@ class SettingsRepositoryImpl implements SettingsRepository {
 
       // Return default download settings
       const defaultSettings = DownloadSettings(
-        downloadPath: '/storage/emulated/0/Download/NhentaiApp',
         maxConcurrentDownloads: 3,
         autoRetryFailed: true,
         wifiOnlyDownload: false,
@@ -485,7 +482,6 @@ class SettingsRepositoryImpl implements SettingsRepository {
       _logger.e('Failed to get download settings',
           error: e, stackTrace: stackTrace);
       return const DownloadSettings(
-        downloadPath: '/storage/emulated/0/Download/NhentaiApp',
         maxConcurrentDownloads: 3,
         autoRetryFailed: true,
         wifiOnlyDownload: false,
@@ -502,7 +498,6 @@ class SettingsRepositoryImpl implements SettingsRepository {
       _logger.d('Updating download settings');
 
       final json = {
-        'downloadPath': settings.downloadPath,
         'maxConcurrentDownloads': settings.maxConcurrentDownloads,
         'autoRetryFailed': settings.autoRetryFailed,
         'wifiOnlyDownload': settings.wifiOnlyDownload,
@@ -517,54 +512,6 @@ class SettingsRepositoryImpl implements SettingsRepository {
       _logger.e('Failed to update download settings',
           error: e, stackTrace: stackTrace);
       rethrow;
-    }
-  }
-
-  @override
-  Future<List<StorageLocation>> getAvailableDownloadPaths() async {
-    try {
-      // This would typically use path_provider to get actual storage locations
-      return const [
-        StorageLocation(
-          path: '/storage/emulated/0/Download/NhentaiApp',
-          name: 'Internal Storage - Downloads',
-          availableSpace: 1000000000, // 1GB
-          totalSpace: 10000000000, // 10GB
-          isWritable: true,
-        ),
-        StorageLocation(
-          path: '/storage/emulated/0/Documents/NhentaiApp',
-          name: 'Internal Storage - Documents',
-          availableSpace: 1000000000,
-          totalSpace: 10000000000,
-          isWritable: true,
-        ),
-      ];
-    } catch (e, stackTrace) {
-      _logger.e('Failed to get available download paths',
-          error: e, stackTrace: stackTrace);
-      return [];
-    }
-  }
-
-  @override
-  Future<PathValidationResult> validateDownloadPath(String path) async {
-    try {
-      // This would typically check actual file system permissions
-      return const PathValidationResult(
-        isValid: true,
-        isWritable: true,
-        hasPermission: true,
-      );
-    } catch (e, stackTrace) {
-      _logger.e('Failed to validate download path',
-          error: e, stackTrace: stackTrace);
-      return PathValidationResult(
-        isValid: false,
-        isWritable: false,
-        hasPermission: false,
-        error: e.toString(),
-      );
     }
   }
 

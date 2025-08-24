@@ -96,13 +96,6 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
                     _buildTimeoutSlider(),
                     const SizedBox(height: 24),
 
-                    // Storage settings
-                    _buildSectionTitle('Storage'),
-                    _buildAutoCleanupSwitch(),
-                    const SizedBox(height: 16),
-                    _buildMaxStorageSlider(),
-                    const SizedBox(height: 24),
-
                     // Notifications
                     _buildSectionTitle('Notifications'),
                     _buildNotificationsSwitch(),
@@ -419,91 +412,6 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
               );
             });
           },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAutoCleanupSwitch() {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Auto Cleanup',
-                style: TextStyleConst.bodyMedium.copyWith(
-                  color: ColorsConst.onSurface,
-                ),
-              ),
-              Text(
-                'Automatically clean up failed downloads',
-                style: TextStyleConst.bodySmall.copyWith(
-                  color: ColorsConst.onSurface.withOpacity(0.6),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Switch(
-          value: _settings.autoCleanup,
-          activeColor: ColorsConst.primary,
-          onChanged: (value) {
-            setState(() {
-              _settings = _settings.copyWith(autoCleanup: value);
-            });
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMaxStorageSlider() {
-    final maxStorageGB = _settings.maxStorageSize / (1024 * 1024 * 1024);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              'Max Storage Size',
-              style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.onSurface,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              '${maxStorageGB.toStringAsFixed(1)} GB',
-              style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.primary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Slider(
-          value: maxStorageGB,
-          min: 0.5,
-          max: 20.0,
-          divisions: 39,
-          activeColor: ColorsConst.primary,
-          inactiveColor: ColorsConst.onSurface.withOpacity(0.2),
-          onChanged: (value) {
-            setState(() {
-              _settings = _settings.copyWith(
-                maxStorageSize: (value * 1024 * 1024 * 1024).toInt(),
-              );
-            });
-          },
-        ),
-        Text(
-          'Downloads will be paused when this limit is reached',
-          style: TextStyleConst.bodySmall.copyWith(
-            color: ColorsConst.onSurface.withOpacity(0.6),
-          ),
         ),
       ],
     );

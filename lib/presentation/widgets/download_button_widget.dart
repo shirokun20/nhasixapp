@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
+import '../../core/routing/app_router.dart';
 import '../../domain/entities/entities.dart';
 import '../blocs/download/download_bloc.dart';
 
@@ -414,16 +415,14 @@ class DownloadButtonWidget extends StatelessWidget {
   }
 
   void _openDownload(BuildContext context) {
-    // TODO: Navigate to reader or show downloaded content
+    // Navigate to reader screen with the downloaded content
+    AppRouter.goToReader(context, content.id);
+    
+    // Show confirmation that content is being opened
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Opening: ${content.title}'),
-        action: SnackBarAction(
-          label: 'View',
-          onPressed: () {
-            // TODO: Navigate to reader
-          },
-        ),
+        duration: const Duration(seconds: 2),
       ),
     );
   }

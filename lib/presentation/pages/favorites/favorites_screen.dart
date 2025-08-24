@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:logger/web.dart';
 
 import '../../../core/constants/colors_const.dart';
 import '../../../core/constants/text_style_const.dart';
@@ -24,10 +25,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   // Selection mode for batch operations
   bool _isSelectionMode = false;
   final Set<String> _selectedItems = <String>{};
+  
+  // Cubit instance to avoid context issues
+  late FavoriteCubit _favoriteCubit;
 
   @override
   void initState() {
     super.initState();
+    _favoriteCubit = getIt<FavoriteCubit>();
     _scrollController.addListener(_onScroll);
   }
 
@@ -35,6 +40,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   void dispose() {
     _searchController.dispose();
     _scrollController.dispose();
+    _favoriteCubit.close();
     super.dispose();
   }
 
@@ -42,7 +48,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent * 0.8) {
       // Load more when 80% scrolled
-      context.read<FavoriteCubit>().loadMoreFavorites();
+      _favoriteCubit.loadMoreFavorites();
     }
   }
 
@@ -86,10 +92,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     final confirmed = await _showDeleteConfirmation(_selectedItems.length);
     if (!confirmed) return;
 
+    // Store the count before async operations
+    final selectedCount = _selectedItems.length;
+    final selectedItemsList = _selectedItems.toList();
+
     try {
-      await context.read<FavoriteCubit>().removeBatchFavorites(
-            _selectedItems.toList(),
-          );
+      await _favoriteCubit.removeBatchFavorites(selectedItemsList);
 
       setState(() {
         _selectedItems.clear();
@@ -100,7 +108,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Removed ${_selectedItems.length} favorites',
+              'Removed $selectedCount favorites',
               style: TextStyleConst.withColor(
                   TextStyleConst.bodyMedium, ColorsConst.darkTextPrimary),
             ),
@@ -109,6 +117,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         );
       }
     } catch (e) {
+      Logger().e('Error removing batch favorites: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -191,7 +200,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
 
     try {
-      final exportData = await context.read<FavoriteCubit>().exportFavorites();
+      final exportData = await _favoriteCubit.exportFavorites();
 
       if (mounted) {
         Navigator.of(context).pop(); // Close loading dialog
@@ -245,7 +254,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => getIt<FavoriteCubit>()..loadFavorites(),
+      create: (context) => _favoriteCubit..loadFavorites(),
       child: AppScaffoldWithOffline(
         title: 'Favorites',
         backgroundColor: ColorsConst.darkBackground,
@@ -302,7 +311,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   _showExportDialog();
                   break;
                 case 'refresh':
-                  context.read<FavoriteCubit>().refresh();
+                  _favoriteCubit.refresh();
                   break;
               }
             },
@@ -371,7 +380,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       color: ColorsConst.darkTextSecondary),
                   onPressed: () {
                     _searchController.clear();
-                    context.read<FavoriteCubit>().clearSearch();
+                    _favoriteCubit.clearSearch();
                   },
                 )
               : null,
@@ -385,7 +394,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
         onChanged: (query) {
-          context.read<FavoriteCubit>().searchFavorites(query);
+          _favoriteCubit.searchFavorites(query);
         },
       ),
     );
@@ -444,7 +453,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           title: 'Error Loading Favorites',
           message: state.userMessage,
           onRetry: state.canRetry
-              ? () => context.read<FavoriteCubit>().retryLoading()
+              ? () => _favoriteCubit.retryLoading()
               : null,
         ),
       );
@@ -485,7 +494,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               ElevatedButton(
                 onPressed: () {
                   _searchController.clear();
-                  context.read<FavoriteCubit>().clearSearch();
+                  _favoriteCubit.clearSearch();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: ColorsConst.accentBlue,
@@ -502,7 +511,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   Widget _buildFavoritesList(FavoriteLoaded state) {
     return RefreshIndicator(
-      onRefresh: () => context.read<FavoriteCubit>().refresh(),
+      onRefresh: () => _favoriteCubit.refresh(),
       color: ColorsConst.accentBlue,
       backgroundColor: ColorsConst.darkSurface,
       child: GridView.builder(
@@ -630,14 +639,68 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 right: 8,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: ColorsConst.darkSurface.withValues(alpha: 0.8),
+                    color: ColorsConst.darkSurface.withValues(alpha: 0.9),
                     shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: IconButton(
                     icon: const Icon(Icons.favorite,
                         color: ColorsConst.accentRed),
-                    onPressed: () => _removeFavorite(contentId),
+                    onPressed: () {
+                      // Show confirmation dialog before removing
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          backgroundColor: ColorsConst.darkCard,
+                          title: Text(
+                            'Remove Favorite',
+                            style: TextStyleConst.withColor(
+                                TextStyleConst.headingMedium, 
+                                ColorsConst.darkTextPrimary),
+                          ),
+                          content: Text(
+                            'Are you sure you want to remove this content from favorites?',
+                            style: TextStyleConst.withColor(
+                                TextStyleConst.bodyMedium, 
+                                ColorsConst.darkTextSecondary),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyleConst.withColor(
+                                    TextStyleConst.buttonMedium,
+                                    ColorsConst.darkTextSecondary),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                _removeFavorite(contentId);
+                              },
+                              child: Text(
+                                'Remove',
+                                style: TextStyleConst.withColor(
+                                    TextStyleConst.buttonMedium, 
+                                    ColorsConst.accentRed),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                     iconSize: 20,
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
                   ),
                 ),
               ),
@@ -671,9 +734,36 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   Future<void> _removeFavorite(String contentId) async {
     try {
-      await context.read<FavoriteCubit>().removeFromFavorites(contentId);
+      // Show loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Removing from favorites...',
+                style: TextStyleConst.withColor(
+                    TextStyleConst.bodyMedium, ColorsConst.darkTextPrimary),
+              ),
+            ],
+          ),
+          backgroundColor: ColorsConst.darkCard,
+          duration: const Duration(minutes: 1), // Long duration while processing
+        ),
+      );
+
+      await _favoriteCubit.removeFromFavorites(contentId);
 
       if (mounted) {
+        // Hide loading snackbar
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        
+        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -682,11 +772,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   TextStyleConst.bodyMedium, ColorsConst.darkTextPrimary),
             ),
             backgroundColor: ColorsConst.accentGreen,
+            duration: const Duration(seconds: 2),
           ),
         );
       }
     } catch (e) {
+      Logger().e('Error removing content from favorites: $e');
       if (mounted) {
+        // Hide loading snackbar
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        
+        // Show detailed error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -695,9 +791,18 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   TextStyleConst.bodyMedium, ColorsConst.darkTextPrimary),
             ),
             backgroundColor: ColorsConst.accentRed,
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: ColorsConst.darkTextPrimary,
+              onPressed: () => _removeFavorite(contentId),
+            ),
           ),
         );
       }
+      
+      // Log error for debugging
+      print('Error removing favorite $contentId: $e');
     }
   }
 }

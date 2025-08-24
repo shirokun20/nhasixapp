@@ -524,7 +524,6 @@ class _DownloadsScreenState extends State<DownloadsScreen>
           onSettingsChanged: (newSettings) {
             context.read<DownloadBloc>().add(DownloadSettingsUpdateEvent(
                   maxConcurrentDownloads: newSettings.maxConcurrentDownloads,
-                  downloadPath: newSettings.downloadPath,
                   imageQuality: newSettings.imageQuality,
                   autoRetry: newSettings.autoRetry,
                   retryAttempts: newSettings.retryAttempts,
@@ -532,8 +531,6 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   timeoutDuration: newSettings.timeoutDuration,
                   enableNotifications: newSettings.enableNotifications,
                   wifiOnly: newSettings.wifiOnly,
-                  autoCleanup: newSettings.autoCleanup,
-                  maxStorageSize: newSettings.maxStorageSize,
                 ));
           },
         ),
