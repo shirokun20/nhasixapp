@@ -37,7 +37,33 @@ Plan perbaikan untuk masalah utama dalam aplikasi NhasixApp:
 - ✅ NEW FEATURE: Auto-cleanup expired cache files
 - ✅ NEW FEATURE: Download-and-cache functionality untuk network images
 
-### 2. Download Range Feature (NEW)
+### 2. Widget Performance Optimization (NEW) ✅ COMPLETED
+**Current State:**
+- Progressive image widgets were causing excessive loops dan log spam
+- Repeated I/O operations untuk image path resolution
+- Debug logging running in production builds
+
+**Problems:**
+- Widget rebuild loops karena expensive path resolution dalam build methods
+- Debug file structure logging yang tidak perlu di production
+- Performance impact dari repeated file system checks
+- Log spam mengganggu development dan debugging
+
+**Requirements:**
+- Cache resolved image paths untuk prevent repeated expensive I/O
+- Debug-mode-only logging untuk development
+- Optimize didUpdateWidget untuk prevent unnecessary rebuilds
+- Maintain performance di production builds
+
+**Solution Implemented:** ✅ COMPLETED
+- ✅ Added static cache untuk resolved image paths di _ProgressiveImageWidgetState
+- ✅ Made debug file structure logging conditional on kDebugMode
+- ✅ Limited debug output dengan reduced log spam
+- ✅ Added debug-mode-only logging untuk network image loading
+- ✅ Removed expensive debug calls dari production path resolution
+- ✅ Optimized didUpdateWidget untuk prevent unnecessary rebuilds
+
+### 3. Download Range Feature (NEW)
 **Current State:**
 - Download system downloads semua images dari manga
 - Tidak ada option untuk download selective pages
@@ -53,7 +79,7 @@ Plan perbaikan untuk masalah utama dalam aplikasi NhasixApp:
 - Update download system untuk support partial download
 - Maintain metadata.json dengan info pages yang di-download
 
-### 3. Detail Navigation Bug (NEW)
+### 4. Detail Navigation Bug (NEW)
 **Current State:**
 - detail_screen → related content → detail_screen → tag click → uses context.pop()
 - Multiple detail screens dalam navigation stack
@@ -70,7 +96,7 @@ Plan perbaikan untuk masalah utama dalam aplikasi NhasixApp:
 - Maintain filter state properly
 - Clear navigation stack sampai MainScreen
 
-### 4. Filter Highlight Effect (CORRECTED)
+### 5. Filter Highlight Effect (CORRECTED)
 **Current State:**
 - No visual indication untuk content yang match dengan clicked tag
 - Grid menampilkan semua content sama
@@ -86,7 +112,7 @@ Plan perbaikan untuk masalah utama dalam aplikasi NhasixApp:
 - Prevent back navigation ke detail screen setelah tag click
 - Preserve existing filter, hanya update query saja
 
-### 5. Pagination Widget Enhancement
+### 6. Pagination Widget Enhancement
 **Current State:**
 - Menggunakan `PaginationWidget` dengan features:
   - Progress bar
@@ -105,7 +131,7 @@ Plan perbaikan untuk masalah utama dalam aplikasi NhasixApp:
 - Keep tap-to-jump-to-page feature
 - Smaller, cleaner design
 
-### 6. Search Input State Issue & Direct Navigation
+### 7. Search Input State Issue & Direct Navigation
 **Current State:**
 - TextEditingController di `SearchScreen` line 109-111
 - Listener tanpa debounce: `_searchController.addListener(() {...})`
@@ -618,6 +644,14 @@ class SearchFilter with _$SearchFilter {
 - [x] **Task 1.9:** Implement auto-cleanup untuk expired cache files ✅ NEW COMPLETED
 - [x] **Task 1.10:** Add download-and-cache functionality untuk network fallback ✅ NEW COMPLETED
 
+### Phase 1.5: Widget Performance Optimization (Priority: High) ✅ COMPLETED
+- [x] **Task 1.11:** Add static cache untuk resolved image paths di _ProgressiveImageWidgetState ✅ COMPLETED
+- [x] **Task 1.12:** Make debug file structure logging conditional on kDebugMode ✅ COMPLETED
+- [x] **Task 1.13:** Add debug-mode-only logging untuk network image loading ✅ COMPLETED
+- [x] **Task 1.14:** Remove expensive debug calls dari production path resolution ✅ COMPLETED
+- [x] **Task 1.15:** Optimize didUpdateWidget untuk prevent unnecessary rebuilds ✅ COMPLETED
+- [x] **Task 1.16:** Reduce log spam dan improve production performance ✅ COMPLETED
+
 ### Phase 2: Download Range Feature (Priority: High)
 - [ ] **Task 2.1:** Create `DownloadRangeSelector` widget ✅ COMPLETED
 - [ ] **Task 2.2:** Update `DownloadBloc` untuk support partial download
@@ -821,27 +855,35 @@ lib/core/routing/app_router.dart
    - ✅ Stable ValueKey prevents unnecessary widget rebuilds
    - ✅ Smooth reading experience without visual disruptions
 
-3. **Download Range:**
+3. **Widget Performance Optimization:** ✅ COMPLETED
+   - ✅ Eliminated excessive loops dan log spam in progressive image widgets
+   - ✅ Added static cache untuk resolved image paths preventing repeated I/O
+   - ✅ Debug-mode-only logging untuk cleaner production builds
+   - ✅ Optimized didUpdateWidget untuk prevent unnecessary rebuilds
+   - ✅ Reduced widget performance impact dari expensive file operations
+   - ✅ Improved debugging experience dengan focused, relevant logs
+
+4. **Download Range:**
    - ✅ Users dapat pilih download page range (X to Y)
    - ✅ Partial download working dengan proper metadata
    - ✅ Reader supports partial content seamlessly
 
-4. **Navigation Fix:**
+5. **Navigation Fix:**
    - ✅ Tag search dari detail selalu kembali ke MainScreen
    - ✅ No more nested detail navigation issues
    - ✅ Filter state properly maintained
 
-5. **Filter Highlight:**
+6. **Filter Highlight:**
    - ✅ Matching content ter-highlight dalam grid view
    - ✅ Visual feedback untuk search relevance working
    - ✅ Performance maintained dengan highlight effects
 
-6. **Enhanced Pagination:**
+7. **Enhanced Pagination:**
    - ✅ Simplified UI design tapi keep tap-to-jump functionality
    - ✅ Maintained navigation functionality dengan cleaner interface
    - ✅ Consistent across all screens
 
-7. **Search Input (CRITICAL):**
+8. **Search Input (CRITICAL):**
    - ✅ Input dapat dikosongkan completely (no phantom chars or rapid updates)
    - ✅ Debounced input working smoothly (300ms delay)
    - ✅ Direct navigation untuk numeric content IDs working (like nhentai web)
