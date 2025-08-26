@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:logger/logger.dart';
 
 import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
@@ -59,6 +60,7 @@ class ProgressiveImageWidget extends StatefulWidget {
 }
 
 class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
+  static final Logger _logger = Logger();
   String? _cachedLocalPath;
   bool _isLocalPathResolved = false;
 
@@ -91,7 +93,15 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
       return;
     }
 
+    _logger.d('Resolving local path for contentId: ${widget.contentId}, pageNumber: ${widget.pageNumber}, isThumbnail: ${widget.isThumbnail}');
+    
+    // Debug file structure
+    await _debugFileStructure();
+    
     final localPath = await _getLocalImagePath();
+    
+    _logger.d('Local path resolved: $localPath');
+    
     if (mounted) {
       setState(() {
         _cachedLocalPath = localPath;
@@ -121,27 +131,71 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     return _buildNetworkImage();
   }
 
+  /// Debug method to check actual file structure
+  Future<void> _debugFileStructure() async {
+    if (widget.contentId == null) return;
+    
+    try {
+      final baseLocalPath = await LocalImagePreloader.getBaseLocalPath();
+      final contentFolderPath = await LocalImagePreloader.getContentFolderPath(widget.contentId!);
+      final imagesFolderPath = await LocalImagePreloader.getImagesFolderPath(widget.contentId!);
+      
+      _logger.d('Debug file structure for ${widget.contentId}:');
+      _logger.d('Base local path: $baseLocalPath');
+      _logger.d('Content folder path: $contentFolderPath');
+      _logger.d('Images folder path: $imagesFolderPath');
+      
+      // Check if directories exist
+      final contentDir = Directory(contentFolderPath);
+      final imagesDir = Directory(imagesFolderPath);
+      
+      _logger.d('Content directory exists: ${await contentDir.exists()}');
+      _logger.d('Images directory exists: ${await imagesDir.exists()}');
+      
+      // List files in content directory
+      if (await contentDir.exists()) {
+        final contentFiles = await contentDir.list().toList();
+        _logger.d('Files in content directory: ${contentFiles.map((f) => f.path).toList()}');
+      }
+      
+      // List files in images directory
+      if (await imagesDir.exists()) {
+        final imageFiles = await imagesDir.list().toList();
+        _logger.d('Files in images directory: ${imageFiles.map((f) => f.path).toList()}');
+      }
+    } catch (e) {
+      _logger.e('Error debugging file structure: $e');
+    }
+  }
+
   /// Get local image path based on type (thumbnail or page)
   Future<String?> _getLocalImagePath() async {
     if (widget.contentId == null) return null;
 
+    String? localPath;
+    
     if (widget.isThumbnail) {
-      return await LocalImagePreloader.getLocalThumbnailPath(widget.contentId!);
+      localPath = await LocalImagePreloader.getLocalThumbnailPath(widget.contentId!);
+      _logger.d('Thumbnail path check for ${widget.contentId}: $localPath');
     } else if (widget.pageNumber != null) {
-      return await LocalImagePreloader.getLocalImagePath(widget.contentId!, widget.pageNumber!);
+      localPath = await LocalImagePreloader.getLocalImagePath(widget.contentId!, widget.pageNumber!);
+      _logger.d('Page image path check for ${widget.contentId} page ${widget.pageNumber}: $localPath');
     }
     
-    return null;
+    return localPath;
   }
 
   /// Build local file image
   Widget _buildLocalImage(String localPath) {
+    _logger.d('Building local image from path: $localPath');
+    
     Widget imageWidget = Image.file(
       File(localPath),
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
       errorBuilder: (context, error, stackTrace) {
+        _logger.e('Error loading local image from $localPath: $error');
         // If local file fails, fallback to network
         return _buildNetworkImage();
       },
@@ -264,6 +318,7 @@ class ProgressiveReaderImageWidget extends StatefulWidget {
 }
 
 class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWidget> {
+  static final Logger _logger = Logger();
   String? _cachedLocalPath;
   bool _isLocalPathResolved = false;
 
@@ -288,10 +343,14 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
   Future<void> _resolveLocalPath() async {
     widget.onLoadingStateChange?.call(true);
     
+    _logger.d('Reader: Resolving local path for contentId: ${widget.contentId}, pageNumber: ${widget.pageNumber}');
+    
     final localPath = await LocalImagePreloader.getLocalImagePath(
       widget.contentId, 
       widget.pageNumber,
     );
+    
+    _logger.d('Reader: Local path resolved: $localPath');
     
     if (mounted) {
       setState(() {
@@ -311,11 +370,13 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
 
     // Use cached local path if available
     if (_cachedLocalPath != null) {
+      _logger.d('Reader: Using local image from path: $_cachedLocalPath');
       return Image.file(
         File(_cachedLocalPath!),
         fit: widget.fit,
         height: widget.height,
         errorBuilder: (context, error, stackTrace) {
+          _logger.e('Reader: Error loading local image from $_cachedLocalPath: $error');
           // Fallback to network if local file fails
           return _buildNetworkImage(context);
         },
@@ -323,6 +384,7 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
     }
 
     // Fallback to network
+    _logger.d('Reader: Falling back to network image: ${widget.networkUrl}');
     return _buildNetworkImage(context);
   }
 

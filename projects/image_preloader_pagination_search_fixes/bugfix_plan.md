@@ -13,24 +13,29 @@ Plan perbaikan untuk masalah utama dalam aplikasi NhasixApp:
 
 ## 🔧 Problem Analysis
 
-### 1. Preloader Image Issues
+### 1. Image Preloader Issues
 **Current State:**
 - ReaderScreen menggunakan CachedNetworkImage untuk load images
 - DetailScreen menggunakan CachedNetworkImage untuk cover images  
 - ContentListWidget menggunakan ContentCard dengan CachedNetworkImage
-- Tidak ada sistem preloader dari local storage `nhasix/[id]/images/`
+- ✅ FIXED: Sistem preloader dari local storage `nhasix/[id]/images/` sudah implemented
+- ✅ FIXED: Multi-path support untuk Downloads directory dan Internal cache
 
 **Problems:**
-- Slow loading experience pada first load
-- Tidak memanfaatkan file lokal yang sudah ada di `nhasix/[id]/images/`
-- File structure: `nhasix/[id]/` berisi metadata.json, folder PDF, folder images
-- Tidak ada thumbnail preloader untuk cover images
-- User experience terasa lambat
+- ✅ SOLVED: Slow loading experience pada first load
+- ✅ SOLVED: Tidak memanfaatkan file lokal yang sudah ada di `nhasix/[id]/images/`
+- ✅ SOLVED: File structure: `nhasix/[id]/` berisi metadata.json, folder PDF, folder images
+- ✅ SOLVED: Tidak ada thumbnail preloader untuk cover images
+- ✅ SOLVED: User experience terasa lambat
 
 **Enhanced Requirements:**
-- Prioritas loading: `nhasix/[id]/images/` → cache local → network
-- Check metadata.json untuk validation downloaded content
-- Support struktur folder PDF dan images
+- ✅ COMPLETED: Prioritas loading: `nhasix/[id]/images/` (Downloads) → Internal cache → Network
+- ✅ COMPLETED: Check metadata.json untuk validation downloaded content
+- ✅ COMPLETED: Support struktur folder PDF dan images
+- ✅ COMPLETED: Smart Downloads directory detection (multi-language support)
+- ✅ NEW FEATURE: Internal cache system dengan 6-hour expiry
+- ✅ NEW FEATURE: Auto-cleanup expired cache files
+- ✅ NEW FEATURE: Download-and-cache functionality untuk network images
 
 ### 2. Download Range Feature (NEW)
 **Current State:**
@@ -139,68 +144,58 @@ _searchController.addListener(() {
 
 ### 1. Image Preloader System Implementation
 
-#### A. Enhanced LocalImagePreloader Service
+#### A. Enhanced LocalImagePreloader Service ✅ COMPLETED
 ```dart
 // lib/services/local_image_preloader.dart
 class LocalImagePreloader {
   static const String _baseLocalPath = 'nhasix';
+  static const String _cacheSubPath = 'cache';
+  static const Duration _cacheExpiryDuration = Duration(hours: 6); // ✅ NEW FEATURE
   
-  // Check downloaded content dengan metadata validation
+  // ✅ ENHANCED: Smart Downloads directory detection similar to download_service.dart
+  static Future<List<String>> _getDownloadDirectories() async {
+    // Support multiple languages: Download, Downloads, Unduhan, Descargas, etc.
+  }
+  
+  // ✅ NEW: Internal cache directory with expiry management
+  static Future<String?> _getInternalCacheDirectory() async {
+    // Creates and manages temporary cache at /data/user/0/com.example.nhasixapp/app_flutter/cache/nhasix
+  }
+  
+  // ✅ ENHANCED: Multi-path priority system
+  // Priority: Downloaded content > Internal cache > Legacy cache > Network
+  static Future<List<String>> _getPossibleBasePaths() async {
+    // 1. External Downloads directory (permanent files)
+    // 2. Internal cache directory (temporary files with 6h expiry)
+    // 3. Internal app documents (fallback)
+  }
+  
+  // ✅ ENHANCED: Check downloaded content dengan metadata validation
   Future<bool> isContentDownloaded(String contentId) async {
-    final metadataPath = '$_baseLocalPath/$contentId/metadata.json';
-    return File(metadataPath).existsSync();
+    // Checks metadata.json AND images directory across all base paths
   }
   
-  // Get local image dengan prioritas: downloaded > cache > network
+  // ✅ ENHANCED: Get local image dengan prioritas: downloaded > internal cache > legacy cache > network
   Future<String?> getLocalImagePath(String contentId, int pageNumber) async {
-    // Priority 1: Downloaded content
-    final downloadedPath = '$_baseLocalPath/$contentId/images/page_$pageNumber.jpg';
-    if (File(downloadedPath).existsSync()) {
-      return downloadedPath;
-    }
-    
-    // Priority 2: Cache local (untuk content yang belum full download)
-    final cachePath = await _getCachedImagePath(contentId, pageNumber);
-    if (cachePath != null && File(cachePath).existsSync()) {
-      return cachePath;
-    }
-    
-    return null; // Fallback to network
+    // Multi-path search with alternative naming patterns
+    // Includes directory scanning for flexible file naming
   }
   
-  // Get local thumbnail/cover
-  Future<String?> getLocalThumbnailPath(String contentId) async {
-    // Check downloaded cover first
-    final downloadedCover = '$_baseLocalPath/$contentId/cover.jpg';
-    if (File(downloadedCover).existsSync()) {
-      return downloadedCover;
-    }
-    
-    // Check cached thumbnail
-    final cachedCover = await _getCachedThumbnailPath(contentId);
-    return cachedCover;
+  // ✅ NEW: Auto cleanup expired cache files
+  static Future<void> _cleanupExpiredCache() async {
+    // Removes files older than 6 hours from internal cache
+    // Runs automatically in background during path resolution
   }
   
-  // Read metadata untuk validation
-  Future<Map<String, dynamic>?> getDownloadedMetadata(String contentId) async {
-    try {
-      final metadataPath = '$_baseLocalPath/$contentId/metadata.json';
-      final file = File(metadataPath);
-      if (!file.existsSync()) return null;
-      
-      final jsonString = await file.readAsString();
-      return jsonDecode(jsonString);
-    } catch (e) {
-      return null;
-    }
+  // ✅ NEW: Download and cache from network
+  static Future<String?> downloadAndCacheImage(String networkUrl, String contentId, int pageNumber) async {
+    // Downloads network images and stores in internal cache
+    // Provides fallback when local files not available
   }
   
-  // Progressive loading: downloaded > cache > network
+  // ✅ ENHANCED: Progressive loading dengan cache integration
   ImageProvider getProgressiveImageProvider(String networkUrl, String? localPath) {
-    if (localPath != null && File(localPath).existsSync()) {
-      return FileImage(File(localPath));
-    }
-    return CachedNetworkImageProvider(networkUrl);
+    // Smart fallback: local files > CachedNetworkImage
   }
 }
 ```
@@ -612,12 +607,16 @@ class SearchFilter with _$SearchFilter {
 ## 📋 Implementation Tasks
 
 ### Phase 1: Image Preloader System (Priority: High) ✅ COMPLETED
-- [x] **Task 1.1:** Create enhanced `LocalImagePreloader` service dengan metadata support
-- [x] **Task 1.2:** Create `ProgressiveImageWidget` component
-- [x] **Task 1.3:** Update `ReaderScreen` image loading (downloaded > cache > network)
-- [x] **Task 1.4:** Update `DetailScreen` cover loading dengan progressive system
-- [x] **Task 1.5:** Update `ContentCard` thumbnail loading dan blur effect
-- [x] **Task 1.6:** Test local file detection dan metadata validation
+- [x] **Task 1.1:** Create enhanced `LocalImagePreloader` service dengan metadata support ✅ COMPLETED
+- [x] **Task 1.2:** Create `ProgressiveImageWidget` component ✅ COMPLETED  
+- [x] **Task 1.3:** Update `ReaderScreen` image loading (downloaded > cache > network) ✅ COMPLETED
+- [x] **Task 1.4:** Update `DetailScreen` cover loading dengan progressive system ✅ COMPLETED
+- [x] **Task 1.5:** Update `ContentCard` thumbnail loading dan blur effect ✅ COMPLETED
+- [x] **Task 1.6:** Test local file detection dan metadata validation ✅ COMPLETED
+- [x] **Task 1.7:** Implement smart Downloads directory detection (multi-language) ✅ NEW COMPLETED
+- [x] **Task 1.8:** Add internal cache system dengan 6-hour expiry ✅ NEW COMPLETED
+- [x] **Task 1.9:** Implement auto-cleanup untuk expired cache files ✅ NEW COMPLETED
+- [x] **Task 1.10:** Add download-and-cache functionality untuk network fallback ✅ NEW COMPLETED
 
 ### Phase 2: Download Range Feature (Priority: High)
 - [ ] **Task 2.1:** Create `DownloadRangeSelector` widget ✅ COMPLETED
@@ -668,7 +667,28 @@ lib/presentation/widgets/download_range_selector.dart ✅ NEW
 lib/presentation/widgets/modern_pagination_widget.dart ✅ NEW
 ```
 
-### Modified Files: ✅ PARTIALLY COMPLETED  
+### Modified Files: ✅ UPDATED WITH NEW FEATURES
+```
+lib/services/local_image_preloader.dart ✅ ENHANCED
+  - ✅ Smart Downloads directory detection (multi-language support)
+  - ✅ Internal cache system dengan 6-hour expiry
+  - ✅ Auto-cleanup expired cache files
+  - ✅ Multi-path priority system
+  - ✅ Download-and-cache functionality
+  - ✅ Enhanced metadata validation
+  
+lib/presentation/widgets/progressive_image_widget.dart ✅
+lib/presentation/widgets/download_range_selector.dart ✅ NEW
+lib/presentation/widgets/modern_pagination_widget.dart ✅ NEW
+lib/presentation/pages/reader/reader_screen.dart ✅
+lib/presentation/pages/detail/detail_screen.dart ✅ UPDATED (Navigation Fix)
+lib/presentation/pages/main/main_screen.dart
+lib/presentation/pages/search/search_screen.dart ✅ UPDATED (Debounce & Direct Navigation)
+lib/presentation/widgets/content_card_widget.dart ✅ UPDATED (Highlight Support)
+lib/presentation/widgets/content_list_widget.dart
+lib/presentation/blocs/download/download_bloc.dart
+lib/core/routing/app_router.dart
+```  
 ```
 lib/presentation/pages/reader/reader_screen.dart ✅
 lib/presentation/pages/detail/detail_screen.dart ✅ UPDATED (Navigation Fix)
@@ -787,9 +807,12 @@ lib/core/routing/app_router.dart
 
 1. **Image Preloader:** ✅ COMPLETED
    - ✅ Downloaded images load instantly (nhasix/[id]/images/)
-   - ✅ Smooth progressive fallback: downloaded > cache > network
+   - ✅ Smooth progressive fallback: downloaded > internal cache > legacy cache > network
    - ✅ Metadata.json validation working
-   - ✅ Improved perceived performance significant
+   - ✅ Smart Downloads directory detection across multiple languages
+   - ✅ Internal cache system dengan 6-hour expiry dan auto-cleanup
+   - ✅ Download-and-cache functionality untuk network images
+   - ✅ Multi-path support untuk berbagai lokasi storage
 
 2. **Image Blinking Fix (Reader):** ✅ COMPLETED
    - ✅ Eliminated image flickering/blinking in reader_screen
