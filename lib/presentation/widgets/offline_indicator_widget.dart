@@ -271,7 +271,7 @@ class OfflineModeToggle extends StatelessWidget {
           Switch(
             value: isOfflineMode,
             onChanged: onToggle,
-            activeColor: ColorsConst.accentGreen,
+            activeThumbColor: ColorsConst.accentGreen,
             inactiveThumbColor: ColorsConst.darkTextSecondary,
             inactiveTrackColor: ColorsConst.darkElevated,
           ),

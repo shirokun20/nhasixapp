@@ -799,7 +799,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 trailing: Switch(
                   value: currentState.keepScreenOn ?? false,
                   onChanged: (_) => _readerCubit.toggleKeepScreenOn(),
-                  activeColor: ColorsConst.accentBlue,
+                  activeThumbColor: ColorsConst.accentBlue,
                 ),
               ),
 

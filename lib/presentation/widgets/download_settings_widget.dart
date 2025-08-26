@@ -288,7 +288,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
         ),
         Switch(
           value: _settings.autoRetry,
-          activeColor: ColorsConst.primary,
+          activeThumbColor: ColorsConst.primary,
           onChanged: (value) {
             setState(() {
               _settings = _settings.copyWith(autoRetry: value);
@@ -363,7 +363,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
         ),
         Switch(
           value: _settings.wifiOnly,
-          activeColor: ColorsConst.primary,
+          activeThumbColor: ColorsConst.primary,
           onChanged: (value) {
             setState(() {
               _settings = _settings.copyWith(wifiOnly: value);
@@ -440,7 +440,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
         ),
         Switch(
           value: _settings.enableNotifications,
-          activeColor: ColorsConst.primary,
+          activeThumbColor: ColorsConst.primary,
           onChanged: (value) {
             setState(() {
               _settings = _settings.copyWith(enableNotifications: value);

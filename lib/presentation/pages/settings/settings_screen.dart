@@ -182,7 +182,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 SwitchListTile(
                   tileColor: Theme.of(context).colorScheme.surface,
-                  activeColor: Theme.of(context).colorScheme.primary,
+                  activeThumbColor: Theme.of(context).colorScheme.primary,
                   title: Text('Show System UI in Reader', style: TextStyleConst.bodyLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   )),
