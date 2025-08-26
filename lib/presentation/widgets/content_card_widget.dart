@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/content.dart';
+import 'progressive_image_widget.dart';
 
 /// Enhanced content card widget with image caching and improved UI
 ///
@@ -135,29 +136,14 @@ class ContentCard extends StatelessWidget {
         color: ColorsConst.darkElevated,
       ),
       child: content.coverUrl.isNotEmpty
-          ? CachedNetworkImage(
-              imageUrl: content.coverUrl,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => _buildImagePlaceholder(),
-              errorWidget: (context, url, error) => _buildImageError(),
-              memCacheWidth: 400, // Optimize memory usage
-              memCacheHeight: 600,
-              fadeInDuration: const Duration(milliseconds: 300),
-              fadeOutDuration: const Duration(milliseconds: 100),
+          ? ProgressiveThumbnailWidget(
+              networkUrl: content.coverUrl,
+              contentId: content.id,
+              aspectRatio: aspectRatio,
+              borderRadius: BorderRadius.zero, // No border radius, handled by parent
+              showOfflineIndicator: showOfflineIndicator,
             )
           : _buildImageError(),
-    );
-  }
-
-  Widget _buildImagePlaceholder() {
-    return Shimmer.fromColors(
-      baseColor: ColorsConst.darkElevated,
-      highlightColor: ColorsConst.darkCard,
-      child: Container(
-        width: double.infinity,
-        height: double.infinity,
-        color: ColorsConst.darkElevated,
-      ),
     );
   }
 

@@ -10,9 +10,9 @@ import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:nhasixapp/core/utils/app_state_manager.dart';
 import '../../widgets/download_button_widget.dart';
+import '../../widgets/progressive_image_widget.dart';
 
 class DetailScreen extends StatefulWidget {
   final String contentId;
@@ -377,11 +377,17 @@ class _DetailScreenState extends State<DetailScreen> {
                 background: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Cover image
-                    CachedNetworkImage(
-                      imageUrl: content.coverUrl,
+                    // Cover image with progressive loading
+                    ProgressiveImageWidget(
+                      networkUrl: content.coverUrl,
+                      contentId: content.id,
+                      isThumbnail: false,
+                      width: double.infinity,
+                      height: double.infinity,
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
+                      memCacheWidth: 800,
+                      memCacheHeight: 1200,
+                      placeholder: Container(
                         color: ColorsConst.darkCard,
                         child: const Center(
                           child: CircularProgressIndicator(
@@ -389,7 +395,7 @@ class _DetailScreenState extends State<DetailScreen> {
                           ),
                         ),
                       ),
-                      errorWidget: (context, url, error) => Container(
+                      errorWidget: Container(
                         color: ColorsConst.darkCard,
                         child: const Center(
                           child: Icon(
@@ -399,8 +405,6 @@ class _DetailScreenState extends State<DetailScreen> {
                           ),
                         ),
                       ),
-                      memCacheWidth: 800,
-                      memCacheHeight: 1200,
                     ),
                     // Gradient overlay
                     Container(
@@ -853,12 +857,16 @@ class _DetailScreenState extends State<DetailScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: CachedNetworkImage(
-                  imageUrl: relatedContent.coverUrl,
-                  fit: BoxFit.cover,
+                child: ProgressiveImageWidget(
+                  networkUrl: relatedContent.coverUrl,
+                  contentId: relatedContent.id,
+                  isThumbnail: true,
                   width: double.infinity,
                   height: 200,
-                  placeholder: (context, url) => Container(
+                  fit: BoxFit.cover,
+                  memCacheWidth: 320,
+                  memCacheHeight: 400,
+                  placeholder: Container(
                     color: ColorsConst.darkCard,
                     child: const Center(
                       child: CircularProgressIndicator(
@@ -867,7 +875,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       ),
                     ),
                   ),
-                  errorWidget: (context, url, error) => Container(
+                  errorWidget: Container(
                     color: ColorsConst.darkCard,
                     child: const Center(
                       child: Icon(
@@ -877,8 +885,6 @@ class _DetailScreenState extends State<DetailScreen> {
                       ),
                     ),
                   ),
-                  memCacheWidth: 320,
-                  memCacheHeight: 400,
                 ),
               ),
             ),

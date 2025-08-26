@@ -1,9 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:photo_view/photo_view.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/colors_const.dart';
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
@@ -12,6 +10,7 @@ import '../../cubits/reader/reader_cubit.dart';
 // import '../../cubits/reader/reader_state.dart';
 import '../../widgets/progress_indicator_widget.dart';
 import '../../widgets/error_widget.dart';
+import '../../widgets/progressive_image_widget.dart';
 
 /// Simple reader screen for reading manga/doujinshi content
 class ReaderScreen extends StatefulWidget {
@@ -318,11 +317,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
               maxScale: PhotoViewComputedScale.covered * 3.0,
               initialScale: PhotoViewComputedScale.contained,
               heroAttributes: PhotoViewHeroAttributes(tag: imageUrl),
-              child: _buildImageWidget(imageUrl, pageNumber, isOffline),
+              child: ProgressiveReaderImageWidget(
+                networkUrl: imageUrl,
+                contentId: widget.contentId,
+                pageNumber: pageNumber,
+              ),
             );
           } else {
-            return PhotoView(
-              imageProvider: CachedNetworkImageProvider(imageUrl),
+            return PhotoView.customChild(
               backgroundDecoration: const BoxDecoration(
                 color: ColorsConst.darkBackground,
               ),
@@ -330,17 +332,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
               maxScale: PhotoViewComputedScale.covered * 3.0,
               initialScale: PhotoViewComputedScale.contained,
               heroAttributes: PhotoViewHeroAttributes(tag: imageUrl),
-              loadingBuilder: (context, event) => Center(
-                child: AppProgressIndicator(
-                  message: 'Loading page $pageNumber...',
-                ),
-              ),
-              errorBuilder: (context, error, stackTrace) => Center(
-                child: AppErrorWidget(
-                  title: 'Image Error',
-                  message: 'Failed to load page $pageNumber',
-                  onRetry: () => setState(() {}),
-                ),
+              child: ProgressiveReaderImageWidget(
+                networkUrl: imageUrl,
+                contentId: widget.contentId,
+                pageNumber: pageNumber,
               ),
             );
           }
@@ -356,61 +351,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
     BoxFit? fit,
     double? height,
   }) {
-    if (isOffline) {
-      // Load from local file system
-      return Image.file(
-        File(imageUrl),
-        fit: fit ?? BoxFit.contain,
-        height: height,
-        errorBuilder: (context, error, stackTrace) => SizedBox(
-          height: height ?? MediaQuery.of(context).size.height * 0.5,
-          child: Center(
-            child: AppErrorWidget(
-              title: 'Offline Image Error',
-              message: 'Failed to load offline page $pageNumber',
-              onRetry: () => setState(() {}),
-            ),
-          ),
-        ),
-      );
-    } else {
-      // Load from network
-      return CachedNetworkImage(
-        imageUrl: imageUrl,
-        fit: fit ?? BoxFit.contain,
-        height: height,
-        placeholder: (context, url) => SizedBox(
-          height: height ?? MediaQuery.of(context).size.height * 0.8,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AppProgressIndicator(
-                  message: 'Loading page $pageNumber...',
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Page $pageNumber',
-                  style: TextStyleConst.bodySmall.copyWith(
-                    color: ColorsConst.darkTextSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        errorWidget: (context, url, error) => SizedBox(
-          height: height ?? MediaQuery.of(context).size.height * 0.5,
-          child: Center(
-            child: AppErrorWidget(
-              title: 'Image Error',
-              message: 'Failed to load page $pageNumber',
-              onRetry: () => setState(() {}),
-            ),
-          ),
-        ),
-      );
-    }
+    // Use ProgressiveReaderImageWidget for enhanced local file support
+    return ProgressiveReaderImageWidget(
+      networkUrl: imageUrl,
+      contentId: widget.contentId,
+      pageNumber: pageNumber,
+      fit: fit ?? BoxFit.contain,
+      height: height,
+    );
   }
 
   Widget _buildUIOverlay(ReaderState state) {
