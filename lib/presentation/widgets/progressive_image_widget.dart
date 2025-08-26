@@ -378,14 +378,22 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
   Future<void> _resolveLocalPath() async {
     widget.onLoadingStateChange?.call(true);
     
-    _logger.d('Reader: Resolving local path for contentId: ${widget.contentId}, pageNumber: ${widget.pageNumber}');
+    if (kDebugMode) {
+      _logger.d('Reader: Resolving local path for contentId: ${widget.contentId}, pageNumber: ${widget.pageNumber}');
+    }
     
     final localPath = await LocalImagePreloader.getLocalImagePath(
       widget.contentId, 
       widget.pageNumber,
     );
     
-    _logger.d('Reader: Local path resolved: $localPath');
+    if (kDebugMode) {
+      if (localPath != null) {
+        _logger.d('Reader: ✅ Found local image at: $localPath');
+      } else {
+        _logger.d('Reader: ❌ No local image found, will use network: ${widget.networkUrl}');
+      }
+    }
     
     if (mounted) {
       setState(() {
@@ -405,13 +413,14 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
 
     // Use cached local path if available
     if (_cachedLocalPath != null) {
-      _logger.d('Reader: Using local image from path: $_cachedLocalPath');
       return Image.file(
         File(_cachedLocalPath!),
         fit: widget.fit,
         height: widget.height,
         errorBuilder: (context, error, stackTrace) {
-          _logger.e('Reader: Error loading local image from $_cachedLocalPath: $error');
+          if (kDebugMode) {
+            _logger.e('Reader: ❌ Error loading local image from $_cachedLocalPath: $error');
+          }
           // Fallback to network if local file fails
           return _buildNetworkImage(context);
         },
@@ -419,7 +428,9 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
     }
 
     // Fallback to network
-    _logger.d('Reader: Falling back to network image: ${widget.networkUrl}');
+    if (kDebugMode) {
+      _logger.d('Reader: 📡 Falling back to network image: ${widget.networkUrl}');
+    }
     return _buildNetworkImage(context);
   }
 
