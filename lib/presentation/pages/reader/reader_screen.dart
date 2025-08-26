@@ -6,6 +6,7 @@ import '../../../core/constants/colors_const.dart';
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../data/models/reader_settings_model.dart';
+import '../../../services/local_image_preloader.dart';
 import '../../cubits/reader/reader_cubit.dart';
 // import '../../cubits/reader/reader_state.dart';
 import '../../widgets/progress_indicator_widget.dart';
@@ -35,6 +36,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   // Debouncing for scroll updates
   int _lastReportedPage = 1;
+  
+  // Prefetching tracking
+  static const int _prefetchCount = 5; // Number of pages to prefetch ahead
+  final Set<int> _prefetchedPages = {}; // Track which pages have been prefetched
 
   @override
   void initState() {
@@ -66,6 +71,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
           clampedPage != (state.currentPage ?? 1)) {
         _lastReportedPage = clampedPage;
         _readerCubit.jumpToPage(clampedPage);
+        
+        // Trigger prefetching for continuous scroll mode too
+        final imageUrls = state.content?.imageUrls ?? [];
+        _prefetchImages(clampedPage, imageUrls);
       }
     }
   }
@@ -77,6 +86,39 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _verticalPageController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// Prefetch next few images in background for smoother reading experience
+  void _prefetchImages(int currentPage, List<String> imageUrls) {
+    if (imageUrls.isEmpty) return;
+    
+    // Prefetch next _prefetchCount pages
+    for (int i = 1; i <= _prefetchCount; i++) {
+      final targetPage = currentPage + i;
+      
+      // Check bounds and avoid duplicate prefetching
+      if (targetPage <= imageUrls.length && !_prefetchedPages.contains(targetPage)) {
+        _prefetchedPages.add(targetPage);
+        
+        final imageUrl = imageUrls[targetPage - 1]; // Convert to 0-based index
+        
+        // Prefetch in background (non-blocking)
+        LocalImagePreloader.downloadAndCacheImage(
+          imageUrl,
+          widget.contentId,
+          targetPage,
+        ).then((_) {
+          if (mounted) {
+            // Optionally log success for debugging
+            debugPrint('📥 Prefetched page $targetPage');
+          }
+        }).catchError((error) {
+          // Remove from prefetched set if failed, so it can be retried
+          _prefetchedPages.remove(targetPage);
+          debugPrint('❌ Failed to prefetch page $targetPage: $error');
+        });
+      }
+    }
   }
 
   void _syncControllersWithState(ReaderState state) {
@@ -139,6 +181,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
       child: BlocListener<ReaderCubit, ReaderState>(
         listener: (context, state) {
           _syncControllersWithState(state);
+          
+          // Trigger initial prefetching when content is loaded
+          if (state.content != null && state.content!.imageUrls.isNotEmpty) {
+            final currentPage = state.currentPage ?? widget.initialPage;
+            _prefetchImages(currentPage, state.content!.imageUrls);
+          }
         },
         child: BlocBuilder<ReaderCubit, ReaderState>(
           builder: (context, state) {
@@ -224,6 +272,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
         onPageChanged: (index) {
           final newPage = index + 1;
           _readerCubit.jumpToPage(newPage);
+          
+          // Trigger prefetching for next pages
+          final imageUrls = state.content?.imageUrls ?? [];
+          _prefetchImages(newPage, imageUrls);
         },
         itemCount: state.content?.imageUrls.length ?? 0,
         itemBuilder: (context, index) {
@@ -259,6 +311,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
         onPageChanged: (index) {
           final newPage = index + 1;
           _readerCubit.jumpToPage(newPage);
+          
+          // Trigger prefetching for next pages
+          final imageUrls = state.content?.imageUrls ?? [];
+          _prefetchImages(newPage, imageUrls);
         },
         itemCount: state.content?.imageUrls.length ?? 0,
         itemBuilder: (context, index) {
