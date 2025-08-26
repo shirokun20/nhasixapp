@@ -382,25 +382,64 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
       _logger.d('Reader: Resolving local path for contentId: ${widget.contentId}, pageNumber: ${widget.pageNumber}');
     }
     
+    // First try to get existing local image
     final localPath = await LocalImagePreloader.getLocalImagePath(
       widget.contentId, 
       widget.pageNumber,
     );
     
-    if (kDebugMode) {
-      if (localPath != null) {
+    if (localPath != null) {
+      // Found local image
+      if (kDebugMode) {
         _logger.d('Reader: ✅ Found local image at: $localPath');
-      } else {
-        _logger.d('Reader: ❌ No local image found, will use network: ${widget.networkUrl}');
       }
+      
+      if (mounted) {
+        setState(() {
+          _cachedLocalPath = localPath;
+          _isLocalPathResolved = true;
+        });
+        widget.onLoadingStateChange?.call(false);
+      }
+      return;
     }
     
-    if (mounted) {
-      setState(() {
-        _cachedLocalPath = localPath;
-        _isLocalPathResolved = true;
-      });
-      widget.onLoadingStateChange?.call(false);
+    // No local image found, try to download and cache
+    if (kDebugMode) {
+      _logger.d('Reader: 📥 No local image found, downloading and caching: ${widget.networkUrl}');
+    }
+    
+    final cachedPath = await LocalImagePreloader.downloadAndCacheImage(
+      widget.networkUrl,
+      widget.contentId,
+      widget.pageNumber,
+    );
+    
+    if (cachedPath != null) {
+      if (kDebugMode) {
+        _logger.d('Reader: ✅ Successfully cached image at: $cachedPath');
+      }
+      
+      if (mounted) {
+        setState(() {
+          _cachedLocalPath = cachedPath;
+          _isLocalPathResolved = true;
+        });
+        widget.onLoadingStateChange?.call(false);
+      }
+    } else {
+      // Cache failed, will fallback to network
+      if (kDebugMode) {
+        _logger.d('Reader: ❌ Failed to cache image, will use network: ${widget.networkUrl}');
+      }
+      
+      if (mounted) {
+        setState(() {
+          _cachedLocalPath = null;
+          _isLocalPathResolved = true;
+        });
+        widget.onLoadingStateChange?.call(false);
+      }
     }
   }
 
