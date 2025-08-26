@@ -142,6 +142,66 @@ class ContentCard extends StatelessWidget {
         ),
       ),
     );
+
+    // Apply additional highlight effect untuk matching content
+    if (isHighlighted) {
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: ColorsConst.accentBlue.withValues(alpha: 0.3),
+              blurRadius: 8,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: cardWidget,
+      );
+    }
+
+    return cardWidget;
+  }
+
+  /// Build highlight overlay indicator for matching content
+  Widget _buildHighlightOverlay() {
+    return Positioned(
+      top: 8,
+      right: 8,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: ColorsConst.accentBlue,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.star,
+              color: Colors.white,
+              size: 12,
+            ),
+            const SizedBox(width: 2),
+            Text(
+              'MATCH',
+              style: TextStyleConst.overline.copyWith(
+                color: Colors.white,
+                fontSize: 8,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildCoverImage() {
@@ -665,66 +725,6 @@ class CompactContentCard extends StatelessWidget {
                 ),
             ],
           ),
-        ),
-      ),
-    );
-
-    // Apply additional highlight effect untuk matching content
-    if (isHighlighted) {
-      return Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: ColorsConst.accentBlue.withValues(alpha: 0.3),
-              blurRadius: 8,
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: cardWidget,
-      );
-    }
-
-    return cardWidget;
-  }
-
-  /// Build highlight overlay indicator for matching content
-  Widget _buildHighlightOverlay() {
-    return Positioned(
-      top: 8,
-      right: 8,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: ColorsConst.accentBlue,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.star,
-              color: Colors.white,
-              size: 12,
-            ),
-            const SizedBox(width: 2),
-            Text(
-              'MATCH',
-              style: TextStyleConst.overline.copyWith(
-                color: Colors.white,
-                fontSize: 8,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
         ),
       ),
     );
