@@ -44,6 +44,8 @@ class _SearchScreenState extends State<SearchScreen> {
   List<Tag> _categories = [];
 
   Timer? _tagSearchTimer;
+  Timer? _debounceTimer;
+  final RegExp _contentIdPattern = RegExp(r'^\d{1,6}$'); // Match 1-6 digit numbers
 
   @override
   void initState() {
@@ -102,18 +104,81 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  /// Setup search listeners for text inputs (no API calls)
+  /// Setup search listeners for text inputs with debounce and direct navigation
   void _setupSearchListeners() {
-    // Main search query listener (updates filter state only)
+    // Enhanced main search query listener with debounce and direct navigation
     _searchController.addListener(() {
-      final query = _searchController.text.trim();
-      _currentFilter = _currentFilter.copyWith(
-        query: query.isEmpty ? null : query,
-      );
-      _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
+      // Cancel previous debounce timer
+      _debounceTimer?.cancel();
+      
+      // Start new debounce timer
+      _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+        final query = _searchController.text.trim();
+        
+        // Check if input is numeric content ID (like nhentai web behavior)
+        if (_contentIdPattern.hasMatch(query)) {
+          _navigateToContentById(query);
+          return;
+        }
+        
+        // Regular search behavior with debounce
+        _currentFilter = _currentFilter.copyWith(
+          query: query.isEmpty ? null : query,
+        );
+        _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
+      });
     });
 
     // Removed complex tag search listeners - now handled by FilterDataScreen
+  }
+
+  /// Direct navigation for numeric content IDs (nhentai-like behavior)
+  void _navigateToContentById(String contentId) async {
+    try {
+      // Clear search field for better UX
+      _searchController.clear();
+      
+      // Navigate directly to detail screen
+      if (mounted) {
+        context.push('/detail/$contentId');
+      }
+    } catch (e) {
+      // Handle error - show "Content not found" dialog
+      _showContentNotFoundDialog(contentId);
+    }
+  }
+
+  /// Show dialog for content not found
+  void _showContentNotFoundDialog(String contentId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: ColorsConst.darkCard,
+        title: Text(
+          'Content Not Found',
+          style: TextStyleConst.headingSmall.copyWith(
+            color: ColorsConst.darkTextPrimary,
+          ),
+        ),
+        content: Text(
+          'Content with ID "$contentId" was not found.',
+          style: TextStyleConst.bodyMedium.copyWith(
+            color: ColorsConst.darkTextSecondary,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'OK',
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: ColorsConst.accentBlue,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   // Removed complex tag search methods - now handled by FilterDataScreen
@@ -121,6 +186,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void dispose() {
     _tagSearchTimer?.cancel();
+    _debounceTimer?.cancel(); // Clean up debounce timer
     _searchController.dispose();
     _searchFocusNode.dispose();
     // Removed complex filter controllers disposal - now handled by FilterDataScreen
@@ -416,6 +482,8 @@ class _SearchScreenState extends State<SearchScreen> {
                       icon: const Icon(Icons.clear,
                           color: ColorsConst.darkTextSecondary),
                       onPressed: () {
+                        // Enhanced clear method with proper timer cleanup
+                        _debounceTimer?.cancel();
                         _searchController.clear();
                         _currentFilter = _currentFilter.copyWith(query: null);
                         _searchBloc
@@ -1106,6 +1174,9 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _clearAllFilters() {
+    // Cancel any pending debounce
+    _debounceTimer?.cancel();
+    
     _searchController.clear();
     // Removed complex filter controllers clearing - now handled by FilterDataScreen
 

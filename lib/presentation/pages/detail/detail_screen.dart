@@ -11,6 +11,7 @@ import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/core/utils/app_state_manager.dart';
+import 'package:nhasixapp/presentation/pages/main/main_screen.dart';
 import '../../widgets/download_button_widget.dart';
 import '../../widgets/progressive_image_widget.dart';
 
@@ -49,21 +50,28 @@ class _DetailScreenState extends State<DetailScreen> {
     super.dispose();
   }
 
-  /// Navigate to search with specific tag filter
+  /// Navigate to search with specific tag filter (FIXED navigation)
   void _searchByTag(String tagName) async {
     try {
-      // Create SearchFilter with query (safer approach for mixed tag types)
-      final searchFilter = SearchFilter(
-        query: tagName,
-      );
-
-      // Save filter to local storage (same as SearchScreen does)
-      await getIt<LocalDataSource>().saveSearchFilter(searchFilter.toJson());
-
-      // Navigate back to MainScreen and pass search flag
+      // Load existing filter and preserve it, only update query
+      final savedFilterData = await getIt<LocalDataSource>().getLastSearchFilter();
+      SearchFilter currentFilter = const SearchFilter();
+      
+      if (savedFilterData != null) {
+        currentFilter = SearchFilter.fromJson(savedFilterData);
+      }
+      
+      // CORRECTED: Preserve existing filter, only update query
+      final updatedFilter = currentFilter.copyWith(query: tagName);
+      await getIt<LocalDataSource>().saveSearchFilter(updatedFilter.toJson());
+      
+      // FIXED: Clear navigation stack completely and prevent back to detail
       if (mounted) {
-        // Use pop to go back to MainScreen, then trigger search
-        context.pop(searchFilter);
+        // Clear entire navigation stack and go to MainScreen
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+          (route) => false, // Remove all routes
+        );
       }
     } catch (e, stackTrace) {
       Logger().e("Error searching for tag: $tagName",
@@ -1151,7 +1159,10 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   void _navigateToRelatedContent(Content relatedContent) {
-    AppRouter.goToContentDetail(context, relatedContent.id);
+    // Option 1: Replace current detail instead of push to avoid nested navigation
+    if (mounted) {
+      context.pushReplacement('/detail/${relatedContent.id}');
+    }
   }
 
   void _showGoOnlineDialog(BuildContext context) {

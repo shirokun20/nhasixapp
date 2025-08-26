@@ -31,6 +31,8 @@ class ContentCard extends StatelessWidget {
     this.showUploadDate = false, // Hidden by default for main screen
     this.maxTagsToShow = 3,
     this.showOfflineIndicator = false,
+    this.isHighlighted = false, // NEW: for highlight matching content
+    this.highlightReason, // NEW: reason for highlight
   });
 
   final Content content;
@@ -48,16 +50,26 @@ class ContentCard extends StatelessWidget {
   final bool showUploadDate;
   final int maxTagsToShow;
   final bool showOfflineIndicator;
+  final bool isHighlighted; // NEW: for highlight matching content
+  final String? highlightReason; // NEW: reason for highlight
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    final cardWidget = Card(
       clipBehavior: Clip.antiAlias,
       color: ColorsConst.darkCard,
-      elevation: 2,
-      shadowColor: ColorsConst.darkBackground.withValues(alpha: 0.3),
+      elevation: isHighlighted ? 6 : 2,
+      shadowColor: isHighlighted 
+          ? ColorsConst.accentBlue.withValues(alpha: 0.5)
+          : ColorsConst.darkBackground.withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
+        side: isHighlighted
+            ? BorderSide(
+                color: ColorsConst.accentBlue,
+                width: 2.0,
+              )
+            : BorderSide.none,
       ),
       child: InkWell(
         onTap: onTap,
@@ -85,6 +97,9 @@ class ContentCard extends StatelessWidget {
                     // Top overlay with favorite button and page count
                     if (content.pageCount > 0 || showOfflineIndicator)
                       _buildTopOverlay(),
+
+                    // Highlight indicator overlay
+                    if (isHighlighted) _buildHighlightOverlay(),
 
                     // Bottom gradient overlay for better text readability
                     _buildBottomGradientOverlay(),
@@ -650,6 +665,66 @@ class CompactContentCard extends StatelessWidget {
                 ),
             ],
           ),
+        ),
+      ),
+    );
+
+    // Apply additional highlight effect untuk matching content
+    if (isHighlighted) {
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: ColorsConst.accentBlue.withValues(alpha: 0.3),
+              blurRadius: 8,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: cardWidget,
+      );
+    }
+
+    return cardWidget;
+  }
+
+  /// Build highlight overlay indicator for matching content
+  Widget _buildHighlightOverlay() {
+    return Positioned(
+      top: 8,
+      right: 8,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: ColorsConst.accentBlue,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.star,
+              color: Colors.white,
+              size: 12,
+            ),
+            const SizedBox(width: 2),
+            Text(
+              'MATCH',
+              style: TextStyleConst.overline.copyWith(
+                color: Colors.white,
+                fontSize: 8,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
       ),
     );
