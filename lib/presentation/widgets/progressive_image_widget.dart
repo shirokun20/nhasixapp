@@ -20,7 +20,7 @@ import '../../services/local_image_preloader.dart';
 /// - Error state handling
 /// - Memory optimization
 /// - Support for both page images and thumbnails
-class ProgressiveImageWidget extends StatelessWidget {
+class ProgressiveImageWidget extends StatefulWidget {
   const ProgressiveImageWidget({
     super.key,
     required this.networkUrl,
@@ -55,40 +55,80 @@ class ProgressiveImageWidget extends StatelessWidget {
   final Duration fadeOutDuration;
 
   @override
+  State<ProgressiveImageWidget> createState() => _ProgressiveImageWidgetState();
+}
+
+class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
+  String? _cachedLocalPath;
+  bool _isLocalPathResolved = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolveLocalPath();
+  }
+
+  @override
+  void didUpdateWidget(ProgressiveImageWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Only re-resolve if content or page changed
+    if (oldWidget.contentId != widget.contentId || 
+        oldWidget.pageNumber != widget.pageNumber ||
+        oldWidget.isThumbnail != widget.isThumbnail) {
+      _cachedLocalPath = null;
+      _isLocalPathResolved = false;
+      _resolveLocalPath();
+    }
+  }
+
+  Future<void> _resolveLocalPath() async {
+    if (widget.contentId == null) {
+      if (mounted) {
+        setState(() {
+          _isLocalPathResolved = true;
+        });
+      }
+      return;
+    }
+
+    final localPath = await _getLocalImagePath();
+    if (mounted) {
+      setState(() {
+        _cachedLocalPath = localPath;
+        _isLocalPathResolved = true;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     // If no contentId provided, fallback to network only
-    if (contentId == null) {
+    if (widget.contentId == null) {
       return _buildNetworkImage();
     }
 
-    return FutureBuilder<String?>(
-      future: _getLocalImagePath(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildPlaceholder();
-        }
+    // Show placeholder while resolving local path
+    if (!_isLocalPathResolved) {
+      return _buildPlaceholder();
+    }
 
-        final localPath = snapshot.data;
-        
-        if (localPath != null) {
-          // Show local image first (instant loading)
-          return _buildLocalImage(localPath);
-        }
-        
-        // Fallback to network with placeholder
-        return _buildNetworkImage();
-      },
-    );
+    // Use cached local path if available
+    if (_cachedLocalPath != null) {
+      return _buildLocalImage(_cachedLocalPath!);
+    }
+
+    // Fallback to network
+    return _buildNetworkImage();
   }
 
   /// Get local image path based on type (thumbnail or page)
   Future<String?> _getLocalImagePath() async {
-    if (contentId == null) return null;
+    if (widget.contentId == null) return null;
 
-    if (isThumbnail) {
-      return await LocalImagePreloader.getLocalThumbnailPath(contentId!);
-    } else if (pageNumber != null) {
-      return await LocalImagePreloader.getLocalImagePath(contentId!, pageNumber!);
+    if (widget.isThumbnail) {
+      return await LocalImagePreloader.getLocalThumbnailPath(widget.contentId!);
+    } else if (widget.pageNumber != null) {
+      return await LocalImagePreloader.getLocalImagePath(widget.contentId!, widget.pageNumber!);
     }
     
     return null;
@@ -98,9 +138,9 @@ class ProgressiveImageWidget extends StatelessWidget {
   Widget _buildLocalImage(String localPath) {
     Widget imageWidget = Image.file(
       File(localPath),
-      width: width,
-      height: height,
-      fit: fit,
+      width: widget.width,
+      height: widget.height,
+      fit: widget.fit,
       errorBuilder: (context, error, stackTrace) {
         // If local file fails, fallback to network
         return _buildNetworkImage();
@@ -114,9 +154,9 @@ class ProgressiveImageWidget extends StatelessWidget {
     );
 
     // Apply border radius if specified
-    if (borderRadius != null) {
+    if (widget.borderRadius != null) {
       imageWidget = ClipRRect(
-        borderRadius: borderRadius!,
+        borderRadius: widget.borderRadius!,
         child: imageWidget,
       );
     }
@@ -127,22 +167,22 @@ class ProgressiveImageWidget extends StatelessWidget {
   /// Build network image with caching
   Widget _buildNetworkImage() {
     Widget imageWidget = CachedNetworkImage(
-      imageUrl: networkUrl,
-      width: width,
-      height: height,
-      fit: fit,
-      memCacheWidth: memCacheWidth ?? (isThumbnail ? 400 : 800),
-      memCacheHeight: memCacheHeight ?? (isThumbnail ? 600 : 1200),
-      placeholder: (context, url) => placeholder ?? _buildPlaceholder(),
-      errorWidget: (context, url, error) => errorWidget ?? _buildErrorWidget(),
-      fadeInDuration: fadeInDuration,
-      fadeOutDuration: fadeOutDuration,
+      imageUrl: widget.networkUrl,
+      width: widget.width,
+      height: widget.height,
+      fit: widget.fit,
+      memCacheWidth: widget.memCacheWidth ?? (widget.isThumbnail ? 400 : 800),
+      memCacheHeight: widget.memCacheHeight ?? (widget.isThumbnail ? 600 : 1200),
+      placeholder: (context, url) => widget.placeholder ?? _buildPlaceholder(),
+      errorWidget: (context, url, error) => widget.errorWidget ?? _buildErrorWidget(),
+      fadeInDuration: widget.fadeInDuration,
+      fadeOutDuration: widget.fadeOutDuration,
     );
 
     // Apply border radius if specified
-    if (borderRadius != null) {
+    if (widget.borderRadius != null) {
       imageWidget = ClipRRect(
-        borderRadius: borderRadius!,
+        borderRadius: widget.borderRadius!,
         child: imageWidget,
       );
     }
@@ -154,13 +194,13 @@ class ProgressiveImageWidget extends StatelessWidget {
   Widget _buildPlaceholder() {
     return Shimmer.fromColors(
       baseColor: ColorsConst.darkElevated,
-      highlightColor: ColorsConst.darkCard,
+      highlightColor: ColorsConst.darkElevated.withOpacity(0.8),
       child: Container(
-        width: width,
-        height: height,
+        width: widget.width,
+        height: widget.height,
         decoration: BoxDecoration(
           color: ColorsConst.darkElevated,
-          borderRadius: borderRadius,
+          borderRadius: widget.borderRadius,
         ),
       ),
     );
@@ -169,21 +209,21 @@ class ProgressiveImageWidget extends StatelessWidget {
   /// Build error widget
   Widget _buildErrorWidget() {
     return Container(
-      width: width,
-      height: height,
+      width: widget.width,
+      height: widget.height,
       decoration: BoxDecoration(
         color: ColorsConst.darkElevated,
-        borderRadius: borderRadius,
+        borderRadius: widget.borderRadius,
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.broken_image_outlined,
-            size: isThumbnail ? 24 : 32,
+            size: widget.isThumbnail ? 24 : 32,
             color: ColorsConst.darkTextTertiary,
           ),
-          if (!isThumbnail) ...[
+          if (!widget.isThumbnail) ...[
             const SizedBox(height: 4),
             Text(
               'Image not available',
@@ -201,7 +241,7 @@ class ProgressiveImageWidget extends StatelessWidget {
 
 /// Specialized Progressive Image Widget for Reader Screen
 /// Optimized for full-screen reading with enhanced local file support
-class ProgressiveReaderImageWidget extends StatelessWidget {
+class ProgressiveReaderImageWidget extends StatefulWidget {
   const ProgressiveReaderImageWidget({
     super.key,
     required this.networkUrl,
@@ -220,42 +260,77 @@ class ProgressiveReaderImageWidget extends StatelessWidget {
   final void Function(bool isLoading)? onLoadingStateChange;
 
   @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<String?>(
-      future: LocalImagePreloader.getLocalImagePath(contentId, pageNumber),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          onLoadingStateChange?.call(true);
-          return _buildReaderPlaceholder(context);
-        }
+  State<ProgressiveReaderImageWidget> createState() => _ProgressiveReaderImageWidgetState();
+}
 
-        final localPath = snapshot.data;
-        onLoadingStateChange?.call(false);
-        
-        if (localPath != null) {
-          // Instant loading from local file
-          return Image.file(
-            File(localPath),
-            fit: fit,
-            height: height,
-            errorBuilder: (context, error, stackTrace) {
-              // Fallback to network if local file fails
-              return _buildNetworkImage(context);
-            },
-          );
-        }
-        
-        // Fallback to network
-        return _buildNetworkImage(context);
-      },
+class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWidget> {
+  String? _cachedLocalPath;
+  bool _isLocalPathResolved = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolveLocalPath();
+  }
+
+  @override
+  void didUpdateWidget(ProgressiveReaderImageWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Only re-resolve if content or page changed
+    if (oldWidget.contentId != widget.contentId || 
+        oldWidget.pageNumber != widget.pageNumber) {
+      _cachedLocalPath = null;
+      _isLocalPathResolved = false;
+      _resolveLocalPath();
+    }
+  }
+
+  Future<void> _resolveLocalPath() async {
+    widget.onLoadingStateChange?.call(true);
+    
+    final localPath = await LocalImagePreloader.getLocalImagePath(
+      widget.contentId, 
+      widget.pageNumber,
     );
+    
+    if (mounted) {
+      setState(() {
+        _cachedLocalPath = localPath;
+        _isLocalPathResolved = true;
+      });
+      widget.onLoadingStateChange?.call(false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Show placeholder while resolving local path
+    if (!_isLocalPathResolved) {
+      return _buildReaderPlaceholder(context);
+    }
+
+    // Use cached local path if available
+    if (_cachedLocalPath != null) {
+      return Image.file(
+        File(_cachedLocalPath!),
+        fit: widget.fit,
+        height: widget.height,
+        errorBuilder: (context, error, stackTrace) {
+          // Fallback to network if local file fails
+          return _buildNetworkImage(context);
+        },
+      );
+    }
+
+    // Fallback to network
+    return _buildNetworkImage(context);
   }
 
   Widget _buildNetworkImage(BuildContext context) {
     return CachedNetworkImage(
-      imageUrl: networkUrl,
-      fit: fit,
-      height: height,
+      imageUrl: widget.networkUrl,
+      fit: widget.fit,
+      height: widget.height,
       memCacheWidth: 800,
       memCacheHeight: 1200,
       placeholder: (context, url) => _buildReaderPlaceholder(context),
@@ -266,7 +341,7 @@ class ProgressiveReaderImageWidget extends StatelessWidget {
 
   Widget _buildReaderPlaceholder(BuildContext context) {
     return SizedBox(
-      height: height ?? MediaQuery.of(context).size.height * 0.8,
+      height: widget.height ?? MediaQuery.of(context).size.height * 0.8,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -275,7 +350,7 @@ class ProgressiveReaderImageWidget extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Loading page $pageNumber...',
+            'Loading page ${widget.pageNumber}...',
             style: TextStyleConst.bodyMedium.copyWith(
               color: ColorsConst.darkTextSecondary,
             ),
@@ -287,7 +362,7 @@ class ProgressiveReaderImageWidget extends StatelessWidget {
 
   Widget _buildReaderErrorWidget(BuildContext context) {
     return SizedBox(
-      height: height ?? MediaQuery.of(context).size.height * 0.5,
+      height: widget.height ?? MediaQuery.of(context).size.height * 0.5,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -298,7 +373,7 @@ class ProgressiveReaderImageWidget extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Failed to load page $pageNumber',
+            'Failed to load page ${widget.pageNumber}',
             style: TextStyleConst.bodyLarge.copyWith(
               color: ColorsConst.darkTextSecondary,
             ),

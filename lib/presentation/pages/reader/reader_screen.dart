@@ -218,6 +218,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         }
       },
       child: PageView.builder(
+        key: const ValueKey('horizontal_page_view'),
         controller: _pageController,
         scrollDirection: Axis.horizontal,
         onPageChanged: (index) {
@@ -252,6 +253,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         }
       },
       child: PageView.builder(
+        key: const ValueKey('vertical_page_view'),
         controller: _verticalPageController,
         scrollDirection: Axis.vertical,
         onPageChanged: (index) {
@@ -318,6 +320,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               initialScale: PhotoViewComputedScale.contained,
               heroAttributes: PhotoViewHeroAttributes(tag: imageUrl),
               child: ProgressiveReaderImageWidget(
+                key: ValueKey('photo_image_1_${widget.contentId}_$pageNumber'),
                 networkUrl: imageUrl,
                 contentId: widget.contentId,
                 pageNumber: pageNumber,
@@ -333,6 +336,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               initialScale: PhotoViewComputedScale.contained,
               heroAttributes: PhotoViewHeroAttributes(tag: imageUrl),
               child: ProgressiveReaderImageWidget(
+                key: ValueKey('photo_image_2_${widget.contentId}_$pageNumber'),
                 networkUrl: imageUrl,
                 contentId: widget.contentId,
                 pageNumber: pageNumber,
@@ -353,6 +357,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }) {
     // Use ProgressiveReaderImageWidget for enhanced local file support
     return ProgressiveReaderImageWidget(
+      key: ValueKey('image_${widget.contentId}_$pageNumber'),
       networkUrl: imageUrl,
       contentId: widget.contentId,
       pageNumber: pageNumber,
