@@ -791,27 +791,34 @@ lib/core/routing/app_router.dart
    - ✅ Metadata.json validation working
    - ✅ Improved perceived performance significant
 
-2. **Download Range:**
+2. **Image Blinking Fix (Reader):** ✅ COMPLETED
+   - ✅ Eliminated image flickering/blinking in reader_screen
+   - ✅ Stable StatefulWidget implementation for image loading
+   - ✅ Cached local path resolution prevents FutureBuilder rebuilds
+   - ✅ Stable ValueKey prevents unnecessary widget rebuilds
+   - ✅ Smooth reading experience without visual disruptions
+
+3. **Download Range:**
    - ✅ Users dapat pilih download page range (X to Y)
    - ✅ Partial download working dengan proper metadata
    - ✅ Reader supports partial content seamlessly
 
-3. **Navigation Fix:**
+4. **Navigation Fix:**
    - ✅ Tag search dari detail selalu kembali ke MainScreen
    - ✅ No more nested detail navigation issues
    - ✅ Filter state properly maintained
 
-4. **Filter Highlight:**
+5. **Filter Highlight:**
    - ✅ Matching content ter-highlight dalam grid view
    - ✅ Visual feedback untuk search relevance working
    - ✅ Performance maintained dengan highlight effects
 
-5. **Enhanced Pagination:**
+6. **Enhanced Pagination:**
    - ✅ Simplified UI design tapi keep tap-to-jump functionality
    - ✅ Maintained navigation functionality dengan cleaner interface
    - ✅ Consistent across all screens
 
-6. **Search Input (CRITICAL):**
+7. **Search Input (CRITICAL):**
    - ✅ Input dapat dikosongkan completely (no phantom chars or rapid updates)
    - ✅ Debounced input working smoothly (300ms delay)
    - ✅ Direct navigation untuk numeric content IDs working (like nhentai web)
