@@ -63,6 +63,31 @@ Plan perbaikan untuk masalah utama dalam aplikasi NhasixApp:
 - ✅ Removed expensive debug calls dari production path resolution
 - ✅ Optimized didUpdateWidget untuk prevent unnecessary rebuilds
 
+### 2.5. Smart Image Prefetching (NEW) ✅ COMPLETED
+**Current State:**
+- Reader screen was loading images one by one when user navigated
+- No prefetching mechanism caused visible loading delays
+- Each page transition required individual download/cache lookup
+
+**Problems:**
+- Preloader tidak kerasa because no background prefetching
+- User experience terasa lambat with loading delays between pages
+- No batch downloading atau smart caching strategy
+
+**Requirements:**
+- Implement prefetching untuk next 5 pages ahead in background
+- Non-blocking downloads menggunakan existing cache system
+- Smart tracking untuk avoid duplicate downloads
+- Works across all reading modes (single, vertical, continuous)
+
+**Solution Implemented:** ✅ COMPLETED
+- ✅ Added smart prefetching logic di ReaderScreen dengan 5 pages ahead
+- ✅ Non-blocking background downloads using LocalImagePreloader.downloadAndCacheImage
+- ✅ Tracking system dengan _prefetchedPages Set untuk avoid duplicates
+- ✅ Integrated dengan all reading modes: single page, vertical page, continuous scroll
+- ✅ Initial prefetch ketika content loads + ongoing prefetch saat navigation
+- ✅ Error handling dan retry logic untuk robust prefetching
+
 ### 3. Download Range Feature (NEW)
 **Current State:**
 - Download system downloads semua images dari manga
@@ -652,6 +677,14 @@ class SearchFilter with _$SearchFilter {
 - [x] **Task 1.15:** Optimize didUpdateWidget untuk prevent unnecessary rebuilds ✅ COMPLETED
 - [x] **Task 1.16:** Reduce log spam dan improve production performance ✅ COMPLETED
 
+### Phase 1.6: Smart Image Prefetching (Priority: High) ✅ COMPLETED
+- [x] **Task 1.17:** Implement smart prefetching logic di ReaderScreen untuk next 5 pages ✅ COMPLETED
+- [x] **Task 1.18:** Add non-blocking background downloads using LocalImagePreloader ✅ COMPLETED
+- [x] **Task 1.19:** Implement tracking system untuk avoid duplicate prefetching ✅ COMPLETED
+- [x] **Task 1.20:** Integrate prefetching dengan all reading modes (single, vertical, continuous) ✅ COMPLETED
+- [x] **Task 1.21:** Add initial prefetch when content loads ✅ COMPLETED
+- [x] **Task 1.22:** Add error handling dan retry logic untuk robust prefetching ✅ COMPLETED
+
 ### Phase 2: Download Range Feature (Priority: High)
 - [ ] **Task 2.1:** Create `DownloadRangeSelector` widget ✅ COMPLETED
 - [ ] **Task 2.2:** Update `DownloadBloc` untuk support partial download
@@ -863,27 +896,35 @@ lib/core/routing/app_router.dart
    - ✅ Reduced widget performance impact dari expensive file operations
    - ✅ Improved debugging experience dengan focused, relevant logs
 
-4. **Download Range:**
+4. **Smart Image Prefetching:** ✅ COMPLETED
+   - ✅ Prefetch next 5 pages ahead in background when navigating
+   - ✅ Non-blocking downloads untuk smoother reading experience  
+   - ✅ Smart tracking system mencegah duplicate downloads
+   - ✅ Integrated dengan all reading modes (single, vertical, continuous scroll)
+   - ✅ Initial prefetch ketika content loads + ongoing prefetch during navigation
+   - ✅ Robust error handling dan retry logic
+
+5. **Download Range:**
    - ✅ Users dapat pilih download page range (X to Y)
    - ✅ Partial download working dengan proper metadata
    - ✅ Reader supports partial content seamlessly
 
-5. **Navigation Fix:**
+6. **Navigation Fix:**
    - ✅ Tag search dari detail selalu kembali ke MainScreen
    - ✅ No more nested detail navigation issues
    - ✅ Filter state properly maintained
 
-6. **Filter Highlight:**
+7. **Filter Highlight:**
    - ✅ Matching content ter-highlight dalam grid view
    - ✅ Visual feedback untuk search relevance working
    - ✅ Performance maintained dengan highlight effects
 
-7. **Enhanced Pagination:**
+8. **Enhanced Pagination:**
    - ✅ Simplified UI design tapi keep tap-to-jump functionality
    - ✅ Maintained navigation functionality dengan cleaner interface
    - ✅ Consistent across all screens
 
-8. **Search Input (CRITICAL):**
+9. **Search Input (CRITICAL):**
    - ✅ Input dapat dikosongkan completely (no phantom chars or rapid updates)
    - ✅ Debounced input working smoothly (300ms delay)
    - ✅ Direct navigation untuk numeric content IDs working (like nhentai web)
