@@ -55,7 +55,7 @@ class OfflineContentManager {
     try {
       final downloadStatus =
           await _userDataRepository.getDownloadStatus(contentId);
-      _logger.i("Location: path: ${downloadStatus?.downloadPath}");
+      // _logger.i("Location: path: ${downloadStatus?.downloadPath}");
       return downloadStatus?.downloadPath;
     } catch (e, stackTrace) {
       _logger.e('Error getting offline content path for $contentId',
@@ -103,7 +103,7 @@ class OfflineContentManager {
 
       for (final download in downloads) {
         if (await isContentAvailableOffline(download.contentId)) {
-          _logger.i("isi file nya: $download");
+          // _logger.i("isi file nya: $download");
           offlineIds.add(download.contentId);
         }
       }

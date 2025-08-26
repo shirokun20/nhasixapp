@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:logger/logger.dart';
@@ -61,6 +62,8 @@ class ProgressiveImageWidget extends StatefulWidget {
 
 class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
   static final Logger _logger = Logger();
+  static final Map<String, String?> _pathCache = {}; // ✅ Cache for resolved paths
+  
   String? _cachedLocalPath;
   bool _isLocalPathResolved = false;
 
@@ -93,14 +96,34 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
       return;
     }
 
-    _logger.d('Resolving local path for contentId: ${widget.contentId}, pageNumber: ${widget.pageNumber}, isThumbnail: ${widget.isThumbnail}');
+    // ✅ Check cache first to avoid repeated calls
+    final cacheKey = '${widget.contentId}_${widget.pageNumber}_${widget.isThumbnail}';
+    if (_pathCache.containsKey(cacheKey)) {
+      if (mounted) {
+        setState(() {
+          _cachedLocalPath = _pathCache[cacheKey];
+          _isLocalPathResolved = true;
+        });
+      }
+      return;
+    }
+
+    if (kDebugMode) {
+      _logger.d('🔍 Resolving local path for contentId: ${widget.contentId}, pageNumber: ${widget.pageNumber}, isThumbnail: ${widget.isThumbnail}');
+    }
     
-    // Debug file structure
-    await _debugFileStructure();
+    // ✅ REMOVED: _debugFileStructure() - too expensive and spammy
+    // Only run debug in extreme debug mode if needed
+    // if (kDebugMode) await _debugFileStructure();
     
     final localPath = await _getLocalImagePath();
     
-    _logger.d('Local path resolved: $localPath');
+    // ✅ Cache the result
+    _pathCache[cacheKey] = localPath;
+    
+    if (kDebugMode && localPath != null) {
+      _logger.d('✅ Local path resolved: $localPath');
+    }
     
     if (mounted) {
       setState(() {
@@ -131,40 +154,40 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     return _buildNetworkImage();
   }
 
-  /// Debug method to check actual file structure
+  /// Debug method to check actual file structure (only in debug mode)
   Future<void> _debugFileStructure() async {
-    if (widget.contentId == null) return;
+    if (widget.contentId == null || !kDebugMode) return;
     
     try {
       final baseLocalPath = await LocalImagePreloader.getBaseLocalPath();
       final contentFolderPath = await LocalImagePreloader.getContentFolderPath(widget.contentId!);
       final imagesFolderPath = await LocalImagePreloader.getImagesFolderPath(widget.contentId!);
       
-      _logger.d('Debug file structure for ${widget.contentId}:');
-      _logger.d('Base local path: $baseLocalPath');
-      _logger.d('Content folder path: $contentFolderPath');
-      _logger.d('Images folder path: $imagesFolderPath');
+      _logger.d('🔍 Debug file structure for ${widget.contentId}:');
+      _logger.d('📁 Base local path: $baseLocalPath');
+      _logger.d('📁 Content folder path: $contentFolderPath');
+      _logger.d('📁 Images folder path: $imagesFolderPath');
       
       // Check if directories exist
       final contentDir = Directory(contentFolderPath);
       final imagesDir = Directory(imagesFolderPath);
       
-      _logger.d('Content directory exists: ${await contentDir.exists()}');
-      _logger.d('Images directory exists: ${await imagesDir.exists()}');
+      _logger.d('📂 Content directory exists: ${await contentDir.exists()}');
+      _logger.d('📂 Images directory exists: ${await imagesDir.exists()}');
       
-      // List files in content directory
+      // List files in content directory (limit output)
       if (await contentDir.exists()) {
-        final contentFiles = await contentDir.list().toList();
-        _logger.d('Files in content directory: ${contentFiles.map((f) => f.path).toList()}');
+        final contentFiles = await contentDir.list().take(5).toList(); // Limit to 5 files
+        _logger.d('📄 Files in content directory (first 5): ${contentFiles.map((f) => f.path).toList()}');
       }
       
-      // List files in images directory
+      // List files in images directory (limit output)
       if (await imagesDir.exists()) {
-        final imageFiles = await imagesDir.list().toList();
-        _logger.d('Files in images directory: ${imageFiles.map((f) => f.path).toList()}');
+        final imageFiles = await imagesDir.list().take(5).toList(); // Limit to 5 files
+        _logger.d('🖼️ Files in images directory (first 5): ${imageFiles.map((f) => f.path).toList()}');
       }
     } catch (e) {
-      _logger.e('Error debugging file structure: $e');
+      _logger.e('❌ Error debugging file structure: $e');
     }
   }
 
@@ -176,10 +199,14 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     
     if (widget.isThumbnail) {
       localPath = await LocalImagePreloader.getLocalThumbnailPath(widget.contentId!);
-      _logger.d('Thumbnail path check for ${widget.contentId}: $localPath');
+      if (kDebugMode && localPath != null) {
+        _logger.d('🖼️ Thumbnail found for ${widget.contentId}: $localPath');
+      }
     } else if (widget.pageNumber != null) {
       localPath = await LocalImagePreloader.getLocalImagePath(widget.contentId!, widget.pageNumber!);
-      _logger.d('Page image path check for ${widget.contentId} page ${widget.pageNumber}: $localPath');
+      if (kDebugMode && localPath != null) {
+        _logger.d('📄 Page image found for ${widget.contentId} page ${widget.pageNumber}: $localPath');
+      }
     }
     
     return localPath;
@@ -187,7 +214,9 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
 
   /// Build local file image
   Widget _buildLocalImage(String localPath) {
-    _logger.d('Building local image from path: $localPath');
+    if (kDebugMode) {
+      _logger.d('📸 Using local image: $localPath');
+    }
     
     Widget imageWidget = Image.file(
       File(localPath),
@@ -195,7 +224,9 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
       height: widget.height,
       fit: widget.fit,
       errorBuilder: (context, error, stackTrace) {
-        _logger.e('Error loading local image from $localPath: $error');
+        if (kDebugMode) {
+          _logger.e('❌ Error loading local image from $localPath: $error');
+        }
         // If local file fails, fallback to network
         return _buildNetworkImage();
       },
@@ -220,6 +251,10 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
 
   /// Build network image with caching
   Widget _buildNetworkImage() {
+    if (kDebugMode) {
+      _logger.d('📡 Loading network image: ${widget.networkUrl}');
+    }
+    
     Widget imageWidget = CachedNetworkImage(
       imageUrl: widget.networkUrl,
       width: widget.width,
@@ -389,6 +424,10 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
   }
 
   Widget _buildNetworkImage(BuildContext context) {
+    if (kDebugMode) {
+      _logger.d('📡 Loading reader image: ${widget.networkUrl}');
+    }
+    
     return CachedNetworkImage(
       imageUrl: widget.networkUrl,
       fit: widget.fit,
