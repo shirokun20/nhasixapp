@@ -65,19 +65,35 @@ class _MainScreenState extends State<MainScreen> {
 
       // NEW: Check if we're in tag browsing mode
       if (widget.tagQuery != null && widget.tagQuery!.isNotEmpty) {
-        // Tag browsing mode - load content for specific tag
+        // Load user preferences to get excluded tags
+        final userPreferences = await userDataRepository.getUserPreferences();
+        
+        // Use blacklisted tags from preferences, or default NSFW tags if none set
+        List<String> excludedTagsList = userPreferences.blacklistedTags;
+        if (excludedTagsList.isEmpty) {
+          // Default excluded tags for NSFW content
+          excludedTagsList = ['lolicon', 'shotacon'];
+        }
+        
+        // Convert blacklisted tags to excluded FilterItems
+        final excludedTags = excludedTagsList
+            .map((tag) => FilterItem(value: tag, isExcluded: true))
+            .toList();
+        
+        // Tag browsing mode - load content for specific tag with excluded tags
         final tagFilter = SearchFilter(
           query: widget.tagQuery,
           sortBy: _currentSortOption,
           source: SearchSource.detailScreen,
           highlightMode: true,
           highlightQuery: widget.tagQuery,
+          tags: excludedTags, // NEW: Include excluded tags from user preferences
         );
         
         _currentSearchFilter = tagFilter;
         _isShowingSearchResults = true;
         _contentBloc.add(ContentSearchEvent(tagFilter));
-        Logger().i('MainScreen: Loading tag browsing content for: ${widget.tagQuery}');
+        Logger().i('MainScreen: Loading tag browsing content for: ${widget.tagQuery} with ${excludedTags.length} excluded tags: ${excludedTagsList.join(', ')}');
         return;
       }
 
@@ -688,6 +704,7 @@ class _MainScreenState extends State<MainScreen> {
     // Check excluded tags
     for (final tagFilter in filter.tags.where((t) => t.isExcluded)) {
       if (content.tags.any((tag) => tag.name.toLowerCase() == tagFilter.value.toLowerCase())) {
+        print('BLUR_DEBUG: Content ${content.id} should be blurred - matches excluded tag: ${tagFilter.value}');
         return true;
       }
     }
@@ -695,6 +712,7 @@ class _MainScreenState extends State<MainScreen> {
     // Check excluded groups
     for (final groupFilter in filter.groups.where((g) => g.isExcluded)) {
       if (content.groups.any((group) => group.toLowerCase() == groupFilter.value.toLowerCase())) {
+        print('BLUR_DEBUG: Content ${content.id} should be blurred - matches excluded group: ${groupFilter.value}');
         return true;
       }
     }
@@ -702,6 +720,7 @@ class _MainScreenState extends State<MainScreen> {
     // Check excluded characters
     for (final charFilter in filter.characters.where((c) => c.isExcluded)) {
       if (content.characters.any((char) => char.toLowerCase() == charFilter.value.toLowerCase())) {
+        print('BLUR_DEBUG: Content ${content.id} should be blurred - matches excluded character: ${charFilter.value}');
         return true;
       }
     }
@@ -709,6 +728,7 @@ class _MainScreenState extends State<MainScreen> {
     // Check excluded parodies
     for (final parodFilter in filter.parodies.where((p) => p.isExcluded)) {
       if (content.parodies.any((parod) => parod.toLowerCase() == parodFilter.value.toLowerCase())) {
+        print('BLUR_DEBUG: Content ${content.id} should be blurred - matches excluded parody: ${parodFilter.value}');
         return true;
       }
     }
@@ -716,6 +736,7 @@ class _MainScreenState extends State<MainScreen> {
     // Check excluded artists
     for (final artistFilter in filter.artists.where((a) => a.isExcluded)) {
       if (content.artists.any((artist) => artist.toLowerCase() == artistFilter.value.toLowerCase())) {
+        print('BLUR_DEBUG: Content ${content.id} should be blurred - matches excluded artist: ${artistFilter.value}');
         return true;
       }
     }
