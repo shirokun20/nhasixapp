@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 
 import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/entities.dart';
+import '../../services/download_service.dart';
 
 /// Widget for displaying individual download item with progress and actions
 class DownloadItemWidget extends StatelessWidget {
@@ -79,7 +81,7 @@ class DownloadItemWidget extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      '${download.progressPercentage}%',
+                      '${(download.progressPercentage > 100) ? '100' : download.progressPercentage}%',
                       style: TextStyleConst.bodySmall.copyWith(
                         color: ColorsConst.onSurface.withValues(alpha: 0.7),
                         fontWeight: FontWeight.w500,
@@ -100,12 +102,7 @@ class DownloadItemWidget extends StatelessWidget {
                       color: ColorsConst.onSurface.withValues(alpha: 0.6),
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      '${download.downloadedPages}/${download.totalPages}',
-                      style: TextStyleConst.bodySmall.copyWith(
-                        color: ColorsConst.onSurface.withValues(alpha: 0.7),
-                      ),
-                    ),
+                    _buildVerifiedPagesText(download),
                     const SizedBox(width: 16),
                   ],
 
@@ -449,6 +446,80 @@ class DownloadItemWidget extends StatelessWidget {
       return '${minutes}m ${seconds}s';
     } else {
       return '${seconds}s';
+    }
+  }
+
+  String _buildPagesText(DownloadStatus download) {
+    if (download.isRangeDownload) {
+      // For range downloads, show: "X/Y (Pages A-B of C)"
+      return '${download.downloadedPages}/${download.pagesToDownload} (Pages ${download.startPage}-${download.endPage} of ${download.totalPages})';
+    } else {
+      // For full downloads, show: "X/Y"
+      return '${download.downloadedPages}/${download.totalPages}';
+    }
+  }
+
+  /// Build verified pages text using actual file count
+  Widget _buildVerifiedPagesText(DownloadStatus download) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _verifyDownloadStatus(download.contentId),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Text(
+            _buildPagesText(download),
+            style: TextStyleConst.bodySmall.copyWith(
+              color: ColorsConst.onSurface.withValues(alpha: 0.7),
+            ),
+          );
+        }
+
+        final data = snapshot.data!;
+        final actualCount = data['actualCount'] as int;
+        final expectedCount = data['expectedCount'] as int?;
+        final isRangeDownload = data['isRangeDownload'] as bool;
+
+        // If expectedCount is null or 0, fall back to database values
+        if (expectedCount == null || expectedCount == 0) {
+          return Text(
+            _buildPagesText(download),
+            style: TextStyleConst.bodySmall.copyWith(
+              color: ColorsConst.onSurface.withValues(alpha: 0.7),
+            ),
+          );
+        }
+
+        String text;
+        if (isRangeDownload) {
+          final rangeStart = data['rangeStart'] as int?;
+          final rangeEnd = data['rangeEnd'] as int?;
+          final totalPages = data['totalPages'] as int?;
+          text = '$actualCount/$expectedCount (Pages $rangeStart-$rangeEnd of $totalPages)';
+        } else {
+          text = '$actualCount/$expectedCount';
+        }
+
+        return Text(
+          text,
+          style: TextStyleConst.bodySmall.copyWith(
+            color: ColorsConst.onSurface.withValues(alpha: 0.7),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Verify download status by checking actual files
+  Future<Map<String, dynamic>> _verifyDownloadStatus(String contentId) async {
+    try {
+      final downloadService = GetIt.instance<DownloadService>();
+      return await downloadService.verifyDownloadStatus(contentId);
+    } catch (e) {
+      // Return null expectedCount to trigger fallback to database values
+      return {
+        'actualCount': 0,
+        'expectedCount': null, // This will trigger fallback in _buildVerifiedPagesText
+        'isRangeDownload': false,
+      };
     }
   }
 }

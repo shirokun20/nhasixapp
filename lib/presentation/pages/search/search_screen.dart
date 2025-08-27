@@ -104,24 +104,18 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  /// Setup search listeners for text inputs with debounce and direct navigation
+  /// Setup search listeners for text inputs with debounce (NO direct navigation)
   void _setupSearchListeners() {
-    // Enhanced main search query listener with debounce and direct navigation
+    // Enhanced main search query listener with debounce only
     _searchController.addListener(() {
       // Cancel previous debounce timer
       _debounceTimer?.cancel();
       
-      // Start new debounce timer
+      // Start new debounce timer - ONLY for regular search, no direct navigation
       _debounceTimer = Timer(const Duration(milliseconds: 300), () {
         final query = _searchController.text.trim();
         
-        // Check if input is numeric content ID (like nhentai web behavior)
-        if (_contentIdPattern.hasMatch(query)) {
-          _navigateToContentById(query);
-          return;
-        }
-        
-        // Regular search behavior with debounce
+        // Regular search behavior with debounce (REMOVED numeric direct navigation)
         _currentFilter = _currentFilter.copyWith(
           query: query.isEmpty ? null : query,
         );
@@ -140,7 +134,7 @@ class _SearchScreenState extends State<SearchScreen> {
       
       // Navigate directly to detail screen
       if (mounted) {
-        context.push('/detail/$contentId');
+        AppRouter.goToContentDetail(context, contentId);
       }
     } catch (e) {
       // Handle error - show "Content not found" dialog
@@ -665,7 +659,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton.icon(
-                  onPressed: hasFilters && !isLoading ? _performSearch : null,
+                  onPressed: hasFilters && !isLoading ? _onSearchButtonPressed : null,
                   icon: isLoading
                       ? SizedBox(
                           width: 24,
@@ -1143,6 +1137,20 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   // Removed helper methods for complex filter management - now handled by FilterDataScreen
+
+  /// Handle search button press - check for numeric input first
+  void _onSearchButtonPressed() {
+    final query = _searchController.text.trim();
+    
+    // Check if input is numeric content ID (direct navigation without debounce)
+    if (_contentIdPattern.hasMatch(query)) {
+      _navigateToContentById(query);
+      return;
+    }
+    
+    // Regular search behavior for non-numeric input
+    _performSearch();
+  }
 
   void _performSearch() async {
     try {

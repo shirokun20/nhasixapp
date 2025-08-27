@@ -13,6 +13,9 @@ class DownloadStatusModel extends DownloadStatus {
     super.downloadPath,
     super.fileSize = 0,
     super.speed = 0.0,
+    super.retryCount = 0,
+    super.startPage,
+    super.endPage,
     this.title,
     this.coverUrl,
   });
@@ -37,6 +40,9 @@ class DownloadStatusModel extends DownloadStatus {
       downloadPath: status.downloadPath,
       fileSize: status.fileSize,
       speed: status.speed,
+      retryCount: status.retryCount,
+      startPage: status.startPage,
+      endPage: status.endPage,
       title: title,
       coverUrl: coverUrl,
     );
@@ -55,6 +61,9 @@ class DownloadStatusModel extends DownloadStatus {
       downloadPath: downloadPath,
       fileSize: fileSize,
       speed: speed,
+      retryCount: retryCount,
+      startPage: startPage,
+      endPage: endPage,
     );
   }
 
@@ -77,6 +86,9 @@ class DownloadStatusModel extends DownloadStatus {
       error: map['error_message'],
       downloadPath: map['download_path'],
       fileSize: map['file_size'] ?? 0,
+      retryCount: map['retry_count'] ?? 0,
+      startPage: map['start_page'],
+      endPage: map['end_page'],
       title: map['title'],
       coverUrl: map['cover_url'],
     );
@@ -96,6 +108,9 @@ class DownloadStatusModel extends DownloadStatus {
       'error_message': error,
       'download_path': downloadPath,
       'file_size': fileSize,
+      'retry_count': retryCount,
+      'start_page': startPage,
+      'end_page': endPage,
     };
   }
 }

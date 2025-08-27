@@ -556,9 +556,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
               ),
               const SizedBox(height: 16),
               _buildDetailRow('Status', download.statusText),
-              _buildDetailRow('Progress',
-                  '${download.downloadedPages}/${download.totalPages} pages'),
-              _buildDetailRow('Progress %', '${download.progressPercentage}%'),
+              _buildDetailRow('Progress', _buildProgressText(download)),
+              _buildDetailRow('Progress %', '${(download.progressPercentage > 100) ? '100' : download.progressPercentage}%'),
               if (download.speed > 0)
                 _buildDetailRow('Speed', download.formattedSpeed),
               if (download.fileSize > 0)
@@ -638,6 +637,16 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       return '${minutes}m ${seconds}s';
     } else {
       return '${seconds}s';
+    }
+  }
+
+  String _buildProgressText(DownloadStatus download) {
+    if (download.isRangeDownload) {
+      // For range downloads, show: "X/Y pages (Pages A-B of C)"
+      return '${download.downloadedPages}/${download.pagesToDownload} pages (Range: ${download.startPage}-${download.endPage} of ${download.totalPages})';
+    } else {
+      // For full downloads, show: "X/Y pages"
+      return '${download.downloadedPages}/${download.totalPages} pages';
     }
   }
 }

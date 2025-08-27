@@ -123,10 +123,13 @@ class ReaderCubit extends Cubit<ReaderState> {
       _logger.e("Reader Cubit: $e, $stackTrace");
       _stopAutoHideTimer();
 
-      final errorState = state.copyWith(
-        message: 'Failed to load content: ${e.toString()}',
-      );
-      emit(ReaderError(errorState));
+      // Check if cubit is still active before emitting state
+      if (!isClosed) {
+        final errorState = state.copyWith(
+          message: 'Failed to load content: ${e.toString()}',
+        );
+        emit(ReaderError(errorState));
+      }
     }
   }
 
@@ -139,7 +142,7 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   /// Navigate to next page
   void nextPage() {
-    if (!state.isLastPage) {
+    if (!state.isLastPage && !isClosed) {
       final newPage = (state.currentPage ?? 1) + 1;
       emit(state.copyWith(currentPage: newPage));
       _saveToHistory();
@@ -148,7 +151,7 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   /// Navigate to previous page
   void previousPage() {
-    if (!state.isFirstPage) {
+    if (!state.isFirstPage && !isClosed) {
       final newPage = (state.currentPage ?? 1) - 1;
       emit(state.copyWith(currentPage: newPage));
       _saveToHistory();
@@ -157,7 +160,12 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   /// Jump to specific page
   void jumpToPage(int page) {
-    if (page >= 1 && page <= state.content!.pageCount) {
+    goToPage(page);
+  }
+
+  /// Navigate to specific page
+  void goToPage(int page) {
+    if (!isClosed) {
       emit(state.copyWith(currentPage: page));
       _saveToHistory();
     }
@@ -165,39 +173,47 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   /// Toggle UI visibility
   void toggleUI() {
-    final newShowUI = !(state.showUI ?? true);
-    emit(state.copyWith(showUI: newShowUI));
+    if (!isClosed) {
+      final newShowUI = !(state.showUI ?? true);
+      emit(state.copyWith(showUI: newShowUI));
 
-    // Save to preferences with error handling
-    readerSettingsRepository.saveShowUI(newShowUI).catchError((e, stackTrace) {
-      _logger.e("Failed to save show UI setting: $e",
-          error: e, stackTrace: stackTrace);
-      // Settings will still apply for current session
-    });
+      // Save to preferences with error handling
+      readerSettingsRepository.saveShowUI(newShowUI).catchError((e, stackTrace) {
+        _logger.e("Failed to save show UI setting: $e",
+            error: e, stackTrace: stackTrace);
+        // Settings will still apply for current session
+      });
 
-    // Start auto-hide timer if UI is shown
-    if (newShowUI) {
-      _startAutoHideTimer();
-    } else {
-      _stopAutoHideTimer();
+      // Start auto-hide timer if UI is shown
+      if (newShowUI) {
+        _startAutoHideTimer();
+      } else {
+        _stopAutoHideTimer();
+      }
     }
   }
 
   /// Show UI temporarily
   void showUI() {
-    emit(state.copyWith(showUI: true));
+    if (!isClosed) {
+      emit(state.copyWith(showUI: true));
+    }
     _startAutoHideTimer();
   }
 
   /// Hide UI
   void hideUI() {
-    emit(state.copyWith(showUI: false));
+    if (!isClosed) {
+      emit(state.copyWith(showUI: false));
+    }
     _stopAutoHideTimer();
   }
 
   /// Change reading mode
   Future<void> changeReadingMode(ReadingMode mode) async {
-    emit(state.copyWith(readingMode: mode));
+    if (!isClosed) {
+      emit(state.copyWith(readingMode: mode));
+    }
 
     // Save to preferences with error handling
     try {
@@ -221,7 +237,9 @@ class ReaderCubit extends Cubit<ReaderState> {
         await WakelockPlus.disable();
       }
 
-      emit(state.copyWith(keepScreenOn: newKeepScreenOn));
+      if (!isClosed) {
+        emit(state.copyWith(keepScreenOn: newKeepScreenOn));
+      }
 
       // Save to preferences with error handling
       try {
@@ -246,11 +264,13 @@ class ReaderCubit extends Cubit<ReaderState> {
       _logger.i("Successfully reset reader settings to defaults");
 
       // Apply default settings to current state
-      emit(state.copyWith(
-        readingMode: ReadingMode.singlePage,
-        keepScreenOn: false,
-        showUI: true,
-      ));
+      if (!isClosed) {
+        emit(state.copyWith(
+          readingMode: ReadingMode.singlePage,
+          keepScreenOn: false,
+          showUI: true,
+        ));
+      }
 
       // Disable wakelock
       try {
@@ -264,11 +284,13 @@ class ReaderCubit extends Cubit<ReaderState> {
           error: e, stackTrace: stackTrace);
 
       // Still apply default settings to current state even if persistence failed
-      emit(state.copyWith(
-        readingMode: ReadingMode.singlePage,
-        keepScreenOn: false,
-        showUI: true,
-      ));
+      if (!isClosed) {
+        emit(state.copyWith(
+          readingMode: ReadingMode.singlePage,
+          keepScreenOn: false,
+          showUI: true,
+        ));
+      }
 
       // Try to disable wakelock anyway
       try {
@@ -305,10 +327,16 @@ class ReaderCubit extends Cubit<ReaderState> {
     _logger.i("start reading timer");
     _readingTimer?.cancel();
     _readingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      final currentTimer = state.readingTimer ?? Duration.zero;
-      emit(state.copyWith(
-        readingTimer: currentTimer + const Duration(seconds: 1),
-      ));
+      // Check if cubit is still active before emitting state
+      if (!isClosed) {
+        final currentTimer = state.readingTimer ?? Duration.zero;
+        emit(state.copyWith(
+          readingTimer: currentTimer + const Duration(seconds: 1),
+        ));
+      } else {
+        // Cancel timer if cubit is closed
+        timer.cancel();
+      }
     });
     _logger.i("end reading timer");
   }
@@ -323,7 +351,8 @@ class ReaderCubit extends Cubit<ReaderState> {
   void _startAutoHideTimer() {
     _stopAutoHideTimer();
     _autoHideTimer = Timer(const Duration(seconds: 3), () {
-      if (state.showUI ?? false) {
+      // Check if cubit is still active before calling hideUI
+      if (!isClosed && (state.showUI ?? false)) {
         hideUI();
       }
     });

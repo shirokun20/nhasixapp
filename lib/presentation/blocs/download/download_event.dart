@@ -18,13 +18,53 @@ class DownloadQueueEvent extends DownloadEvent {
   const DownloadQueueEvent({
     required this.content,
     this.priority = 0,
+    this.startPage,
+    this.endPage,
   });
 
   final Content content;
   final int priority;
+  final int? startPage;  // NEW: Start page for range download
+  final int? endPage;    // NEW: End page for range download
+
+  /// Check if this is a range download
+  bool get isRangeDownload => startPage != null && endPage != null;
+
+  /// Get effective start page (1 if not specified)
+  int get effectiveStartPage => startPage ?? 1;
+
+  /// Get effective end page (total pages if not specified)
+  int get effectiveEndPage => endPage ?? content.pageCount;
+
+  /// Get number of pages to download
+  int get pagesToDownload => effectiveEndPage - effectiveStartPage + 1;
 
   @override
-  List<Object?> get props => [content, priority];
+  List<Object?> get props => [content, priority, startPage, endPage];
+}
+
+/// Event to queue a range download
+class DownloadRangeEvent extends DownloadEvent {
+  const DownloadRangeEvent({
+    required this.content,
+    required this.startPage,
+    required this.endPage,
+    this.priority = 0,
+  });
+
+  final Content content;
+  final int startPage;
+  final int endPage;
+  final int priority;
+
+  /// Get number of pages to download
+  int get pagesToDownload => endPage - startPage + 1;
+
+  /// Validate range
+  bool get isValidRange => startPage >= 1 && endPage <= content.pageCount && startPage <= endPage;
+
+  @override
+  List<Object?> get props => [content, startPage, endPage, priority];
 }
 
 /// Event to start/resume a download

@@ -31,8 +31,7 @@ class AppRouter {
         path: AppRoute.home,
         name: AppRoute.homeName,
         builder: (context, state) {
-          return MainScreen(
-);
+          return MainScreen();
         },
       ),
 

@@ -58,18 +58,27 @@ class DownloadContentUseCase
         }
       }
 
-      // Create initial download status and save it
+      // Create initial download status and save it  
       var downloadStatus = DownloadStatus.initial(
         params.content.id,
         params.content.pageCount,
+        startPage: params.startPage,
+        endPage: params.endPage,
       );
 
       await _userDataRepository.saveDownloadStatus(downloadStatus);
 
       // Start actual download if not just queuing
       if (params.startImmediately) {
-        downloadStatus =
-            await _performActualDownload(params.content, downloadStatus, params.convertToPdf, params.imageQuality, params.timeoutDuration);
+        downloadStatus = await _performActualDownload(
+          params.content, 
+          downloadStatus, 
+          params.convertToPdf, 
+          params.imageQuality, 
+          params.timeoutDuration,
+          params.startPage,
+          params.endPage,
+        );
       }
 
       return downloadStatus;
@@ -100,6 +109,8 @@ class DownloadContentUseCase
     bool convertToPdf,
     String imageQuality,
     Duration? timeoutDuration,
+    int? startPage,
+    int? endPage,
   ) async {
     var currentStatus = initialStatus;
 
@@ -120,6 +131,8 @@ class DownloadContentUseCase
         content: contentWithFullUrls,
         imageQuality: imageQuality,
         timeoutDuration: timeoutDuration,
+        startPage: startPage,
+        endPage: endPage,
         onProgress: (progress) async {
           // ✅ FIXED: Only emit to stream, let DownloadBloc handle database saves
           // This prevents race condition between multiple save operations
@@ -280,6 +293,8 @@ class DownloadContentParams extends UseCaseParams {
     this.convertToPdf = false,
     this.imageQuality = 'high',
     this.timeoutDuration,
+    this.startPage, // NEW: Start page for range download
+    this.endPage,   // NEW: End page for range download
   });
 
   final Content content;
@@ -290,6 +305,17 @@ class DownloadContentParams extends UseCaseParams {
   final bool convertToPdf;
   final String imageQuality;
   final Duration? timeoutDuration;
+  final int? startPage; // NEW: Start page for range download (1-based)
+  final int? endPage;   // NEW: End page for range download (1-based)
+
+  /// Check if this is a range download
+  bool get isRangeDownload => startPage != null || endPage != null;
+
+  /// Get effective start page (1 if not specified)
+  int get effectiveStartPage => startPage ?? 1;
+
+  /// Get effective end page (total pages if not specified)
+  int get effectiveEndPage => endPage ?? content.pageCount;
 
   @override
   List<Object?> get props => [
@@ -301,6 +327,8 @@ class DownloadContentParams extends UseCaseParams {
         convertToPdf,
         imageQuality,
         timeoutDuration,
+        startPage,
+        endPage,
       ];
 
   DownloadContentParams copyWith({
@@ -312,6 +340,8 @@ class DownloadContentParams extends UseCaseParams {
     bool? convertToPdf,
     String? imageQuality,
     Duration? timeoutDuration,
+    int? startPage,
+    int? endPage,
   }) {
     return DownloadContentParams(
       content: content ?? this.content,
@@ -322,6 +352,8 @@ class DownloadContentParams extends UseCaseParams {
       convertToPdf: convertToPdf ?? this.convertToPdf,
       imageQuality: imageQuality ?? this.imageQuality,
       timeoutDuration: timeoutDuration ?? this.timeoutDuration,
+      startPage: startPage ?? this.startPage,
+      endPage: endPage ?? this.endPage,
     );
   }
 
@@ -361,7 +393,7 @@ class DownloadContentParams extends UseCaseParams {
 
   /// Create params for immediate download with images
   factory DownloadContentParams.immediate(Content content,
-      {bool convertToPdf = false, String imageQuality = 'high', Duration? timeoutDuration}) {
+      {bool convertToPdf = false, String imageQuality = 'high', Duration? timeoutDuration, int? startPage, int? endPage}) {
     return DownloadContentParams(
       content: content,
       priority: 5,
@@ -369,6 +401,8 @@ class DownloadContentParams extends UseCaseParams {
       convertToPdf: convertToPdf,
       imageQuality: imageQuality,
       timeoutDuration: timeoutDuration,
+      startPage: startPage,
+      endPage: endPage,
     );
   }
 

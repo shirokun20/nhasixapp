@@ -6,6 +6,7 @@ import '../../core/constants/text_style_const.dart';
 import '../../core/routing/app_router.dart';
 import '../../domain/entities/entities.dart';
 import '../blocs/download/download_bloc.dart';
+import 'download_range_selector.dart';
 
 /// Widget untuk tombol download dengan status dan progress
 class DownloadButtonWidget extends StatelessWidget {
@@ -41,14 +42,8 @@ class DownloadButtonWidget extends StatelessWidget {
             state.downloads.where((d) => d.contentId == content.id).firstOrNull;
 
         if (download == null) {
-          // Not downloaded, show download button with green color to match DetailScreen
-          return _buildButton(
-            context: context,
-            icon: Icons.download,
-            text: 'Download',
-            onPressed: () => _startDownload(context),
-            color: ColorsConst.accentGreen,
-          );
+          // Not downloaded, show download options with dropdown
+          return _buildDownloadOptionsButton(context);
         }
 
         // Show status based on download state
@@ -394,6 +389,80 @@ class DownloadButtonWidget extends StatelessWidget {
       SnackBar(
         content: Text('Download started: ${content.title}'),
         duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Widget _buildDownloadOptionsButton(BuildContext context) {
+    return PopupMenuButton<String>(
+      onSelected: (value) {
+        if (value == 'download_all') {
+          _startDownload(context);
+        } else if (value == 'download_range') {
+          _showRangeSelector(context);
+        }
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: 'download_all',
+          child: Row(
+            children: [
+              Icon(Icons.download, color: ColorsConst.accentGreen),
+              SizedBox(width: 8),
+              Text('Download All'),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'download_range',
+          child: Row(
+            children: [
+              Icon(Icons.folder_open, color: ColorsConst.accentBlue),
+              SizedBox(width: 8),
+              Text('Download Range'),
+            ],
+          ),
+        ),
+      ],
+      child: _buildButton(
+        context: context,
+        icon: Icons.download,
+        text: 'Download',
+        onPressed: null, // Handled by PopupMenuButton
+        color: ColorsConst.accentGreen,
+      ),
+    );
+  }
+
+  void _showRangeSelector(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => DownloadRangeSelector(
+        totalPages: content.pageCount,
+        contentTitle: content.title,
+        onRangeSelected: (startPage, endPage) {
+          _startRangeDownload(context, startPage, endPage);
+        },
+      ),
+    );
+  }
+
+  void _startRangeDownload(BuildContext context, int startPage, int endPage) {
+    context.read<DownloadBloc>().add(DownloadRangeEvent(
+      content: content,
+      startPage: startPage,
+      endPage: endPage,
+    ));
+    context.read<DownloadBloc>().add(DownloadStartEvent(content.id));
+
+    final pageText = startPage == endPage 
+        ? 'page $startPage' 
+        : 'pages $startPage-$endPage';
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Range download started: ${content.title} ($pageText)'),
+        duration: const Duration(seconds: 3),
       ),
     );
   }

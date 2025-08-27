@@ -43,6 +43,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     // Register event handlers
     on<DownloadInitializeEvent>(_onInitialize);
     on<DownloadQueueEvent>(_onQueue);
+    on<DownloadRangeEvent>(_onRange);
     on<DownloadStartEvent>(_onStart);
     on<DownloadPauseEvent>(_onPause);
     on<DownloadCancelEvent>(_onCancel);
@@ -269,10 +270,12 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         return;
       }
 
-      // Create download status with priority
+      // Create download status with range support
       final downloadStatus = DownloadStatus.initial(
         event.content.id,
         event.content.pageCount,
+        startPage: event.startPage,
+        endPage: event.endPage,
       );
 
       // Save to database
@@ -287,9 +290,13 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // Send notification
       if (currentState.settings.enableNotifications) {
+        final title = event.content.title;
+        final rangeText = downloadStatus.isRangeDownload 
+            ? ' (Pages ${downloadStatus.startPage}-${downloadStatus.endPage})'
+            : '';
         _notificationService.showDownloadStarted(
           contentId: event.content.id,
-          title: event.content.title,
+          title: '$title$rangeText',
         );
       }
 
@@ -302,6 +309,86 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           error: e, stackTrace: stackTrace);
       emit(DownloadError(
         message: 'Failed to queue download: ${e.toString()}',
+        errorType: _determineErrorType(e),
+        previousState: currentState,
+        stackTrace: stackTrace,
+      ));
+    }
+  }
+
+  /// Queue a range download (specific pages)
+  Future<void> _onRange(
+    DownloadRangeEvent event,
+    Emitter<DownloadBlocState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! DownloadLoaded) {
+      _logger.w('DownloadBloc: Cannot queue range download - not in loaded state');
+      return;
+    }
+
+    try {
+      _logger.i('DownloadBloc: Queuing range download for ${event.content.id} (pages ${event.startPage}-${event.endPage})');
+
+      // Validate page range
+      if (!event.isValidRange) {
+        throw ArgumentError('Invalid page range: ${event.startPage}-${event.endPage} (total: ${event.content.pageCount})');
+      }
+
+      // Check if already exists
+      final existingDownload = currentState.downloads
+          .where((d) => d.contentId == event.content.id)
+          .firstOrNull;
+
+      if (existingDownload != null) {
+        _logger.w('DownloadBloc: Content ${event.content.id} already in download list');
+        
+        // If download failed or was cancelled, retry it
+        if (existingDownload.canRetry) {
+          _logger.i('DownloadBloc: Retrying existing download for ${event.content.id}');
+          add(DownloadRetryEvent(event.content.id));
+        }
+        
+        return;
+      }
+
+      // Create download status for range download
+      final downloadStatus = DownloadStatus.initial(
+        event.content.id,
+        event.content.pageCount,
+        startPage: event.startPage,
+        endPage: event.endPage,
+      );
+
+      // Save to database
+      await _userDataRepository.saveDownloadStatus(downloadStatus);
+
+      // Update state with new download added
+      final updatedDownloads = [...currentState.downloads, downloadStatus];
+      emit(currentState.copyWith(
+        downloads: updatedDownloads,
+        lastUpdated: DateTime.now(),
+      ));
+
+      // Send notification with range info
+      if (currentState.settings.enableNotifications) {
+        final title = event.content.title;
+        final rangeText = ' (Pages ${event.startPage}-${event.endPage})';
+        _notificationService.showDownloadStarted(
+          contentId: event.content.id,
+          title: '$title$rangeText',
+        );
+      }
+
+      _logger.i('DownloadBloc: Queued range download for ${event.content.id}');
+      
+      // Check if we can start downloading right away
+      _processQueue();
+    } catch (e, stackTrace) {
+      _logger.e('DownloadBloc: Error queuing range download',
+          error: e, stackTrace: stackTrace);
+      emit(DownloadError(
+        message: 'Failed to queue range download: ${e.toString()}',
         errorType: _determineErrorType(e),
         previousState: currentState,
         stackTrace: stackTrace,
@@ -402,6 +489,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         content,
         imageQuality: currentState.settings.imageQuality,
         timeoutDuration: currentState.settings.timeoutDuration,
+        startPage: updatedDownload.startPage,
+        endPage: updatedDownload.endPage,
       );
       final result = await _downloadContentUseCase.call(downloadParams);
 

@@ -32,6 +32,8 @@ class DownloadService {
     CancelToken? cancelToken,
     String imageQuality = 'high', // Default to high quality
     Duration? timeoutDuration, // Optional timeout override
+    int? startPage, // NEW: Start page for range download (1-based)
+    int? endPage,   // NEW: End page for range download (1-based)
   }) async {
     try {
       _logger.i('Starting download for content: ${content.id}');
@@ -42,23 +44,58 @@ class DownloadService {
       // Create download directory
       final downloadDir = await _createDownloadDirectory(content.id);
 
+      // Calculate actual page range to download
+      final actualStartPage = startPage ?? 1;
+      final actualEndPage = endPage ?? content.imageUrls.length;
+      
+      // Validate range
+      if (actualStartPage < 1 || actualEndPage > content.imageUrls.length || actualStartPage > actualEndPage) {
+        throw ArgumentError('Invalid page range: $actualStartPage-$actualEndPage (total: ${content.imageUrls.length})');
+      }
+      
+      final isRangeDownload = startPage != null || endPage != null;
+      final pagesToDownload = actualEndPage - actualStartPage + 1;
+      
+      _logger.i('Download range: pages $actualStartPage-$actualEndPage ($pagesToDownload pages)${isRangeDownload ? ' [RANGE]' : ' [FULL]'}');
+
       // ✅ FIXED: Check existing downloaded files for proper resume
       final existingFiles = await _getExistingDownloadedFiles(downloadDir);
-      final totalImages = content.imageUrls.length;
-      var downloadedCount = existingFiles.length; // Start from existing count
+      final totalImages = isRangeDownload ? pagesToDownload : content.imageUrls.length;
+      var downloadedCount = 0; // Reset for range downloads
 
-      _logger.i('Found ${existingFiles.length} existing files, continuing from page ${downloadedCount + 1}');
+      // For range downloads, count only files in the specified range
+      if (isRangeDownload) {
+        for (int pageNum = actualStartPage; pageNum <= actualEndPage; pageNum++) {
+          final fileName = 'page_${pageNum.toString().padLeft(3, '0')}.jpg';
+          final filePath = path.join(downloadDir.path, fileName);
+          if (await File(filePath).exists()) {
+            downloadedCount++;
+          }
+        }
+      } else {
+        downloadedCount = existingFiles.length; // Use existing count for full downloads
+      }
 
-      // Show start notification
+      _logger.i('Found ${downloadedCount} existing files in range, continuing download');
+
+      // Show start notification with range info
+      final rangeText = isRangeDownload ? ' (Pages $actualStartPage-$actualEndPage)' : '';
       await _notificationService.showDownloadStarted(
         contentId: content.id,
-        title: content.title,
+        title: '${content.title}$rangeText',
       );
 
-      final downloadedFiles = List<String>.from(existingFiles); // Include existing files
+      final downloadedFiles = <String>[];
+      
+      // Add existing files to the list if doing full download
+      if (!isRangeDownload) {
+        downloadedFiles.addAll(existingFiles);
+      }
 
-      // Download each image
-      for (int i = 0; i < content.imageUrls.length; i++) {
+      // Download each image in the specified range
+      for (int pageNum = actualStartPage; pageNum <= actualEndPage; pageNum++) {
+        final i = pageNum - 1; // Convert to 0-based index for imageUrls array
+        
         // Check for cancellation
         if (cancelToken?.isCancelled == true) {
           throw DioException(
@@ -85,12 +122,16 @@ class DownloadService {
         // Apply image quality setting
         final optimizedImageUrl = _getOptimizedImageUrl(imageUrl, imageQuality);
         
-        final fileName = 'page_${(i + 1).toString().padLeft(3, '0')}.jpg';
+        final fileName = 'page_${pageNum.toString().padLeft(3, '0')}.jpg';
         final filePath = path.join(downloadDir.path, fileName);
 
         // ✅ FIXED: Skip if file already exists (for proper resume)
         if (await File(filePath).exists()) {
           _logger.d('Skipping existing file: $fileName');
+          // For range downloads, add to list even if already exists
+          if (isRangeDownload && !downloadedFiles.contains(filePath)) {
+            downloadedFiles.add(filePath);
+          }
           continue;
         }
 
@@ -106,7 +147,7 @@ class DownloadService {
           downloadedFiles.add(filePath);
           downloadedCount++;
 
-          // Update progress
+          // Update progress with proper calculation for range downloads
           final progress = DownloadProgress(
             contentId: content.id,
             downloadedPages: downloadedCount,
@@ -119,25 +160,26 @@ class DownloadService {
           // ✅ REMOVED: Direct notification update to prevent race condition
           // Notification will be updated through DownloadBloc for better synchronization
 
-          _logger.d('Downloaded image ${i + 1}/$totalImages: $fileName');
+          _logger.d('Downloaded page $pageNum ($downloadedCount/$totalImages): $fileName');
         } catch (e, stackTrace) {
-          _logger.e('Failed to download image ${i + 1}: $e and $stackTrace');
+          _logger.e('Failed to download page $pageNum: $e and $stackTrace');
           // Continue with next image instead of failing completely
           continue;
         }
       }
 
-      // Save metadata
-      await _saveDownloadMetadata(content, downloadDir, downloadedFiles);
+      // Save metadata with range information
+      await _saveDownloadMetadata(content, downloadDir, downloadedFiles, actualStartPage, actualEndPage);
 
-      // Show completion notification
+      // Show completion notification with range info
+      final completionRangeText = isRangeDownload ? ' (Pages $actualStartPage-$actualEndPage)' : '';
       await _notificationService.showDownloadCompleted(
         contentId: content.id,
-        title: content.title,
+        title: '${content.title}$completionRangeText',
         downloadPath: downloadDir.path,
       );
 
-      _logger.i('Download completed for content: ${content.id}');
+      _logger.i('Download completed for content: ${content.id}${isRangeDownload ? " (range: $actualStartPage-$actualEndPage)" : ""}');
 
       return DownloadResult(
         success: true,
@@ -347,7 +389,10 @@ class DownloadService {
     Content content,
     Directory downloadDir,
     List<String> downloadedFiles,
+    int startPage,
+    int endPage,
   ) async {
+    final isRangeDownload = startPage > 1 || endPage < content.pageCount;
     final metadata = {
       'content_id': content.id,
       'title': content.title,
@@ -359,6 +404,11 @@ class DownloadService {
       'artists': content.artists,
       'language': content.language,
       'cover_url': content.coverUrl,
+      // NEW: Range download information
+      'is_range_download': isRangeDownload,
+      'start_page': startPage,
+      'end_page': endPage,
+      'pages_downloaded': endPage - startPage + 1,
     };
 
     final metadataFile =
@@ -517,6 +567,114 @@ class DownloadService {
     final optimizedUrl = imageUrl.getOptimized(quality);
     
     return optimizedUrl.value;
+  }
+
+  /// Count actual downloaded files in the folder
+  Future<int> countDownloadedFiles(String contentId) async {
+    try {
+      final downloadsDir = await _getDownloadsDirectory();
+      final nhasixDir = Directory(path.join(downloadsDir, 'nhasix'));
+      final contentDir = Directory(path.join(nhasixDir.path, contentId));
+      final imagesDir = Directory(path.join(contentDir.path, 'images'));
+      
+      _logger.d('Checking directories for content $contentId:');
+      _logger.d('Downloads dir: $downloadsDir');
+      _logger.d('Nhasix dir: ${nhasixDir.path} (exists: ${await nhasixDir.exists()})');
+      _logger.d('Content dir: ${contentDir.path} (exists: ${await contentDir.exists()})');
+      _logger.d('Images dir: ${imagesDir.path} (exists: ${await imagesDir.exists()})');
+      
+      // Use the same logic as _createDownloadDirectory - images dir is primary
+      if (!await imagesDir.exists()) {
+        _logger.w('Images directory does not exist: ${imagesDir.path}');
+        return 0;
+      }
+
+      // List all files in the directory for debugging
+      final allEntities = await imagesDir.list().toList();
+      _logger.d('All entities in ${imagesDir.path}:');
+      for (final entity in allEntities) {
+        _logger.d('  - ${entity.path} (is File: ${entity is File})');
+      }
+
+      final files = await imagesDir.list()
+          .where((entity) => entity is File && 
+                            (entity.path.endsWith('.jpg') || 
+                             entity.path.endsWith('.jpeg') || 
+                             entity.path.endsWith('.png') || 
+                             entity.path.endsWith('.webp')))
+          .length;
+
+      _logger.i('Found $files downloaded image files for content $contentId in ${imagesDir.path}');
+      return files;
+    } catch (e) {
+      _logger.e('Error counting downloaded files for $contentId: $e');
+      return 0;
+    }
+  }
+
+  /// Verify and update download status based on actual files
+  Future<Map<String, dynamic>> verifyDownloadStatus(String contentId) async {
+    try {
+      final actualCount = await countDownloadedFiles(contentId);
+      final downloadsDir = await _getDownloadsDirectory();
+      final contentDir = Directory(path.join(downloadsDir, 'nhasix', contentId));
+      final metadataPath = path.join(contentDir.path, 'metadata.json');
+      
+      _logger.d('Verifying download status for $contentId:');
+      _logger.d('Actual file count: $actualCount');
+      _logger.d('Metadata path: $metadataPath');
+      
+      if (await File(metadataPath).exists()) {
+        final metadataContent = await File(metadataPath).readAsString();
+        final metadata = json.decode(metadataContent) as Map<String, dynamic>;
+        
+        _logger.d('Metadata content: $metadata');
+        
+        // Get expected count based on range or total
+        // Use snake_case keys as saved in _saveDownloadMetadata
+        final isRangeDownload = metadata['is_range_download'] == true;
+        final int expectedCount;
+        
+        if (isRangeDownload) {
+          final startPage = metadata['start_page'] ?? 1;
+          final endPage = metadata['end_page'] ?? metadata['total_pages'];
+          expectedCount = endPage - startPage + 1;
+          _logger.d('Range download: $startPage-$endPage, expected: $expectedCount');
+        } else {
+          // Use snake_case key as saved in metadata
+          final totalPagesFromMeta = metadata['total_pages'] ?? 0;
+          expectedCount = totalPagesFromMeta;
+          _logger.d('Full download: total_pages=${metadata['total_pages']}, expected: $expectedCount');
+        }
+        
+        final result = {
+          'actualCount': actualCount,
+          'expectedCount': expectedCount,
+          'isRangeDownload': isRangeDownload,
+          'rangeStart': metadata['start_page'],
+          'rangeEnd': metadata['end_page'],
+          'totalPages': metadata['total_pages'],
+        };
+        
+        _logger.d('Verification result: $result');
+        return result;
+      }
+      
+      _logger.w('Metadata file not found, falling back to database values');
+      // For downloads without metadata, return null to indicate fallback needed
+      return {
+        'actualCount': actualCount,
+        'expectedCount': null, // Indicates to fall back to database values
+        'isRangeDownload': false,
+      };
+    } catch (e) {
+      _logger.e('Error verifying download status for $contentId: $e');
+      return {
+        'actualCount': 0,
+        'expectedCount': null, // Indicates to fall back to database values
+        'isRangeDownload': false,
+      };
+    }
   }
 }
 

@@ -685,12 +685,12 @@ class SearchFilter with _$SearchFilter {
 - [x] **Task 1.21:** Add initial prefetch when content loads ✅ COMPLETED
 - [x] **Task 1.22:** Add error handling dan retry logic untuk robust prefetching ✅ COMPLETED
 
-### Phase 2: Download Range Feature (Priority: High)
-- [ ] **Task 2.1:** Create `DownloadRangeSelector` widget ✅ COMPLETED
-- [ ] **Task 2.2:** Update `DownloadBloc` untuk support partial download
-- [ ] **Task 2.3:** Modify download system untuk range-based downloading
-- [ ] **Task 2.4:** Update metadata.json structure untuk partial content
-- [ ] **Task 2.5:** Test range download functionality
+### Phase 2: Download Range Feature (Priority: High) ✅ COMPLETED
+- [x] **Task 2.1:** Create `DownloadRangeSelector` widget ✅ COMPLETED
+- [x] **Task 2.2:** Update `DownloadBloc` untuk support partial download ✅ COMPLETED
+- [x] **Task 2.3:** Modify download system untuk range-based downloading ✅ COMPLETED
+- [x] **Task 2.4:** Update metadata.json structure untuk partial content ✅ COMPLETED
+- [x] **Task 2.5:** Test range download functionality ✅ COMPLETED
 
 ### Phase 3: Navigation Bug Fix (Priority: High)
 - [ ] **Task 3.1:** Fix `_searchByTag` navigation untuk clear stack ✅ COMPLETED
@@ -779,12 +779,12 @@ lib/core/routing/app_router.dart
 - [ ] Test thumbnail preloader di grid view
 - [ ] Performance comparison: downloaded vs cache vs network
 
-### 2. Download Range Testing
-- [ ] Test range selector UI dan UX
-- [ ] Test partial download (page 5-10 dari 50 pages)
-- [ ] Test metadata.json dengan partial content info
-- [ ] Test reader compatibility dengan partial content
-- [ ] Test edge cases (invalid ranges, single page)
+### 2. Download Range Testing ✅ COMPLETED
+- [x] Test range selector UI dan UX ✅ COMPLETED
+- [x] Test partial download (page 5-10 dari 50 pages) ✅ COMPLETED
+- [x] Test metadata.json dengan partial content info ✅ COMPLETED
+- [x] Test reader compatibility dengan partial content ✅ COMPLETED
+- [x] Test edge cases (invalid ranges, single page) ✅ COMPLETED
 
 ### 3. Navigation Fix Testing
 - [ ] Test detail → related → detail → tag navigation flow
@@ -904,7 +904,7 @@ lib/core/routing/app_router.dart
    - ✅ Initial prefetch ketika content loads + ongoing prefetch during navigation
    - ✅ Robust error handling dan retry logic
 
-5. **Download Range:**
+5. **Download Range:** ✅ COMPLETED
    - ✅ Users dapat pilih download page range (X to Y)
    - ✅ Partial download working dengan proper metadata
    - ✅ Reader supports partial content seamlessly

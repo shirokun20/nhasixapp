@@ -1,151 +1,57 @@
-import 'package:equatable/equatable.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-/// Filter item with include/exclude functionality
-class FilterItem extends Equatable {
-  const FilterItem({
-    required this.value,
-    this.isExcluded = false,
-  });
+part 'search_filter.freezed.dart';
+part 'search_filter.g.dart';
 
-  final String value;
-  final bool isExcluded; // true = exclude, false = include
+/// Filter item for tagging and categorization
+@freezed
+class FilterItem with _$FilterItem {
+  const factory FilterItem({
+    required String value,
+    required bool isExcluded,
+  }) = _FilterItem;
 
-  @override
-  List<Object?> get props => [value, isExcluded];
+  /// Create an included filter item
+  factory FilterItem.include(String value) => FilterItem(value: value, isExcluded: false);
+  
+  /// Create an excluded filter item
+  factory FilterItem.exclude(String value) => FilterItem(value: value, isExcluded: true);
 
-  FilterItem copyWith({
-    String? value,
-    bool? isExcluded,
-  }) {
-    return FilterItem(
-      value: value ?? this.value,
-      isExcluded: isExcluded ?? this.isExcluded,
-    );
-  }
+  factory FilterItem.fromJson(Map<String, dynamic> json) => _$FilterItemFromJson(json);
+}
 
-  /// Create include filter item
-  factory FilterItem.include(String value) {
-    return FilterItem(value: value, isExcluded: false);
-  }
-
-  /// Create exclude filter item
-  factory FilterItem.exclude(String value) {
-    return FilterItem(value: value, isExcluded: true);
-  }
-
+/// Extension for FilterItem helper methods
+extension FilterItemExtension on FilterItem {
   /// Get prefix for query string
   String get prefix => isExcluded ? '-' : '';
-
-  /// Convert to JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'value': value,
-      'isExcluded': isExcluded,
-    };
-  }
-
-  /// Create from JSON
-  factory FilterItem.fromJson(Map<String, dynamic> json) {
-    return FilterItem(
-      value: json['value'] as String,
-      isExcluded: json['isExcluded'] as bool? ?? false,
-    );
-  }
 }
 
 /// Search filter entity for advanced content filtering
-class SearchFilter extends Equatable {
-  const SearchFilter({
-    this.query,
-    this.tags = const [],
-    this.artists = const [],
-    this.characters = const [],
-    this.parodies = const [],
-    this.groups = const [],
-    this.language,
-    this.category,
-    this.page = 1,
-    this.sortBy = SortOption.newest,
-    this.popular = false,
-    this.pageCountRange,
-    this.source = SearchSource.unknown,
-    this.highlightMode = false,
-    this.highlightQuery,
-  });
-
-  final String? query;
-  final List<FilterItem> tags;
-  final List<FilterItem> artists;
-  final List<FilterItem> characters;
-  final List<FilterItem> parodies;
-  final List<FilterItem> groups;
-  final String? language; // Single select only
-  final String? category; // Single select only
-  final int page;
-  final SortOption sortBy;
-  final bool popular; // Popular filter
-  final IntRange? pageCountRange;
-  final SearchSource source; // Navigation source tracking
-  final bool highlightMode; // Enable blur effect for excluded content
-  final String? highlightQuery; // Specific query to highlight (can differ from main query)
-
-  @override
-  List<Object?> get props => [
-        query,
-        tags,
-        artists,
-        characters,
-        parodies,
-        groups,
-        language,
-        category,
-        page,
-        sortBy,
-        popular,
-        pageCountRange,
-        source,
-        highlightMode,
-        highlightQuery,
-      ];
-
-  static const _undefined = Object();
-
-  SearchFilter copyWith({
+@freezed
+class SearchFilter with _$SearchFilter {
+  const factory SearchFilter({
     String? query,
-    List<FilterItem>? tags,
-    List<FilterItem>? artists,
-    List<FilterItem>? characters,
-    List<FilterItem>? parodies,
-    List<FilterItem>? groups,
-    Object? language = _undefined,
-    Object? category = _undefined,
-    int? page,
-    SortOption? sortBy,
-    bool? popular,
+    @Default([]) List<FilterItem> tags,
+    @Default([]) List<FilterItem> artists,
+    @Default([]) List<FilterItem> characters,
+    @Default([]) List<FilterItem> parodies,
+    @Default([]) List<FilterItem> groups,
+    String? language, // Single select only
+    String? category, // Single select only
+    @Default(1) int page,
+    @Default(SortOption.newest) SortOption sortBy,
+    @Default(false) bool popular, // Popular filter
     IntRange? pageCountRange,
-    SearchSource? source,
-    bool? highlightMode,
-    Object? highlightQuery = _undefined,
-  }) {
-    return SearchFilter(
-      query: query ?? this.query,
-      tags: tags ?? this.tags,
-      artists: artists ?? this.artists,
-      characters: characters ?? this.characters,
-      parodies: parodies ?? this.parodies,
-      groups: groups ?? this.groups,
-      language: language == _undefined ? this.language : language as String?,
-      category: category == _undefined ? this.category : category as String?,
-      page: page ?? this.page,
-      sortBy: sortBy ?? this.sortBy,
-      popular: popular ?? this.popular,
-      pageCountRange: pageCountRange ?? this.pageCountRange,
-      source: source ?? this.source,
-      highlightMode: highlightMode ?? this.highlightMode,
-      highlightQuery: highlightQuery == _undefined ? this.highlightQuery : highlightQuery as String?,
-    );
-  }
+    @Default(SearchSource.unknown) SearchSource source, // Navigation source tracking
+    @Default(false) bool highlightMode, // Enable blur effect for excluded content
+    String? highlightQuery, // Specific query to highlight (can differ from main query)
+  }) = _SearchFilter;
 
+  factory SearchFilter.fromJson(Map<String, dynamic> json) => _$SearchFilterFromJson(json);
+}
+
+/// Extension for SearchFilter helper methods
+extension SearchFilterExtension on SearchFilter {
   /// Check if filter is empty (no criteria set)
   bool get isEmpty {
     return query == null &&
@@ -422,49 +328,6 @@ class SearchFilter extends Equatable {
     };
   }
 
-  /// Create from JSON for persistence
-  factory SearchFilter.fromJson(Map<String, dynamic> json) {
-    return SearchFilter(
-      query: json['query'] as String?,
-      tags: (json['tags'] as List<dynamic>?)
-              ?.map((item) => FilterItem.fromJson(item as Map<String, dynamic>))
-              .toList() ??
-          const [],
-      artists: (json['artists'] as List<dynamic>?)
-              ?.map((item) => FilterItem.fromJson(item as Map<String, dynamic>))
-              .toList() ??
-          const [],
-      characters: (json['characters'] as List<dynamic>?)
-              ?.map((item) => FilterItem.fromJson(item as Map<String, dynamic>))
-              .toList() ??
-          const [],
-      parodies: (json['parodies'] as List<dynamic>?)
-              ?.map((item) => FilterItem.fromJson(item as Map<String, dynamic>))
-              .toList() ??
-          const [],
-      groups: (json['groups'] as List<dynamic>?)
-              ?.map((item) => FilterItem.fromJson(item as Map<String, dynamic>))
-              .toList() ??
-          const [],
-      language: json['language'] as String?,
-      category: json['category'] as String?,
-      page: json['page'] as int? ?? 1,
-      sortBy: SortOption.values.firstWhere(
-        (e) => e.name == json['sortBy'],
-        orElse: () => SortOption.newest,
-      ),
-      popular: json['popular'] as bool? ?? false,
-      pageCountRange: json['pageCountRange'] != null
-          ? IntRange.fromJson(json['pageCountRange'] as Map<String, dynamic>)
-          : null,
-      source: SearchSource.values.firstWhere(
-        (e) => e.apiValue == json['source'],
-        orElse: () => SearchSource.unknown,
-      ),
-      highlightMode: json['highlightMode'] as bool? ?? false,
-      highlightQuery: json['highlightQuery'] as String?,
-    );
-  }
 }
 
 /// Sort options for content
@@ -542,25 +405,18 @@ extension SortOptionExtension on SortOption {
 }
 
 /// Integer range for filtering
-class IntRange extends Equatable {
-  const IntRange({this.min, this.max});
-
-  final int? min;
-  final int? max;
-
-  @override
-  List<Object?> get props => [min, max];
-
-  IntRange copyWith({
+@freezed
+class IntRange with _$IntRange {
+  const factory IntRange({
     int? min,
     int? max,
-  }) {
-    return IntRange(
-      min: min ?? this.min,
-      max: max ?? this.max,
-    );
-  }
+  }) = _IntRange;
 
+  factory IntRange.fromJson(Map<String, dynamic> json) => _$IntRangeFromJson(json);
+}
+
+/// Extension for IntRange helper methods
+extension IntRangeExtension on IntRange {
   /// Check if value is within range
   bool contains(int value) {
     if (min != null && value < min!) return false;
@@ -586,39 +442,22 @@ class IntRange extends Equatable {
     }
     return '';
   }
-
-  /// Convert to JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'min': min,
-      'max': max,
-    };
-  }
-
-  /// Create from JSON
-  factory IntRange.fromJson(Map<String, dynamic> json) {
-    return IntRange(
-      min: json['min'] as int?,
-      max: json['max'] as int?,
-    );
-  }
 }
 
 /// Result of filter validation
-class FilterValidationResult extends Equatable {
-  const FilterValidationResult({
-    required this.isValid,
-    required this.errors,
-    required this.warnings,
-  });
+@freezed
+class FilterValidationResult with _$FilterValidationResult {
+  const factory FilterValidationResult({
+    required bool isValid,
+    required List<String> errors,
+    required List<String> warnings,
+  }) = _FilterValidationResult;
 
-  final bool isValid;
-  final List<String> errors;
-  final List<String> warnings;
+  factory FilterValidationResult.fromJson(Map<String, dynamic> json) => _$FilterValidationResultFromJson(json);
+}
 
-  @override
-  List<Object> get props => [isValid, errors, warnings];
-
+/// Extension for FilterValidationResult helper methods
+extension FilterValidationResultExtension on FilterValidationResult {
   /// Check if has any issues
   bool get hasIssues => errors.isNotEmpty || warnings.isNotEmpty;
 

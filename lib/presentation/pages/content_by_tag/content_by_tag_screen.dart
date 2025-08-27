@@ -49,33 +49,18 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
       final userDataRepository = getIt<UserDataRepository>();
       _currentSortOption = await userDataRepository.getSortingPreference();
 
-      // Load user preferences to get excluded tags
-      final userPreferences = await userDataRepository.getUserPreferences();
-      
-      // Use blacklisted tags from preferences, or default NSFW tags if none set
-      List<String> excludedTagsList = userPreferences.blacklistedTags;
-      if (excludedTagsList.isEmpty) {
-        // Default excluded tags for NSFW content
-        excludedTagsList = ['lolicon', 'shotacon'];
-      }
-      
-      // Convert blacklisted tags to excluded FilterItems
-      final excludedTags = excludedTagsList
-          .map((tag) => FilterItem(value: tag, isExcluded: true))
-          .toList();
 
       // Create search filter for the tag
       final searchFilter = SearchFilter(
         query: widget.tagQuery,
         sortBy: _currentSortOption,
         source: SearchSource.detailScreen,
-        tags: excludedTags, // Include excluded tags
       );
 
       _currentSearchFilter = searchFilter;
       _contentBloc.add(ContentSearchEvent(searchFilter));
       
-      Logger().i('ContentByTagScreen: Loading content for tag: ${widget.tagQuery} with ${excludedTags.length} excluded tags');
+      Logger().i('ContentByTagScreen: Loading content for tag: ${widget.tagQuery}');
       setState(() {});
     } catch (e) {
       Logger().e('ContentByTagScreen: Error initializing content: $e');

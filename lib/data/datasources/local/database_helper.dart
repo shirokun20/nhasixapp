@@ -7,7 +7,7 @@ import 'package:logger/logger.dart';
 /// Database helper class for managing SQLite database
 class DatabaseHelper {
   static const String _databaseName = 'nhasix_app.db';
-  static const int _databaseVersion = 4;
+  static const int _databaseVersion = 5;
 
   static Database? _database;
   static final Logger _logger = Logger();
@@ -136,6 +136,18 @@ class DatabaseHelper {
       _logger.i('Added search_filter_state table in database upgrade');
     }
 
+    if (oldVersion < 5 && newVersion >= 5) {
+      // Add range download columns to downloads table in version 5
+      try {
+        await db.execute('ALTER TABLE downloads ADD COLUMN retry_count INTEGER DEFAULT 0');
+        await db.execute('ALTER TABLE downloads ADD COLUMN start_page INTEGER');
+        await db.execute('ALTER TABLE downloads ADD COLUMN end_page INTEGER');
+        _logger.i('Added range download columns to downloads table in database upgrade');
+      } catch (e) {
+        _logger.w('Error adding range download columns (may already exist): $e');
+      }
+    }
+
     // Fix history table schema if needed (for any version upgrade)
     try {
       // Check if history table has the correct schema
@@ -225,7 +237,10 @@ class DatabaseHelper {
         start_time INTEGER,
         end_time INTEGER,
         file_size INTEGER,
-        error_message TEXT
+        error_message TEXT,
+        retry_count INTEGER DEFAULT 0,
+        start_page INTEGER,
+        end_page INTEGER
       )
     ''');
   }

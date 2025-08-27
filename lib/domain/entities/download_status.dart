@@ -14,6 +14,8 @@ class DownloadStatus extends Equatable {
     this.fileSize = 0,
     this.speed = 0.0,
     this.retryCount = 0,
+    this.startPage,
+    this.endPage,
   });
 
   final String contentId;
@@ -27,6 +29,33 @@ class DownloadStatus extends Equatable {
   final int fileSize; // in bytes
   final double speed; // bytes per second
   final int retryCount; // number of retry attempts made
+  final int? startPage; // NEW: Start page for range download
+  final int? endPage;   // NEW: End page for range download
+
+  /// Check if this is a range download
+  bool get isRangeDownload => startPage != null && endPage != null;
+
+  /// Get effective start page (1 if not specified)
+  int get effectiveStartPage => startPage ?? 1;
+
+  /// Get effective end page (total pages if not specified)
+  int get effectiveEndPage => endPage ?? totalPages;
+
+  /// Get actual number of pages being downloaded
+  int get pagesToDownload {
+    if (isRangeDownload && startPage != null && endPage != null) {
+      return endPage! - startPage! + 1;
+    }
+    return totalPages;
+  }
+
+  /// Get range display text
+  String get rangeDisplayText {
+    if (isRangeDownload) {
+      return 'Pages $startPage-$endPage of $totalPages';
+    }
+    return 'All pages ($totalPages)';
+  }
 
   @override
   List<Object?> get props => [
@@ -41,6 +70,8 @@ class DownloadStatus extends Equatable {
         fileSize,
         speed,
         retryCount,
+        startPage,
+        endPage,
       ];
 
   DownloadStatus copyWith({
@@ -55,6 +86,8 @@ class DownloadStatus extends Equatable {
     int? fileSize,
     double? speed,
     int? retryCount,
+    int? startPage,
+    int? endPage,
   }) {
     return DownloadStatus(
       contentId: contentId ?? this.contentId,
@@ -68,13 +101,22 @@ class DownloadStatus extends Equatable {
       fileSize: fileSize ?? this.fileSize,
       speed: speed ?? this.speed,
       retryCount: retryCount ?? this.retryCount,
+      startPage: startPage ?? this.startPage,
+      endPage: endPage ?? this.endPage,
     );
   }
 
   /// Get download progress as percentage (0.0 to 1.0)
   double get progress {
     if (totalPages == 0) return 0.0;
-    return downloadedPages / totalPages;
+    
+    // For range downloads, calculate progress based on pages in the range
+    final divisor = pagesToDownload;
+    if (divisor == 0) return 0.0;
+    
+    final rawProgress = downloadedPages / divisor;
+    // Cap progress at 1.0 to prevent progress bar overflow
+    return rawProgress > 1.0 ? 1.0 : rawProgress;
   }
 
   /// Get download progress as percentage (0 to 100)
@@ -186,12 +228,14 @@ class DownloadStatus extends Equatable {
   }
 
   /// Create initial download status
-  factory DownloadStatus.initial(String contentId, int totalPages) {
+  factory DownloadStatus.initial(String contentId, int totalPages, {int? startPage, int? endPage}) {
     return DownloadStatus(
       contentId: contentId,
       state: DownloadState.queued,
       totalPages: totalPages,
       startTime: DateTime.now(),
+      startPage: startPage,
+      endPage: endPage,
     );
   }
 
