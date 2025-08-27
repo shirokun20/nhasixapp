@@ -1,14 +1,47 @@
 # Next Development Priorities - NhasixApp
 
 *Created: August 26, 2025*  
-*Status: Pending Implementation*  
-*Context: Post image preloader, performance optimization, and smart prefetching completion*
+*Updated: August 27, 2025*  
+*Status: Latest urgent fixes completed*  
+*Context: Post image preloader, performance optimization, smart prefetching, and critical bug fixes completion*
+
+---
+
+## 🚨 URGENT PRIORITY - RECENTLY COMPLETED
+
+### ✅ PDF Notification Issue in Release Mode - FIXED
+**Status**: COMPLETED ✅
+**Problem**: PDF notifications only work in debug mode, not release mode. Download notifications work in both.
+**Root Cause**: PDF notifications are called after background processing where the NotificationService may not be properly initialized in release mode, unlike download notifications which are called from warm UI context.
+**Solution Applied**: 
+- Added `_ensureNotificationServiceReady()` method to PdfConversionService
+- Re-initialize NotificationService before each PDF notification call
+- This ensures proper service initialization for release mode compatibility
+**Commit**: `880cdba` - fix: re-initialize NotificationService before PDF notifications
+
+### ✅ Tag Navigation Fix - COMPLETED
+**Status**: COMPLETED ✅  
+**Problem**: Clicking tags in detail_screen doesn't navigate properly to home with search
+**Solution Applied**: 
+- Fixed navigation to use AppRouter.goToHome with search parameter
+- Added navigation lock to prevent multiple rapid taps
+- Enhanced logging for debugging
+**Commit**: `db4e47f` - fix: tag navigation from detail_screen to home with search
+
+### ✅ Android Notification Permissions - COMPLETED  
+**Status**: COMPLETED ✅
+**Problem**: Missing notification permissions for Android 13+
+**Solution Applied**:
+- Added POST_NOTIFICATIONS permission to AndroidManifest.xml
+- Added VIBRATE permission for enhanced notifications
+- Enhanced NotificationService for Android 13+ permission handling
+**Commit**: `b1fc6b5` - feat: add Android 13+ notification permissions and enhance service
 
 ---
 
 ## 🎯 **EXECUTIVE SUMMARY**
 
-After successful completion of **Phase 1** (Image Preloader System), **Phase 1.5** (Widget Performance Optimization), and **Phase 1.6** (Smart Image Prefetching), the next development focus should prioritize **fixing broken core functionality** before adding new features.
+After successful completion of **Phase 1** (Image Preloader System), **Phase 1.5** (Widget Performance Optimization), **Phase 1.6** (Smart Image Prefetching), and **urgent bug fixes** (PDF notifications, tag navigation, Android permissions), the next development focus should prioritize **completing remaining broken core functionality** before adding new features.
 
 **IMMEDIATE PRIORITIES:**
 1. **Phase 6: Search Input Fix** *(0.5-1 day)* - Critical broken functionality
