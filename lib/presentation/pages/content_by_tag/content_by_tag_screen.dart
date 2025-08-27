@@ -101,10 +101,10 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
     return BlocProvider.value(
       value: _contentBloc,
       child: AppScaffoldWithOffline(
-        title: 'Content ${widget.tagQuery}',
+        title: widget.tagQuery.toUpperCase(),
         appBar: AppBar(
           title: Text(
-            'Content ${widget.tagQuery}',
+            widget.tagQuery.toUpperCase(),
             style: TextStyleConst.headingMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
@@ -130,10 +130,6 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
             children: [
               // Offline banner
               const OfflineBanner(),
-
-              // Tag info header
-              _buildTagHeader(),
-
               // Sorting widget - only visible when there's data
               if (_shouldShowSorting(state))
                 SortingWidget(
@@ -159,55 +155,6 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
             ],
           );
         },
-      ),
-    );
-  }
-
-  /// Build tag info header
-  Widget _buildTagHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outline,
-            width: 1,
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.local_offer,
-            color: Theme.of(context).colorScheme.primary,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Tag Search',
-                  style: TextStyleConst.bodySmall.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  widget.tagQuery,
-                  style: TextStyleConst.bodyMedium.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

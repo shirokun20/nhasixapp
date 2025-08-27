@@ -119,7 +119,7 @@ class _MainScreenState extends State<MainScreen> {
           // Show full screen loading during home initialization
           if (homeState is HomeLoading) {
             return SimpleOfflineScaffold(
-              title: 'NhaSix',
+              title: 'NHentai',
               body: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
