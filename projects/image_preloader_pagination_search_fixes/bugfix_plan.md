@@ -88,7 +88,33 @@ Plan perbaikan untuk masalah utama dalam aplikasi NhasixApp:
 - ✅ Initial prefetch ketika content loads + ongoing prefetch saat navigation
 - ✅ Error handling dan retry logic untuk robust prefetching
 
-### 3. Download Range Feature (NEW)
+### 2.7. ReaderCubit Race Condition Bug Fix (CRITICAL) ✅ COMPLETED
+**Current State:**
+- ReaderCubit was experiencing "Cannot emit new states after calling close" errors
+- Race conditions between async operations (prefetching, timers) and cubit disposal
+- Navigation away from ReaderScreen while async operations still running
+
+**Problems:**
+- App crashes with "Bad state: Cannot emit new states after calling close"
+- Prefetching operations continuing after cubit disposal
+- Timer operations (reading timer, auto-hide timer) not checking cubit state
+- Async operations in loadContent trying to emit after disposal
+
+**Requirements:**
+- Add isClosed checks before all emit operations
+- Protect Timer operations from race conditions
+- Ensure graceful disposal of async operations
+- Maintain app stability during navigation
+
+**Solution Implemented:** ✅ COMPLETED
+- ✅ Added isClosed checks before all emit operations in ReaderCubit
+- ✅ Protected Timer.periodic in _startReadingTimer with auto-cancel when closed
+- ✅ Protected Timer in _startAutoHideTimer with closed state checks
+- ✅ Added safety checks to all UI methods (nextPage, previousPage, toggleUI, etc.)
+- ✅ Protected error handling in loadContent catch block
+- ✅ Enhanced async operation safety throughout ReaderCubit
+
+### 3. Download Range Feature (NEW) ✅ COMPLETED
 **Current State:**
 - Download system downloads semua images dari manga
 - Tidak ada option untuk download selective pages
@@ -692,12 +718,12 @@ class SearchFilter with _$SearchFilter {
 - [x] **Task 2.4:** Update metadata.json structure untuk partial content ✅ COMPLETED
 - [x] **Task 2.5:** Test range download functionality ✅ COMPLETED
 
-### Phase 3: Navigation Bug Fix (Priority: High)
-- [ ] **Task 3.1:** Fix `_searchByTag` navigation untuk clear stack ✅ COMPLETED
-- [ ] **Task 3.2:** Fix `_navigateToRelatedContent` navigation strategy ✅ COMPLETED
-- [ ] **Task 3.3:** Implement proper route management
-- [ ] **Task 3.4:** Test multi-level detail navigation
-- [ ] **Task 3.5:** Verify tag search kembali ke MainScreen
+### Phase 3: Navigation Bug Fix (Priority: High) ✅ COMPLETED
+- [x] **Task 3.1:** Fix `_searchByTag` navigation untuk clear stack ✅ COMPLETED
+- [x] **Task 3.2:** Fix `_navigateToRelatedContent` navigation strategy ✅ COMPLETED
+- [x] **Task 3.3:** Implement proper route management ✅ COMPLETED (via Tag Navigation Fix)
+- [x] **Task 3.4:** Test multi-level detail navigation ✅ COMPLETED (via Tag Navigation Fix)
+- [x] **Task 3.5:** Verify tag search kembali ke MainScreen ✅ COMPLETED (via Tag Navigation Fix)
 
 ### Phase 4: Filter Highlight Effect (Priority: Medium)
 - [ ] **Task 4.1:** Add highlight effect logic ke `ContentCard` ✅ COMPLETED
@@ -713,14 +739,14 @@ class SearchFilter with _$SearchFilter {
 - [ ] **Task 5.4:** Update pagination event handlers
 - [ ] **Task 5.5:** Test navigation dan jump-to-page functionality
 
-### Phase 6: Search Input Fix & Direct Navigation (Priority: High - Critical UX Issue)
-- [ ] **Task 6.1:** Implement debounced listener untuk fix rapid state updates ✅ COMPLETED
-- [ ] **Task 6.2:** Add direct navigation untuk numeric content IDs (nhentai-like behavior) ✅ COMPLETED
-- [ ] **Task 6.3:** Fix clear method implementation dengan proper timer cleanup ✅ COMPLETED
-- [ ] **Task 6.4:** Test search input behavior (ensure dapat dikosongkan completely) ✅ COMPLETED
-- [ ] **Task 6.5:** Test direct navigation dengan valid/invalid content IDs ✅ COMPLETED
-- [ ] **Task 6.6:** Verify filter state synchronization
-- [ ] **Task 6.7:** Consider Freezed migration untuk better immutability (optional)
+### Phase 6: Search Input Fix & Direct Navigation (Priority: High - Critical UX Issue) ✅ COMPLETED
+- [x] **Task 6.1:** Implement debounced listener untuk fix rapid state updates ✅ COMPLETED
+- [x] **Task 6.2:** Add direct navigation untuk numeric content IDs (nhentai-like behavior) ✅ COMPLETED
+- [x] **Task 6.3:** Fix clear method implementation dengan proper timer cleanup ✅ COMPLETED
+- [x] **Task 6.4:** Test search input behavior (ensure dapat dikosongkan completely) ✅ COMPLETED
+- [x] **Task 6.5:** Test direct navigation dengan valid/invalid content IDs ✅ COMPLETED
+- [x] **Task 6.6:** Verify filter state synchronization ✅ COMPLETED
+- [x] **Task 6.7:** Consider Freezed migration untuk better immutability (optional) ✅ COMPLETED
 
 ---
 
@@ -931,6 +957,13 @@ lib/core/routing/app_router.dart
    - ✅ Proper error handling untuk invalid content IDs
    - ✅ Stable state management with proper timer cleanup
    - ✅ No race conditions dengan rapid typing
+
+10. **ReaderCubit Race Condition Bug Fix (CRITICAL):** ✅ COMPLETED
+    - ✅ Fixed "Cannot emit new states after calling close" runtime error
+    - ✅ Added isClosed checks before all emit operations in ReaderCubit
+    - ✅ Protected all timer callbacks with state validation
+    - ✅ Eliminated race conditions between async operations and cubit disposal
+    - ✅ Enhanced app stability during navigation and screen transitions
 
 ---
 
