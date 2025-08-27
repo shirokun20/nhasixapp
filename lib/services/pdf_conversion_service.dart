@@ -69,6 +69,8 @@ class PdfConversionService {
 
       // Tampilkan notifikasi bahwa konversi PDF dimulai
       // Show notification that PDF conversion has started
+      _logger.i('PdfConversionService: About to show PDF conversion started notification');
+      _notificationService.debugLogState('Before PDF conversion started notification');
       await _notificationService.showPdfConversionStarted(
         contentId: contentId,
         title: title,
@@ -166,6 +168,8 @@ class PdfConversionService {
 
       // Tampilkan notifikasi sukses dengan informasi file yang dibuat
       // Show success notification with created file information
+      _logger.i('PdfConversionService: About to show PDF conversion completed notification');
+      _notificationService.debugLogState('Before PDF conversion completed notification');
       await _notificationService.showPdfConversionCompleted(
         contentId: contentId,
         title: title,

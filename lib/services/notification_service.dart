@@ -147,9 +147,16 @@ class NotificationService {
     required String contentId,
     required String title,
   }) async {
-    if (!isEnabled) return;
+    _logger.i('NotificationService: showPdfConversionStarted called for $contentId (title: $title)');
+    _logger.i('NotificationService: isEnabled = $isEnabled (_permissionGranted: $_permissionGranted, _initialized: $_initialized)');
+    
+    if (!isEnabled) {
+      _logger.w('NotificationService: PDF conversion start notification disabled, skipping for $contentId');
+      return;
+    }
 
     try {
+      _logger.i('NotificationService: Showing PDF conversion started notification for $contentId');
       final notificationId = _getNotificationId('pdf_$contentId');
       await _notificationsPlugin.show(
         notificationId,
@@ -178,9 +185,10 @@ class NotificationService {
         payload: contentId,
       );
 
-      _logger.d('PDF conversion started notification shown for: $contentId');
-    } catch (e) {
-      _logger.e('Failed to show PDF conversion started notification: $e');
+      _logger.i('PDF conversion started notification shown successfully for: $contentId');
+    } catch (e, stackTrace) {
+      _logger.e('Failed to show PDF conversion started notification for $contentId: $e', 
+                error: e, stackTrace: stackTrace);
     }
   }
 
@@ -236,9 +244,16 @@ class NotificationService {
     required List<String> pdfPaths,
     required int partsCount,
   }) async {
-    if (!isEnabled) return;
+    _logger.i('NotificationService: showPdfConversionCompleted called for $contentId (title: $title, parts: $partsCount)');
+    _logger.i('NotificationService: isEnabled = $isEnabled (_permissionGranted: $_permissionGranted, _initialized: $_initialized)');
+    
+    if (!isEnabled) {
+      _logger.w('NotificationService: PDF conversion completed notification disabled, skipping for $contentId');
+      return;
+    }
 
     try {
+      _logger.i('NotificationService: Showing PDF conversion completed notification for $contentId');
       final notificationId = _getNotificationId('pdf_$contentId');
       final message = partsCount > 1 
           ? '${_truncateTitle(title)} converted to $partsCount PDF files'
@@ -311,9 +326,16 @@ class NotificationService {
     required String title,
     required String error,
   }) async {
-    if (!isEnabled) return;
+    _logger.i('NotificationService: showPdfConversionError called for $contentId (title: $title, error: $error)');
+    _logger.i('NotificationService: isEnabled = $isEnabled (_permissionGranted: $_permissionGranted, _initialized: $_initialized)');
+    
+    if (!isEnabled) {
+      _logger.w('NotificationService: PDF conversion error notification disabled, skipping for $contentId');
+      return;
+    }
 
     try {
+      _logger.i('NotificationService: Showing PDF conversion error notification for $contentId');
       final notificationId = _getNotificationId('pdf_$contentId');
       await _notificationsPlugin.show(
         notificationId,
@@ -355,6 +377,16 @@ class NotificationService {
 
   /// Check if notifications are enabled
   bool get isEnabled => _permissionGranted && _initialized;
+
+  /// Debug method to log current notification service state
+  void debugLogState([String? context]) {
+    final contextStr = context != null ? ' ($context)' : '';
+    _logger.i('NotificationService State$contextStr:');
+    _logger.i('  - _permissionGranted: $_permissionGranted');
+    _logger.i('  - _initialized: $_initialized'); 
+    _logger.i('  - isEnabled: $isEnabled');
+    _logger.i('  - Platform: ${Platform.operatingSystem}');
+  }
 
   /// Initialize notification service
   /// Enhanced initialization for debug and release mode compatibility
