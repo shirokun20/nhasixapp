@@ -3,6 +3,7 @@ class AppRoute {
   static const String splash = '/';
   static const String home = '/home';
   static const String search = '/search';
+  static const String contentByTag = '/searchByTag';
 
   // Content routes
   static const String contentDetail = '/content/:id';
@@ -33,6 +34,7 @@ class AppRoute {
   static const String homeName = 'home';
   static const String searchName = 'search';
   static const String searchNameWithQuery = 'search-query';
+  static const String contentByTagName = 'content-by-tag';
   static const String contentDetailName = 'content-detail';
   static const String readerName = 'reader';
   static const String favoritesName = 'favorites';

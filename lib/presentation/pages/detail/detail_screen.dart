@@ -61,10 +61,9 @@ class _DetailScreenState extends State<DetailScreen> {
       _isNavigating = true;
       Logger().i("Starting tag browsing navigation for: $tagName");
       
-      // Simple route navigation to home with tag parameter
+      // Navigate to ContentByTagScreen
       if (mounted) {
-        final encodedTag = Uri.encodeComponent(tagName);
-        context.go('/home?tag=$encodedTag');
+        AppRouter.goToContentByTag(context, tagName);
         Logger().i("Navigation completed successfully for tag: $tagName");
       } else {
         Logger().w("Widget unmounted before navigation for tag: $tagName");

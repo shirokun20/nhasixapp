@@ -154,43 +154,6 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     return _buildNetworkImage();
   }
 
-  /// Debug method to check actual file structure (only in debug mode)
-  Future<void> _debugFileStructure() async {
-    if (widget.contentId == null || !kDebugMode) return;
-    
-    try {
-      final baseLocalPath = await LocalImagePreloader.getBaseLocalPath();
-      final contentFolderPath = await LocalImagePreloader.getContentFolderPath(widget.contentId!);
-      final imagesFolderPath = await LocalImagePreloader.getImagesFolderPath(widget.contentId!);
-      
-      _logger.d('🔍 Debug file structure for ${widget.contentId}:');
-      _logger.d('📁 Base local path: $baseLocalPath');
-      _logger.d('📁 Content folder path: $contentFolderPath');
-      _logger.d('📁 Images folder path: $imagesFolderPath');
-      
-      // Check if directories exist
-      final contentDir = Directory(contentFolderPath);
-      final imagesDir = Directory(imagesFolderPath);
-      
-      _logger.d('📂 Content directory exists: ${await contentDir.exists()}');
-      _logger.d('📂 Images directory exists: ${await imagesDir.exists()}');
-      
-      // List files in content directory (limit output)
-      if (await contentDir.exists()) {
-        final contentFiles = await contentDir.list().take(5).toList(); // Limit to 5 files
-        _logger.d('📄 Files in content directory (first 5): ${contentFiles.map((f) => f.path).toList()}');
-      }
-      
-      // List files in images directory (limit output)
-      if (await imagesDir.exists()) {
-        final imageFiles = await imagesDir.list().take(5).toList(); // Limit to 5 files
-        _logger.d('🖼️ Files in images directory (first 5): ${imageFiles.map((f) => f.path).toList()}');
-      }
-    } catch (e) {
-      _logger.e('❌ Error debugging file structure: $e');
-    }
-  }
-
   /// Get local image path based on type (thumbnail or page)
   Future<String?> _getLocalImagePath() async {
     if (widget.contentId == null) return null;

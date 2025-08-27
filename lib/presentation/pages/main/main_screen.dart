@@ -21,12 +21,7 @@ import 'package:nhasixapp/presentation/widgets/offline_indicator_widget.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({
-    super.key,
-    this.tagQuery, // NEW: support for tag browsing mode
-  });
-
-  final String? tagQuery; // NEW: tag parameter for tag browsing
+  const MainScreen({super.key});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -62,40 +57,6 @@ class _MainScreenState extends State<MainScreen> {
       // Load saved sorting preference
       final userDataRepository = getIt<UserDataRepository>();
       _currentSortOption = await userDataRepository.getSortingPreference();
-
-      // NEW: Check if we're in tag browsing mode
-      if (widget.tagQuery != null && widget.tagQuery!.isNotEmpty) {
-        // Load user preferences to get excluded tags
-        final userPreferences = await userDataRepository.getUserPreferences();
-        
-        // Use blacklisted tags from preferences, or default NSFW tags if none set
-        List<String> excludedTagsList = userPreferences.blacklistedTags;
-        if (excludedTagsList.isEmpty) {
-          // Default excluded tags for NSFW content
-          excludedTagsList = ['lolicon', 'shotacon'];
-        }
-        
-        // Convert blacklisted tags to excluded FilterItems
-        final excludedTags = excludedTagsList
-            .map((tag) => FilterItem(value: tag, isExcluded: true))
-            .toList();
-        
-        // Tag browsing mode - load content for specific tag with excluded tags
-        final tagFilter = SearchFilter(
-          query: widget.tagQuery,
-          sortBy: _currentSortOption,
-          source: SearchSource.detailScreen,
-          highlightMode: true,
-          highlightQuery: widget.tagQuery,
-          tags: excludedTags, // NEW: Include excluded tags from user preferences
-        );
-        
-        _currentSearchFilter = tagFilter;
-        _isShowingSearchResults = true;
-        _contentBloc.add(ContentSearchEvent(tagFilter));
-        Logger().i('MainScreen: Loading tag browsing content for: ${widget.tagQuery} with ${excludedTags.length} excluded tags: ${excludedTagsList.join(', ')}');
-        return;
-      }
 
       // Check if there's a saved search filter from local storage
       final savedFilterData =
@@ -212,10 +173,6 @@ class _MainScreenState extends State<MainScreen> {
               // Offline banner
               const OfflineBanner(),
 
-              // Tag browsing banner (if in tag mode)
-              if (widget.tagQuery != null && widget.tagQuery!.isNotEmpty)
-                _buildTagBrowsingBanner(),
-
               // Search results header (if showing search results)
               if (_isShowingSearchResults) _buildSearchResultsHeader(),
 
@@ -234,9 +191,6 @@ class _MainScreenState extends State<MainScreen> {
                     onContentTap: _onContentTap,
                     enablePullToRefresh: true, // Allow pull-to-refresh
                     enableInfiniteScroll: false, // Use pagination instead
-                    shouldBlurContent: _shouldBlurContent, // NEW: Pass blur logic
-                    shouldHighlightContent: _shouldHighlightContent, // NEW: Pass highlight logic
-                    highlightReason: _getHighlightReason, // NEW: Pass highlight reason logic
                   ),
                 ),
               ),
@@ -614,71 +568,6 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  /// Build tag browsing banner when in tag mode
-  Widget _buildTagBrowsingBanner() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-            width: 1,
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.local_offer,
-            color: Theme.of(context).colorScheme.primary,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Browsing Tag',
-                  style: TextStyleConst.bodySmall.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  widget.tagQuery!,
-                  style: TextStyleConst.bodyMedium.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Back to home button
-          TextButton.icon(
-            onPressed: () => context.go('/home'),
-            icon: Icon(
-              Icons.home,
-              size: 18,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            label: Text(
-              'Home',
-              style: TextStyleConst.bodySmall.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   /// Handle search results from SearchScreen
   void handleSearchResults(SearchFilter filter) {
     setState(() {
@@ -689,79 +578,5 @@ class _MainScreenState extends State<MainScreen> {
     // Load search results
     _contentBloc.add(ContentSearchEvent(filter));
     Logger().i('MainScreen: Loading search results from SearchScreen');
-  }
-
-  /// NEW: Determine if content should be blurred (excluded content in tag browsing mode)
-  bool _shouldBlurContent(Content content) {
-    // Only blur in tag browsing mode when content has excluded filters
-    if (widget.tagQuery == null || !_isShowingSearchResults || _currentSearchFilter == null) {
-      return false;
-    }
-    
-    // Check if content matches excluded filters
-    final filter = _currentSearchFilter!;
-    
-    // Check excluded tags
-    for (final tagFilter in filter.tags.where((t) => t.isExcluded)) {
-      if (content.tags.any((tag) => tag.name.toLowerCase() == tagFilter.value.toLowerCase())) {
-        print('BLUR_DEBUG: Content ${content.id} should be blurred - matches excluded tag: ${tagFilter.value}');
-        return true;
-      }
-    }
-    
-    // Check excluded groups
-    for (final groupFilter in filter.groups.where((g) => g.isExcluded)) {
-      if (content.groups.any((group) => group.toLowerCase() == groupFilter.value.toLowerCase())) {
-        print('BLUR_DEBUG: Content ${content.id} should be blurred - matches excluded group: ${groupFilter.value}');
-        return true;
-      }
-    }
-    
-    // Check excluded characters
-    for (final charFilter in filter.characters.where((c) => c.isExcluded)) {
-      if (content.characters.any((char) => char.toLowerCase() == charFilter.value.toLowerCase())) {
-        print('BLUR_DEBUG: Content ${content.id} should be blurred - matches excluded character: ${charFilter.value}');
-        return true;
-      }
-    }
-    
-    // Check excluded parodies
-    for (final parodFilter in filter.parodies.where((p) => p.isExcluded)) {
-      if (content.parodies.any((parod) => parod.toLowerCase() == parodFilter.value.toLowerCase())) {
-        print('BLUR_DEBUG: Content ${content.id} should be blurred - matches excluded parody: ${parodFilter.value}');
-        return true;
-      }
-    }
-    
-    // Check excluded artists
-    for (final artistFilter in filter.artists.where((a) => a.isExcluded)) {
-      if (content.artists.any((artist) => artist.toLowerCase() == artistFilter.value.toLowerCase())) {
-        print('BLUR_DEBUG: Content ${content.id} should be blurred - matches excluded artist: ${artistFilter.value}');
-        return true;
-      }
-    }
-    
-    return false;
-  }
-
-  /// NEW: Determine if content should be highlighted (matching content in tag browsing mode)
-  bool _shouldHighlightContent(Content content) {
-    // Only highlight in tag browsing mode when content matches the tag query
-    if (widget.tagQuery == null || !_isShowingSearchResults) {
-      return false;
-    }
-    
-    // Check if content contains the tag we're browsing
-    final tagQuery = widget.tagQuery!.toLowerCase();
-    return content.tags.any((tag) => tag.name.toLowerCase().contains(tagQuery));
-  }
-
-  /// NEW: Get highlight reason for content
-  String? _getHighlightReason(Content content) {
-    if (!_shouldHighlightContent(content)) {
-      return null;
-    }
-    
-    return 'Matches tag: ${widget.tagQuery}';
   }
 }

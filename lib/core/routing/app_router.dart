@@ -6,6 +6,7 @@ import 'package:nhasixapp/presentation/pages/settings/settings_screen.dart';
 import 'package:nhasixapp/presentation/pages/splash/splash_screen.dart';
 import 'package:nhasixapp/presentation/pages/main/main_screen.dart';
 import 'package:nhasixapp/presentation/pages/search/search_screen.dart';
+import 'package:nhasixapp/presentation/pages/content_by_tag/content_by_tag_screen.dart';
 import 'package:nhasixapp/presentation/pages/detail/detail_screen.dart';
 import 'package:nhasixapp/presentation/pages/filter_data/filter_data_screen.dart';
 import 'package:nhasixapp/presentation/pages/favorites/favorites_screen.dart';
@@ -30,11 +31,8 @@ class AppRouter {
         path: AppRoute.home,
         name: AppRoute.homeName,
         builder: (context, state) {
-          // Check for tag parameter
-          final tagQuery = state.uri.queryParameters['tag'];
           return MainScreen(
-            tagQuery: tagQuery, // Pass tag parameter to MainScreen
-          );
+);
         },
       ),
 
@@ -84,6 +82,16 @@ class AppRouter {
         builder: (context, state) {
           final query = state.pathParameters['query']!;
           return SearchScreen(query: query);
+        },
+      ),
+
+      // Content by Tag Screen
+      GoRoute(
+        path: AppRoute.contentByTag,
+        name: AppRoute.contentByTagName,
+        builder: (context, state) {
+          final query = state.uri.queryParameters['q'] ?? '';
+          return ContentByTagScreen(tagQuery: query);
         },
       ),
 
@@ -224,6 +232,10 @@ class AppRouter {
 
   static void goToSearch(BuildContext context) {
     context.push(AppRoute.search);
+  }
+
+  static void goToContentByTag(BuildContext context, String tagQuery) {
+    context.push('${AppRoute.contentByTag}?q=$tagQuery');
   }
 
   static Future<SearchFilter?> goToContentDetail(
