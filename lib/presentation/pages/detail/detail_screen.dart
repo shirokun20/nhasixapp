@@ -11,7 +11,6 @@ import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/core/utils/app_state_manager.dart';
-import 'package:nhasixapp/presentation/pages/main/main_screen.dart';
 import '../../widgets/download_button_widget.dart';
 import '../../widgets/progressive_image_widget.dart';
 
@@ -30,6 +29,7 @@ class DetailScreen extends StatefulWidget {
 class _DetailScreenState extends State<DetailScreen> {
   late final DetailCubit _detailCubit;
   final ScrollController _scrollController = ScrollController();
+  bool _isNavigating = false; // Add navigation lock to prevent multiple simultaneous navigation
 
   @override
   void initState() {
@@ -52,7 +52,16 @@ class _DetailScreenState extends State<DetailScreen> {
 
   /// Navigate to search with specific tag filter (FIXED navigation)
   void _searchByTag(String tagName) async {
+    // Prevent multiple simultaneous navigation attempts
+    if (_isNavigating) {
+      Logger().w("Navigation already in progress, ignoring tag search: $tagName");
+      return;
+    }
+
     try {
+      _isNavigating = true;
+      Logger().i("Starting tag search navigation for: $tagName");
+      
       // Load existing filter and preserve it, only update query
       final savedFilterData = await getIt<LocalDataSource>().getLastSearchFilter();
       SearchFilter currentFilter = const SearchFilter();
@@ -64,18 +73,43 @@ class _DetailScreenState extends State<DetailScreen> {
       // CORRECTED: Preserve existing filter, only update query
       final updatedFilter = currentFilter.copyWith(query: tagName);
       await getIt<LocalDataSource>().saveSearchFilter(updatedFilter.toJson());
+      Logger().i("Saved search filter state for tag: $tagName");
       
-      // FIXED: Clear navigation stack completely and prevent back to detail
+      // FIXED: Use correct route path and AppRouter helper method
       if (mounted) {
-        // Clear entire navigation stack and go to MainScreen
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const MainScreen()),
-          (route) => false, // Remove all routes
-        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            try {
+              Logger().i("Attempting navigation to home screen for tag search: $tagName");
+              // Use AppRouter helper method for consistent navigation
+              AppRouter.goToHome(context);
+              Logger().i("Navigation completed successfully for tag: $tagName");
+            } catch (e) {
+              Logger().e("Navigation error after tag search: $tagName", error: e);
+            } finally {
+              _isNavigating = false;
+            }
+          } else {
+            Logger().w("Widget unmounted during navigation for tag: $tagName");
+            _isNavigating = false;
+          }
+        });
+        
+        // Add timeout fallback to reset navigation lock
+        Future.delayed(const Duration(seconds: 3), () {
+          if (_isNavigating) {
+            Logger().w("Navigation timeout reached, resetting lock for tag: $tagName");
+            _isNavigating = false;
+          }
+        });
+      } else {
+        Logger().w("Widget unmounted before navigation for tag: $tagName");
+        _isNavigating = false;
       }
     } catch (e, stackTrace) {
-      Logger().e("Error searching for tag: $tagName",
-          error: e, stackTrace: stackTrace);
+      Logger().e("Error searching for tag: $tagName", error: e, stackTrace: stackTrace);
+      _isNavigating = false;
+      
       // Handle error gracefully
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
