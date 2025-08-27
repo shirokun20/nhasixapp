@@ -126,6 +126,47 @@ After successful completion of **Phase 1** (Image Preloader System), **Phase 1.5
 - [ ] **Task 2.4:** Update metadata.json structure for partial content
 - [ ] **Task 2.5:** Test range download functionality
 
+---
+
+## 🚨 **URGENT BUG: PDF Notifications Missing in Release Mode**
+
+### **Issue Description:**
+- **Problem**: PDF conversion notifications appear in debug mode but not in release mode
+- **Root Cause**: Android permission handling differs between debug and release builds
+- **Impact**: Users don't get feedback on PDF conversion progress in production
+
+### **Solution Required:**
+```xml
+<!-- Add to android/app/src/main/AndroidManifest.xml -->
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.VIBRATE" />
+```
+
+### **Additional Fix:**
+```dart
+// In NotificationService.requestNotificationPermission()
+// Add fallback for release builds
+if (Platform.isAndroid) {
+  final androidInfo = await DeviceInfoPlugin().androidInfo;
+  if (androidInfo.version.sdkInt >= 33) {
+    // Android 13+ requires explicit notification permission
+    final status = await Permission.notification.request();
+    return status.isGranted;
+  } else {
+    // Older Android versions, notifications are enabled by default
+    return true;
+  }
+}
+```
+
+### **Testing Steps:**
+1. Build release APK with updated permissions
+2. Test PDF conversion with notifications enabled
+3. Verify notifications appear on different Android versions
+4. Test permission request flow in release mode
+
+### **Estimated Effort:** 0.5 day
+
 ### **Remaining Work:**
 ```markdown
 🎯 **Task 2.2: Update DownloadBloc for Partial Download Support**
