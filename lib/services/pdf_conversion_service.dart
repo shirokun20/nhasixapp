@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:logger/logger.dart';
+import 'package:get_it/get_it.dart';
 
 import 'pdf_service.dart';
 import 'notification_service.dart';
@@ -93,6 +94,16 @@ class PdfConversionService {
       await clearDebugLog();
       await _debugLogToFile('testPdfNotification: Debug log cleared, starting fresh test');
       
+      // Test basic notification service first
+      await _debugLogToFile('testPdfNotification: Testing basic notification service');
+      
+      try {
+        await _notificationService.showTestActionNotification();
+        await _debugLogToFile('testPdfNotification: Basic test notification completed');
+      } catch (basicTestError) {
+        await _debugLogToFile('testPdfNotification: Basic test FAILED - ${basicTestError.toString()}');
+      }
+      
       // Ensure service is ready
       await _ensureNotificationServiceReady();
       
@@ -132,6 +143,24 @@ class PdfConversionService {
       await _debugLogToFile('testPdfNotification: EXCEPTION - ${e.toString()}');
       await _debugLogToFile('testPdfNotification: STACKTRACE - ${stackTrace.toString()}');
       return false;
+    }
+  }
+
+  /// Quick static method untuk test dari UI atau main function
+  /// Quick static method for testing from UI or main function
+  static Future<void> quickTestPdfNotifications() async {
+    try {
+      final service = GetIt.instance<PdfConversionService>();
+      final result = await service.testPdfNotification();
+      
+      print('PDF Notification Test Result: $result');
+      
+      // Also get the debug log
+      final debugLog = await service.getDebugLog();
+      print('Debug Log:\n$debugLog');
+      
+    } catch (e) {
+      print('Quick test failed: $e');
     }
   }
 
