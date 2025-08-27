@@ -9,7 +9,6 @@ import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
-import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/core/utils/app_state_manager.dart';
 import '../../widgets/download_button_widget.dart';
 import '../../widgets/progressive_image_widget.dart';
@@ -50,7 +49,7 @@ class _DetailScreenState extends State<DetailScreen> {
     super.dispose();
   }
 
-  /// Navigate to search with specific tag filter (FIXED navigation)
+  /// Navigate to tag browsing mode (SIMPLIFIED routing)
   void _searchByTag(String tagName) async {
     // Prevent multiple simultaneous navigation attempts
     if (_isNavigating) {
@@ -60,65 +59,30 @@ class _DetailScreenState extends State<DetailScreen> {
 
     try {
       _isNavigating = true;
-      Logger().i("Starting tag search navigation for: $tagName");
+      Logger().i("Starting tag browsing navigation for: $tagName");
       
-      // Load existing filter and preserve it, only update query
-      final savedFilterData = await getIt<LocalDataSource>().getLastSearchFilter();
-      SearchFilter currentFilter = const SearchFilter();
-      
-      if (savedFilterData != null) {
-        currentFilter = SearchFilter.fromJson(savedFilterData);
-      }
-      
-      // CORRECTED: Preserve existing filter, only update query
-      final updatedFilter = currentFilter.copyWith(query: tagName);
-      await getIt<LocalDataSource>().saveSearchFilter(updatedFilter.toJson());
-      Logger().i("Saved search filter state for tag: $tagName");
-      
-      // FIXED: Use correct route path and AppRouter helper method
+      // Simple route navigation to home with tag parameter
       if (mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            try {
-              Logger().i("Attempting navigation to home screen for tag search: $tagName");
-              // Use AppRouter helper method for consistent navigation
-              AppRouter.goToHome(context);
-              Logger().i("Navigation completed successfully for tag: $tagName");
-            } catch (e) {
-              Logger().e("Navigation error after tag search: $tagName", error: e);
-            } finally {
-              _isNavigating = false;
-            }
-          } else {
-            Logger().w("Widget unmounted during navigation for tag: $tagName");
-            _isNavigating = false;
-          }
-        });
-        
-        // Add timeout fallback to reset navigation lock
-        Future.delayed(const Duration(seconds: 3), () {
-          if (_isNavigating) {
-            Logger().w("Navigation timeout reached, resetting lock for tag: $tagName");
-            _isNavigating = false;
-          }
-        });
+        final encodedTag = Uri.encodeComponent(tagName);
+        context.go('/home?tag=$encodedTag');
+        Logger().i("Navigation completed successfully for tag: $tagName");
       } else {
         Logger().w("Widget unmounted before navigation for tag: $tagName");
-        _isNavigating = false;
       }
     } catch (e, stackTrace) {
-      Logger().e("Error searching for tag: $tagName", error: e, stackTrace: stackTrace);
-      _isNavigating = false;
+      Logger().e("Error navigating to tag: $tagName", error: e, stackTrace: stackTrace);
       
       // Handle error gracefully
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error searching for tag: $tagName'),
+            content: Text('Error browsing tag: $tagName'),
             backgroundColor: ColorsConst.accentRed,
           ),
         );
       }
+    } finally {
+      _isNavigating = false;
     }
   }
 

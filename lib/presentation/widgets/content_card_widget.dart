@@ -33,6 +33,7 @@ class ContentCard extends StatelessWidget {
     this.showOfflineIndicator = false,
     this.isHighlighted = false, // NEW: for highlight matching content
     this.highlightReason, // NEW: reason for highlight
+    this.isBlurred = false, // NEW: for blur excluded content
   });
 
   final Content content;
@@ -52,6 +53,7 @@ class ContentCard extends StatelessWidget {
   final bool showOfflineIndicator;
   final bool isHighlighted; // NEW: for highlight matching content
   final String? highlightReason; // NEW: reason for highlight
+  final bool isBlurred; // NEW: for blur excluded content
 
   @override
   Widget build(BuildContext context) {
@@ -157,6 +159,41 @@ class ContentCard extends StatelessWidget {
           ],
         ),
         child: cardWidget,
+      );
+    }
+
+    // Apply blur effect if content is excluded
+    if (isBlurred) {
+      return Stack(
+        children: [
+          // Blurred content
+          ColorFiltered(
+            colorFilter: ColorFilter.mode(
+              Colors.grey.withValues(alpha: 0.3),
+              BlendMode.saturation,
+            ),
+            child: Opacity(
+              opacity: 0.5,
+              child: cardWidget,
+            ),
+          ),
+          // Overlay to indicate excluded content
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.black.withValues(alpha: 0.2),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.visibility_off,
+                  color: Colors.white54,
+                  size: 24,
+                ),
+              ),
+            ),
+          ),
+        ],
       );
     }
 

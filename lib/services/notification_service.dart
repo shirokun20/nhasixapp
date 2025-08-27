@@ -147,17 +147,29 @@ class NotificationService {
     required String contentId,
     required String title,
   }) async {
+    print('PDF_NOTIFICATION: showPdfConversionStarted - ENTER method for contentId=$contentId, title=$title');
+    
     _logger.i('NotificationService: showPdfConversionStarted called for $contentId (title: $title)');
     _logger.i('NotificationService: isEnabled = $isEnabled (_permissionGranted: $_permissionGranted, _initialized: $_initialized)');
     
+    print('PDF_NOTIFICATION: showPdfConversionStarted - isEnabled=$isEnabled, _permissionGranted=$_permissionGranted, _initialized=$_initialized');
+    
     if (!isEnabled) {
       _logger.w('NotificationService: PDF conversion start notification disabled, skipping for $contentId');
+      print('PDF_NOTIFICATION: showPdfConversionStarted - DISABLED, returning early');
       return;
     }
 
     try {
+      print('PDF_NOTIFICATION: showPdfConversionStarted - Starting notification creation');
+      
       _logger.i('NotificationService: Showing PDF conversion started notification for $contentId');
       final notificationId = _getNotificationId('pdf_$contentId');
+      
+      print('PDF_NOTIFICATION: showPdfConversionStarted - Generated notificationId=$notificationId');
+      print('PDF_NOTIFICATION: showPdfConversionStarted - Using channel: $_downloadChannelId');
+      print('PDF_NOTIFICATION: showPdfConversionStarted - About to call _notificationsPlugin.show()');
+      
       await _notificationsPlugin.show(
         notificationId,
         'Converting to PDF',
@@ -174,7 +186,7 @@ class NotificationService {
             showProgress: true,
             maxProgress: 100,
             progress: 0,
-            icon: '@drawable/ic_pdf',
+            // Remove icon to avoid drawable resource errors (same as download notifications)
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -185,11 +197,17 @@ class NotificationService {
         payload: contentId,
       );
 
+      print('PDF_NOTIFICATION: showPdfConversionStarted - _notificationsPlugin.show() completed successfully');
       _logger.i('PDF conversion started notification shown successfully for: $contentId');
+      
     } catch (e, stackTrace) {
+      print('PDF_NOTIFICATION: showPdfConversionStarted - EXCEPTION caught: ${e.toString()}');
+      print('PDF_NOTIFICATION: showPdfConversionStarted - STACKTRACE: ${stackTrace.toString()}');
       _logger.e('Failed to show PDF conversion started notification for $contentId: $e', 
                 error: e, stackTrace: stackTrace);
     }
+    
+    print('PDF_NOTIFICATION: showPdfConversionStarted - EXIT method');
   }
 
   /// Update PDF conversion progress notification
@@ -219,7 +237,7 @@ class NotificationService {
             showProgress: true,
             maxProgress: 100,
             progress: progress,
-            icon: '@drawable/ic_pdf',
+            // Remove icon to avoid drawable resource errors
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: false,
@@ -273,27 +291,24 @@ class NotificationService {
             ongoing: false,
             autoCancel: true,
             showProgress: false,
-            icon: '@drawable/ic_pdf',
-            largeIcon: DrawableResourceAndroidBitmap('@drawable/ic_pdf'),
-            styleInformation: BigTextStyleInformation(
-              message,
-              contentTitle: 'PDF Created Successfully',
-              summaryText: 'Tap to open or use buttons below',
-            ),
+            // Add actions without custom icons (same pattern as download notification)
             actions: [
               AndroidNotificationAction(
                 'open_pdf',
                 'Open PDF',
-                icon: DrawableResourceAndroidBitmap('@drawable/ic_open'),
                 showsUserInterface: true,
               ),
               AndroidNotificationAction(
                 'share_pdf',
                 'Share',
-                icon: DrawableResourceAndroidBitmap('@drawable/ic_share'),
                 showsUserInterface: true,
               ),
             ],
+            styleInformation: BigTextStyleInformation(
+              message,
+              contentTitle: 'PDF Created Successfully',
+              summaryText: 'Tap to open PDF',
+            ),
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -351,12 +366,12 @@ class NotificationService {
             ongoing: false,
             autoCancel: true,
             showProgress: false,
-            icon: '@drawable/ic_error',
+            // Add retry action without custom icon
             actions: [
               AndroidNotificationAction(
                 'retry_pdf',
                 'Retry',
-                icon: DrawableResourceAndroidBitmap('@drawable/ic_refresh'),
+                showsUserInterface: true,
               ),
             ],
           ),
@@ -1035,26 +1050,12 @@ class NotificationService {
             priority: Priority.high,
             ongoing: false,
             autoCancel: true,
-            icon: '@drawable/ic_pdf',
+            // Remove icons and actions to avoid drawable resource errors
             styleInformation: const BigTextStyleInformation(
-              'Tap the action buttons below to test functionality',
+              'Simple test notification without icons',
               contentTitle: 'Test Action Buttons',
               summaryText: 'Testing...',
             ),
-            actions: [
-              AndroidNotificationAction(
-                'open_pdf',
-                'Test Open',
-                icon: DrawableResourceAndroidBitmap('@drawable/ic_open'),
-                showsUserInterface: true,
-              ),
-              AndroidNotificationAction(
-                'share_pdf',
-                'Test Share',
-                icon: DrawableResourceAndroidBitmap('@drawable/ic_share'),
-                showsUserInterface: true,
-              ),
-            ],
           ),
         ),
         payload: '/test/path/test.pdf',

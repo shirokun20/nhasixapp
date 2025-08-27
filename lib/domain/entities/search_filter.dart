@@ -68,6 +68,9 @@ class SearchFilter extends Equatable {
     this.sortBy = SortOption.newest,
     this.popular = false,
     this.pageCountRange,
+    this.source = SearchSource.unknown,
+    this.highlightMode = false,
+    this.highlightQuery,
   });
 
   final String? query;
@@ -82,6 +85,9 @@ class SearchFilter extends Equatable {
   final SortOption sortBy;
   final bool popular; // Popular filter
   final IntRange? pageCountRange;
+  final SearchSource source; // Navigation source tracking
+  final bool highlightMode; // Enable blur effect for excluded content
+  final String? highlightQuery; // Specific query to highlight (can differ from main query)
 
   @override
   List<Object?> get props => [
@@ -97,6 +103,9 @@ class SearchFilter extends Equatable {
         sortBy,
         popular,
         pageCountRange,
+        source,
+        highlightMode,
+        highlightQuery,
       ];
 
   static const _undefined = Object();
@@ -114,6 +123,9 @@ class SearchFilter extends Equatable {
     SortOption? sortBy,
     bool? popular,
     IntRange? pageCountRange,
+    SearchSource? source,
+    bool? highlightMode,
+    Object? highlightQuery = _undefined,
   }) {
     return SearchFilter(
       query: query ?? this.query,
@@ -128,6 +140,9 @@ class SearchFilter extends Equatable {
       sortBy: sortBy ?? this.sortBy,
       popular: popular ?? this.popular,
       pageCountRange: pageCountRange ?? this.pageCountRange,
+      source: source ?? this.source,
+      highlightMode: highlightMode ?? this.highlightMode,
+      highlightQuery: highlightQuery == _undefined ? this.highlightQuery : highlightQuery as String?,
     );
   }
 
@@ -142,7 +157,9 @@ class SearchFilter extends Equatable {
         language == null &&
         category == null &&
         !popular &&
-        pageCountRange == null;
+        pageCountRange == null &&
+        !highlightMode &&
+        highlightQuery == null;
   }
 
   /// Check if filter has any criteria
@@ -161,6 +178,7 @@ class SearchFilter extends Equatable {
     if (category != null) count++;
     if (popular) count++;
     if (pageCountRange != null) count++;
+    if (highlightMode) count++;
     return count;
   }
 
@@ -398,6 +416,9 @@ class SearchFilter extends Equatable {
       'sortBy': sortBy.name,
       'popular': popular,
       'pageCountRange': pageCountRange?.toJson(),
+      'source': source.apiValue,
+      'highlightMode': highlightMode,
+      'highlightQuery': highlightQuery,
     };
   }
 
@@ -436,6 +457,12 @@ class SearchFilter extends Equatable {
       pageCountRange: json['pageCountRange'] != null
           ? IntRange.fromJson(json['pageCountRange'] as Map<String, dynamic>)
           : null,
+      source: SearchSource.values.firstWhere(
+        (e) => e.apiValue == json['source'],
+        orElse: () => SearchSource.unknown,
+      ),
+      highlightMode: json['highlightMode'] as bool? ?? false,
+      highlightQuery: json['highlightQuery'] as String?,
     );
   }
 }
@@ -446,6 +473,43 @@ enum SortOption {
   popular,
   popularWeek,
   popularToday,
+}
+
+/// Navigation source for search filter
+enum SearchSource {
+  searchScreen,
+  detailScreen,
+  homeScreen,
+  unknown,
+}
+
+/// Extension for SearchSource display names
+extension SearchSourceExtension on SearchSource {
+  String get displayName {
+    switch (this) {
+      case SearchSource.searchScreen:
+        return 'Search Screen';
+      case SearchSource.detailScreen:
+        return 'Detail Screen';
+      case SearchSource.homeScreen:
+        return 'Home Screen';
+      case SearchSource.unknown:
+        return 'Unknown';
+    }
+  }
+
+  String get apiValue {
+    switch (this) {
+      case SearchSource.searchScreen:
+        return 'search';
+      case SearchSource.detailScreen:
+        return 'detail';
+      case SearchSource.homeScreen:
+        return 'home';
+      case SearchSource.unknown:
+        return 'unknown';
+    }
+  }
 }
 
 /// Extension for SortOption display names

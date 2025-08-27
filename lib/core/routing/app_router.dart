@@ -29,8 +29,13 @@ class AppRouter {
       GoRoute(
         path: AppRoute.home,
         name: AppRoute.homeName,
-        builder: (context, state) =>
-            const MainScreen(), // Using MainScreen as home for now
+        builder: (context, state) {
+          // Check for tag parameter
+          final tagQuery = state.uri.queryParameters['tag'];
+          return MainScreen(
+            tagQuery: tagQuery, // Pass tag parameter to MainScreen
+          );
+        },
       ),
 
       // Search Screen

@@ -28,12 +28,18 @@ class ContentListWidget extends StatefulWidget {
     this.enablePullToRefresh = true,
     this.enableInfiniteScroll = false, // Disabled by default for pagination
     this.showHeader = false, // Hidden by default for main screen style
+    this.shouldBlurContent, // NEW: Function to determine if content should be blurred
+    this.shouldHighlightContent, // NEW: Function to determine if content should be highlighted
+    this.highlightReason, // NEW: Function to get highlight reason
   });
 
   final void Function(Content content)? onContentTap;
   final bool enablePullToRefresh;
   final bool enableInfiniteScroll;
   final bool showHeader;
+  final bool Function(Content content)? shouldBlurContent; // NEW: Blur logic
+  final bool Function(Content content)? shouldHighlightContent; // NEW: Highlight logic
+  final String? Function(Content content)? highlightReason; // NEW: Highlight reason logic
 
   @override
   State<ContentListWidget> createState() => _ContentListWidgetState();
@@ -448,6 +454,9 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                   onTap: () => widget.onContentTap?.call(content),
                   // Using default settings (showUploadDate: false) for main screen style
                   // For search/browse screens, set showUploadDate: true
+                  isBlurred: widget.shouldBlurContent?.call(content) ?? false, // NEW: Apply blur logic
+                  isHighlighted: widget.shouldHighlightContent?.call(content) ?? false, // NEW: Apply highlight logic
+                  highlightReason: widget.highlightReason?.call(content), // NEW: Apply highlight reason
                 );
               },
               childCount: state.contents.length,
