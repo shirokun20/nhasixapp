@@ -26,6 +26,20 @@ class PdfConversionService {
   final UserDataRepository _userDataRepository;
   final Logger _logger;
 
+  /// Ensure notification service is properly initialized before PDF notifications
+  /// This fixes the issue where PDF notifications don't appear in release mode
+  Future<void> _ensureNotificationServiceReady() async {
+    try {
+      // Re-initialize notification service to ensure it's ready for PDF notifications
+      // This is especially important in release mode where the service might not be warm
+      await _notificationService.initialize();
+      
+      _logger.d('PdfConversionService: Notification service re-initialized for PDF notifications');
+    } catch (e) {
+      _logger.w('PdfConversionService: Failed to re-initialize notification service', error: e);
+    }
+  }
+
   /// Hitung total ukuran file dari daftar path PDF
   /// Calculate total file size from list of PDF paths
   Future<int> _calculateTotalFileSize(List<String> pdfPaths) async {
@@ -70,6 +84,10 @@ class PdfConversionService {
       // Tampilkan notifikasi bahwa konversi PDF dimulai
       // Show notification that PDF conversion has started
       _logger.i('PdfConversionService: About to show PDF conversion started notification');
+      
+      // Ensure notification service is ready (especially important for release mode)
+      await _ensureNotificationServiceReady();
+      
       _notificationService.debugLogState('Before PDF conversion started notification');
       await _notificationService.showPdfConversionStarted(
         contentId: contentId,
@@ -169,6 +187,10 @@ class PdfConversionService {
       // Tampilkan notifikasi sukses dengan informasi file yang dibuat
       // Show success notification with created file information
       _logger.i('PdfConversionService: About to show PDF conversion completed notification');
+      
+      // Ensure notification service is ready (especially important for release mode)
+      await _ensureNotificationServiceReady();
+      
       _notificationService.debugLogState('Before PDF conversion completed notification');
       await _notificationService.showPdfConversionCompleted(
         contentId: contentId,
@@ -185,6 +207,9 @@ class PdfConversionService {
       // Handle unexpected errors during conversion process
       _logger.e('PdfConversionService: Unexpected error during PDF conversion for $contentId', 
                 error: e, stackTrace: stackTrace);
+      
+      // Ensure notification service is ready for error notification
+      await _ensureNotificationServiceReady();
       
       await _notificationService.showPdfConversionError(
         contentId: contentId,
