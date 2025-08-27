@@ -27,58 +27,6 @@ class PdfConversionService {
   final UserDataRepository _userDataRepository;
   final Logger _logger;
 
-  /// File-based debug logging yang persisten di release mode
-  /// Persistent file-based debug logging for release mode debugging
-  Future<void> _debugLogToFile(String message) async {
-    try {
-      final documentsDir = await getApplicationDocumentsDirectory();
-      final debugFile = File(path.join(documentsDir.path, 'pdf_conversion_debug.log'));
-      
-      final timestamp = DateTime.now().toIso8601String();
-      final logEntry = '[$timestamp] $message\n';
-      
-      // Append to debug file
-      await debugFile.writeAsString(logEntry, mode: FileMode.append);
-    } catch (e) {
-      // Ignore file write errors - tidak boleh crash conversion process
-      // Ignore file write errors - should not crash conversion process
-    }
-  }
-
-  /// Read debug log file untuk debugging release mode issues
-  /// Read debug log file for debugging release mode issues
-  /// 
-  /// Returns: String content of debug log file
-  Future<String> getDebugLog() async {
-    try {
-      final documentsDir = await getApplicationDocumentsDirectory();
-      final debugFile = File(path.join(documentsDir.path, 'pdf_conversion_debug.log'));
-      
-      if (await debugFile.exists()) {
-        return await debugFile.readAsString();
-      } else {
-        return 'Debug log file not found. No PDF conversions attempted yet.';
-      }
-    } catch (e) {
-      return 'Error reading debug log: ${e.toString()}';
-    }
-  }
-
-  /// Clear debug log file
-  /// Clear debug log file for fresh debugging
-  Future<void> clearDebugLog() async {
-    try {
-      final documentsDir = await getApplicationDocumentsDirectory();
-      final debugFile = File(path.join(documentsDir.path, 'pdf_conversion_debug.log'));
-      
-      if (await debugFile.exists()) {
-        await debugFile.delete();
-      }
-    } catch (e) {
-      // Ignore errors
-    }
-  }
-
   /// Test method untuk verify apakah notification service bisa menampilkan notification
   /// Test method to verify if notification service can display notifications
   /// 
@@ -88,20 +36,16 @@ class PdfConversionService {
     String testTitle = 'PDF Notification Test',
   }) async {
     try {
-      await _debugLogToFile('testPdfNotification: STARTING test with contentId=$testContentId');
-      
-      // Clear previous logs for clean test
-      await clearDebugLog();
-      await _debugLogToFile('testPdfNotification: Debug log cleared, starting fresh test');
+      print('PDF_NOTIFICATION: testPdfNotification - STARTING test with contentId=$testContentId');
       
       // Test basic notification service first
-      await _debugLogToFile('testPdfNotification: Testing basic notification service');
+      print('PDF_NOTIFICATION: testPdfNotification - Testing basic notification service');
       
       try {
         await _notificationService.showTestActionNotification();
-        await _debugLogToFile('testPdfNotification: Basic test notification completed');
+        print('PDF_NOTIFICATION: testPdfNotification - Basic test notification completed');
       } catch (basicTestError) {
-        await _debugLogToFile('testPdfNotification: Basic test FAILED - ${basicTestError.toString()}');
+        print('PDF_NOTIFICATION: testPdfNotification - Basic test FAILED: ${basicTestError.toString()}');
       }
       
       // Ensure service is ready
@@ -109,22 +53,22 @@ class PdfConversionService {
       
       // Check service state
       final isEnabled = _notificationService.isEnabled;
-      await _debugLogToFile('testPdfNotification: NotificationService.isEnabled = $isEnabled');
+      print('PDF_NOTIFICATION: testPdfNotification - NotificationService.isEnabled = $isEnabled');
       
       if (!isEnabled) {
-        await _debugLogToFile('testPdfNotification: FAILED - NotificationService is not enabled');
+        print('PDF_NOTIFICATION: testPdfNotification - FAILED - NotificationService is not enabled');
         return false;
       }
       
       // Try to show simple PDF notification
-      await _debugLogToFile('testPdfNotification: Attempting to show test PDF notification');
+      print('PDF_NOTIFICATION: testPdfNotification - Attempting to show test PDF notification');
       
       await _notificationService.showPdfConversionStarted(
         contentId: testContentId,
         title: testTitle,
       );
       
-      await _debugLogToFile('testPdfNotification: Test notification completed successfully');
+      print('PDF_NOTIFICATION: testPdfNotification - Test notification completed successfully');
       
       // Wait a bit then show completion notification
       await Future.delayed(const Duration(seconds: 2));
@@ -136,12 +80,12 @@ class PdfConversionService {
         partsCount: 1,
       );
       
-      await _debugLogToFile('testPdfNotification: Test completion notification sent');
+      print('PDF_NOTIFICATION: testPdfNotification - Test completion notification sent');
       return true;
       
     } catch (e, stackTrace) {
-      await _debugLogToFile('testPdfNotification: EXCEPTION - ${e.toString()}');
-      await _debugLogToFile('testPdfNotification: STACKTRACE - ${stackTrace.toString()}');
+      print('PDF_NOTIFICATION: testPdfNotification - EXCEPTION: ${e.toString()}');
+      print('PDF_NOTIFICATION: testPdfNotification - STACKTRACE: ${stackTrace.toString()}');
       return false;
     }
   }
@@ -150,17 +94,15 @@ class PdfConversionService {
   /// Quick static method for testing from UI or main function
   static Future<void> quickTestPdfNotifications() async {
     try {
+      print('PDF_NOTIFICATION: quickTestPdfNotifications - Starting quick test');
+      
       final service = GetIt.instance<PdfConversionService>();
       final result = await service.testPdfNotification();
       
-      print('PDF Notification Test Result: $result');
-      
-      // Also get the debug log
-      final debugLog = await service.getDebugLog();
-      print('Debug Log:\n$debugLog');
+      print('PDF_NOTIFICATION: quickTestPdfNotifications - Test Result: $result');
       
     } catch (e) {
-      print('Quick test failed: $e');
+      print('PDF_NOTIFICATION: quickTestPdfNotifications - Quick test failed: $e');
     }
   }
 
@@ -168,21 +110,21 @@ class PdfConversionService {
   /// This fixes the issue where PDF notifications don't appear in release mode
   Future<void> _ensureNotificationServiceReady() async {
     try {
-      await _debugLogToFile('_ensureNotificationServiceReady: Starting notification service setup');
+      print('PDF_NOTIFICATION: _ensureNotificationServiceReady - Starting notification service setup');
       
       // Check initial state
       final initialEnabled = _notificationService.isEnabled;
-      await _debugLogToFile('_ensureNotificationServiceReady: Initial isEnabled = $initialEnabled');
+      print('PDF_NOTIFICATION: _ensureNotificationServiceReady - Initial isEnabled = $initialEnabled');
       
       // Re-initialize notification service to ensure it's ready for PDF notifications
       // This is especially important in release mode where the service might not be warm
       await _notificationService.initialize();
       
-      await _debugLogToFile('_ensureNotificationServiceReady: NotificationService.initialize() completed');
+      print('PDF_NOTIFICATION: _ensureNotificationServiceReady - NotificationService.initialize() completed');
       
       // Check state after first initialization
       final afterInitEnabled = _notificationService.isEnabled;
-      await _debugLogToFile('_ensureNotificationServiceReady: After init isEnabled = $afterInitEnabled');
+      print('PDF_NOTIFICATION: _ensureNotificationServiceReady - After init isEnabled = $afterInitEnabled');
       
       // Additional setup for release mode compatibility
       // Force another initialization to ensure channels are properly registered
@@ -191,22 +133,22 @@ class PdfConversionService {
         await _notificationService.initialize();
         
         final finalEnabled = _notificationService.isEnabled;
-        await _debugLogToFile('_ensureNotificationServiceReady: After double init isEnabled = $finalEnabled');
+        print('PDF_NOTIFICATION: _ensureNotificationServiceReady - After double init isEnabled = $finalEnabled');
         
         if (!finalEnabled) {
-          await _debugLogToFile('_ensureNotificationServiceReady: WARNING - Service still not enabled after double init!');
+          print('PDF_NOTIFICATION: _ensureNotificationServiceReady - WARNING - Service still not enabled after double init!');
         }
         
       } catch (doubleInitError) {
-        await _debugLogToFile('_ensureNotificationServiceReady: Double init error - ${doubleInitError.toString()}');
+        print('PDF_NOTIFICATION: _ensureNotificationServiceReady - Double init error: ${doubleInitError.toString()}');
       }
       
       _logger.d('PdfConversionService: Notification service re-initialized for PDF notifications');
-      await _debugLogToFile('_ensureNotificationServiceReady: Setup completed successfully');
+      print('PDF_NOTIFICATION: _ensureNotificationServiceReady - Setup completed successfully');
       
     } catch (e) {
       _logger.w('PdfConversionService: Failed to re-initialize notification service', error: e);
-      await _debugLogToFile('_ensureNotificationServiceReady: FAILED - ${e.toString()}');
+      print('PDF_NOTIFICATION: _ensureNotificationServiceReady - FAILED: ${e.toString()}');
     }
   }
 
@@ -244,7 +186,7 @@ class PdfConversionService {
     int maxPagesPerFile = 50,
   }) async {
     try {
-      await _debugLogToFile('convertToPdfInBackground: STARTED for contentId=$contentId, title=$title, images=${imagePaths.length}');
+      print('PDF_NOTIFICATION: convertToPdfInBackground - STARTED for contentId=$contentId, title=$title, images=${imagePaths.length}');
       
       _logger.i('PdfConversionService: Starting background PDF conversion for $contentId');
       
@@ -256,20 +198,20 @@ class PdfConversionService {
       // Tampilkan notifikasi bahwa konversi PDF dimulai
       // Show notification that PDF conversion has started
       _logger.i('PdfConversionService: About to show PDF conversion started notification');
-      await _debugLogToFile('convertToPdfInBackground: About to call showPdfConversionStarted');
+      print('PDF_NOTIFICATION: convertToPdfInBackground - About to call showPdfConversionStarted');
       
       // Ensure notification service is ready (especially important for release mode)
       await _ensureNotificationServiceReady();
       
       _notificationService.debugLogState('Before PDF conversion started notification');
-      await _debugLogToFile('convertToPdfInBackground: Calling showPdfConversionStarted now');
+      print('PDF_NOTIFICATION: convertToPdfInBackground - Calling showPdfConversionStarted now');
       
       await _notificationService.showPdfConversionStarted(
         contentId: contentId,
         title: title,
       );
       
-      await _debugLogToFile('convertToPdfInBackground: showPdfConversionStarted completed');
+      print('PDF_NOTIFICATION: convertToPdfInBackground - showPdfConversionStarted completed');
 
       // Buat direktori output untuk PDF
       // Create output directory for PDFs
@@ -364,13 +306,13 @@ class PdfConversionService {
       // Tampilkan notifikasi sukses dengan informasi file yang dibuat
       // Show success notification with created file information
       _logger.i('PdfConversionService: About to show PDF conversion completed notification');
-      await _debugLogToFile('convertToPdfInBackground: About to call showPdfConversionCompleted');
+      print('PDF_NOTIFICATION: convertToPdfInBackground - About to call showPdfConversionCompleted');
       
       // Ensure notification service is ready (especially important for release mode)
       await _ensureNotificationServiceReady();
       
       _notificationService.debugLogState('Before PDF conversion completed notification');
-      await _debugLogToFile('convertToPdfInBackground: Calling showPdfConversionCompleted now');
+      print('PDF_NOTIFICATION: convertToPdfInBackground - Calling showPdfConversionCompleted now');
       
       await _notificationService.showPdfConversionCompleted(
         contentId: contentId,
@@ -379,7 +321,7 @@ class PdfConversionService {
         partsCount: conversionResult.partsCount,
       );
       
-      await _debugLogToFile('convertToPdfInBackground: showPdfConversionCompleted completed');
+      print('PDF_NOTIFICATION: convertToPdfInBackground - showPdfConversionCompleted completed');
       
       _logger.i('PdfConversionService: PDF conversion completed successfully for $contentId');
       _logger.i('PdfConversionService: Created ${conversionResult.partsCount} PDF file(s) with ${conversionResult.pageCount} total pages');
@@ -390,12 +332,12 @@ class PdfConversionService {
       _logger.e('PdfConversionService: Unexpected error during PDF conversion for $contentId', 
                 error: e, stackTrace: stackTrace);
       
-      await _debugLogToFile('convertToPdfInBackground: ERROR occurred - ${e.toString()}');
+      print('PDF_NOTIFICATION: convertToPdfInBackground - ERROR occurred: ${e.toString()}');
       
       // Ensure notification service is ready for error notification
       await _ensureNotificationServiceReady();
       
-      await _debugLogToFile('convertToPdfInBackground: About to call showPdfConversionError');
+      print('PDF_NOTIFICATION: convertToPdfInBackground - About to call showPdfConversionError');
       
       await _notificationService.showPdfConversionError(
         contentId: contentId,
@@ -403,7 +345,7 @@ class PdfConversionService {
         error: 'Conversion failed: ${e.toString()}',
       );
       
-      await _debugLogToFile('convertToPdfInBackground: showPdfConversionError completed');
+      print('PDF_NOTIFICATION: convertToPdfInBackground - showPdfConversionError completed');
     }
   }
 
