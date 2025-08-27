@@ -78,11 +78,72 @@ class PdfConversionService {
     }
   }
 
+  /// Test method untuk verify apakah notification service bisa menampilkan notification
+  /// Test method to verify if notification service can display notifications
+  /// 
+  /// Returns: true jika test notification berhasil ditampilkan
+  Future<bool> testPdfNotification({
+    String testContentId = 'test-pdf-123',
+    String testTitle = 'PDF Notification Test',
+  }) async {
+    try {
+      await _debugLogToFile('testPdfNotification: STARTING test with contentId=$testContentId');
+      
+      // Clear previous logs for clean test
+      await clearDebugLog();
+      await _debugLogToFile('testPdfNotification: Debug log cleared, starting fresh test');
+      
+      // Ensure service is ready
+      await _ensureNotificationServiceReady();
+      
+      // Check service state
+      final isEnabled = _notificationService.isEnabled;
+      await _debugLogToFile('testPdfNotification: NotificationService.isEnabled = $isEnabled');
+      
+      if (!isEnabled) {
+        await _debugLogToFile('testPdfNotification: FAILED - NotificationService is not enabled');
+        return false;
+      }
+      
+      // Try to show simple PDF notification
+      await _debugLogToFile('testPdfNotification: Attempting to show test PDF notification');
+      
+      await _notificationService.showPdfConversionStarted(
+        contentId: testContentId,
+        title: testTitle,
+      );
+      
+      await _debugLogToFile('testPdfNotification: Test notification completed successfully');
+      
+      // Wait a bit then show completion notification
+      await Future.delayed(const Duration(seconds: 2));
+      
+      await _notificationService.showPdfConversionCompleted(
+        contentId: testContentId,
+        title: testTitle,
+        pdfPaths: ['/test/path/test.pdf'],
+        partsCount: 1,
+      );
+      
+      await _debugLogToFile('testPdfNotification: Test completion notification sent');
+      return true;
+      
+    } catch (e, stackTrace) {
+      await _debugLogToFile('testPdfNotification: EXCEPTION - ${e.toString()}');
+      await _debugLogToFile('testPdfNotification: STACKTRACE - ${stackTrace.toString()}');
+      return false;
+    }
+  }
+
   /// Ensure notification service is properly initialized before PDF notifications
   /// This fixes the issue where PDF notifications don't appear in release mode
   Future<void> _ensureNotificationServiceReady() async {
     try {
       await _debugLogToFile('_ensureNotificationServiceReady: Starting notification service setup');
+      
+      // Check initial state
+      final initialEnabled = _notificationService.isEnabled;
+      await _debugLogToFile('_ensureNotificationServiceReady: Initial isEnabled = $initialEnabled');
       
       // Re-initialize notification service to ensure it's ready for PDF notifications
       // This is especially important in release mode where the service might not be warm
@@ -90,12 +151,23 @@ class PdfConversionService {
       
       await _debugLogToFile('_ensureNotificationServiceReady: NotificationService.initialize() completed');
       
+      // Check state after first initialization
+      final afterInitEnabled = _notificationService.isEnabled;
+      await _debugLogToFile('_ensureNotificationServiceReady: After init isEnabled = $afterInitEnabled');
+      
       // Additional setup for release mode compatibility
       // Force another initialization to ensure channels are properly registered
       try {
         // Double initialization to ensure proper channel setup
         await _notificationService.initialize();
-        await _debugLogToFile('_ensureNotificationServiceReady: Double initialization completed');
+        
+        final finalEnabled = _notificationService.isEnabled;
+        await _debugLogToFile('_ensureNotificationServiceReady: After double init isEnabled = $finalEnabled');
+        
+        if (!finalEnabled) {
+          await _debugLogToFile('_ensureNotificationServiceReady: WARNING - Service still not enabled after double init!');
+        }
+        
       } catch (doubleInitError) {
         await _debugLogToFile('_ensureNotificationServiceReady: Double init error - ${doubleInitError.toString()}');
       }
