@@ -4,6 +4,7 @@ import 'package:logger/logger.dart';
 import 'package:open_file/open_file.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 /// Service untuk handle local notifications untuk download
 /// 
@@ -67,26 +68,76 @@ class NotificationService {
       'Download progress notifications';
 
   /// Request notification permission from user
+  /// Enhanced for Android 13+ and release mode compatibility
   Future<bool> requestNotificationPermission() async {
     try {
-      final status = await Permission.notification.request();
-      
-      if (status.isGranted) {
-        _logger.i('NotificationService: Permission granted');
-        return true;
-      } else if (status.isDenied) {
-        _logger.w('NotificationService: Permission denied');
-        return false;
-      } else if (status.isPermanentlyDenied) {
-        _logger.w('NotificationService: Permission permanently denied');
-        // Could show dialog to open app settings
-        return false;
+      // For Android, handle version-specific permission logic
+      if (Platform.isAndroid) {
+        // Get Android version info for API level checking
+        final deviceInfo = DeviceInfoPlugin();
+        final androidInfo = await deviceInfo.androidInfo;
+        final sdkInt = androidInfo.version.sdkInt;
+        
+        _logger.i('NotificationService: Android SDK: $sdkInt');
+        
+        if (sdkInt >= 33) {
+          // Android 13+ (API 33+) requires explicit notification permission
+          _logger.i('NotificationService: Requesting notification permission for Android 13+');
+          final status = await Permission.notification.request();
+          
+          if (status.isGranted) {
+            _logger.i('NotificationService: Permission granted (Android 13+)');
+            return true;
+          } else if (status.isDenied) {
+            _logger.w('NotificationService: Permission denied (Android 13+)');
+            return false;
+          } else if (status.isPermanentlyDenied) {
+            _logger.w('NotificationService: Permission permanently denied (Android 13+)');
+            return false;
+          } else if (status.isRestricted) {
+            _logger.w('NotificationService: Permission restricted (Android 13+)');
+            return false;
+          }
+          
+          _logger.w('NotificationService: Unknown permission status: $status');
+          return false;
+        } else {
+          // Android 12 and below - notifications enabled by default
+          _logger.i('NotificationService: Android 12 and below - notifications enabled by default');
+          return true;
+        }
+      } else if (Platform.isIOS) {
+        // iOS permission handling
+        _logger.i('NotificationService: Requesting notification permission for iOS');
+        final status = await Permission.notification.request();
+        
+        if (status.isGranted) {
+          _logger.i('NotificationService: Permission granted (iOS)');
+          return true;
+        } else {
+          _logger.w('NotificationService: Permission denied (iOS)');
+          return false;
+        }
       }
       
-      return false;
-    } catch (e) {
-      _logger.e('NotificationService: Error requesting permission: $e');
-      return false;
+      // Fallback for other platforms
+      _logger.w('NotificationService: Unknown platform, assuming permission granted');
+      return true;
+      
+    } catch (e, stackTrace) {
+      _logger.e('NotificationService: Error requesting permission: $e', 
+                error: e, stackTrace: stackTrace);
+      
+      // In case of error, try fallback approach
+      try {
+        final status = await Permission.notification.request();
+        final granted = status.isGranted;
+        _logger.w('NotificationService: Fallback permission result: $granted');
+        return granted;
+      } catch (fallbackError) {
+        _logger.e('NotificationService: Fallback permission also failed: $fallbackError');
+        return false;
+      }
     }
   }
 
@@ -306,8 +357,11 @@ class NotificationService {
   bool get isEnabled => _permissionGranted && _initialized;
 
   /// Initialize notification service
+  /// Enhanced initialization for debug and release mode compatibility
   Future<void> initialize() async {
     try {
+      _logger.i('NotificationService: Starting initialization...');
+      
       // Request notification permission first
       final permissionStatus = await requestNotificationPermission();
       
@@ -319,36 +373,73 @@ class NotificationService {
       }
       
       _permissionGranted = true;
+      _logger.i('NotificationService: Permission granted, proceeding with initialization');
       
       // Android initialization
-      const androidSettings =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
+      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
 
-      // iOS initialization
-      const iosSettings = DarwinInitializationSettings(
-        requestAlertPermission: false, // Already requested above
-        requestBadgePermission: false,
-        requestSoundPermission: false,
-      );
+      // iOS initialization - request permissions during init for iOS
+      final DarwinInitializationSettings iosSettings;
+      if (Platform.isIOS) {
+        iosSettings = const DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        );
+      } else {
+        iosSettings = const DarwinInitializationSettings(
+          requestAlertPermission: false, // Already requested above for non-iOS
+          requestBadgePermission: false,
+          requestSoundPermission: false,
+        );
+      }
 
-      const initSettings = InitializationSettings(
+      final initSettings = InitializationSettings(
         android: androidSettings,
         iOS: iosSettings,
       );
 
-      await _notificationsPlugin.initialize(
+      final initResult = await _notificationsPlugin.initialize(
         initSettings,
         onDidReceiveNotificationResponse: _onNotificationTapped,
       );
+
+      if (initResult == null || !initResult) {
+        _logger.w('NotificationService: Plugin initialization returned false or null');
+      } else {
+        _logger.i('NotificationService: Plugin initialization successful');
+      }
 
       // Create notification channel for Android
       await _createNotificationChannel();
 
       _initialized = true;
-      _logger.i('NotificationService initialized successfully');
-    } catch (e) {
+      _logger.i('NotificationService initialized successfully (Permission: $_permissionGranted, Initialized: $_initialized)');
+      
+    } catch (e, stackTrace) {
       _initialized = false;
-      _logger.e('Failed to initialize NotificationService: $e');
+      _permissionGranted = false;
+      _logger.e('Failed to initialize NotificationService: $e', 
+                error: e, stackTrace: stackTrace);
+      
+      // Try a simplified initialization as fallback
+      try {
+        _logger.i('NotificationService: Attempting fallback initialization...');
+        const simpleSettings = InitializationSettings(
+          android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+          iOS: DarwinInitializationSettings(),
+        );
+        
+        await _notificationsPlugin.initialize(simpleSettings);
+        _initialized = true;
+        _permissionGranted = true; // Assume granted for fallback
+        _logger.w('NotificationService: Fallback initialization completed');
+        
+      } catch (fallbackError) {
+        _logger.e('NotificationService: Fallback initialization also failed: $fallbackError');
+        _initialized = false;
+        _permissionGranted = false;
+      }
     }
   }
 
