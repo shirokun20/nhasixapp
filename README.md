@@ -12,6 +12,10 @@
 > **The content accessed through this application may contain mature themes and is not suitable for minors.**  
 > **By using this application, you confirm that you are at least 18 years old and legally permitted to access such content in your jurisdiction.**
 
+> **📱 PLATFORM SUPPORT**  
+> **NhasixApp is designed exclusively for Android devices.**  
+> **Other platforms (iOS, web, desktop) are NOT supported.**
+
 ## 🚀 **BETA v0.2.0 - NOW AVAILABLE!**
 
 **NhasixApp** is a comprehensive Flutter Android application that provides an enhanced mobile reading experience with **70% faster content loading**, smart offline capabilities, and modern UI improvements. Built with **Clean Architecture** and optimized for performance.

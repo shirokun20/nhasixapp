@@ -5,6 +5,10 @@ version: 0.2.0+2
 
 environment:
   sdk: ^3.5.4
+  
+# Platform-specific builds (Android only)
+platforms:
+  android:
 
 dependencies:
   flutter:

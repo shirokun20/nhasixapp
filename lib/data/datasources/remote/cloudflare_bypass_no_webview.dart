@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:async';
+import 'dart:io';
 
 /// Cloudflare bypass implementation without using WebView
 class CloudflareBypassNoWebView {
@@ -18,6 +20,12 @@ class CloudflareBypassNoWebView {
 
   /// Attempt to bypass Cloudflare protection without WebView
   Future<bool> attemptBypass() async {
+    // Only Android platform is supported
+    if (kIsWeb || Platform.isIOS || Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      _logger.e('CloudflareBypass only supported on Android platform');
+      throw UnsupportedError('NhasixApp is only supported on Android devices. Current platform: ${Platform.operatingSystem}');
+    }
+
     _logger.i('Starting Cloudflare bypass without WebView...');
 
     final stopwatch = Stopwatch()..start();
