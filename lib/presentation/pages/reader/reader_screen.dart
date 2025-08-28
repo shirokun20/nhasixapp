@@ -738,6 +738,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           ),
           TextButton(
             onPressed: () {
+              Navigator.pop(context);
               final page = int.tryParse(controller.text);
               if (page != null &&
                   page >= 1 &&
@@ -748,7 +749,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
                 );
-                Navigator.of(context).pop();
               }
             },
             child: Text(

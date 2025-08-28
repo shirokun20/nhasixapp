@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/entities.dart';
 import '../../services/local_image_preloader.dart';
 import '../blocs/content/content_bloc.dart';
-import '../blocs/download/download_bloc.dart';  // 🐛 FIXED: Added import for DownloadBloc
+import '../blocs/download/download_bloc.dart'; // 🐛 FIXED: Added import for DownloadBloc
 import 'content_card_widget.dart';
 
 extension StringCapitalize on String {
@@ -24,11 +23,12 @@ class ContentDownloadCache {
   static final Map<String, DateTime> _cacheTime = {};
   static const Duration _cacheExpiry = Duration(minutes: 5);
 
-  static Future<bool> isDownloaded(String contentId, [BuildContext? context]) async {
+  static Future<bool> isDownloaded(String contentId,
+      [BuildContext? context]) async {
     // Check cache first
     if (_cache.containsKey(contentId)) {
       final cacheTime = _cacheTime[contentId];
-      if (cacheTime != null && 
+      if (cacheTime != null &&
           DateTime.now().difference(cacheTime) < _cacheExpiry) {
         return _cache[contentId]!;
       }
@@ -41,11 +41,11 @@ class ContentDownloadCache {
         final downloadState = context.read<DownloadBloc>().state;
         if (downloadState is DownloadLoaded) {
           isDownloaded = downloadState.isDownloaded(contentId);
-          
+
           // Cache DownloadBloc result as it's authoritative
           _cache[contentId] = isDownloaded;
           _cacheTime[contentId] = DateTime.now();
-          
+
           return isDownloaded;
         }
       } catch (e) {
@@ -56,11 +56,11 @@ class ContentDownloadCache {
     // Priority 2 - Fallback to filesystem check only when DownloadBloc unavailable
     try {
       isDownloaded = await LocalImagePreloader.isContentDownloaded(contentId);
-      
+
       // Cache result
       _cache[contentId] = isDownloaded;
       _cacheTime[contentId] = DateTime.now();
-      
+
       return isDownloaded;
     } catch (e) {
       // If error checking, assume not downloaded and cache negative result briefly
@@ -107,99 +107,35 @@ class ContentListWidget extends StatefulWidget {
   final bool enableInfiniteScroll;
   final bool showHeader;
   final bool Function(Content content)? shouldBlurContent; // NEW: Blur logic
-  final bool Function(Content content)? shouldHighlightContent; // NEW: Highlight logic
-  final String? Function(Content content)? highlightReason; // NEW: Highlight reason logic
+  final bool Function(Content content)?
+      shouldHighlightContent; // NEW: Highlight logic
+  final String? Function(Content content)?
+      highlightReason; // NEW: Highlight reason logic
 
   @override
   State<ContentListWidget> createState() => _ContentListWidgetState();
 }
 
 class _ContentListWidgetState extends State<ContentListWidget> {
-  final RefreshController _refreshController = RefreshController(
-    initialRefresh: false,
-  );
   final ScrollController _scrollController = ScrollController();
-  bool _isRefreshing = false;
 
   @override
   void initState() {
     super.initState();
-    _setupScrollListener();
   }
 
   @override
   void dispose() {
-    _refreshController.dispose();
     _scrollController.dispose();
     super.dispose();
-  }
-
-  void _setupScrollListener() {
-    // Only setup infinite scroll if enabled
-    if (widget.enableInfiniteScroll) {
-      _scrollController.addListener(() {
-        if (_scrollController.position.pixels >=
-            _scrollController.position.maxScrollExtent - 200) {
-          // Load more when near bottom
-          final state = context.read<ContentBloc>().state;
-          if (state is ContentLoaded && state.canLoadMore) {
-            context.read<ContentBloc>().add(const ContentLoadMoreEvent());
-          }
-        }
-      });
-    }
-  }
-
-  void _onRefresh() {
-    if (_isRefreshing) return; // Prevent multiple refresh calls
-
-    _isRefreshing = true;
-    final currentState = context.read<ContentBloc>().state;
-    if (currentState is ContentLoaded) {
-      // Refresh current page instead of going back to page 1
-      context
-          .read<ContentBloc>()
-          .add(ContentGoToPageEvent(currentState.currentPage));
-    } else {
-      context.read<ContentBloc>().add(const ContentRefreshEvent());
-    }
-  }
-
-  void _onLoadMore() {
-    context.read<ContentBloc>().add(const ContentLoadMoreEvent());
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<ContentBloc, ContentState>(
       listener: (context, state) {
-        if (state is ContentLoaded) {
-          // Complete refresh if we were refreshing
-          if (_isRefreshing) {
-            // Only call SmartRefresher methods if infinite scroll is enabled
-            if (widget.enableInfiniteScroll) {
-              _refreshController.refreshCompleted();
-            }
-            _isRefreshing = false;
-          }
-
-          if (state.isLoadingMore && widget.enableInfiniteScroll) {
-            // Load more completed (only for infinite scroll)
-            _refreshController.loadComplete();
-          }
-        } else if (state is ContentError) {
+       if (state is ContentError) {
           // Reset refresh state and notify controller
-          if (_isRefreshing) {
-            if (widget.enableInfiniteScroll) {
-              _refreshController.refreshFailed();
-            }
-            _isRefreshing = false;
-          }
-
-          if (widget.enableInfiniteScroll) {
-            _refreshController.loadFailed();
-          }
-
           // Show error snackbar
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -228,102 +164,6 @@ class _ContentListWidgetState extends State<ContentListWidget> {
           );
         }
 
-        if (state is ContentLoading) {
-          // Show overlay loading for pagination changes if we have previous content
-          if (state.previousContents != null &&
-              state.previousContents!.isNotEmpty) {
-            return Stack(
-              children: [
-                // Show previous content with reduced opacity
-                Opacity(
-                  opacity: 0.3,
-                  child: _buildContentGrid(ContentLoaded(
-                    contents: state.previousContents!,
-                    currentPage: 1, // Temporary values
-                    totalPages: 1,
-                    totalCount: state.previousContents!.length,
-                    hasNext: false,
-                    hasPrevious: false,
-                    sortBy: SortOption.newest,
-                    lastUpdated: DateTime.now(),
-                  )),
-                ),
-                // Loading overlay
-                Container(
-                  color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.7),
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 16,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Theme.of(context).shadowColor.withValues(alpha: 0.5),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              color: Theme.of(context).colorScheme.primary,
-                              strokeWidth: 2.5,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Text(
-                            state.message.isNotEmpty
-                                ? state.message
-                                : 'Loading...',
-                            style: TextStyleConst.bodyMedium.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          }
-
-          // Full loading for initial load
-          return Container(
-            color: Theme.of(context).colorScheme.surface,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    color: Theme.of(context).colorScheme.primary,
-                    strokeWidth: 3,
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    state.message.isNotEmpty
-                        ? state.message
-                        : 'Loading content...',
-                    style: TextStyleConst.bodyLarge.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
         if (state is ContentEmpty) {
           return Center(
             child: Column(
@@ -332,7 +172,10 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                 Icon(
                   Icons.inbox_outlined,
                   size: 64,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -415,46 +258,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
         }
 
         if (state is ContentLoaded) {
-          // For pagination mode, we don't use SmartRefresher at all
-          // Only use SmartRefresher when infinite scroll is explicitly enabled
-          if (widget.enableInfiniteScroll) {
-            return SmartRefresher(
-              controller: _refreshController,
-              enablePullDown: widget.enablePullToRefresh,
-              enablePullUp: widget.enableInfiniteScroll && state.hasNext,
-              onRefresh: _onRefresh,
-              onLoading: _onLoadMore,
-              header: widget.enablePullToRefresh
-                  ? const WaterDropMaterialHeader()
-                  : null,
-              footer: CustomFooter(
-                builder: (context, mode) {
-                  Widget body;
-                  if (mode == LoadStatus.idle) {
-                    body = const Text("Pull up to load more");
-                  } else if (mode == LoadStatus.loading) {
-                    body = CircularProgressIndicator(
-                        color: Theme.of(context).colorScheme.primary);
-                  } else if (mode == LoadStatus.failed) {
-                    body = const Text("Load Failed! Click retry!");
-                  } else if (mode == LoadStatus.canLoading) {
-                    body = const Text("Release to load more");
-                  } else {
-                    body = const Text("No more content");
-                  }
-                  return SizedBox(
-                    height: 55.0,
-                    child: Center(child: body),
-                  );
-                },
-              ),
-              child: _buildContentGrid(state),
-            );
-          } else {
-            // Simple grid for pagination mode
-            // For pagination, we use pagination controls instead of pull-to-refresh
-            return _buildContentGrid(state);
-          }
+          return _buildContentGrid(state);
         }
 
         return const SizedBox.shrink();
@@ -487,7 +291,10 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                         Text(
                           '${state.totalCount} items • Page ${state.currentPage} of ${state.totalPages}',
                           style: TextStyleConst.bodySmall.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.7),
                           ),
                         ),
                       ],
@@ -497,7 +304,10 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                     Text(
                       'Updated: ${_formatTime(state.lastUpdated!)}',
                       style: TextStyleConst.bodySmall.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.5),
                       ),
                     ),
                 ],
@@ -518,21 +328,26 @@ class _ContentListWidgetState extends State<ContentListWidget> {
             delegate: SliverChildBuilderDelegate(
               (context, index) {
                 final content = state.contents[index];
-                
+
                 // Use FutureBuilder to check download status for highlight
                 return FutureBuilder<bool>(
-                  future: ContentDownloadCache.isDownloaded(content.id, context), // 🐛 FIXED: Pass context for DownloadBloc access
+                  future: ContentDownloadCache.isDownloaded(content.id,
+                      context), // 🐛 FIXED: Pass context for DownloadBloc access
                   builder: (context, snapshot) {
                     final isDownloaded = snapshot.data ?? false;
-                    
+
                     return ContentCard(
                       content: content,
                       onTap: () => widget.onContentTap?.call(content),
                       // Using default settings (showUploadDate: false) for main screen style
                       // For search/browse screens, set showUploadDate: true
-                      isBlurred: widget.shouldBlurContent?.call(content) ?? false, // NEW: Apply blur logic
-                      isHighlighted: isDownloaded, // NEW: Highlight downloaded content instead of search match
-                      highlightReason: isDownloaded ? 'Downloaded' : null, // NEW: Indicate download status
+                      isBlurred: widget.shouldBlurContent?.call(content) ??
+                          false, // NEW: Apply blur logic
+                      isHighlighted:
+                          isDownloaded, // NEW: Highlight downloaded content instead of search match
+                      highlightReason: isDownloaded
+                          ? 'Downloaded'
+                          : null, // NEW: Indicate download status
                     );
                   },
                 );
@@ -541,17 +356,6 @@ class _ContentListWidgetState extends State<ContentListWidget> {
             ),
           ),
         ),
-
-        // Loading more indicator (only for infinite scroll)
-        if (widget.enableInfiniteScroll && state.isLoadingMore)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Center(
-                child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
-              ),
-            ),
-          ),
 
         // Bottom padding
         const SliverToBoxAdapter(
