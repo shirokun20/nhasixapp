@@ -8,7 +8,6 @@ import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/blocs/content/content_bloc.dart';
-import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';  // 🐛 FIXED: Added import for DownloadBloc
 import 'package:nhasixapp/presentation/blocs/home/home_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
