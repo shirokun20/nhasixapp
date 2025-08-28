@@ -282,7 +282,46 @@ class DownloadService {
       await imagesDir.create(recursive: true);
     }
 
+    // 🔒 PRIVACY: Create .nomedia file to prevent images from appearing in gallery
+    await _createNoMediaFile(nhasixDir);
+
     return imagesDir;
+  }
+
+  /// Create .nomedia file to prevent media scanning
+  /// This hides images from Android Gallery/Photos apps for privacy
+  Future<void> _createNoMediaFile(Directory directory) async {
+    try {
+      final nomediaFile = File(path.join(directory.path, '.nomedia'));
+      
+      if (!await nomediaFile.exists()) {
+        await nomediaFile.writeAsString(
+          '# This file prevents Android Media Scanner from indexing this folder\n'
+          '# Images in this folder and subfolders will not appear in Gallery apps\n'
+          '# Created by NhasixApp for privacy protection\n'
+        );
+        _logger.i('Created .nomedia file for privacy: ${nomediaFile.path}');
+      }
+    } catch (e) {
+      _logger.w('Failed to create .nomedia file: $e');
+      // Don't throw error - this is not critical for download functionality
+    }
+  }
+
+  /// 🔒 UTILITY: Add .nomedia file to existing downloads for privacy protection
+  /// Call this to retrofit existing downloads that don't have .nomedia file
+  Future<void> ensurePrivacyProtection() async {
+    try {
+      final downloadsPath = await _getDownloadsDirectory();
+      final nhasixDir = Directory(path.join(downloadsPath, 'nhasix'));
+      
+      if (await nhasixDir.exists()) {
+        await _createNoMediaFile(nhasixDir);
+        _logger.i('Privacy protection ensured for existing downloads');
+      }
+    } catch (e) {
+      _logger.e('Error ensuring privacy protection: $e');
+    }
   }
 
   /// Smart Downloads directory detection

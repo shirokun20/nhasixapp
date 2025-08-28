@@ -4,7 +4,6 @@ import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/presentation/pages/reader/reader_screen.dart';
 import 'package:nhasixapp/presentation/pages/settings/settings_screen.dart';
 import 'package:nhasixapp/presentation/pages/splash/splash_screen.dart';
-import 'package:nhasixapp/presentation/pages/main/main_screen.dart';
 import 'package:nhasixapp/presentation/pages/main/main_screen_scrollable.dart';
 import 'package:nhasixapp/presentation/pages/search/search_screen.dart';
 import 'package:nhasixapp/presentation/pages/content_by_tag/content_by_tag_screen.dart';
