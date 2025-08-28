@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:logger/web.dart';
 
 import '../../../core/constants/colors_const.dart';
@@ -557,7 +558,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           _toggleItemSelection(contentId);
         } else {
           // Navigate to content detail
-          Navigator.of(context).pushNamed('/content/$contentId');
+          context.push('/content/$contentId');
         }
       },
       onLongPress: () {

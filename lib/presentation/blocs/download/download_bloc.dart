@@ -18,6 +18,7 @@ import '../../../domain/repositories/repositories.dart';
 import '../../../services/notification_service.dart';
 import '../../../services/download_manager.dart';
 import '../../../services/pdf_conversion_service.dart';
+import '../../widgets/content_list_widget.dart';
 
 part 'download_event.dart';
 part 'download_state.dart';
@@ -509,6 +510,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         );
       }
 
+      // Invalidate download status cache to ensure UI reflects new download status
+      ContentDownloadCache.invalidateCache(event.contentId);
+
       // Process queue to start next download
       _processQueue();
 
@@ -853,6 +857,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Remove from database
       await _userDataRepository.deleteDownloadStatus(event.contentId);
       await _downloadContentUseCase.deleteCall(event.contentId);
+
+      // Invalidate download status cache to ensure UI reflects removal
+      ContentDownloadCache.invalidateCache(event.contentId);
 
       // Refresh downloads
       add(const DownloadRefreshEvent());

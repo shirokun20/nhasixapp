@@ -260,10 +260,32 @@ class LocalImagePreloader {
     }
   }
 
+  /// Get only external download paths (excluding cache)
+  static Future<List<String>> _getExternalDownloadPaths() async {
+    final List<String> externalPaths = [];
+    
+    try {
+      // Only external storage Download folder (permanently downloaded files)
+      final downloadPaths = await _getDownloadDirectories();
+      for (final downloadPath in downloadPaths) {
+        final downloadDir = Directory(path.join(downloadPath, _baseLocalPath));
+        if (await downloadDir.exists()) {
+          externalPaths.add(path.join(downloadPath, _baseLocalPath));
+          _logger.d('🐛 External download path: ${path.join(downloadPath, _baseLocalPath)}');
+        }
+      }
+    } catch (e) {
+      _logger.e('Error getting external download paths: $e');
+    }
+    
+    return externalPaths;
+  }
+
   /// Check if content is downloaded with metadata validation
+  /// Only checks external download folders, not cache
   static Future<bool> isContentDownloaded(String contentId) async {
     try {
-      final basePaths = await _getPossibleBasePaths();
+      final basePaths = await _getExternalDownloadPaths();
       
       for (final basePath in basePaths) {
         final metadataPath = path.join(basePath, contentId, 'metadata.json');

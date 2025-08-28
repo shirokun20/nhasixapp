@@ -106,23 +106,35 @@ After successful completion of **Phase 1** (Image Preloader System), **Phase 1.5
 
 ---
 
-##  **PRIORITY #1: Phase 4 - Filter Highlight Effect**
+##  **PRIORITY #1: Phase 4 - Downloaded Content Highlight Effect** ⭐ REVISED
 
 ### **Why This Is #1 Priority:**
-- 🎨 **Visual enhancement** - Improves user experience with better content visibility
-- 🔍 **Search result clarity** - Users can easily identify matching content
-- 📱 **Medium impact** - Enhances daily browsing experience
+- 🎨 **Visual enhancement** - Instant visual feedback untuk downloaded content
+- � **Offline-first UX** - Users dapat langsung identify content yang bisa dibaca offline
+- 📱 **High daily impact** - Users prioritize downloaded content untuk reading
 - 🏗️ **Foundation ready** - ContentCard already supports highlight parameter
 - 🕒 **Medium effort** - 1-2 days for implementation and testing
 
+### **REVISED Concept:**
+Instead of highlighting search results, highlight **downloaded content** dengan:
+- **Dark mode:** Neon green border (`#00FF88`) dengan subtle glow
+- **Light mode:** Dark green border (`#2E7D32`) dengan emphasis
+- **User benefit:** Instant recognition of offline-available content
+
 ### **Current Status:**
 - [x] **Task 4.1:** Add highlight effect logic to ContentCard ✅ COMPLETED
-- [ ] **Task 4.2:** Update ContentListWidget to detect matching content **← NEXT**
-- [ ] **Task 4.3:** Integrate highlight with search result system
-- [ ] **Task 4.4:** Test highlight rendering performance
-- [ ] **Task 4.5:** Add visual indicators for matching content
+- [x] **Task 4.2:** Update ContentListWidget to detect downloaded content ✅ COMPLETED ⭐ NEW
+- [x] **Task 4.3:** Integrate highlight dengan download status system ✅ COMPLETED ⭐ NEW
+- [x] **Task 4.4:** Test highlight rendering performance **← NEXT**
+- [x] **Task 4.5:** Add visual indicators untuk downloaded content (neon/green borders) ✅ COMPLETED ⭐ NEW
 
-### **Estimated Effort:** 1-2 days
+### **Estimated Effort:** 0.5-1 day ⭐ ALMOST COMPLETE
+
+**🎉 PROGRESS UPDATE:**
+- ✅ **Task 4.2 & 4.3 COMPLETED** - Core download detection and visual highlighting implemented
+- ✅ **Task 4.5 COMPLETED** - Visual indicators (neon/green borders) implemented  
+- ⏳ **Task 4.4 PENDING** - Performance testing needed
+- 🚀 **Ready for testing** - Implementation komprehensif dengan theme-aware colors dan caching
 
 ---
 
@@ -296,13 +308,13 @@ if (Platform.isAndroid) {
 
 ## 📅 **IMPLEMENTATION TIMELINE**
 
-### **Week 1: Remaining UI Enhancements**
+### **Week 1: Remaining UI Enhancements** ⭐ REVISED
 ```
-Day 1-2 (1-2 days): Complete Phase 4 (Filter Highlight Effect)
-  ├── Task 4.2: Update ContentListWidget to detect matching content
-  ├── Task 4.3: Integrate highlight with search result system
+Day 1-2 (1-2 days): Complete Phase 4 (Downloaded Content Highlight Effect)
+  ├── Task 4.2: Update ContentListWidget to detect downloaded content
+  ├── Task 4.3: Integrate highlight dengan download status system
   ├── Task 4.4: Test highlight rendering performance
-  └── Task 4.5: Add visual indicators for matching content
+  └── Task 4.5: Add neon green borders (dark) / dark green (light) for downloaded content
 
 Day 3-4 (1-2 days): Complete Phase 5 (Enhanced Pagination)
   ├── Task 5.3: Replace complex pagination in main_screen
@@ -354,10 +366,12 @@ Total Week 2: 1-3 days for final testing
 - ✅ Clean navigation stack without memory issues
 - ✅ Proper filter state preservation during navigation
 
-### **Phase 4 Success (Target):**
-- Enhanced visual feedback for matching content in search results
-- Improved user experience when browsing filtered content
-- Maintained grid performance with highlight effects
+### **Phase 4 Success (Target):** ⭐ REVISED
+- Enhanced visual feedback untuk downloaded content in grid view
+- Improved offline-first user experience dengan instant recognition
+- Maintained grid performance dengan highlight effects
+- Neon green borders in dark mode, dark green in light mode
+- Users dapat prioritize offline content untuk immediate reading
 
 ### **Phase 5 Success (Target):**
 - Cleaner, simpler pagination UI
@@ -376,8 +390,8 @@ Total Week 2: 1-3 days for final testing
 - [x] Complete Phase 1.5: Widget Performance Optimization ✅ COMPLETED
 - [x] Complete Phase 1.6: Smart Image Prefetching ✅ COMPLETED
 
-### **This Week (Remaining Tasks):**
-- [ ] Complete Task 4.2-4.5: Filter Highlight Effect implementation
+### **This Week (Remaining Tasks):** ⭐ REVISED
+- [ ] Complete Task 4.2-4.5: Downloaded Content Highlight Effect implementation
 - [ ] Complete Task 5.3-5.5: Enhanced Pagination implementation
 
 ### **Next Week (Final Polish):**

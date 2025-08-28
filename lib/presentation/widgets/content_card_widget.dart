@@ -57,19 +57,25 @@ class ContentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
     final cardWidget = Card(
       clipBehavior: Clip.antiAlias,
       color: ColorsConst.darkCard,
       elevation: isHighlighted ? 6 : 2,
       shadowColor: isHighlighted 
-          ? ColorsConst.accentBlue.withValues(alpha: 0.5)
+          ? (isDarkMode 
+              ? const Color(0xFF00FF88).withValues(alpha: 0.5) // Neon green for dark mode
+              : const Color(0xFF2E7D32).withValues(alpha: 0.5)) // Dark green for light mode
           : ColorsConst.darkBackground.withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: isHighlighted
             ? BorderSide(
-                color: ColorsConst.accentBlue,
-                width: 2.0,
+                color: isDarkMode 
+                    ? const Color(0xFF00FF88) // Neon green for dark mode
+                    : const Color(0xFF2E7D32), // Dark green for light mode
+                width: 2.5,
               )
             : BorderSide.none,
       ),
@@ -145,14 +151,19 @@ class ContentCard extends StatelessWidget {
       ),
     );
 
-    // Apply additional highlight effect untuk matching content
+    // Apply additional highlight effect untuk downloaded content
     if (isHighlighted) {
+      final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+      
       return Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: ColorsConst.accentBlue.withValues(alpha: 0.3),
+              color: (isDarkMode 
+                  ? const Color(0xFF00FF88) // Neon green for dark mode
+                  : const Color(0xFF2E7D32)) // Dark green for light mode
+                  .withValues(alpha: 0.3),
               blurRadius: 8,
               spreadRadius: 2,
             ),
@@ -200,44 +211,52 @@ class ContentCard extends StatelessWidget {
     return cardWidget;
   }
 
-  /// Build highlight overlay indicator for matching content
+  /// Build highlight overlay indicator for downloaded content
   Widget _buildHighlightOverlay() {
-    return Positioned(
-      top: 8,
-      right: 8,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: ColorsConst.accentBlue,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+    return Builder(
+      builder: (context) {
+        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+        
+        return Positioned(
+          top: 8,
+          right: 8,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            decoration: BoxDecoration(
+              color: isDarkMode 
+                  ? const Color(0xFF00FF88) // Neon green for dark mode
+                  : const Color(0xFF2E7D32), // Dark green for light mode
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.star,
-              color: Colors.white,
-              size: 12,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.download_done,
+                  color: isDarkMode ? Colors.black : Colors.white,
+                  size: 12,
+                ),
+                const SizedBox(width: 3),
+                Text(
+                  'OFFLINE',
+                  style: TextStyleConst.overline.copyWith(
+                    color: isDarkMode ? Colors.black : Colors.white,
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 2),
-            Text(
-              'MATCH',
-              style: TextStyleConst.overline.copyWith(
-                color: Colors.white,
-                fontSize: 8,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -477,23 +496,41 @@ class ContentCard extends StatelessWidget {
   }
 
   Widget _buildBottomRow() {
-    return Row(
-      children: [
-        // Upload date (only show if enabled)
-        if (showUploadDate)
-          Text(
-            _formatUploadDate(content.uploadDate),
-            style: TextStyleConst.caption.copyWith(
-              fontSize: 10,
-            ),
-          ),
+    return Builder(
+      builder: (context) {
+        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+        
+        return Row(
+          children: [
+            // Upload date (only show if enabled)
+            if (showUploadDate)
+              Text(
+                _formatUploadDate(content.uploadDate),
+                style: TextStyleConst.caption.copyWith(
+                  fontSize: 10,
+                ),
+              ),
 
-        const Spacer(),
+            const Spacer(),
 
-        // Language flag
-        if (showLanguageFlag && content.language.isNotEmpty)
-          _buildLanguageFlag(),
-      ],
+            // Downloaded indicator icon
+            if (isHighlighted) ...[
+              Icon(
+                Icons.offline_pin,
+                size: 14,
+                color: isDarkMode 
+                    ? const Color(0xFF00FF88) // Neon green for dark mode
+                    : const Color(0xFF2E7D32), // Dark green for light mode
+              ),
+              const SizedBox(width: 4),
+            ],
+
+            // Language flag
+            if (showLanguageFlag && content.language.isNotEmpty)
+              _buildLanguageFlag(),
+          ],
+        );
+      },
     );
   }
 

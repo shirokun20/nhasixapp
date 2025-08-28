@@ -4,13 +4,82 @@ import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/entities.dart';
+import '../../services/local_image_preloader.dart';
 import '../blocs/content/content_bloc.dart';
+import '../blocs/download/download_bloc.dart';  // 🐛 FIXED: Added import for DownloadBloc
 import 'content_card_widget.dart';
 
 extension StringCapitalize on String {
   String get capitalize {
     if (isEmpty) return this;
     return '${this[0].toUpperCase()}${substring(1).toLowerCase()}';
+  }
+}
+
+/// Cache for download status to prevent repeated file system checks
+/// Public class to allow cache invalidation from other components
+/// 🐛 FIXED: Use DownloadBloc state as single source of truth to prevent false positives
+class ContentDownloadCache {
+  static final Map<String, bool> _cache = {};
+  static final Map<String, DateTime> _cacheTime = {};
+  static const Duration _cacheExpiry = Duration(minutes: 5);
+
+  static Future<bool> isDownloaded(String contentId, [BuildContext? context]) async {
+    // Check cache first
+    if (_cache.containsKey(contentId)) {
+      final cacheTime = _cacheTime[contentId];
+      if (cacheTime != null && 
+          DateTime.now().difference(cacheTime) < _cacheExpiry) {
+        return _cache[contentId]!;
+      }
+    }
+
+    // 🐛 FIXED: Priority 1 - Check DownloadBloc state (single source of truth)
+    bool isDownloaded = false;
+    if (context != null) {
+      try {
+        final downloadState = context.read<DownloadBloc>().state;
+        if (downloadState is DownloadLoaded) {
+          isDownloaded = downloadState.isDownloaded(contentId);
+          
+          // Cache DownloadBloc result as it's authoritative
+          _cache[contentId] = isDownloaded;
+          _cacheTime[contentId] = DateTime.now();
+          
+          return isDownloaded;
+        }
+      } catch (e) {
+        // DownloadBloc not available, fallback to filesystem check
+      }
+    }
+
+    // Priority 2 - Fallback to filesystem check only when DownloadBloc unavailable
+    try {
+      isDownloaded = await LocalImagePreloader.isContentDownloaded(contentId);
+      
+      // Cache result
+      _cache[contentId] = isDownloaded;
+      _cacheTime[contentId] = DateTime.now();
+      
+      return isDownloaded;
+    } catch (e) {
+      // If error checking, assume not downloaded and cache negative result briefly
+      _cache[contentId] = false;
+      _cacheTime[contentId] = DateTime.now();
+      return false;
+    }
+  }
+
+  /// Invalidate cache for specific content to force refresh
+  static void invalidateCache(String contentId) {
+    _cache.remove(contentId);
+    _cacheTime.remove(contentId);
+  }
+
+  /// Clear all cache entries
+  static void clearCache() {
+    _cache.clear();
+    _cacheTime.clear();
   }
 }
 
@@ -449,14 +518,23 @@ class _ContentListWidgetState extends State<ContentListWidget> {
             delegate: SliverChildBuilderDelegate(
               (context, index) {
                 final content = state.contents[index];
-                return ContentCard(
-                  content: content,
-                  onTap: () => widget.onContentTap?.call(content),
-                  // Using default settings (showUploadDate: false) for main screen style
-                  // For search/browse screens, set showUploadDate: true
-                  isBlurred: widget.shouldBlurContent?.call(content) ?? false, // NEW: Apply blur logic
-                  isHighlighted: widget.shouldHighlightContent?.call(content) ?? false, // NEW: Apply highlight logic
-                  highlightReason: widget.highlightReason?.call(content), // NEW: Apply highlight reason
+                
+                // Use FutureBuilder to check download status for highlight
+                return FutureBuilder<bool>(
+                  future: ContentDownloadCache.isDownloaded(content.id, context), // 🐛 FIXED: Pass context for DownloadBloc access
+                  builder: (context, snapshot) {
+                    final isDownloaded = snapshot.data ?? false;
+                    
+                    return ContentCard(
+                      content: content,
+                      onTap: () => widget.onContentTap?.call(content),
+                      // Using default settings (showUploadDate: false) for main screen style
+                      // For search/browse screens, set showUploadDate: true
+                      isBlurred: widget.shouldBlurContent?.call(content) ?? false, // NEW: Apply blur logic
+                      isHighlighted: isDownloaded, // NEW: Highlight downloaded content instead of search match
+                      highlightReason: isDownloaded ? 'Downloaded' : null, // NEW: Indicate download status
+                    );
+                  },
                 );
               },
               childCount: state.contents.length,

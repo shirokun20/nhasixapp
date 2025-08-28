@@ -349,7 +349,13 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       emit(const SearchLoading(message: 'Searching...'));
 
       // Save search filter state to local datasource for persistence
-      await _localDataSource.saveSearchFilter(_currentFilter.toJson());
+      // BUT EXCLUDE tag clicks from detail screen to prevent unwanted saving
+      if (_currentFilter.source != SearchSource.detailScreen) {
+        await _localDataSource.saveSearchFilter(_currentFilter.toJson());
+        _logger.d('SearchBloc: Saved search filter to local storage (source: ${_currentFilter.source.displayName})');
+      } else {
+        _logger.d('SearchBloc: Skipped saving search filter - tag click from detail screen');
+      }
 
       // Perform search
       final result = await _searchContentUseCase(_currentFilter);

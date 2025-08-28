@@ -5,6 +5,7 @@ import 'package:nhasixapp/presentation/pages/reader/reader_screen.dart';
 import 'package:nhasixapp/presentation/pages/settings/settings_screen.dart';
 import 'package:nhasixapp/presentation/pages/splash/splash_screen.dart';
 import 'package:nhasixapp/presentation/pages/main/main_screen.dart';
+import 'package:nhasixapp/presentation/pages/main/main_screen_scrollable.dart';
 import 'package:nhasixapp/presentation/pages/search/search_screen.dart';
 import 'package:nhasixapp/presentation/pages/content_by_tag/content_by_tag_screen.dart';
 import 'package:nhasixapp/presentation/pages/detail/detail_screen.dart';
@@ -31,7 +32,7 @@ class AppRouter {
         path: AppRoute.home,
         name: AppRoute.homeName,
         builder: (context, state) {
-          return MainScreen();
+          return const MainScreenScrollable(); // Phase 5: Testing scrollable architecture
         },
       ),
 
@@ -196,7 +197,7 @@ class AppRouter {
       GoRoute(
         path: AppRoute.main,
         name: AppRoute.mainName,
-        builder: (context, state) => const MainScreen(),
+        builder: (context, state) => const MainScreenScrollable(),
       ),
     ],
 
