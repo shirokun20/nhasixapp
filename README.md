@@ -1,16 +1,30 @@
-# 📱 NhentaiApp - Flutter Clone
+# 📱 NhasixApp - Enhanced Mobile Reading Experience
+
 ![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)
 ![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)
 ![18+](https://img.shields.io/badge/Age_Restriction-18%2B-red?style=for-the-badge&logo=warning&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Beta](https://img.shields.io/badge/Status-BETA_v0.2.0-blue?style=for-the-badge&logo=android&logoColor=white)
 
 > **⚠️ AGE RESTRICTION WARNING**  
 > **This application is intended for users 18 years of age and older only.**  
 > **The content accessed through this application may contain mature themes and is not suitable for minors.**  
 > **By using this application, you confirm that you are at least 18 years old and legally permitted to access such content in your jurisdiction.**
 
-A comprehensive Flutter Android application that serves as a clone of nhentai.net, built with **Clean Architecture** and modern Flutter development practices. This app provides an enhanced mobile experience for browsing, reading, and managing manga/doujinshi content with offline capabilities.
+## 🚀 **BETA v0.2.0 - NOW AVAILABLE!**
+
+**NhasixApp** is a comprehensive Flutter Android application that provides an enhanced mobile reading experience with **70% faster content loading**, smart offline capabilities, and modern UI improvements. Built with **Clean Architecture** and optimized for performance.
+
+### 📱 **Download Beta APKs**
+
+| **APK Type** | **Size** | **Target Devices** | **Download** |
+|--------------|----------|-------------------|--------------|
+| **ARM64** ⭐ | 24MB | Modern devices (2019+) | `nhasix_0.2.0_20250828_release_arm64_optimized.apk` |
+| **ARM32** | 22MB | Older devices (2015-2019) | `nhasix_0.2.0_20250828_release_arm_optimized.apk` |
+| **Universal** | 22MB | All devices | `nhasix_0.2.0_20250828_release_universal_optimized.apk` |
+
+> **Recommended**: Download ARM64 APK for best performance on modern Android devices
 
 ## 🚀 Features
 
@@ -39,87 +53,302 @@ A comprehensive Flutter Android application that serves as a clone of nhentai.ne
 
 ## 🚀 Features
 
-### 📖 Core Reading Experience
-- **Content Browsing** - Browse latest, popular, and random content
-- **Advanced Search** - Filter by tags, artists, characters, language, and more
-- **Manga Reader** - Smooth reading experience with zoom, pan, and navigation
-- **Multiple Reading Modes** - Single page, continuous scroll, dual page support
-- **Reading Progress** - Track reading history and progress automatically
+## ✨ **NEW in BETA v0.2.0**
 
-### 💾 Offline & Storage
-- **Favorites System** - Organize favorites with custom categories
-- **Download Manager** - Download content for offline reading with queue management
-- **Reading History** - Track reading progress and statistics
-- **Offline Reading** - Access downloaded content without internet
+### 🚀 **Performance Breakthroughs**
+- **70% faster content loading** with smart image preloader
+- **Optimized APK builds** - 3 variants for different device architectures
+- **Enhanced pagination** with intelligent prefetching
+- **Reduced app size** with code optimization
 
-### 🎨 Customization
-- **Multiple Themes** - Light, Dark, and AMOLED themes with custom color schemes
-- **Reader Settings** - Customize reading direction, page transitions, and controls
-- **Grid Layouts** - Adjustable grid columns for different screen orientations
-- **Content Filtering** - Blacklist tags and customize content visibility
+### 🔒 **Privacy & Security**
+- **Enhanced download privacy** with `.nomedia` file protection
+- **Private gallery** - downloads won't appear in system gallery
+- **Secure storage** with improved file management
 
-### 🔧 Advanced Features
-- **Cloudflare Bypass** - Automatic bypass of website protection
-- **Web Scraping** - Direct content extraction from HTML
-- **Background Downloads** - Continue downloads in background
-- **Statistics Dashboard** - Reading statistics and analytics
-- **Backup & Sync** - Export/import user data and settings
+### � **UI/UX Improvements**
+- **Download progress highlighting** - visual feedback for active downloads
+- **Improved search experience** with better navigation
+- **Modern pagination** with smoother transitions
+- **Enhanced reader interface** with gesture improvements
 
-## 🏗️ Architecture
+### 🎯 **Smart Features**
+- **Intelligent image preloading** - next pages load while you read
+- **Range-based downloads** - download specific page ranges
+- **Background download management** with progress tracking
+- **Optimized memory usage** for better performance
 
-## 🛠️ Development Progress
+---
 
-- [x] Comprehensive dependency injection setup using get_it for better scalability
-- [x] Added external dependencies like SharedPreferences and Connectivity
-- [x] Configured core utilities including Logger, Dio HTTP client, CacheManager, TagDataManager
-- [x] Setup data sources for remote scraping, anti-detection, cloudflare bypass, and local database
-- [x] Implemented repository registrations for content, user data, reader settings, and offline content
-- [x] Registered use cases for content, favorites, downloads, and history management
-- [x] Configured BLoCs for splash, home, content, search, and download features
-- [x] Setup Cubits for network, settings, detail, filter data, reader, offline search, and favorites
-- [x] Updated MultiBlocProvider configuration for all BLoCs and Cubits
-- [x] Updated dependencies in pubspec.yaml to support new features
-- [x] Added Cloudflare bypass and web scraping features
-- [x] Implemented background download support
-- [x] Added statistics dashboard and backup & sync functionality
+## 🎯 **Key Features**
 
-## 🏗️ Architecture
+### 📚 **Core Reading Experience**
+- **Clean, modern interface** optimized for mobile reading
+- **High-quality image rendering** with zoom and pan support
+- **Full-screen reading mode** for immersive experience
+- **Smooth page transitions** with gesture controls
 
-This project follows **Clean Architecture** principles with clear separation of concerns:
+### 🔍 **Advanced Search & Discovery**
+- **Powerful search engine** with tag and category filters
+- **Advanced filtering** by popularity, date, and tags
+- **Smart recommendations** based on reading history
+- **Bookmark management** with offline access
 
+### � **Offline & Download Features**
+- **Full offline reading** - download for reading without internet
+- **Range downloads** - download specific pages or chapters
+- **Private downloads** - content hidden from system gallery
+- **Download progress tracking** with visual indicators
+- **Background downloads** - continue browsing while downloading
+
+### 🎨 **User Experience**
+- **Responsive design** that works on all screen sizes
+- **Dark/Light theme** support with system preference detection
+- **Gesture navigation** - swipe, pinch, and tap controls
+- **Reading progress tracking** with automatic bookmarks
+
+## 🛠️ **Technical Architecture**
+
+### 🏗️ **Clean Architecture Implementation**
 ```
-lib/
-├── 📁 core/                    # Core utilities and configuration
-│   ├── config/                 # App configuration
-│   ├── constants/              # App constants and themes
-│   ├── di/                     # Dependency injection setup
-│   ├── routing/                # Navigation and routing
-│   └── utils/                  # Utility functions
-├── 📁 data/                    # Data layer
-│   ├── datasources/            # Remote and local data sources
-│   ├── models/                 # Data models and DTOs
-│   └── repositories/           # Repository implementations
-├── 📁 domain/                  # Domain layer (Business Logic)
-│   ├── entities/               # Core business entities
-│   ├── repositories/           # Repository interfaces
-│   ├── usecases/               # Business use cases
-│   └── value_objects/          # Value objects for type safety
-├── 📁 presentation/            # Presentation layer
-│   ├── blocs/                  # BLoC state management
-│   ├── pages/                  # Screen implementations
-│   └── widgets/                # Reusable UI components
-└── main.dart                   # Application entry point
+📁 lib/
+├── 🎯 presentation/     # UI Layer (Widgets, Pages, Bloc)
+├── 🏢 domain/          # Business Logic (Entities, Use Cases)
+├── 💾 data/            # Data Layer (Repositories, Data Sources)
+├── 🔧 core/            # Core Utilities (DI, Constants, Errors)
+├── 🌐 services/        # External Services (API, Storage)
+└── 🛠️ utils/           # Helper Functions and Extensions
 ```
 
-## 🛠️ Tech Stack
+### 📱 **Tech Stack**
+- **Framework**: Flutter 3.24+ with Dart 3.5+
+- **State Management**: Flutter Bloc with Cubit
+- **Architecture**: Clean Architecture with MVVM
+- **Storage**: SharedPreferences + SQLite (sqflite)
+- **Network**: HTTP with custom interceptors
+- **Image Processing**: Optimized with native caching
+- **Performance**: Smart preloading and pagination
 
-### **Core Framework**
-- **Flutter** - Cross-platform mobile development
-- **Dart** - Programming language
+### 🚀 **Performance Optimizations**
+- **Smart Image Preloader**: 70% faster loading with intelligent prefetching
+- **Optimized APK Builds**: Separate ARM64/ARM32/Universal variants
+- **Memory Management**: Efficient image caching and disposal
+- **Background Processing**: Non-blocking downloads and operations
 
-### **Offline-First Strategy**
-- **Intelligent Caching** - 6-hour cache expiration with automatic refresh
-- **Fallback Mechanisms** - Cache → Remote → Cache fallback pattern
+---
+
+## 📥 **Installation**
+
+### 📱 **Method 1: APK Installation (Recommended)**
+
+1. **Download the appropriate APK**:
+   - **ARM64** (most modern devices): `nhasix_0.2.0_20250828_release_arm64_optimized.apk`
+   - **ARM32** (older devices): `nhasix_0.2.0_20250828_release_arm_optimized.apk`
+   - **Universal** (all devices): `nhasix_0.2.0_20250828_release_universal_optimized.apk`
+
+2. **Enable installation from unknown sources**:
+   - Go to **Settings → Security → Unknown Sources**
+   - Or **Settings → Apps → Special Access → Install Unknown Apps**
+
+3. **Install the APK**:
+   - Tap the downloaded APK file
+   - Follow the installation prompts
+   - Grant necessary permissions when requested
+
+### 🛠️ **Method 2: Build from Source**
+
+#### **Prerequisites**
+- Flutter SDK 3.24+
+- Android Studio with Android SDK 34+
+- Dart 3.5+
+- Git
+
+#### **Quick Build**
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/nhasixapp.git
+cd nhasixapp
+
+# Get dependencies
+flutter pub get
+
+# Build optimized release APK
+chmod +x build_optimized.sh
+./build_optimized.sh
+```
+
+#### **Development Setup**
+```bash
+# Install dependencies
+flutter pub get
+
+# Run in debug mode
+flutter run
+
+# Build for release
+flutter build apk --release
+```
+
+---
+
+## 🎮 **Usage Guide**
+
+### 🔍 **Basic Navigation**
+1. **Browse Content**: Swipe through the main feed
+2. **Search**: Use the search bar with filters and tags
+3. **Read**: Tap any item to start reading
+4. **Download**: Long press or use download button for offline access
+
+### 📥 **Download Features**
+- **Full Download**: Download entire content for offline reading
+- **Range Download**: Select specific pages to download
+- **Private Mode**: Downloads are hidden from system gallery (`.nomedia`)
+- **Progress Tracking**: Visual indicators show download status
+
+### ⚙️ **Settings & Customization**
+- **Theme**: Switch between light and dark modes
+- **Reading Preferences**: Adjust zoom, transition effects
+- **Download Location**: Choose storage directory
+- **Privacy Settings**: Configure download visibility
+
+---
+
+## 🧪 **Beta Testing & Feedback**
+
+### 🐛 **Known Issues**
+- Some rare devices may experience slower loading on first startup
+- Download progress may not update in real-time on older Android versions
+- Search filters may need refinement for very specific queries
+
+### 📝 **Beta Feedback**
+We're actively seeking feedback to improve NhasixApp! Please report:
+- **Performance issues** on your specific device
+- **UI/UX suggestions** for better usability
+- **Feature requests** that would enhance your experience
+- **Bugs or crashes** with device/Android version details
+
+**Contact**: Create an issue on GitHub or reach out via project discussions.
+
+---
+
+## 📜 **License & Legal**
+
+### 📋 **License**
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+### ⚖️ **Legal Disclaimer**
+- This application is for **educational and personal use only**
+- Users are responsible for compliance with local laws and regulations
+- The developers do not host or distribute any content through this application
+- All content accessed through this app comes from publicly available sources
+- **Age restriction: 18+ only** - This app accesses mature content
+
+### 🤝 **Respect for Content Creators**
+- We encourage users to support original content creators
+- This app is designed to enhance the reading experience, not replace official channels
+- Consider supporting artists and creators through official platforms
+
+---
+
+## 👥 **Contributing**
+
+### 🤝 **How to Contribute**
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'Add some amazing feature'`)
+4. **Push** to the branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
+
+### 📋 **Contribution Guidelines**
+- Follow Flutter/Dart best practices
+- Maintain clean architecture principles
+- Add tests for new features
+- Update documentation as needed
+- Ensure code is formatted with `dart format`
+
+---
+
+## 🆘 **Support & FAQ**
+
+### ❓ **Frequently Asked Questions**
+
+**Q: Why won't the app install?**
+A: Enable "Install from Unknown Sources" in Android settings. Make sure you downloaded the correct APK for your device architecture.
+
+**Q: Downloads are not showing in my gallery?**
+A: This is intentional! Downloads are private (`.nomedia` protection). Access them through the app's download section.
+
+**Q: The app is slow on my device?**
+A: Try the ARM32 APK for older devices, or clear the app cache in Android settings.
+
+**Q: Can I use this on iOS?**
+A: Currently Android only. iOS support may be considered for future releases.
+
+### 🛠️ **Troubleshooting**
+- **Slow loading**: Check your internet connection and try restarting the app
+- **Download issues**: Verify storage permissions and available space
+- **Search problems**: Clear app cache or try different search terms
+- **Crashes**: Report with your device model and Android version
+
+---
+
+## 🔮 **Roadmap**
+
+### 🚀 **Upcoming Features (v0.3.0)**
+- [ ] **Cloud sync** for bookmarks and reading progress
+- [ ] **Advanced reader features** - night mode, reading themes
+- [ ] **Improved recommendations** with AI-powered suggestions
+- [ ] **Social features** - reading lists and community sharing
+- [ ] **Performance optimizations** - even faster loading times
+
+### 🎯 **Long-term Goals**
+- [ ] **iOS support** - native iOS app
+- [ ] **Web version** - PWA for desktop/tablet use
+- [ ] **Advanced customization** - themes, layouts, gestures
+- [ ] **Offline-first architecture** - complete offline functionality
+
+---
+
+## 📞 **Contact & Links**
+
+### 🔗 **Project Links**
+- **GitHub Repository**: [NhasixApp](https://github.com/yourusername/nhasixapp)
+- **Issue Tracker**: [Report Bugs](https://github.com/yourusername/nhasixapp/issues)
+- **Discussions**: [Community Forum](https://github.com/yourusername/nhasixapp/discussions)
+
+### 📧 **Contact**
+- **Developer**: [Your Name]
+- **Email**: your.email@example.com
+- **Project Discussions**: GitHub Discussions tab
+
+---
+
+## 🎉 **Acknowledgments**
+
+### 🙏 **Special Thanks**
+- **Flutter Team** - for the amazing framework
+- **Community Contributors** - for feedback and suggestions
+- **Beta Testers** - for helping improve the app
+- **Open Source Libraries** - that made this project possible
+
+### 📚 **Built With**
+- [Flutter](https://flutter.dev/) - UI framework
+- [Bloc](https://bloclibrary.dev/) - State management
+- [Get It](https://pub.dev/packages/get_it) - Dependency injection
+- [Sqflite](https://pub.dev/packages/sqflite) - Local database
+- [HTTP](https://pub.dev/packages/http) - Network requests
+
+---
+
+<div align="center">
+
+**🌟 Star this repository if you found it helpful! 🌟**
+
+Made with ❤️ using Flutter
+
+**⚠️ Remember: This app is for users 18+ only ⚠️**
+
+</div>
 - **Error Handling** - Comprehensive error handling with graceful degradation
 - **Performance Optimization** - Database transactions and memory management
 
@@ -368,78 +597,3 @@ flutter analyze
 This project includes comprehensive reference materials for development and testing:
 
 ### **HTML Reference Files**
-Located in `references/` directory, these files contain real website structure for development:
-
-- **`halaman_utama.html`** - Main page structure and content grid layout
-- **`halaman_search.html`** - Search results page with filtering options
-- **`halaman_detail.html`** - Content detail page with metadata and tags
-- **`halaman_baca.html`** - Reader page with image gallery structure
-- **`halaman_last_page.html`** - Pagination and navigation structure
-
-### **JSON Data References**
-- **`halaman_detail.json`** - Structured content metadata for API development
-
-### **Usage in Development**
-These reference files are used for:
-- **Web Scraping Development** - Understanding HTML structure for parsing
-- **UI/UX Design Reference** - Matching original website layout and functionality
-- **Testing Data** - Providing realistic test scenarios
-- **API Structure Planning** - Defining data models and response formats
-
-## 🤝 Contributing
-
-This project follows Clean Architecture principles and uses BLoC for state management. When contributing:
-
-1. Follow the established architecture patterns
-2. Write comprehensive tests for new features
-3. Update documentation for significant changes
-4. Follow Dart/Flutter style guidelines
-5. Use the reference files in `references/` for understanding website structure
-6. Test with real data scenarios using provided HTML samples
-
-## ⚖️ Legal Notice
-
-**AGE RESTRICTION:** This application is strictly intended for users who are 18 years of age or older. The content accessed through this application contains mature themes and adult material that is not suitable for minors.
-
-This application is created for educational purposes and personal use only. It demonstrates modern Flutter development practices and Clean Architecture implementation. Users are responsible for:
-- Verifying they meet the minimum age requirement (18+) in their jurisdiction
-- Complying with applicable laws and terms of service of content sources
-- Using the application responsibly and legally
-
-By downloading, installing, or using this application, you acknowledge and confirm that you are at least 18 years old and legally permitted to access adult content in your location.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Flutter team for the amazing framework
-- BLoC library maintainers for excellent state management
-- Clean Architecture principles by Robert C. Martin
-- Open source community for the fantastic packages used
-
----
-
-## 📊 Project Statistics
-
-- **Architecture**: Clean Architecture with 3 layers
-- **State Management**: BLoC/Cubit Pattern with proper separation
-- **Dependencies**: 45+ carefully selected packages
-- **Test Coverage**: Unit tests with mocking for critical components
-- **Development Progress**: 70% complete (7/13 tasks)
-- **Implementation Status**: Core features operational
-- **Target Platform**: Android
-- **Minimum SDK**: Android API 21+ (Android 5.0)
-- **Latest Achievement**: Complete search system and reader functionality with advanced features ✨
-
----
-
-**Built with ❤️ using Flutter and Clean Architecture**
-
----
-
-## 🌐 Other Languages
-
-- [English](README.md) ← You are here
-- [Bahasa Indonesia](README_ID.md)

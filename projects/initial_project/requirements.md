@@ -1,8 +1,21 @@
-# Requirements Document
+# Requirements Document - NhasixApp BETA v0.2.0
 
 ## Introduction
 
-Aplikasi NhentaiApp adalah sebuah aplikasi mobile Flutter yang berfungsi sebagai clone dari website nhentai.net. Aplikasi ini dirancang untuk memberikan pengalaman browsing yang lebih baik dan user-friendly untuk mengakses konten manga/doujinshi dengan fitur-fitur seperti pencarian, bookmark, download offline, dan manajemen koleksi personal.
+NhasixApp (formerly NhentaiApp) adalah sebuah aplikasi mobile Flutter yang berfungsi sebagai clone dari website nhentai.net. Aplikasi ini dirancang untuk memberikan pengalaman browsing yang lebih baik dan user-friendly untuk mengakses konten manga/doujinshi dengan fitur-fitur seperti smart image preloader, pencarian dengan debounced search, bookmark, download dengan range support, privacy protection, dan manajemen koleksi personal yang aman.
+
+**Current Version**: BETA v0.2.0  
+**Development Status**: Active development with recent major improvements  
+**Last Update**: December 2024
+
+## Recent Achievements (v0.2.0)
+- ✅ Smart image preloader dengan fallback strategy
+- ✅ Privacy protection dengan .nomedia files  
+- ✅ Enhanced download system dengan range support
+- ✅ Debounced search implementation  
+- ✅ Direct content ID navigation
+- ✅ Race condition fixes untuk image loading
+- ✅ Optimized APK builds dengan asset compression
 
 ## Requirements
 
@@ -24,8 +37,8 @@ Aplikasi NhentaiApp adalah sebuah aplikasi mobile Flutter yang berfungsi sebagai
 #### Acceptance Criteria
 
 1. WHEN pengguna mengakses fitur pencarian THEN sistem SHALL menampilkan SearchScreen dengan SearchBloc untuk state management tanpa langsung mengirim API request
-2. WHEN pengguna memasukkan kata kunci pencarian THEN sistem SHALL menyimpan input menggunakan UpdateSearchFilter event tanpa memicu API call
-3. WHEN pengguna memilih filter tag, artist, character, parody, atau group THEN sistem SHALL membuka FilterDataScreen dengan FilterDataCubit untuk pencarian data dari assets/json/tags.json
+2. WHEN pengguna memasukkan kata kunci pencarian THEN sistem SHALL menggunakan debounced search untuk menghindari spam requests dan menyimpan input menggunakan UpdateSearchFilter event tanpa memicu API call langsung
+3. WHEN pengguna memilih filter tag, artist, character, parody, atau group THEN sistem SHALL membuka FilterDataScreen dengan FilterDataCubit untuk pencarian data dari assets/json/tags.json dengan interface yang modern dan user-friendly
 4. WHEN pengguna memilih multiple filter THEN sistem SHALL menyimpan semua filter menggunakan FilterItem class dengan opsi include/exclude dan TagDataManager untuk validasi
 5. WHEN pengguna memilih filter language atau category THEN sistem SHALL hanya mengizinkan satu pilihan menggunakan single select validation
 6. WHEN pengguna menekan tombol "Search" atau "Apply" THEN sistem SHALL mengirim SearchSubmitted event, menyimpan state ke LocalDataSource, dan kembali ke MainScreen dengan hasil
@@ -142,16 +155,36 @@ Aplikasi NhentaiApp adalah sebuah aplikasi mobile Flutter yang berfungsi sebagai
 6. WHEN pengguna mereset pengaturan THEN sistem SHALL mengembalikan semua pengaturan reader ke nilai default
 7. WHEN terjadi error saat menyimpan pengaturan THEN sistem SHALL menampilkan pesan error dan tetap menggunakan pengaturan sebelumnya
 
-### Requirement 11
+### Requirement 12
 
-**User Story:** Sebagai developer, saya ingin semua fitur aplikasi ditest tidak hanya melalui analisis kode tetapi juga pada perangkat nyata, sehingga saya dapat memastikan aplikasi berfungsi dengan baik di lingkungan produksi.
+**User Story:** Sebagai pengguna, saya ingin aplikasi memiliki sistem image loading yang cerdas dan privasi yang terlindungi, sehingga gambar dapat dimuat dengan efisien dan konten sensitif tidak terindeks oleh sistem.
 
 #### Acceptance Criteria
 
-1. WHEN melakukan testing fitur THEN sistem SHALL ditest pada perangkat Android fisik untuk memverifikasi performa
-2. WHEN testing UI components THEN sistem SHALL ditest pada berbagai ukuran layar perangkat nyata
-3. WHEN testing download functionality THEN sistem SHALL ditest dengan koneksi internet yang bervariasi pada perangkat nyata
-4. WHEN testing offline functionality THEN sistem SHALL ditest dengan benar-benar memutus koneksi internet pada perangkat fisik
-5. WHEN testing reader mode THEN sistem SHALL ditest dengan gesture navigation pada perangkat nyata
-6. WHEN testing performance THEN sistem SHALL dimonitor penggunaan memory dan CPU pada perangkat fisik
-7. WHEN testing background tasks THEN sistem SHALL diverifikasi berjalan dengan benar saat aplikasi di background pada perangkat nyata
+1. WHEN aplikasi memuat gambar THEN sistem SHALL menggunakan LocalImagePreloader dengan fallback strategy: local file → cache → network request
+2. WHEN sistem melakukan download THEN sistem SHALL membuat .nomedia files untuk privacy protection dan mencegah konten muncul di gallery
+3. WHEN terjadi race condition dalam image loading THEN sistem SHALL menggunakan synchronized loading dengan proper state management
+4. WHEN pengguna menggunakan download dengan range THEN sistem SHALL mendukung partial download untuk menghemat bandwidth dan storage
+5. WHEN sistem melakukan download THEN sistem SHALL menggunakan DownloadService dengan range support untuk download yang lebih efisien
+
+### Requirement 13
+
+**User Story:** Sebagai pengguna, saya ingin dapat navigasi langsung ke konten dengan ID tertentu, sehingga saya dapat mengakses konten yang spesifik dengan cepat.
+
+#### Acceptance Criteria
+
+1. WHEN pengguna memiliki content ID THEN sistem SHALL menyediakan cara untuk navigasi langsung ke konten tersebut
+2. WHEN pengguna memasukkan content ID THEN sistem SHALL memvalidasi format ID dan mengarahkan ke detail page
+3. WHEN content ID tidak valid THEN sistem SHALL menampilkan error message yang informatif  
+4. WHEN pengguna menggunakan deep linking dengan content ID THEN sistem SHALL dapat membuka konten langsung dari external link
+
+### Requirement 14
+
+**User Story:** Sebagai pengguna, saya ingin aplikasi memiliki build yang dioptimasi untuk performa yang lebih baik, sehingga aplikasi berjalan lebih cepat dan menggunakan lebih sedikit resource.
+
+#### Acceptance Criteria
+
+1. WHEN aplikasi di-build untuk release THEN sistem SHALL menggunakan asset compression untuk mengurangi ukuran APK
+2. WHEN aplikasi di-build THEN sistem SHALL menggunakan optimized compiler settings untuk performa maksimal
+3. WHEN aplikasi berjalan THEN sistem SHALL menggunakan memory management yang efisien untuk menghindari memory leaks
+4. WHEN pengguna menginstall APK THEN sistem SHALL memiliki ukuran file yang minimal tanpa mengurangi functionality

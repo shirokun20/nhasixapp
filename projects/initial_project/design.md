@@ -1,8 +1,23 @@
-# Design Document
+# Design Document - NhasixApp BETA v0.2.0
 
 ## Overview
 
-NhentaiApp adalah aplikasi Flutter yang mengimplementasikan Clean Architecture dengan BLoC pattern untuk state management. Aplikasi ini dirancang untuk memberikan pengalaman browsing yang optimal dengan fitur offline-first, caching yang efisien, dan UI yang responsif. Aplikasi menggunakan Dio HTTP client untuk web scraping dan mengambil data langsung dari HTML nhentai.net.
+NhasixApp adalah aplikasi Flutter yang mengimplementasikan Clean Architecture dengan BLoC pattern untuk state management. Aplikasi ini dirancang untuk memberikan pengalaman browsing yang optimal dengan fitur smart image preloader, privacy protection, download range support, dan UI yang responsif. Aplikasi menggunakan Dio HTTP client untuk web scraping dan mengambil data langsung dari HTML nhentai.net.
+
+## Project Status
+
+**Current Version**: BETA v0.2.0  
+**Last Update**: December 2024  
+**Development Phase**: Active development with recent major improvements
+
+### Recent Achievements (v0.2.0)
+- ✅ Smart image preloader dengan fallback strategy (local → cache → network)
+- ✅ Privacy protection dengan .nomedia files
+- ✅ Enhanced download system dengan range support  
+- ✅ Debounced search implementation
+- ✅ Direct content ID navigation
+- ✅ Race condition fixes untuk image loading
+- ✅ Optimized APK builds dengan asset compression
 
 ## Architecture
 
@@ -47,26 +62,22 @@ Aplikasi menggunakan BLoC (Business Logic Component) pattern dengan flutter_bloc
 #### Pages
 - **SplashScreen**: ✅ Menangani initial loading dengan SplashBloc dan modern UI
 - **MainScreen**: ✅ Menampilkan konten dengan HomeBloc, ContentBloc, search results support, dan SortingWidget
-- **SearchScreen**: ✅ Interface pencarian dengan SearchBloc, filter advanced, dan navigation ke FilterDataScreen
+- **SearchScreen**: ✅ Interface pencarian dengan SearchBloc, debounced search, dan navigation ke FilterDataScreen
 - **FilterDataScreen**: ✅ Halaman terpisah modern dengan FilterDataCubit untuk Tags, Artists, Characters, Parodies, Groups
 - **DetailScreen**: ✅ Menampilkan detail konten dengan DetailCubit dan metadata lengkap
 - **ReaderScreen**: ✅ Mode baca dengan ReaderCubit, 3 reading modes, dan settings persistence
 - **FavoritesScreen**: ⏳ Daftar konten favorit (planned)
-- **DownloadsScreen**: ⏳ Konten offline (planned)
+- **DownloadsScreen**: ⏳ Konten offline (planned)  
 - **SettingsScreen**: ⏳ Pengaturan aplikasi (planned)
-- **TagScreen**: ⏳ Daftar tag (planned)
-- **ArtistScreen**: ⏳ Daftar artist (planned)
-- **RandomScreen**: ⏳ Random content (planned)
-- **HistoryScreen**: ⏳ Riwayat konten (planned)
 
 #### Widgets
-- **ContentCard**: ✅ Card component untuk preview konten dengan image caching
+- **ContentCard**: ✅ Card component untuk preview konten dengan smart image loading
 - **ContentListWidget**: ✅ Grid layout dengan pagination support dan pull-to-refresh
 - **AppMainHeaderWidget**: ✅ Header dengan search dan menu navigation
 - **AppMainDrawerWidget**: ✅ Side navigation dengan 4 menu utama
 - **PaginationWidget**: ✅ Advanced pagination dengan progress bar dan page jumping
 - **SortingWidget**: ✅ Widget untuk sorting options di MainScreen
-- **FilterDataSearchWidget**: ✅ Search widget untuk FilterDataScreen
+- **FilterDataSearchWidget**: ✅ Search widget untuk FilterDataScreen dengan debouncing
 - **FilterItemCard**: ✅ Modern card untuk filter selection dengan include/exclude
 - **SelectedFiltersWidget**: ✅ Horizontal scrollable selected filters
 - **FilterTypeTabBar**: ✅ Tab bar untuk filter types
@@ -77,7 +88,7 @@ Aplikasi menggunakan BLoC (Business Logic Component) pattern dengan flutter_bloc
 ```dart
 // Complex State Management (BLoCs) - IMPLEMENTED
 ContentBloc: ✅ Mengelola state untuk daftar konten dengan pagination kompleks, sorting, dan search results
-SearchBloc: ✅ Mengelola pencarian dengan events UpdateSearchFilter dan SearchSubmitted, state persistence
+SearchBloc: ✅ Mengelola pencarian dengan debounced search, events UpdateSearchFilter dan SearchSubmitted, state persistence  
 HomeBloc: ✅ Mengelola main screen state dan initialization
 SplashBloc: ✅ Mengelola initial loading, bypass logic, dan navigation
 
