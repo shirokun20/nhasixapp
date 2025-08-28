@@ -1,7 +1,8 @@
-# NhasixApp Beta Release v0.2.0-beta
+# NhasixApp Beta Release v0.2.0
 
 *Released: August 28, 2025*  
-*Build: nhasix_0.2.0_beta_20250828_release_universal_optimized.apk*
+*Version: 0.2.0+2*  
+*Build: Optimized APKs with obfuscation and architecture-specific builds*
 
 ---
 
@@ -155,9 +156,13 @@
 
 ### **Build Information**
 - **Flutter Version**: Latest stable
-- **Target SDK**: Android 13+ (API 33+)
-- **Architecture**: ARM64 (universal compatibility)
-- **APK Size**: 26.6MB (optimized with tree-shaking)
+- **Target SDK**: Android 13+ (API 33+)  
+- **Architecture**: ARM64, ARM32 (architecture-specific builds)
+- **APK Sizes**: 
+  - ARM64: 24MB (modern devices)
+  - ARM32: 22MB (older devices)
+  - Universal: 22MB (fallback)
+- **Optimizations**: Obfuscation, tree-shaking, ProGuard compression
 - **Permissions**: Storage, Notifications, Network
 
 ### **Compatibility**
