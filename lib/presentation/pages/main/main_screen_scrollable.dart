@@ -299,7 +299,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                       state.message.isNotEmpty ? state.message : 'Loading...',
                       style: TextStyleConst.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -607,9 +606,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                   children: [
                     Text(
                       'Search Results',
-                      style: TextStyleConst.bodyLarge.copyWith(
+                      style: TextStyleConst.headingSmall.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/entities.dart';
 
@@ -126,8 +125,8 @@ class FilterItemCard extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: isIncluded
-                      ? ColorsConst.accentBlue.withValues(alpha: 0.1)
-                      : ColorsConst.accentRed.withValues(alpha: 0.1),
+                      ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                      : Theme.of(context).colorScheme.error.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -137,16 +136,16 @@ class FilterItemCard extends StatelessWidget {
                       isIncluded ? Icons.add : Icons.remove,
                       size: 16,
                       color: isIncluded
-                          ? ColorsConst.accentBlue
-                          : ColorsConst.accentRed,
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.error,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       isIncluded ? 'Include' : 'Exclude',
                       style: TextStyleConst.label.copyWith(
                         color: isIncluded
-                            ? ColorsConst.accentBlue
-                            : ColorsConst.accentRed,
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.error,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -181,10 +180,10 @@ class FilterItemCard extends StatelessWidget {
                 icon: Icon(
                   Icons.add,
                   size: 20,
-                  color: ColorsConst.accentBlue,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
                 style: IconButton.styleFrom(
-                  backgroundColor: ColorsConst.accentBlue.withValues(alpha: 0.1),
+                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                   padding: const EdgeInsets.all(8),
                   minimumSize: const Size(36, 36),
                 ),
@@ -196,10 +195,10 @@ class FilterItemCard extends StatelessWidget {
                 icon: Icon(
                   Icons.remove,
                   size: 20,
-                  color: ColorsConst.accentRed,
+                  color: Theme.of(context).colorScheme.error,
                 ),
                 style: IconButton.styleFrom(
-                  backgroundColor: ColorsConst.accentRed.withValues(alpha: 0.1),
+                  backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.1),
                   padding: const EdgeInsets.all(8),
                   minimumSize: const Size(36, 36),
                 ),
@@ -213,18 +212,18 @@ class FilterItemCard extends StatelessWidget {
 
   Color _getCardColor(BuildContext context) {
     if (isIncluded) {
-      return ColorsConst.accentBlue.withValues(alpha: 0.05);
+      return Theme.of(context).colorScheme.primary.withOpacity(0.05);
     } else if (isExcluded) {
-      return ColorsConst.accentRed.withValues(alpha: 0.05);
+      return Theme.of(context).colorScheme.error.withOpacity(0.05);
     }
     return Theme.of(context).colorScheme.surface;
   }
 
   Color _getBorderColor(BuildContext context) {
     if (isIncluded) {
-      return ColorsConst.accentBlue;
+      return Theme.of(context).colorScheme.primary;
     } else if (isExcluded) {
-      return ColorsConst.accentRed;
+      return Theme.of(context).colorScheme.error;
     }
     return Theme.of(context).colorScheme.outline;
   }
@@ -279,11 +278,11 @@ class FilterItemCardCompact extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      color: _getCardColor(),
+      color: _getCardColor(context),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
         side: BorderSide(
-          color: _getBorderColor(),
+          color: _getBorderColor(context),
           width: _getBorderWidth(),
         ),
       ),
@@ -302,7 +301,7 @@ class FilterItemCardCompact extends StatelessWidget {
                     Text(
                       tag.name,
                       style: TextStyleConst.bodyMedium.copyWith(
-                        color: ColorsConst.darkTextPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -310,7 +309,7 @@ class FilterItemCardCompact extends StatelessWidget {
                     Text(
                       '${tag.count}',
                       style: TextStyleConst.bodySmall.copyWith(
-                        color: ColorsConst.darkTextSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -319,7 +318,7 @@ class FilterItemCardCompact extends StatelessWidget {
 
               // Action button
               const SizedBox(width: 8),
-              _buildActionButton(),
+              _buildActionButton(context),
             ],
           ),
         ),
@@ -327,38 +326,38 @@ class FilterItemCardCompact extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton() {
+  Widget _buildActionButton(BuildContext context) {
     if (isIncluded || isExcluded) {
       return Icon(
         isIncluded ? Icons.add_circle : Icons.remove_circle,
-        color: isIncluded ? ColorsConst.accentBlue : ColorsConst.accentRed,
+        color: isIncluded ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.error,
         size: 24,
       );
     } else {
       return Icon(
         Icons.add_circle_outline,
-        color: ColorsConst.darkTextSecondary,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
         size: 24,
       );
     }
   }
 
-  Color _getCardColor() {
+  Color _getCardColor(BuildContext context) {
     if (isIncluded) {
-      return ColorsConst.accentBlue.withValues(alpha: 0.05);
+      return Theme.of(context).colorScheme.primary.withOpacity(0.05);
     } else if (isExcluded) {
-      return ColorsConst.accentRed.withValues(alpha: 0.05);
+      return Theme.of(context).colorScheme.error.withOpacity(0.05);
     }
-    return ColorsConst.darkSurface;
+    return Theme.of(context).colorScheme.surface;
   }
 
-  Color _getBorderColor() {
+  Color _getBorderColor(BuildContext context) {
     if (isIncluded) {
-      return ColorsConst.accentBlue;
+      return Theme.of(context).colorScheme.primary;
     } else if (isExcluded) {
-      return ColorsConst.accentRed;
+      return Theme.of(context).colorScheme.error;
     }
-    return ColorsConst.borderDefault;
+    return Theme.of(context).colorScheme.outline;
   }
 
   double _getBorderWidth() {

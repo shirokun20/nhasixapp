@@ -218,7 +218,9 @@ class _ContentListWidgetState extends State<ContentListWidget> {
               children: [
                 Text(
                   state.errorIcon,
-                  style: const TextStyle(fontSize: 64),
+                  style: TextStyleConst.displayMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(

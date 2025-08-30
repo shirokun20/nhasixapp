@@ -5,7 +5,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:logger/logger.dart';
 
-import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../services/local_image_preloader.dart';
 
@@ -245,13 +244,13 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
   /// Build shimmer placeholder
   Widget _buildPlaceholder() {
     return Shimmer.fromColors(
-      baseColor: ColorsConst.darkElevated,
-      highlightColor: ColorsConst.darkElevated.withOpacity(0.8),
+      baseColor: Theme.of(context).colorScheme.surfaceVariant,
+      highlightColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.8),
       child: Container(
         width: widget.width,
         height: widget.height,
         decoration: BoxDecoration(
-          color: ColorsConst.darkElevated,
+          color: Theme.of(context).colorScheme.surfaceVariant,
           borderRadius: widget.borderRadius,
         ),
       ),
@@ -264,7 +263,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
       width: widget.width,
       height: widget.height,
       decoration: BoxDecoration(
-        color: ColorsConst.darkElevated,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: widget.borderRadius,
       ),
       child: Column(
@@ -273,14 +272,14 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
           Icon(
             Icons.broken_image_outlined,
             size: widget.isThumbnail ? 24 : 32,
-            color: ColorsConst.darkTextTertiary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           if (!widget.isThumbnail) ...[
             const SizedBox(height: 4),
             Text(
               'Image not available',
               style: TextStyleConst.caption.copyWith(
-                color: ColorsConst.darkTextTertiary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
@@ -459,14 +458,14 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const CircularProgressIndicator(
-            color: ColorsConst.accentBlue,
+          CircularProgressIndicator(
+            color: Theme.of(context).colorScheme.primary,
           ),
           const SizedBox(height: 16),
           Text(
             'Loading page ${widget.pageNumber}...',
             style: TextStyleConst.bodyMedium.copyWith(
-              color: ColorsConst.darkTextSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -480,16 +479,16 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.broken_image,
             size: 64,
-            color: ColorsConst.darkTextTertiary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           const SizedBox(height: 16),
           Text(
             'Failed to load page ${widget.pageNumber}',
             style: TextStyleConst.bodyLarge.copyWith(
-              color: ColorsConst.darkTextSecondary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
             textAlign: TextAlign.center,
           ),
@@ -497,7 +496,7 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
           Text(
             'Check your internet connection',
             style: TextStyleConst.bodySmall.copyWith(
-              color: ColorsConst.darkTextTertiary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
           ),
@@ -555,11 +554,11 @@ class ProgressiveThumbnailWidget extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: ColorsConst.accentGreen,
+                        color: Theme.of(context).colorScheme.tertiary,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
+                            color: Theme.of(context).colorScheme.scrim.withOpacity(0.3),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -568,18 +567,16 @@ class ProgressiveThumbnailWidget extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.offline_bolt,
                             size: 12,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onTertiary,
                           ),
                           const SizedBox(width: 2),
                           Text(
                             'OFFLINE',
-                            style: TextStyleConst.caption.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 10,
+                            style: TextStyleConst.overline.copyWith(
+                              color: Theme.of(context).colorScheme.onTertiary,
                             ),
                           ),
                         ],

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
 
 /// Search widget for filter data with modern design
@@ -24,12 +23,12 @@ class FilterDataSearchWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: ColorsConst.darkCard,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: focusNode.hasFocus
-              ? ColorsConst.accentBlue
-              : ColorsConst.borderDefault,
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.outline,
           width: focusNode.hasFocus ? 2 : 1,
         ),
       ),
@@ -39,24 +38,24 @@ class FilterDataSearchWidget extends StatelessWidget {
         enabled: enabled,
         onChanged: onChanged,
         style: TextStyleConst.bodyLarge.copyWith(
-          color: ColorsConst.darkTextPrimary,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyleConst.bodyLarge.copyWith(
-            color: ColorsConst.darkTextSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
           ),
           prefixIcon: Icon(
             Icons.search,
             color: focusNode.hasFocus
-                ? ColorsConst.accentBlue
-                : ColorsConst.darkTextSecondary,
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
           ),
           suffixIcon: controller.text.isNotEmpty
               ? IconButton(
                   icon: Icon(
                     Icons.clear,
-                    color: ColorsConst.darkTextSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
                   ),
                   onPressed: () {
                     controller.clear();

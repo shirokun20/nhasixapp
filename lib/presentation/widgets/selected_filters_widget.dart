@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/entities.dart';
 
@@ -59,10 +58,10 @@ class SelectedFilterChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: _getChipColor(),
+        color: _getChipColor(context),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: _getBorderColor(),
+          color: _getBorderColor(context),
           width: 1,
         ),
       ),
@@ -76,7 +75,7 @@ class SelectedFilterChip extends StatelessWidget {
               child: Icon(
                 filterItem.isExcluded ? Icons.remove : Icons.add,
                 size: 16,
-                color: _getIconColor(),
+                color: _getIconColor(context),
               ),
             ),
 
@@ -90,7 +89,7 @@ class SelectedFilterChip extends StatelessWidget {
                 child: Text(
                   filterItem.value,
                   style: TextStyleConst.label.copyWith(
-                    color: _getTextColor(),
+                    color: _getTextColor(context),
                     fontWeight: FontWeight.w500,
                   ),
                   maxLines: 1,
@@ -106,13 +105,13 @@ class SelectedFilterChip extends StatelessWidget {
                 padding: const EdgeInsets.all(4),
                 margin: const EdgeInsets.only(right: 8),
                 decoration: BoxDecoration(
-                  color: _getRemoveButtonColor(),
+                  color: _getRemoveButtonColor(context),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.close,
                   size: 14,
-                  color: _getRemoveIconColor(),
+                  color: _getRemoveIconColor(context),
                 ),
               ),
             ),
@@ -122,46 +121,46 @@ class SelectedFilterChip extends StatelessWidget {
     );
   }
 
-  Color _getChipColor() {
+  Color _getChipColor(BuildContext context) {
     if (filterItem.isExcluded) {
-      return ColorsConst.accentRed.withValues(alpha: 0.1);
+      return Theme.of(context).colorScheme.error.withOpacity(0.1);
     }
-    return ColorsConst.accentBlue.withValues(alpha: 0.1);
+    return Theme.of(context).colorScheme.primary.withOpacity(0.1);
   }
 
-  Color _getBorderColor() {
+  Color _getBorderColor(BuildContext context) {
     if (filterItem.isExcluded) {
-      return ColorsConst.accentRed.withValues(alpha: 0.3);
+      return Theme.of(context).colorScheme.error.withOpacity(0.3);
     }
-    return ColorsConst.accentBlue.withValues(alpha: 0.3);
+    return Theme.of(context).colorScheme.primary.withOpacity(0.3);
   }
 
-  Color _getIconColor() {
+  Color _getIconColor(BuildContext context) {
     if (filterItem.isExcluded) {
-      return ColorsConst.accentRed;
+      return Theme.of(context).colorScheme.error;
     }
-    return ColorsConst.accentBlue;
+    return Theme.of(context).colorScheme.primary;
   }
 
-  Color _getTextColor() {
+  Color _getTextColor(BuildContext context) {
     if (filterItem.isExcluded) {
-      return ColorsConst.accentRed;
+      return Theme.of(context).colorScheme.error;
     }
-    return ColorsConst.accentBlue;
+    return Theme.of(context).colorScheme.primary;
   }
 
-  Color _getRemoveButtonColor() {
+  Color _getRemoveButtonColor(BuildContext context) {
     if (filterItem.isExcluded) {
-      return ColorsConst.accentRed.withValues(alpha: 0.2);
+      return Theme.of(context).colorScheme.error.withOpacity(0.2);
     }
-    return ColorsConst.accentBlue.withValues(alpha: 0.2);
+    return Theme.of(context).colorScheme.primary.withOpacity(0.2);
   }
 
-  Color _getRemoveIconColor() {
+  Color _getRemoveIconColor(BuildContext context) {
     if (filterItem.isExcluded) {
-      return ColorsConst.accentRed;
+      return Theme.of(context).colorScheme.error;
     }
-    return ColorsConst.accentBlue;
+    return Theme.of(context).colorScheme.primary;
   }
 }
 
@@ -202,13 +201,13 @@ class SelectedFiltersWidgetCompact extends StatelessWidget {
               vertical: 6,
             ),
             decoration: BoxDecoration(
-              color: ColorsConst.darkCard,
+              color: Theme.of(context).colorScheme.surfaceVariant,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
               '+$remainingCount more',
               style: TextStyleConst.bodySmall.copyWith(
-                color: ColorsConst.darkTextSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -232,10 +231,10 @@ class SelectedFilterChipCompact extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: _getChipColor(),
+        color: _getChipColor(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: _getBorderColor(),
+          color: _getBorderColor(context),
           width: 1,
         ),
       ),
@@ -249,7 +248,7 @@ class SelectedFilterChipCompact extends StatelessWidget {
               child: Icon(
                 filterItem.isExcluded ? Icons.remove : Icons.add,
                 size: 12,
-                color: _getIconColor(),
+                color: _getIconColor(context),
               ),
             ),
 
@@ -263,7 +262,7 @@ class SelectedFilterChipCompact extends StatelessWidget {
                 child: Text(
                   filterItem.value,
                   style: TextStyleConst.bodySmall.copyWith(
-                    color: _getTextColor(),
+                    color: _getTextColor(context),
                     fontWeight: FontWeight.w500,
                   ),
                   maxLines: 1,
@@ -280,7 +279,7 @@ class SelectedFilterChipCompact extends StatelessWidget {
                 child: Icon(
                   Icons.close,
                   size: 12,
-                  color: _getIconColor(),
+                  color: _getIconColor(context),
                 ),
               ),
             ),
@@ -290,31 +289,31 @@ class SelectedFilterChipCompact extends StatelessWidget {
     );
   }
 
-  Color _getChipColor() {
+  Color _getChipColor(BuildContext context) {
     if (filterItem.isExcluded) {
-      return ColorsConst.accentRed.withValues(alpha: 0.1);
+      return Theme.of(context).colorScheme.error.withOpacity(0.1);
     }
-    return ColorsConst.accentBlue.withValues(alpha: 0.1);
+    return Theme.of(context).colorScheme.primary.withOpacity(0.1);
   }
 
-  Color _getBorderColor() {
+  Color _getBorderColor(BuildContext context) {
     if (filterItem.isExcluded) {
-      return ColorsConst.accentRed.withValues(alpha: 0.3);
+      return Theme.of(context).colorScheme.error.withOpacity(0.3);
     }
-    return ColorsConst.accentBlue.withValues(alpha: 0.3);
+    return Theme.of(context).colorScheme.primary.withOpacity(0.3);
   }
 
-  Color _getIconColor() {
+  Color _getIconColor(BuildContext context) {
     if (filterItem.isExcluded) {
-      return ColorsConst.accentRed;
+      return Theme.of(context).colorScheme.error;
     }
-    return ColorsConst.accentBlue;
+    return Theme.of(context).colorScheme.primary;
   }
 
-  Color _getTextColor() {
+  Color _getTextColor(BuildContext context) {
     if (filterItem.isExcluded) {
-      return ColorsConst.accentRed;
+      return Theme.of(context).colorScheme.error;
     }
-    return ColorsConst.accentBlue;
+    return Theme.of(context).colorScheme.primary;
   }
 }

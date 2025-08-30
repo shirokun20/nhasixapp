@@ -60,10 +60,10 @@ class AppScaffoldWithOffline extends StatelessWidget {
   AppBar _buildAppBarWithOfflineIndicator(BuildContext context, bool isOfflineMode) {
     return AppBar(
       title: Text(title),
-      backgroundColor: isOfflineMode ? Colors.orange[700] : null,
+      backgroundColor: isOfflineMode ? Theme.of(context).colorScheme.errorContainer : null,
       actions: [
         // Show offline badge in app bar when in offline mode
-        if (isOfflineMode) _buildOfflineBadge(),
+        if (isOfflineMode) _buildOfflineBadge(context),
         // Add any additional actions here
       ],
     );
@@ -71,14 +71,14 @@ class AppScaffoldWithOffline extends StatelessWidget {
 
   /// Build compact offline badge for app bar
   /// Small badge that clearly indicates offline status
-  Widget _buildOfflineBadge() {
+  Widget _buildOfflineBadge(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange[800]!, width: 1),
+        border: Border.all(color: Theme.of(context).colorScheme.error, width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -86,15 +86,13 @@ class AppScaffoldWithOffline extends StatelessWidget {
           Icon(
             Icons.offline_bolt,
             size: 16,
-            color: Colors.orange[700],
+            color: Theme.of(context).colorScheme.error,
           ),
           const SizedBox(width: 4),
           Text(
             'OFFLINE',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: Colors.orange[700],
+            style: TextStyleConst.overline.copyWith(
+              color: Theme.of(context).colorScheme.error,
             ),
           ),
         ],
@@ -109,10 +107,10 @@ class AppScaffoldWithOffline extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.orange.withValues(alpha: 0.1),
+        color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.1),
         border: Border(
           bottom: BorderSide(
-            color: Colors.orange.withValues(alpha: 0.3),
+            color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -121,7 +119,7 @@ class AppScaffoldWithOffline extends StatelessWidget {
         children: [
           Icon(
             Icons.info_outline,
-            color: Colors.orange[800],
+            color: Theme.of(context).colorScheme.error,
             size: 20,
           ),
           const SizedBox(width: 12),
@@ -132,14 +130,13 @@ class AppScaffoldWithOffline extends StatelessWidget {
                 Text(
                   'You are offline',
                   style: TextStyleConst.bodyMedium.copyWith(
-                    color: Colors.orange[800],
-                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.error,
                   ),
                 ),
                 Text(
                   'Some features are limited. Connect to internet for full access.',
                   style: TextStyleConst.bodySmall.copyWith(
-                    color: Colors.orange[700],
+                    color: Theme.of(context).colorScheme.error,
                   ),
                 ),
               ],
@@ -152,21 +149,20 @@ class AppScaffoldWithOffline extends StatelessWidget {
             icon: Icon(
               Icons.wifi,
               size: 16,
-              color: Colors.orange[800],
+              color: Theme.of(context).colorScheme.error,
             ),
             label: Text(
               'Go Online',
-              style: TextStyle(
-                color: Colors.orange[800],
-                fontWeight: FontWeight.w600,
+              style: TextStyleConst.buttonSmall.copyWith(
+                color: Theme.of(context).colorScheme.error,
               ),
             ),
             style: TextButton.styleFrom(
-              backgroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.surface,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.orange[300]!, width: 1),
+                side: BorderSide(color: Theme.of(context).colorScheme.outline, width: 1),
               ),
             ),
           ),
@@ -189,7 +185,7 @@ class AppScaffoldWithOffline extends StatelessWidget {
                 height: 16,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.onPrimary),
                 ),
               ),
               const SizedBox(width: 12),
@@ -197,7 +193,7 @@ class AppScaffoldWithOffline extends StatelessWidget {
             ],
           ),
           duration: const Duration(seconds: 2),
-          backgroundColor: Colors.blue,
+          backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
 
@@ -210,47 +206,47 @@ class AppScaffoldWithOffline extends StatelessWidget {
         AppStateManager().enableOnlineMode();
         
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.white),
+                Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onPrimary),
                 SizedBox(width: 12),
                 Text('Back online! All features available.'),
               ],
             ),
             duration: Duration(seconds: 3),
-            backgroundColor: Colors.green,
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       } else {
         // Still no connection
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Row(
               children: [
-                Icon(Icons.wifi_off, color: Colors.white),
+                Icon(Icons.wifi_off, color: Theme.of(context).colorScheme.onError),
                 SizedBox(width: 12),
                 Text('Still no internet connection.'),
               ],
             ),
             duration: Duration(seconds: 2),
-            backgroundColor: Colors.orange,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
     } catch (e) {
       // Error checking connection
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Row(
             children: [
-              Icon(Icons.error_outline, color: Colors.white),
+              Icon(Icons.error_outline, color: Theme.of(context).colorScheme.onError),
               SizedBox(width: 12),
               Text('Unable to check connection.'),
             ],
           ),
           duration: Duration(seconds: 2),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
@@ -322,13 +318,13 @@ mixin OfflineAwareMixin<T extends StatefulWidget> on State<T> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.offline_bolt, color: Colors.white),
-              const SizedBox(width: 12),
+              Icon(Icons.offline_bolt, color: Theme.of(context).colorScheme.onError),
+              SizedBox(width: 12),
               Expanded(child: Text(message)),
             ],
           ),
-          backgroundColor: Colors.orange,
-          duration: const Duration(seconds: 3),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          duration: Duration(seconds: 3),
         ),
       );
     }
@@ -341,12 +337,12 @@ mixin OfflineAwareMixin<T extends StatefulWidget> on State<T> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.wifi, color: Colors.white),
-              const SizedBox(width: 12),
+              Icon(Icons.wifi, color: Theme.of(context).colorScheme.onPrimary),
+              SizedBox(width: 12),
               Expanded(child: Text(message)),
             ],
           ),
-          backgroundColor: Colors.green,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           duration: Duration(seconds: 2),
         ),
       );

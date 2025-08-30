@@ -76,7 +76,7 @@ class _DetailScreenState extends State<DetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error browsing tag: $tagName'),
-            backgroundColor: ColorsConst.accentRed,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -98,7 +98,7 @@ class _DetailScreenState extends State<DetailScreen> {
           }
         },
         child: Scaffold(
-          backgroundColor: ColorsConst.darkBackground,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           body: StreamBuilder<bool>(
             // Listen to offline mode changes
             stream: AppStateManager().offlineModeStream,
@@ -128,24 +128,23 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Widget _buildLoadingState(BuildContext context) {
     return Scaffold(
-      backgroundColor: ColorsConst.darkBackground,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: ColorsConst.darkSurface,
+        backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
         elevation: 0,
         leading: IconButton(
-          icon:
-              const Icon(Icons.arrow_back, color: ColorsConst.darkTextPrimary),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurfaceVariant),
           onPressed: () => context.pop(),
         ),
         title: Text(
           'Loading Content',
           style: TextStyleConst.headingMedium.copyWith(
-            color: ColorsConst.darkTextPrimary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
       ),
       body: Container(
-        color: ColorsConst.darkBackground,
+        color: Theme.of(context).colorScheme.surface,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -158,32 +157,32 @@ class _DetailScreenState extends State<DetailScreen> {
                     width: 100,
                     height: 100,
                     child: CircularProgressIndicator(
-                      color: ColorsConst.accentBlue,
+                      color: Theme.of(context).colorScheme.primary,
                       strokeWidth: 5,
-                      backgroundColor: ColorsConst.darkCard,
+                      backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
                     ),
                   ),
                   Container(
                     width: 70,
                     height: 70,
                     decoration: BoxDecoration(
-                      color: ColorsConst.darkBackground,
+                      color: Theme.of(context).colorScheme.surface,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: ColorsConst.accentBlue.withValues(alpha: 0.3),
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                         width: 2,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: ColorsConst.accentBlue.withValues(alpha: 0.2),
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                           blurRadius: 8,
                           spreadRadius: 2,
                         ),
                       ],
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.menu_book,
-                      color: ColorsConst.accentBlue,
+                      color: Theme.of(context).colorScheme.primary,
                       size: 32,
                     ),
                   ),
@@ -198,15 +197,15 @@ class _DetailScreenState extends State<DetailScreen> {
                   vertical: 16,
                 ),
                 decoration: BoxDecoration(
-                  color: ColorsConst.darkCard,
+                  color: Theme.of(context).colorScheme.surfaceVariant,
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: ColorsConst.borderDefault,
+                    color: Theme.of(context).colorScheme.outline,
                     width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: ColorsConst.darkBackground.withValues(alpha: 0.5),
+                      color: Theme.of(context).colorScheme.scrim.withOpacity(0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -217,7 +216,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     Text(
                       'Loading Content Details',
                       style: TextStyleConst.headingSmall.copyWith(
-                        color: ColorsConst.darkTextPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -225,7 +224,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     Text(
                       'Fetching metadata and images...',
                       style: TextStyleConst.bodyMedium.copyWith(
-                        color: ColorsConst.darkTextSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -258,12 +257,12 @@ class _DetailScreenState extends State<DetailScreen> {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      color: ColorsConst.accentYellow.withValues(alpha: 0.1),
+          color: Theme.of(context).colorScheme.secondaryContainer,
           child: Row(
             children: [
               Icon(
                 Icons.wifi_off,
-                color: ColorsConst.accentYellow,
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
                 size: 16,
               ),
               const SizedBox(width: 8),

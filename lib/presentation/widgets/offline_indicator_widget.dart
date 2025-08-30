@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
 import '../cubits/network/network_cubit.dart';
 
@@ -36,13 +35,13 @@ class OfflineIndicatorWidget extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             color: isOffline
-                ? ColorsConst.accentRed.withValues(alpha: 0.2)
-                : _getConnectionColor(connectionType).withValues(alpha: 0.2),
+                ? Theme.of(context).colorScheme.error.withOpacity(0.2)
+                : _getConnectionColor(context, connectionType).withOpacity(0.2),
             borderRadius: BorderRadius.circular(compact ? 4 : 6),
             border: Border.all(
               color: isOffline
-                  ? ColorsConst.accentRed
-                  : _getConnectionColor(connectionType),
+                  ? Theme.of(context).colorScheme.error
+                  : _getConnectionColor(context, connectionType),
               width: 1,
             ),
           ),
@@ -55,20 +54,24 @@ class OfflineIndicatorWidget extends StatelessWidget {
                     : _getConnectionIcon(connectionType),
                 size: compact ? 12 : 16,
                 color: isOffline
-                    ? ColorsConst.accentRed
-                    : _getConnectionColor(connectionType),
+                    ? Theme.of(context).colorScheme.error
+                    : _getConnectionColor(context, connectionType),
               ),
               if (!compact) ...[
                 const SizedBox(width: 4),
                 Text(
                   isOffline ? 'OFFLINE' : _getConnectionText(connectionType),
-                  style: TextStyleConst.bodySmall.copyWith(
-                    color: isOffline
-                        ? ColorsConst.accentRed
-                        : _getConnectionColor(connectionType),
-                    fontWeight: FontWeight.bold,
-                    fontSize: compact ? 10 : 12,
-                  ),
+                  style: compact 
+                      ? TextStyleConst.overline.copyWith(
+                          color: isOffline
+                              ? Theme.of(context).colorScheme.error
+                              : _getConnectionColor(context, connectionType),
+                        )
+                      : TextStyleConst.label.copyWith(
+                          color: isOffline
+                              ? Theme.of(context).colorScheme.error
+                              : _getConnectionColor(context, connectionType),
+                        ),
                 ),
               ],
             ],
@@ -78,17 +81,18 @@ class OfflineIndicatorWidget extends StatelessWidget {
     );
   }
 
-  Color _getConnectionColor(NetworkConnectionType? type) {
+  Color _getConnectionColor(BuildContext context, NetworkConnectionType? type) {
+    final colorScheme = Theme.of(context).colorScheme;
     switch (type) {
       case NetworkConnectionType.wifi:
       case NetworkConnectionType.ethernet:
-        return ColorsConst.accentGreen;
+        return colorScheme.tertiary; // Green for good connection
       case NetworkConnectionType.mobile:
-        return ColorsConst.accentYellow;
+        return colorScheme.secondary; // Amber/orange for mobile
       case NetworkConnectionType.other:
-        return ColorsConst.accentBlue;
+        return colorScheme.primary; // Primary blue for other
       case null:
-        return ColorsConst.accentRed;
+        return colorScheme.error; // Red for error/offline
     }
   }
 
@@ -168,10 +172,10 @@ class OfflineBanner extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: ColorsConst.accentRed.withValues(alpha: 0.1),
+            color: Theme.of(context).colorScheme.errorContainer,
             border: Border(
               bottom: BorderSide(
-                color: ColorsConst.accentRed.withValues(alpha: 0.3),
+                color: Theme.of(context).colorScheme.error.withOpacity(0.3),
                 width: 1,
               ),
             ),
@@ -181,14 +185,14 @@ class OfflineBanner extends StatelessWidget {
               Icon(
                 Icons.cloud_off,
                 size: 16,
-                color: ColorsConst.accentRed,
+                color: Theme.of(context).colorScheme.onErrorContainer,
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'You are offline. Some features may not be available.',
                   style: TextStyleConst.bodySmall.copyWith(
-                    color: ColorsConst.accentRed,
+                    color: Theme.of(context).colorScheme.onErrorContainer,
                   ),
                 ),
               ),
@@ -199,7 +203,7 @@ class OfflineBanner extends StatelessWidget {
                 child: Text(
                   'Retry',
                   style: TextStyleConst.buttonSmall.copyWith(
-                    color: ColorsConst.accentRed,
+                    color: Theme.of(context).colorScheme.error,
                   ),
                 ),
               ),
@@ -227,12 +231,12 @@ class OfflineModeToggle extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: ColorsConst.darkCard,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isOfflineMode
-              ? ColorsConst.accentGreen
-              : ColorsConst.borderDefault,
+              ? Theme.of(context).colorScheme.tertiary
+              : Theme.of(context).colorScheme.outline,
           width: 1,
         ),
       ),
@@ -241,8 +245,8 @@ class OfflineModeToggle extends StatelessWidget {
           Icon(
             isOfflineMode ? Icons.offline_bolt : Icons.cloud,
             color: isOfflineMode
-                ? ColorsConst.accentGreen
-                : ColorsConst.darkTextSecondary,
+                ? Theme.of(context).colorScheme.tertiary
+                : Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -252,8 +256,7 @@ class OfflineModeToggle extends StatelessWidget {
                 Text(
                   'Offline Mode',
                   style: TextStyleConst.bodyMedium.copyWith(
-                    color: ColorsConst.darkTextPrimary,
-                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -262,7 +265,7 @@ class OfflineModeToggle extends StatelessWidget {
                       ? 'Using downloaded content only'
                       : 'Online mode with network access',
                   style: TextStyleConst.bodySmall.copyWith(
-                    color: ColorsConst.darkTextSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
                   ),
                 ),
               ],
@@ -271,9 +274,9 @@ class OfflineModeToggle extends StatelessWidget {
           Switch(
             value: isOfflineMode,
             onChanged: onToggle,
-            activeThumbColor: ColorsConst.accentGreen,
-            inactiveThumbColor: ColorsConst.darkTextSecondary,
-            inactiveTrackColor: ColorsConst.darkElevated,
+            activeColor: Theme.of(context).colorScheme.tertiary,
+            inactiveThumbColor: Theme.of(context).colorScheme.onSurfaceVariant,
+            inactiveTrackColor: Theme.of(context).colorScheme.surfaceVariant,
           ),
         ],
       ),
