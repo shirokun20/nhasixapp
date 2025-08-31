@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/content.dart';
 import '../../domain/entities/search_filter.dart';
 import '../../domain/entities/tag.dart';
@@ -44,7 +45,12 @@ class _WidgetExamplesScreenState extends State<WidgetExamplesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Widget Examples'),
+        title: Text(
+          'Widget Examples',
+          style: TextStyleConst.headlineSmall.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -243,13 +249,15 @@ class _WidgetExamplesScreenState extends State<WidgetExamplesScreen> {
                       child: Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: Colors.grey[800],
+                          color: Theme.of(context).colorScheme.surfaceContainer,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
                             'Content behind overlay',
-                            style: TextStyle(color: Colors.white),
+                            style: TextStyleConst.bodyMedium.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
                           ),
                         ),
                       ),
@@ -270,9 +278,8 @@ class _WidgetExamplesScreenState extends State<WidgetExamplesScreen> {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+          style: TextStyleConst.headingMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 16),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/constants/colors_const.dart';
 import '../../../core/constants/text_style_const.dart';
 import '../../../domain/entities/entities.dart';
 import '../../blocs/download/download_bloc.dart';
@@ -41,9 +40,11 @@ class _DownloadsScreenState extends State<DownloadsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return AppScaffoldWithOffline(
       title: 'Downloads',
-      backgroundColor: ColorsConst.background,
+      backgroundColor: colorScheme.surface,
       appBar: _buildAppBar(), // Use custom AppBar with menu actions
       body: BlocConsumer<DownloadBloc, DownloadBlocState>(
         listener: (context, state) {
@@ -51,11 +52,11 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
-                backgroundColor: ColorsConst.error,
+                backgroundColor: colorScheme.error,
                 action: state.canRetry
                     ? SnackBarAction(
                         label: 'Retry',
-                        textColor: ColorsConst.onError,
+                        textColor: colorScheme.onError,
                         onPressed: () {
                           context
                               .read<DownloadBloc>()
@@ -100,12 +101,12 @@ class _DownloadsScreenState extends State<DownloadsScreen>
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: ColorsConst.surface,
-      foregroundColor: ColorsConst.onSurface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      foregroundColor: Theme.of(context).colorScheme.onSurface,
       title: Text(
         'Downloads',
         style: TextStyleConst.headlineSmall.copyWith(
-          color: ColorsConst.onSurface,
+          color: Theme.of(context).colorScheme.onSurface,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -117,9 +118,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             return PopupMenuButton<String>(
               icon: Icon(
                 Icons.more_vert,
-                color: ColorsConst.onSurface,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
-              color: ColorsConst.surface,
+              color: Theme.of(context).colorScheme.surface,
               onSelected: (value) => _handleMenuAction(value, state),
               itemBuilder: (context) => [
                 PopupMenuItem(
@@ -128,7 +129,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                       state.queuedDownloads.isNotEmpty,
                   child: Row(
                     children: [
-                      Icon(Icons.pause, color: ColorsConst.onSurface),
+                      Icon(Icons.pause, color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
                       Text('Pause All', style: TextStyleConst.bodyMedium),
                     ],
@@ -140,7 +141,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                       .any((d) => d.state == DownloadState.paused),
                   child: Row(
                     children: [
-                      Icon(Icons.play_arrow, color: ColorsConst.onSurface),
+                      Icon(Icons.play_arrow, color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
                       Text('Resume All', style: TextStyleConst.bodyMedium),
                     ],
@@ -151,11 +152,11 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   enabled: state.downloads.any((d) => d.canCancel),
                   child: Row(
                     children: [
-                      Icon(Icons.cancel, color: ColorsConst.error),
+                      Icon(Icons.cancel, color: Theme.of(context).colorScheme.error),
                       const SizedBox(width: 8),
                       Text('Cancel All',
                           style: TextStyleConst.bodyMedium
-                              .copyWith(color: ColorsConst.error)),
+                              .copyWith(color: Theme.of(context).colorScheme.error)),
                     ],
                   ),
                 ),
@@ -165,7 +166,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   enabled: state.completedDownloads.isNotEmpty,
                   child: Row(
                     children: [
-                      Icon(Icons.clear_all, color: ColorsConst.onSurface),
+                      Icon(Icons.clear_all, color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
                       Text('Clear Completed', style: TextStyleConst.bodyMedium),
                     ],
@@ -176,7 +177,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   child: Row(
                     children: [
                       Icon(Icons.cleaning_services,
-                          color: ColorsConst.onSurface),
+                          color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
                       Text('Cleanup Storage', style: TextStyleConst.bodyMedium),
                     ],
@@ -187,7 +188,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   value: 'settings',
                   child: Row(
                     children: [
-                      Icon(Icons.settings, color: ColorsConst.onSurface),
+                      Icon(Icons.settings, color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
                       Text('Settings', style: TextStyleConst.bodyMedium),
                     ],
@@ -197,7 +198,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   value: 'export',
                   child: Row(
                     children: [
-                      Icon(Icons.file_download, color: ColorsConst.onSurface),
+                      Icon(Icons.file_download, color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
                       Text('Export List', style: TextStyleConst.bodyMedium),
                     ],
@@ -210,9 +211,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       ],
       bottom: TabBar(
         controller: _tabController,
-        labelColor: ColorsConst.primary,
-        unselectedLabelColor: ColorsConst.onSurface.withValues(alpha: 0.6),
-        indicatorColor: ColorsConst.primary,
+        labelColor: Theme.of(context).colorScheme.primary,
+        unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+        indicatorColor: Theme.of(context).colorScheme.primary,
         tabs: const [
           Tab(text: 'All'),
           Tab(text: 'Active'),
@@ -258,13 +259,13 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             Icon(
               Icons.download_outlined,
               size: 64,
-              color: ColorsConst.onSurface.withValues(alpha: 0.3),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 16),
             Text(
               emptyMessage,
               style: TextStyleConst.bodyLarge.copyWith(
-                color: ColorsConst.onSurface.withValues(alpha: 0.6),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -372,16 +373,16 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: ColorsConst.surface,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         title: Text(
           'Cancel All Downloads',
           style: TextStyleConst.headlineSmall
-              .copyWith(color: ColorsConst.onSurface),
+              .copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         content: Text(
           'Are you sure you want to cancel all active downloads? This action cannot be undone.',
           style:
-              TextStyleConst.bodyMedium.copyWith(color: ColorsConst.onSurface),
+              TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         actions: [
           TextButton(
@@ -396,7 +397,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             child: Text(
               'Cancel All',
               style:
-                  TextStyleConst.labelLarge.copyWith(color: ColorsConst.error),
+                  TextStyleConst.labelLarge.copyWith(color: Theme.of(context).colorScheme.error),
             ),
           ),
         ],
@@ -408,16 +409,16 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: ColorsConst.surface,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         title: Text(
           'Cancel Download',
           style: TextStyleConst.headlineSmall
-              .copyWith(color: ColorsConst.onSurface),
+              .copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         content: Text(
           'Are you sure you want to cancel this download? Progress will be lost.',
           style:
-              TextStyleConst.bodyMedium.copyWith(color: ColorsConst.onSurface),
+              TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         actions: [
           TextButton(
@@ -434,7 +435,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             child: Text(
               'Cancel Download',
               style:
-                  TextStyleConst.labelLarge.copyWith(color: ColorsConst.error),
+                  TextStyleConst.labelLarge.copyWith(color: Theme.of(context).colorScheme.error),
             ),
           ),
         ],
@@ -446,16 +447,16 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: ColorsConst.surface,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         title: Text(
           'Remove Download',
           style: TextStyleConst.headlineSmall
-              .copyWith(color: ColorsConst.onSurface),
+              .copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         content: Text(
           'Are you sure you want to remove this download from the list? Downloaded files will be deleted.',
           style:
-              TextStyleConst.bodyMedium.copyWith(color: ColorsConst.onSurface),
+              TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         actions: [
           TextButton(
@@ -472,7 +473,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             child: Text(
               'Remove',
               style:
-                  TextStyleConst.labelLarge.copyWith(color: ColorsConst.error),
+                  TextStyleConst.labelLarge.copyWith(color: Theme.of(context).colorScheme.error),
             ),
           ),
         ],
@@ -484,16 +485,16 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: ColorsConst.surface,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         title: Text(
           'Cleanup Storage',
           style: TextStyleConst.headlineSmall
-              .copyWith(color: ColorsConst.onSurface),
+              .copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         content: Text(
           'This will remove orphaned files and clean up failed downloads. Continue?',
           style:
-              TextStyleConst.bodyMedium.copyWith(color: ColorsConst.onSurface),
+              TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         actions: [
           TextButton(
@@ -518,7 +519,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     showDialog(
       context: context,
       builder: (context) => Dialog(
-        backgroundColor: ColorsConst.surface,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         child: DownloadSettingsWidget(
           settings: settings,
           onSettingsChanged: (newSettings) {
@@ -542,7 +543,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     showDialog(
       context: context,
       builder: (context) => Dialog(
-        backgroundColor: ColorsConst.surface,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -552,7 +553,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
               Text(
                 'Download Details',
                 style: TextStyleConst.headlineSmall
-                    .copyWith(color: ColorsConst.onSurface),
+                    .copyWith(color: Theme.of(context).colorScheme.onSurface),
               ),
               const SizedBox(height: 16),
               _buildDetailRow('Status', download.statusText),
@@ -603,7 +604,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             child: Text(
               '$label:',
               style: TextStyleConst.bodySmall.copyWith(
-                color: ColorsConst.onSurface.withValues(alpha: 0.7),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -613,7 +614,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             child: Text(
               value,
               style: TextStyleConst.bodySmall.copyWith(
-                color: isError ? ColorsConst.error : ColorsConst.onSurface,
+                color: isError ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),

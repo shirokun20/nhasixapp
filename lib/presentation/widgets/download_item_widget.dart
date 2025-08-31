@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 
-import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/entities.dart';
 import '../../services/download_service.dart';
@@ -21,8 +20,10 @@ class DownloadItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Card(
-      color: ColorsConst.surface,
+      color: colorScheme.surface,
       margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
         onTap: onTap,
@@ -42,7 +43,7 @@ class DownloadItemWidget extends StatelessWidget {
                         Text(
                           'Content ${download.contentId}',
                           style: TextStyleConst.titleMedium.copyWith(
-                            color: ColorsConst.onSurface,
+                            color: colorScheme.onSurface,
                             fontWeight: FontWeight.w600,
                           ),
                           maxLines: 1,
@@ -52,14 +53,14 @@ class DownloadItemWidget extends StatelessWidget {
                         Text(
                           download.statusText,
                           style: TextStyleConst.bodySmall.copyWith(
-                            color: _getStatusColor(),
+                            color: _getStatusColor(context),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  _buildActionButton(),
+                  _buildActionButton(context),
                 ],
               ),
 
@@ -73,9 +74,9 @@ class DownloadItemWidget extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: download.progress,
                         backgroundColor:
-                            ColorsConst.onSurface.withValues(alpha: 0.1),
+                            colorScheme.onSurface.withValues(alpha: 0.1),
                         valueColor:
-                            AlwaysStoppedAnimation<Color>(_getProgressColor()),
+                            AlwaysStoppedAnimation<Color>(_getProgressColor(context)),
                         minHeight: 6,
                       ),
                     ),
@@ -83,7 +84,7 @@ class DownloadItemWidget extends StatelessWidget {
                     Text(
                       '${(download.progressPercentage > 100) ? '100' : download.progressPercentage}%',
                       style: TextStyleConst.bodySmall.copyWith(
-                        color: ColorsConst.onSurface.withValues(alpha: 0.7),
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -99,7 +100,7 @@ class DownloadItemWidget extends StatelessWidget {
                     Icon(
                       Icons.photo_library_outlined,
                       size: 16,
-                      color: ColorsConst.onSurface.withValues(alpha: 0.6),
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                     const SizedBox(width: 4),
                     _buildVerifiedPagesText(download),
@@ -110,13 +111,13 @@ class DownloadItemWidget extends StatelessWidget {
                     Icon(
                       Icons.storage_outlined,
                       size: 16,
-                      color: ColorsConst.onSurface.withValues(alpha: 0.6),
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       download.formattedFileSize,
                       style: TextStyleConst.bodySmall.copyWith(
-                        color: ColorsConst.onSurface.withValues(alpha: 0.7),
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -126,13 +127,13 @@ class DownloadItemWidget extends StatelessWidget {
                     Icon(
                       Icons.speed_outlined,
                       size: 16,
-                      color: ColorsConst.onSurface.withValues(alpha: 0.6),
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       download.formattedSpeed,
                       style: TextStyleConst.bodySmall.copyWith(
-                        color: ColorsConst.onSurface.withValues(alpha: 0.7),
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
@@ -144,7 +145,7 @@ class DownloadItemWidget extends StatelessWidget {
                     onPressed: () => _showMoreActions(context),
                     icon: Icon(
                       Icons.more_vert,
-                      color: ColorsConst.onSurface.withValues(alpha: 0.6),
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                     iconSize: 20,
                     constraints: const BoxConstraints(
@@ -161,10 +162,10 @@ class DownloadItemWidget extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: ColorsConst.error.withValues(alpha: 0.1),
+                    color: colorScheme.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(
-                      color: ColorsConst.error.withValues(alpha: 0.3),
+                      color: colorScheme.error.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
@@ -173,14 +174,14 @@ class DownloadItemWidget extends StatelessWidget {
                       Icon(
                         Icons.error_outline,
                         size: 16,
-                        color: ColorsConst.error,
+                        color: colorScheme.error,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           download.error!,
                           style: TextStyleConst.bodySmall.copyWith(
-                            color: ColorsConst.error,
+                            color: colorScheme.error,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -200,13 +201,13 @@ class DownloadItemWidget extends StatelessWidget {
                     Icon(
                       Icons.schedule_outlined,
                       size: 16,
-                      color: ColorsConst.onSurface.withValues(alpha: 0.6),
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       'ETA: ${_formatDuration(download.estimatedTimeRemaining!)}',
                       style: TextStyleConst.bodySmall.copyWith(
-                        color: ColorsConst.onSurface.withValues(alpha: 0.7),
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
@@ -219,7 +220,8 @@ class DownloadItemWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton() {
+  Widget _buildActionButton(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     IconData icon;
     Color color;
     String action;
@@ -227,39 +229,39 @@ class DownloadItemWidget extends StatelessWidget {
     switch (download.state) {
       case DownloadState.queued:
         icon = Icons.schedule;
-        color = ColorsConst.onSurface.withValues(alpha: 0.6);
+        color = colorScheme.onSurface.withValues(alpha: 0.6);
         action = 'start';
         break;
       case DownloadState.downloading:
         // If progress is 100%, show as completed even if state hasn't updated yet
         if (download.progressPercentage >= 100) {
           icon = Icons.check_circle;
-          color = ColorsConst.success;
+          color = colorScheme.tertiary;
           action = 'details';
         } else {
           icon = Icons.pause;
-          color = ColorsConst.primary;
+          color = colorScheme.primary;
           action = 'pause';
         }
         break;
       case DownloadState.paused:
         icon = Icons.play_arrow;
-        color = ColorsConst.primary;
+        color = colorScheme.primary;
         action = 'start';
         break;
       case DownloadState.completed:
         icon = Icons.check_circle;
-        color = ColorsConst.success;
+        color = colorScheme.tertiary;
         action = 'details';
         break;
       case DownloadState.failed:
         icon = Icons.refresh;
-        color = ColorsConst.error;
+        color = colorScheme.error;
         action = 'retry';
         break;
       case DownloadState.cancelled:
         icon = Icons.refresh;
-        color = ColorsConst.onSurface.withValues(alpha: 0.6);
+        color = colorScheme.onSurface.withValues(alpha: 0.6);
         action = 'retry';
         break;
     }
@@ -272,9 +274,11 @@ class DownloadItemWidget extends StatelessWidget {
   }
 
   void _showMoreActions(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     showModalBottomSheet(
       context: context,
-      backgroundColor: ColorsConst.surface,
+      backgroundColor: colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -288,7 +292,7 @@ class DownloadItemWidget extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: ColorsConst.onSurface.withValues(alpha: 0.3),
+                color: colorScheme.onSurface.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -298,7 +302,7 @@ class DownloadItemWidget extends StatelessWidget {
             Text(
               'Download Actions',
               style: TextStyleConst.titleMedium.copyWith(
-                color: ColorsConst.onSurface,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -377,15 +381,17 @@ class DownloadItemWidget extends StatelessWidget {
     required String action,
     bool isDestructive = false,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return ListTile(
       leading: Icon(
         icon,
-        color: isDestructive ? ColorsConst.error : ColorsConst.onSurface,
+        color: isDestructive ? colorScheme.error : colorScheme.onSurface,
       ),
       title: Text(
         title,
         style: TextStyleConst.bodyMedium.copyWith(
-          color: isDestructive ? ColorsConst.error : ColorsConst.onSurface,
+          color: isDestructive ? colorScheme.error : colorScheme.onSurface,
         ),
       ),
       onTap: () {
@@ -395,43 +401,47 @@ class DownloadItemWidget extends StatelessWidget {
     );
   }
 
-  Color _getStatusColor() {
+  Color _getStatusColor(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     switch (download.state) {
       case DownloadState.queued:
-        return ColorsConst.onSurface.withValues(alpha: 0.6);
+        return colorScheme.onSurface.withValues(alpha: 0.6);
       case DownloadState.downloading:
         // If progress is 100%, show success color even if state hasn't updated yet
         if (download.progressPercentage >= 100) {
-          return ColorsConst.success;
+          return colorScheme.tertiary;
         }
-        return ColorsConst.primary;
+        return colorScheme.primary;
       case DownloadState.paused:
-        return ColorsConst.warning;
+        return colorScheme.secondary;
       case DownloadState.completed:
-        return ColorsConst.success;
+        return colorScheme.tertiary;
       case DownloadState.failed:
-        return ColorsConst.error;
+        return colorScheme.error;
       case DownloadState.cancelled:
-        return ColorsConst.onSurface.withValues(alpha: 0.6);
+        return colorScheme.onSurface.withValues(alpha: 0.6);
     }
   }
 
-  Color _getProgressColor() {
+  Color _getProgressColor(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     switch (download.state) {
       case DownloadState.downloading:
         // If progress is 100%, show success color even if state hasn't updated yet
         if (download.progressPercentage >= 100) {
-          return ColorsConst.success;
+          return colorScheme.tertiary;
         }
-        return ColorsConst.primary;
+        return colorScheme.primary;
       case DownloadState.paused:
-        return ColorsConst.warning;
+        return colorScheme.secondary;
       case DownloadState.completed:
-        return ColorsConst.success;
+        return colorScheme.tertiary;
       case DownloadState.failed:
-        return ColorsConst.error;
+        return colorScheme.error;
       default:
-        return ColorsConst.onSurface.withValues(alpha: 0.3);
+        return colorScheme.onSurface.withValues(alpha: 0.3);
     }
   }
 
@@ -464,11 +474,13 @@ class DownloadItemWidget extends StatelessWidget {
     return FutureBuilder<Map<String, dynamic>>(
       future: _verifyDownloadStatus(download.contentId),
       builder: (context, snapshot) {
+        final colorScheme = Theme.of(context).colorScheme;
+        
         if (!snapshot.hasData) {
           return Text(
             _buildPagesText(download),
             style: TextStyleConst.bodySmall.copyWith(
-              color: ColorsConst.onSurface.withValues(alpha: 0.7),
+              color: colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           );
         }
@@ -483,7 +495,7 @@ class DownloadItemWidget extends StatelessWidget {
           return Text(
             _buildPagesText(download),
             style: TextStyleConst.bodySmall.copyWith(
-              color: ColorsConst.onSurface.withValues(alpha: 0.7),
+              color: colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           );
         }
@@ -501,7 +513,7 @@ class DownloadItemWidget extends StatelessWidget {
         return Text(
           text,
           style: TextStyleConst.bodySmall.copyWith(
-            color: ColorsConst.onSurface.withValues(alpha: 0.7),
+            color: colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         );
       },

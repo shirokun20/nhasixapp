@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
 
-import '../../../core/constants/colors_const.dart';
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
 import '../../cubits/offline_search/offline_search_cubit.dart';
@@ -43,11 +42,13 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return BlocProvider<OfflineSearchCubit>(
       create: (context) => _offlineSearchCubit,
       child: AppScaffoldWithOffline(
         title: 'Offline Content',
-        backgroundColor: ColorsConst.darkBackground,
+        backgroundColor: colorScheme.surface,
         appBar: _buildAppBar(),
         body: Column(
           children: [
@@ -65,24 +66,24 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: ColorsConst.darkSurface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       elevation: 0,
       leading: IconButton(
         onPressed: () => context.pop(),
-        icon: const Icon(Icons.arrow_back, color: ColorsConst.darkTextPrimary),
+        icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
       ),
       title: Row(
         children: [
           Icon(
             Icons.offline_bolt,
-            color: ColorsConst.accentGreen,
+            color: Theme.of(context).colorScheme.tertiary,
             size: 24,
           ),
           const SizedBox(width: 8),
           Text(
             'Offline Content',
             style: TextStyleConst.headingMedium.copyWith(
-              color: ColorsConst.darkTextPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ],
@@ -106,13 +107,13 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                           Text(
                             '${stats['totalContent']} items',
                             style: TextStyleConst.bodySmall.copyWith(
-                              color: ColorsConst.darkTextSecondary,
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                             ),
                           ),
                           Text(
                             stats['formattedSize'],
                             style: TextStyleConst.bodySmall.copyWith(
-                              color: ColorsConst.accentBlue,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                           ),
                         ],
@@ -130,13 +131,15 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
   }
 
   Widget _buildSearchBar() {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: ColorsConst.darkSurface,
+        color: colorScheme.surface,
         border: Border(
           bottom: BorderSide(
-            color: ColorsConst.borderMuted,
+            color: colorScheme.outline.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -148,16 +151,16 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
               controller: _searchController,
               focusNode: _searchFocusNode,
               style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.darkTextPrimary,
+                color: colorScheme.onSurface,
               ),
               decoration: InputDecoration(
                 hintText: 'Search offline content...',
                 hintStyle: TextStyleConst.bodyMedium.copyWith(
-                  color: ColorsConst.darkTextSecondary,
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
                 prefixIcon: Icon(
                   Icons.search,
-                  color: ColorsConst.darkTextSecondary,
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
@@ -167,17 +170,17 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                         },
                         icon: Icon(
                           Icons.clear,
-                          color: ColorsConst.darkTextSecondary,
+                          color: colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                       )
                     : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: ColorsConst.borderDefault),
+                  borderSide: BorderSide(color: colorScheme.outline),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: ColorsConst.accentBlue),
+                  borderSide: BorderSide(color: colorScheme.primary),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -211,8 +214,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
               _searchFocusNode.unfocus();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: ColorsConst.accentBlue,
-              foregroundColor: ColorsConst.darkTextPrimary,
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -221,7 +224,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
             child: Text(
               'Search',
               style: TextStyleConst.buttonMedium.copyWith(
-                color: ColorsConst.darkTextPrimary,
+                color: colorScheme.onPrimary,
               ),
             ),
           ),
@@ -231,6 +234,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
   }
 
   Widget _buildBody(OfflineSearchState state) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     if (state is OfflineSearchLoading) {
       return const Center(
         child: AppProgressIndicator(
@@ -257,13 +262,13 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
             Icon(
               Icons.cloud_off,
               size: 64,
-              color: ColorsConst.darkTextTertiary,
+              color: colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 16),
             Text(
               state.emptyMessage,
               style: TextStyleConst.bodyLarge.copyWith(
-                color: ColorsConst.darkTextSecondary,
+                color: colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
@@ -273,8 +278,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
               icon: const Icon(Icons.download),
               label: const Text('Go to Downloads'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: ColorsConst.accentBlue,
-                foregroundColor: ColorsConst.darkTextPrimary,
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
@@ -295,14 +300,14 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                 Text(
                   state.displayTitle,
                   style: TextStyleConst.headingSmall.copyWith(
-                    color: ColorsConst.darkTextPrimary,
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 const Spacer(),
                 Text(
                   state.resultsSummary,
                   style: TextStyleConst.bodySmall.copyWith(
-                    color: ColorsConst.darkTextSecondary,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],

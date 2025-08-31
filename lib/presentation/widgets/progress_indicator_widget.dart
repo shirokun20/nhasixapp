@@ -1,28 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
-import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
 
-/// Custom progress indicator widgets with black theme
+/// Custom progress indicator widgets with theme-aware colors
 class AppProgressIndicator extends StatelessWidget {
   const AppProgressIndicator({
     super.key,
     this.message,
     this.size = 24.0,
     this.strokeWidth = 3.0,
-    this.color = ColorsConst.accentBlue,
+    this.color,
     this.showMessage = true,
   });
 
   final String? message;
   final double size;
   final double strokeWidth;
-  final Color color;
+  final Color? color;
   final bool showMessage;
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -30,7 +31,7 @@ class AppProgressIndicator extends StatelessWidget {
           width: size,
           height: size,
           child: CircularProgressIndicator(
-            color: color,
+            color: color ?? colorScheme.primary,
             strokeWidth: strokeWidth,
           ),
         ),
@@ -39,7 +40,7 @@ class AppProgressIndicator extends StatelessWidget {
           Text(
             message!,
             style: TextStyleConst.bodyMedium.copyWith(
-              color: ColorsConst.darkTextSecondary,
+              color: colorScheme.onSurface.withValues(alpha: 0.7),
             ),
             textAlign: TextAlign.center,
           ),
@@ -54,8 +55,8 @@ class AppLinearProgressIndicator extends StatelessWidget {
   const AppLinearProgressIndicator({
     super.key,
     this.value,
-    this.backgroundColor = ColorsConst.borderMuted,
-    this.valueColor = ColorsConst.accentBlue,
+    this.backgroundColor,
+    this.valueColor,
     this.height = 4.0,
     this.borderRadius = 2.0,
     this.showPercentage = false,
@@ -63,8 +64,8 @@ class AppLinearProgressIndicator extends StatelessWidget {
   });
 
   final double? value;
-  final Color backgroundColor;
-  final Color valueColor;
+  final Color? backgroundColor;
+  final Color? valueColor;
   final double height;
   final double borderRadius;
   final bool showPercentage;
@@ -72,6 +73,8 @@ class AppLinearProgressIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,7 +83,7 @@ class AppLinearProgressIndicator extends StatelessWidget {
           Text(
             message!,
             style: TextStyleConst.bodyMedium.copyWith(
-              color: ColorsConst.darkTextSecondary,
+              color: colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 8),
@@ -91,7 +94,7 @@ class AppLinearProgressIndicator extends StatelessWidget {
               child: Container(
                 height: height,
                 decoration: BoxDecoration(
-                  color: backgroundColor,
+                  color: backgroundColor ?? colorScheme.outline.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(borderRadius),
                 ),
                 child: FractionallySizedBox(
@@ -99,7 +102,7 @@ class AppLinearProgressIndicator extends StatelessWidget {
                   widthFactor: value ?? 0.0,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: valueColor,
+                      color: valueColor ?? colorScheme.primary,
                       borderRadius: BorderRadius.circular(borderRadius),
                     ),
                   ),
@@ -111,7 +114,7 @@ class AppLinearProgressIndicator extends StatelessWidget {
               Text(
                 '${(value! * 100).toInt()}%',
                 style: TextStyleConst.caption.copyWith(
-                  color: ColorsConst.darkTextSecondary,
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -128,23 +131,25 @@ class AppShimmerLoading extends StatelessWidget {
   const AppShimmerLoading({
     super.key,
     required this.child,
-    this.baseColor = ColorsConst.darkElevated,
-    this.highlightColor = ColorsConst.darkCard,
+    this.baseColor,
+    this.highlightColor,
     this.enabled = true,
   });
 
   final Widget child;
-  final Color baseColor;
-  final Color highlightColor;
+  final Color? baseColor;
+  final Color? highlightColor;
   final bool enabled;
 
   @override
   Widget build(BuildContext context) {
     if (!enabled) return child;
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Shimmer.fromColors(
-      baseColor: baseColor,
-      highlightColor: highlightColor,
+      baseColor: baseColor ?? colorScheme.surfaceContainerHighest,
+      highlightColor: highlightColor ?? colorScheme.surface,
       child: child,
     );
   }
@@ -161,9 +166,11 @@ class ContentCardShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return AppShimmerLoading(
       child: Card(
-        color: ColorsConst.darkCard,
+        color: colorScheme.surface,
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -178,9 +185,9 @@ class ContentCardShimmer extends StatelessWidget {
                 flex: 3,
                 child: Container(
                   width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: ColorsConst.darkElevated,
-                    borderRadius: BorderRadius.vertical(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(12),
                     ),
                   ),
@@ -200,7 +207,7 @@ class ContentCardShimmer extends StatelessWidget {
                         height: 14,
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: ColorsConst.darkElevated,
+                          color: colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -211,7 +218,7 @@ class ContentCardShimmer extends StatelessWidget {
                         height: 14,
                         width: 120,
                         decoration: BoxDecoration(
-                          color: ColorsConst.darkElevated,
+                          color: colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -223,7 +230,7 @@ class ContentCardShimmer extends StatelessWidget {
                         height: 12,
                         width: 80,
                         decoration: BoxDecoration(
-                          color: ColorsConst.darkElevated,
+                          color: colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -237,7 +244,7 @@ class ContentCardShimmer extends StatelessWidget {
                             height: 10,
                             width: 40,
                             decoration: BoxDecoration(
-                              color: ColorsConst.darkElevated,
+                              color: colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -246,7 +253,7 @@ class ContentCardShimmer extends StatelessWidget {
                             height: 16,
                             width: 24,
                             decoration: BoxDecoration(
-                              color: ColorsConst.darkElevated,
+                              color: colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
@@ -299,12 +306,12 @@ class ContentGridShimmer extends StatelessWidget {
 class PulsingDotIndicator extends StatefulWidget {
   const PulsingDotIndicator({
     super.key,
-    this.color = ColorsConst.accentBlue,
+    this.color,
     this.size = 8.0,
     this.dotCount = 3,
   });
 
-  final Color color;
+  final Color? color;
   final double size;
   final int dotCount;
 
@@ -357,6 +364,9 @@ class _PulsingDotIndicatorState extends State<PulsingDotIndicator>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final dotColor = widget.color ?? colorScheme.primary;
+    
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(widget.dotCount, (index) {
@@ -368,7 +378,7 @@ class _PulsingDotIndicatorState extends State<PulsingDotIndicator>
               width: widget.size,
               height: widget.size,
               decoration: BoxDecoration(
-                color: widget.color.withValues(
+                color: dotColor.withValues(
                   alpha: 0.3 + (0.7 * _animations[index].value),
                 ),
                 shape: BoxShape.circle,
@@ -396,12 +406,14 @@ class TextSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return AppShimmerLoading(
       child: Container(
         width: width,
         height: height,
         decoration: BoxDecoration(
-          color: ColorsConst.darkElevated,
+          color: colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(borderRadius),
         ),
       ),
@@ -426,12 +438,14 @@ class LoadingOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Stack(
       children: [
         child,
         if (isLoading)
           Container(
-            color: (backgroundColor ?? ColorsConst.darkBackground)
+            color: (backgroundColor ?? colorScheme.surface)
                 .withValues(alpha: 0.7),
             child: Center(
               child: Container(
@@ -440,11 +454,11 @@ class LoadingOverlay extends StatelessWidget {
                   vertical: 16,
                 ),
                 decoration: BoxDecoration(
-                  color: ColorsConst.darkCard,
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: ColorsConst.darkBackground.withValues(alpha: 0.5),
+                      color: colorScheme.shadow.withValues(alpha: 0.5),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),

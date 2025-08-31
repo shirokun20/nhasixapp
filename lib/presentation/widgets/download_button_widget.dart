@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../core/routing/app_router.dart';
 import '../../domain/entities/entities.dart';
@@ -25,6 +24,8 @@ class DownloadButtonWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return BlocBuilder<DownloadBloc, DownloadBlocState>(
       builder: (context, state) {
         if (state is! DownloadLoaded) {
@@ -33,7 +34,7 @@ class DownloadButtonWidget extends StatelessWidget {
             icon: Icons.download,
             text: 'Download',
             onPressed: null,
-            color: ColorsConst.accentGreen,
+            color: colorScheme.tertiary,
           );
         }
 
@@ -54,7 +55,7 @@ class DownloadButtonWidget extends StatelessWidget {
               icon: Icons.schedule,
               text: 'Queued',
               onPressed: () => _cancelDownload(context),
-              color: ColorsConst.warning,
+              color: colorScheme.secondary,
             );
 
           case DownloadState.downloading:
@@ -65,7 +66,7 @@ class DownloadButtonWidget extends StatelessWidget {
                 icon: Icons.check_circle,
                 text: 'Downloaded',
                 onPressed: () => _openDownload(context),
-                color: ColorsConst.success,
+                color: colorScheme.tertiary,
               );
             }
             return _buildProgressButton(
@@ -80,7 +81,7 @@ class DownloadButtonWidget extends StatelessWidget {
               icon: Icons.play_arrow,
               text: 'Resume',
               onPressed: () => _resumeDownload(context),
-              color: ColorsConst.info,
+              color: colorScheme.primary,
               progress: download.progressPercentage / 100,
             );
 
@@ -90,7 +91,7 @@ class DownloadButtonWidget extends StatelessWidget {
               icon: Icons.check_circle,
               text: 'Downloaded',
               onPressed: () => _openDownload(context),
-              color: ColorsConst.success,
+              color: colorScheme.tertiary,
             );
 
           case DownloadState.failed:
@@ -99,7 +100,7 @@ class DownloadButtonWidget extends StatelessWidget {
               icon: Icons.error,
               text: 'Failed',
               onPressed: () => _retryDownload(context),
-              color: ColorsConst.error,
+              color: colorScheme.error,
             );
 
           case DownloadState.cancelled:
@@ -108,7 +109,7 @@ class DownloadButtonWidget extends StatelessWidget {
               icon: Icons.download,
               text: 'Download',
               onPressed: () => _startDownload(context),
-              color: ColorsConst.accentGreen,
+              color: colorScheme.tertiary,
             );
         }
       },
@@ -123,7 +124,7 @@ class DownloadButtonWidget extends StatelessWidget {
     Color? color,
     double? progress,
   }) {
-    final buttonColor = color ?? ColorsConst.primary;
+    final buttonColor = color ?? Theme.of(context).colorScheme.primary;
 
     switch (size) {
       case DownloadButtonSize.small:
@@ -309,7 +310,7 @@ class DownloadButtonWidget extends StatelessWidget {
     final buttonHeight = isLarge ? 48.0 : 40.0;
     
     // Use more vibrant colors for better visibility
-    final progressColor = ColorsConst.primary;
+    final progressColor = Theme.of(context).colorScheme.primary;
     final backgroundColor = progressColor.withValues(alpha: 0.15);
     final progressValueColor = progressColor.withValues(alpha: 0.8);
 
@@ -394,6 +395,8 @@ class DownloadButtonWidget extends StatelessWidget {
   }
 
   Widget _buildDownloadOptionsButton(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return PopupMenuButton<String>(
       onSelected: (value) {
         if (value == 'download_all') {
@@ -403,23 +406,23 @@ class DownloadButtonWidget extends StatelessWidget {
         }
       },
       itemBuilder: (context) => [
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'download_all',
           child: Row(
             children: [
-              Icon(Icons.download, color: ColorsConst.accentGreen),
-              SizedBox(width: 8),
-              Text('Download All'),
+              Icon(Icons.download, color: colorScheme.tertiary),
+              const SizedBox(width: 8),
+              const Text('Download All'),
             ],
           ),
         ),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'download_range',
           child: Row(
             children: [
-              Icon(Icons.folder_open, color: ColorsConst.accentBlue),
-              SizedBox(width: 8),
-              Text('Download Range'),
+              Icon(Icons.folder_open, color: colorScheme.primary),
+              const SizedBox(width: 8),
+              const Text('Download Range'),
             ],
           ),
         ),
@@ -429,7 +432,7 @@ class DownloadButtonWidget extends StatelessWidget {
         icon: Icons.download,
         text: 'Download',
         onPressed: null, // Handled by PopupMenuButton
-        color: ColorsConst.accentGreen,
+        color: colorScheme.tertiary,
       ),
     );
   }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/content.dart';
 import 'progressive_image_widget.dart';
@@ -61,13 +60,13 @@ class ContentCard extends StatelessWidget {
     
     final cardWidget = Card(
       clipBehavior: Clip.antiAlias,
-      color: ColorsConst.darkCard,
+      color: Theme.of(context).colorScheme.surfaceContainer,
       elevation: isHighlighted ? 6 : 2,
       shadowColor: isHighlighted 
           ? (isDarkMode 
               ? const Color(0xFF00FF88).withValues(alpha: 0.5) // Neon green for dark mode
               : const Color(0xFF2E7D32).withValues(alpha: 0.5)) // Dark green for light mode
-          : ColorsConst.darkBackground.withValues(alpha: 0.3),
+          : Theme.of(context).colorScheme.shadow.withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: isHighlighted
@@ -82,8 +81,8 @@ class ContentCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         onLongPress: onLongPress,
-        splashColor: ColorsConst.accentBlue.withValues(alpha: 0.1),
-        highlightColor: ColorsConst.hoverColor,
+        splashColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+        highlightColor: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
         child: AspectRatio(
           aspectRatio: aspectRatio,
@@ -261,69 +260,77 @@ class ContentCard extends StatelessWidget {
   }
 
   Widget _buildCoverImage() {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: ColorsConst.darkElevated,
+    return Builder(
+      builder: (context) => Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceVariant,
+        ),
+        child: content.coverUrl.isNotEmpty
+            ? ProgressiveThumbnailWidget(
+                networkUrl: content.coverUrl,
+                contentId: content.id,
+                aspectRatio: aspectRatio,
+                borderRadius: BorderRadius.zero, // No border radius, handled by parent
+                showOfflineIndicator: showOfflineIndicator,
+              )
+            : _buildImageError(),
       ),
-      child: content.coverUrl.isNotEmpty
-          ? ProgressiveThumbnailWidget(
-              networkUrl: content.coverUrl,
-              contentId: content.id,
-              aspectRatio: aspectRatio,
-              borderRadius: BorderRadius.zero, // No border radius, handled by parent
-              showOfflineIndicator: showOfflineIndicator,
-            )
-          : _buildImageError(),
     );
   }
 
   Widget _buildImageError() {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: ColorsConst.darkElevated,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.broken_image_outlined,
-            size: 32,
-            color: ColorsConst.darkTextTertiary,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Image not available',
-            style: TextStyleConst.caption,
-            textAlign: TextAlign.center,
-          ),
-        ],
+    return Builder(
+      builder: (context) => Container(
+        width: double.infinity,
+        height: double.infinity,
+        color: Theme.of(context).colorScheme.surfaceVariant,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.broken_image_outlined,
+              size: 32,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Image not available',
+              style: TextStyleConst.caption.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildDownloadProgressOverlay() {
     return Positioned.fill(
-      child: Container(
-        color: ColorsConst.darkBackground.withValues(alpha: 0.7),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(
-              value: downloadProgress,
-              color: ColorsConst.accentBlue,
-              backgroundColor: ColorsConst.borderMuted,
-              strokeWidth: 3,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${(downloadProgress! * 100).toInt()}%',
-              style: TextStyleConst.bodySmall.copyWith(
-                color: ColorsConst.darkTextPrimary,
-                fontWeight: FontWeight.bold,
+      child: Builder(
+        builder: (context) => Container(
+          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.7),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                value: downloadProgress,
+                color: Theme.of(context).colorScheme.primary,
+                backgroundColor: Theme.of(context).colorScheme.outline,
+                strokeWidth: 3,
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                '${(downloadProgress! * 100).toInt()}%',
+                style: TextStyleConst.bodySmall.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -334,85 +341,87 @@ class ContentCard extends StatelessWidget {
       top: 8,
       left: 8,
       right: 8,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Left side badges
-          Row(
-            children: [
-              // Page count badge
-              if (showPageCount && content.pageCount > 0)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: ColorsConst.darkBackground.withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${content.pageCount}p',
-                    style: TextStyleConst.caption.copyWith(
-                      color: ColorsConst.darkTextPrimary,
-                      fontWeight: FontWeight.bold,
+      child: Builder(
+        builder: (context) => Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Left side badges
+            Row(
+              children: [
+                // Page count badge
+                if (showPageCount && content.pageCount > 0)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${content.pageCount}p',
+                      style: TextStyleConst.caption.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
 
-              // Offline indicator badge
-              if (showOfflineIndicator) ...[
-                if (showPageCount && content.pageCount > 0)
-                  const SizedBox(width: 4),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: ColorsConst.accentGreen.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.offline_bolt,
-                        size: 10,
-                        color: ColorsConst.darkTextPrimary,
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        'OFFLINE',
-                        style: TextStyleConst.caption.copyWith(
-                          color: ColorsConst.darkTextPrimary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 8,
+                // Offline indicator badge
+                if (showOfflineIndicator) ...[
+                  if (showPageCount && content.pageCount > 0)
+                    const SizedBox(width: 4),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.offline_bolt,
+                          size: 10,
+                          color: Theme.of(context).colorScheme.onTertiary,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 2),
+                        Text(
+                          'OFFLINE',
+                          style: TextStyleConst.caption.copyWith(
+                            color: Theme.of(context).colorScheme.onTertiary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 8,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ],
-            ],
-          ),
+            ),
 
-          // Favorite button
-          if (showFavoriteButton)
-            GestureDetector(
-              onTap: onFavoriteToggle,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: ColorsConst.darkBackground.withValues(alpha: 0.8),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  isFavorite ? Icons.favorite : Icons.favorite_border,
-                  size: 18,
-                  color: isFavorite
-                      ? ColorsConst.accentPink
-                      : ColorsConst.darkTextPrimary,
+            // Favorite button
+            if (showFavoriteButton)
+              GestureDetector(
+                onTap: onFavoriteToggle,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                    size: 18,
+                    color: isFavorite
+                        ? Theme.of(context).colorScheme.error
+                        : Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -453,46 +462,68 @@ class ContentCard extends StatelessWidget {
   }
 
   Widget _buildArtist() {
-    return Text(
-      content.artists.take(2).join(', '),
-      style: TextStyleConst.contentSubtitle.copyWith(
-        color: ColorsConst.accentBlue,
-        fontSize: 11,
+    return Builder(
+      builder: (context) => Text(
+        content.artists.take(2).join(', '),
+        style: TextStyleConst.contentSubtitle.copyWith(
+          color: Theme.of(context).colorScheme.primary,
+          fontSize: 11,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
     );
   }
 
   Widget _buildTags() {
     final visibleTags = content.tags.take(maxTagsToShow).toList();
 
-    return Wrap(
-      spacing: 4,
-      runSpacing: 2,
-      children: visibleTags
-          .map((tag) => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                decoration: BoxDecoration(
-                  color:
-                      ColorsConst.getTagColor(tag.type).withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: ColorsConst.getTagColor(tag.type)
-                        .withValues(alpha: 0.5),
-                    width: 0.5,
+    return Builder(
+      builder: (context) => Wrap(
+        spacing: 4,
+        runSpacing: 2,
+        children: visibleTags
+            .map((tag) => Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: _getTagColor(context, tag.type).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: _getTagColor(context, tag.type).withValues(alpha: 0.5),
+                      width: 0.5,
+                    ),
                   ),
-                ),
-                child: Text(
-                  tag.name,
-                  style: TextStyleConst.contentTag.copyWith(
-                    color: ColorsConst.getTagColor(tag.type),
-                    fontSize: 9,
+                  child: Text(
+                    tag.name,
+                    style: TextStyleConst.contentTag.copyWith(
+                      color: _getTagColor(context, tag.type),
+                      fontSize: 9,
+                    ),
                   ),
-                ),
-              ))
-          .toList(),
+                ))
+            .toList(),
+      ),
     );
+  }
+
+  /// Helper method to get tag color based on theme
+  Color _getTagColor(BuildContext context, String tagType) {
+    switch (tagType.toLowerCase()) {
+      case 'artist':
+        return Theme.of(context).colorScheme.primary;
+      case 'character':
+        return Theme.of(context).colorScheme.secondary;
+      case 'parody':
+        return Theme.of(context).colorScheme.tertiary;
+      case 'group':
+        return Theme.of(context).colorScheme.error;
+      case 'language':
+        return Theme.of(context).colorScheme.inversePrimary;
+      case 'category':
+        return Theme.of(context).colorScheme.outline;
+      default:
+        return Theme.of(context).colorScheme.onSurfaceVariant;
+    }
   }
 
   Widget _buildBottomRow() {
@@ -535,37 +566,40 @@ class ContentCard extends StatelessWidget {
   }
 
   Widget _buildLanguageFlag() {
-    return Container(
-      width: 24,
-      height: 16,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(2),
-        border: Border.all(
-          color: ColorsConst.borderMuted,
-          width: 0.5,
+    return Builder(
+      builder: (context) => Container(
+        width: 24,
+        height: 16,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(2),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outline,
+            width: 0.5,
+          ),
         ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(2),
-        child: Image.asset(
-          'assets/images/${content.language.toLowerCase()}.gif',
-          width: 24,
-          height: 16,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: ColorsConst.darkElevated,
-              child: Center(
-                child: Text(
-                  content.language.substring(0, 2).toUpperCase(),
-                  style: TextStyleConst.caption.copyWith(
-                    fontSize: 8,
-                    fontWeight: FontWeight.bold,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(2),
+          child: Image.asset(
+            'assets/images/${content.language.toLowerCase()}.gif',
+            width: 24,
+            height: 16,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                color: Theme.of(context).colorScheme.surfaceVariant,
+                child: Center(
+                  child: Text(
+                    content.language.substring(0, 2).toUpperCase(),
+                    style: TextStyleConst.caption.copyWith(
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
@@ -596,24 +630,27 @@ class ContentCard extends StatelessWidget {
     double? height,
     int? memCacheWidth,
     int? memCacheHeight,
+    required BuildContext context,
   }) {
     if (imageUrl.isEmpty) {
       return Container(
         width: width,
         height: height,
-        color: ColorsConst.darkElevated,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.broken_image_outlined,
               size: 32,
-              color: ColorsConst.darkTextTertiary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 4),
             Text(
               'No image',
-              style: TextStyleConst.caption,
+              style: TextStyleConst.caption.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -629,30 +666,32 @@ class ContentCard extends StatelessWidget {
       memCacheWidth: memCacheWidth ?? 400,
       memCacheHeight: memCacheHeight ?? 600,
       placeholder: (context, url) => Shimmer.fromColors(
-        baseColor: ColorsConst.darkElevated,
-        highlightColor: ColorsConst.darkCard,
+        baseColor: Theme.of(context).colorScheme.surfaceVariant,
+        highlightColor: Theme.of(context).colorScheme.surfaceContainer,
         child: Container(
           width: width,
           height: height,
-          color: ColorsConst.darkElevated,
+          color: Theme.of(context).colorScheme.surfaceVariant,
         ),
       ),
       errorWidget: (context, url, error) => Container(
         width: width,
         height: height,
-        color: ColorsConst.darkElevated,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.broken_image_outlined,
               size: 32,
-              color: ColorsConst.darkTextTertiary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 4),
             Text(
               'Failed to load',
-              style: TextStyleConst.caption,
+              style: TextStyleConst.caption.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -684,7 +723,7 @@ class CompactContentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: ColorsConst.darkCard,
+      color: Theme.of(context).colorScheme.surfaceContainer,
       elevation: 1,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: InkWell(
@@ -705,19 +744,19 @@ class CompactContentCard extends StatelessWidget {
                     width: 60,
                     height: 80,
                     placeholder: (context, url) => Container(
-                      color: ColorsConst.darkElevated,
-                      child: const Center(
+                      color: Theme.of(context).colorScheme.surfaceVariant,
+                      child: Center(
                         child: CircularProgressIndicator(
-                          color: ColorsConst.accentBlue,
+                          color: Theme.of(context).colorScheme.primary,
                           strokeWidth: 2,
                         ),
                       ),
                     ),
                     errorWidget: (context, url, error) => Container(
-                      color: ColorsConst.darkElevated,
+                      color: Theme.of(context).colorScheme.surfaceVariant,
                       child: Icon(
                         Icons.broken_image,
-                        color: ColorsConst.darkTextTertiary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         size: 24,
                       ),
                     ),
@@ -738,6 +777,7 @@ class CompactContentCard extends StatelessWidget {
                       content.getDisplayTitle(),
                       style: TextStyleConst.bodyMedium.copyWith(
                         fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -747,7 +787,7 @@ class CompactContentCard extends StatelessWidget {
                       Text(
                         content.artists.join(', '),
                         style: TextStyleConst.bodySmall.copyWith(
-                          color: ColorsConst.accentBlue,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -758,7 +798,9 @@ class CompactContentCard extends StatelessWidget {
                       children: [
                         Text(
                           '${content.pageCount} pages',
-                          style: TextStyleConst.caption,
+                          style: TextStyleConst.caption.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         if (content.language.isNotEmpty) ...[
@@ -768,7 +810,7 @@ class CompactContentCard extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: ColorsConst.darkElevated,
+                              color: Theme.of(context).colorScheme.surfaceVariant,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -776,6 +818,7 @@ class CompactContentCard extends StatelessWidget {
                               style: TextStyleConst.caption.copyWith(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ),
@@ -793,8 +836,8 @@ class CompactContentCard extends StatelessWidget {
                   icon: Icon(
                     isFavorite ? Icons.favorite : Icons.favorite_border,
                     color: isFavorite
-                        ? ColorsConst.accentPink
-                        : ColorsConst.darkTextSecondary,
+                        ? Theme.of(context).colorScheme.error
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
             ],

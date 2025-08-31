@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:nhasixapp/core/constants/colors_const.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 
 /// Modern simplified pagination widget with tap-to-jump functionality
@@ -44,11 +43,11 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: ColorsConst.darkCard,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         title: Text(
           'Jump to Page',
           style: TextStyleConst.headingSmall.copyWith(
-            color: ColorsConst.darkTextPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         content: Column(
@@ -57,7 +56,7 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
             Text(
               'Enter page number (1 - ${widget.totalPages})',
               style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.darkTextSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 16),
@@ -69,26 +68,26 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
                 LengthLimitingTextInputFormatter(6),
               ],
               style: TextStyleConst.bodyLarge.copyWith(
-                color: ColorsConst.darkTextPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               decoration: InputDecoration(
                 hintText: 'Page number',
                 hintStyle: TextStyleConst.bodyMedium.copyWith(
-                  color: ColorsConst.darkTextTertiary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 filled: true,
-                fillColor: ColorsConst.darkBackground,
+                fillColor: Theme.of(context).colorScheme.surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: ColorsConst.borderDefault),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: ColorsConst.borderDefault),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: ColorsConst.accentBlue, width: 2),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
                 ),
               ),
               autofocus: true,
@@ -105,7 +104,7 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
             child: Text(
               'Cancel',
               style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.darkTextSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -115,13 +114,13 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
               Navigator.of(context).pop();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: ColorsConst.accentBlue,
-              foregroundColor: ColorsConst.darkBackground,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
             ),
             child: Text(
               'Go',
               style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.darkBackground,
+                color: Theme.of(context).colorScheme.onPrimary,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -142,10 +141,10 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
           content: Text(
             'Please enter a valid page number between 1 and ${widget.totalPages}',
             style: TextStyleConst.bodyMedium.copyWith(
-              color: ColorsConst.darkBackground,
+              color: Theme.of(context).colorScheme.onError,
             ),
           ),
-          backgroundColor: ColorsConst.accentRed,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
       return;
@@ -158,11 +157,11 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: const BoxDecoration(
-        color: ColorsConst.darkSurface,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
         border: Border(
           top: BorderSide(
-            color: ColorsConst.borderDefault,
+            color: Theme.of(context).colorScheme.outline,
             width: 1,
           ),
         ),
@@ -175,8 +174,8 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
             onPressed: widget.hasPrevious ? widget.onPreviousPage : null,
             icon: const Icon(Icons.chevron_left),
             color: widget.hasPrevious
-                ? ColorsConst.darkTextPrimary
-                : ColorsConst.darkTextTertiary,
+                ? Theme.of(context).colorScheme.onSurface
+                : Theme.of(context).colorScheme.onSurfaceVariant,
             tooltip: 'Previous page',
           ),
           
@@ -186,9 +185,9 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: ColorsConst.darkCard,
+                color: Theme.of(context).colorScheme.surfaceContainer,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: ColorsConst.borderDefault),
+                border: Border.all(color: Theme.of(context).colorScheme.outline),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -196,7 +195,7 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
                   Text(
                     '${widget.currentPage} / ${widget.totalPages}',
                     style: TextStyleConst.bodyLarge.copyWith(
-                      color: ColorsConst.darkTextPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -204,7 +203,7 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
                   Text(
                     'Tap to jump',
                     style: TextStyleConst.overline.copyWith(
-                      color: ColorsConst.darkTextTertiary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 10,
                     ),
                   ),
@@ -218,8 +217,8 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
             onPressed: widget.hasNext ? widget.onNextPage : null,
             icon: const Icon(Icons.chevron_right),
             color: widget.hasNext
-                ? ColorsConst.darkTextPrimary
-                : ColorsConst.darkTextTertiary,
+                ? Theme.of(context).colorScheme.onSurface
+                : Theme.of(context).colorScheme.onSurfaceVariant,
             tooltip: 'Next page',
           ),
         ],

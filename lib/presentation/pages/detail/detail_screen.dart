@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/web.dart';
-import 'package:nhasixapp/core/constants/colors_const.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
@@ -236,7 +235,7 @@ class _DetailScreenState extends State<DetailScreen> {
               Text(
                 'This may take a few moments',
                 style: TextStyleConst.bodySmall.copyWith(
-                  color: ColorsConst.darkTextTertiary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontStyle: FontStyle.italic,
                 ),
                 textAlign: TextAlign.center,
@@ -270,7 +269,7 @@ class _DetailScreenState extends State<DetailScreen> {
                 child: Text(
                   'You are offline. Some features may be limited.',
                   style: TextStyleConst.bodySmall.copyWith(
-                    color: ColorsConst.accentYellow,
+                    color: Theme.of(context).colorScheme.onSecondaryContainer,
                   ),
                 ),
               ),
@@ -279,7 +278,7 @@ class _DetailScreenState extends State<DetailScreen> {
                 child: Text(
                   'Go Online',
                   style: TextStyleConst.bodySmall.copyWith(
-                    color: ColorsConst.accentYellow,
+                    color: Theme.of(context).colorScheme.onSecondaryContainer,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -296,10 +295,10 @@ class _DetailScreenState extends State<DetailScreen> {
             SliverAppBar(
               expandedHeight: 300,
               pinned: true,
-              backgroundColor: ColorsConst.darkSurface,
+              backgroundColor: Theme.of(context).colorScheme.surface,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back,
-                    color: ColorsConst.darkTextPrimary),
+                icon: Icon(Icons.arrow_back,
+                    color: Theme.of(context).colorScheme.onSurface),
                 onPressed: () => context.pop(),
               ),
               actions: [
@@ -308,9 +307,9 @@ class _DetailScreenState extends State<DetailScreen> {
                   Container(
                     margin: const EdgeInsets.only(right: 8),
                     child: IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.wifi_off,
-                        color: ColorsConst.accentYellow,
+                        color: Theme.of(context).colorScheme.error,
                         size: 20,
                       ),
                       onPressed: () => _showGoOnlineDialog(context),
@@ -322,8 +321,8 @@ class _DetailScreenState extends State<DetailScreen> {
                   icon: Icon(
                     state.isFavorited ? Icons.favorite : Icons.favorite_border,
                     color: state.isFavorited
-                        ? ColorsConst.accentPink
-                        : ColorsConst.darkTextPrimary,
+                        ? Theme.of(context).colorScheme.error
+                        : Theme.of(context).colorScheme.onSurface,
                   ),
                   onPressed: state.isTogglingFavorite
                       ? null
@@ -331,28 +330,28 @@ class _DetailScreenState extends State<DetailScreen> {
                 ),
                 // Share button
                 IconButton(
-                  icon: const Icon(Icons.share,
-                      color: ColorsConst.darkTextPrimary),
+                  icon: Icon(Icons.share,
+                      color: Theme.of(context).colorScheme.onSurface),
                   onPressed: () => _shareContent(content),
                 ),
                 // More options
                 PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert,
-                      color: ColorsConst.darkTextPrimary),
-                  color: ColorsConst.darkCard,
+                  icon: Icon(Icons.more_vert,
+                      color: Theme.of(context).colorScheme.onSurface),
+                  color: Theme.of(context).colorScheme.surfaceContainer,
                   onSelected: (value) => _handleMenuAction(value, content),
                   itemBuilder: (context) => [
                     PopupMenuItem(
                       value: 'download',
                       child: Row(
                         children: [
-                          const Icon(Icons.download,
-                              color: ColorsConst.darkTextPrimary),
+                          Icon(Icons.download,
+                              color: Theme.of(context).colorScheme.onSurface),
                           const SizedBox(width: 12),
                           Text(
                             'Download',
                             style: TextStyleConst.bodyMedium.copyWith(
-                              color: ColorsConst.darkTextPrimary,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                         ],
@@ -362,13 +361,13 @@ class _DetailScreenState extends State<DetailScreen> {
                       value: 'copy_link',
                       child: Row(
                         children: [
-                          const Icon(Icons.link,
-                              color: ColorsConst.darkTextPrimary),
+                          Icon(Icons.link,
+                              color: Theme.of(context).colorScheme.onSurface),
                           const SizedBox(width: 12),
                           Text(
                             'Copy Link',
                             style: TextStyleConst.bodyMedium.copyWith(
-                              color: ColorsConst.darkTextPrimary,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                         ],
@@ -392,20 +391,20 @@ class _DetailScreenState extends State<DetailScreen> {
                       memCacheWidth: 800,
                       memCacheHeight: 1200,
                       placeholder: Container(
-                        color: ColorsConst.darkCard,
-                        child: const Center(
+                        color: Theme.of(context).colorScheme.surfaceContainer,
+                        child: Center(
                           child: CircularProgressIndicator(
-                            color: ColorsConst.accentBlue,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ),
                       errorWidget: Container(
-                        color: ColorsConst.darkCard,
-                        child: const Center(
+                        color: Theme.of(context).colorScheme.surfaceContainer,
+                        child: Center(
                           child: Icon(
                             Icons.broken_image,
                             size: 64,
-                            color: ColorsConst.darkTextTertiary,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),
@@ -485,7 +484,7 @@ class _DetailScreenState extends State<DetailScreen> {
         Text(
           content.title,
           style: TextStyleConst.headingLarge.copyWith(
-            color: ColorsConst.darkTextPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
             height: 1.3,
           ),
         ),
@@ -495,7 +494,7 @@ class _DetailScreenState extends State<DetailScreen> {
           Text(
             content.englishTitle!,
             style: TextStyleConst.bodyLarge.copyWith(
-              color: ColorsConst.darkTextSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontStyle: FontStyle.italic,
             ),
           ),
@@ -506,7 +505,7 @@ class _DetailScreenState extends State<DetailScreen> {
           Text(
             content.japaneseTitle!,
             style: TextStyleConst.bodyMedium.copyWith(
-              color: ColorsConst.darkTextTertiary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -518,12 +517,12 @@ class _DetailScreenState extends State<DetailScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: ColorsConst.darkCard,
+        color: Theme.of(context).colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: ColorsConst.borderDefault),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
         boxShadow: [
           BoxShadow(
-            color: ColorsConst.darkBackground.withValues(alpha: 0.3),
+            color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -537,14 +536,14 @@ class _DetailScreenState extends State<DetailScreen> {
             children: [
               Icon(
                 Icons.info_outline,
-                color: ColorsConst.accentBlue,
+                color: Theme.of(context).colorScheme.primary,
                 size: 20,
               ),
               const SizedBox(width: 8),
               Text(
                 'Content Information',
                 style: TextStyleConst.headingSmall.copyWith(
-                  color: ColorsConst.darkTextPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -582,9 +581,9 @@ class _DetailScreenState extends State<DetailScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: ColorsConst.darkBackground,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: ColorsConst.borderMuted),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -592,7 +591,7 @@ class _DetailScreenState extends State<DetailScreen> {
           if (icon != null) ...[
             Icon(
               icon,
-              color: ColorsConst.darkTextSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               size: 18,
             ),
             const SizedBox(width: 12),
@@ -602,7 +601,7 @@ class _DetailScreenState extends State<DetailScreen> {
             child: Text(
               label,
               style: TextStyleConst.bodySmall.copyWith(
-                color: ColorsConst.darkTextSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -612,7 +611,7 @@ class _DetailScreenState extends State<DetailScreen> {
             child: Text(
               value,
               style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.darkTextPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -631,7 +630,7 @@ class _DetailScreenState extends State<DetailScreen> {
         Text(
           'Tags',
           style: TextStyleConst.headingSmall.copyWith(
-            color: ColorsConst.darkTextPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 12),
@@ -645,12 +644,10 @@ class _DetailScreenState extends State<DetailScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color:
-                      ColorsConst.getTagColor(tag.type).withValues(alpha: 0.1),
+                  color: _getTagColor(context, tag.type).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: ColorsConst.getTagColor(tag.type)
-                        .withValues(alpha: 0.3),
+                    color: _getTagColor(context, tag.type).withValues(alpha: 0.5),
                   ),
                 ),
                 child: Row(
@@ -659,7 +656,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     Text(
                       tag.name,
                       style: TextStyleConst.contentTag.copyWith(
-                        color: ColorsConst.getTagColor(tag.type),
+                        color: _getTagColor(context, tag.type),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -668,8 +665,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       Text(
                         '${tag.count}',
                         style: TextStyleConst.overline.copyWith(
-                          color: ColorsConst.getTagColor(tag.type)
-                              .withValues(alpha: 0.7),
+                          color: _getTagColor(context, tag.type).withValues(alpha: 0.7),
                         ),
                       ),
                     ],
@@ -687,9 +683,9 @@ class _DetailScreenState extends State<DetailScreen> {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: ColorsConst.darkCard,
+        color: Theme.of(context).colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: ColorsConst.borderDefault),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -706,15 +702,15 @@ class _DetailScreenState extends State<DetailScreen> {
                 label: Text(
                   'Read Now',
                   style: TextStyleConst.buttonLarge.copyWith(
-                    color: ColorsConst.darkBackground,
+                    color: Theme.of(context).colorScheme.onPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: ColorsConst.accentBlue,
-                  foregroundColor: ColorsConst.darkBackground,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   elevation: 4,
-                  shadowColor: ColorsConst.accentBlue.withValues(alpha: 0.3),
+                  shadowColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -744,9 +740,9 @@ class _DetailScreenState extends State<DetailScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: ColorsConst.darkCard,
+        color: Theme.of(context).colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: ColorsConst.borderDefault),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -754,7 +750,7 @@ class _DetailScreenState extends State<DetailScreen> {
           Text(
             'Statistics',
             style: TextStyleConst.headingSmall.copyWith(
-              color: ColorsConst.darkTextPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 12),
@@ -766,19 +762,19 @@ class _DetailScreenState extends State<DetailScreen> {
                 icon: Icons.favorite,
                 label: 'Favorites',
                 value: _formatNumber(content.favorites),
-                color: ColorsConst.accentPink,
+                color: Theme.of(context).colorScheme.error,
               ),
               _buildStatItem(
                 icon: Icons.menu_book,
                 label: 'Pages',
                 value: '${content.pageCount}',
-                color: ColorsConst.accentBlue,
+                color: Theme.of(context).colorScheme.primary,
               ),
               _buildStatItem(
                 icon: Icons.label,
                 label: 'Tags',
                 value: '${content.tags.length}',
-                color: ColorsConst.accentGreen,
+                color: Theme.of(context).colorScheme.secondary,
               ),
             ],
           ),
@@ -794,20 +790,20 @@ class _DetailScreenState extends State<DetailScreen> {
                     icon: Icons.person,
                     label: 'Artists',
                     value: '${content.artists.length}',
-                    color: ColorsConst.accentOrange,
+                    color: Theme.of(context).colorScheme.tertiary,
                   ),
                 _buildStatItem(
                   icon: Icons.language,
                   label: 'Language',
                   value: content.language.toUpperCase(),
-                  color: ColorsConst.accentPurple,
+                  color: Theme.of(context).colorScheme.secondaryContainer,
                 ),
                 if (content.relatedContent.isNotEmpty)
                   _buildStatItem(
                     icon: Icons.recommend,
                     label: 'Related',
                     value: '${content.relatedContent.length}',
-                    color: ColorsConst.accentBlue,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
               ],
             ),
@@ -824,7 +820,7 @@ class _DetailScreenState extends State<DetailScreen> {
         Text(
           'More Like This',
           style: TextStyleConst.headingSmall.copyWith(
-            color: ColorsConst.darkTextPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 12),
@@ -857,7 +853,7 @@ class _DetailScreenState extends State<DetailScreen> {
               height: 200,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                color: ColorsConst.darkCard,
+                color: Theme.of(context).colorScheme.surfaceContainer,
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
@@ -871,21 +867,21 @@ class _DetailScreenState extends State<DetailScreen> {
                   memCacheWidth: 320,
                   memCacheHeight: 400,
                   placeholder: Container(
-                    color: ColorsConst.darkCard,
-                    child: const Center(
+                    color: Theme.of(context).colorScheme.surfaceContainer,
+                    child: Center(
                       child: CircularProgressIndicator(
-                        color: ColorsConst.accentBlue,
+                        color: Theme.of(context).colorScheme.primary,
                         strokeWidth: 2,
                       ),
                     ),
                   ),
                   errorWidget: Container(
-                    color: ColorsConst.darkCard,
-                    child: const Center(
+                    color: Theme.of(context).colorScheme.surfaceContainer,
+                    child: Center(
                       child: Icon(
                         Icons.broken_image,
                         size: 32,
-                        color: ColorsConst.darkTextTertiary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -898,7 +894,7 @@ class _DetailScreenState extends State<DetailScreen> {
             Text(
               relatedContent.title,
               style: TextStyleConst.bodySmall.copyWith(
-                color: ColorsConst.darkTextPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w500,
               ),
               maxLines: 2,
@@ -911,7 +907,7 @@ class _DetailScreenState extends State<DetailScreen> {
               Text(
                 relatedContent.artists.first,
                 style: TextStyleConst.overline.copyWith(
-                  color: ColorsConst.darkTextSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -935,14 +931,14 @@ class _DetailScreenState extends State<DetailScreen> {
         Text(
           value,
           style: TextStyleConst.bodyMedium.copyWith(
-            color: ColorsConst.darkTextPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
         ),
         Text(
           label,
           style: TextStyleConst.bodySmall.copyWith(
-            color: ColorsConst.darkTextSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
       ],
@@ -951,24 +947,23 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Widget _buildErrorState(DetailError state) {
     return Scaffold(
-      backgroundColor: ColorsConst.darkBackground,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: ColorsConst.darkSurface,
+        backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
         elevation: 0,
         leading: IconButton(
-          icon:
-              const Icon(Icons.arrow_back, color: ColorsConst.darkTextPrimary),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurfaceVariant),
           onPressed: () => context.pop(),
         ),
         title: Text(
           'Error',
           style: TextStyleConst.headingMedium.copyWith(
-            color: ColorsConst.darkTextPrimary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
       ),
       body: Container(
-        color: ColorsConst.darkBackground,
+        color: Theme.of(context).colorScheme.surface,
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(32),
@@ -980,17 +975,17 @@ class _DetailScreenState extends State<DetailScreen> {
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: ColorsConst.accentRed.withValues(alpha: 0.1),
+                    color: Theme.of(context).colorScheme.errorContainer,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: ColorsConst.accentRed.withValues(alpha: 0.3),
+                      color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5),
                       width: 2,
                     ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.error_outline,
                     size: 64,
-                    color: ColorsConst.accentRed,
+                    color: Theme.of(context).colorScheme.error,
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -999,7 +994,7 @@ class _DetailScreenState extends State<DetailScreen> {
                 Text(
                   'Failed to load content',
                   style: TextStyleConst.headingMedium.copyWith(
-                    color: ColorsConst.accentRed,
+                    color: Theme.of(context).colorScheme.error,
                     fontWeight: FontWeight.bold,
                   ),
                   textAlign: TextAlign.center,
@@ -1010,17 +1005,17 @@ class _DetailScreenState extends State<DetailScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: ColorsConst.darkCard,
+                    color: Theme.of(context).colorScheme.surfaceContainer,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: ColorsConst.borderDefault,
+                      color: Theme.of(context).colorScheme.outline,
                       width: 1,
                     ),
                   ),
                   child: Text(
                     state.message,
                     style: TextStyleConst.bodyMedium.copyWith(
-                      color: ColorsConst.darkTextPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -1038,8 +1033,8 @@ class _DetailScreenState extends State<DetailScreen> {
                         icon: const Icon(Icons.refresh),
                         label: const Text('Retry'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: ColorsConst.accentBlue,
-                          foregroundColor: ColorsConst.darkBackground,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
                             vertical: 12,
@@ -1056,9 +1051,8 @@ class _DetailScreenState extends State<DetailScreen> {
                       icon: const Icon(Icons.arrow_back),
                       label: const Text('Go Back'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: ColorsConst.darkTextSecondary,
-                        side:
-                            const BorderSide(color: ColorsConst.borderDefault),
+                        foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                        side: BorderSide(color: Theme.of(context).colorScheme.outline),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
                           vertical: 12,
@@ -1105,6 +1099,27 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
+  /// Get theme-aware tag color based on tag type
+  Color _getTagColor(BuildContext context, String tagType) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    switch (tagType.toLowerCase()) {
+      case 'artist':
+        return colorScheme.tertiary;
+      case 'character':
+        return colorScheme.secondary;
+      case 'parody':
+        return colorScheme.primary;
+      case 'group':
+        return colorScheme.primaryContainer;
+      case 'language':
+        return colorScheme.secondaryContainer;
+      case 'tag':
+      default:
+        return colorScheme.onSurfaceVariant;
+    }
+  }
+
   void _readContent(Content content) {
     AppRouter.goToReader(context, content.id);
   }
@@ -1118,7 +1133,7 @@ class _DetailScreenState extends State<DetailScreen> {
           style: TextStyleConst.bodyMedium
               .copyWith(color: Theme.of(context).colorScheme.onPrimary),
         ),
-        backgroundColor: ColorsConst.accentBlue,
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );
   }
@@ -1132,9 +1147,9 @@ class _DetailScreenState extends State<DetailScreen> {
             content: Text(
               'Use the download button below to start download',
               style: TextStyleConst.bodyMedium
-                  .copyWith(color: Theme.of(context).colorScheme.onPrimary),
+                  .copyWith(color: Theme.of(context).colorScheme.onSecondary),
             ),
-            backgroundColor: ColorsConst.accentGreen,
+            backgroundColor: Theme.of(context).colorScheme.secondary,
           ),
         );
         break;
@@ -1145,9 +1160,9 @@ class _DetailScreenState extends State<DetailScreen> {
             content: Text(
               'Link copied to clipboard',
               style: TextStyleConst.bodyMedium
-                  .copyWith(color: Theme.of(context).colorScheme.onPrimary),
+                  .copyWith(color: Theme.of(context).colorScheme.onSecondary),
             ),
-            backgroundColor: ColorsConst.accentGreen,
+            backgroundColor: Theme.of(context).colorScheme.secondary,
           ),
         );
         break;
@@ -1157,7 +1172,7 @@ class _DetailScreenState extends State<DetailScreen> {
   void _navigateToRelatedContent(Content relatedContent) {
     // Option 1: Replace current detail instead of push to avoid nested navigation
     if (mounted) {
-      context.pushReplacement('/detail/${relatedContent.id}');
+      context.pushReplacement('/content/${relatedContent.id}');
     }
   }
 
@@ -1165,17 +1180,17 @@ class _DetailScreenState extends State<DetailScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: ColorsConst.darkCard,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         title: Text(
           'Go Online',
           style: TextStyleConst.headingSmall.copyWith(
-            color: ColorsConst.darkTextPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         content: Text(
           'You are currently in offline mode. Would you like to go online to access the latest content?',
           style: TextStyleConst.bodyMedium.copyWith(
-            color: ColorsConst.darkTextSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         actions: [
@@ -1184,7 +1199,7 @@ class _DetailScreenState extends State<DetailScreen> {
             child: Text(
               'Cancel',
               style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.darkTextSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -1197,20 +1212,20 @@ class _DetailScreenState extends State<DetailScreen> {
                   content: Text(
                     'Going online...',
                     style: TextStyleConst.bodyMedium.copyWith(
-                      color: ColorsConst.darkTextPrimary,
+                      color: Theme.of(context).colorScheme.onSecondary,
                     ),
                   ),
-                  backgroundColor: ColorsConst.accentGreen,
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
                 ),
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: ColorsConst.accentBlue,
+              backgroundColor: Theme.of(context).colorScheme.primary,
             ),
             child: Text(
               'Go Online',
               style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.darkTextPrimary,
+                color: Theme.of(context).colorScheme.onPrimary,
               ),
             ),
           ),

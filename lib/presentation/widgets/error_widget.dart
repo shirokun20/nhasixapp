@@ -243,7 +243,7 @@ class NetworkErrorWidget extends StatelessWidget {
       message:
           'Unable to connect to the internet. Please check your connection and try again.',
       icon: Icons.wifi_off,
-      iconColor: Colors.orange,
+      iconColor: Theme.of(context).colorScheme.error,
       onRetry: onRetry,
       retryText: 'Try Again',
       onSecondaryAction: onGoOffline,
@@ -277,7 +277,7 @@ class ServerErrorWidget extends StatelessWidget {
           ? 'Server returned error $statusCode. The service might be temporarily unavailable.'
           : 'The server is currently unavailable. Please try again later.',
       icon: Icons.dns,
-      iconColor: Colors.red,
+      iconColor: Theme.of(context).colorScheme.error,
       onRetry: onRetry,
       suggestions: const [
         'Wait a few minutes and try again',
@@ -306,7 +306,7 @@ class CloudflareErrorWidget extends StatelessWidget {
       message:
           'The website is protected by Cloudflare. We\'re trying to bypass the protection.',
       icon: Icons.security,
-      iconColor: Colors.orange,
+      iconColor: Theme.of(context).colorScheme.tertiary,
       onRetry: onRetry,
       retryText: 'Try Again',
       onSecondaryAction: onBypass,
@@ -338,7 +338,7 @@ class ParseErrorWidget extends StatelessWidget {
       message:
           'Unable to process the received data. The website structure might have changed.',
       icon: Icons.code_off,
-      iconColor: Colors.red,
+      iconColor: Theme.of(context).colorScheme.error,
       onRetry: onRetry,
       retryText: 'Retry',
       onSecondaryAction: onReport,
@@ -491,7 +491,7 @@ class MaintenanceWidget extends StatelessWidget {
       message:
           'The service is currently under maintenance. Please check back later.',
       icon: Icons.build,
-      iconColor: Colors.orange,
+      iconColor: Theme.of(context).colorScheme.tertiary,
       onRetry: onCheckAgain,
       retryText: 'Check Again',
       suggestions: const [

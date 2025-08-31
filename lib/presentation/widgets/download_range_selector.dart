@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:nhasixapp/core/constants/colors_const.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 
 /// Widget for selecting download range (page X to page Y)
@@ -77,12 +76,14 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return AlertDialog(
-      backgroundColor: ColorsConst.darkCard,
+      backgroundColor: colorScheme.surface,
       title: Text(
         'Select Download Range',
         style: TextStyleConst.headingMedium.copyWith(
-          color: ColorsConst.darkTextPrimary,
+          color: colorScheme.onSurface,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -95,9 +96,9 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: ColorsConst.darkBackground,
+                color: colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: ColorsConst.borderDefault),
+                border: Border.all(color: colorScheme.outline),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,7 +106,7 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
                   Text(
                     'Content: ${widget.contentTitle}',
                     style: TextStyleConst.bodyMedium.copyWith(
-                      color: ColorsConst.darkTextPrimary,
+                      color: colorScheme.onSurface,
                       fontWeight: FontWeight.w500,
                     ),
                     maxLines: 2,
@@ -115,7 +116,7 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
                   Text(
                     'Total Pages: ${widget.totalPages}',
                     style: TextStyleConst.bodySmall.copyWith(
-                      color: ColorsConst.darkTextSecondary,
+                      color: colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -127,16 +128,16 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: ColorsConst.accentBlue.withValues(alpha: 0.1),
+                color: colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: ColorsConst.accentBlue.withValues(alpha: 0.3)),
+                border: Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
               ),
               child: Column(
                 children: [
                   Text(
                     'Selected: Pages $startPage to $endPage',
                     style: TextStyleConst.bodyLarge.copyWith(
-                      color: ColorsConst.accentBlue,
+                      color: colorScheme.primary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -144,7 +145,7 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
                   Text(
                     '$selectedPageCount pages (${selectionPercentage.toStringAsFixed(1)}%)',
                     style: TextStyleConst.bodySmall.copyWith(
-                      color: ColorsConst.accentBlue,
+                      color: colorScheme.primary,
                     ),
                   ),
                 ],
@@ -156,20 +157,20 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
             Text(
               'Use slider to select range:',
               style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.darkTextPrimary,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 8),
             SliderTheme(
               data: SliderTheme.of(context).copyWith(
-                activeTrackColor: ColorsConst.accentBlue,
-                inactiveTrackColor: ColorsConst.darkTextTertiary,
-                thumbColor: ColorsConst.accentBlue,
-                overlayColor: ColorsConst.accentBlue.withValues(alpha: 0.2),
-                valueIndicatorColor: ColorsConst.accentBlue,
+                activeTrackColor: colorScheme.primary,
+                inactiveTrackColor: colorScheme.onSurface.withValues(alpha: 0.4),
+                thumbColor: colorScheme.primary,
+                overlayColor: colorScheme.primary.withValues(alpha: 0.2),
+                valueIndicatorColor: colorScheme.primary,
                 valueIndicatorTextStyle: TextStyleConst.bodySmall.copyWith(
-                  color: ColorsConst.darkBackground,
+                  color: colorScheme.onPrimary,
                 ),
               ),
               child: RangeSlider(
@@ -195,7 +196,7 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
             Text(
               'Or enter manually:',
               style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.darkTextPrimary,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -211,26 +212,26 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
                       LengthLimitingTextInputFormatter(6),
                     ],
                     style: TextStyleConst.bodyMedium.copyWith(
-                      color: ColorsConst.darkTextPrimary,
+                      color: colorScheme.onSurface,
                     ),
                     decoration: InputDecoration(
                       labelText: 'Start Page',
                       labelStyle: TextStyleConst.bodySmall.copyWith(
-                        color: ColorsConst.darkTextSecondary,
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                       filled: true,
-                      fillColor: ColorsConst.darkBackground,
+                      fillColor: colorScheme.surfaceContainerHighest,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: ColorsConst.borderDefault),
+                        borderSide: BorderSide(color: colorScheme.outline),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: ColorsConst.borderDefault),
+                        borderSide: BorderSide(color: colorScheme.outline),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: ColorsConst.accentBlue, width: 2),
+                        borderSide: BorderSide(color: colorScheme.primary, width: 2),
                       ),
                     ),
                     onChanged: (_) => _updateFromTextFields(),
@@ -246,26 +247,26 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
                       LengthLimitingTextInputFormatter(6),
                     ],
                     style: TextStyleConst.bodyMedium.copyWith(
-                      color: ColorsConst.darkTextPrimary,
+                      color: colorScheme.onSurface,
                     ),
                     decoration: InputDecoration(
                       labelText: 'End Page',
                       labelStyle: TextStyleConst.bodySmall.copyWith(
-                        color: ColorsConst.darkTextSecondary,
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                       filled: true,
-                      fillColor: ColorsConst.darkBackground,
+                      fillColor: colorScheme.surfaceContainerHighest,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: ColorsConst.borderDefault),
+                        borderSide: BorderSide(color: colorScheme.outline),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: ColorsConst.borderDefault),
+                        borderSide: BorderSide(color: colorScheme.outline),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: ColorsConst.accentBlue, width: 2),
+                        borderSide: BorderSide(color: colorScheme.primary, width: 2),
                       ),
                     ),
                     onChanged: (_) => _updateFromTextFields(),
@@ -279,7 +280,7 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
             Text(
               'Quick selections:',
               style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.darkTextPrimary,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -288,11 +289,11 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _buildQuickSelectChip('All Pages', 1, widget.totalPages),
-                _buildQuickSelectChip('First Half', 1, (widget.totalPages / 2).round()),
-                _buildQuickSelectChip('Second Half', (widget.totalPages / 2).round() + 1, widget.totalPages),
-                _buildQuickSelectChip('First 10', 1, (widget.totalPages >= 10) ? 10 : widget.totalPages),
-                _buildQuickSelectChip('Last 10', (widget.totalPages >= 10) ? widget.totalPages - 9 : 1, widget.totalPages),
+                _buildQuickSelectChip('All Pages', 1, widget.totalPages, context),
+                _buildQuickSelectChip('First Half', 1, (widget.totalPages / 2).round(), context),
+                _buildQuickSelectChip('Second Half', (widget.totalPages / 2).round() + 1, widget.totalPages, context),
+                _buildQuickSelectChip('First 10', 1, (widget.totalPages >= 10) ? 10 : widget.totalPages, context),
+                _buildQuickSelectChip('Last 10', (widget.totalPages >= 10) ? widget.totalPages - 9 : 1, widget.totalPages, context),
               ],
             ),
           ],
@@ -304,7 +305,7 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
           child: Text(
             'Cancel',
             style: TextStyleConst.bodyMedium.copyWith(
-              color: ColorsConst.darkTextSecondary,
+              color: colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ),
@@ -316,8 +317,8 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
           icon: const Icon(Icons.download),
           label: Text('Download Range'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: ColorsConst.accentBlue,
-            foregroundColor: ColorsConst.darkBackground,
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
         ),
@@ -325,7 +326,8 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
     );
   }
 
-  Widget _buildQuickSelectChip(String label, int start, int end) {
+  Widget _buildQuickSelectChip(String label, int start, int end, BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final isSelected = startPage == start && endPage == end;
     
     return FilterChip(
@@ -339,14 +341,14 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
           _updateControllers();
         });
       },
-      backgroundColor: ColorsConst.darkBackground,
-      selectedColor: ColorsConst.accentBlue.withValues(alpha: 0.2),
+      backgroundColor: colorScheme.surfaceContainerHighest,
+      selectedColor: colorScheme.primary.withValues(alpha: 0.2),
       labelStyle: TextStyleConst.bodySmall.copyWith(
-        color: isSelected ? ColorsConst.accentBlue : ColorsConst.darkTextSecondary,
+        color: isSelected ? colorScheme.primary : colorScheme.onSurface.withValues(alpha: 0.7),
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
       ),
       side: BorderSide(
-        color: isSelected ? ColorsConst.accentBlue : ColorsConst.borderDefault,
+        color: isSelected ? colorScheme.primary : colorScheme.outline,
       ),
     );
   }

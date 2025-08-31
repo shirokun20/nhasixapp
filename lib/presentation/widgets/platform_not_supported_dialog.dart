@@ -2,37 +2,61 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 
+import '../../core/constants/text_style_const.dart';
+
 class PlatformNotSupportedDialog extends StatelessWidget {
   const PlatformNotSupportedDialog({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return AlertDialog(
-      icon: const Icon(
+      backgroundColor: colorScheme.surface,
+      icon: Icon(
         Icons.warning_amber_rounded,
-        color: Colors.orange,
+        color: colorScheme.tertiary,
         size: 48,
       ),
-      title: const Text('Platform Not Supported'),
-      content: const Column(
+      title: Text(
+        'Platform Not Supported',
+        style: TextStyleConst.headlineSmall.copyWith(
+          color: colorScheme.onSurface,
+        ),
+      ),
+      content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             'NhasixApp is designed exclusively for Android devices.',
             textAlign: TextAlign.center,
+            style: TextStyleConst.bodyMedium.copyWith(
+              color: colorScheme.onSurface,
+            ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
             'Please install and run this app on an Android device.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.w600),
+            style: TextStyleConst.bodyMedium.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('OK'),
+          style: TextButton.styleFrom(
+            foregroundColor: colorScheme.primary,
+          ),
+          child: Text(
+            'OK',
+            style: TextStyleConst.labelLarge.copyWith(
+              color: colorScheme.primary,
+            ),
+          ),
         ),
       ],
     );

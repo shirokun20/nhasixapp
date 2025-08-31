@@ -588,6 +588,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     child: ContentCard.buildImage(
                       imageUrl: coverUrl,
                       fit: BoxFit.cover,
+                      context: context,
                     ),
                   ),
                 ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/entities.dart';
 
@@ -19,12 +18,14 @@ class FilterTypeTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Container(
       decoration: BoxDecoration(
-        color: ColorsConst.darkSurface,
+        color: colorScheme.surface,
         border: Border(
           bottom: BorderSide(
-            color: ColorsConst.borderDefault,
+            color: colorScheme.outline,
             width: 1,
           ),
         ),
@@ -33,10 +34,10 @@ class FilterTypeTabBar extends StatelessWidget {
         controller: controller,
         isScrollable: true,
         tabAlignment: TabAlignment.start,
-        indicatorColor: ColorsConst.accentBlue,
+        indicatorColor: colorScheme.primary,
         indicatorWeight: 3,
-        labelColor: ColorsConst.accentBlue,
-        unselectedLabelColor: ColorsConst.darkTextSecondary,
+        labelColor: colorScheme.primary,
+        unselectedLabelColor: colorScheme.onSurface.withValues(alpha: 0.7),
         labelStyle: TextStyleConst.label.copyWith(
           fontWeight: FontWeight.w600,
         ),
@@ -69,14 +70,16 @@ class FilterTypeTabBarModern extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Container(
       height: 56,
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: ColorsConst.darkSurface,
+        color: colorScheme.surface,
         border: Border(
           bottom: BorderSide(
-            color: ColorsConst.borderDefault,
+            color: colorScheme.outline,
             width: 1,
           ),
         ),
@@ -120,6 +123,8 @@ class FilterTypeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -129,11 +134,10 @@ class FilterTypeTab extends StatelessWidget {
           vertical: 8,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? ColorsConst.accentBlue : ColorsConst.darkCard,
+          color: isSelected ? colorScheme.primary : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color:
-                isSelected ? ColorsConst.accentBlue : ColorsConst.borderDefault,
+            color: isSelected ? colorScheme.primary : colorScheme.outline,
             width: 1,
           ),
         ),
@@ -142,8 +146,8 @@ class FilterTypeTab extends StatelessWidget {
             text,
             style: TextStyleConst.label.copyWith(
               color: isSelected
-                  ? ColorsConst.darkTextPrimary
-                  : ColorsConst.darkTextSecondary,
+                  ? colorScheme.onPrimary
+                  : colorScheme.onSurface.withValues(alpha: 0.7),
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             ),
           ),
@@ -168,10 +172,12 @@ class FilterTypeSegmentedControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Container(
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: ColorsConst.darkCard,
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -190,7 +196,7 @@ class FilterTypeSegmentedControl extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
                   color:
-                      isSelected ? ColorsConst.accentBlue : Colors.transparent,
+                      isSelected ? colorScheme.primary : Colors.transparent,
                   borderRadius: BorderRadius.horizontal(
                     left: isFirst ? const Radius.circular(12) : Radius.zero,
                     right: isLast ? const Radius.circular(12) : Radius.zero,
@@ -201,8 +207,8 @@ class FilterTypeSegmentedControl extends StatelessWidget {
                     TagType.getDisplayName(type),
                     style: TextStyleConst.label.copyWith(
                       color: isSelected
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                          ? colorScheme.onPrimary
+                          : colorScheme.onSurface.withValues(alpha: 0.7),
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.w500,
                     ),
@@ -232,14 +238,16 @@ class FilterTypeChipBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Container(
       height: 56,
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: ColorsConst.darkSurface,
+        color: colorScheme.surface,
         border: Border(
           bottom: BorderSide(
-            color: ColorsConst.borderDefault,
+            color: colorScheme.outline,
             width: 1,
           ),
         ),
@@ -258,18 +266,18 @@ class FilterTypeChipBar extends StatelessWidget {
               label: Text(TagType.getDisplayName(type)),
               selected: isSelected,
               onSelected: (selected) => onChanged(index),
-              selectedColor: ColorsConst.accentBlue.withValues(alpha: 0.2),
-              checkmarkColor: ColorsConst.accentBlue,
+              selectedColor: colorScheme.primary.withValues(alpha: 0.2),
+              checkmarkColor: colorScheme.primary,
               labelStyle: TextStyleConst.label.copyWith(
                 color: isSelected
-                    ? ColorsConst.accentBlue
-                    : ColorsConst.darkTextSecondary,
+                    ? colorScheme.primary
+                    : colorScheme.onSurface.withValues(alpha: 0.7),
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               ),
               side: BorderSide(
                 color: isSelected
-                    ? ColorsConst.accentBlue
-                    : ColorsConst.borderDefault,
+                    ? colorScheme.primary
+                    : colorScheme.outline,
               ),
             ),
           );
