@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
 import '../blocs/download/download_bloc.dart';
 
@@ -45,7 +44,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
                 Text(
                   'Download Settings',
                   style: TextStyleConst.headlineSmall.copyWith(
-                    color: ColorsConst.onSurface,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -54,7 +53,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
                   onPressed: () => Navigator.of(context).pop(),
                   icon: Icon(
                     Icons.close,
-                    color: ColorsConst.onSurface,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ],
@@ -114,7 +113,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: TextButton.styleFrom(
-                      foregroundColor: ColorsConst.onSurface.withValues(alpha: 0.7),
+                      foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(
@@ -128,14 +127,14 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
                   child: ElevatedButton(
                     onPressed: _saveSettings,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: ColorsConst.primary,
-                      foregroundColor: ColorsConst.onPrimary,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(
                       'Save',
                       style: TextStyleConst.labelLarge.copyWith(
-                        color: ColorsConst.onPrimary,
+                        color: Theme.of(context).colorScheme.onPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -155,7 +154,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
       child: Text(
         title,
         style: TextStyleConst.titleMedium.copyWith(
-          color: ColorsConst.onSurface,
+          color: Theme.of(context).colorScheme.onSurface,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -171,14 +170,14 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
             Text(
               'Max Concurrent Downloads',
               style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.onSurface,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const Spacer(),
             Text(
               '${_settings.maxConcurrentDownloads}',
               style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.primary,
+                color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -190,8 +189,8 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
           min: 1,
           max: 10,
           divisions: 9,
-          activeColor: ColorsConst.primary,
-          inactiveColor: ColorsConst.onSurface.withValues(alpha: 0.2),
+          activeColor: Theme.of(context).colorScheme.primary,
+          inactiveColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           onChanged: (value) {
             setState(() {
               _settings = _settings.copyWith(
@@ -203,7 +202,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
         Text(
           'Higher values may consume more bandwidth and device resources',
           style: TextStyleConst.bodySmall.copyWith(
-            color: ColorsConst.onSurface.withValues(alpha: 0.6),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -217,7 +216,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
         Text(
           'Image Quality',
           style: TextStyleConst.bodyMedium.copyWith(
-            color: ColorsConst.onSurface,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 8),
@@ -227,23 +226,23 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide:
-                  BorderSide(color: ColorsConst.onSurface.withValues(alpha: 0.3)),
+                  BorderSide(color: Theme.of(context).colorScheme.outline),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide:
-                  BorderSide(color: ColorsConst.onSurface.withValues(alpha: 0.3)),
+                  BorderSide(color: Theme.of(context).colorScheme.outline),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: ColorsConst.primary),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
             ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
-          dropdownColor: ColorsConst.surface,
+          dropdownColor: Theme.of(context).colorScheme.surface,
           style:
-              TextStyleConst.bodyMedium.copyWith(color: ColorsConst.onSurface),
+              TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface),
           items: const [
             DropdownMenuItem(value: 'low', child: Text('Low (Faster)')),
             DropdownMenuItem(value: 'medium', child: Text('Medium')),
@@ -274,13 +273,13 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
               Text(
                 'Auto Retry Failed Downloads',
                 style: TextStyleConst.bodyMedium.copyWith(
-                  color: ColorsConst.onSurface,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               Text(
                 'Automatically retry failed downloads',
                 style: TextStyleConst.bodySmall.copyWith(
-                  color: ColorsConst.onSurface.withValues(alpha: 0.6),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -288,7 +287,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
         ),
         Switch(
           value: _settings.autoRetry,
-          activeThumbColor: ColorsConst.primary,
+          activeThumbColor: Theme.of(context).colorScheme.primary,
           onChanged: (value) {
             setState(() {
               _settings = _settings.copyWith(autoRetry: value);
@@ -308,14 +307,14 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
             Text(
               'Max Retry Attempts',
               style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.onSurface,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const Spacer(),
             Text(
               '${_settings.retryAttempts}',
               style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.primary,
+                color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -327,8 +326,8 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
           min: 1,
           max: 10,
           divisions: 9,
-          activeColor: ColorsConst.primary,
-          inactiveColor: ColorsConst.onSurface.withValues(alpha: 0.2),
+          activeColor: Theme.of(context).colorScheme.primary,
+          inactiveColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           onChanged: (value) {
             setState(() {
               _settings = _settings.copyWith(retryAttempts: value.toInt());
@@ -349,13 +348,13 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
               Text(
                 'WiFi Only',
                 style: TextStyleConst.bodyMedium.copyWith(
-                  color: ColorsConst.onSurface,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               Text(
                 'Only download when connected to WiFi',
                 style: TextStyleConst.bodySmall.copyWith(
-                  color: ColorsConst.onSurface.withValues(alpha: 0.6),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -363,7 +362,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
         ),
         Switch(
           value: _settings.wifiOnly,
-          activeThumbColor: ColorsConst.primary,
+          activeThumbColor: Theme.of(context).colorScheme.primary,
           onChanged: (value) {
             setState(() {
               _settings = _settings.copyWith(wifiOnly: value);
@@ -383,14 +382,14 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
             Text(
               'Download Timeout',
               style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.onSurface,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const Spacer(),
             Text(
               '${_settings.timeoutDuration.inMinutes} min',
               style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.primary,
+                color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -402,8 +401,8 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
           min: 1,
           max: 30,
           divisions: 29,
-          activeColor: ColorsConst.primary,
-          inactiveColor: ColorsConst.onSurface.withValues(alpha: 0.2),
+          activeColor: Theme.of(context).colorScheme.primary,
+          inactiveColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           onChanged: (value) {
             setState(() {
               _settings = _settings.copyWith(
@@ -426,13 +425,13 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
               Text(
                 'Enable Notifications',
                 style: TextStyleConst.bodyMedium.copyWith(
-                  color: ColorsConst.onSurface,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               Text(
                 'Show notifications for download progress',
                 style: TextStyleConst.bodySmall.copyWith(
-                  color: ColorsConst.onSurface.withValues(alpha: 0.6),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -440,7 +439,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
         ),
         Switch(
           value: _settings.enableNotifications,
-          activeThumbColor: ColorsConst.primary,
+          activeThumbColor: Theme.of(context).colorScheme.primary,
           onChanged: (value) {
             setState(() {
               _settings = _settings.copyWith(enableNotifications: value);

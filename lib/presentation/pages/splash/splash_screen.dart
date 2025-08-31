@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:nhasixapp/core/constants/colors_const.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
@@ -99,7 +98,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ColorsConst.darkBackground,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: BlocConsumer<SplashBloc, SplashState>(
         listenWhen: (previous, current) => previous != current,
         listener: (_, state) {
@@ -131,9 +130,9 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: ColorsConst.darkCard.withValues(alpha: 0.3),
+                    color: Theme.of(context).colorScheme.surfaceContainer.withValues(alpha: 0.3),
                     border: Border.all(
-                      color: ColorsConst.accentBlue.withValues(alpha: 0.2),
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                       width: 2,
                     ),
                   ),
@@ -150,7 +149,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                 Text(
                   'NhentaiApp',
                   style: TextStyleConst.headingLarge.copyWith(
-                    color: ColorsConst.darkTextPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.2,
                   ),
@@ -159,7 +158,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                 Text(
                   'Enhanced Reading Experience',
                   style: TextStyleConst.bodyMedium.copyWith(
-                    color: ColorsConst.darkTextSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
@@ -182,21 +181,21 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                               value: state is SplashInitializing
                                   ? 0.3
                                   : 0.7, // Show progress
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                ColorsConst.accentBlue,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Theme.of(context).colorScheme.primary,
                               ),
                               strokeWidth: 4,
-                              backgroundColor: ColorsConst.darkCard,
+                              backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
                             ),
                           ),
                           Container(
                             width: 60,
                             height: 60,
                             decoration: BoxDecoration(
-                              color: ColorsConst.darkBackground,
+                              color: Theme.of(context).colorScheme.surface,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: ColorsConst.accentBlue
+                                color: Theme.of(context).colorScheme.primary
                                     .withValues(alpha: 0.3),
                                 width: 1,
                               ),
@@ -205,7 +204,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                               state is SplashInitializing
                                   ? Icons.settings
                                   : Icons.security,
-                              color: ColorsConst.accentBlue,
+                              color: Theme.of(context).colorScheme.primary,
                               size: 24,
                             ),
                           ),
@@ -220,10 +219,10 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                           vertical: 12,
                         ),
                         decoration: BoxDecoration(
-                          color: ColorsConst.darkCard.withValues(alpha: 0.5),
+                          color: Theme.of(context).colorScheme.surfaceContainer.withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: ColorsConst.borderDefault,
+                            color: Theme.of(context).colorScheme.outline,
                             width: 1,
                           ),
                         ),
@@ -232,7 +231,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                               ? 'Initializing Application...'
                               : (state as SplashBypassInProgress).message,
                           style: TextStyleConst.headingSmall.copyWith(
-                            color: ColorsConst.darkTextPrimary,
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w600,
                           ),
                           textAlign: TextAlign.center,
@@ -246,7 +245,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                             ? 'Setting up components and checking connection...'
                             : 'Bypassing protection and establishing connection...',
                         style: TextStyleConst.bodyMedium.copyWith(
-                          color: ColorsConst.darkTextSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -267,7 +266,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                       Icon(
                         Icons.error_outline,
                         size: 48,
-                        color: ColorsConst.accentRed,
+                        color: Theme.of(context).colorScheme.error,
                       ),
                       const SizedBox(height: 16),
                       Padding(
@@ -289,8 +288,8 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                         icon: const Icon(Icons.refresh),
                         label: const Text('Retry'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: ColorsConst.accentBlue,
-                          foregroundColor: ColorsConst.darkBackground,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
                             vertical: 12,
@@ -323,17 +322,17 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: ColorsConst.accentGreen.withValues(alpha: 0.1),
+                    color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: ColorsConst.accentGreen.withValues(alpha: 0.3),
+                      color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.3),
                       width: 2,
                     ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.check_circle,
                     size: 48,
-                    color: ColorsConst.accentGreen,
+                    color: Theme.of(context).colorScheme.tertiary,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -342,7 +341,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                 Text(
                   'Ready to Go!',
                   style: TextStyleConst.headingMedium.copyWith(
-                    color: ColorsConst.accentGreen,
+                    color: Theme.of(context).colorScheme.tertiary,
                     fontWeight: FontWeight.bold,
                   ),
                   textAlign: TextAlign.center,
@@ -353,7 +352,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                 Text(
                   state.message,
                   style: TextStyleConst.bodyMedium.copyWith(
-                    color: ColorsConst.darkTextPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -363,7 +362,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                 Text(
                   'Launching main application...',
                   style: TextStyleConst.bodySmall.copyWith(
-                    color: ColorsConst.darkTextSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontStyle: FontStyle.italic,
                   ),
                   textAlign: TextAlign.center,
@@ -389,8 +388,8 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
           margin: const EdgeInsets.symmetric(horizontal: 3),
           width: 6,
           height: 6,
-          decoration: const BoxDecoration(
-            color: ColorsConst.accentGreen,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.tertiary,
             shape: BoxShape.circle,
           ),
         );
@@ -410,7 +409,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
               width: 8,
               height: 8,
               decoration: BoxDecoration(
-                color: ColorsConst.accentBlue.withValues(
+                color: Theme.of(context).colorScheme.primary.withValues(
                   alpha: _dotAnimations[index].value,
                 ),
                 shape: BoxShape.circle,

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../core/constants/colors_const.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/search_filter.dart';
 
@@ -210,10 +209,10 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: ColorsConst.darkCard,
+        color: Theme.of(context).colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: ColorsConst.borderDefault,
+          color: Theme.of(context).colorScheme.outline,
           width: 1,
         ),
       ),
@@ -239,10 +238,10 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: ColorsConst.borderMuted,
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
             width: 1,
           ),
         ),
@@ -256,15 +255,15 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
               decoration: InputDecoration(
                 hintText: 'Search content...',
                 hintStyle: TextStyleConst.placeholderText,
-                prefixIcon: const Icon(
+                prefixIcon: Icon(
                   Icons.search,
-                  color: ColorsConst.darkTextSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 suffixIcon: _queryController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.clear,
-                          color: ColorsConst.darkTextSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         onPressed: () {
                           _queryController.clear();
@@ -274,14 +273,14 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
                     : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(
-                    color: ColorsConst.borderDefault,
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.outline,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(
-                    color: ColorsConst.accentBlue,
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
@@ -302,7 +301,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
                 duration: const Duration(milliseconds: 300),
                 child: const Icon(Icons.expand_more),
               ),
-              color: ColorsConst.darkTextSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               tooltip: _isExpanded ? 'Hide filters' : 'Show more filters',
             ),
           ],
@@ -358,10 +357,10 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
       sizeFactor: _expandAnimation,
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
-              color: ColorsConst.borderMuted,
+              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
               width: 1,
             ),
           ),
@@ -416,7 +415,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
           vertical: 8,
         ),
       ),
-      dropdownColor: ColorsConst.darkCard,
+      dropdownColor: Theme.of(context).colorScheme.surfaceContainer,
       style: TextStyleConst.bodyMedium,
       items: SortOption.values.map((option) {
         return DropdownMenuItem(
@@ -439,12 +438,12 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
       onSelected: (selected) {
         widget.onFilterChanged(widget.filter.copyWith(popular: selected));
       },
-      selectedColor: ColorsConst.accentBlue.withValues(alpha: 0.2),
-      checkmarkColor: ColorsConst.accentBlue,
+      selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+      checkmarkColor: Theme.of(context).colorScheme.primary,
       labelStyle: TextStyleConst.bodySmall.copyWith(
         color: widget.filter.popular
-            ? ColorsConst.accentBlue
-            : ColorsConst.darkTextSecondary,
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.onSurfaceVariant,
       ),
     );
   }
@@ -463,7 +462,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
           vertical: 8,
         ),
       ),
-      dropdownColor: ColorsConst.darkCard,
+      dropdownColor: Theme.of(context).colorScheme.surfaceContainer,
       style: TextStyleConst.bodyMedium,
       items: [
         const DropdownMenuItem<String>(
@@ -497,7 +496,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
           vertical: 8,
         ),
       ),
-      dropdownColor: ColorsConst.darkCard,
+      dropdownColor: Theme.of(context).colorScheme.surfaceContainer,
       style: TextStyleConst.bodyMedium,
       items: [
         const DropdownMenuItem<String>(
@@ -536,7 +535,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
                 _queryController.text = search;
                 _updateFilter();
               },
-              backgroundColor: ColorsConst.darkElevated,
+              backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
               labelStyle: TextStyleConst.bodySmall,
             );
           }).toList(),
@@ -559,9 +558,9 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
             ),
-            prefixIcon: const Icon(
+            prefixIcon: Icon(
               Icons.add_circle_outline,
-              color: ColorsConst.accentGreen,
+              color: Theme.of(context).colorScheme.tertiary,
             ),
           ),
           onChanged: (_) => _updateFilter(),
@@ -578,9 +577,9 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
             ),
-            prefixIcon: const Icon(
+            prefixIcon: Icon(
               Icons.remove_circle_outline,
-              color: ColorsConst.accentRed,
+              color: Theme.of(context).colorScheme.error,
             ),
           ),
           onChanged: (_) => _updateFilter(),
@@ -603,9 +602,9 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
             ),
-            prefixIcon: const Icon(
+            prefixIcon: Icon(
               Icons.brush,
-              color: ColorsConst.tagArtist,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
           onChanged: (_) => _updateFilter(),
@@ -623,9 +622,9 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  prefixIcon: const Icon(
+                  prefixIcon: Icon(
                     Icons.person,
-                    color: ColorsConst.tagCharacter,
+                    color: Theme.of(context).colorScheme.secondary,
                   ),
                 ),
                 onChanged: (_) => _updateFilter(),
@@ -642,9 +641,9 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  prefixIcon: const Icon(
+                  prefixIcon: Icon(
                     Icons.movie,
-                    color: ColorsConst.tagParody,
+                    color: Theme.of(context).colorScheme.tertiary,
                   ),
                 ),
                 onChanged: (_) => _updateFilter(),
@@ -662,9 +661,9 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
             ),
-            prefixIcon: const Icon(
+            prefixIcon: Icon(
               Icons.group,
-              color: ColorsConst.tagGroup,
+              color: Theme.of(context).colorScheme.inversePrimary,
             ),
           ),
           onChanged: (_) => _updateFilter(),
@@ -771,12 +770,12 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
                       .copyWith(tags: [...includeTags, ...excludeTags]),
                 );
               },
-              selectedColor: ColorsConst.accentBlue.withValues(alpha: 0.2),
-              checkmarkColor: ColorsConst.accentBlue,
+              selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+              checkmarkColor: Theme.of(context).colorScheme.primary,
               labelStyle: TextStyleConst.bodySmall.copyWith(
                 color: isIncluded
-                    ? ColorsConst.accentBlue
-                    : ColorsConst.darkTextSecondary,
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             );
           }).toList(),
@@ -790,10 +789,10 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
           top: BorderSide(
-            color: ColorsConst.borderMuted,
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
             width: 1,
           ),
         ),
@@ -805,13 +804,13 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: ColorsConst.accentBlue.withValues(alpha: 0.2),
+                color: Theme.of(context).colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 '${widget.filter.activeFilterCount} active',
                 style: TextStyleConst.caption.copyWith(
-                  color: ColorsConst.accentBlue,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -826,7 +825,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
               child: Text(
                 'Clear All',
                 style: TextStyleConst.buttonMedium.copyWith(
-                  color: ColorsConst.accentRed,
+                  color: Theme.of(context).colorScheme.error,
                 ),
               ),
             ),

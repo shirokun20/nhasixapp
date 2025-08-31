@@ -179,7 +179,7 @@ class ContentCard extends StatelessWidget {
           // Blurred content
           ColorFiltered(
             colorFilter: ColorFilter.mode(
-              Colors.grey.withValues(alpha: 0.3),
+              Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
               BlendMode.saturation,
             ),
             child: Opacity(
@@ -192,12 +192,12 @@ class ContentCard extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                color: Colors.black.withValues(alpha: 0.2),
+                color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.5),
               ),
-              child: const Center(
+              child: Center(
                 child: Icon(
                   Icons.visibility_off,
-                  color: Colors.white54,
+                  color: Theme.of(context).colorScheme.onSurface,
                   size: 24,
                 ),
               ),
@@ -239,14 +239,14 @@ class ContentCard extends StatelessWidget {
               children: [
                 Icon(
                   Icons.download_done,
-                  color: isDarkMode ? Colors.black : Colors.white,
+                  color: Theme.of(context).colorScheme.onSecondary,
                   size: 12,
                 ),
                 const SizedBox(width: 3),
                 Text(
                   'OFFLINE',
                   style: TextStyleConst.overline.copyWith(
-                    color: isDarkMode ? Colors.black : Colors.white,
+                    color: Theme.of(context).colorScheme.onSecondary,
                     fontSize: 8,
                     fontWeight: FontWeight.bold,
                   ),

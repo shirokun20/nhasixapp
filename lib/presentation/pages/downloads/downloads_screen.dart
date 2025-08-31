@@ -105,9 +105,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       foregroundColor: Theme.of(context).colorScheme.onSurface,
       title: Text(
         'Downloads',
-        style: TextStyleConst.headlineSmall.copyWith(
+        style: TextStyleConst.headlineMedium.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
-          fontWeight: FontWeight.bold,
         ),
       ),
       actions: [
@@ -603,9 +602,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             width: 80,
             child: Text(
               '$label:',
-              style: TextStyleConst.bodySmall.copyWith(
+              style: TextStyleConst.labelMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
               ),
             ),
           ),

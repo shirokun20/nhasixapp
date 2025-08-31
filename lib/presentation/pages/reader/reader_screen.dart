@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:photo_view/photo_view.dart';
-import '../../../core/constants/colors_const.dart';
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../data/models/reader_settings_model.dart';
@@ -191,7 +190,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         child: BlocBuilder<ReaderCubit, ReaderState>(
           builder: (context, state) {
             return Scaffold(
-              backgroundColor: ColorsConst.darkBackground,
+              backgroundColor: Theme.of(context).colorScheme.surface,
               body: _buildBody(state),
             );
           },
@@ -368,8 +367,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
           // For single page, use PhotoView for offline files or CachedNetworkImage for online
           if (isOffline) {
             return PhotoView.customChild(
-              backgroundDecoration: const BoxDecoration(
-                color: ColorsConst.darkBackground,
+              backgroundDecoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
               ),
               minScale: PhotoViewComputedScale.contained,
               maxScale: PhotoViewComputedScale.covered * 3.0,
@@ -384,8 +383,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
             );
           } else {
             return PhotoView.customChild(
-              backgroundDecoration: const BoxDecoration(
-                color: ColorsConst.darkBackground,
+              backgroundDecoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
               ),
               minScale: PhotoViewComputedScale.contained,
               maxScale: PhotoViewComputedScale.covered * 3.0,
@@ -443,7 +442,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: ColorsConst.darkSurface.withValues(alpha: 0.9),
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
       ),
       child: Row(
@@ -451,8 +450,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
           // Back button
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.arrow_back,
-                color: ColorsConst.darkTextPrimary),
+            icon: Icon(Icons.arrow_back,
+                color: Theme.of(context).colorScheme.onSurface),
           ),
 
           const SizedBox(width: 8),
@@ -468,7 +467,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       child: Text(
                         state.content?.getDisplayTitle() ?? 'Loading...',
                         style: TextStyleConst.headingMedium.copyWith(
-                          color: ColorsConst.darkTextPrimary,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -481,10 +480,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: ColorsConst.accentGreen.withValues(alpha: 0.2),
+                          color: Theme.of(context).colorScheme.primaryContainer,
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                              color: ColorsConst.accentGreen, width: 1),
+                              color: Theme.of(context).colorScheme.primary, width: 1),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -492,13 +491,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             Icon(
                               Icons.offline_bolt,
                               size: 12,
-                              color: ColorsConst.accentGreen,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                             const SizedBox(width: 2),
                             Text(
                               'OFFLINE',
                               style: TextStyleConst.bodySmall.copyWith(
-                                color: ColorsConst.accentGreen,
+                                color: Theme.of(context).colorScheme.primary,
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -514,7 +513,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     Text(
                       'Page ${state.currentPage ?? 1} of ${state.content?.pageCount ?? 1}',
                       style: TextStyleConst.bodySmall.copyWith(
-                        color: ColorsConst.darkTextSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                     // Show progress bar in continuous scroll mode
@@ -523,7 +522,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       Text(
                         '(${state.progressPercentage}%)',
                         style: TextStyleConst.bodySmall.copyWith(
-                          color: ColorsConst.accentBlue,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ],
@@ -535,9 +534,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     padding: const EdgeInsets.only(top: 4),
                     child: LinearProgressIndicator(
                       value: state.progress,
-                      backgroundColor: ColorsConst.borderMuted,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                          ColorsConst.accentBlue),
+                      backgroundColor: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).colorScheme.primary),
                       minHeight: 2,
                     ),
                   ),
@@ -567,7 +566,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             },
             icon: Icon(
               _getReadingModeIcon(state.readingMode ?? ReadingMode.singlePage),
-              color: ColorsConst.darkTextPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
 
@@ -579,8 +578,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   ? Icons.screen_lock_portrait
                   : Icons.screen_lock_portrait_outlined,
               color: (state.keepScreenOn ?? false)
-                  ? ColorsConst.accentBlue
-                  : ColorsConst.darkTextPrimary,
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurface,
             ),
           ),
 
@@ -588,7 +587,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           IconButton(
             onPressed: () => _showReaderSettings(state),
             icon:
-                const Icon(Icons.settings, color: ColorsConst.darkTextPrimary),
+                Icon(Icons.settings, color: Theme.of(context).colorScheme.onSurface),
           ),
         ],
       ),
@@ -599,7 +598,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: ColorsConst.darkSurface.withValues(alpha: 0.9),
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
       ),
       child: Column(
@@ -611,23 +610,23 @@ class _ReaderScreenState extends State<ReaderScreen> {
               Text(
                 '${state.currentPage ?? 1}',
                 style: TextStyleConst.bodySmall.copyWith(
-                  color: ColorsConst.darkTextSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: LinearProgressIndicator(
                   value: state.progress,
-                  backgroundColor: ColorsConst.borderMuted,
-                  valueColor: const AlwaysStoppedAnimation<Color>(
-                      ColorsConst.accentBlue),
+                  backgroundColor: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.primary),
                 ),
               ),
               const SizedBox(width: 8),
               Text(
                 '${state.content?.pageCount ?? 1}',
                 style: TextStyleConst.bodySmall.copyWith(
-                  color: ColorsConst.darkTextSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -647,8 +646,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 icon: Icon(
                   Icons.skip_previous,
                   color: state.isFirstPage
-                      ? ColorsConst.darkTextTertiary
-                      : ColorsConst.darkTextPrimary,
+                      ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)
+                      : Theme.of(context).colorScheme.onSurface,
                 ),
               ),
 
@@ -661,14 +660,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     child: Text(
                       '${state.progressPercentage}%',
                       style: TextStyleConst.bodyMedium.copyWith(
-                        color: ColorsConst.accentBlue,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
                   ),
                   Text(
                     '${(state.readingTimer ?? Duration.zero).inMinutes}m',
                     style: TextStyleConst.bodySmall.copyWith(
-                      color: ColorsConst.darkTextSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -681,8 +680,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 icon: Icon(
                   Icons.skip_next,
                   color: state.isLastPage
-                      ? ColorsConst.darkTextTertiary
-                      : ColorsConst.darkTextPrimary,
+                      ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)
+                      : Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],
@@ -699,11 +698,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: ColorsConst.darkSurface,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         title: Text(
           'Jump to Page',
           style: TextStyleConst.headingMedium.copyWith(
-            color: ColorsConst.darkTextPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         content: TextField(
@@ -711,18 +710,18 @@ class _ReaderScreenState extends State<ReaderScreen> {
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           style: TextStyleConst.bodyMedium.copyWith(
-            color: ColorsConst.darkTextPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
           decoration: InputDecoration(
             labelText: 'Page (1-${state.content?.pageCount ?? 1})',
             labelStyle: TextStyleConst.bodyMedium.copyWith(
-              color: ColorsConst.darkTextSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             border: OutlineInputBorder(
-              borderSide: BorderSide(color: ColorsConst.borderDefault),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
             ),
             focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: ColorsConst.accentBlue),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
             ),
           ),
         ),
@@ -732,7 +731,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             child: Text(
               'Cancel',
               style: TextStyleConst.buttonMedium.copyWith(
-                color: ColorsConst.darkTextSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -754,7 +753,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             child: Text(
               'Jump',
               style: TextStyleConst.buttonMedium.copyWith(
-                color: ColorsConst.accentBlue,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
           ),
@@ -766,7 +765,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   void _showReaderSettings(ReaderState state) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: ColorsConst.darkSurface,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
       isScrollControlled: true,
       builder: (context) => BlocBuilder<ReaderCubit, ReaderState>(
         bloc: _readerCubit,
@@ -781,7 +780,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: ColorsConst.darkTextTertiary,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -789,7 +788,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               Text(
                 'Reader Settings',
                 style: TextStyleConst.headingMedium.copyWith(
-                  color: ColorsConst.darkTextPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
 
@@ -800,14 +799,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 title: Text(
                   'Reading Mode',
                   style: TextStyleConst.bodyMedium.copyWith(
-                    color: ColorsConst.darkTextPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 subtitle: Text(
                   _getReadingModeLabel(
                       currentState.readingMode ?? ReadingMode.singlePage),
                   style: TextStyleConst.bodySmall.copyWith(
-                    color: ColorsConst.darkTextSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 trailing: IconButton(
@@ -833,7 +832,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   icon: Icon(
                     _getReadingModeIcon(
                         currentState.readingMode ?? ReadingMode.singlePage),
-                    color: ColorsConst.accentBlue,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ),
@@ -843,19 +842,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 title: Text(
                   'Keep Screen On',
                   style: TextStyleConst.bodyMedium.copyWith(
-                    color: ColorsConst.darkTextPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 subtitle: Text(
                   'Prevent screen from turning off while reading',
                   style: TextStyleConst.bodySmall.copyWith(
-                    color: ColorsConst.darkTextSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 trailing: Switch(
                   value: currentState.keepScreenOn ?? false,
                   onChanged: (_) => _readerCubit.toggleKeepScreenOn(),
-                  activeThumbColor: ColorsConst.accentBlue,
+                  activeThumbColor: Theme.of(context).colorScheme.primary,
                 ),
               ),
 
@@ -866,18 +865,18 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: () => _showResetConfirmationDialog(),
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.restore,
-                    color: ColorsConst.accentRed,
+                    color: Theme.of(context).colorScheme.error,
                   ),
                   label: Text(
                     'Reset to Defaults',
                     style: TextStyleConst.buttonMedium.copyWith(
-                      color: ColorsConst.accentRed,
+                      color: Theme.of(context).colorScheme.error,
                     ),
                   ),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: ColorsConst.accentRed),
+                    side: BorderSide(color: Theme.of(context).colorScheme.error),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
@@ -917,11 +916,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: ColorsConst.darkSurface,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         title: Text(
           'Reset Reader Settings',
           style: TextStyleConst.headingMedium.copyWith(
-            color: ColorsConst.darkTextPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         content: Text(
@@ -931,7 +930,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           '• Show UI: On\n\n'
           'Are you sure you want to continue?',
           style: TextStyleConst.bodyMedium.copyWith(
-            color: ColorsConst.darkTextSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         actions: [
@@ -940,7 +939,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             child: Text(
               'Cancel',
               style: TextStyleConst.buttonMedium.copyWith(
-                color: ColorsConst.darkTextSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -952,7 +951,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             child: Text(
               'Reset',
               style: TextStyleConst.buttonMedium.copyWith(
-                color: ColorsConst.accentRed,
+                color: Theme.of(context).colorScheme.error,
               ),
             ),
           ),
@@ -976,10 +975,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
             content: Text(
               'Reader settings have been reset to defaults',
               style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.darkTextPrimary,
+                color: Theme.of(context).colorScheme.onPrimary,
               ),
             ),
-            backgroundColor: ColorsConst.accentGreen,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             duration: const Duration(seconds: 3),
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(16),
@@ -997,10 +996,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
             content: Text(
               'Failed to reset settings: ${e.toString()}',
               style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.darkTextPrimary,
+                color: Theme.of(context).colorScheme.onError,
               ),
             ),
-            backgroundColor: ColorsConst.accentRed,
+            backgroundColor: Theme.of(context).colorScheme.error,
             duration: const Duration(seconds: 4),
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(16),
@@ -1009,7 +1008,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             ),
             action: SnackBarAction(
               label: 'Retry',
-              textColor: ColorsConst.darkTextPrimary,
+              textColor: Theme.of(context).colorScheme.onError,
               onPressed: () => _resetReaderSettings(),
             ),
           ),

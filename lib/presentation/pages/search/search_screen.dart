@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
-import 'package:nhasixapp/core/constants/colors_const.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
@@ -147,17 +146,17 @@ class _SearchScreenState extends State<SearchScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: ColorsConst.darkCard,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         title: Text(
           'Content Not Found',
           style: TextStyleConst.headingSmall.copyWith(
-            color: ColorsConst.darkTextPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         content: Text(
           'Content with ID "$contentId" was not found.',
           style: TextStyleConst.bodyMedium.copyWith(
-            color: ColorsConst.darkTextSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         actions: [
@@ -166,7 +165,7 @@ class _SearchScreenState extends State<SearchScreen> {
             child: Text(
               'OK',
               style: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.accentBlue,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
           ),
@@ -229,7 +228,7 @@ class _SearchScreenState extends State<SearchScreen> {
         Text(
           'Filter Categories',
           style: TextStyleConst.bodyMedium.copyWith(
-            color: ColorsConst.darkTextSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -262,13 +261,13 @@ class _SearchScreenState extends State<SearchScreen> {
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: hasFilters
-                        ? ColorsConst.accentBlue.withValues(alpha: 0.1)
-                        : ColorsConst.darkSurface,
+                        ? Theme.of(context).colorScheme.primaryContainer
+                        : Theme.of(context).colorScheme.surfaceContainer,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: hasFilters
-                          ? ColorsConst.accentBlue
-                          : ColorsConst.borderDefault,
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.outline,
                     ),
                   ),
                   child: Row(
@@ -277,8 +276,8 @@ class _SearchScreenState extends State<SearchScreen> {
                         icon,
                         size: 20,
                         color: hasFilters
-                            ? ColorsConst.accentBlue
-                            : ColorsConst.darkTextSecondary,
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -286,8 +285,8 @@ class _SearchScreenState extends State<SearchScreen> {
                           label,
                           style: TextStyleConst.bodySmall.copyWith(
                             color: hasFilters
-                                ? ColorsConst.accentBlue
-                                : ColorsConst.darkTextPrimary,
+                                ? Theme.of(context).colorScheme.onPrimaryContainer
+                                : Theme.of(context).colorScheme.onSurface,
                             fontWeight: hasFilters
                                 ? FontWeight.w600
                                 : FontWeight.normal,
@@ -299,13 +298,13 @@ class _SearchScreenState extends State<SearchScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: ColorsConst.accentBlue,
+                            color: Theme.of(context).colorScheme.primary,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
                             filters.length.toString(),
                             style: TextStyleConst.caption.copyWith(
-                              color: ColorsConst.darkBackground,
+                              color: Theme.of(context).colorScheme.onPrimary,
                               fontWeight: FontWeight.w600,
                               fontSize: 10,
                             ),
@@ -315,7 +314,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         Icon(
                           Icons.arrow_forward_ios,
                           size: 14,
-                          color: ColorsConst.darkTextTertiary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ],
                     ],
@@ -376,7 +375,7 @@ class _SearchScreenState extends State<SearchScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error opening filter selection: $e'),
-            backgroundColor: ColorsConst.accentRed,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -389,7 +388,7 @@ class _SearchScreenState extends State<SearchScreen> {
       value: _searchBloc,
       child: AppScaffoldWithOffline(
         title: 'Search',
-        backgroundColor: ColorsConst.darkBackground,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: _buildAppBar(),
         body: Column(
           children: [
@@ -405,16 +404,16 @@ class _SearchScreenState extends State<SearchScreen> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: ColorsConst.darkSurface,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: ColorsConst.darkTextPrimary),
+        icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
         onPressed: () => context.pop(),
       ),
       title: Text(
         'Advanced Search',
         style: TextStyleConst.headingMedium.copyWith(
-          color: ColorsConst.darkTextPrimary,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
       actions: [
@@ -422,8 +421,8 @@ class _SearchScreenState extends State<SearchScreen> {
           icon: Icon(
             _showAdvancedFilters ? Icons.filter_list : Icons.filter_list_off,
             color: _showAdvancedFilters
-                ? ColorsConst.accentBlue
-                : ColorsConst.darkTextSecondary,
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           onPressed: () {
             setState(() {
@@ -433,8 +432,7 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
         IconButton(
           tooltip: 'Clear all filters',
-          icon:
-              const Icon(Icons.clear_all, color: ColorsConst.darkTextSecondary),
+          icon: Icon(Icons.clear_all, color: Theme.of(context).colorScheme.onSurfaceVariant),
           onPressed: _clearAllFilters,
         ),
       ],
@@ -444,11 +442,11 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildSearchHeader() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: ColorsConst.darkSurface,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainer,
         border: Border(
           bottom: BorderSide(
-            color: ColorsConst.borderDefault,
+            color: Theme.of(context).colorScheme.outline,
             width: 1,
           ),
         ),
@@ -460,21 +458,21 @@ class _SearchScreenState extends State<SearchScreen> {
             controller: _searchController,
             focusNode: _searchFocusNode,
             style: TextStyleConst.bodyMedium.copyWith(
-              color: ColorsConst.darkTextPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
             decoration: InputDecoration(
               hintText: 'Enter search query (e.g. "big breasts english")',
               hintStyle: TextStyleConst.bodyMedium.copyWith(
-                color: ColorsConst.darkTextTertiary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-              prefixIcon: const Icon(
+              prefixIcon: Icon(
                 Icons.search,
-                color: ColorsConst.darkTextSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               suffixIcon: _searchController.text.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.clear,
-                          color: ColorsConst.darkTextSecondary),
+                      icon: Icon(Icons.clear,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant),
                       onPressed: () {
                         // Enhanced clear method with proper timer cleanup
                         _debounceTimer?.cancel();
@@ -486,19 +484,19 @@ class _SearchScreenState extends State<SearchScreen> {
                     )
                   : null,
               filled: true,
-              fillColor: ColorsConst.darkCard,
+              fillColor: Theme.of(context).colorScheme.surface,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: ColorsConst.borderDefault),
+                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: ColorsConst.borderDefault),
+                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide:
-                    const BorderSide(color: ColorsConst.accentBlue, width: 2),
+                    BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
               ),
             ),
           ),
@@ -513,11 +511,11 @@ class _SearchScreenState extends State<SearchScreen> {
       constraints: const BoxConstraints(
         maxHeight: 400, // Limit height to prevent overflow
       ),
-      decoration: const BoxDecoration(
-        color: ColorsConst.darkCard,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainer,
         border: Border(
           bottom: BorderSide(
-            color: ColorsConst.borderDefault,
+            color: Theme.of(context).colorScheme.outline,
             width: 1,
           ),
         ),
@@ -532,7 +530,7 @@ class _SearchScreenState extends State<SearchScreen> {
               Text(
                 'Advanced Filters',
                 style: TextStyleConst.headingSmall.copyWith(
-                  color: ColorsConst.darkTextPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 16),
@@ -577,7 +575,7 @@ class _SearchScreenState extends State<SearchScreen> {
         Text(
           title,
           style: TextStyleConst.bodyMedium.copyWith(
-            color: ColorsConst.darkTextPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -592,11 +590,11 @@ class _SearchScreenState extends State<SearchScreen> {
                 label: const Text('Clear'),
                 selected: false,
                 onSelected: (selected) => onChanged(null),
-                backgroundColor: ColorsConst.darkSurface,
+                backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
                 labelStyle: TextStyleConst.bodySmall.copyWith(
-                  color: ColorsConst.darkTextSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
-                side: const BorderSide(color: ColorsConst.borderDefault),
+                side: BorderSide(color: Theme.of(context).colorScheme.outline),
               ),
             // Option chips
             ...options.map((option) {
@@ -607,18 +605,18 @@ class _SearchScreenState extends State<SearchScreen> {
                 onSelected: (selected) {
                   onChanged(selected ? option.name : null);
                 },
-                backgroundColor: ColorsConst.darkSurface,
+                backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
                 selectedColor:
-                    _getColorForTagType(title).withValues(alpha: 0.2),
+                    _getColorForTagType(title, context).withValues(alpha: 0.2),
                 labelStyle: TextStyleConst.bodySmall.copyWith(
                   color: isSelected
-                      ? _getColorForTagType(title)
-                      : ColorsConst.darkTextSecondary,
+                      ? _getColorForTagType(title, context)
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 side: BorderSide(
                   color: isSelected
-                      ? _getColorForTagType(title)
-                      : ColorsConst.borderDefault,
+                      ? _getColorForTagType(title, context)
+                      : Theme.of(context).colorScheme.outline,
                 ),
               );
             }),
@@ -637,16 +635,16 @@ class _SearchScreenState extends State<SearchScreen> {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: ColorsConst.darkSurface,
-            border: const Border(
+            color: Theme.of(context).colorScheme.surfaceContainer,
+            border: Border(
               bottom: BorderSide(
-                color: ColorsConst.borderDefault,
+                color: Theme.of(context).colorScheme.outline,
                 width: 1,
               ),
             ),
             boxShadow: [
               BoxShadow(
-                color: ColorsConst.darkBackground.withValues(alpha: 0.3),
+                color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.3),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -667,43 +665,43 @@ class _SearchScreenState extends State<SearchScreen> {
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
                             color: hasFilters
-                                ? ColorsConst.darkBackground
-                                : ColorsConst.darkTextTertiary,
+                                ? Theme.of(context).colorScheme.onPrimary
+                                : Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         )
                       : Icon(
                           Icons.search,
                           size: 24,
                           color: hasFilters
-                              ? ColorsConst.darkBackground
-                              : ColorsConst.darkTextTertiary,
+                              ? Theme.of(context).colorScheme.onPrimary
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                   label: Text(
                     isLoading ? 'Searching...' : 'Apply Search',
                     style: TextStyleConst.buttonLarge.copyWith(
                       color: hasFilters
-                          ? ColorsConst.darkBackground
-                          : ColorsConst.darkTextTertiary,
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: hasFilters
-                        ? ColorsConst.accentBlue
-                        : ColorsConst.darkCard,
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.surfaceContainer,
                     foregroundColor: hasFilters
-                        ? ColorsConst.darkBackground
-                        : ColorsConst.darkTextTertiary,
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
                     elevation: hasFilters ? 4 : 0,
                     shadowColor: hasFilters
-                        ? ColorsConst.accentBlue.withValues(alpha: 0.3)
+                        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
                         : Colors.transparent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                       side: BorderSide(
                         color: hasFilters
-                            ? ColorsConst.accentBlue
-                            : ColorsConst.borderDefault,
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.outline,
                         width: hasFilters ? 0 : 1,
                       ),
                     ),
@@ -717,7 +715,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 Text(
                   'Add filters above to enable search',
                   style: TextStyleConst.bodySmall.copyWith(
-                    color: ColorsConst.darkTextTertiary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontStyle: FontStyle.italic,
                   ),
                   textAlign: TextAlign.center,
@@ -765,7 +763,7 @@ class _SearchScreenState extends State<SearchScreen> {
             Text(
               'Popular Searches',
               style: TextStyleConst.headingSmall.copyWith(
-                color: ColorsConst.darkTextPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 12),
@@ -780,11 +778,11 @@ class _SearchScreenState extends State<SearchScreen> {
                     _currentFilter = _currentFilter.copyWith(query: query);
                     _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
                   },
-                  backgroundColor: ColorsConst.darkCard,
+                  backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
                   labelStyle: TextStyleConst.bodySmall.copyWith(
-                    color: ColorsConst.darkTextPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
-                  side: const BorderSide(color: ColorsConst.borderDefault),
+                  side: BorderSide(color: Theme.of(context).colorScheme.outline),
                 );
               }).toList(),
             ),
@@ -797,7 +795,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 Text(
                   'Recent Searches',
                   style: TextStyleConst.headingSmall.copyWith(
-                    color: ColorsConst.darkTextPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 TextButton(
@@ -807,7 +805,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   child: Text(
                     'Clear All',
                     style: TextStyleConst.bodySmall.copyWith(
-                      color: ColorsConst.accentRed,
+                      color: Theme.of(context).colorScheme.error,
                     ),
                   ),
                 ),
@@ -816,21 +814,21 @@ class _SearchScreenState extends State<SearchScreen> {
             const SizedBox(height: 12),
             ...history.take(10).map((query) {
               return ListTile(
-                leading: const Icon(
+                leading: Icon(
                   Icons.history,
-                  color: ColorsConst.darkTextSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   size: 20,
                 ),
                 title: Text(
                   query,
                   style: TextStyleConst.bodyMedium.copyWith(
-                    color: ColorsConst.darkTextPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 trailing: IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close,
-                    color: ColorsConst.darkTextSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     size: 18,
                   ),
                   onPressed: () {
@@ -854,20 +852,20 @@ class _SearchScreenState extends State<SearchScreen> {
                   Icon(
                     Icons.search,
                     size: 64,
-                    color: ColorsConst.darkTextTertiary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'Start searching',
                     style: TextStyleConst.headingSmall.copyWith(
-                      color: ColorsConst.darkTextSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Enter keywords, tags, or use advanced filters to find content',
                     style: TextStyleConst.bodySmall.copyWith(
-                      color: ColorsConst.darkTextTertiary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -890,20 +888,20 @@ class _SearchScreenState extends State<SearchScreen> {
             Icon(
               Icons.tune,
               size: 64,
-              color: ColorsConst.accentBlue,
+              color: Theme.of(context).colorScheme.primary,
             ),
             const SizedBox(height: 16),
             Text(
               'Filters Ready',
               style: TextStyleConst.headingSmall.copyWith(
-                color: ColorsConst.darkTextPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Press the Search button to find content with your current filters',
               style: TextStyleConst.bodySmall.copyWith(
-                color: ColorsConst.darkTextTertiary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
@@ -912,14 +910,14 @@ class _SearchScreenState extends State<SearchScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: ColorsConst.darkCard,
+                  color: Theme.of(context).colorScheme.surfaceContainer,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: ColorsConst.borderDefault),
+                  border: Border.all(color: Theme.of(context).colorScheme.outline),
                 ),
                 child: Text(
                   state.filterSummary,
                   style: TextStyleConst.bodySmall.copyWith(
-                    color: ColorsConst.darkTextSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -932,19 +930,18 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildLoadingState() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircularProgressIndicator(
-            color: ColorsConst.accentBlue,
+            color: Theme.of(context).colorScheme.primary,
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
             'Searching...',
-            style: TextStyle(
-              color: ColorsConst.darkTextSecondary,
-              fontSize: 16,
+            style: TextStyleConst.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -962,14 +959,14 @@ class _SearchScreenState extends State<SearchScreen> {
             children: [
               Icon(
                 Icons.search,
-                color: ColorsConst.accentBlue,
+                color: Theme.of(context).colorScheme.primary,
                 size: 24,
               ),
               const SizedBox(width: 8),
               Text(
                 '${state.totalCount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} results',
                 style: TextStyleConst.headingMedium.copyWith(
-                  color: ColorsConst.darkTextPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -982,7 +979,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 child: Text(
                   'View in Main',
                   style: TextStyleConst.bodySmall.copyWith(
-                    color: ColorsConst.accentBlue,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ),
@@ -1026,20 +1023,20 @@ class _SearchScreenState extends State<SearchScreen> {
             Icon(
               Icons.search_off,
               size: 64,
-              color: ColorsConst.darkTextTertiary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 16),
             Text(
               'No results found',
               style: TextStyleConst.headingSmall.copyWith(
-                color: ColorsConst.darkTextSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               state.message,
               style: TextStyleConst.bodySmall.copyWith(
-                color: ColorsConst.darkTextTertiary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1049,8 +1046,8 @@ class _SearchScreenState extends State<SearchScreen> {
               icon: const Icon(Icons.clear_all),
               label: const Text('Clear Filters'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: ColorsConst.accentBlue,
-                side: const BorderSide(color: ColorsConst.accentBlue),
+                foregroundColor: Theme.of(context).colorScheme.primary,
+                side: BorderSide(color: Theme.of(context).colorScheme.primary),
               ),
             ),
           ],
@@ -1069,20 +1066,20 @@ class _SearchScreenState extends State<SearchScreen> {
             Icon(
               Icons.error_outline,
               size: 64,
-              color: ColorsConst.accentRed,
+              color: Theme.of(context).colorScheme.error,
             ),
             const SizedBox(height: 16),
             Text(
               'Search Error',
               style: TextStyleConst.headingSmall.copyWith(
-                color: ColorsConst.accentRed,
+                color: Theme.of(context).colorScheme.error,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               state.userMessage,
               style: TextStyleConst.bodySmall.copyWith(
-                color: ColorsConst.darkTextTertiary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1095,8 +1092,8 @@ class _SearchScreenState extends State<SearchScreen> {
                 icon: const Icon(Icons.refresh),
                 label: Text(state.retryButtonText),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: ColorsConst.accentBlue,
-                  foregroundColor: ColorsConst.darkBackground,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 ),
               ),
             ],
@@ -1111,8 +1108,8 @@ class _SearchScreenState extends State<SearchScreen> {
       onRefresh: () async {
         _searchBloc.add(const SearchRefreshEvent());
       },
-      color: ColorsConst.accentBlue,
-      backgroundColor: ColorsConst.darkSurface,
+      color: Theme.of(context).colorScheme.primary,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       child: GridView.builder(
         padding: const EdgeInsets.all(16),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -1197,14 +1194,14 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
-  Color _getColorForTagType(String type) {
+  Color _getColorForTagType(String type, BuildContext context) {
     switch (type.toLowerCase()) {
       case 'language':
-        return ColorsConst.tagLanguage;
+        return Theme.of(context).colorScheme.secondary;
       case 'category':
-        return ColorsConst.tagCategory;
+        return Theme.of(context).colorScheme.tertiary;
       default:
-        return ColorsConst.accentBlue;
+        return Theme.of(context).colorScheme.primary;
     }
   }
 }
