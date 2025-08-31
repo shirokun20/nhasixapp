@@ -214,9 +214,8 @@ class _DetailScreenState extends State<DetailScreen> {
                   children: [
                     Text(
                       'Loading Content Details',
-                      style: TextStyleConst.headingSmall.copyWith(
+                      style: TextStyleConst.headingMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -277,9 +276,8 @@ class _DetailScreenState extends State<DetailScreen> {
                 onPressed: () => _showGoOnlineDialog(context),
                 child: Text(
                   'Go Online',
-                  style: TextStyleConst.bodySmall.copyWith(
+                  style: TextStyleConst.labelMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSecondaryContainer,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -542,9 +540,8 @@ class _DetailScreenState extends State<DetailScreen> {
               const SizedBox(width: 8),
               Text(
                 'Content Information',
-                style: TextStyleConst.headingSmall.copyWith(
+                style: TextStyleConst.headingMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -600,9 +597,8 @@ class _DetailScreenState extends State<DetailScreen> {
             width: 80,
             child: Text(
               label,
-              style: TextStyleConst.bodySmall.copyWith(
+              style: TextStyleConst.labelMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -610,9 +606,8 @@ class _DetailScreenState extends State<DetailScreen> {
           Expanded(
             child: Text(
               value,
-              style: TextStyleConst.bodyMedium.copyWith(
+              style: TextStyleConst.bodyLarge.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
-                fontWeight: FontWeight.w500,
               ),
             ),
           ),
@@ -655,9 +650,8 @@ class _DetailScreenState extends State<DetailScreen> {
                   children: [
                     Text(
                       tag.name,
-                      style: TextStyleConst.contentTag.copyWith(
+                      style: TextStyleConst.bodyMedium.copyWith(
                         color: _getTagColor(context, tag.type),
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     if (tag.count > 0) ...[
@@ -701,9 +695,8 @@ class _DetailScreenState extends State<DetailScreen> {
                 icon: const Icon(Icons.menu_book, size: 24),
                 label: Text(
                   'Read Now',
-                  style: TextStyleConst.buttonLarge.copyWith(
+                  style: TextStyleConst.headingSmall.copyWith(
                     color: Theme.of(context).colorScheme.onPrimary,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -893,9 +886,8 @@ class _DetailScreenState extends State<DetailScreen> {
             // Title
             Text(
               relatedContent.title,
-              style: TextStyleConst.bodySmall.copyWith(
+              style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
-                fontWeight: FontWeight.w500,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -930,9 +922,8 @@ class _DetailScreenState extends State<DetailScreen> {
         const SizedBox(height: 4),
         Text(
           value,
-          style: TextStyleConst.bodyMedium.copyWith(
+          style: TextStyleConst.headingSmall.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w600,
           ),
         ),
         Text(
@@ -993,9 +984,8 @@ class _DetailScreenState extends State<DetailScreen> {
                 // Error title
                 Text(
                   'Failed to load content',
-                  style: TextStyleConst.headingMedium.copyWith(
+                  style: TextStyleConst.headingLarge.copyWith(
                     color: Theme.of(context).colorScheme.error,
-                    fontWeight: FontWeight.bold,
                   ),
                   textAlign: TextAlign.center,
                 ),

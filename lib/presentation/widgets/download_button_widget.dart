@@ -355,9 +355,8 @@ class DownloadButtonWidget extends StatelessWidget {
               label: showText
                   ? Text(
                       '${download.progressPercentage.toInt()}%',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
+                      style: TextStyleConst.labelLarge.copyWith(
+                        color: Theme.of(context).colorScheme.onPrimary,
                         fontSize: isLarge ? 16 : 14,
                       ),
                     )

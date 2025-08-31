@@ -37,9 +37,8 @@ class DownloadStatsWidget extends StatelessWidget {
                     children: [
                       Text(
                         'Overall Progress',
-                        style: TextStyleConst.titleSmall.copyWith(
+                        style: TextStyleConst.headingSmall.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
-                          fontWeight: FontWeight.w600,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -57,9 +56,8 @@ class DownloadStatsWidget extends StatelessWidget {
                 const SizedBox(width: 16),
                 Text(
                   '${(state.totalProgress * 100).toInt()}%',
-                  style: TextStyleConst.titleMedium.copyWith(
+                  style: TextStyleConst.headingLarge.copyWith(
                     color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
@@ -167,9 +165,8 @@ class DownloadStatsWidget extends StatelessWidget {
                   Expanded(
                     child: Text(
                       '${state.failedDownloads.length} download${state.failedDownloads.length == 1 ? '' : 's'} failed',
-                      style: TextStyleConst.bodySmall.copyWith(
+                      style: TextStyleConst.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.error,
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
@@ -185,9 +182,8 @@ class DownloadStatsWidget extends StatelessWidget {
                     ),
                     child: Text(
                       'View',
-                      style: TextStyleConst.labelSmall.copyWith(
+                      style: TextStyleConst.labelLarge.copyWith(
                         color: Theme.of(context).colorScheme.error,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -254,9 +250,8 @@ class DownloadStatsWidget extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             value,
-            style: TextStyleConst.titleSmall.copyWith(
+            style: TextStyleConst.headingMedium.copyWith(
               color: color,
-              fontWeight: FontWeight.bold,
             ),
           ),
           Text(
@@ -292,9 +287,8 @@ class DownloadStatsWidget extends StatelessWidget {
         ),
         Text(
           value,
-          style: TextStyleConst.bodySmall.copyWith(
+          style: TextStyleConst.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
           ),
         ),
       ],

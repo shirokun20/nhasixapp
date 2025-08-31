@@ -146,7 +146,9 @@ class _PaginationWidgetState extends State<PaginationWidget> {
         SnackBar(
           content: Text(
             'Please enter a valid page number between 1 and ${widget.totalPages}',
-            style: TextStyle(color: Theme.of(context).colorScheme.onError),
+            style: TextStyleConst.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onError,
+            ),
           ),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),

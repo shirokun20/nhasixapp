@@ -82,9 +82,8 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
       backgroundColor: colorScheme.surface,
       title: Text(
         'Select Download Range',
-        style: TextStyleConst.headingMedium.copyWith(
+        style: TextStyleConst.headingLarge.copyWith(
           color: colorScheme.onSurface,
-          fontWeight: FontWeight.w600,
         ),
       ),
       content: SingleChildScrollView(
@@ -105,9 +104,8 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
                 children: [
                   Text(
                     'Content: ${widget.contentTitle}',
-                    style: TextStyleConst.bodyMedium.copyWith(
+                    style: TextStyleConst.bodyLarge.copyWith(
                       color: colorScheme.onSurface,
-                      fontWeight: FontWeight.w500,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -136,9 +134,8 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
                 children: [
                   Text(
                     'Selected: Pages $startPage to $endPage',
-                    style: TextStyleConst.bodyLarge.copyWith(
+                    style: TextStyleConst.headingSmall.copyWith(
                       color: colorScheme.primary,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -156,9 +153,8 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
             // Range slider
             Text(
               'Use slider to select range:',
-              style: TextStyleConst.bodyMedium.copyWith(
+              style: TextStyleConst.bodyLarge.copyWith(
                 color: colorScheme.onSurface,
-                fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 8),
@@ -195,9 +191,8 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
             // Manual input fields
             Text(
               'Or enter manually:',
-              style: TextStyleConst.bodyMedium.copyWith(
+              style: TextStyleConst.bodyLarge.copyWith(
                 color: colorScheme.onSurface,
-                fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 8),
@@ -279,9 +274,8 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
             // Quick selection buttons
             Text(
               'Quick selections:',
-              style: TextStyleConst.bodyMedium.copyWith(
+              style: TextStyleConst.bodyLarge.copyWith(
                 color: colorScheme.onSurface,
-                fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 8),
@@ -343,10 +337,13 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
       },
       backgroundColor: colorScheme.surfaceContainerHighest,
       selectedColor: colorScheme.primary.withValues(alpha: 0.2),
-      labelStyle: TextStyleConst.bodySmall.copyWith(
-        color: isSelected ? colorScheme.primary : colorScheme.onSurface.withValues(alpha: 0.7),
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-      ),
+      labelStyle: isSelected 
+          ? TextStyleConst.headingSmall.copyWith(
+              color: colorScheme.primary,
+            )
+          : TextStyleConst.bodySmall.copyWith(
+              color: colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
       side: BorderSide(
         color: isSelected ? colorScheme.primary : colorScheme.outline,
       ),

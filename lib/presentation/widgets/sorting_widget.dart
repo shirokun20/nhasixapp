@@ -44,9 +44,8 @@ class SortingWidget extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             currentSort.displayName,
-            style: TextStyleConst.bodySmall.copyWith(
+            style: TextStyleConst.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(width: 4),
@@ -93,9 +92,8 @@ class SortingWidget extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 'Sort by',
-                style: TextStyleConst.headingSmall.copyWith(
+                style: TextStyleConst.headingMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -119,13 +117,13 @@ class SortingWidget extends StatelessWidget {
                     backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
                     selectedColor:
                         Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                    labelStyle: TextStyleConst.bodySmall.copyWith(
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.normal,
-                    ),
+                    labelStyle: isSelected
+                        ? TextStyleConst.headingSmall.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                          )
+                        : TextStyleConst.bodySmall.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                     side: BorderSide(
                       color: isSelected
                           ? Theme.of(context).colorScheme.primary
@@ -184,9 +182,8 @@ class SortingDropdown extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               currentSort.displayName,
-              style: TextStyleConst.bodySmall.copyWith(
+              style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
-                fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(width: 4),
@@ -216,13 +213,13 @@ class SortingDropdown extends StatelessWidget {
               Expanded(
                 child: Text(
                   sort.displayName,
-                  style: TextStyleConst.bodySmall.copyWith(
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.onSurface,
-                    fontWeight:
-                        isSelected ? FontWeight.w600 : FontWeight.normal,
-                  ),
+                  style: isSelected
+                      ? TextStyleConst.headingSmall.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                        )
+                      : TextStyleConst.bodySmall.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                 ),
               ),
             ],

@@ -227,9 +227,8 @@ class _SearchScreenState extends State<SearchScreen> {
       children: [
         Text(
           'Filter Categories',
-          style: TextStyleConst.bodyMedium.copyWith(
+          style: TextStyleConst.labelLarge.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
           ),
         ),
         const SizedBox(height: 12),
@@ -283,14 +282,13 @@ class _SearchScreenState extends State<SearchScreen> {
                       Expanded(
                         child: Text(
                           label,
-                          style: TextStyleConst.bodySmall.copyWith(
-                            color: hasFilters
-                                ? Theme.of(context).colorScheme.onPrimaryContainer
-                                : Theme.of(context).colorScheme.onSurface,
-                            fontWeight: hasFilters
-                                ? FontWeight.w600
-                                : FontWeight.normal,
-                          ),
+                          style: hasFilters
+                              ? TextStyleConst.labelMedium.copyWith(
+                                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                )
+                              : TextStyleConst.bodySmall.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                ),
                         ),
                       ),
                       if (hasFilters) ...[
@@ -303,9 +301,8 @@ class _SearchScreenState extends State<SearchScreen> {
                           ),
                           child: Text(
                             filters.length.toString(),
-                            style: TextStyleConst.caption.copyWith(
+                            style: TextStyleConst.labelSmall.copyWith(
                               color: Theme.of(context).colorScheme.onPrimary,
-                              fontWeight: FontWeight.w600,
                               fontSize: 10,
                             ),
                           ),
@@ -574,9 +571,8 @@ class _SearchScreenState extends State<SearchScreen> {
       children: [
         Text(
           title,
-          style: TextStyleConst.bodyMedium.copyWith(
+          style: TextStyleConst.labelLarge.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
           ),
         ),
         const SizedBox(height: 8),
@@ -678,11 +674,10 @@ class _SearchScreenState extends State<SearchScreen> {
                         ),
                   label: Text(
                     isLoading ? 'Searching...' : 'Apply Search',
-                    style: TextStyleConst.buttonLarge.copyWith(
+                    style: TextStyleConst.labelLarge.copyWith(
                       color: hasFilters
                           ? Theme.of(context).colorScheme.onPrimary
                           : Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -965,9 +960,8 @@ class _SearchScreenState extends State<SearchScreen> {
               const SizedBox(width: 8),
               Text(
                 '${state.totalCount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} results',
-                style: TextStyleConst.headingMedium.copyWith(
+                style: TextStyleConst.headingLarge.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
-                  fontWeight: FontWeight.w700,
                 ),
               ),
               const Spacer(),

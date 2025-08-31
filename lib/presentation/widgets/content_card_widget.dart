@@ -245,10 +245,9 @@ class ContentCard extends StatelessWidget {
                 const SizedBox(width: 3),
                 Text(
                   'OFFLINE',
-                  style: TextStyleConst.overline.copyWith(
+                  style: TextStyleConst.labelSmall.copyWith(
                     color: Theme.of(context).colorScheme.onSecondary,
                     fontSize: 8,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
@@ -324,9 +323,8 @@ class ContentCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 '${(downloadProgress! * 100).toInt()}%',
-                style: TextStyleConst.bodySmall.copyWith(
+                style: TextStyleConst.labelMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
@@ -359,9 +357,8 @@ class ContentCard extends StatelessWidget {
                     ),
                     child: Text(
                       '${content.pageCount}p',
-                      style: TextStyleConst.caption.copyWith(
+                      style: TextStyleConst.labelSmall.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
@@ -388,9 +385,8 @@ class ContentCard extends StatelessWidget {
                         const SizedBox(width: 2),
                         Text(
                           'OFFLINE',
-                          style: TextStyleConst.caption.copyWith(
+                          style: TextStyleConst.labelSmall.copyWith(
                             color: Theme.of(context).colorScheme.onTertiary,
-                            fontWeight: FontWeight.bold,
                             fontSize: 8,
                           ),
                         ),
@@ -590,9 +586,8 @@ class ContentCard extends StatelessWidget {
                 child: Center(
                   child: Text(
                     content.language.substring(0, 2).toUpperCase(),
-                    style: TextStyleConst.caption.copyWith(
+                    style: TextStyleConst.labelSmall.copyWith(
                       fontSize: 8,
-                      fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
@@ -775,8 +770,7 @@ class CompactContentCard extends StatelessWidget {
                   children: [
                     Text(
                       content.getDisplayTitle(),
-                      style: TextStyleConst.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w600,
+                      style: TextStyleConst.headingSmall.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                       maxLines: 2,
@@ -815,9 +809,8 @@ class CompactContentCard extends StatelessWidget {
                             ),
                             child: Text(
                               content.language.toUpperCase(),
-                              style: TextStyleConst.caption.copyWith(
+                              style: TextStyleConst.labelSmall.copyWith(
                                 fontSize: 10,
-                                fontWeight: FontWeight.bold,
                                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                             ),
