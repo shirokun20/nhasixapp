@@ -430,13 +430,13 @@ class ContentCard extends StatelessWidget {
       imageWidget = Container(
         decoration: BoxDecoration(
           border: Border.all(
-            color: Colors.blue.withOpacity(0.8),
+            color: Colors.blue.withValues(alpha: 0.8),
             width: 3.0,
           ),
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: Colors.blue.withOpacity(0.3),
+              color: Colors.blue.withValues(alpha: 0.3),
               blurRadius: 8,
               spreadRadius: 2,
             ),
@@ -474,7 +474,7 @@ class ContentCard extends StatelessWidget {
                 child: Container(
                   padding: EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
+                    color: Colors.black.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(

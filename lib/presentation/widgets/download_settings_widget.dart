@@ -45,7 +45,6 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
                   'Download Settings',
                   style: TextStyleConst.headlineSmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const Spacer(),
@@ -135,7 +134,6 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
                       'Save',
                       style: TextStyleConst.labelLarge.copyWith(
                         color: Theme.of(context).colorScheme.onPrimary,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -155,7 +153,6 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
         title,
         style: TextStyleConst.titleMedium.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
-          fontWeight: FontWeight.w600,
         ),
       ),
     );
@@ -178,7 +175,6 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
               '${_settings.maxConcurrentDownloads}',
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -221,7 +217,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: _settings.imageQuality,
+          initialValue: _settings.imageQuality,
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -315,7 +311,6 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
               '${_settings.retryAttempts}',
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -390,7 +385,6 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
               '${_settings.timeoutDuration.inMinutes} min',
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ],

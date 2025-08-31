@@ -150,7 +150,6 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                   'NhentaiApp',
                   style: TextStyleConst.headingLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.bold,
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -232,7 +231,6 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                               : (state as SplashBypassInProgress).message,
                           style: TextStyleConst.headingSmall.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -275,7 +273,6 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                           'Connection Failed',
                           style: TextStyleConst.statusError.copyWith(
                             fontSize: 18,
-                            fontWeight: FontWeight.bold,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -342,7 +339,6 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                   'Ready to Go!',
                   style: TextStyleConst.headingMedium.copyWith(
                     color: Theme.of(context).colorScheme.tertiary,
-                    fontWeight: FontWeight.bold,
                   ),
                   textAlign: TextAlign.center,
                 ),

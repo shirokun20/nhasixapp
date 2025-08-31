@@ -372,7 +372,10 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
 
             Text(
               'Advanced Filters',
-              style: TextStyleConst.headingSmall.copyWith(fontSize: 16),
+              style: TextStyleConst.headingSmall.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontSize: 16,
+              ),
             ),
 
             const SizedBox(height: 16),
@@ -403,7 +406,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
 
   Widget _buildSortDropdown() {
     return DropdownButtonFormField<SortOption>(
-      value: widget.filter.sortBy,
+      initialValue: widget.filter.sortBy,
       decoration: InputDecoration(
         labelText: 'Sort by',
         labelStyle: TextStyleConst.label,
@@ -450,7 +453,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
 
   Widget _buildLanguageDropdown() {
     return DropdownButtonFormField<String>(
-      value: widget.filter.language,
+      initialValue: widget.filter.language,
       decoration: InputDecoration(
         labelText: 'Language',
         labelStyle: TextStyleConst.label,
@@ -484,7 +487,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
 
   Widget _buildCategoryDropdown() {
     return DropdownButtonFormField<String>(
-      value: widget.filter.category,
+      initialValue: widget.filter.category,
       decoration: InputDecoration(
         labelText: 'Category',
         labelStyle: TextStyleConst.label,
@@ -809,9 +812,8 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
               ),
               child: Text(
                 '${widget.filter.activeFilterCount} active',
-                style: TextStyleConst.caption.copyWith(
+                style: TextStyleConst.labelMedium.copyWith(
                   color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),

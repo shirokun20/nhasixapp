@@ -25,18 +25,28 @@ This document outlines a comprehensive plan to update all widgets and screens in
 - `download_stats_widget.dart` ✅ - Mixed but properly themed
 - `content_list_widget.dart` ✅ - Partially themed
 
-### ❌ Needs Theming Updates (Still using hardcoded values)
-**High Priority - No Theme.of(context) usage:**
-- `progressive_image_widget.dart` ❌ - Hardcoded Colors.black, Colors.white
-- `app_scaffold_with_offline.dart` ❌ - Multiple Colors.orange[xxx] hardcoded
-- `offline_indicator_widget.dart` ❌ - Hardcoded font weights and sizes
+### 🎯 **PHASE 2: TextStyleConst Standardization - IN PROGRESS ⚡**
 
-**Medium Priority - Partially themed:**
-- `search_screen.dart` - Some hardcoded values remain
-- `downloads_screen.dart` - Some hardcoded font weights
-- `splash_screen.dart` - Multiple hardcoded text styles
-- `favorites_screen.dart` - Some hardcoded overlay colors
-- `reader_screen.dart` - Hardcoded font sizes
+#### ✅ **HIGH PRIORITY FILES - COMPLETED:**
+- [x] **download_item_widget.dart** ✅ - 4 FontWeight instances cleaned
+- [x] **filter_type_tab_bar_widget.dart** ✅ - 8 FontWeight instances cleaned  
+- [x] **download_settings_widget.dart** ✅ - 6 FontWeight instances cleaned
+- [x] **progress_indicator_widget.dart** ✅ - 1 FontWeight instance cleaned
+- [x] **download_button_widget.dart** ✅ - 1 FontWeight instance cleaned
+- [x] **error_widget.dart** ✅ - 3 FontWeight instances cleaned
+- [x] **platform_not_supported_dialog.dart** ✅ - 1 FontWeight instance cleaned  
+- [x] **search_filter_widget.dart** ✅ - 1 FontWeight instance cleaned
+- [x] **splash_screen.dart** ✅ - 4 FontWeight instances cleaned
+
+#### ⚠️ **REMAINING FILES TO CLEAN:**
+- [ ] **reader_screen.dart** - 1 FontWeight instance
+- [ ] **pagination_widget.dart** - 3 FontWeight instances  
+- [ ] **filter_item_card_widget.dart** - 4 FontWeight instances
+- [ ] **selected_filters_widget.dart** - 2 FontWeight instances
+- [ ] **modern_pagination_widget.dart** - 2 FontWeight instances
+
+**Progress**: 9/14 files completed = **64% completed** 🎯
+**Estimate**: ~15 more minutes for remaining 5 files
 
 ---
 
@@ -304,7 +314,7 @@ Widgets that are mostly themed but need minor consistency updates.
 // ❌ Don't do this
 color: Color(0xFF1F1F1F)
 color: Colors.blue
-color: Colors.black.withOpacity(0.3)
+color: Colors.black.withValues(alpha: 0.3)
 
 // ✅ Do this (Material 3 + Theme integration)
 color: Theme.of(context).colorScheme.surface

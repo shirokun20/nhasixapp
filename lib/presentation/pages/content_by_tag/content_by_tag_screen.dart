@@ -146,7 +146,7 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
 
   /// Handle content tap to navigate to detail screen
   void _onContentTap(Content content) {
-    context.push('/detail/${content.id}');
+    context.push('/content/${content.id}');
   }
 
   /// Handle sorting option change

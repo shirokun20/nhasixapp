@@ -125,8 +125,8 @@ class FilterItemCard extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: isIncluded
-                      ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
-                      : Theme.of(context).colorScheme.error.withOpacity(0.1),
+                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
+                      : Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -183,7 +183,7 @@ class FilterItemCard extends StatelessWidget {
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 style: IconButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                   padding: const EdgeInsets.all(8),
                   minimumSize: const Size(36, 36),
                 ),
@@ -198,7 +198,7 @@ class FilterItemCard extends StatelessWidget {
                   color: Theme.of(context).colorScheme.error,
                 ),
                 style: IconButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.1),
+                  backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
                   padding: const EdgeInsets.all(8),
                   minimumSize: const Size(36, 36),
                 ),
@@ -212,9 +212,9 @@ class FilterItemCard extends StatelessWidget {
 
   Color _getCardColor(BuildContext context) {
     if (isIncluded) {
-      return Theme.of(context).colorScheme.primary.withOpacity(0.05);
+      return Theme.of(context).colorScheme.primary.withValues(alpha: 0.05);
     } else if (isExcluded) {
-      return Theme.of(context).colorScheme.error.withOpacity(0.05);
+      return Theme.of(context).colorScheme.error.withValues(alpha: 0.05);
     }
     return Theme.of(context).colorScheme.surface;
   }
@@ -344,9 +344,9 @@ class FilterItemCardCompact extends StatelessWidget {
 
   Color _getCardColor(BuildContext context) {
     if (isIncluded) {
-      return Theme.of(context).colorScheme.primary.withOpacity(0.05);
+      return Theme.of(context).colorScheme.primary.withValues(alpha: 0.05);
     } else if (isExcluded) {
-      return Theme.of(context).colorScheme.error.withOpacity(0.05);
+      return Theme.of(context).colorScheme.error.withValues(alpha: 0.05);
     }
     return Theme.of(context).colorScheme.surface;
   }

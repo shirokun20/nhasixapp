@@ -35,8 +35,8 @@ class OfflineIndicatorWidget extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             color: isOffline
-                ? Theme.of(context).colorScheme.error.withOpacity(0.2)
-                : _getConnectionColor(context, connectionType).withOpacity(0.2),
+                ? Theme.of(context).colorScheme.error.withValues(alpha: 0.2)
+                : _getConnectionColor(context, connectionType).withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(compact ? 4 : 6),
             border: Border.all(
               color: isOffline
@@ -175,7 +175,7 @@ class OfflineBanner extends StatelessWidget {
             color: Theme.of(context).colorScheme.errorContainer,
             border: Border(
               bottom: BorderSide(
-                color: Theme.of(context).colorScheme.error.withOpacity(0.3),
+                color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
@@ -231,7 +231,7 @@ class OfflineModeToggle extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isOfflineMode
@@ -265,7 +265,7 @@ class OfflineModeToggle extends StatelessWidget {
                       ? 'Using downloaded content only'
                       : 'Online mode with network access',
                   style: TextStyleConst.bodySmall.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -274,9 +274,9 @@ class OfflineModeToggle extends StatelessWidget {
           Switch(
             value: isOfflineMode,
             onChanged: onToggle,
-            activeColor: Theme.of(context).colorScheme.tertiary,
+            activeThumbColor: Theme.of(context).colorScheme.tertiary,
             inactiveThumbColor: Theme.of(context).colorScheme.onSurfaceVariant,
-            inactiveTrackColor: Theme.of(context).colorScheme.surfaceVariant,
+            inactiveTrackColor: Theme.of(context).colorScheme.surfaceContainerHighest,
           ),
         ],
       ),

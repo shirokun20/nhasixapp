@@ -44,7 +44,6 @@ class DownloadItemWidget extends StatelessWidget {
                           'Content ${download.contentId}',
                           style: TextStyleConst.titleMedium.copyWith(
                             color: colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -54,7 +53,6 @@ class DownloadItemWidget extends StatelessWidget {
                           download.statusText,
                           style: TextStyleConst.bodySmall.copyWith(
                             color: _getStatusColor(context),
-                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
@@ -85,7 +83,6 @@ class DownloadItemWidget extends StatelessWidget {
                       '${(download.progressPercentage > 100) ? '100' : download.progressPercentage}%',
                       style: TextStyleConst.bodySmall.copyWith(
                         color: colorScheme.onSurface.withValues(alpha: 0.7),
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -303,7 +300,6 @@ class DownloadItemWidget extends StatelessWidget {
               'Download Actions',
               style: TextStyleConst.titleMedium.copyWith(
                 color: colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 16),

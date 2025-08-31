@@ -76,7 +76,7 @@ class DownloadService {
         downloadedCount = existingFiles.length; // Use existing count for full downloads
       }
 
-      _logger.i('Found ${downloadedCount} existing files in range, continuing download');
+      _logger.i('Found $downloadedCount existing files in range, continuing download');
 
       // Show start notification with range info
       final rangeText = isRangeDownload ? ' (Pages $actualStartPage-$actualEndPage)' : '';

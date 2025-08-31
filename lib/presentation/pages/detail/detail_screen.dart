@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/web.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
@@ -129,7 +131,7 @@ class _DetailScreenState extends State<DetailScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -158,7 +160,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     child: CircularProgressIndicator(
                       color: Theme.of(context).colorScheme.primary,
                       strokeWidth: 5,
-                      backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                     ),
                   ),
                   Container(
@@ -168,12 +170,12 @@ class _DetailScreenState extends State<DetailScreen> {
                       color: Theme.of(context).colorScheme.surface,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                         width: 2,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                           blurRadius: 8,
                           spreadRadius: 2,
                         ),
@@ -196,7 +198,7 @@ class _DetailScreenState extends State<DetailScreen> {
                   vertical: 16,
                 ),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: Theme.of(context).colorScheme.outline,
@@ -204,7 +206,7 @@ class _DetailScreenState extends State<DetailScreen> {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Theme.of(context).colorScheme.scrim.withOpacity(0.1),
+                      color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -940,7 +942,7 @@ class _DetailScreenState extends State<DetailScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -1095,18 +1097,18 @@ class _DetailScreenState extends State<DetailScreen> {
     
     switch (tagType.toLowerCase()) {
       case 'artist':
-        return colorScheme.tertiary;
+        return colorScheme.primary; // Better contrast than tertiary
       case 'character':
         return colorScheme.secondary;
       case 'parody':
-        return colorScheme.primary;
+        return colorScheme.tertiary; // Move tertiary to parody
       case 'group':
-        return colorScheme.primaryContainer;
+        return colorScheme.error; // Use error for better visibility
       case 'language':
-        return colorScheme.secondaryContainer;
+        return colorScheme.onSurfaceVariant; // Better contrast for language
       case 'tag':
       default:
-        return colorScheme.onSurfaceVariant;
+        return colorScheme.outline; // Use outline for default tags
     }
   }
 
@@ -1114,49 +1116,319 @@ class _DetailScreenState extends State<DetailScreen> {
     AppRouter.goToReader(context, content.id);
   }
 
-  void _shareContent(Content content) {
-    // Implement share functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Share functionality will be implemented later',
-          style: TextStyleConst.bodyMedium
-              .copyWith(color: Theme.of(context).colorScheme.onPrimary),
-        ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
-    );
+  void _shareContent(Content content) async {
+    try {
+      // Create shareable link and message
+      final contentUrl = 'https://nhentai.net/g/${content.id}/';
+      final shareText = _buildShareMessage(content, contentUrl);
+      
+      // Share using share_plus package
+      await Share.share(
+        shareText,
+        subject: content.title,
+      );
+      
+      // Show success feedback
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  Icons.check_circle,
+                  color: Theme.of(context).colorScheme.onSecondary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Share panel opened successfully!',
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Theme.of(context).colorScheme.secondary,
+          ),
+        );
+      }
+    } catch (e) {
+      Logger().e('Error sharing content: $e');
+      
+      // Fallback: copy to clipboard if sharing fails
+      if (mounted) {
+        final contentUrl = 'https://nhentai.net/g/${content.id}/';
+        await Clipboard.setData(ClipboardData(text: contentUrl));
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  Icons.content_copy,
+                  color: Theme.of(context).colorScheme.onError,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Share failed, but link copied to clipboard',
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onError,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Build share message with content details
+  String _buildShareMessage(Content content, String url) {
+    final List<String> messageParts = [];
+    
+    // Add title
+    messageParts.add(content.title);
+    
+    // Add metadata if available
+    final List<String> metadata = [];
+    
+    if (content.artists.isNotEmpty) {
+      metadata.add('Artist: ${content.artists.first}');
+    }
+    
+    if (content.pageCount > 0) {
+      metadata.add('${content.pageCount} pages');
+    }
+    
+    if (content.language.isNotEmpty) {
+      metadata.add('Language: ${content.language.toUpperCase()}');
+    }
+    
+    if (metadata.isNotEmpty) {
+      messageParts.add(metadata.join(' • '));
+    }
+    
+    // Add URL
+    messageParts.add('Check it out: $url');
+    
+    return messageParts.join('\n\n');
   }
 
   void _handleMenuAction(String action, Content content) {
     switch (action) {
       case 'download':
-        // Download functionality is now handled by DownloadButtonWidget
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Use the download button below to start download',
-              style: TextStyleConst.bodyMedium
-                  .copyWith(color: Theme.of(context).colorScheme.onSecondary),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.secondary,
-          ),
-        );
+        // Trigger download using DownloadBloc
+        _startDownload(content);
         break;
       case 'copy_link':
-        // Implement copy link functionality
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Link copied to clipboard',
-              style: TextStyleConst.bodyMedium
-                  .copyWith(color: Theme.of(context).colorScheme.onSecondary),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.secondary,
-          ),
-        );
+        // Copy content link to clipboard
+        _copyContentLink(content);
         break;
     }
+  }
+
+  /// Start download for the content
+  void _startDownload(Content content) {
+    try {
+      // Get download bloc and add download queue event
+      final downloadBloc = context.read<DownloadBloc>();
+      downloadBloc.add(DownloadQueueEvent(content: content));
+      
+      // Show success feedback
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                Icons.download,
+                color: Theme.of(context).colorScheme.onSecondary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Download started for "${content.title}"',
+                  style: TextStyleConst.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Theme.of(context).colorScheme.secondary,
+          action: SnackBarAction(
+            label: 'View',
+            textColor: Theme.of(context).colorScheme.onSecondary,
+            onPressed: () {
+              // Navigate to downloads screen
+              context.go('/downloads');
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      Logger().e('Error starting download: $e');
+      
+      // Show error feedback
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                Icons.error,
+                color: Theme.of(context).colorScheme.onError,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Failed to start download. Please try again.',
+                  style: TextStyleConst.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onError,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  /// Copy content link to clipboard
+  void _copyContentLink(Content content) {
+    try {
+      // Generate shareable link - using the content ID for deep linking
+      final contentLink = 'https://nhentai.net/g/${content.id}/';
+      
+      // Copy to clipboard
+      Clipboard.setData(ClipboardData(text: contentLink));
+      
+      // Show success feedback
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                Icons.check_circle,
+                color: Theme.of(context).colorScheme.onSecondary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Link copied to clipboard',
+                  style: TextStyleConst.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Theme.of(context).colorScheme.secondary,
+          action: SnackBarAction(
+            label: 'View',
+            textColor: Theme.of(context).colorScheme.onSecondary,
+            onPressed: () {
+              // Show copied link in a dialog for verification
+              _showCopiedLinkDialog(contentLink);
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      Logger().e('Error copying link: $e');
+      
+      // Show error feedback
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                Icons.error,
+                color: Theme.of(context).colorScheme.onError,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Failed to copy link. Please try again.',
+                  style: TextStyleConst.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onError,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  /// Show dialog with copied link for verification
+  void _showCopiedLinkDialog(String link) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+        title: Text(
+          'Copied Link',
+          style: TextStyleConst.headingSmall.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'The following link has been copied to your clipboard:',
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+              ),
+              child: SelectableText(
+                link,
+                style: TextStyleConst.bodySmall.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'Close',
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _navigateToRelatedContent(Content relatedContent) {

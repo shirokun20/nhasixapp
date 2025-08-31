@@ -113,9 +113,8 @@ class AppLinearProgressIndicator extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 '${(value! * 100).toInt()}%',
-                style: TextStyleConst.caption.copyWith(
+                style: TextStyleConst.labelMedium.copyWith(
                   color: colorScheme.onSurface.withValues(alpha: 0.7),
-                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],

@@ -244,13 +244,13 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
   /// Build shimmer placeholder
   Widget _buildPlaceholder() {
     return Shimmer.fromColors(
-      baseColor: Theme.of(context).colorScheme.surfaceVariant,
-      highlightColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.8),
+      baseColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+      highlightColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
       child: Container(
         width: widget.width,
         height: widget.height,
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: widget.borderRadius,
         ),
       ),
@@ -263,7 +263,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
       width: widget.width,
       height: widget.height,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: widget.borderRadius,
       ),
       child: Column(
@@ -558,7 +558,7 @@ class ProgressiveThumbnailWidget extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Theme.of(context).colorScheme.scrim.withOpacity(0.3),
+                            color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.3),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),

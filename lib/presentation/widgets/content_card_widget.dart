@@ -82,7 +82,7 @@ class ContentCard extends StatelessWidget {
         onTap: onTap,
         onLongPress: onLongPress,
         splashColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-        highlightColor: Theme.of(context).colorScheme.surfaceVariant,
+        highlightColor: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         child: AspectRatio(
           aspectRatio: aspectRatio,
@@ -263,7 +263,7 @@ class ContentCard extends StatelessWidget {
       builder: (context) => Container(
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
         ),
         child: content.coverUrl.isNotEmpty
             ? ProgressiveThumbnailWidget(
@@ -283,7 +283,7 @@ class ContentCard extends StatelessWidget {
       builder: (context) => Container(
         width: double.infinity,
         height: double.infinity,
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -446,14 +446,17 @@ class ContentCard extends StatelessWidget {
   }
 
   Widget _buildTitle() {
-    return Text(
-      content.getDisplayTitle(),
-      style: TextStyleConst.contentTitle.copyWith(
-        fontSize: 13,
-        height: 1.2,
+    return Builder(
+      builder: (context) => Text(
+        content.getDisplayTitle(),
+        style: TextStyleConst.contentTitle.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontSize: 13,
+          height: 1.2,
+        ),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
       ),
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
     );
   }
 
@@ -582,7 +585,7 @@ class ContentCard extends StatelessWidget {
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return Container(
-                color: Theme.of(context).colorScheme.surfaceVariant,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 child: Center(
                   child: Text(
                     content.language.substring(0, 2).toUpperCase(),
@@ -631,7 +634,7 @@ class ContentCard extends StatelessWidget {
       return Container(
         width: width,
         height: height,
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -661,18 +664,18 @@ class ContentCard extends StatelessWidget {
       memCacheWidth: memCacheWidth ?? 400,
       memCacheHeight: memCacheHeight ?? 600,
       placeholder: (context, url) => Shimmer.fromColors(
-        baseColor: Theme.of(context).colorScheme.surfaceVariant,
+        baseColor: Theme.of(context).colorScheme.surfaceContainerHighest,
         highlightColor: Theme.of(context).colorScheme.surfaceContainer,
         child: Container(
           width: width,
           height: height,
-          color: Theme.of(context).colorScheme.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
         ),
       ),
       errorWidget: (context, url, error) => Container(
         width: width,
         height: height,
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -739,7 +742,7 @@ class CompactContentCard extends StatelessWidget {
                     width: 60,
                     height: 80,
                     placeholder: (context, url) => Container(
-                      color: Theme.of(context).colorScheme.surfaceVariant,
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                       child: Center(
                         child: CircularProgressIndicator(
                           color: Theme.of(context).colorScheme.primary,
@@ -748,7 +751,7 @@ class CompactContentCard extends StatelessWidget {
                       ),
                     ),
                     errorWidget: (context, url, error) => Container(
-                      color: Theme.of(context).colorScheme.surfaceVariant,
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                       child: Icon(
                         Icons.broken_image,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -804,7 +807,7 @@ class CompactContentCard extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surfaceVariant,
+                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(

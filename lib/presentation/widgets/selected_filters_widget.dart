@@ -123,16 +123,16 @@ class SelectedFilterChip extends StatelessWidget {
 
   Color _getChipColor(BuildContext context) {
     if (filterItem.isExcluded) {
-      return Theme.of(context).colorScheme.error.withOpacity(0.1);
+      return Theme.of(context).colorScheme.error.withValues(alpha: 0.1);
     }
-    return Theme.of(context).colorScheme.primary.withOpacity(0.1);
+    return Theme.of(context).colorScheme.primary.withValues(alpha: 0.1);
   }
 
   Color _getBorderColor(BuildContext context) {
     if (filterItem.isExcluded) {
-      return Theme.of(context).colorScheme.error.withOpacity(0.3);
+      return Theme.of(context).colorScheme.error.withValues(alpha: 0.3);
     }
-    return Theme.of(context).colorScheme.primary.withOpacity(0.3);
+    return Theme.of(context).colorScheme.primary.withValues(alpha: 0.3);
   }
 
   Color _getIconColor(BuildContext context) {
@@ -151,9 +151,9 @@ class SelectedFilterChip extends StatelessWidget {
 
   Color _getRemoveButtonColor(BuildContext context) {
     if (filterItem.isExcluded) {
-      return Theme.of(context).colorScheme.error.withOpacity(0.2);
+      return Theme.of(context).colorScheme.error.withValues(alpha: 0.2);
     }
-    return Theme.of(context).colorScheme.primary.withOpacity(0.2);
+    return Theme.of(context).colorScheme.primary.withValues(alpha: 0.2);
   }
 
   Color _getRemoveIconColor(BuildContext context) {
@@ -201,7 +201,7 @@ class SelectedFiltersWidgetCompact extends StatelessWidget {
               vertical: 6,
             ),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceVariant,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
@@ -291,16 +291,16 @@ class SelectedFilterChipCompact extends StatelessWidget {
 
   Color _getChipColor(BuildContext context) {
     if (filterItem.isExcluded) {
-      return Theme.of(context).colorScheme.error.withOpacity(0.1);
+      return Theme.of(context).colorScheme.error.withValues(alpha: 0.1);
     }
-    return Theme.of(context).colorScheme.primary.withOpacity(0.1);
+    return Theme.of(context).colorScheme.primary.withValues(alpha: 0.1);
   }
 
   Color _getBorderColor(BuildContext context) {
     if (filterItem.isExcluded) {
-      return Theme.of(context).colorScheme.error.withOpacity(0.3);
+      return Theme.of(context).colorScheme.error.withValues(alpha: 0.3);
     }
-    return Theme.of(context).colorScheme.primary.withOpacity(0.3);
+    return Theme.of(context).colorScheme.primary.withValues(alpha: 0.3);
   }
 
   Color _getIconColor(BuildContext context) {

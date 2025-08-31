@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:logger/logger.dart';
 import 'package:open_file/open_file.dart';
@@ -147,28 +148,28 @@ class NotificationService {
     required String contentId,
     required String title,
   }) async {
-    print('PDF_NOTIFICATION: showPdfConversionStarted - ENTER method for contentId=$contentId, title=$title');
+    debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - ENTER method for contentId=$contentId, title=$title');
     
     _logger.i('NotificationService: showPdfConversionStarted called for $contentId (title: $title)');
     _logger.i('NotificationService: isEnabled = $isEnabled (_permissionGranted: $_permissionGranted, _initialized: $_initialized)');
     
-    print('PDF_NOTIFICATION: showPdfConversionStarted - isEnabled=$isEnabled, _permissionGranted=$_permissionGranted, _initialized=$_initialized');
+    debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - isEnabled=$isEnabled, _permissionGranted=$_permissionGranted, _initialized=$_initialized');
     
     if (!isEnabled) {
       _logger.w('NotificationService: PDF conversion start notification disabled, skipping for $contentId');
-      print('PDF_NOTIFICATION: showPdfConversionStarted - DISABLED, returning early');
+      debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - DISABLED, returning early');
       return;
     }
 
     try {
-      print('PDF_NOTIFICATION: showPdfConversionStarted - Starting notification creation');
+      debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - Starting notification creation');
       
       _logger.i('NotificationService: Showing PDF conversion started notification for $contentId');
       final notificationId = _getNotificationId('pdf_$contentId');
       
-      print('PDF_NOTIFICATION: showPdfConversionStarted - Generated notificationId=$notificationId');
-      print('PDF_NOTIFICATION: showPdfConversionStarted - Using channel: $_downloadChannelId');
-      print('PDF_NOTIFICATION: showPdfConversionStarted - About to call _notificationsPlugin.show()');
+      debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - Generated notificationId=$notificationId');
+      debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - Using channel: $_downloadChannelId');
+      debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - About to call _notificationsPlugin.show()');
       
       await _notificationsPlugin.show(
         notificationId,
@@ -197,17 +198,17 @@ class NotificationService {
         payload: contentId,
       );
 
-      print('PDF_NOTIFICATION: showPdfConversionStarted - _notificationsPlugin.show() completed successfully');
+      debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - _notificationsPlugin.show() completed successfully');
       _logger.i('PDF conversion started notification shown successfully for: $contentId');
       
     } catch (e, stackTrace) {
-      print('PDF_NOTIFICATION: showPdfConversionStarted - EXCEPTION caught: ${e.toString()}');
-      print('PDF_NOTIFICATION: showPdfConversionStarted - STACKTRACE: ${stackTrace.toString()}');
+      debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - EXCEPTION caught: ${e.toString()}');
+      debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - STACKTRACE: ${stackTrace.toString()}');
       _logger.e('Failed to show PDF conversion started notification for $contentId: $e', 
                 error: e, stackTrace: stackTrace);
     }
     
-    print('PDF_NOTIFICATION: showPdfConversionStarted - EXIT method');
+    debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - EXIT method');
   }
 
   /// Update PDF conversion progress notification

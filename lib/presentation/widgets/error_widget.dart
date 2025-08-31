@@ -104,9 +104,8 @@ class AppErrorWidget extends StatelessWidget {
         children: [
           Text(
             'Suggestions:',
-            style: TextStyleConst.bodySmall.copyWith(
+            style: TextStyleConst.labelMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
@@ -188,7 +187,6 @@ class AppErrorWidget extends StatelessWidget {
                 retryText,
                 style: TextStyleConst.buttonMedium.copyWith(
                   color: Theme.of(context).colorScheme.onPrimary,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -431,7 +429,6 @@ class EmptyStateWidget extends StatelessWidget {
                 actionText!,
                 style: TextStyleConst.buttonMedium.copyWith(
                   color: Theme.of(context).colorScheme.onPrimary,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),

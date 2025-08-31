@@ -159,7 +159,9 @@ class _ContentListWidgetState extends State<ContentListWidget> {
           return Center(
             child: Text(
               'Tap to load content',
-              style: TextStyleConst.placeholderText,
+              style: TextStyleConst.placeholderText.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           );
         }
@@ -181,18 +183,24 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                 Text(
                   state.contextualMessage,
                   textAlign: TextAlign.center,
-                  style: TextStyleConst.bodyMedium,
+                  style: TextStyleConst.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 if (state.suggestions.isNotEmpty) ...[
                   Text(
                     'Suggestions:',
-                    style: TextStyleConst.bodyMedium,
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   ...state.suggestions.map((suggestion) => Text(
                         '• $suggestion',
-                        style: TextStyleConst.bodyMedium,
+                        style: TextStyleConst.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       )),
                 ],
                 if (state.canRetry) ...[

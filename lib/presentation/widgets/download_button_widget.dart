@@ -264,7 +264,6 @@ class DownloadButtonWidget extends StatelessWidget {
                 text,
                 style: TextStyleConst.buttonMedium.copyWith(
                   color: color,
-                  fontWeight: FontWeight.w500,
                 ),
               ),
               style: OutlinedButton.styleFrom(

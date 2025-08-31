@@ -718,7 +718,7 @@ class AppScaffoldWithOffline extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Colors.orange.withOpacity(0.1),
+      color: Colors.orange.withValues(alpha: 0.1),
       child: Row(
         children: [
           Icon(Icons.info_outline, color: Colors.orange[800], size: 20),

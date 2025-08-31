@@ -38,11 +38,11 @@ class FilterTypeTabBar extends StatelessWidget {
         indicatorWeight: 3,
         labelColor: colorScheme.primary,
         unselectedLabelColor: colorScheme.onSurface.withValues(alpha: 0.7),
-        labelStyle: TextStyleConst.label.copyWith(
-          fontWeight: FontWeight.w600,
+        labelStyle: TextStyleConst.labelMedium.copyWith(
+          color: colorScheme.primary,
         ),
         unselectedLabelStyle: TextStyleConst.label.copyWith(
-          fontWeight: FontWeight.w500,
+          color: colorScheme.onSurface.withValues(alpha: 0.7),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16),
         tabs: filterTypes
@@ -144,12 +144,13 @@ class FilterTypeTab extends StatelessWidget {
         child: Center(
           child: Text(
             text,
-            style: TextStyleConst.label.copyWith(
-              color: isSelected
-                  ? colorScheme.onPrimary
-                  : colorScheme.onSurface.withValues(alpha: 0.7),
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            ),
+            style: isSelected 
+                ? TextStyleConst.labelMedium.copyWith(
+                    color: colorScheme.onPrimary,
+                  )
+                : TextStyleConst.label.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
           ),
         ),
       ),
@@ -205,13 +206,13 @@ class FilterTypeSegmentedControl extends StatelessWidget {
                 child: Center(
                   child: Text(
                     TagType.getDisplayName(type),
-                    style: TextStyleConst.label.copyWith(
-                      color: isSelected
-                          ? colorScheme.onPrimary
-                          : colorScheme.onSurface.withValues(alpha: 0.7),
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.w500,
-                    ),
+                    style: isSelected 
+                        ? TextStyleConst.labelMedium.copyWith(
+                            color: colorScheme.onPrimary,
+                          )
+                        : TextStyleConst.label.copyWith(
+                            color: colorScheme.onSurface.withValues(alpha: 0.7),
+                          ),
                   ),
                 ),
               ),
@@ -268,12 +269,13 @@ class FilterTypeChipBar extends StatelessWidget {
               onSelected: (selected) => onChanged(index),
               selectedColor: colorScheme.primary.withValues(alpha: 0.2),
               checkmarkColor: colorScheme.primary,
-              labelStyle: TextStyleConst.label.copyWith(
-                color: isSelected
-                    ? colorScheme.primary
-                    : colorScheme.onSurface.withValues(alpha: 0.7),
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              ),
+              labelStyle: isSelected 
+                  ? TextStyleConst.labelMedium.copyWith(
+                      color: colorScheme.primary,
+                    )
+                  : TextStyleConst.label.copyWith(
+                      color: colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
               side: BorderSide(
                 color: isSelected
                     ? colorScheme.primary

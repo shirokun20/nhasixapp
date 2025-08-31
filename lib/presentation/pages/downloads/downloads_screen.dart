@@ -130,7 +130,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                     children: [
                       Icon(Icons.pause, color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
-                      Text('Pause All', style: TextStyleConst.bodyMedium),
+                      Text('Pause All', style: TextStyleConst.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      )),
                     ],
                   ),
                 ),
@@ -142,7 +144,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                     children: [
                       Icon(Icons.play_arrow, color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
-                      Text('Resume All', style: TextStyleConst.bodyMedium),
+                      Text('Resume All', style: TextStyleConst.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      )),
                     ],
                   ),
                 ),
@@ -167,7 +171,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                     children: [
                       Icon(Icons.clear_all, color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
-                      Text('Clear Completed', style: TextStyleConst.bodyMedium),
+                      Text('Clear Completed', style: TextStyleConst.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      )),
                     ],
                   ),
                 ),
@@ -178,7 +184,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                       Icon(Icons.cleaning_services,
                           color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
-                      Text('Cleanup Storage', style: TextStyleConst.bodyMedium),
+                      Text('Cleanup Storage', style: TextStyleConst.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      )),
                     ],
                   ),
                 ),
@@ -189,7 +197,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                     children: [
                       Icon(Icons.settings, color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
-                      Text('Settings', style: TextStyleConst.bodyMedium),
+                      Text('Settings', style: TextStyleConst.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      )),
                     ],
                   ),
                 ),
@@ -199,7 +209,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                     children: [
                       Icon(Icons.file_download, color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
-                      Text('Export List', style: TextStyleConst.bodyMedium),
+                      Text('Export List', style: TextStyleConst.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      )),
                     ],
                   ),
                 ),

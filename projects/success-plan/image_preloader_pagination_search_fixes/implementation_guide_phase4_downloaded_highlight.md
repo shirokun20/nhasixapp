@@ -30,7 +30,7 @@ Border.all(
 
 // Optional glow effect
 BoxShadow(
-  color: const Color(0xFF00FF88).withOpacity(0.3),
+  color: const Color(0xFF00FF88).withValues(alpha: 0.3),
   blurRadius: 4,
   spreadRadius: 1,
 )
@@ -45,7 +45,7 @@ Border.all(
 
 // Optional subtle shadow
 BoxShadow(
-  color: const Color(0xFF2E7D32).withOpacity(0.2),
+  color: const Color(0xFF2E7D32).withValues(alpha: 0.2),
   blurRadius: 3,
   spreadRadius: 0.5,
 )
@@ -177,7 +177,7 @@ class ContentCard extends StatelessWidget {
           BoxShadow(
             color: (isDarkMode 
               ? const Color(0xFF00FF88)
-              : const Color(0xFF2E7D32)).withOpacity(0.3),
+              : const Color(0xFF2E7D32)).withValues(alpha: 0.3),
             blurRadius: 4,
             spreadRadius: 1,
           )
@@ -304,8 +304,8 @@ class DownloadStatusOverlay extends StatelessWidget {
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
           color: isDarkMode 
-            ? const Color(0xFF00FF88).withOpacity(0.9)
-            : const Color(0xFF2E7D32).withOpacity(0.9),
+            ? const Color(0xFF00FF88).withValues(alpha: 0.9)
+            : const Color(0xFF2E7D32).withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(

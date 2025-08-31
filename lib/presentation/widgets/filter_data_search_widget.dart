@@ -23,7 +23,7 @@ class FilterDataSearchWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: focusNode.hasFocus
@@ -43,19 +43,19 @@ class FilterDataSearchWidget extends StatelessWidget {
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyleConst.bodyLarge.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
+            color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
           ),
           prefixIcon: Icon(
             Icons.search,
             color: focusNode.hasFocus
                 ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
+                : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
           ),
           suffixIcon: controller.text.isNotEmpty
               ? IconButton(
                   icon: Icon(
                     Icons.clear,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                   ),
                   onPressed: () {
                     controller.clear();

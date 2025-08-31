@@ -38,9 +38,8 @@ class PlatformNotSupportedDialog extends StatelessWidget {
           Text(
             'Please install and run this app on an Android device.',
             textAlign: TextAlign.center,
-            style: TextStyleConst.bodyMedium.copyWith(
+            style: TextStyleConst.titleMedium.copyWith(
               color: colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
             ),
           ),
         ],

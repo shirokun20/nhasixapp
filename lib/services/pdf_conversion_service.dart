@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/widgets.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:logger/logger.dart';
@@ -36,16 +37,16 @@ class PdfConversionService {
     String testTitle = 'PDF Notification Test',
   }) async {
     try {
-      print('PDF_NOTIFICATION: testPdfNotification - STARTING test with contentId=$testContentId');
+      debugPrint('PDF_NOTIFICATION: testPdfNotification - STARTING test with contentId=$testContentId');
       
       // Test basic notification service first
-      print('PDF_NOTIFICATION: testPdfNotification - Testing basic notification service');
+      debugPrint('PDF_NOTIFICATION: testPdfNotification - Testing basic notification service');
       
       try {
         await _notificationService.showTestActionNotification();
-        print('PDF_NOTIFICATION: testPdfNotification - Basic test notification completed');
+        debugPrint('PDF_NOTIFICATION: testPdfNotification - Basic test notification completed');
       } catch (basicTestError) {
-        print('PDF_NOTIFICATION: testPdfNotification - Basic test FAILED: ${basicTestError.toString()}');
+        debugPrint('PDF_NOTIFICATION: testPdfNotification - Basic test FAILED: ${basicTestError.toString()}');
       }
       
       // Ensure service is ready
@@ -53,22 +54,22 @@ class PdfConversionService {
       
       // Check service state
       final isEnabled = _notificationService.isEnabled;
-      print('PDF_NOTIFICATION: testPdfNotification - NotificationService.isEnabled = $isEnabled');
+      debugPrint('PDF_NOTIFICATION: testPdfNotification - NotificationService.isEnabled = $isEnabled');
       
       if (!isEnabled) {
-        print('PDF_NOTIFICATION: testPdfNotification - FAILED - NotificationService is not enabled');
+        debugPrint('PDF_NOTIFICATION: testPdfNotification - FAILED - NotificationService is not enabled');
         return false;
       }
       
       // Try to show simple PDF notification
-      print('PDF_NOTIFICATION: testPdfNotification - Attempting to show test PDF notification');
+      debugPrint('PDF_NOTIFICATION: testPdfNotification - Attempting to show test PDF notification');
       
       await _notificationService.showPdfConversionStarted(
         contentId: testContentId,
         title: testTitle,
       );
       
-      print('PDF_NOTIFICATION: testPdfNotification - Test notification completed successfully');
+      debugPrint('PDF_NOTIFICATION: testPdfNotification - Test notification completed successfully');
       
       // Wait a bit then show completion notification
       await Future.delayed(const Duration(seconds: 2));
@@ -80,12 +81,12 @@ class PdfConversionService {
         partsCount: 1,
       );
       
-      print('PDF_NOTIFICATION: testPdfNotification - Test completion notification sent');
+      debugPrint('PDF_NOTIFICATION: testPdfNotification - Test completion notification sent');
       return true;
       
     } catch (e, stackTrace) {
-      print('PDF_NOTIFICATION: testPdfNotification - EXCEPTION: ${e.toString()}');
-      print('PDF_NOTIFICATION: testPdfNotification - STACKTRACE: ${stackTrace.toString()}');
+      debugPrint('PDF_NOTIFICATION: testPdfNotification - EXCEPTION: ${e.toString()}');
+      debugPrint('PDF_NOTIFICATION: testPdfNotification - STACKTRACE: ${stackTrace.toString()}');
       return false;
     }
   }
@@ -94,15 +95,15 @@ class PdfConversionService {
   /// Quick static method for testing from UI or main function
   static Future<void> quickTestPdfNotifications() async {
     try {
-      print('PDF_NOTIFICATION: quickTestPdfNotifications - Starting quick test');
+      debugPrint('PDF_NOTIFICATION: quickTestPdfNotifications - Starting quick test');
       
       final service = GetIt.instance<PdfConversionService>();
       final result = await service.testPdfNotification();
       
-      print('PDF_NOTIFICATION: quickTestPdfNotifications - Test Result: $result');
+      debugPrint('PDF_NOTIFICATION: quickTestPdfNotifications - Test Result: $result');
       
     } catch (e) {
-      print('PDF_NOTIFICATION: quickTestPdfNotifications - Quick test failed: $e');
+      debugPrint('PDF_NOTIFICATION: quickTestPdfNotifications - Quick test failed: $e');
     }
   }
 
@@ -110,21 +111,21 @@ class PdfConversionService {
   /// This fixes the issue where PDF notifications don't appear in release mode
   Future<void> _ensureNotificationServiceReady() async {
     try {
-      print('PDF_NOTIFICATION: _ensureNotificationServiceReady - Starting notification service setup');
+      debugPrint('PDF_NOTIFICATION: _ensureNotificationServiceReady - Starting notification service setup');
       
       // Check initial state
       final initialEnabled = _notificationService.isEnabled;
-      print('PDF_NOTIFICATION: _ensureNotificationServiceReady - Initial isEnabled = $initialEnabled');
+      debugPrint('PDF_NOTIFICATION: _ensureNotificationServiceReady - Initial isEnabled = $initialEnabled');
       
       // Re-initialize notification service to ensure it's ready for PDF notifications
       // This is especially important in release mode where the service might not be warm
       await _notificationService.initialize();
       
-      print('PDF_NOTIFICATION: _ensureNotificationServiceReady - NotificationService.initialize() completed');
+      debugPrint('PDF_NOTIFICATION: _ensureNotificationServiceReady - NotificationService.initialize() completed');
       
       // Check state after first initialization
       final afterInitEnabled = _notificationService.isEnabled;
-      print('PDF_NOTIFICATION: _ensureNotificationServiceReady - After init isEnabled = $afterInitEnabled');
+      debugPrint('PDF_NOTIFICATION: _ensureNotificationServiceReady - After init isEnabled = $afterInitEnabled');
       
       // Additional setup for release mode compatibility
       // Force another initialization to ensure channels are properly registered
@@ -133,22 +134,22 @@ class PdfConversionService {
         await _notificationService.initialize();
         
         final finalEnabled = _notificationService.isEnabled;
-        print('PDF_NOTIFICATION: _ensureNotificationServiceReady - After double init isEnabled = $finalEnabled');
+        debugPrint('PDF_NOTIFICATION: _ensureNotificationServiceReady - After double init isEnabled = $finalEnabled');
         
         if (!finalEnabled) {
-          print('PDF_NOTIFICATION: _ensureNotificationServiceReady - WARNING - Service still not enabled after double init!');
+          debugPrint('PDF_NOTIFICATION: _ensureNotificationServiceReady - WARNING - Service still not enabled after double init!');
         }
         
       } catch (doubleInitError) {
-        print('PDF_NOTIFICATION: _ensureNotificationServiceReady - Double init error: ${doubleInitError.toString()}');
+        debugPrint('PDF_NOTIFICATION: _ensureNotificationServiceReady - Double init error: ${doubleInitError.toString()}');
       }
       
       _logger.d('PdfConversionService: Notification service re-initialized for PDF notifications');
-      print('PDF_NOTIFICATION: _ensureNotificationServiceReady - Setup completed successfully');
+      debugPrint('PDF_NOTIFICATION: _ensureNotificationServiceReady - Setup completed successfully');
       
     } catch (e) {
       _logger.w('PdfConversionService: Failed to re-initialize notification service', error: e);
-      print('PDF_NOTIFICATION: _ensureNotificationServiceReady - FAILED: ${e.toString()}');
+      debugPrint('PDF_NOTIFICATION: _ensureNotificationServiceReady - FAILED: ${e.toString()}');
     }
   }
 
@@ -186,7 +187,7 @@ class PdfConversionService {
     int maxPagesPerFile = 50,
   }) async {
     try {
-      print('PDF_NOTIFICATION: convertToPdfInBackground - STARTED for contentId=$contentId, title=$title, images=${imagePaths.length}');
+      debugPrint('PDF_NOTIFICATION: convertToPdfInBackground - STARTED for contentId=$contentId, title=$title, images=${imagePaths.length}');
       
       _logger.i('PdfConversionService: Starting background PDF conversion for $contentId');
       
@@ -198,20 +199,20 @@ class PdfConversionService {
       // Tampilkan notifikasi bahwa konversi PDF dimulai
       // Show notification that PDF conversion has started
       _logger.i('PdfConversionService: About to show PDF conversion started notification');
-      print('PDF_NOTIFICATION: convertToPdfInBackground - About to call showPdfConversionStarted');
+      debugPrint('PDF_NOTIFICATION: convertToPdfInBackground - About to call showPdfConversionStarted');
       
       // Ensure notification service is ready (especially important for release mode)
       await _ensureNotificationServiceReady();
       
       _notificationService.debugLogState('Before PDF conversion started notification');
-      print('PDF_NOTIFICATION: convertToPdfInBackground - Calling showPdfConversionStarted now');
+      debugPrint('PDF_NOTIFICATION: convertToPdfInBackground - Calling showPdfConversionStarted now');
       
       await _notificationService.showPdfConversionStarted(
         contentId: contentId,
         title: title,
       );
       
-      print('PDF_NOTIFICATION: convertToPdfInBackground - showPdfConversionStarted completed');
+      debugPrint('PDF_NOTIFICATION: convertToPdfInBackground - showPdfConversionStarted completed');
 
       // Buat direktori output untuk PDF
       // Create output directory for PDFs
@@ -306,13 +307,13 @@ class PdfConversionService {
       // Tampilkan notifikasi sukses dengan informasi file yang dibuat
       // Show success notification with created file information
       _logger.i('PdfConversionService: About to show PDF conversion completed notification');
-      print('PDF_NOTIFICATION: convertToPdfInBackground - About to call showPdfConversionCompleted');
+      debugPrint('PDF_NOTIFICATION: convertToPdfInBackground - About to call showPdfConversionCompleted');
       
       // Ensure notification service is ready (especially important for release mode)
       await _ensureNotificationServiceReady();
       
       _notificationService.debugLogState('Before PDF conversion completed notification');
-      print('PDF_NOTIFICATION: convertToPdfInBackground - Calling showPdfConversionCompleted now');
+      debugPrint('PDF_NOTIFICATION: convertToPdfInBackground - Calling showPdfConversionCompleted now');
       
       await _notificationService.showPdfConversionCompleted(
         contentId: contentId,
@@ -321,7 +322,7 @@ class PdfConversionService {
         partsCount: conversionResult.partsCount,
       );
       
-      print('PDF_NOTIFICATION: convertToPdfInBackground - showPdfConversionCompleted completed');
+      debugPrint('PDF_NOTIFICATION: convertToPdfInBackground - showPdfConversionCompleted completed');
       
       _logger.i('PdfConversionService: PDF conversion completed successfully for $contentId');
       _logger.i('PdfConversionService: Created ${conversionResult.partsCount} PDF file(s) with ${conversionResult.pageCount} total pages');
@@ -332,12 +333,12 @@ class PdfConversionService {
       _logger.e('PdfConversionService: Unexpected error during PDF conversion for $contentId', 
                 error: e, stackTrace: stackTrace);
       
-      print('PDF_NOTIFICATION: convertToPdfInBackground - ERROR occurred: ${e.toString()}');
+      debugPrint('PDF_NOTIFICATION: convertToPdfInBackground - ERROR occurred: ${e.toString()}');
       
       // Ensure notification service is ready for error notification
       await _ensureNotificationServiceReady();
       
-      print('PDF_NOTIFICATION: convertToPdfInBackground - About to call showPdfConversionError');
+      debugPrint('PDF_NOTIFICATION: convertToPdfInBackground - About to call showPdfConversionError');
       
       await _notificationService.showPdfConversionError(
         contentId: contentId,
@@ -345,7 +346,7 @@ class PdfConversionService {
         error: 'Conversion failed: ${e.toString()}',
       );
       
-      print('PDF_NOTIFICATION: convertToPdfInBackground - showPdfConversionError completed');
+      debugPrint('PDF_NOTIFICATION: convertToPdfInBackground - showPdfConversionError completed');
     }
   }
 
