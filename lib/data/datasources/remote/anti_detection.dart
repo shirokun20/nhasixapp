@@ -138,16 +138,16 @@ class AntiDetection {
     return headers;
   }
 
-  /// Calculate minimum delay based on request frequency
+    /// Calculate minimum delay based on request frequency
   Duration _calculateMinDelay() {
-    // Increase delay as request count increases to avoid rate limiting
-    final baseDelay = 1000; // 1 second base
-    final additionalDelay =
-        (_requestCount ~/ 10) * 500; // +500ms per 10 requests
-    final maxDelay = 5000; // Max 5 seconds
+    // More conservative base delay
+    final baseDelay = 2000; // 2 seconds base (increased from 1 second)
+    final additionalDelay = (_requestCount ~/ 5) * 1000; // +1s per 5 requests (more aggressive)
+    final maxDelay = 8000; // Max 8 seconds (increased from 5 seconds)
 
-    final totalDelay = (baseDelay + additionalDelay).clamp(baseDelay, maxDelay);
-    return Duration(milliseconds: totalDelay);
+    return Duration(
+      milliseconds: min(baseDelay + additionalDelay, maxDelay),
+    );
   }
 
   /// Get random user agent
@@ -181,19 +181,19 @@ class AntiDetection {
 
   /// Simulate human-like browsing patterns
   Future<void> simulateHumanBehavior() async {
-    // Occasionally pause longer (simulate reading)
-    if (_random.nextDouble() < 0.1) {
+    // More frequent reading simulation (30% chance instead of 10%)
+    if (_random.nextDouble() < 0.3) {
       final readingDelay = Duration(
-        milliseconds: 3000 + _random.nextInt(7000), // 3-10 seconds
+        milliseconds: 2000 + _random.nextInt(6000), // 2-8 seconds (reduced from 3-10)
       );
       _logger.d('Simulating reading behavior: ${readingDelay.inSeconds}s');
       await Future.delayed(readingDelay);
     }
 
-    // Vary request patterns
-    if (_requestCount % 20 == 0) {
+    // More frequent breaks but shorter (every 15 requests instead of 20)
+    if (_requestCount % 15 == 0) {
       final breakDelay = Duration(
-        milliseconds: 10000 + _random.nextInt(20000), // 10-30 seconds
+        milliseconds: 5000 + _random.nextInt(10000), // 5-15 seconds (reduced from 10-30)
       );
       _logger.d('Taking a break: ${breakDelay.inSeconds}s');
       await Future.delayed(breakDelay);
@@ -202,13 +202,24 @@ class AntiDetection {
 
   /// Check if we should throttle requests
   bool shouldThrottleRequests() {
-    // Throttle if making too many requests too quickly
-    const maxRequestsPerMinute = 30;
+    // More conservative rate limiting: 15 requests per minute
+    const maxRequestsPerMinute = 15;
     const timeWindow = Duration(minutes: 1);
 
     if (_lastRequestTime != null) {
-      final timeSinceStart = DateTime.now().difference(_lastRequestTime!);
-      if (timeSinceStart < timeWindow && _requestCount > maxRequestsPerMinute) {
+      final now = DateTime.now();
+      final timeSinceStart = now.difference(_lastRequestTime!);
+      
+      // Reset counter if more than time window has passed
+      if (timeSinceStart >= timeWindow) {
+        _requestCount = 0;
+        _lastRequestTime = now;
+        return false;
+      }
+      
+      // Check if we've exceeded the limit
+      if (_requestCount >= maxRequestsPerMinute) {
+        _logger.w('Rate limit approached: $_requestCount requests in ${timeSinceStart.inSeconds}s');
         return true;
       }
     }

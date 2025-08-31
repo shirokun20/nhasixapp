@@ -18,10 +18,12 @@ class FilterDataScreen extends StatefulWidget {
     super.key,
     required this.filterType,
     required this.selectedFilters,
+    this.hideOtherTabs = false,
   });
 
   final String filterType;
   final List<FilterItem> selectedFilters;
+  final bool hideOtherTabs;
 
   @override
   State<FilterDataScreen> createState() => _FilterDataScreenState();
@@ -60,8 +62,10 @@ class _FilterDataScreenState extends State<FilterDataScreen>
       initialIndex: initialIndex >= 0 ? initialIndex : 0,
     );
 
-    // Listen to tab changes
-    _tabController.addListener(_onTabChanged);
+    // Listen to tab changes only if tabs are not hidden
+    if (!widget.hideOtherTabs) {
+      _tabController.addListener(_onTabChanged);
+    }
 
     // Initialize cubit
     _filterDataCubit.initialize(
@@ -72,7 +76,9 @@ class _FilterDataScreenState extends State<FilterDataScreen>
 
   @override
   void dispose() {
-    _tabController.removeListener(_onTabChanged);
+    if (!widget.hideOtherTabs) {
+      _tabController.removeListener(_onTabChanged);
+    }
     _tabController.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
@@ -206,6 +212,11 @@ class _FilterDataScreenState extends State<FilterDataScreen>
   }
 
   Widget _buildFilterTypeTabBar() {
+    // Hide tab bar if hideOtherTabs is true
+    if (widget.hideOtherTabs) {
+      return const SizedBox.shrink();
+    }
+    
     return Container(
       color: Theme.of(context).colorScheme.surface,
       child: FilterTypeTabBar(

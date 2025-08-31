@@ -509,8 +509,9 @@ class LocalDataSource {
       }
 
       return UserPreferences.fromJson(prefsMap);
-    } catch (e) {
+    } catch (e, stackTrace) {
       _logger.e('Error getting user preferences: $e');
+      _logger.e('Stack trace: $stackTrace');
       return const UserPreferences(); // Return default preferences
     }
   }

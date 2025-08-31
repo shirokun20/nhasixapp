@@ -409,13 +409,62 @@ class NhentaiScraper {
         }
       }
 
-      // Try to extract from current URL in JavaScript
+      // Try to extract from gallery ID in page title or gallery_id section
+      final galleryIdElement = document.querySelector('#gallery_id .hash');
+      if (galleryIdElement != null) {
+        final nextSibling = galleryIdElement.nextElementSibling;
+        if (nextSibling != null) {
+          final idText = nextSibling.text.trim();
+          final idMatch = RegExp(r'(\d+)').firstMatch(idText);
+          if (idMatch != null) {
+            return idMatch.group(1);
+          }
+        }
+      }
+
+      // Try to extract from window._gallery JSON object in JavaScript
       final scriptElements = document.querySelectorAll('script');
       for (final script in scriptElements) {
         final content = script.text;
+        if (content.contains('window._gallery')) {
+          // Look for: window._gallery = JSON.parse("{\u0022id\u0022:588417,...")
+          final galleryMatch = RegExp(r'window\._gallery\s*=\s*JSON\.parse\("([^"]+)"\)').firstMatch(content);
+          if (galleryMatch != null) {
+            try {
+              final jsonString = galleryMatch.group(1)!;
+              // Decode unicode escapes
+              final decodedJson = jsonString.replaceAllMapped(
+                RegExp(r'\\u([0-9a-fA-F]{4})'),
+                (match) => String.fromCharCode(int.parse(match.group(1)!, radix: 16)),
+              );
+              
+              // Extract ID from JSON string pattern
+              final idMatch = RegExp(r'"id"\s*:\s*(\d+)').firstMatch(decodedJson);
+              if (idMatch != null) {
+                return idMatch.group(1);
+              }
+            } catch (e) {
+              _logger.w('Failed to parse gallery JSON: $e');
+            }
+          }
+        }
+        
+        // Fallback: Try original gallery_id pattern
         if (content.contains('gallery_id')) {
           final match =
               RegExp(r'gallery_id["\s]*:["\s]*(\d+)').firstMatch(content);
+          if (match != null) {
+            return match.group(1);
+          }
+        }
+      }
+
+      // Last resort: try to extract from URL fragments in the page
+      final allLinks = document.querySelectorAll('a[href*="/g/"]');
+      for (final link in allLinks) {
+        final href = link.attributes['href'];
+        if (href != null) {
+          final match = RegExp(contentUrlPattern).firstMatch(href);
           if (match != null) {
             return match.group(1);
           }

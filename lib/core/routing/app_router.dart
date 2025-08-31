@@ -12,7 +12,10 @@ import 'package:nhasixapp/presentation/pages/filter_data/filter_data_screen.dart
 import 'package:nhasixapp/presentation/pages/favorites/favorites_screen.dart';
 import 'package:nhasixapp/presentation/pages/downloads/downloads_screen.dart';
 import 'package:nhasixapp/presentation/pages/offline/offline_content_screen.dart';
+import 'package:nhasixapp/presentation/pages/history/history_screen.dart';
+import 'package:nhasixapp/presentation/pages/random/random_gallery_screen.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
+import 'package:nhasixapp/utils/app_animations.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -39,7 +42,12 @@ class AppRouter {
       GoRoute(
         path: AppRoute.search,
         name: AppRoute.searchName,
-        builder: (context, state) => const SearchScreen(),
+        pageBuilder: (context, state) => AppAnimations.animatedPageBuilder(
+          context,
+          state,
+          const SearchScreen(),
+          type: RouteTransitionType.slideLeft,
+        ),
       ),
 
       // Filter Data Screen
@@ -48,6 +56,7 @@ class AppRouter {
         name: AppRoute.filterDataName,
         builder: (context, state) {
           final filterType = state.uri.queryParameters['type'] ?? 'tag';
+          final hideOtherTabs = state.uri.queryParameters['hideOtherTabs'] == 'true';
 
           // Safe type casting for List<FilterItem>
           List<FilterItem> selectedFilters = [];
@@ -71,6 +80,7 @@ class AppRouter {
           return FilterDataScreen(
             filterType: filterType,
             selectedFilters: selectedFilters,
+            hideOtherTabs: hideOtherTabs,
           );
         },
       ),
@@ -98,9 +108,14 @@ class AppRouter {
       GoRoute(
         path: AppRoute.contentDetail,
         name: AppRoute.contentDetailName,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final contentId = state.pathParameters['id']!;
-          return DetailScreen(contentId: contentId);
+          return AppAnimations.animatedPageBuilder(
+            context,
+            state,
+            DetailScreen(contentId: contentId),
+            type: RouteTransitionType.fadeSlide,
+          );
         },
       ),
 
@@ -144,8 +159,11 @@ class AppRouter {
       GoRoute(
         path: AppRoute.history,
         name: AppRoute.historyName,
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('History Screen - To be implemented')),
+        pageBuilder: (context, state) => AppAnimations.animatedPageBuilder(
+          context,
+          state,
+          const HistoryScreen(),
+          type: RouteTransitionType.slideUp,
         ),
       ),
 
@@ -153,7 +171,12 @@ class AppRouter {
       GoRoute(
         path: AppRoute.settings,
         name: AppRoute.settingsName,
-        builder: (context, state) => const SettingsScreen(),
+        pageBuilder: (context, state) => AppAnimations.animatedPageBuilder(
+          context,
+          state,
+          const SettingsScreen(),
+          type: RouteTransitionType.fade,
+        ),
       ),
 
       // Tags Screen
@@ -178,8 +201,11 @@ class AppRouter {
       GoRoute(
         path: AppRoute.random,
         name: AppRoute.randomName,
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Random Screen - To be implemented')),
+        pageBuilder: (context, state) => AppAnimations.animatedPageBuilder(
+          context,
+          state,
+          const RandomGalleryScreen(),
+          type: RouteTransitionType.fadeSlide,
         ),
       ),
 
@@ -287,10 +313,11 @@ class AppRouter {
     BuildContext context, {
     required String filterType,
     required List<FilterItem> selectedFilters,
+    bool hideOtherTabs = false,
   }) async {
     try {
       final result = await context.push<List<FilterItem>>(
-        '${AppRoute.filterData}?type=$filterType',
+        '${AppRoute.filterData}?type=$filterType&hideOtherTabs=$hideOtherTabs',
         extra: selectedFilters,
       );
 

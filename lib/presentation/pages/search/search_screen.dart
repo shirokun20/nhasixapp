@@ -333,9 +333,11 @@ class _SearchScreenState extends State<SearchScreen> {
         context,
         filterType: filterType,
         selectedFilters: selectedFilters,
+        hideOtherTabs: true, // Hide other tabs when navigating from Filter Categories
       );
 
-      if (result != null && result.isNotEmpty) {
+      // Update filter if result is not null (including empty results for clearing filters)
+      if (result != null) {
         // Update the current filter with the returned filters
         switch (filterType.toLowerCase()) {
           case 'tag':

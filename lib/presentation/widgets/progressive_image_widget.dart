@@ -7,6 +7,7 @@ import 'package:logger/logger.dart';
 
 import '../../core/constants/text_style_const.dart';
 import '../../services/local_image_preloader.dart';
+import '../../utils/performance_monitor.dart';
 
 /// Progressive Image Widget with enhanced local file priority
 /// 
@@ -111,22 +112,30 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
       _logger.d('🔍 Resolving local path for contentId: ${widget.contentId}, pageNumber: ${widget.pageNumber}, isThumbnail: ${widget.isThumbnail}');
     }
     
-    // ✅ REMOVED: _debugFileStructure() - too expensive and spammy
-    // Only run debug in extreme debug mode if needed
-    // if (kDebugMode) await _debugFileStructure();
-    
-    final localPath = await _getLocalImagePath();
+    // ✅ Track performance of local path resolution
+    final result = await PerformanceMonitor.timeOperation(
+      'image_local_path_resolution',
+      () async {
+        final localPath = await _getLocalImagePath();
+        return localPath;
+      },
+      metadata: {
+        'content_id': widget.contentId,
+        'page_number': widget.pageNumber,
+        'is_thumbnail': widget.isThumbnail,
+      },
+    );
     
     // ✅ Cache the result
-    _pathCache[cacheKey] = localPath;
+    _pathCache[cacheKey] = result;
     
-    if (kDebugMode && localPath != null) {
-      _logger.d('✅ Local path resolved: $localPath');
+    if (kDebugMode && result != null) {
+      _logger.d('✅ Local path resolved: $result');
     }
     
     if (mounted) {
       setState(() {
-        _cachedLocalPath = localPath;
+        _cachedLocalPath = result;
         _isLocalPathResolved = true;
       });
     }

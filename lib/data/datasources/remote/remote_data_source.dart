@@ -8,6 +8,7 @@ import '../../models/tag_model.dart';
 import '../../../domain/entities/search_filter.dart';
 import 'nhentai_scraper.dart';
 import 'anti_detection.dart';
+import 'request_rate_manager.dart';
 import 'exceptions.dart';
 
 /// Remote data source for web scraping nhentai.net
@@ -18,13 +19,15 @@ class RemoteDataSource {
     required this.cloudflareBypass,
     required this.antiDetection,
     Logger? logger,
-  }) : _logger = logger ?? Logger();
+  }) : _logger = logger ?? Logger(),
+       _rateManager = RequestRateManager(logger: logger);
 
   final Dio httpClient;
   final NhentaiScraper scraper;
   final CloudflareBypassNoWebView cloudflareBypass;
   final AntiDetection antiDetection;
   final Logger _logger;
+  final RequestRateManager _rateManager;
 
   static const String baseUrl = 'https://nhentai.net';
   static const Duration requestTimeout = Duration(seconds: 30);
@@ -277,9 +280,12 @@ class RemoteDataSource {
       // Extract content ID from the redirected URL or page content
       final contentId = scraper.extractContentIdFromPage(html);
       if (contentId == null) {
+        _logger.e('Failed to extract content ID from random page');
+        _logger.d('HTML content preview: ${html.length > 500 ? html.substring(0, 500) : html}...');
         throw Exception('Failed to extract content ID from random page');
       }
 
+      _logger.i('Successfully extracted content ID: $contentId from random page');
       return await getContentDetail(contentId);
     } catch (e, stackTrace) {
       _logger.e('Failed to get random content',
@@ -439,9 +445,30 @@ class RemoteDataSource {
       try {
         _logger.d('Fetching HTML from: $url (attempt $attempt/$maxRetries)');
 
-        // Check if we should throttle requests
+        // Check intelligent rate manager
+        if (!_rateManager.canMakeRequest()) {
+          if (_rateManager.isInCooldown) {
+            final remainingTime = _rateManager.remainingCooldown;
+            _logger.w('In cooldown, ${remainingTime?.inSeconds ?? 0}s remaining');
+            throw RateLimitException('In cooldown period', '429');
+          } else {
+            _logger.w('Rate limit protection triggered');
+            _rateManager.triggerCooldown();
+            throw RateLimitException('Request rate limit exceeded', '429');
+          }
+        }
+
+        // Apply intelligent delay
+        final delay = _rateManager.calculateDelay();
+        _logger.d('Applying intelligent delay: ${delay.inMilliseconds}ms');
+        await Future.delayed(delay);
+
+        // Check if we should throttle requests (backup check)
         if (antiDetection.shouldThrottleRequests()) {
-          throw const RateLimitException('Request rate limit exceeded');
+          _logger.w('Rate limit protection triggered, waiting 30 seconds...');
+          await Future.delayed(const Duration(seconds: 30));
+          antiDetection.resetCounters(); // Reset counters after cooldown
+          throw const RateLimitException('Request rate limit exceeded - cooldown applied');
         }
 
         // Apply anti-detection measures
@@ -465,6 +492,9 @@ class RemoteDataSource {
         if (response.statusCode == 200) {
           final html = response.data as String;
 
+          // Record successful request
+          _rateManager.recordRequest();
+
           // Check if Cloudflare challenge is present
           if (cloudflareBypass.isCloudflareChallenge(html)) {
             _logger.w('Cloudflare challenge detected, attempting bypass...');
@@ -482,6 +512,8 @@ class RemoteDataSource {
           throw ContentNotFoundException(
               'Content not found: $url', response.statusCode.toString());
         } else if (response.statusCode == 429) {
+          // Server returned rate limit, trigger our cooldown
+          _rateManager.triggerCooldown(cooldownDuration: const Duration(minutes: 5));
           throw RateLimitException(
               'Rate limit exceeded: $url', response.statusCode.toString());
         } else if (response.statusCode! >= 500) {

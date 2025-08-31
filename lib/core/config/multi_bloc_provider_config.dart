@@ -56,6 +56,10 @@ class MultiBlocProviderConfig {
       create: (context) => getIt<ReaderCubit>(),
     ),
 
+    BlocProvider<RandomGalleryCubit>(
+      create: (context) => getIt<RandomGalleryCubit>(),
+    ),
+
     // Note: DetailCubit, ReaderCubit, FavoriteCubit akan di-provide secara lokal
     // di screen masing-masing karena mereka screen-specific, bukan app-wide
   ];

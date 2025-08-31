@@ -55,6 +55,7 @@ dependencies:
   # File Management & Sharing
   open_file: ^3.5.7
   share_plus: ^10.0.2
+  url_launcher: ^6.3.1
 
   # Utilities
   logger: ^2.5.0

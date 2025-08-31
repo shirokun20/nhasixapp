@@ -6,11 +6,26 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/presentation/cubits/theme/theme_cubit.dart';
 import 'package:nhasixapp/presentation/widgets/platform_not_supported_dialog.dart';
+import 'package:nhasixapp/services/analytics_service.dart';
+import 'package:nhasixapp/services/history_cleanup_service.dart';
+import 'package:nhasixapp/utils/performance_monitor.dart';
 import 'dart:io';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await setupLocator();
+  
+  // Initialize Performance Monitoring
+  await PerformanceMonitor.initialize();
+  
+  // Initialize Analytics Service
+  final analyticsService = getIt<AnalyticsService>();
+  await analyticsService.initialize();
+  
+  // Initialize History Cleanup Service
+  final historyCleanupService = getIt<HistoryCleanupService>();
+  await historyCleanupService.initialize();
+  
   runApp(const MyApp());
 }
 

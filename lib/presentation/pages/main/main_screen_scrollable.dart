@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
+import 'package:nhasixapp/domain/repositories/content_repository.dart';
 import 'package:nhasixapp/presentation/blocs/content/content_bloc.dart';
+import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/home/home_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
@@ -155,6 +158,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                   _initializeContent();
                 }
               },
+              onOpenBrowser: () => _openInBrowser(),
+              onDownloadAll: () => _downloadAllGalleries(),
             ),
             drawer: AppMainDrawerWidget(context: context),
             body: _buildScrollableBody(),
@@ -811,5 +816,420 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
         showPageInput: true, // Keep tap-to-jump functionality
       ),
     );
+  }
+
+  /// Open current page in browser
+  Future<void> _openInBrowser() async {
+    try {
+      final contentState = _contentBloc.state;
+      if (contentState is! ContentLoaded) {
+        Logger().w('Cannot open in browser: no content loaded');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('No content loaded to open in browser'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Build URL based on current page and context
+      String url;
+      
+      if (_isShowingSearchResults && _currentSearchFilter != null) {
+        // Search results page - use current search filter
+        final filter = _currentSearchFilter!.copyWith(page: contentState.currentPage);
+        
+        if (filter.isEmpty) {
+          // Empty filter - redirect to main page
+          url = _buildMainPageUrl(contentState.currentPage);
+        } else {
+          // Use SearchFilter's complete URL building
+          final queryParams = filter.toQueryString();
+          if (queryParams.trim().isEmpty) {
+            // Fallback to main page if query params are empty
+            url = _buildMainPageUrl(contentState.currentPage);
+          } else {
+            url = 'https://nhentai.net/search/?$queryParams';
+          }
+        }
+      } else {
+        // Not showing search results - build URL based on content state context
+        url = _buildContentStateUrl(contentState);
+      }
+
+      // Clean up URL (remove trailing ? or & and empty parameters)
+      url = _cleanUrl(url);
+      
+      Logger().i('Built URL for browser: $url');
+      
+      // Validate URL format
+      if (url.isEmpty) {
+        throw 'Generated URL is empty';
+      }
+      
+      final uri = Uri.parse(url);
+      Logger().i('Parsed URI: $uri');
+      Logger().i('URI scheme: ${uri.scheme}, host: ${uri.host}, path: ${uri.path}');
+      Logger().i('URI query: ${uri.query}');
+      
+      // Additional validation
+      if (uri.scheme.isEmpty || uri.host.isEmpty) {
+        throw 'Invalid URL format: $url';
+      }
+      
+      // Try to launch the URL
+      bool launched = false;
+      String lastError = '';
+      
+      // First try with canLaunchUrl check
+      try {
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          launched = true;
+          Logger().i('Successfully opened in browser via canLaunchUrl: $url');
+        } else {
+          Logger().w('canLaunchUrl returned false for: $url');
+          lastError = 'canLaunchUrl returned false';
+        }
+      } catch (e) {
+        Logger().e('canLaunchUrl failed: $e');
+        lastError = 'canLaunchUrl failed: $e';
+      }
+      
+      // Fallback: try launching directly for https URLs
+      if (!launched && uri.scheme == 'https') {
+        try {
+          Logger().i('Attempting direct launch for https URL: $url');
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          launched = true;
+          Logger().i('Successfully opened in browser via direct launch: $url');
+        } catch (e) {
+          Logger().e('Direct launch failed: $e');
+          lastError = 'Direct launch failed: $e';
+        }
+      }
+      
+      if (launched) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.open_in_browser, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text('Opened in browser'),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        throw 'Could not launch $url - $lastError';
+      }
+    } catch (e) {
+      Logger().e('Error opening in browser: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text('Failed to open browser: ${e.toString().replaceAll('Exception: ', '')}'),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: () => _openInBrowser(),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Build URL for content state context (non-search)
+  String _buildContentStateUrl(ContentLoaded contentState) {
+    if (contentState.tag != null) {
+      // Tag browsing page
+      final tagName = Uri.encodeComponent(contentState.tag!.name);
+      final pageParam = contentState.currentPage > 1 ? '?page=${contentState.currentPage}' : '';
+      return 'https://nhentai.net/tag/$tagName/$pageParam';
+    } else if (contentState.timeframe != null) {
+      // Popular content page
+      final timeframe = contentState.timeframe!;
+      final timeframeSuffix = timeframe.apiValue.isNotEmpty ? '-${timeframe.apiValue}' : '';
+      final pageParam = contentState.currentPage > 1 ? '?page=${contentState.currentPage}' : '';
+      return 'https://nhentai.net/popular$timeframeSuffix/$pageParam';
+    } else {
+      // Main page with sort options
+      return _buildMainPageUrl(contentState.currentPage, contentState.sortBy);
+    }
+  }
+
+  /// Build main page URL with optional sort and page parameters
+  String _buildMainPageUrl(int currentPage, [SortOption? sortBy]) {
+    final sort = sortBy ?? SortOption.newest;
+    final sortParam = sort == SortOption.newest ? '' : '?sort=${sort.apiValue}';
+    final pageParam = currentPage > 1 
+        ? (sortParam.isEmpty ? '?page=$currentPage' : '&page=$currentPage')
+        : '';
+    return 'https://nhentai.net/$sortParam$pageParam';
+  }
+
+  /// Clean URL by removing trailing ? or & characters and empty parameters
+  String _cleanUrl(String url) {
+    try {
+      final uri = Uri.parse(url);
+      
+      // Clean query parameters by removing empty values
+      final cleanParams = <String, String>{};
+      uri.queryParameters.forEach((key, value) {
+        // Only add non-empty values
+        if (value.trim().isNotEmpty) {
+          cleanParams[key] = value;
+        }
+      });
+      
+      // Rebuild the URL with clean parameters
+      final cleanUri = uri.replace(queryParameters: cleanParams.isEmpty ? null : cleanParams);
+      String cleanedUrl = cleanUri.toString();
+      
+      Logger().i('URL cleaned from: $url');
+      Logger().i('URL cleaned to: $cleanedUrl');
+      
+      return cleanedUrl;
+    } catch (e) {
+      Logger().e('Error cleaning URL: $e');
+      // Fallback: simple string cleaning
+      String cleaned = url;
+      if (cleaned.endsWith('?') || cleaned.endsWith('&')) {
+        cleaned = cleaned.substring(0, cleaned.length - 1);
+      }
+      // Remove empty parameters (basic approach)
+      cleaned = cleaned.replaceAllMapped(RegExp(r'[?&]([^=]+)=(?=[&]|$)'), (match) {
+        // Remove empty parameters, but keep the separator if needed
+        return cleaned.indexOf(match.group(0)!) == cleaned.indexOf('?') ? '?' : '';
+      });
+      return cleaned;
+    }
+  }
+
+  /// Download all galleries in current page
+  Future<void> _downloadAllGalleries() async {
+    try {
+      final contentState = _contentBloc.state;
+      if (contentState is! ContentLoaded) {
+        Logger().w('Cannot download all: no content loaded');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('No content available to download'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (contentState.contents.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('No galleries found on this page'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Show loading while checking download status
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text('Checking download status...'),
+              ],
+            ),
+            duration: Duration(seconds: 10), // Longer duration for checking process
+          ),
+        );
+      }
+
+      // Filter out already downloaded galleries
+      final galleriesNeedDownload = <Content>[];
+      int alreadyDownloadedCount = 0;
+
+      for (final content in contentState.contents) {
+        try {
+          final isDownloaded = await ContentDownloadCache.isDownloaded(content.id, context);
+          if (isDownloaded) {
+            alreadyDownloadedCount++;
+            Logger().i('Skipping already downloaded gallery: ${content.title}');
+          } else {
+            galleriesNeedDownload.add(content);
+          }
+        } catch (e) {
+          Logger().e('Error checking download status for ${content.id}: $e');
+          // If we can't check status, assume it needs download to be safe
+          galleriesNeedDownload.add(content);
+        }
+      }
+
+      // Hide the loading snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      }
+
+      // Check if there are any galleries to download
+      if (galleriesNeedDownload.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text('All ${contentState.contents.length} galleries are already downloaded!'),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.blue,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Show confirmation dialog with accurate count
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text('Download New Galleries'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Found ${contentState.contents.length} galleries on this page:'),
+              SizedBox(height: 8),
+              Text('• ${galleriesNeedDownload.length} new galleries to download'),
+              Text('• $alreadyDownloadedCount already downloaded (will be skipped)'),
+              SizedBox(height: 12),
+              if (galleriesNeedDownload.length > 0)
+                Text(
+                  'Download ${galleriesNeedDownload.length} new galleries?\n\nThis may take significant time and storage space.',
+                  style: TextStyle(fontWeight: FontWeight.normal),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text('Download ${galleriesNeedDownload.length} New'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm != true) return;
+
+      // Get download bloc and queue only new downloads
+      if (!mounted) return;
+      final downloadBloc = context.read<DownloadBloc>();
+      int queuedCount = 0;
+
+      for (final content in galleriesNeedDownload) {
+        try {
+          downloadBloc.add(DownloadQueueEvent(content: content));
+          queuedCount++;
+          Logger().i('Queued download for: ${content.title}');
+        } catch (e) {
+          Logger().e('Failed to queue download for ${content.id}: $e');
+        }
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.download, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Queued $queuedCount new downloads'),
+                      if (alreadyDownloadedCount > 0)
+                        Text(
+                          'Skipped $alreadyDownloadedCount already downloaded',
+                          style: TextStyle(fontSize: 12, color: Colors.white70),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: queuedCount > 0 ? Colors.green : Colors.orange,
+            duration: Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'View Downloads',
+              textColor: Colors.white,
+              onPressed: () {
+                AppRouter.goToDownloads(context);
+              },
+            ),
+          ),
+        );
+      }
+
+      Logger().i('Bulk download completed: $queuedCount/${galleriesNeedDownload.length} queued successfully, $alreadyDownloadedCount skipped');
+      
+    } catch (e) {
+      Logger().e('Error in bulk download: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Failed to download galleries'),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 }

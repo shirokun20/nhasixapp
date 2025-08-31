@@ -223,7 +223,7 @@ Dokumen ini berisi daftar lengkap semua komponen yang ada dan telah diimplementa
 
 | Component | Status | Description | File Path |
 |-----------|--------|-------------|-----------|
-| UrlNhentaiUtil | ✅ | URL utilities untuk nhentai | `lib/core/utils/url_nhentai_util.dart` |
+| UrlNhentaiUtil | ⚠️ | URL utilities untuk nhentai (DEPRECATED - use SearchFilter.toQueryString()) | `lib/core/utils/url_nhentai_util.dart` |
 
 ---
 

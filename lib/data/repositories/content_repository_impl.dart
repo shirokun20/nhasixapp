@@ -114,13 +114,30 @@ class ContentRepositoryImpl implements ContentRepository {
 
       for (int i = 0; i < count; i++) {
         try {
+          // Add progressive delay between requests to avoid rate limiting
+          if (i > 0) {
+            final delay = Duration(milliseconds: 2000 + (i * 500)); // Progressive delay: 2s, 2.5s, 3s, etc.
+            await Future.delayed(delay);
+          }
+          
           final remoteContent = await remoteDataSource.getRandomContent();
           randomContents.add(remoteContent.toEntity());
+          
+          _logger.d('Successfully got random content ${i + 1}/$count');
         } catch (e) {
-          _logger.w('Failed to get random content $i: $e');
-          // Continue with other random content
+          _logger.w('Failed to get random content ${i + 1}/$count: $e');
+          // Continue with other random content, but add exponential backoff on error
+          if (e.toString().toLowerCase().contains('rate limit')) {
+            _logger.w('Rate limit detected, applying exponential backoff');
+            final backoffDelay = Duration(seconds: 10 + (i * 5)); // 10s, 15s, 20s, etc.
+            await Future.delayed(backoffDelay);
+          } else {
+            // Regular error, add shorter delay
+            await Future.delayed(const Duration(seconds: 3));
+          }
         }
       }
+      
       _logger.i('Returning ${randomContents.length} random content(s)');
       return randomContents;
     } catch (e, stackTrace) {

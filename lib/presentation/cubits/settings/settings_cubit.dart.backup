@@ -1,3 +1,5 @@
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../domain/entities/entities.dart';
 import '../../../services/preferences_service.dart';
 import '../base/base_cubit.dart';
@@ -18,6 +20,27 @@ class SettingsCubit extends BaseCubit<SettingsState> {
   }
 
   final PreferencesService _preferencesService;
+
+  // Settings keys
+  static const String _themeKey = 'app_theme';
+  static const String _defaultLanguageKey = 'default_language';
+  static const String _imageQualityKey = 'image_quality';
+  static const String _autoDownloadKey = 'auto_download';
+  static const String _showTitlesKey = 'show_titles';
+  static const String _blurThumbnailsKey = 'blur_thumbnails';
+  static const String _usePaginationKey = 'use_pagination';
+  static const String _columnsPortraitKey = 'columns_portrait';
+  static const String _columnsLandscapeKey = 'columns_landscape';
+  static const String _useVolumeKeysKey = 'use_volume_keys';
+  static const String _readingDirectionKey = 'reading_direction';
+  static const String _keepScreenOnKey = 'keep_screen_on';
+  static const String _showSystemUIKey = 'show_system_ui';
+  // History cleanup settings keys
+  static const String _autoCleanupHistoryKey = 'auto_cleanup_history';
+  static const String _historyCleanupIntervalKey = 'history_cleanup_interval';
+  static const String _maxHistoryDaysKey = 'max_history_days';
+  static const String _cleanupOnInactivityKey = 'cleanup_on_inactivity';
+  static const String _inactivityCleanupDaysKey = 'inactivity_cleanup_days';
 
   /// Load settings from PreferencesService
   Future<void> _loadSettings() async {
@@ -65,19 +88,19 @@ class SettingsCubit extends BaseCubit<SettingsState> {
 
   /// Update show titles setting
   Future<void> updateShowTitles(bool showTitles) async {
-    await _updateSetting(
+    await _updateSetting(_showTitlesKey, showTitles,
         (prefs) => prefs.copyWith(showTitles: showTitles));
   }
 
   /// Update blur thumbnails setting
   Future<void> updateBlurThumbnails(bool blurThumbnails) async {
-    await _updateSetting(
+    await _updateSetting(_blurThumbnailsKey, blurThumbnails,
         (prefs) => prefs.copyWith(blurThumbnails: blurThumbnails));
   }
 
   /// Update pagination setting
   Future<void> updateUsePagination(bool usePagination) async {
-    await _updateSetting(
+    await _updateSetting(_usePaginationKey, usePagination,
         (prefs) => prefs.copyWith(usePagination: usePagination));
   }
 
@@ -87,7 +110,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
       logWarning('Invalid columns portrait value: $columns');
       return;
     }
-    await _updateSetting(
+    await _updateSetting(_columnsPortraitKey, columns,
         (prefs) => prefs.copyWith(columnsPortrait: columns));
   }
 
@@ -97,61 +120,61 @@ class SettingsCubit extends BaseCubit<SettingsState> {
       logWarning('Invalid columns landscape value: $columns');
       return;
     }
-    await _updateSetting(
+    await _updateSetting(_columnsLandscapeKey, columns,
         (prefs) => prefs.copyWith(columnsLandscape: columns));
   }
 
   /// Update use volume keys setting
   Future<void> updateUseVolumeKeys(bool useVolumeKeys) async {
-    await _updateSetting(
+    await _updateSetting(_useVolumeKeysKey, useVolumeKeys,
         (prefs) => prefs.copyWith(useVolumeKeys: useVolumeKeys));
   }
 
   /// Update reading direction setting
   Future<void> updateReadingDirection(ReadingDirection direction) async {
-    await _updateSetting(
+    await _updateSetting(_readingDirectionKey, direction.index,
         (prefs) => prefs.copyWith(readingDirection: direction));
   }
 
   /// Update keep screen on setting
   Future<void> updateKeepScreenOn(bool keepScreenOn) async {
-    await _updateSetting(
+    await _updateSetting(_keepScreenOnKey, keepScreenOn,
         (prefs) => prefs.copyWith(keepScreenOn: keepScreenOn));
   }
 
   /// Update show system UI setting
   Future<void> updateShowSystemUI(bool showSystemUI) async {
-    await _updateSetting(
+    await _updateSetting(_showSystemUIKey, showSystemUI,
         (prefs) => prefs.copyWith(showSystemUI: showSystemUI));
   }
 
   /// Update auto cleanup history setting
   Future<void> updateAutoCleanupHistory(bool autoCleanupHistory) async {
-    await _updateSetting(
+    await _updateSetting(_autoCleanupHistoryKey, autoCleanupHistory,
         (prefs) => prefs.copyWith(autoCleanupHistory: autoCleanupHistory));
   }
 
   /// Update history cleanup interval setting
   Future<void> updateHistoryCleanupInterval(int intervalHours) async {
-    await _updateSetting(
+    await _updateSetting(_historyCleanupIntervalKey, intervalHours,
         (prefs) => prefs.copyWith(historyCleanupIntervalHours: intervalHours));
   }
 
   /// Update max history days setting
   Future<void> updateMaxHistoryDays(int maxDays) async {
-    await _updateSetting(
+    await _updateSetting(_maxHistoryDaysKey, maxDays,
         (prefs) => prefs.copyWith(maxHistoryDays: maxDays));
   }
 
   /// Update cleanup on inactivity setting
   Future<void> updateCleanupOnInactivity(bool cleanupOnInactivity) async {
-    await _updateSetting(
+    await _updateSetting(_cleanupOnInactivityKey, cleanupOnInactivity,
         (prefs) => prefs.copyWith(cleanupOnInactivity: cleanupOnInactivity));
   }
 
   /// Update inactivity cleanup days setting
   Future<void> updateInactivityCleanupDays(int inactivityDays) async {
-    await _updateSetting(
+    await _updateSetting(_inactivityCleanupDaysKey, inactivityDays,
         (prefs) => prefs.copyWith(inactivityCleanupDays: inactivityDays));
   }
 
@@ -192,8 +215,26 @@ class SettingsCubit extends BaseCubit<SettingsState> {
     try {
       logInfo('Resetting all settings to defaults');
 
-      // Clear all settings via PreferencesService
-      await _preferencesService.clear();
+      // Clear all settings from SharedPreferences
+      await _sharedPreferences.remove(_themeKey);
+      await _sharedPreferences.remove(_defaultLanguageKey);
+      await _sharedPreferences.remove(_imageQualityKey);
+      await _sharedPreferences.remove(_autoDownloadKey);
+      await _sharedPreferences.remove(_showTitlesKey);
+      await _sharedPreferences.remove(_blurThumbnailsKey);
+      await _sharedPreferences.remove(_usePaginationKey);
+      await _sharedPreferences.remove(_columnsPortraitKey);
+      await _sharedPreferences.remove(_columnsLandscapeKey);
+      await _sharedPreferences.remove(_useVolumeKeysKey);
+      await _sharedPreferences.remove(_readingDirectionKey);
+      await _sharedPreferences.remove(_keepScreenOnKey);
+      await _sharedPreferences.remove(_showSystemUIKey);
+      // Remove history cleanup settings
+      await _sharedPreferences.remove(_autoCleanupHistoryKey);
+      await _sharedPreferences.remove(_historyCleanupIntervalKey);
+      await _sharedPreferences.remove(_maxHistoryDaysKey);
+      await _sharedPreferences.remove(_cleanupOnInactivityKey);
+      await _sharedPreferences.remove(_inactivityCleanupDaysKey);
 
       // Reload settings (will use defaults)
       await _loadSettings();

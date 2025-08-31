@@ -31,6 +31,14 @@ class UserPreferences extends Equatable {
     this.readerAutoHideDelay = 3,
     this.readerHideOnTap = true,
     this.readerHideOnSwipe = true,
+    // History cleanup settings
+    this.autoCleanupHistory = false,
+    this.historyCleanupIntervalHours = 24,
+    this.maxHistoryDays = 30,
+    this.cleanupOnInactivity = true,
+    this.inactivityCleanupDays = 7,
+    this.lastAppAccess,
+    this.lastHistoryCleanup,
   });
 
   final String theme; // light, dark, amoled
@@ -61,6 +69,15 @@ class UserPreferences extends Equatable {
   final int readerAutoHideDelay; // in seconds
   final bool readerHideOnTap;
   final bool readerHideOnSwipe;
+  
+  // History cleanup settings
+  final bool autoCleanupHistory;
+  final int historyCleanupIntervalHours; // 6, 12, 24, 48, 168 (week)
+  final int maxHistoryDays; // Maximum days to keep history (0 = no limit)
+  final bool cleanupOnInactivity; // Clean when app is inactive
+  final int inactivityCleanupDays; // Days of inactivity before cleanup
+  final DateTime? lastAppAccess; // Track last app access
+  final DateTime? lastHistoryCleanup; // Track last cleanup
 
   @override
   List<Object?> get props => [
@@ -91,6 +108,13 @@ class UserPreferences extends Equatable {
         readerAutoHideDelay,
         readerHideOnTap,
         readerHideOnSwipe,
+        autoCleanupHistory,
+        historyCleanupIntervalHours,
+        maxHistoryDays,
+        cleanupOnInactivity,
+        inactivityCleanupDays,
+        lastAppAccess,
+        lastHistoryCleanup,
       ];
 
   UserPreferences copyWith({
@@ -121,6 +145,14 @@ class UserPreferences extends Equatable {
     int? readerAutoHideDelay,
     bool? readerHideOnTap,
     bool? readerHideOnSwipe,
+    // History cleanup parameters
+    bool? autoCleanupHistory,
+    int? historyCleanupIntervalHours,
+    int? maxHistoryDays,
+    bool? cleanupOnInactivity,
+    int? inactivityCleanupDays,
+    DateTime? lastAppAccess,
+    DateTime? lastHistoryCleanup,
   }) {
     return UserPreferences(
       theme: theme ?? this.theme,
@@ -153,6 +185,14 @@ class UserPreferences extends Equatable {
       readerAutoHideDelay: readerAutoHideDelay ?? this.readerAutoHideDelay,
       readerHideOnTap: readerHideOnTap ?? this.readerHideOnTap,
       readerHideOnSwipe: readerHideOnSwipe ?? this.readerHideOnSwipe,
+      // History cleanup settings
+      autoCleanupHistory: autoCleanupHistory ?? this.autoCleanupHistory,
+      historyCleanupIntervalHours: historyCleanupIntervalHours ?? this.historyCleanupIntervalHours,
+      maxHistoryDays: maxHistoryDays ?? this.maxHistoryDays,
+      cleanupOnInactivity: cleanupOnInactivity ?? this.cleanupOnInactivity,
+      inactivityCleanupDays: inactivityCleanupDays ?? this.inactivityCleanupDays,
+      lastAppAccess: lastAppAccess ?? this.lastAppAccess,
+      lastHistoryCleanup: lastHistoryCleanup ?? this.lastHistoryCleanup,
     );
   }
 
@@ -251,6 +291,14 @@ class UserPreferences extends Equatable {
       'readerAutoHideDelay': readerAutoHideDelay,
       'readerHideOnTap': readerHideOnTap,
       'readerHideOnSwipe': readerHideOnSwipe,
+      // History cleanup settings
+      'autoCleanupHistory': autoCleanupHistory,
+      'historyCleanupIntervalHours': historyCleanupIntervalHours,
+      'maxHistoryDays': maxHistoryDays,
+      'cleanupOnInactivity': cleanupOnInactivity,
+      'inactivityCleanupDays': inactivityCleanupDays,
+      'lastAppAccess': lastAppAccess?.millisecondsSinceEpoch,
+      'lastHistoryCleanup': lastHistoryCleanup?.millisecondsSinceEpoch,
     };
   }
 
@@ -260,34 +308,88 @@ class UserPreferences extends Equatable {
       theme: json['theme'] ?? 'dark',
       defaultLanguage: json['defaultLanguage'] ?? 'english',
       imageQuality: json['imageQuality'] ?? 'high',
-      autoDownload: json['autoDownload'] ?? false,
-      showTitles: json['showTitles'] ?? true,
-      blurThumbnails: json['blurThumbnails'] ?? false,
-      usePagination: json['usePagination'] ?? true,
+      autoDownload: _safeParseBool(json['autoDownload'], false),
+      showTitles: _safeParseBool(json['showTitles'], true),
+      blurThumbnails: _safeParseBool(json['blurThumbnails'], false),
+      usePagination: _safeParseBool(json['usePagination'], true),
       columnsPortrait: json['columnsPortrait'] ?? 2,
       columnsLandscape: json['columnsLandscape'] ?? 3,
-      useVolumeKeys: json['useVolumeKeys'] ?? false,
+      useVolumeKeys: _safeParseBool(json['useVolumeKeys'], false),
       readingDirection: ReadingDirection.values.firstWhere(
         (e) => e.name == json['readingDirection'],
         orElse: () => ReadingDirection.leftToRight,
       ),
-      keepScreenOn: json['keepScreenOn'] ?? false,
-      showSystemUI: json['showSystemUI'] ?? true,
+      keepScreenOn: _safeParseBool(json['keepScreenOn'], false),
+      showSystemUI: _safeParseBool(json['showSystemUI'], true),
       downloadPath: json['downloadPath'],
-      maxConcurrentDownloads: json['maxConcurrentDownloads'] ?? 3,
-      autoBackup: json['autoBackup'] ?? false,
-      showNsfwContent: json['showNsfwContent'] ?? true,
+      maxConcurrentDownloads: _safeParseInt(json['maxConcurrentDownloads'], 3),
+      autoBackup: _safeParseBool(json['autoBackup'], false),
+      showNsfwContent: _safeParseBool(json['showNsfwContent'], true),
       blacklistedTags: List<String>.from(json['blacklistedTags'] ?? []),
       favoriteCategories: List<String>.from(json['favoriteCategories'] ?? []),
       readerBrightness: (json['readerBrightness'] ?? 1.0).toDouble(),
-      readerInvertColors: json['readerInvertColors'] ?? false,
-      readerShowPageNumbers: json['readerShowPageNumbers'] ?? true,
-      readerShowProgressBar: json['readerShowProgressBar'] ?? true,
-      readerAutoHideUI: json['readerAutoHideUI'] ?? true,
-      readerAutoHideDelay: json['readerAutoHideDelay'] ?? 3,
-      readerHideOnTap: json['readerHideOnTap'] ?? true,
-      readerHideOnSwipe: json['readerHideOnSwipe'] ?? true,
+      readerInvertColors: _safeParseBool(json['readerInvertColors'], false),
+      readerShowPageNumbers: _safeParseBool(json['readerShowPageNumbers'], true),
+      readerShowProgressBar: _safeParseBool(json['readerShowProgressBar'], true),
+      readerAutoHideUI: _safeParseBool(json['readerAutoHideUI'], true),
+      readerAutoHideDelay: _safeParseInt(json['readerAutoHideDelay'], 3),
+      readerHideOnTap: _safeParseBool(json['readerHideOnTap'], true),
+      readerHideOnSwipe: _safeParseBool(json['readerHideOnSwipe'], true),
+      // History cleanup settings
+      autoCleanupHistory: _safeParseBool(json['autoCleanupHistory'], false),
+      historyCleanupIntervalHours: _safeParseInt(json['historyCleanupIntervalHours'], 24),
+      maxHistoryDays: _safeParseInt(json['maxHistoryDays'], 30),
+      cleanupOnInactivity: _safeParseBool(json['cleanupOnInactivity'], true),
+      inactivityCleanupDays: _safeParseInt(json['inactivityCleanupDays'], 7),
+      lastAppAccess: json['lastAppAccess'] != null ? DateTime.fromMillisecondsSinceEpoch(_safeParseInt(json['lastAppAccess'], 0)) : null,
+      lastHistoryCleanup: json['lastHistoryCleanup'] != null ? DateTime.fromMillisecondsSinceEpoch(_safeParseInt(json['lastHistoryCleanup'], 0)) : null,
     );
+  }
+
+  /// Safely parse boolean value from JSON, handling various data types
+  static bool _safeParseBool(dynamic value, bool defaultValue) {
+    if (value == null) return defaultValue;
+    
+    if (value is bool) return value;
+    
+    if (value is String) {
+      final lowerValue = value.toLowerCase().trim();
+      if (lowerValue == 'true' || lowerValue == '1') return true;
+      if (lowerValue == 'false' || lowerValue == '0') return false;
+    }
+    
+    if (value is int) {
+      return value != 0;
+    }
+    
+    if (value is double) {
+      return value != 0.0;
+    }
+    
+    // If we can't parse it, return the default value
+    return defaultValue;
+  }
+
+  /// Safely parse integer value from JSON, handling various data types
+  static int _safeParseInt(dynamic value, int defaultValue) {
+    if (value == null) return defaultValue;
+    
+    if (value is int) return value;
+    
+    if (value is String) {
+      final parsed = int.tryParse(value.trim());
+      if (parsed != null) return parsed;
+    }
+    
+    if (value is double) {
+      return value.round();
+    }
+    
+    if (value is bool) {
+      return value ? 1 : 0;
+    }
+    
+    return defaultValue;
   }
 }
 

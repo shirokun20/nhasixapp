@@ -9,10 +9,14 @@ class AppMainHeaderWidget extends StatelessWidget
     super.key,
     required this.context,
     this.onSearchPressed,
+    this.onOpenBrowser,
+    this.onDownloadAll,
   });
 
   final BuildContext context;
   final VoidCallback? onSearchPressed;
+  final VoidCallback? onOpenBrowser;
+  final VoidCallback? onDownloadAll;
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +50,18 @@ class AppMainHeaderWidget extends StatelessWidget
           icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface),
           onSelected: (String item) {
             // Handle item selection
+            switch (item) {
+              case 'opob':
+                if (onOpenBrowser != null) {
+                  onOpenBrowser!();
+                }
+                break;
+              case 'download-all':
+                if (onDownloadAll != null) {
+                  onDownloadAll!();
+                }
+                break;
+            }
           },
           itemBuilder: (BuildContext context) {
             return [

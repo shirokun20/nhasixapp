@@ -48,6 +48,10 @@ import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
 import 'package:nhasixapp/domain/usecases/favorites/favorites_usecases.dart';
 import 'package:nhasixapp/domain/usecases/downloads/downloads_usecases.dart';
 import 'package:nhasixapp/domain/usecases/history/add_to_history_usecase.dart';
+import 'package:nhasixapp/domain/usecases/history/get_history_usecase.dart';
+import 'package:nhasixapp/domain/usecases/history/clear_history_usecase.dart';
+import 'package:nhasixapp/domain/usecases/history/remove_history_item_usecase.dart';
+import 'package:nhasixapp/domain/usecases/history/get_history_count_usecase.dart';
 import 'package:nhasixapp/domain/usecases/settings/get_user_preferences_usecase.dart';
 import 'package:nhasixapp/domain/usecases/settings/save_user_preferences_usecase.dart';
 
@@ -56,6 +60,9 @@ import 'package:nhasixapp/services/download_service.dart';
 import 'package:nhasixapp/services/notification_service.dart';
 import 'package:nhasixapp/services/pdf_service.dart';
 import 'package:nhasixapp/services/pdf_conversion_service.dart';
+import 'package:nhasixapp/services/history_cleanup_service.dart';
+import 'package:nhasixapp/services/preferences_service.dart';
+import 'package:nhasixapp/services/analytics_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -76,6 +83,11 @@ Future<void> _setupExternalDependencies() async {
   // SharedPreferences
   final sharedPreferences = await SharedPreferences.getInstance();
   getIt.registerSingleton<SharedPreferences>(sharedPreferences);
+
+  // PreferencesService - Wrapper for SharedPreferences
+  getIt.registerLazySingleton<PreferencesService>(() => PreferencesService(
+        getIt<SharedPreferences>(),
+      ));
 
   // Connectivity
   getIt.registerLazySingleton<Connectivity>(() => Connectivity());
@@ -133,6 +145,17 @@ void _setupServices() {
         notificationService: getIt<NotificationService>(),
         logger: getIt<Logger>(),
       ));
+
+  // History Cleanup Service
+  getIt.registerLazySingleton<HistoryCleanupService>(() => HistoryCleanupService(
+        preferencesService: getIt<PreferencesService>(),
+        clearHistoryUseCase: getIt<ClearHistoryUseCase>(),
+        getHistoryCountUseCase: getIt<GetHistoryCountUseCase>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // Analytics Service - Privacy-first local analytics tracking
+  getIt.registerLazySingleton<AnalyticsService>(() => AnalyticsService());
 }
 
 /// Setup data sources (Remote and Local)
@@ -251,6 +274,14 @@ void _setupUseCases() {
   // History Use Cases
   getIt.registerLazySingleton<AddToHistoryUseCase>(
       () => AddToHistoryUseCase(getIt()));
+  getIt.registerLazySingleton<GetHistoryUseCase>(
+      () => GetHistoryUseCase(getIt()));
+  getIt.registerLazySingleton<ClearHistoryUseCase>(
+      () => ClearHistoryUseCase(getIt()));
+  getIt.registerLazySingleton<RemoveHistoryItemUseCase>(
+      () => RemoveHistoryItemUseCase(getIt()));
+  getIt.registerLazySingleton<GetHistoryCountUseCase>(
+      () => GetHistoryCountUseCase(getIt()));
 }
 
 /// Setup BLoCs
@@ -309,7 +340,7 @@ void _setupCubits() {
 
   // SettingsCubit - App-wide settings management
   getIt.registerLazySingleton<SettingsCubit>(() => SettingsCubit(
-        sharedPreferences: getIt<SharedPreferences>(),
+        preferencesService: getIt<PreferencesService>(),
         logger: getIt<Logger>(),
       ));
 
@@ -349,6 +380,15 @@ void _setupCubits() {
         logger: getIt<Logger>(),
       ));
 
+  // RandomGalleryCubit - Random gallery management
+  getIt.registerFactory<RandomGalleryCubit>(() => RandomGalleryCubit(
+        getRandomContentUseCase: getIt<GetRandomContentUseCase>(),
+        addToFavoritesUseCase: getIt<AddToFavoritesUseCase>(),
+        removeFromFavoritesUseCase: getIt<RemoveFromFavoritesUseCase>(),
+        userDataRepository: getIt<UserDataRepository>(),
+        logger: getIt<Logger>(),
+      ));
+
   // FavoriteCubit - Favorites management
   getIt.registerFactory<FavoriteCubit>(() => FavoriteCubit(
         addToFavoritesUseCase: getIt<AddToFavoritesUseCase>(),
@@ -357,6 +397,9 @@ void _setupCubits() {
         userDataRepository: getIt<UserDataRepository>(),
         logger: getIt<Logger>(),
       ));
+
+  // HistoryCubit - History management (using static factory)
+  getIt.registerFactory<HistoryCubit>(() => HistoryCubitFactory.create());
 }
 
 /// Clean up all registered dependencies
