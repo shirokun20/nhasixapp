@@ -5,7 +5,7 @@ import 'package:logger/web.dart';
 
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
-import '../../../core/localization/app_localizations.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/responsive_grid_delegate.dart';
 import '../../cubits/favorite/favorite_cubit.dart';
 import '../../cubits/settings/settings_cubit.dart';
@@ -111,7 +111,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppLocalizations.of(context)!.removedFavoritesCountFormat(selectedCount),
+              AppLocalizations.of(context)!.removedFavoritesCount(selectedCount),
               style: TextStyleConst.withColor(
                   TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onPrimary),
             ),
@@ -125,7 +125,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppLocalizations.of(context)!.failedToRemoveFavoritesFormat(e.toString()),
+              AppLocalizations.of(context)!.failedToRemoveFavorites(e.toString()),
               style: TextStyleConst.withColor(
                   TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onError),
             ),
@@ -147,7 +147,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   TextStyleConst.headingMedium, Theme.of(context).colorScheme.onSurface),
             ),
             content: Text(
-              AppLocalizations.of(context)!.deleteFavoritesConfirmationFormat(count),
+              AppLocalizations.of(context)!.deleteFavoritesConfirmation(count, count > 1 ? 's' : ''),
               style: TextStyleConst.withColor(
                   TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onSurfaceVariant),
             ),
@@ -219,7 +219,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   TextStyleConst.headingMedium, Theme.of(context).colorScheme.onSurface),
             ),
             content: Text(
-              AppLocalizations.of(context)!.exportedFavoritesCountFormat(exportData['total_count']),
+              AppLocalizations.of(context)!.exportedFavoritesCount(exportData['total_count']),
               style: TextStyleConst.withColor(
                   TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onSurfaceVariant),
             ),
@@ -243,7 +243,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppLocalizations.of(context)!.exportFailedFormat(e.toString()),
+              AppLocalizations.of(context)!.exportFailed(e.toString()),
               style: TextStyleConst.withColor(
                   TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onError),
             ),

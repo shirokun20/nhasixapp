@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/text_style_const.dart';
-import '../../../../core/localization/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../services/history_cleanup_service.dart';
 import '../../../cubits/history/history_cubit.dart';
 

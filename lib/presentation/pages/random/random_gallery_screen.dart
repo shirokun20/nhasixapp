@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/di/service_locator.dart';
-import '../../../core/localization/app_localizations.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../core/routing/app_route.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../services/analytics_service.dart';

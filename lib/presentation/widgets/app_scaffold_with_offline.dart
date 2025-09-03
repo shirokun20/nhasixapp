@@ -4,7 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 
 import '../../core/utils/app_state_manager.dart';
 import '../../core/constants/text_style_const.dart';
-import '../../core/localization/app_localizations.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Reusable scaffold widget that shows offline indicators and "Go Online" functionality
 /// This widget wraps around any page content to provide consistent offline mode UI

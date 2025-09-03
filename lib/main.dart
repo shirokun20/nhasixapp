@@ -1,10 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:nhasixapp/core/config/multi_bloc_provider_config.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
-import 'package:nhasixapp/core/localization/app_localizations.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/theme/theme_cubit.dart';
@@ -56,16 +55,8 @@ class MyApp extends StatelessWidget {
                 theme: themeState.themeData,
                 themeMode: themeState.themeMode,
                 locale: locale,
-                localizationsDelegates: const [
-                  AppLocalizations.delegate,
-                  GlobalMaterialLocalizations.delegate,
-                  GlobalWidgetsLocalizations.delegate,
-                  GlobalCupertinoLocalizations.delegate,
-                ],
-                supportedLocales: const [
-                  Locale('en', ''), // English
-                  Locale('id', ''), // Indonesian
-                ],
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
                 builder: (context, child) {
                   // Show platform warning for non-Android platforms
                   if (kIsWeb || (!kIsWeb && !Platform.isAndroid)) {

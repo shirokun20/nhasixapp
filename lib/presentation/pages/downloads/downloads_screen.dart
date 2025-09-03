@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/text_style_const.dart';
-import '../../../core/localization/app_localizations.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../domain/entities/entities.dart';
 import '../../blocs/download/download_bloc.dart';
 import '../../widgets/widgets.dart';

@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/di/service_locator.dart';
-import '../../../core/localization/app_localizations.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../services/analytics_service.dart';
 import '../../cubits/history/history_cubit.dart';
 import '../../cubits/history/history_cubit_factory.dart';

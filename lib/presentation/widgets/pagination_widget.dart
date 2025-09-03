@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
-import 'package:nhasixapp/core/localization/app_localizations.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 
 /// Advanced pagination widget with page navigation and progress indicator
 class PaginationWidget extends StatefulWidget {

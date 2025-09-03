@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
-import 'package:nhasixapp/core/localization/app_localizations.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/core/utils/responsive_grid_delegate.dart';

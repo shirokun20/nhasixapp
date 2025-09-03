@@ -11,10 +11,246 @@
   "randomGallery": "Random Gallery",
   "offlineContent": "Offline Content",
   "settings": "Settings",
+  "offline": "Offline",
+  
+  "searchHint": "Search content...",
+  "searchPlaceholder": "Enter search keywords",
+  "noResults": "No results found",
+  "searchSuggestions": "Search Suggestions",
+  "suggestions": "Suggestions:",
+  "tapToLoadContent": "Tap to load content",
+  "searchResults": "Search Results",
+  "failedToOpenBrowser": "Failed to open browser",
+  "viewDownloads": "View Downloads",
+  "clearSearch": "Clear Search",
+  "clearFilters": "Clear Filters",
+  "anyLanguage": "Any language",
+  "anyCategory": "Any category",
+  "errorOpeningFilter": "Error opening filter selection",
+  "errorBrowsingTag": "Error browsing tag",
+  
+  "pages": "Pages",
+  "tags": "Tags",
+  "language": "Language",
+  "uploadedOn": "Uploaded on",
+  "readNow": "Read Now",
+  "confirmDownload": "Confirm Download",
+  "downloadConfirmation": "Are you sure you want to download?",
+  "confirmButton": "Confirm",
+  "download": "Download",
+  "downloading": "Downloading",
+  "downloadCompleted": "Download Completed",
+  "downloadFailed": "Download Failed",
+  "initializing": "Initializing...",
+  "noContentToBrowse": "No content loaded to open in browser",
+  "addToFavorites": "Add to Favorites",
+  "removeFromFavorites": "Remove from Favorites",
+  "content": "Content",
+  "view": "View",
+  "clearAll": "Clear All",
+  "exportList": "Export List",
+  "unableToCheck": "Unable to check connection.",
+  "noContentAvailable": "No content available",
+  "noContentToDownload": "No content available to download",
+  "noGalleriesFound": "No galleries found on this page",
+  "noContentLoadedToBrowse": "No content loaded to open in browser",
+  "showCachedContent": "Show Cached Content",
+  "openedInBrowser": "Opened in browser",
+  "foundGalleries": "Found Galleries",
+  "checkingDownloadStatus": "Checking Download Status...",
+  "allGalleriesDownloaded": "All Galleries Downloaded",
+  
+  "downloadStarted": "Download started for \"{title}\"",
+  "@downloadStarted": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "downloadNewGalleries": "Download New Galleries",
+  "downloadProgress": "Download Progress",
+  "downloadComplete": "Download Complete",
+  "downloadError": "Download Error",
+  "initializingDownloads": "Initializing downloads...",
+  "loadingDownloads": "Loading downloads...",
+  "pauseAll": "Pause All",
+  "resumeAll": "Resume All",
+  "cancelAll": "Cancel All",
+  "clearCompleted": "Clear Completed",
+  "cleanupStorage": "Cleanup Storage",
+  "all": "All",
+  "active": "Active",
+  "completed": "Completed",
+  "noDownloadsYet": "No downloads yet",
+  "noActiveDownloads": "No active downloads",
+  "noQueuedDownloads": "No queued downloads",
+  "noCompletedDownloads": "No completed downloads",
+  "noFailedDownloads": "No failed downloads",
+  "pdfConversionStarted": "PDF conversion started",
+  "cancelAllDownloads": "Cancel All Downloads",
+  "cancelAllConfirmation": "Are you sure you want to cancel all active downloads? This action cannot be undone.",
+  "cancelDownload": "Cancel Download",
+  "cancelDownloadConfirmation": "Are you sure you want to cancel this download? Progress will be lost.",
+  "removeDownload": "Remove Download",
+  "removeDownloadConfirmation": "Are you sure you want to remove this download from the list? Downloaded files will be deleted.",
+  "cleanupConfirmation": "This will remove orphaned files and clean up failed downloads. Continue?",
+  "downloadDetails": "Download Details",
+  "status": "Status",
+  "progress": "Progress",
+  "progressPercent": "Progress %",
+  "speed": "Speed",
+  "size": "Size",
+  "started": "Started",
+  "ended": "Ended",
+  "duration": "Duration",
+  "eta": "ETA",
+  "queued": "Queued",
+  "downloaded": "Downloaded",
+  "resume": "Resume",
+  "failed": "Failed",
+  "downloadListExported": "Download list exported",
+  "downloadAll": "Download All",
+  "downloadRange": "Download Range",
+  "selectDownloadRange": "Select Download Range",
+  "totalPages": "Total Pages",
+  "useSliderToSelectRange": "Use slider to select range:",
+  "orEnterManually": "Or enter manually:",
+  "startPage": "Start Page",
+  "endPage": "End Page",
+  "quickSelections": "Quick selections:",
+  "allPages": "All Pages",
+  "firstHalf": "First Half",
+  "secondHalf": "Second Half",
+  "first10": "First 10",
+  "last10": "Last 10",
+  "countAlreadyDownloaded": "Skipped {count} already downloaded",
+  "@countAlreadyDownloaded": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "newGalleriesToDownload": "• {count} new galleries to download",
+  "@newGalleriesToDownload": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "alreadyDownloaded": "• {count} already downloaded (will be skipped)",
+  "@alreadyDownloaded": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "downloadNew": "Download {count} New",
+  "@downloadNew": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "queuedDownloads": "Queued {count} new downloads",
+  "@queuedDownloads": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "downloadInfo": "Download {count} new galleries?\\n\\nThis may take significant time and storage space.",
+  "@downloadInfo": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "failedToDownload": "Failed to download galleries",
+  "selectedPagesTo": "Selected: Pages {start} to {end}",
+  "@selectedPagesTo": {
+    "placeholders": {
+      "start": {"type": "int"},
+      "end": {"type": "int"}
+    }
+  },
+  "pagesPercentage": "{count} pages ({percentage}%)",
+  "@pagesPercentage": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "percentage": {"type": "String"}
+    }
+  },
+  "rangeDownloadStarted": "Range download started: {title} ({pageText})",
+  "@rangeDownloadStarted": {
+    "placeholders": {
+      "title": {"type": "String"},
+      "pageText": {"type": "String"}
+    }
+  },
+  "opening": "Opening: {title}",
+  "@opening": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  
+  "loadingFavorites": "Loading favorites...",
+  "errorLoadingFavorites": "Error Loading Favorites",
+  "removeFavorite": "Remove Favorite",
+  "removeFavoriteConfirmation": "Are you sure you want to remove this content from favorites?",
+  "removeAction": "Remove",
+  "deleteFavorites": "Delete Favorites",
+  "deleteFavoritesConfirmation": "Are you sure you want to remove {count} favorite{s}?",
+  "@deleteFavoritesConfirmation": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "s": {"type": "String"}
+    }
+  },
+  "exportFavorites": "Export Favorites",
+  "exportingFavorites": "Exporting favorites...",
+  "exportComplete": "Export Complete",
+  "exportedFavoritesCount": "Exported {count} favorites successfully.",
+  "@exportedFavoritesCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "exportFailed": "Export failed: {error}",
+  "@exportFailed": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "selectedCount": "{count} selected",
+  "@selectedCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "selectFavorites": "Select favorites",
+  "exportAction": "Export",
+  "refreshAction": "Refresh",
+  "deleteSelected": "Delete selected",
+  "searchFavorites": "Search favorites...",
+  "selectAll": "Select All",
+  "clearSelection": "Clear",
+  "removingFromFavorites": "Removing from favorites...",
+  "removedFromFavorites": "Removed from favorites",
+  "failedToRemoveFavorite": "Failed to remove favorite: {error}",
+  "@failedToRemoveFavorite": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "removedFavoritesCount": "Removed {count} favorites",
+  "@removedFavoritesCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "failedToRemoveFavorites": "Failed to remove favorites: {error}",
+  "@failedToRemoveFavorites": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
   
   "appearance": "Appearance",
   "theme": "Theme",
-  "language": "Language",
   "imageQuality": "Image Quality",
   "gridColumns": "Grid Columns (Portrait)",
   "reader": "Reader",
@@ -31,6 +267,53 @@
   "inactivityThreshold": "Inactivity Threshold",
   "daysOfInactivityBeforeCleanup": "Days of inactivity before cleanup",
   "resetToDefault": "Reset to Default",
+  "generalSettings": "General Settings",
+  "displaySettings": "Display",
+  "darkMode": "Dark Mode",
+  "lightMode": "Light Mode",
+  "systemMode": "Follow System",
+  "appLanguage": "App Language",
+  "allowAnalytics": "Allow Analytics",
+  "privacyAnalytics": "Privacy Analytics",
+  "resetSettings": "Reset Settings",
+  
+  "readingHistory": "Reading History",
+  "clearAllHistory": "Clear All History",
+  "manualCleanup": "Manual Cleanup",
+  "cleanupSettings": "Cleanup Settings",
+  "removeFromHistory": "Remove from History",
+  "removeFromHistoryQuestion": "Remove this item from reading history?",
+  "cleanup": "Cleanup",
+  "failedToLoadCleanupStatus": "Failed to load cleanup status",
+  "manualCleanupConfirmation": "This will perform cleanup based on your current settings. Continue?",
+  "noReadingHistory": "No Reading History",
+  "errorLoadingHistory": "Error Loading History",
+  
+  "nextPage": "Next Page",
+  "previousPage": "Previous Page",
+  "pageOf": "of",
+  "fullscreen": "Fullscreen",
+  "exitFullscreen": "Exit Fullscreen",
+  
+  "checkingConnection": "Checking connection...",
+  "backOnline": "Back online! All features available.",
+  "stillNoInternet": "Still no internet connection.",
+  "unableToCheckConnection": "Unable to check connection.",
+  "noInternetConnection": "No internet connection",
+  "connectionError": "Connection error",
+  "serverError": "Server error",
+  
+  "low": "Low",
+  "medium": "Medium", 
+  "high": "High",
+  "original": "Original",
+  "lowFaster": "Low (Faster)",
+  "highBetterQuality": "High (Better Quality)",
+  "originalLargest": "Original (Largest)",
+  "lowQuality": "Low (Faster)",
+  "mediumQuality": "Medium",
+  "highQuality": "High (Better Quality)",
+  "originalQuality": "Original (Largest)",
   
   "dark": "Dark",
   "light": "Light",
@@ -40,60 +323,69 @@
   "japanese": "Japanese",
   "indonesian": "Indonesian",
   
-  "low": "Low",
-  "medium": "Medium",
-  "high": "High",
-  "original": "Original",
+  "sortBy": "Sort by",
+  "filterBy": "Filter by",
+  "recent": "Recent",
+  "popular": "Popular",
+  "oldest": "Oldest",
+  
+  "ok": "OK",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "confirm": "Confirm",
+  "loading": "Loading...",
+  "error": "Error",
+  "retry": "Retry",
+  "tryAgain": "Try Again",
+  "save": "Save",
+  "edit": "Edit",
+  "close": "Close",
+  "clear": "Clear",
+  "remove": "Remove",
+  "share": "Share",
+  "goBack": "Go Back",
+  "yes": "Yes",
+  "no": "No",
+  "previous": "Previous",
+  "next": "Next",
+  "goToDownloads": "Go to Downloads",
+  "retryAction": "Retry",
   
   "hours": "{count} hours",
   "@hours": {
     "placeholders": {
-      "count": {
-        "type": "int"
-      }
+      "count": {"type": "int"}
     }
   },
   "days": "{count} days",
   "@days": {
     "placeholders": {
-      "count": {
-        "type": "int"
-      }
+      "count": {"type": "int"}
     }
   },
-  
-  "download": "Download",
-  "downloading": "Downloading",
-  "downloadCompleted": "Download Completed",
-  "downloadFailed": "Download Failed",
-  "downloadStarted": "Download started for \"{title}\"",
-  "@downloadStarted": {
+  "unknown": "Unknown",
+  "justNow": "Just now",
+  "daysAgo": "{days}d ago",
+  "@daysAgo": {
     "placeholders": {
-      "title": {
-        "type": "String"
-      }
+      "days": {"type": "int"}
     }
   },
-  "downloadNewGalleries": "Download New Galleries",
-  "clearAllHistory": "Clear All History",
-  "manualCleanup": "Manual Cleanup",
-  "removeFromHistory": "Remove from History",
+  "hoursAgo": "{hours}h ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "hours": {"type": "int"}
+    }
+  },
+  "minutesAgo": "{minutes}m ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
   
-  "loading": "Loading",
-  "error": "Error",
   "noData": "No Data",
   "unknownTitle": "Unknown Title",
-  "noReadingHistory": "No Reading History",
-  "errorLoadingFavorites": "Error Loading Favorites",
-  "errorLoadingHistory": "Error Loading History",
   "offlineContentError": "Offline Content Error",
-  "downloadError": "Download Error",
-  
-  "cancel": "Cancel",
-  "confirm": "Confirm",
-  "ok": "OK",
-  "delete": "Delete",
-  "save": "Save",
-  "yes": "Yes",
-  "no": "No"
+  "downloadError": "Download Error"
 }

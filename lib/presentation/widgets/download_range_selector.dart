@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
-import '../../core/localization/app_localizations.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Widget for selecting download range (page X to page Y)
 /// Allows users to download partial content instead of all pages

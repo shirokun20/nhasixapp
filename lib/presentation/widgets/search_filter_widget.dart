@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/constants/text_style_const.dart';
-import '../../core/localization/app_localizations.dart';
+import '../../l10n/app_localizations.dart';
 import '../../domain/entities/search_filter.dart';
 
 /// Advanced search filter widget with expandable sections

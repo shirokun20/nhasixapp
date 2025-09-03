@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
-import 'package:nhasixapp/core/localization/app_localizations.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../domain/entities/user_preferences.dart';
 import '../../../services/analytics_service.dart';

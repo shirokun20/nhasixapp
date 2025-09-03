@@ -4,7 +4,7 @@ import 'package:nhasixapp/core/routing/app_router.dart';
 
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
-import '../../../core/localization/app_localizations.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../domain/entities/entities.dart';
 import '../../cubits/filter_data/filter_data_cubit.dart';
 import '../../widgets/filter_data_search_widget.dart';
