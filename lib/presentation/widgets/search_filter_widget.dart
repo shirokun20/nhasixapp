@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/constants/text_style_const.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../domain/entities/search_filter.dart';
 
 /// Advanced search filter widget with expandable sections
@@ -436,7 +437,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
 
   Widget _buildPopularToggle() {
     return FilterChip(
-      label: const Text('Popular'),
+      label: Text(AppLocalizations.of(context)!.popular),
       selected: widget.filter.popular,
       onSelected: (selected) {
         widget.onFilterChanged(widget.filter.copyWith(popular: selected));
@@ -468,9 +469,9 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
       dropdownColor: Theme.of(context).colorScheme.surfaceContainer,
       style: TextStyleConst.bodyMedium,
       items: [
-        const DropdownMenuItem<String>(
+        DropdownMenuItem<String>(
           value: null,
-          child: Text('Any language'),
+          child: Text(AppLocalizations.of(context)!.anyLanguage),
         ),
         ...widget.availableLanguages.map((language) {
           return DropdownMenuItem(
@@ -502,9 +503,9 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
       dropdownColor: Theme.of(context).colorScheme.surfaceContainer,
       style: TextStyleConst.bodyMedium,
       items: [
-        const DropdownMenuItem<String>(
+        DropdownMenuItem<String>(
           value: null,
-          child: Text('Any category'),
+          child: Text(AppLocalizations.of(context)!.anyCategory),
         ),
         ...widget.availableCategories.map((category) {
           return DropdownMenuItem(

@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/constants/text_style_const.dart';
+import '../../core/localization/app_localizations.dart';
+import '../../core/utils/responsive_grid_delegate.dart';
 import '../../domain/entities/entities.dart';
 import '../../services/local_image_preloader.dart';
 import '../blocs/content/content_bloc.dart';
 import '../blocs/download/download_bloc.dart'; // 🐛 FIXED: Added import for DownloadBloc
+import '../cubits/settings/settings_cubit.dart';
 import 'content_card_widget.dart';
 
 extension StringCapitalize on String {
@@ -211,7 +214,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                           .read<ContentBloc>()
                           .add(const ContentRetryEvent());
                     },
-                    child: const Text('Try Again'),
+                    child: Text(AppLocalizations.of(context)!.tryAgain),
                   ),
                 ],
               ],
@@ -249,7 +252,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                           .read<ContentBloc>()
                           .add(const ContentRetryEvent());
                     },
-                    child: const Text('Retry'),
+                    child: Text(AppLocalizations.of(context)!.retry),
                   ),
                 ],
                 if (state.hasPreviousContent) ...[
@@ -259,7 +262,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                       // Show cached content
                       // This would require additional implementation
                     },
-                    child: const Text('Show Cached Content'),
+                    child: Text(AppLocalizations.of(context)!.showCachedContent),
                   ),
                 ],
               ],
@@ -329,11 +332,9 @@ class _ContentListWidgetState extends State<ContentListWidget> {
         SliverPadding(
           padding: EdgeInsets.all(widget.showHeader ? 8.0 : 16.0),
           sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.7,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
+            gridDelegate: ResponsiveGridDelegate.createGridDelegate(
+              context,
+              context.read<SettingsCubit>(),
             ),
             delegate: SliverChildBuilderDelegate(
               (context, index) {

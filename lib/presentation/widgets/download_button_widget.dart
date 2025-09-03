@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/constants/text_style_const.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/routing/app_router.dart';
 import '../../domain/entities/entities.dart';
 import '../blocs/download/download_bloc.dart';
@@ -32,7 +33,7 @@ class DownloadButtonWidget extends StatelessWidget {
           return _buildButton(
             context: context,
             icon: Icons.download,
-            text: 'Download',
+            text: AppLocalizations.of(context)!.download,
             onPressed: null,
             color: colorScheme.tertiary,
           );
@@ -53,7 +54,7 @@ class DownloadButtonWidget extends StatelessWidget {
             return _buildButton(
               context: context,
               icon: Icons.schedule,
-              text: 'Queued',
+              text: AppLocalizations.of(context)!.queued,
               onPressed: () => _cancelDownload(context),
               color: colorScheme.secondary,
             );
@@ -64,7 +65,7 @@ class DownloadButtonWidget extends StatelessWidget {
               return _buildButton(
                 context: context,
                 icon: Icons.check_circle,
-                text: 'Downloaded',
+                text: AppLocalizations.of(context)!.downloaded,
                 onPressed: () => _openDownload(context),
                 color: colorScheme.tertiary,
               );
@@ -79,7 +80,7 @@ class DownloadButtonWidget extends StatelessWidget {
             return _buildButton(
               context: context,
               icon: Icons.play_arrow,
-              text: 'Resume',
+              text: AppLocalizations.of(context)!.resume,
               onPressed: () => _resumeDownload(context),
               color: colorScheme.primary,
               progress: download.progressPercentage / 100,
@@ -89,7 +90,7 @@ class DownloadButtonWidget extends StatelessWidget {
             return _buildButton(
               context: context,
               icon: Icons.check_circle,
-              text: 'Downloaded',
+              text: AppLocalizations.of(context)!.downloaded,
               onPressed: () => _openDownload(context),
               color: colorScheme.tertiary,
             );
@@ -98,7 +99,7 @@ class DownloadButtonWidget extends StatelessWidget {
             return _buildButton(
               context: context,
               icon: Icons.error,
-              text: 'Failed',
+              text: AppLocalizations.of(context)!.failed,
               onPressed: () => _retryDownload(context),
               color: colorScheme.error,
             );
@@ -107,7 +108,7 @@ class DownloadButtonWidget extends StatelessWidget {
             return _buildButton(
               context: context,
               icon: Icons.download,
-              text: 'Download',
+              text: AppLocalizations.of(context)!.download,
               onPressed: () => _startDownload(context),
               color: colorScheme.tertiary,
             );
@@ -386,7 +387,7 @@ class DownloadButtonWidget extends StatelessWidget {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Download started: ${content.title}'),
+        content: Text(AppLocalizations.of(context)!.downloadStarted(content.title)),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -410,7 +411,7 @@ class DownloadButtonWidget extends StatelessWidget {
             children: [
               Icon(Icons.download, color: colorScheme.tertiary),
               const SizedBox(width: 8),
-              const Text('Download All'),
+              Text(AppLocalizations.of(context)!.downloadAll),
             ],
           ),
         ),
@@ -420,7 +421,7 @@ class DownloadButtonWidget extends StatelessWidget {
             children: [
               Icon(Icons.folder_open, color: colorScheme.primary),
               const SizedBox(width: 8),
-              const Text('Download Range'),
+              Text(AppLocalizations.of(context)!.downloadRange),
             ],
           ),
         ),
@@ -428,7 +429,7 @@ class DownloadButtonWidget extends StatelessWidget {
       child: _buildButton(
         context: context,
         icon: Icons.download,
-        text: 'Download',
+        text: AppLocalizations.of(context)!.download,
         onPressed: null, // Handled by PopupMenuButton
         color: colorScheme.tertiary,
       ),
@@ -462,7 +463,7 @@ class DownloadButtonWidget extends StatelessWidget {
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Range download started: ${content.title} ($pageText)'),
+        content: Text(AppLocalizations.of(context)!.rangeDownloadStarted(content.title, pageText)),
         duration: const Duration(seconds: 3),
       ),
     );
@@ -491,7 +492,7 @@ class DownloadButtonWidget extends StatelessWidget {
     // Show confirmation that content is being opened
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Opening: ${content.title}'),
+        content: Text(AppLocalizations.of(context)!.opening(content.title)),
         duration: const Duration(seconds: 2),
       ),
     );

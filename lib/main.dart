@@ -1,9 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:nhasixapp/core/config/multi_bloc_provider_config.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/localization/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
+import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/theme/theme_cubit.dart';
 import 'package:nhasixapp/presentation/widgets/platform_not_supported_dialog.dart';
 import 'package:nhasixapp/services/analytics_service.dart';
@@ -38,25 +41,59 @@ class MyApp extends StatelessWidget {
       providers: MultiBlocProviderConfig.data,
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, themeState) {
-          debugPrint('🎨 MaterialApp rebuilt with theme: ${themeState.currentTheme}, mode: ${themeState.themeMode}, brightness: ${themeState.themeData.brightness}');
-          return MaterialApp.router(
-            title: "Nhentai Flutter App",
-            debugShowCheckedModeBanner: false,
-            routerConfig: AppRouter.router,
-            theme: themeState.themeData,
-            themeMode: themeState.themeMode,
-            builder: (context, child) {
-              // Show platform warning for non-Android platforms
-              if (kIsWeb || (!kIsWeb && !Platform.isAndroid)) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  PlatformNotSupportedDialog.show(context);
-                });
-              }
-              return child ?? const SizedBox.shrink();
+          return BlocBuilder<SettingsCubit, SettingsState>(
+            builder: (context, settingsState) {
+              // Get locale from settings
+              final locale = _getLocaleFromSettings(settingsState);
+              
+              debugPrint('🎨 MaterialApp rebuilt with theme: ${themeState.currentTheme}, mode: ${themeState.themeMode}, brightness: ${themeState.themeData.brightness}');
+              debugPrint('🌐 MaterialApp rebuilt with locale: ${locale.languageCode}');
+              
+              return MaterialApp.router(
+                title: "Nhentai Flutter App",
+                debugShowCheckedModeBanner: false,
+                routerConfig: AppRouter.router,
+                theme: themeState.themeData,
+                themeMode: themeState.themeMode,
+                locale: locale,
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                supportedLocales: const [
+                  Locale('en', ''), // English
+                  Locale('id', ''), // Indonesian
+                ],
+                builder: (context, child) {
+                  // Show platform warning for non-Android platforms
+                  if (kIsWeb || (!kIsWeb && !Platform.isAndroid)) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      PlatformNotSupportedDialog.show(context);
+                    });
+                  }
+                  return child ?? const SizedBox.shrink();
+                },
+              );
             },
           );
         },
       ),
     );
+  }
+
+  /// Convert settings language to Locale
+  Locale _getLocaleFromSettings(SettingsState settingsState) {
+    if (settingsState is SettingsLoaded) {
+      switch (settingsState.preferences.defaultLanguage) {
+        case 'indonesian':
+          return const Locale('id');
+        case 'english':
+        default:
+          return const Locale('en');
+      }
+    }
+    return const Locale('en'); // Default to English
   }
 }

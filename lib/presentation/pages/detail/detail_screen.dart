@@ -6,6 +6,7 @@ import 'package:logger/web.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/localization/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
@@ -76,7 +77,7 @@ class _DetailScreenState extends State<DetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error browsing tag: $tagName'),
+            content: Text(AppLocalizations.of(context)!.errorBrowsingTag),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -1023,7 +1024,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       ElevatedButton.icon(
                         onPressed: () => _detailCubit.retryLoading(),
                         icon: const Icon(Icons.refresh),
-                        label: const Text('Retry'),
+                        label: Text(AppLocalizations.of(context)!.retry),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Theme.of(context).colorScheme.primary,
                           foregroundColor: Theme.of(context).colorScheme.onPrimary,
@@ -1041,7 +1042,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     OutlinedButton.icon(
                       onPressed: () => context.pop(),
                       icon: const Icon(Icons.arrow_back),
-                      label: const Text('Go Back'),
+                      label: Text(AppLocalizations.of(context)!.goBack),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
                         side: BorderSide(color: Theme.of(context).colorScheme.outline),

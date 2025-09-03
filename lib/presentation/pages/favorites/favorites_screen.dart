@@ -5,7 +5,10 @@ import 'package:logger/web.dart';
 
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
+import '../../../core/localization/app_localizations.dart';
+import '../../../core/utils/responsive_grid_delegate.dart';
 import '../../cubits/favorite/favorite_cubit.dart';
+import '../../cubits/settings/settings_cubit.dart';
 import '../../widgets/widgets.dart';
 import '../../widgets/app_scaffold_with_offline.dart';
 
@@ -108,7 +111,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Removed $selectedCount favorites',
+              AppLocalizations.of(context)!.removedFavoritesCountFormat(selectedCount),
               style: TextStyleConst.withColor(
                   TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onPrimary),
             ),
@@ -122,7 +125,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Failed to remove favorites: ${e.toString()}',
+              AppLocalizations.of(context)!.failedToRemoveFavoritesFormat(e.toString()),
               style: TextStyleConst.withColor(
                   TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onError),
             ),
@@ -139,12 +142,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           builder: (context) => AlertDialog(
             backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
             title: Text(
-              'Delete Favorites',
+              AppLocalizations.of(context)!.deleteFavorites,
               style: TextStyleConst.withColor(
                   TextStyleConst.headingMedium, Theme.of(context).colorScheme.onSurface),
             ),
             content: Text(
-              'Are you sure you want to remove $count favorite${count > 1 ? 's' : ''}?',
+              AppLocalizations.of(context)!.deleteFavoritesConfirmationFormat(count),
               style: TextStyleConst.withColor(
                   TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onSurfaceVariant),
             ),
@@ -152,7 +155,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
                 child: Text(
-                  'Cancel',
+                  AppLocalizations.of(context)!.cancel,
                   style: TextStyleConst.withColor(TextStyleConst.buttonMedium,
                       Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
@@ -160,7 +163,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
                 child: Text(
-                  'Delete',
+                  AppLocalizations.of(context)!.delete,
                   style: TextStyleConst.withColor(
                       TextStyleConst.buttonMedium, Theme.of(context).colorScheme.error),
                 ),
@@ -178,7 +181,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         title: Text(
-          'Export Favorites',
+          AppLocalizations.of(context)!.exportFavorites,
           style: TextStyleConst.withColor(
               TextStyleConst.headingMedium, Theme.of(context).colorScheme.onSurface),
         ),
@@ -190,7 +193,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Exporting favorites...',
+              AppLocalizations.of(context)!.exportingFavorites,
               style: TextStyleConst.withColor(
                   TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onSurfaceVariant),
             ),
@@ -211,12 +214,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           builder: (context) => AlertDialog(
             backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
             title: Text(
-              'Export Complete',
+              AppLocalizations.of(context)!.exportComplete,
               style: TextStyleConst.withColor(
                   TextStyleConst.headingMedium, Theme.of(context).colorScheme.onSurface),
             ),
             content: Text(
-              'Exported ${exportData['total_count']} favorites successfully.',
+              AppLocalizations.of(context)!.exportedFavoritesCountFormat(exportData['total_count']),
               style: TextStyleConst.withColor(
                   TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onSurfaceVariant),
             ),
@@ -224,7 +227,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
                 child: Text(
-                  'OK',
+                  AppLocalizations.of(context)!.ok,
                   style: TextStyleConst.withColor(
                       TextStyleConst.buttonMedium, Theme.of(context).colorScheme.primary),
                 ),
@@ -240,7 +243,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Export failed: ${e.toString()}',
+              AppLocalizations.of(context)!.exportFailedFormat(e.toString()),
               style: TextStyleConst.withColor(
                   TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onError),
             ),
@@ -500,7 +503,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 ),
-                child: const Text('Clear Search'),
+                child: Text(AppLocalizations.of(context)!.clearSearch),
               ),
             ],
           ],
@@ -514,34 +517,38 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       onRefresh: () => _favoriteCubit.refresh(),
       color: Theme.of(context).colorScheme.primary,
       backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-      child: GridView.builder(
-        controller: _scrollController,
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.7,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-        ),
-        itemCount: state.favorites.length + (state.hasMore ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index >= state.favorites.length) {
-            // Loading more indicator
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: CircularProgressIndicator(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            );
-          }
+      child: BlocBuilder<SettingsCubit, SettingsState>(
+        builder: (context, settingsState) {
+          return GridView.builder(
+            controller: _scrollController,
+            padding: const EdgeInsets.all(16),
+            gridDelegate: ResponsiveGridDelegate.createStandardGridDelegate(
+              context,
+              context.read<SettingsCubit>(),
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemCount: state.favorites.length + (state.hasMore ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index >= state.favorites.length) {
+                // Loading more indicator
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: CircularProgressIndicator(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                );
+              }
 
           final favorite = state.favorites[index];
           final contentId = favorite['id'].toString();
           final isSelected = _selectedItems.contains(contentId);
 
           return _buildFavoriteCard(favorite, isSelected);
+        },
+          );
         },
       ),
     );

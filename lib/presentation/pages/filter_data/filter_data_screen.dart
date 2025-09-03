@@ -4,6 +4,7 @@ import 'package:nhasixapp/core/routing/app_router.dart';
 
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../domain/entities/entities.dart';
 import '../../cubits/filter_data/filter_data_cubit.dart';
 import '../../widgets/filter_data_search_widget.dart';
@@ -344,7 +345,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                       selectedFilters: widget.selectedFilters,
                     );
                   },
-                  child: const Text('Retry'),
+                  child: Text(AppLocalizations.of(context)!.retry),
                 ),
               ],
             ),
@@ -449,7 +450,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                     side: BorderSide(color: Theme.of(context).colorScheme.outline),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: const Text('Cancel'),
+                  child: Text(AppLocalizations.of(context)!.cancel),
                 ),
               ),
               const SizedBox(width: 16),

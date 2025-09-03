@@ -1,0 +1,99 @@
+{
+  "@@locale": "id",
+  "appTitle": "NhasixApp",
+  "appSubtitle": "NHentai",
+  
+  "home": "Beranda",
+  "search": "Cari",
+  "favorites": "Favorit",
+  "downloads": "Unduhan",
+  "history": "Riwayat Baca",
+  "randomGallery": "Galeri Acak",
+  "offlineContent": "Konten Offline",
+  "settings": "Pengaturan",
+  
+  "appearance": "Tampilan",
+  "theme": "Tema",
+  "language": "Bahasa",
+  "imageQuality": "Kualitas Gambar",
+  "gridColumns": "Kolom Grid (Portrait)",
+  "reader": "Pembaca",
+  "showSystemUIInReader": "Tampilkan UI Sistem di Pembaca",
+  "historyCleanup": "Pembersihan Riwayat",
+  "autoCleanupHistory": "Pembersihan Otomatis Riwayat",
+  "automaticallyCleanOldReadingHistory": "Otomatis membersihkan riwayat baca lama",
+  "cleanupInterval": "Interval Pembersihan",
+  "howOftenToCleanupHistory": "Seberapa sering membersihkan riwayat",
+  "maxHistoryDays": "Maksimal Hari Riwayat",
+  "maximumDaysToKeepHistory": "Maksimal hari menyimpan riwayat (0 = tanpa batas)",
+  "cleanupOnInactivity": "Bersihkan saat Tidak Aktif",
+  "cleanHistoryWhenAppUnused": "Bersihkan riwayat ketika aplikasi tidak digunakan beberapa hari",
+  "inactivityThreshold": "Batas Tidak Aktif",
+  "daysOfInactivityBeforeCleanup": "Hari tidak aktif sebelum pembersihan",
+  "resetToDefault": "Reset ke Default",
+  
+  "dark": "Gelap",
+  "light": "Terang",
+  "amoled": "AMOLED",
+  
+  "english": "Inggris",
+  "japanese": "Jepang",
+  "indonesian": "Indonesia",
+  
+  "low": "Rendah",
+  "medium": "Sedang",
+  "high": "Tinggi",
+  "original": "Asli",
+  
+  "hours": "{count} jam",
+  "@hours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "days": "{count} hari",
+  "@days": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "download": "Unduh",
+  "downloading": "Mengunduh",
+  "downloadCompleted": "Unduhan Selesai",
+  "downloadFailed": "Unduhan Gagal",
+  "downloadStarted": "Unduhan dimulai untuk \"{title}\"",
+  "@downloadStarted": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadNewGalleries": "Unduh Galeri Baru",
+  "clearAllHistory": "Hapus Semua Riwayat",
+  "manualCleanup": "Pembersihan Manual",
+  "removeFromHistory": "Hapus dari Riwayat",
+  
+  "loading": "Memuat",
+  "error": "Error",
+  "noData": "Tidak Ada Data",
+  "unknownTitle": "Judul Tidak Diketahui",
+  "noReadingHistory": "Tidak Ada Riwayat Baca",
+  "errorLoadingFavorites": "Error Memuat Favorit",
+  "errorLoadingHistory": "Error Memuat Riwayat",
+  "offlineContentError": "Error Konten Offline",
+  "downloadError": "Error Unduhan",
+  
+  "cancel": "Batal",
+  "confirm": "Konfirmasi",
+  "ok": "OK",
+  "delete": "Hapus",
+  "save": "Simpan",
+  "yes": "Ya",
+  "no": "Tidak"
+}

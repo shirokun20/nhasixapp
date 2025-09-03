@@ -1,0 +1,99 @@
+{
+  "@@locale": "en",
+  "appTitle": "NhasixApp",
+  "appSubtitle": "NHentai",
+  
+  "home": "Home",
+  "search": "Search",
+  "favorites": "Favorites",
+  "downloads": "Downloads",
+  "history": "Reading History",
+  "randomGallery": "Random Gallery",
+  "offlineContent": "Offline Content",
+  "settings": "Settings",
+  
+  "appearance": "Appearance",
+  "theme": "Theme",
+  "language": "Language",
+  "imageQuality": "Image Quality",
+  "gridColumns": "Grid Columns (Portrait)",
+  "reader": "Reader",
+  "showSystemUIInReader": "Show System UI in Reader",
+  "historyCleanup": "History Cleanup",
+  "autoCleanupHistory": "Auto Cleanup History",
+  "automaticallyCleanOldReadingHistory": "Automatically clean old reading history",
+  "cleanupInterval": "Cleanup Interval",
+  "howOftenToCleanupHistory": "How often to cleanup history",
+  "maxHistoryDays": "Max History Days",
+  "maximumDaysToKeepHistory": "Maximum days to keep history (0 = unlimited)",
+  "cleanupOnInactivity": "Cleanup on Inactivity",
+  "cleanHistoryWhenAppUnused": "Clean history when app is unused for several days",
+  "inactivityThreshold": "Inactivity Threshold",
+  "daysOfInactivityBeforeCleanup": "Days of inactivity before cleanup",
+  "resetToDefault": "Reset to Default",
+  
+  "dark": "Dark",
+  "light": "Light",
+  "amoled": "AMOLED",
+  
+  "english": "English",
+  "japanese": "Japanese",
+  "indonesian": "Indonesian",
+  
+  "low": "Low",
+  "medium": "Medium",
+  "high": "High",
+  "original": "Original",
+  
+  "hours": "{count} hours",
+  "@hours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "days": "{count} days",
+  "@days": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "download": "Download",
+  "downloading": "Downloading",
+  "downloadCompleted": "Download Completed",
+  "downloadFailed": "Download Failed",
+  "downloadStarted": "Download started for \"{title}\"",
+  "@downloadStarted": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadNewGalleries": "Download New Galleries",
+  "clearAllHistory": "Clear All History",
+  "manualCleanup": "Manual Cleanup",
+  "removeFromHistory": "Remove from History",
+  
+  "loading": "Loading",
+  "error": "Error",
+  "noData": "No Data",
+  "unknownTitle": "Unknown Title",
+  "noReadingHistory": "No Reading History",
+  "errorLoadingFavorites": "Error Loading Favorites",
+  "errorLoadingHistory": "Error Loading History",
+  "offlineContentError": "Offline Content Error",
+  "downloadError": "Download Error",
+  
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "ok": "OK",
+  "delete": "Delete",
+  "save": "Save",
+  "yes": "Yes",
+  "no": "No"
+}

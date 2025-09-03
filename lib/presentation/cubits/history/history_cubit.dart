@@ -1,4 +1,3 @@
-import 'package:logger/logger.dart';
 
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/usecases.dart';
@@ -14,10 +13,9 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     required this.removeHistoryItemUseCase,
     required this.getHistoryCountUseCase,
     required this.historyCleanupService,
-    required Logger logger,
+    required super.logger,
   }) : super(
           initialState: const HistoryInitial(),
-          logger: logger,
         );
 
   final GetHistoryUseCase getHistoryUseCase;

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/di/service_locator.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../services/analytics_service.dart';
 import '../../cubits/history/history_cubit.dart';
 import '../../cubits/history/history_cubit_factory.dart';
@@ -91,7 +92,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
-      title: const Text('Reading History'),
+      title: Text(AppLocalizations.of(context)!.readingHistory),
       actions: [
         // Cleanup info button
         IconButton(
@@ -103,33 +104,33 @@ class _HistoryScreenState extends State<HistoryScreen> {
         PopupMenuButton<String>(
           onSelected: (value) => _handleMenuAction(context, value),
           itemBuilder: (context) => [
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'clear_all',
               child: Row(
                 children: [
                   Icon(Icons.clear_all, size: 20),
                   SizedBox(width: 8),
-                  Text('Clear All History'),
+                  Text(AppLocalizations.of(context)!.clearAllHistory),
                 ],
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'manual_cleanup',
               child: Row(
                 children: [
                   Icon(Icons.cleaning_services, size: 20),
                   SizedBox(width: 8),
-                  Text('Manual Cleanup'),
+                  Text(AppLocalizations.of(context)!.manualCleanup),
                 ],
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'cleanup_settings',
               child: Row(
                 children: [
                   Icon(Icons.settings, size: 20),
                   SizedBox(width: 8),
-                  Text('Cleanup Settings'),
+                  Text(AppLocalizations.of(context)!.cleanupSettings),
                 ],
               ),
             ),
@@ -238,21 +239,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear All History'),
+        title: Text(AppLocalizations.of(context)!.clearAllHistory),
         content: const Text(
           'Are you sure you want to clear all reading history? This action cannot be undone.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           FilledButton(
             onPressed: () {
               Navigator.of(context).pop();
               _historyCubit.clearHistory();
             },
-            child: const Text('Clear All'),
+            child: Text(AppLocalizations.of(context)!.clearAll),
           ),
         ],
       ),
@@ -263,21 +264,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Manual Cleanup'),
-        content: const Text(
-          'This will perform cleanup based on your current settings. Continue?',
+        title: Text(AppLocalizations.of(context)!.manualCleanup),
+        content: Text(
+          AppLocalizations.of(context)!.manualCleanupConfirmation,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           FilledButton(
             onPressed: () {
               Navigator.of(context).pop();
               _historyCubit.performManualCleanup();
             },
-            child: const Text('Cleanup'),
+            child: Text(AppLocalizations.of(context)!.cleanup),
           ),
         ],
       ),
@@ -288,19 +289,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove from History'),
-        content: const Text('Remove this item from reading history?'),
+        title: Text(AppLocalizations.of(context)!.removeFromHistory),
+        content: Text(AppLocalizations.of(context)!.removeFromHistoryQuestion),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           FilledButton(
             onPressed: () {
               Navigator.of(context).pop();
               _historyCubit.removeHistoryItem(contentId);
             },
-            child: const Text('Remove'),
+            child: Text(AppLocalizations.of(context)!.remove),
           ),
         ],
       ),

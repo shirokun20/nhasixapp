@@ -70,13 +70,13 @@ class PreferencesService {
   /// Get specific setting
   Future<T?> getSetting<T>(String key, T? defaultValue) async {
     switch (T) {
-      case String:
+      case const (String):
         return _prefs.getString(key) as T? ?? defaultValue;
-      case bool:
+      case const (bool):
         return _prefs.getBool(key) as T? ?? defaultValue;
-      case int:
+      case const (int):
         return _prefs.getInt(key) as T? ?? defaultValue;
-      case double:
+      case const (double):
         return _prefs.getDouble(key) as T? ?? defaultValue;
       default:
         return defaultValue;
@@ -86,16 +86,16 @@ class PreferencesService {
   /// Set specific setting
   Future<void> setSetting<T>(String key, T value) async {
     switch (T) {
-      case String:
+      case const (String):
         await _prefs.setString(key, value as String);
         break;
-      case bool:
+      case const (bool):
         await _prefs.setBool(key, value as bool);
         break;
-      case int:
+      case const (int):
         await _prefs.setInt(key, value as int);
         break;
-      case double:
+      case const (double):
         await _prefs.setDouble(key, value as double);
         break;
       default:

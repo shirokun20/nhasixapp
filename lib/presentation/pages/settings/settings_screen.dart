@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
+import 'package:nhasixapp/core/localization/app_localizations.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../domain/entities/user_preferences.dart';
 import '../../../services/analytics_service.dart';
@@ -24,7 +25,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return SimpleOfflineScaffold(
-      title: 'Settings',
+      title: AppLocalizations.of(context)?.settings ?? 'Settings',
       body: BlocBuilder<SettingsCubit, SettingsState>(
         builder: (context, state) {
           if (state is SettingsLoaded) {
@@ -33,13 +34,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                  child: Text('Tampilan', style: TextStyleConst.headingSmall.copyWith(
+                  child: Text(AppLocalizations.of(context)?.displaySettings ?? 'Tampilan', style: TextStyleConst.headingSmall.copyWith(
                     color: Theme.of(context).colorScheme.primary,
                   )),
                 ),
                 ListTile(
                   tileColor: Theme.of(context).colorScheme.surface,
-                  title: Text('Theme', style: TextStyleConst.bodyLarge.copyWith(
+                  title: Text(AppLocalizations.of(context)?.theme ?? 'Theme', style: TextStyleConst.bodyLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   )),
                   trailing: Container(
@@ -76,7 +77,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 ListTile(
                   tileColor: Theme.of(context).colorScheme.surface,
-                  title: Text('Language', style: TextStyleConst.bodyLarge.copyWith(
+                  title: Text(AppLocalizations.of(context)?.appLanguage ?? 'Language', style: TextStyleConst.bodyLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   )),
                   trailing: Container(
@@ -97,13 +98,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       items: [
                         DropdownMenuItem(
                           value: 'english',
-                          child: Text('English', style: TextStyleConst.bodyLarge.copyWith(
+                          child: Text(AppLocalizations.of(context)?.english ?? 'English', style: TextStyleConst.bodyLarge.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
                           )),
                         ),
                         DropdownMenuItem(
-                          value: 'japanese',
-                          child: Text('Japanese', style: TextStyleConst.bodyLarge.copyWith(
+                          value: 'indonesian',
+                          child: Text(AppLocalizations.of(context)?.indonesian ?? 'Bahasa Indonesia', style: TextStyleConst.bodyLarge.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
                           )),
                         ),
@@ -118,7 +119,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 ListTile(
                   tileColor: Theme.of(context).colorScheme.surface,
-                  title: Text('Image Quality', style: TextStyleConst.bodyLarge.copyWith(
+                  title: Text(AppLocalizations.of(context)?.imageQuality ?? 'Image Quality', style: TextStyleConst.bodyLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   )),
                   trailing: Container(
@@ -155,7 +156,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 ListTile(
                   tileColor: Theme.of(context).colorScheme.surface,
-                  title: Text('Grid Columns (Portrait)', style: TextStyleConst.bodyLarge.copyWith(
+                  title: Text(AppLocalizations.of(context)?.gridColumns ?? 'Grid Columns (Portrait)', style: TextStyleConst.bodyLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   )),
                   trailing: Container(
@@ -173,7 +174,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       style: TextStyleConst.bodyLarge.copyWith(color: Theme.of(context).colorScheme.onSurface),
                       dropdownColor: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(8),
-                      items: [2, 3, 4].map((count) {
+                      items: [2, 3].map((count) {
                         return DropdownMenuItem<int>(
                           value: count,
                           child: Text('$count', style: TextStyleConst.bodyLarge.copyWith(color: Theme.of(context).colorScheme.onSurface)),
@@ -420,7 +421,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // Analytics Consent Section
                 ListTile(
                   tileColor: Theme.of(context).colorScheme.surface,
-                  title: Text('Izinkan Analytics', style: TextStyleConst.bodyLarge.copyWith(
+                  title: Text(AppLocalizations.of(context)?.allowAnalytics ?? 'Izinkan Analytics', style: TextStyleConst.bodyLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   )),
                   subtitle: Text(
@@ -466,7 +467,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Privasi Analytics',
+                                AppLocalizations.of(context)?.privacyAnalytics ?? 'Privasi Analytics',
                                 style: TextStyleConst.bodyLarge.copyWith(
                                   color: Theme.of(context).colorScheme.primary,
                                   fontWeight: FontWeight.w600,
@@ -504,7 +505,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         context: context,
                         builder: (ctx) => AlertDialog(
                           backgroundColor: Theme.of(context).colorScheme.surface,
-                          title: Text('Reset Settings', style: TextStyleConst.headingSmall.copyWith(
+                          title: Text(AppLocalizations.of(context)?.resetSettings ?? 'Reset Settings', style: TextStyleConst.headingSmall.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
                           )),
                           content: Text('Yakin ingin mengembalikan semua pengaturan ke default?', style: TextStyleConst.bodyLarge.copyWith(

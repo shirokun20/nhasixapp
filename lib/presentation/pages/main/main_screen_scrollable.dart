@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/localization/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
+import 'package:nhasixapp/core/utils/responsive_grid_delegate.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/domain/repositories/content_repository.dart';
@@ -13,6 +15,7 @@ import 'package:nhasixapp/presentation/blocs/content/content_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/home/home_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
+import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_header_widget.dart';
@@ -133,7 +136,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Initializing...',
+                      AppLocalizations.of(context)!.initializing,
                       style: TextStyleConst.styleMedium(
                         textColor: Theme.of(context).colorScheme.onSurface,
                         size: 16,
@@ -205,7 +208,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
               content: Text(state.userFriendlyMessage),
               action: state.canRetry
                   ? SnackBarAction(
-                      label: 'Retry',
+                      label: AppLocalizations.of(context)!.retry,
                       onPressed: () {
                         context
                             .read<ContentBloc>()
@@ -301,7 +304,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                     ),
                     const SizedBox(width: 16),
                     Text(
-                      state.message.isNotEmpty ? state.message : 'Loading...',
+                      state.message.isNotEmpty ? state.message : AppLocalizations.of(context)!.loading,
                       style: TextStyleConst.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
@@ -374,7 +377,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
               onPressed: () {
                 context.read<ContentBloc>().add(const ContentRetryEvent());
               },
-              child: const Text('Try Again'),
+              child: Text(AppLocalizations.of(context)?.tryAgain ?? 'Try Again'),
             ),
           ],
         ],
@@ -411,7 +414,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
               onPressed: () {
                 context.read<ContentBloc>().add(const ContentRetryEvent());
               },
-              child: const Text('Retry'),
+              child: Text(AppLocalizations.of(context)!.retry),
             ),
           ],
           if (state.hasPreviousContent) ...[
@@ -421,7 +424,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                 // Show cached content
                 // This would require additional implementation
               },
-              child: const Text('Show Cached Content'),
+              child: Text(AppLocalizations.of(context)!.showCachedContent),
             ),
           ],
         ],
@@ -452,36 +455,38 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           ),
 
         // Content grid dengan downloaded highlight effect
-        SliverPadding(
-          padding: const EdgeInsets.all(16.0),
-          sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.7,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-            ),
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final content = state.contents[index];
-                
-                // Use FutureBuilder to check download status for highlight
-                return FutureBuilder<bool>(
-                  future: ContentDownloadCache.isDownloaded(content.id, context), // 🐛 FIXED: Pass context for DownloadBloc access
-                  builder: (context, snapshot) {
-                    final isDownloaded = snapshot.data ?? false;
+        BlocBuilder<SettingsCubit, SettingsState>(
+          builder: (context, settingsState) {
+            return SliverPadding(
+              padding: const EdgeInsets.all(16.0),
+              sliver: SliverGrid(
+                gridDelegate: ResponsiveGridDelegate.createGridDelegate(
+                  context,
+                  context.read<SettingsCubit>(),
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final content = state.contents[index];
                     
-                    return ContentCard(
-                      content: content,
-                      onTap: () => _onContentTap(content),
-                      isHighlighted: isDownloaded, // Phase 4: Highlight downloaded content
+                    // Use FutureBuilder to check download status for highlight
+                    return FutureBuilder<bool>(
+                      future: ContentDownloadCache.isDownloaded(content.id, context), // 🐛 FIXED: Pass context for DownloadBloc access
+                      builder: (context, snapshot) {
+                        final isDownloaded = snapshot.data ?? false;
+                        
+                        return ContentCard(
+                          content: content,
+                          onTap: () => _onContentTap(content),
+                          isHighlighted: isDownloaded, // Phase 4: Highlight downloaded content
+                        );
+                      },
                     );
                   },
-                );
-              },
-              childCount: state.contents.length,
-            ),
-          ),
+                  childCount: state.contents.length,
+                ),
+              ),
+            );
+          },
         ),
 
         // Pagination footer - sebagai sliver di bottom
@@ -623,7 +628,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
               TextButton.icon(
                 onPressed: _clearSearchResults,
                 icon: const Icon(Icons.clear, size: 16),
-                label: const Text('Clear'),
+                label: Text(AppLocalizations.of(context)!.clear),
                 style: TextButton.styleFrom(
                   foregroundColor: Theme.of(context).colorScheme.error,
                 ),
@@ -827,7 +832,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('No content loaded to open in browser'),
+              content: Text(AppLocalizations.of(context)!.noContentToBrowse),
               backgroundColor: Colors.orange,
             ),
           );
@@ -920,7 +925,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                 children: [
                   Icon(Icons.open_in_browser, color: Colors.white),
                   SizedBox(width: 8),
-                  Text('Opened in browser'),
+                  Text(AppLocalizations.of(context)!.openedInBrowser),
                 ],
               ),
               backgroundColor: Colors.green,
@@ -1034,7 +1039,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('No content available to download'),
+              content: Text(AppLocalizations.of(context)!.noContentToDownload),
               backgroundColor: Colors.orange,
             ),
           );
@@ -1046,7 +1051,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('No galleries found on this page'),
+              content: Text(AppLocalizations.of(context)!.noGalleriesFound),
               backgroundColor: Colors.orange,
             ),
           );
@@ -1069,7 +1074,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                   ),
                 ),
                 SizedBox(width: 12),
-                Text('Checking download status...'),
+                Text(AppLocalizations.of(context)!.checkingDownloadStatus),
               ],
             ),
             duration: Duration(seconds: 10), // Longer duration for checking process
@@ -1112,7 +1117,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                   Icon(Icons.check_circle, color: Colors.white),
                   SizedBox(width: 8),
                   Expanded(
-                    child: Text('All ${contentState.contents.length} galleries are already downloaded!'),
+                    child: Text(AppLocalizations.of(context)!.allGalleriesDownloaded),
                   ),
                 ],
               ),
@@ -1128,15 +1133,15 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
       final confirm = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text('Download New Galleries'),
+          title: Text(AppLocalizations.of(context)!.downloadNewGalleries),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Found ${contentState.contents.length} galleries on this page:'),
+              Text(AppLocalizations.of(context)!.foundGalleries),
               SizedBox(height: 8),
-              Text('• ${galleriesNeedDownload.length} new galleries to download'),
-              Text('• $alreadyDownloadedCount already downloaded (will be skipped)'),
+              Text(AppLocalizations.of(context)!.newGalleriesToDownload(galleriesNeedDownload.length)),
+              Text(AppLocalizations.of(context)!.alreadyDownloaded(alreadyDownloadedCount)),
               SizedBox(height: 12),
               if (galleriesNeedDownload.length > 0)
                 Text(
@@ -1148,11 +1153,11 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text('Cancel'),
+              child: Text(AppLocalizations.of(context)!.cancel),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text('Download ${galleriesNeedDownload.length} New'),
+              child: Text(AppLocalizations.of(context)!.downloadNew(galleriesNeedDownload.length)),
             ),
           ],
         ),
@@ -1187,7 +1192,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Queued $queuedCount new downloads'),
+                      Text(AppLocalizations.of(context)!.queuedDownloads(queuedCount)),
                       if (alreadyDownloadedCount > 0)
                         Text(
                           'Skipped $alreadyDownloadedCount already downloaded',
@@ -1222,7 +1227,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
               children: [
                 Icon(Icons.error, color: Colors.white),
                 SizedBox(width: 8),
-                Text('Failed to download galleries'),
+                Text(AppLocalizations.of(context)!.failedToDownload),
               ],
             ),
             backgroundColor: Colors.red,

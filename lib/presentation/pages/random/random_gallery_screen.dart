@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/di/service_locator.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/routing/app_route.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../services/analytics_service.dart';
@@ -57,7 +58,7 @@ class _RandomGalleryView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Random Gallery'),
+        title: Text(AppLocalizations.of(context)!.randomGallery),
         elevation: 0,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
@@ -395,7 +396,7 @@ class _RandomGalleryView extends StatelessWidget {
           child: OutlinedButton.icon(
             onPressed: () => _shareGallery(context, gallery),
             icon: const Icon(Icons.share),
-            label: const Text('Share'),
+            label: Text(AppLocalizations.of(context)!.share),
           ),
         ),
         
@@ -406,7 +407,7 @@ class _RandomGalleryView extends StatelessWidget {
           child: FilledButton.icon(
             onPressed: () => _navigateToDetail(context, gallery),
             icon: const Icon(Icons.visibility),
-            label: const Text('View'),
+            label: Text(AppLocalizations.of(context)!.view),
           ),
         ),
       ],
@@ -480,7 +481,7 @@ class _RandomGalleryView extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: () => context.read<RandomGalleryCubit>().retry(),
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Retry'),
+                    label: Text(AppLocalizations.of(context)!.retry),
                   ),
                   
                   const SizedBox(width: 12),
@@ -489,7 +490,7 @@ class _RandomGalleryView extends StatelessWidget {
                 OutlinedButton.icon(
                   onPressed: () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.arrow_back),
-                  label: const Text('Go Back'),
+                  label: Text(AppLocalizations.of(context)!.goBack),
                 ),
               ],
             ),

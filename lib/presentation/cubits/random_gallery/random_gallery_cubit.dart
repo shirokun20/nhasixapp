@@ -1,4 +1,3 @@
-import 'package:logger/logger.dart';
 
 import '../../../core/di/service_locator.dart';
 import '../../../domain/entities/entities.dart';
@@ -27,14 +26,13 @@ class RandomGalleryCubit extends BaseCubit<RandomGalleryState> {
     required AddToFavoritesUseCase addToFavoritesUseCase,
     required RemoveFromFavoritesUseCase removeFromFavoritesUseCase,
     required UserDataRepository userDataRepository,
-    required Logger logger,
+    required super.logger,
   })  : _getRandomContentUseCase = getRandomContentUseCase,
         _addToFavoritesUseCase = addToFavoritesUseCase,
         _removeFromFavoritesUseCase = removeFromFavoritesUseCase,
         _userDataRepository = userDataRepository,
         super(
           initialState: const RandomGalleryInitial(),
-          logger: logger,
         ) {
     _analyticsService = getIt<AnalyticsService>();
   }

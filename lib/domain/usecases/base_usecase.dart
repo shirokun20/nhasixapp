@@ -4,37 +4,37 @@ import 'package:equatable/equatable.dart';
 ///
 /// [Type] - Return type of the use case
 /// [Params] - Parameters type for the use case
-abstract class UseCase<Type, Params> {
+abstract class UseCase<T, Params> {
   /// Execute the use case with given parameters
   ///
   /// [params] - Parameters for the use case
   /// Returns the result of the use case execution
-  Future<Type> call(Params params);
+  Future<T> call(Params params);
 }
 
 /// Base class for use cases that don't require parameters
-abstract class NoParamsUseCase<Type> {
+abstract class NoParamsUseCase<T> {
   /// Execute the use case without parameters
   ///
   /// Returns the result of the use case execution
-  Future<Type> call();
+  Future<T> call();
 }
 
 /// Base class for use cases that return streams
-abstract class StreamUseCase<Type, Params> {
+abstract class StreamUseCase<T, Params> {
   /// Execute the use case and return a stream
   ///
   /// [params] - Parameters for the use case
   /// Returns a stream of results
-  Stream<Type> call(Params params);
+  Stream<T> call(Params params);
 }
 
 /// Base class for stream use cases that don't require parameters
-abstract class NoParamsStreamUseCase<Type> {
+abstract class NoParamsStreamUseCase<T> {
   /// Execute the use case and return a stream without parameters
   ///
   /// Returns a stream of results
-  Stream<Type> call();
+  Stream<T> call();
 }
 
 /// Base parameters class for use cases

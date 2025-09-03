@@ -5,7 +5,10 @@ import 'package:logger/logger.dart';
 
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
+import '../../../core/localization/app_localizations.dart';
+import '../../../core/utils/responsive_grid_delegate.dart';
 import '../../cubits/offline_search/offline_search_cubit.dart';
+import '../../cubits/settings/settings_cubit.dart';
 import '../../widgets/content_card_widget.dart';
 import '../../widgets/progress_indicator_widget.dart';
 import '../../widgets/error_widget.dart';
@@ -276,7 +279,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
             ElevatedButton.icon(
               onPressed: () => context.go('/downloads'),
               icon: const Icon(Icons.download),
-              label: const Text('Go to Downloads'),
+              label: Text(AppLocalizations.of(context)!.goToDownloads),
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorScheme.primary,
                 foregroundColor: colorScheme.onPrimary,
@@ -316,22 +319,26 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
 
           // Content grid
           Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.7,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-              ),
-              itemCount: state.results.length,
-              itemBuilder: (context, index) {
-                final content = state.results[index];
-                Logger().i(content);
-                return ContentCard(
-                  content: content,
-                  onTap: () => context.push('/reader/${content.id}'),
+            child: BlocBuilder<SettingsCubit, SettingsState>(
+              builder: (context, settingsState) {
+                return GridView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  gridDelegate: ResponsiveGridDelegate.createStandardGridDelegate(
+                    context,
+                    context.read<SettingsCubit>(),
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                  ),
+                  itemCount: state.results.length,
+                  itemBuilder: (context, index) {
+                    final content = state.results[index];
+                    Logger().i(content);
+                    return ContentCard(
+                      content: content,
+                      onTap: () => context.push('/reader/${content.id}'),
                   showOfflineIndicator: true,
+                );
+              },
                 );
               },
             ),

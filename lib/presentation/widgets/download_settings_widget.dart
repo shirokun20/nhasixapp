@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/text_style_const.dart';
+import '../../core/localization/app_localizations.dart';
 import '../blocs/download/download_bloc.dart';
 
 /// Widget for configuring download settings
@@ -239,13 +240,13 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
           dropdownColor: Theme.of(context).colorScheme.surface,
           style:
               TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface),
-          items: const [
-            DropdownMenuItem(value: 'low', child: Text('Low (Faster)')),
-            DropdownMenuItem(value: 'medium', child: Text('Medium')),
+          items: [
+            DropdownMenuItem(value: 'low', child: Text(AppLocalizations.of(context)!.lowQuality)),
+            DropdownMenuItem(value: 'medium', child: Text(AppLocalizations.of(context)!.mediumQuality)),
             DropdownMenuItem(
-                value: 'high', child: Text('High (Better Quality)')),
+                value: 'high', child: Text(AppLocalizations.of(context)!.highQuality)),
             DropdownMenuItem(
-                value: 'original', child: Text('Original (Largest)')),
+                value: 'original', child: Text(AppLocalizations.of(context)!.originalQuality)),
           ],
           onChanged: (value) {
             if (value != null) {

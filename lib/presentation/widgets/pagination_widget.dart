@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
+import 'package:nhasixapp/core/localization/app_localizations.dart';
 
 /// Advanced pagination widget with page navigation and progress indicator
 class PaginationWidget extends StatefulWidget {
@@ -319,7 +320,7 @@ class SimplePaginationWidget extends StatelessWidget {
           TextButton.icon(
             onPressed: hasPrevious ? onPreviousPage : null,
             icon: const Icon(Icons.chevron_left),
-            label: const Text('Previous'),
+            label: Text(AppLocalizations.of(context)!.previous),
             style: TextButton.styleFrom(
               foregroundColor: hasPrevious
                   ? Theme.of(context).colorScheme.onSurface
@@ -339,7 +340,7 @@ class SimplePaginationWidget extends StatelessWidget {
           TextButton.icon(
             onPressed: hasNext ? onNextPage : null,
             icon: const Icon(Icons.chevron_right),
-            label: const Text('Next'),
+            label: Text(AppLocalizations.of(context)!.next),
             style: TextButton.styleFrom(
               foregroundColor: hasNext
                   ? Theme.of(context).colorScheme.onSurface

@@ -6,11 +6,14 @@ import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/localization/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
+import 'package:nhasixapp/core/utils/responsive_grid_delegate.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/tag_resolver.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
+import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
 import 'package:nhasixapp/presentation/widgets/content_card_widget.dart';
 import 'package:nhasixapp/presentation/widgets/pagination_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
@@ -373,7 +376,7 @@ class _SearchScreenState extends State<SearchScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error opening filter selection: $e'),
+            content: Text('${AppLocalizations.of(context)!.error}: $e'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -585,7 +588,7 @@ class _SearchScreenState extends State<SearchScreen> {
             // Clear selection chip
             if (selectedValue != null)
               FilterChip(
-                label: const Text('Clear'),
+                label: Text(AppLocalizations.of(context)!.clear),
                 selected: false,
                 onSelected: (selected) => onChanged(null),
                 backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
@@ -1040,7 +1043,7 @@ class _SearchScreenState extends State<SearchScreen> {
             OutlinedButton.icon(
               onPressed: _clearAllFilters,
               icon: const Icon(Icons.clear_all),
-              label: const Text('Clear Filters'),
+              label: Text(AppLocalizations.of(context)!.clearFilters),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Theme.of(context).colorScheme.primary,
                 side: BorderSide(color: Theme.of(context).colorScheme.primary),
@@ -1106,23 +1109,27 @@ class _SearchScreenState extends State<SearchScreen> {
       },
       color: Theme.of(context).colorScheme.primary,
       backgroundColor: Theme.of(context).colorScheme.surface,
-      child: GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.7,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 16,
-        ),
-        itemCount: state.results.length,
-        itemBuilder: (context, index) {
-          final content = state.results[index];
-          return ContentCard(
-            content: content,
-            onTap: () {
-              AppRouter.goToContentDetail(context, content.id);
+      child: BlocBuilder<SettingsCubit, SettingsState>(
+        builder: (context, settingsState) {
+          return GridView.builder(
+            padding: const EdgeInsets.all(16),
+            gridDelegate: ResponsiveGridDelegate.createStandardGridDelegate(
+              context,
+              context.read<SettingsCubit>(),
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 16,
+            ),
+            itemCount: state.results.length,
+            itemBuilder: (context, index) {
+              final content = state.results[index];
+              return ContentCard(
+                content: content,
+                onTap: () {
+                  AppRouter.goToContentDetail(context, content.id);
             },
             showUploadDate: false,
+          );
+        },
           );
         },
       ),

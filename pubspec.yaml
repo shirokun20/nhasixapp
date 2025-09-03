@@ -13,6 +13,8 @@ platforms:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # Core Flutter & State Management
   flutter_bloc: ^9.1.1
@@ -60,7 +62,7 @@ dependencies:
   # Utilities
   logger: ^2.5.0
   permission_handler: ^11.3.1
-  intl: ^0.19.0
+  intl: ^0.20.2
   device_info_plus: ^10.1.2
   collection: ^1.18.0
 
@@ -79,6 +81,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true
 
   assets:
     - assets/

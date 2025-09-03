@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/text_style_const.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../services/history_cleanup_service.dart';
 import '../../../cubits/history/history_cubit.dart';
 
@@ -113,8 +114,8 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
 
   Widget _buildContent(BuildContext context, ScrollController scrollController) {
     if (_cleanupStatus == null) {
-      return const Center(
-        child: Text('Failed to load cleanup status'),
+      return Center(
+        child: Text(AppLocalizations.of(context)!.failedToLoadCleanupStatus),
       );
     }
 
@@ -297,7 +298,7 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
           child: ElevatedButton.icon(
             onPressed: () => _performManualCleanup(context),
             icon: const Icon(Icons.cleaning_services),
-            label: const Text('Manual Cleanup'),
+            label: Text(AppLocalizations.of(context)!.manualCleanup),
             style: ElevatedButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Theme.of(context).colorScheme.onPrimary,
@@ -313,7 +314,7 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
           child: OutlinedButton.icon(
             onPressed: () => _navigateToSettings(context),
             icon: const Icon(Icons.settings),
-            label: const Text('Cleanup Settings'),
+            label: Text(AppLocalizations.of(context)!.cleanupSettings),
           ),
         ),
       ],
@@ -377,14 +378,14 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Manual Cleanup'),
-        content: const Text(
-          'This will perform cleanup based on your current settings. Continue?',
+        title: Text(AppLocalizations.of(context)!.manualCleanup),
+        content: Text(
+          AppLocalizations.of(context)!.manualCleanupConfirmation,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -392,7 +393,7 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
               context.pop(); // Close bottom sheet
               widget.historyCubit.performManualCleanup();
             },
-            child: const Text('Cleanup'),
+            child: Text(AppLocalizations.of(context)!.cleanup),
           ),
         ],
       ),

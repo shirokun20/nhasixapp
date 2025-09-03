@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/text_style_const.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../domain/entities/entities.dart';
 import '../../blocs/download/download_bloc.dart';
 import '../../widgets/widgets.dart';
@@ -43,7 +44,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     final colorScheme = Theme.of(context).colorScheme;
     
     return AppScaffoldWithOffline(
-      title: 'Downloads',
+      title: AppLocalizations.of(context)!.downloads,
       backgroundColor: colorScheme.surface,
       appBar: _buildAppBar(), // Use custom AppBar with menu actions
       body: BlocConsumer<DownloadBloc, DownloadBlocState>(
@@ -70,19 +71,17 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         },
         builder: (context, state) {
           if (state is DownloadInitial || state is DownloadInitializing) {
-            return const Center(
-              child: AppProgressIndicator(message: 'Initializing downloads...'),
+            return Center(
+              child: AppProgressIndicator(message: AppLocalizations.of(context)!.initializingDownloads),
             );
           }
 
           if (state is DownloadError && state.previousState == null) {
             return AppErrorWidget(
-              title: 'Download Error',
+              title: AppLocalizations.of(context)!.downloadError,
               message: state.message,
               onRetry: state.canRetry
-                  ? () => context
-                      .read<DownloadBloc>()
-                      .add(const DownloadInitializeEvent())
+                  ? () => context.read<DownloadBloc>().add(const DownloadInitializeEvent())
                   : null,
             );
           }
@@ -91,8 +90,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             return _buildLoadedContent(state);
           }
 
-          return const Center(
-            child: AppProgressIndicator(message: 'Loading downloads...'),
+          return Center(
+            child: AppProgressIndicator(message: AppLocalizations.of(context)!.loadingDownloads),
           );
         },
       ),
@@ -104,7 +103,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       backgroundColor: Theme.of(context).colorScheme.surface,
       foregroundColor: Theme.of(context).colorScheme.onSurface,
       title: Text(
-        'Downloads',
+        AppLocalizations.of(context)!.downloads,
         style: TextStyleConst.headlineMedium.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
         ),
@@ -130,7 +129,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                     children: [
                       Icon(Icons.pause, color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
-                      Text('Pause All', style: TextStyleConst.bodyMedium.copyWith(
+                      Text(AppLocalizations.of(context)!.pauseAll, style: TextStyleConst.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       )),
                     ],
@@ -144,7 +143,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                     children: [
                       Icon(Icons.play_arrow, color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
-                      Text('Resume All', style: TextStyleConst.bodyMedium.copyWith(
+                      Text(AppLocalizations.of(context)!.resumeAll, style: TextStyleConst.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       )),
                     ],
@@ -157,7 +156,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                     children: [
                       Icon(Icons.cancel, color: Theme.of(context).colorScheme.error),
                       const SizedBox(width: 8),
-                      Text('Cancel All',
+                      Text(AppLocalizations.of(context)!.cancelAll,
                           style: TextStyleConst.bodyMedium
                               .copyWith(color: Theme.of(context).colorScheme.error)),
                     ],
@@ -171,7 +170,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                     children: [
                       Icon(Icons.clear_all, color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
-                      Text('Clear Completed', style: TextStyleConst.bodyMedium.copyWith(
+                      Text(AppLocalizations.of(context)!.clearCompleted, style: TextStyleConst.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       )),
                     ],
@@ -184,7 +183,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                       Icon(Icons.cleaning_services,
                           color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
-                      Text('Cleanup Storage', style: TextStyleConst.bodyMedium.copyWith(
+                      Text(AppLocalizations.of(context)!.cleanupStorage, style: TextStyleConst.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       )),
                     ],
@@ -197,7 +196,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                     children: [
                       Icon(Icons.settings, color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
-                      Text('Settings', style: TextStyleConst.bodyMedium.copyWith(
+                      Text(AppLocalizations.of(context)!.settings, style: TextStyleConst.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       )),
                     ],
@@ -209,7 +208,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                     children: [
                       Icon(Icons.file_download, color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
-                      Text('Export List', style: TextStyleConst.bodyMedium.copyWith(
+                      Text(AppLocalizations.of(context)!.exportList, style: TextStyleConst.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       )),
                     ],
@@ -225,12 +224,12 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         labelColor: Theme.of(context).colorScheme.primary,
         unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
         indicatorColor: Theme.of(context).colorScheme.primary,
-        tabs: const [
-          Tab(text: 'All'),
-          Tab(text: 'Active'),
-          Tab(text: 'Queued'),
-          Tab(text: 'Completed'),
-          Tab(text: 'Failed'),
+        tabs: [
+          Tab(text: AppLocalizations.of(context)!.all),
+          Tab(text: AppLocalizations.of(context)!.active),
+          Tab(text: AppLocalizations.of(context)!.queued),
+          Tab(text: AppLocalizations.of(context)!.completed),
+          Tab(text: AppLocalizations.of(context)!.failed),
         ],
       ),
     );
@@ -247,12 +246,12 @@ class _DownloadsScreenState extends State<DownloadsScreen>
           child: TabBarView(
             controller: _tabController,
             children: [
-              _buildDownloadsList(state.downloads, 'No downloads yet'),
-              _buildDownloadsList(state.activeDownloads, 'No active downloads'),
-              _buildDownloadsList(state.queuedDownloads, 'No queued downloads'),
+              _buildDownloadsList(state.downloads, AppLocalizations.of(context)!.noDownloadsYet),
+              _buildDownloadsList(state.activeDownloads, AppLocalizations.of(context)!.noActiveDownloads),
+              _buildDownloadsList(state.queuedDownloads, AppLocalizations.of(context)!.noQueuedDownloads),
               _buildDownloadsList(
-                  state.completedDownloads, 'No completed downloads'),
-              _buildDownloadsList(state.failedDownloads, 'No failed downloads'),
+                  state.completedDownloads, AppLocalizations.of(context)!.noCompletedDownloads),
+              _buildDownloadsList(state.failedDownloads, AppLocalizations.of(context)!.noFailedDownloads),
             ],
           ),
         ),
@@ -328,7 +327,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       case 'export':
         downloadBloc.add(const DownloadExportEvent());
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Download list exported')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.downloadListExported)),
         );
         break;
     }
@@ -371,8 +370,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         // This triggers the PDF conversion process in background
         downloadBloc.add(DownloadConvertToPdfEvent(download.contentId));
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('PDF conversion started'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.pdfConversionStarted),
             duration: Duration(seconds: 2),
           ),
         );
@@ -386,19 +385,19 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surface,
         title: Text(
-          'Cancel All Downloads',
+          AppLocalizations.of(context)!.cancelAllDownloads,
           style: TextStyleConst.headlineSmall
               .copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         content: Text(
-          'Are you sure you want to cancel all active downloads? This action cannot be undone.',
+          AppLocalizations.of(context)!.cancelAllConfirmation,
           style:
               TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel', style: TextStyleConst.labelLarge),
+            child: Text(AppLocalizations.of(context)!.cancel, style: TextStyleConst.labelLarge),
           ),
           TextButton(
             onPressed: () {
@@ -406,7 +405,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
               context.read<DownloadBloc>().add(const DownloadCancelAllEvent());
             },
             child: Text(
-              'Cancel All',
+              AppLocalizations.of(context)!.cancelAll,
               style:
                   TextStyleConst.labelLarge.copyWith(color: Theme.of(context).colorScheme.error),
             ),
@@ -422,12 +421,12 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surface,
         title: Text(
-          'Cancel Download',
+          AppLocalizations.of(context)!.cancelDownload,
           style: TextStyleConst.headlineSmall
               .copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         content: Text(
-          'Are you sure you want to cancel this download? Progress will be lost.',
+          AppLocalizations.of(context)!.cancelDownloadConfirmation,
           style:
               TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
@@ -444,7 +443,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   .add(DownloadCancelEvent(download.contentId));
             },
             child: Text(
-              'Cancel Download',
+              AppLocalizations.of(context)!.cancelDownload,
               style:
                   TextStyleConst.labelLarge.copyWith(color: Theme.of(context).colorScheme.error),
             ),
@@ -460,19 +459,19 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surface,
         title: Text(
-          'Remove Download',
+          AppLocalizations.of(context)!.removeDownload,
           style: TextStyleConst.headlineSmall
               .copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         content: Text(
-          'Are you sure you want to remove this download from the list? Downloaded files will be deleted.',
+          AppLocalizations.of(context)!.removeDownloadConfirmation,
           style:
               TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel', style: TextStyleConst.labelLarge),
+            child: Text(AppLocalizations.of(context)!.cancel, style: TextStyleConst.labelLarge),
           ),
           TextButton(
             onPressed: () {
@@ -482,7 +481,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   .add(DownloadRemoveEvent(download.contentId));
             },
             child: Text(
-              'Remove',
+              AppLocalizations.of(context)!.remove,
               style:
                   TextStyleConst.labelLarge.copyWith(color: Theme.of(context).colorScheme.error),
             ),
@@ -498,19 +497,19 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surface,
         title: Text(
-          'Cleanup Storage',
+          AppLocalizations.of(context)!.cleanupStorage,
           style: TextStyleConst.headlineSmall
               .copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         content: Text(
-          'This will remove orphaned files and clean up failed downloads. Continue?',
+          AppLocalizations.of(context)!.cleanupConfirmation,
           style:
               TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel', style: TextStyleConst.labelLarge),
+            child: Text(AppLocalizations.of(context)!.cancel, style: TextStyleConst.labelLarge),
           ),
           TextButton(
             onPressed: () {
@@ -519,7 +518,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   .read<DownloadBloc>()
                   .add(const DownloadCleanupStorageEvent());
             },
-            child: Text('Cleanup', style: TextStyleConst.labelLarge),
+            child: Text(AppLocalizations.of(context)!.cleanup, style: TextStyleConst.labelLarge),
           ),
         ],
       ),
@@ -562,31 +561,31 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Download Details',
+                AppLocalizations.of(context)!.downloadDetails,
                 style: TextStyleConst.headlineSmall
                     .copyWith(color: Theme.of(context).colorScheme.onSurface),
               ),
               const SizedBox(height: 16),
-              _buildDetailRow('Status', download.statusText),
-              _buildDetailRow('Progress', _buildProgressText(download)),
-              _buildDetailRow('Progress %', '${(download.progressPercentage > 100) ? '100' : download.progressPercentage}%'),
+              _buildDetailRow(AppLocalizations.of(context)!.status, download.statusText),
+              _buildDetailRow(AppLocalizations.of(context)!.progress, _buildProgressText(download)),
+              _buildDetailRow(AppLocalizations.of(context)!.progressPercent, '${(download.progressPercentage > 100) ? '100' : download.progressPercentage}%'),
               if (download.speed > 0)
-                _buildDetailRow('Speed', download.formattedSpeed),
+                _buildDetailRow(AppLocalizations.of(context)!.speed, download.formattedSpeed),
               if (download.fileSize > 0)
-                _buildDetailRow('Size', download.formattedFileSize),
+                _buildDetailRow(AppLocalizations.of(context)!.size, download.formattedFileSize),
               if (download.startTime != null)
                 _buildDetailRow(
-                    'Started', _formatDateTime(download.startTime!)),
+                    AppLocalizations.of(context)!.started, _formatDateTime(download.startTime!)),
               if (download.endTime != null)
-                _buildDetailRow('Ended', _formatDateTime(download.endTime!)),
+                _buildDetailRow(AppLocalizations.of(context)!.ended, _formatDateTime(download.endTime!)),
               if (download.downloadDuration != null)
                 _buildDetailRow(
-                    'Duration', _formatDuration(download.downloadDuration!)),
+                    AppLocalizations.of(context)!.duration, _formatDuration(download.downloadDuration!)),
               if (download.estimatedTimeRemaining != null)
                 _buildDetailRow(
-                    'ETA', _formatDuration(download.estimatedTimeRemaining!)),
+                    AppLocalizations.of(context)!.eta, _formatDuration(download.estimatedTimeRemaining!)),
               if (download.error != null)
-                _buildDetailRow('Error', download.error!, isError: true),
+                _buildDetailRow(AppLocalizations.of(context)!.error, download.error!, isError: true),
               const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,

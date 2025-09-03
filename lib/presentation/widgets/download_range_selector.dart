@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
+import '../../core/localization/app_localizations.dart';
 
 /// Widget for selecting download range (page X to page Y)
 /// Allows users to download partial content instead of all pages
@@ -81,7 +82,7 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
     return AlertDialog(
       backgroundColor: colorScheme.surface,
       title: Text(
-        'Select Download Range',
+        AppLocalizations.of(context)!.selectDownloadRange,
         style: TextStyleConst.headingLarge.copyWith(
           color: colorScheme.onSurface,
         ),
@@ -103,7 +104,7 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Content: ${widget.contentTitle}',
+                    '${AppLocalizations.of(context)!.content}: ${widget.contentTitle}',
                     style: TextStyleConst.bodyLarge.copyWith(
                       color: colorScheme.onSurface,
                     ),
@@ -112,7 +113,7 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Total Pages: ${widget.totalPages}',
+                    '${AppLocalizations.of(context)!.totalPages}: ${widget.totalPages}',
                     style: TextStyleConst.bodySmall.copyWith(
                       color: colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
@@ -133,14 +134,14 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
               child: Column(
                 children: [
                   Text(
-                    'Selected: Pages $startPage to $endPage',
+                    AppLocalizations.of(context)!.selectedPagesTo(startPage, endPage),
                     style: TextStyleConst.headingSmall.copyWith(
                       color: colorScheme.primary,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '$selectedPageCount pages (${selectionPercentage.toStringAsFixed(1)}%)',
+                    AppLocalizations.of(context)!.pagesPercentage(selectedPageCount, selectionPercentage.toStringAsFixed(1)),
                     style: TextStyleConst.bodySmall.copyWith(
                       color: colorScheme.primary,
                     ),
@@ -152,7 +153,7 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
 
             // Range slider
             Text(
-              'Use slider to select range:',
+              AppLocalizations.of(context)!.useSliderToSelectRange,
               style: TextStyleConst.bodyLarge.copyWith(
                 color: colorScheme.onSurface,
               ),
@@ -190,7 +191,7 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
 
             // Manual input fields
             Text(
-              'Or enter manually:',
+              AppLocalizations.of(context)!.orEnterManually,
               style: TextStyleConst.bodyLarge.copyWith(
                 color: colorScheme.onSurface,
               ),
@@ -210,7 +211,7 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
                       color: colorScheme.onSurface,
                     ),
                     decoration: InputDecoration(
-                      labelText: 'Start Page',
+                      labelText: AppLocalizations.of(context)!.startPage,
                       labelStyle: TextStyleConst.bodySmall.copyWith(
                         color: colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
@@ -245,7 +246,7 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
                       color: colorScheme.onSurface,
                     ),
                     decoration: InputDecoration(
-                      labelText: 'End Page',
+                      labelText: AppLocalizations.of(context)!.endPage,
                       labelStyle: TextStyleConst.bodySmall.copyWith(
                         color: colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
@@ -273,7 +274,7 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
 
             // Quick selection buttons
             Text(
-              'Quick selections:',
+              AppLocalizations.of(context)!.quickSelections,
               style: TextStyleConst.bodyLarge.copyWith(
                 color: colorScheme.onSurface,
               ),
@@ -283,11 +284,11 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _buildQuickSelectChip('All Pages', 1, widget.totalPages, context),
-                _buildQuickSelectChip('First Half', 1, (widget.totalPages / 2).round(), context),
-                _buildQuickSelectChip('Second Half', (widget.totalPages / 2).round() + 1, widget.totalPages, context),
-                _buildQuickSelectChip('First 10', 1, (widget.totalPages >= 10) ? 10 : widget.totalPages, context),
-                _buildQuickSelectChip('Last 10', (widget.totalPages >= 10) ? widget.totalPages - 9 : 1, widget.totalPages, context),
+                _buildQuickSelectChip(AppLocalizations.of(context)!.allPages, 1, widget.totalPages, context),
+                _buildQuickSelectChip(AppLocalizations.of(context)!.firstHalf, 1, (widget.totalPages / 2).round(), context),
+                _buildQuickSelectChip(AppLocalizations.of(context)!.secondHalf, (widget.totalPages / 2).round() + 1, widget.totalPages, context),
+                _buildQuickSelectChip(AppLocalizations.of(context)!.first10, 1, (widget.totalPages >= 10) ? 10 : widget.totalPages, context),
+                _buildQuickSelectChip(AppLocalizations.of(context)!.last10, (widget.totalPages >= 10) ? widget.totalPages - 9 : 1, widget.totalPages, context),
               ],
             ),
           ],
@@ -297,7 +298,7 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text(
-            'Cancel',
+            AppLocalizations.of(context)!.cancel,
             style: TextStyleConst.bodyMedium.copyWith(
               color: colorScheme.onSurface.withValues(alpha: 0.7),
             ),
@@ -309,7 +310,7 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
             Navigator.pop(context);
           },
           icon: const Icon(Icons.download),
-          label: Text('Download Range'),
+          label: Text(AppLocalizations.of(context)!.downloadRange),
           style: ElevatedButton.styleFrom(
             backgroundColor: colorScheme.primary,
             foregroundColor: colorScheme.onPrimary,

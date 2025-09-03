@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/localization/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/presentation/blocs/splash/splash_bloc.dart';
 
@@ -283,7 +284,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                             .read<SplashBloc>()
                             .add(SplashRetryBypassEvent()),
                         icon: const Icon(Icons.refresh),
-                        label: const Text('Retry'),
+                        label: Text(AppLocalizations.of(context)!.retry),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Theme.of(context).colorScheme.primary,
                           foregroundColor: Theme.of(context).colorScheme.onPrimary,

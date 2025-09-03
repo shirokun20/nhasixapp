@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 
 import '../../core/utils/app_state_manager.dart';
 import '../../core/constants/text_style_const.dart';
+import '../../core/localization/app_localizations.dart';
 
 /// Reusable scaffold widget that shows offline indicators and "Go Online" functionality
 /// This widget wraps around any page content to provide consistent offline mode UI
@@ -189,7 +190,7 @@ class AppScaffoldWithOffline extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text('Checking connection...'),
+              Text(AppLocalizations.of(context)!.checkingConnection),
             ],
           ),
           duration: const Duration(seconds: 2),
@@ -211,7 +212,7 @@ class AppScaffoldWithOffline extends StatelessWidget {
               children: [
                 Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onPrimary),
                 SizedBox(width: 12),
-                Text('Back online! All features available.'),
+                Text(AppLocalizations.of(context)!.backOnline),
               ],
             ),
             duration: Duration(seconds: 3),
@@ -226,7 +227,7 @@ class AppScaffoldWithOffline extends StatelessWidget {
               children: [
                 Icon(Icons.wifi_off, color: Theme.of(context).colorScheme.onError),
                 SizedBox(width: 12),
-                Text('Still no internet connection.'),
+                Text(AppLocalizations.of(context)!.stillNoInternet),
               ],
             ),
             duration: Duration(seconds: 2),
@@ -242,7 +243,7 @@ class AppScaffoldWithOffline extends StatelessWidget {
             children: [
               Icon(Icons.error_outline, color: Theme.of(context).colorScheme.onError),
               SizedBox(width: 12),
-              Text('Unable to check connection.'),
+              Text(AppLocalizations.of(context)!.unableToCheck),
             ],
           ),
           duration: Duration(seconds: 2),
