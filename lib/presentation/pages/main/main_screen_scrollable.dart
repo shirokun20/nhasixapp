@@ -224,7 +224,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
         if (state is ContentInitial) {
           return Center(
             child: Text(
-              'Tap to load content',
+              AppLocalizations.of(context)?.tapToLoadContent ?? 'Tap to load content',
               style: TextStyleConst.placeholderText,
             ),
           );
@@ -362,7 +362,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           const SizedBox(height: 8),
           if (state.suggestions.isNotEmpty) ...[
             Text(
-              'Suggestions:',
+              AppLocalizations.of(context)?.suggestions ?? 'Suggestions:',
               style: TextStyleConst.bodyMedium,
             ),
             const SizedBox(height: 4),
@@ -446,7 +446,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
         if (_shouldShowSorting(state))
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: SortingWidget(
                 currentSort: _currentSortOption,
                 onSortChanged: _onSortingChanged,
@@ -617,7 +617,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Search Results',
+                      AppLocalizations.of(context)?.searchResults ?? 'Search Results',
                       style: TextStyleConst.headingSmall.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
@@ -946,14 +946,14 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                 Icon(Icons.error, color: Colors.white),
                 SizedBox(width: 8),
                 Expanded(
-                  child: Text('Failed to open browser: ${e.toString().replaceAll('Exception: ', '')}'),
+                  child: Text('${AppLocalizations.of(context)?.failedToOpenBrowser ?? 'Failed to open browser'}: ${e.toString().replaceAll('Exception: ', '')}'),
                 ),
               ],
             ),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 4),
             action: SnackBarAction(
-              label: 'Retry',
+              label: AppLocalizations.of(context)?.retry ?? 'Retry',
               textColor: Colors.white,
               onPressed: () => _openInBrowser(),
             ),
@@ -1143,9 +1143,9 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
               Text(AppLocalizations.of(context)!.newGalleriesToDownload(galleriesNeedDownload.length)),
               Text(AppLocalizations.of(context)!.alreadyDownloaded(alreadyDownloadedCount)),
               SizedBox(height: 12),
-              if (galleriesNeedDownload.length > 0)
+              if (galleriesNeedDownload.isNotEmpty)
                 Text(
-                  'Download ${galleriesNeedDownload.length} new galleries?\n\nThis may take significant time and storage space.',
+                  AppLocalizations.of(context)!.downloadInfo(galleriesNeedDownload.length),
                   style: TextStyle(fontWeight: FontWeight.normal),
                 ),
             ],
@@ -1195,7 +1195,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                       Text(AppLocalizations.of(context)!.queuedDownloads(queuedCount)),
                       if (alreadyDownloadedCount > 0)
                         Text(
-                          'Skipped $alreadyDownloadedCount already downloaded',
+                          AppLocalizations.of(context)!.countAlreadyDownloaded(alreadyDownloadedCount),
                           style: TextStyle(fontSize: 12, color: Colors.white70),
                         ),
                     ],
@@ -1206,7 +1206,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
             backgroundColor: queuedCount > 0 ? Colors.green : Colors.orange,
             duration: Duration(seconds: 5),
             action: SnackBarAction(
-              label: 'View Downloads',
+              label: AppLocalizations.of(context)?.viewDownloads ?? 'View Downloads',
               textColor: Colors.white,
               onPressed: () {
                 AppRouter.goToDownloads(context);

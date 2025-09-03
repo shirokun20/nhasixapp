@@ -25,6 +25,12 @@ class AppLocalizations {
   String get searchPlaceholder => locale.languageCode == 'id' ? 'Masukkan kata kunci pencarian' : 'Enter search keywords';
   String get noResults => locale.languageCode == 'id' ? 'Tidak ada hasil ditemukan' : 'No results found';
   String get searchSuggestions => locale.languageCode == 'id' ? 'Saran Pencarian' : 'Search Suggestions';
+  String get suggestions => locale.languageCode == 'id' ? 'Saran:' : 'Suggestions:';
+  String get tapToLoadContent => locale.languageCode == 'id' ? 'Ketuk untuk memuat konten' : 'Tap to load content';
+  String get searchResults => locale.languageCode == 'id' ? 'Hasil Pencarian' : 'Search Results';
+  String get failedToOpenBrowser => locale.languageCode == 'id' ? 'Gagal membuka browser' : 'Failed to open browser';
+  String get viewDownloads => locale.languageCode == 'id' ? 'Lihat Unduhan' : 'View Downloads';
+  String countAlreadyDownloaded(int count) => locale.languageCode == 'id' ? 'Dilewati $count yang sudah diunduh' : 'Skipped $count already downloaded';
 
   // Content and Gallery
   String get pages => locale.languageCode == 'id' ? 'Halaman' : 'Pages';
@@ -42,6 +48,7 @@ class AppLocalizations {
   String alreadyDownloaded(int count) => locale.languageCode == 'id' ? '• $count sudah didownload (akan dilewati)' : '• $count already downloaded (will be skipped)';
   String downloadNew(int count) => locale.languageCode == 'id' ? 'Download $count Baru' : 'Download $count New';
   String queuedDownloads(int count) => locale.languageCode == 'id' ? 'Mengantri $count download baru' : 'Queued $count new downloads';
+  String downloadInfo(int count) => locale.languageCode == 'id' ? 'Download $count galeri baru?\n\nIni mungkin memerlukan waktu dan ruang penyimpanan yang signifikan.' : 'Download $count new galleries?\n\nThis may take significant time and storage space.';
   String get failedToDownload => locale.languageCode == 'id' ? 'Gagal mendownload galeri' : 'Failed to download galleries';
   String get lowQuality => locale.languageCode == 'id' ? 'Rendah (Lebih Cepat)' : 'Low (Faster)';
   String get mediumQuality => locale.languageCode == 'id' ? 'Sedang' : 'Medium';
