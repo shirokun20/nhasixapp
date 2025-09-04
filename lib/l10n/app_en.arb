@@ -267,6 +267,7 @@
   "inactivityThreshold": "Inactivity Threshold",
   "daysOfInactivityBeforeCleanup": "Days of inactivity before cleanup",
   "resetToDefault": "Reset to Default",
+  "resetToDefaults": "Reset to Defaults",
   "generalSettings": "General Settings",
   "displaySettings": "Display",
   "darkMode": "Dark Mode",
@@ -276,7 +277,15 @@
   "allowAnalytics": "Allow Analytics",
   "privacyAnalytics": "Privacy Analytics",
   "resetSettings": "Reset Settings",
-  
+  "resetReaderSettings": "Reset Reader Settings",
+  "resetReaderSettingsConfirmation": "This will reset all reader settings to their default values:\n\n",
+  "readingModeLabel": "Reading Mode: Horizontal Pages",
+  "keepScreenOnLabel": "Keep Screen On: Off",
+  "showUILabel": "Show UI: On",
+  "areYouSure": "Are you sure you want to proceed?",
+  "readerSettingsResetSuccess": "Reader settings have been reset to defaults.",
+  "failedToResetSettings": "Failed to reset settings: {error}",
+
   "readingHistory": "Reading History",
   "clearAllHistory": "Clear All History",
   "manualCleanup": "Manual Cleanup",
@@ -387,5 +396,22 @@
   "noData": "No Data",
   "unknownTitle": "Unknown Title",
   "offlineContentError": "Offline Content Error",
-  "downloadError": "Download Error"
+  "downloadError": "Download Error",
+  
+  "other": "Other",
+  "confirmResetSettings": "Are you sure you want to restore all settings to default?",
+  "reset": "Reset",
+  "manageAutoCleanupDescription": "Manage automatic cleanup of reading history to free up storage space.",
+  "oneDay": "1 day",
+  "twoDays": "2 days", 
+  "oneWeek": "1 week",
+  "privacyInfoText": "• Data is stored on your device\n• Not sent to external servers\n• Only to improve app performance\n• Can be disabled anytime",
+  "unlimited": "Unlimited",
+  "daysValue": "{days} days",
+  "@daysValue": {
+    "placeholders": {
+      "days": {"type": "int"}
+    }
+  },
+  "analyticsSubtitle": "Helps app development with local data (not shared)"
 }

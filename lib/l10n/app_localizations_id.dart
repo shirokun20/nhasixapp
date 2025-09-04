@@ -556,6 +556,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get resetToDefault => 'Reset ke Default';
 
   @override
+  String get resetToDefaults => 'Reset ke Default';
+
+  @override
   String get generalSettings => 'Pengaturan Umum';
 
   @override
@@ -581,6 +584,34 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get resetSettings => 'Reset Pengaturan';
+
+  @override
+  String get resetReaderSettings => 'Reset Pengaturan Reader';
+
+  @override
+  String get resetReaderSettingsConfirmation =>
+      'Ini akan mengatur ulang semua pengaturan pembaca ke nilai default:\n\n';
+
+  @override
+  String get readingModeLabel => 'Mode Membaca: Halaman Horizontal';
+
+  @override
+  String get keepScreenOnLabel => 'Tetap Nyalakan Layar: Mati';
+
+  @override
+  String get showUILabel => 'Tampilkan UI: Aktif';
+
+  @override
+  String get areYouSure => 'Apakah Anda yakin ingin melanjutkan?';
+
+  @override
+  String get readerSettingsResetSuccess =>
+      'Pengaturan pembaca telah direset ke default.';
+
+  @override
+  String failedToResetSettings(Object error) {
+    return 'Gagal mengatur ulang pengaturan: $error';
+  }
 
   @override
   String get readingHistory => 'Riwayat Baca';
@@ -820,4 +851,43 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get offlineContentError => 'Error Konten Offline';
+
+  @override
+  String get other => 'Lainnya';
+
+  @override
+  String get confirmResetSettings =>
+      'Yakin ingin mengembalikan semua pengaturan ke default?';
+
+  @override
+  String get reset => 'Reset';
+
+  @override
+  String get manageAutoCleanupDescription =>
+      'Kelola pembersihan otomatis riwayat baca untuk menghemat ruang penyimpanan.';
+
+  @override
+  String get oneDay => '1 hari';
+
+  @override
+  String get twoDays => '2 hari';
+
+  @override
+  String get oneWeek => '1 minggu';
+
+  @override
+  String get privacyInfoText =>
+      '• Data disimpan di device Anda\n• Tidak dikirim ke server eksternal\n• Hanya untuk meningkatkan performa app\n• Dapat dimatikan kapan saja';
+
+  @override
+  String get unlimited => 'Tanpa batas';
+
+  @override
+  String daysValue(int days) {
+    return '$days hari';
+  }
+
+  @override
+  String get analyticsSubtitle =>
+      'Membantu pengembangan app dengan data lokal (tidak dibagikan)';
 }

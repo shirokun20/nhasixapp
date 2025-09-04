@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:photo_view/photo_view.dart';
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
@@ -870,7 +871,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     color: Theme.of(context).colorScheme.error,
                   ),
                   label: Text(
-                    'Reset to Defaults',
+                    AppLocalizations.of(context)?.resetToDefaults ?? 'Reset to Defaults',
                     style: TextStyleConst.buttonMedium.copyWith(
                       color: Theme.of(context).colorScheme.error,
                     ),
@@ -918,17 +919,17 @@ class _ReaderScreenState extends State<ReaderScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         title: Text(
-          'Reset Reader Settings',
+          AppLocalizations.of(context)?.resetReaderSettings ?? 'Reset Reader Settings',
           style: TextStyleConst.headingMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         content: Text(
-          'This will reset all reader settings to their default values:\n\n'
-          '• Reading Mode: Horizontal Pages\n'
-          '• Keep Screen On: Off\n'
-          '• Show UI: On\n\n'
-          'Are you sure you want to continue?',
+          AppLocalizations.of(context)?.resetReaderSettingsConfirmation ?? 'This will reset all reader settings to their default values:\n\n'
+          '• ${AppLocalizations.of(context)?.readingModeLabel ?? 'Reading Mode: Horizontal Pages'}\n'
+          '• ${AppLocalizations.of(context)?.keepScreenOnLabel ?? 'Keep Screen On: Off'}\n'
+          '• ${AppLocalizations.of(context)?.showUILabel ?? 'Show UI: On'}\n\n'
+          '${AppLocalizations.of(context)?.areYouSure ?? 'Are you sure you want to proceed?'}',
           style: TextStyleConst.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -937,7 +938,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
-              'Cancel',
+              AppLocalizations.of(context)?.cancel ?? 'Cancel',
               style: TextStyleConst.buttonMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -949,7 +950,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               _resetReaderSettings();
             },
             child: Text(
-              'Reset',
+              AppLocalizations.of(context)?.reset ?? 'Reset',
               style: TextStyleConst.buttonMedium.copyWith(
                 color: Theme.of(context).colorScheme.error,
               ),
@@ -973,7 +974,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Reader settings have been reset to defaults',
+              AppLocalizations.of(context)?.readerSettingsResetSuccess ?? 'Reader settings have been reset to defaults.'  ,
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onPrimary,
               ),
@@ -994,7 +995,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Failed to reset settings: ${e.toString()}',
+              AppLocalizations.of(context)?.failedToResetSettings(e.toString()) ?? 'Failed to reset settings: ${e.toString()}'  ,
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onError,
               ),
@@ -1007,7 +1008,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             action: SnackBarAction(
-              label: 'Retry',
+              label: AppLocalizations.of(context)?.retry ?? 'Retry' ,
               textColor: Theme.of(context).colorScheme.onError,
               onPressed: () => _resetReaderSettings(),
             ),

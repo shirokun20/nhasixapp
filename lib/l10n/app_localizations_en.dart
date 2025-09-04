@@ -555,6 +555,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resetToDefault => 'Reset to Default';
 
   @override
+  String get resetToDefaults => 'Reset to Defaults';
+
+  @override
   String get generalSettings => 'General Settings';
 
   @override
@@ -580,6 +583,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resetSettings => 'Reset Settings';
+
+  @override
+  String get resetReaderSettings => 'Reset Reader Settings';
+
+  @override
+  String get resetReaderSettingsConfirmation =>
+      'This will reset all reader settings to their default values:\n\n';
+
+  @override
+  String get readingModeLabel => 'Reading Mode: Horizontal Pages';
+
+  @override
+  String get keepScreenOnLabel => 'Keep Screen On: Off';
+
+  @override
+  String get showUILabel => 'Show UI: On';
+
+  @override
+  String get areYouSure => 'Are you sure you want to proceed?';
+
+  @override
+  String get readerSettingsResetSuccess =>
+      'Reader settings have been reset to defaults.';
+
+  @override
+  String failedToResetSettings(Object error) {
+    return 'Failed to reset settings: $error';
+  }
 
   @override
   String get readingHistory => 'Reading History';
@@ -820,4 +851,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offlineContentError => 'Offline Content Error';
+
+  @override
+  String get other => 'Other';
+
+  @override
+  String get confirmResetSettings =>
+      'Are you sure you want to restore all settings to default?';
+
+  @override
+  String get reset => 'Reset';
+
+  @override
+  String get manageAutoCleanupDescription =>
+      'Manage automatic cleanup of reading history to free up storage space.';
+
+  @override
+  String get oneDay => '1 day';
+
+  @override
+  String get twoDays => '2 days';
+
+  @override
+  String get oneWeek => '1 week';
+
+  @override
+  String get privacyInfoText =>
+      '• Data is stored on your device\n• Not sent to external servers\n• Only to improve app performance\n• Can be disabled anytime';
+
+  @override
+  String get unlimited => 'Unlimited';
+
+  @override
+  String daysValue(int days) {
+    return '$days days';
+  }
+
+  @override
+  String get analyticsSubtitle =>
+      'Helps app development with local data (not shared)';
 }

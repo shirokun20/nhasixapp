@@ -173,6 +173,7 @@
   "inactivityThreshold": "Batas Tidak Aktif",
   "daysOfInactivityBeforeCleanup": "Hari tidak aktif sebelum pembersihan",
   "resetToDefault": "Reset ke Default",
+  "resetToDefaults": "Reset ke Default",
   "generalSettings": "Pengaturan Umum",
   "displaySettings": "Tampilan",
   "darkMode": "Mode Gelap",
@@ -182,7 +183,15 @@
   "allowAnalytics": "Izinkan Analytics",
   "privacyAnalytics": "Privasi Analytics",
   "resetSettings": "Reset Pengaturan",
-  
+  "resetReaderSettings": "Reset Pengaturan Reader",
+  "resetReaderSettingsConfirmation": "Ini akan mengatur ulang semua pengaturan pembaca ke nilai default:\n\n",
+  "readingModeLabel": "Mode Membaca: Halaman Horizontal",
+  "keepScreenOnLabel": "Tetap Nyalakan Layar: Mati",
+  "showUILabel": "Tampilkan UI: Aktif",
+  "areYouSure": "Apakah Anda yakin ingin melanjutkan?",
+  "readerSettingsResetSuccess": "Pengaturan pembaca telah direset ke default.",
+  "failedToResetSettings": "Gagal mengatur ulang pengaturan: {error}",
+
   "readingHistory": "Riwayat Baca",
   "clearAllHistory": "Bersihkan Semua Riwayat",
   "manualCleanup": "Pembersihan Manual",
@@ -268,5 +277,142 @@
   "noData": "Tidak Ada Data",
   "unknownTitle": "Judul Tidak Diketahui",
   "offlineContentError": "Error Konten Offline",
-  "downloadError": "Error Unduhan"
+  "downloadError": "Error Unduhan",
+  
+  "other": "Lainnya",
+  "confirmResetSettings": "Yakin ingin mengembalikan semua pengaturan ke default?",
+  "reset": "Reset",
+  "manageAutoCleanupDescription": "Kelola pembersihan otomatis riwayat baca untuk menghemat ruang penyimpanan.",
+  "oneDay": "1 hari",
+  "twoDays": "2 hari",
+  "oneWeek": "1 minggu", 
+  "privacyInfoText": "• Data disimpan di device Anda\n• Tidak dikirim ke server eksternal\n• Hanya untuk meningkatkan performa app\n• Dapat dimatikan kapan saja",
+  "unlimited": "Tanpa batas",
+  "daysValue": "{days} hari",
+  "analyticsSubtitle": "Membantu pengembangan app dengan data lokal (tidak dibagikan)",
+
+  "@downloadStarted": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "@countAlreadyDownloaded": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@newGalleriesToDownload": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@alreadyDownloaded": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@downloadNew": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@queuedDownloads": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@downloadInfo": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@selectedPagesTo": {
+    "placeholders": {
+      "start": {"type": "int"},
+      "end": {"type": "int"}
+    }
+  },
+  "@pagesPercentage": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "percentage": {"type": "String"}
+    }
+  },
+  "@rangeDownloadStarted": {
+    "placeholders": {
+      "title": {"type": "String"},
+      "pageText": {"type": "String"}
+    }
+  },
+  "@opening": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "@deleteFavoritesConfirmation": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "s": {"type": "String"}
+    }
+  },
+  "@exportedFavoritesCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@exportFailed": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "@selectedCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@failedToRemoveFavorite": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "@removedFavoritesCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@failedToRemoveFavorites": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "@hours": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@days": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@daysAgo": {
+    "placeholders": {
+      "days": {"type": "int"}
+    }
+  },
+  "@hoursAgo": {
+    "placeholders": {
+      "hours": {"type": "int"}
+    }
+  },
+  "@minutesAgo": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "@daysValue": {
+    "placeholders": {
+      "days": {"type": "int"}
+    }
+  }
 }

@@ -190,14 +190,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                  child: Text('Pembaca', style: TextStyleConst.headingSmall.copyWith(
+                  child: Text(AppLocalizations.of(context)!.reader, style: TextStyleConst.headingSmall.copyWith(
                     color: Theme.of(context).colorScheme.primary,
                   )),
                 ),
                 SwitchListTile(
                   tileColor: Theme.of(context).colorScheme.surface,
                   activeThumbColor: Theme.of(context).colorScheme.primary,
-                  title: Text('Show System UI in Reader', style: TextStyleConst.bodyLarge.copyWith(
+                  title: Text(AppLocalizations.of(context)!.showSystemUIInReader, style: TextStyleConst.bodyLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   )),
                   value: prefs.showSystemUI,
@@ -210,7 +210,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
                   child: Row(
                     children: [
-                      Text('History Cleanup', style: TextStyleConst.headingSmall.copyWith(
+                      Text(AppLocalizations.of(context)!.historyCleanup, style: TextStyleConst.headingSmall.copyWith(
                         color: Theme.of(context).colorScheme.primary,
                       )),
                       const SizedBox(width: 8),
@@ -225,7 +225,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: Text(
-                    'Manage automatic cleanup of reading history to free up storage space.',
+                    AppLocalizations.of(context)!.manageAutoCleanupDescription,
                     style: TextStyleConst.bodySmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -234,10 +234,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SwitchListTile(
                   tileColor: Theme.of(context).colorScheme.surface,
                   activeThumbColor: Theme.of(context).colorScheme.primary,
-                  title: Text('Auto Cleanup History', style: TextStyleConst.bodyLarge.copyWith(
+                  title: Text(AppLocalizations.of(context)!.autoCleanupHistory, style: TextStyleConst.bodyLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   )),
-                  subtitle: Text('Automatically clean old reading history', style: TextStyleConst.bodyMedium.copyWith(
+                  subtitle: Text(AppLocalizations.of(context)!.automaticallyCleanOldReadingHistory, style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   )),
                   value: prefs.autoCleanupHistory,
@@ -248,12 +248,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListTile(
                   tileColor: Theme.of(context).colorScheme.surface,
                   enabled: prefs.autoCleanupHistory,
-                  title: Text('Cleanup Interval', style: TextStyleConst.bodyLarge.copyWith(
+                  title: Text(AppLocalizations.of(context)!.cleanupInterval, style: TextStyleConst.bodyLarge.copyWith(
                     color: prefs.autoCleanupHistory 
                         ? Theme.of(context).colorScheme.onSurface
                         : Theme.of(context).colorScheme.onSurfaceVariant,
                   )),
-                  subtitle: Text('How often to cleanup history', style: TextStyleConst.bodyMedium.copyWith(
+                  subtitle: Text(AppLocalizations.of(context)!.howOftenToCleanupHistory, style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   )),
                   trailing: Container(
@@ -278,11 +278,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         if (hours < 24) {
                           label = '${hours}h';
                         } else if (hours == 24) {
-                          label = '1 day';
+                          label = AppLocalizations.of(context)!.oneDay;
                         } else if (hours == 48) {
-                          label = '2 days';
+                          label = AppLocalizations.of(context)!.twoDays;
                         } else {
-                          label = '1 week';
+                          label = AppLocalizations.of(context)!.oneWeek;
                         }
                         return DropdownMenuItem<int>(
                           value: hours,
@@ -304,12 +304,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListTile(
                   tileColor: Theme.of(context).colorScheme.surface,
                   enabled: prefs.autoCleanupHistory,
-                  title: Text('Max History Days', style: TextStyleConst.bodyLarge.copyWith(
+                  title: Text(AppLocalizations.of(context)!.maxHistoryDays, style: TextStyleConst.bodyLarge.copyWith(
                     color: prefs.autoCleanupHistory 
                         ? Theme.of(context).colorScheme.onSurface
                         : Theme.of(context).colorScheme.onSurfaceVariant,
                   )),
-                  subtitle: Text('Maximum days to keep history (0 = unlimited)', style: TextStyleConst.bodyMedium.copyWith(
+                  subtitle: Text(AppLocalizations.of(context)!.maximumDaysToKeepHistory, style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   )),
                   trailing: Container(
@@ -333,7 +333,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         return DropdownMenuItem<int>(
                           value: days,
                           child: Text(
-                            days == 0 ? 'Unlimited' : '$days days',
+                            days == 0 ? AppLocalizations.of(context)!.unlimited : AppLocalizations.of(context)!.daysValue(days),
                             style: TextStyleConst.bodyLarge.copyWith(
                               color: prefs.autoCleanupHistory 
                                   ? Theme.of(context).colorScheme.onSurface
@@ -353,12 +353,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SwitchListTile(
                   tileColor: Theme.of(context).colorScheme.surface,
                   activeThumbColor: Theme.of(context).colorScheme.primary,
-                  title: Text('Cleanup on Inactivity', style: TextStyleConst.bodyLarge.copyWith(
+                  title: Text(AppLocalizations.of(context)!.cleanupOnInactivity, style: TextStyleConst.bodyLarge.copyWith(
                     color: prefs.autoCleanupHistory 
                         ? Theme.of(context).colorScheme.onSurface
                         : Theme.of(context).colorScheme.onSurfaceVariant,
                   )),
-                  subtitle: Text('Clean history when app is unused for several days', style: TextStyleConst.bodyMedium.copyWith(
+                  subtitle: Text(AppLocalizations.of(context)!.cleanHistoryWhenAppUnused, style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   )),
                   value: prefs.cleanupOnInactivity,
@@ -369,12 +369,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListTile(
                   tileColor: Theme.of(context).colorScheme.surface,
                   enabled: prefs.autoCleanupHistory && prefs.cleanupOnInactivity,
-                  title: Text('Inactivity Threshold', style: TextStyleConst.bodyLarge.copyWith(
+                  title: Text(AppLocalizations.of(context)!.inactivityThreshold, style: TextStyleConst.bodyLarge.copyWith(
                     color: (prefs.autoCleanupHistory && prefs.cleanupOnInactivity)
                         ? Theme.of(context).colorScheme.onSurface
                         : Theme.of(context).colorScheme.onSurfaceVariant,
                   )),
-                  subtitle: Text('Days of inactivity before cleanup', style: TextStyleConst.bodyMedium.copyWith(
+                  subtitle: Text(AppLocalizations.of(context)!.daysOfInactivityBeforeCleanup, style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   )),
                   trailing: Container(
@@ -397,7 +397,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       items: [3, 5, 7, 14, 30].map((days) {
                         return DropdownMenuItem<int>(
                           value: days,
-                          child: Text('$days days', style: TextStyleConst.bodyLarge.copyWith(
+                          child: Text(AppLocalizations.of(context)!.daysValue(days), style: TextStyleConst.bodyLarge.copyWith(
                             color: (prefs.autoCleanupHistory && prefs.cleanupOnInactivity)
                                 ? Theme.of(context).colorScheme.onSurface
                                 : Theme.of(context).colorScheme.onSurfaceVariant,
@@ -414,7 +414,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                  child: Text('Lainnya', style: TextStyleConst.headingSmall.copyWith(
+                  child: Text(AppLocalizations.of(context)!.other, style: TextStyleConst.headingSmall.copyWith(
                     color: Theme.of(context).colorScheme.primary,
                   )),
                 ),
@@ -425,7 +425,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     color: Theme.of(context).colorScheme.onSurface,
                   )),
                   subtitle: Text(
-                    'Membantu pengembangan app dengan data lokal (tidak dibagikan)',
+                    AppLocalizations.of(context)!.analyticsSubtitle,
                     style: TextStyleConst.bodySmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
@@ -477,7 +477,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '• Data disimpan di device Anda\n• Tidak dikirim ke server eksternal\n• Hanya untuk meningkatkan performa app\n• Dapat dimatikan kapan saja',
+                            AppLocalizations.of(context)!.privacyInfoText,
                             style: TextStyleConst.bodySmall.copyWith(
                               color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
                             ),
@@ -493,7 +493,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: ElevatedButton.icon(
                     icon: Icon(Icons.refresh, color: Theme.of(context).colorScheme.onError),
-                    label: Text('Reset ke Default', style: TextStyleConst.buttonLarge.copyWith(color: Theme.of(context).colorScheme.onError)),
+                    label: Text(AppLocalizations.of(context)!.resetToDefault, style: TextStyleConst.buttonLarge.copyWith(color: Theme.of(context).colorScheme.onError)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.error,
                       foregroundColor: Theme.of(context).colorScheme.onError,
@@ -508,13 +508,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           title: Text(AppLocalizations.of(context)?.resetSettings ?? 'Reset Settings', style: TextStyleConst.headingSmall.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
                           )),
-                          content: Text('Yakin ingin mengembalikan semua pengaturan ke default?', style: TextStyleConst.bodyLarge.copyWith(
+                          content: Text(AppLocalizations.of(context)!.confirmResetSettings, style: TextStyleConst.bodyLarge.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
                           )),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(ctx, false),
-                              child: Text('Batal', style: TextStyleConst.bodyLarge.copyWith(color: Theme.of(context).colorScheme.outline)),
+                              child: Text(AppLocalizations.of(context)!.cancel, style: TextStyleConst.bodyLarge.copyWith(color: Theme.of(context).colorScheme.outline)),
                             ),
                             ElevatedButton(
                               style: ElevatedButton.styleFrom(
@@ -522,7 +522,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 foregroundColor: Theme.of(context).colorScheme.onError,
                               ),
                               onPressed: () => Navigator.pop(ctx, true),
-                              child: Text('Reset', style: TextStyleConst.bodyLarge.copyWith(color: Theme.of(context).colorScheme.onError)),
+                              child: Text(AppLocalizations.of(context)!.reset, style: TextStyleConst.bodyLarge.copyWith(color: Theme.of(context).colorScheme.onError)),
                             ),
                           ],
                         ),

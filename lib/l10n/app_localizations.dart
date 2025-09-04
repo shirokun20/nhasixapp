@@ -1100,6 +1100,12 @@ abstract class AppLocalizations {
   /// **'Reset to Default'**
   String get resetToDefault;
 
+  /// No description provided for @resetToDefaults.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset to Defaults'**
+  String get resetToDefaults;
+
   /// No description provided for @generalSettings.
   ///
   /// In en, this message translates to:
@@ -1153,6 +1159,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reset Settings'**
   String get resetSettings;
+
+  /// No description provided for @resetReaderSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Reader Settings'**
+  String get resetReaderSettings;
+
+  /// No description provided for @resetReaderSettingsConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'This will reset all reader settings to their default values:\n\n'**
+  String get resetReaderSettingsConfirmation;
+
+  /// No description provided for @readingModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading Mode: Horizontal Pages'**
+  String get readingModeLabel;
+
+  /// No description provided for @keepScreenOnLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Screen On: Off'**
+  String get keepScreenOnLabel;
+
+  /// No description provided for @showUILabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Show UI: On'**
+  String get showUILabel;
+
+  /// No description provided for @areYouSure.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to proceed?'**
+  String get areYouSure;
+
+  /// No description provided for @readerSettingsResetSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Reader settings have been reset to defaults.'**
+  String get readerSettingsResetSuccess;
+
+  /// No description provided for @failedToResetSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to reset settings: {error}'**
+  String failedToResetSettings(Object error);
 
   /// No description provided for @readingHistory.
   ///
@@ -1609,6 +1663,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Offline Content Error'**
   String get offlineContentError;
+
+  /// No description provided for @other.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get other;
+
+  /// No description provided for @confirmResetSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to restore all settings to default?'**
+  String get confirmResetSettings;
+
+  /// No description provided for @reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get reset;
+
+  /// No description provided for @manageAutoCleanupDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage automatic cleanup of reading history to free up storage space.'**
+  String get manageAutoCleanupDescription;
+
+  /// No description provided for @oneDay.
+  ///
+  /// In en, this message translates to:
+  /// **'1 day'**
+  String get oneDay;
+
+  /// No description provided for @twoDays.
+  ///
+  /// In en, this message translates to:
+  /// **'2 days'**
+  String get twoDays;
+
+  /// No description provided for @oneWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'1 week'**
+  String get oneWeek;
+
+  /// No description provided for @privacyInfoText.
+  ///
+  /// In en, this message translates to:
+  /// **'• Data is stored on your device\n• Not sent to external servers\n• Only to improve app performance\n• Can be disabled anytime'**
+  String get privacyInfoText;
+
+  /// No description provided for @unlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited'**
+  String get unlimited;
+
+  /// No description provided for @daysValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days'**
+  String daysValue(int days);
+
+  /// No description provided for @analyticsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Helps app development with local data (not shared)'**
+  String get analyticsSubtitle;
 }
 
 class _AppLocalizationsDelegate
