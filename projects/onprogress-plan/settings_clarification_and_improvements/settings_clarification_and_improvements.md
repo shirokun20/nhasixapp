@@ -2041,5 +2041,97 @@ Future<void> _deleteDownload(String contentId) async {
 
 ---
 
-*Plan last updated: August 31, 2025*
-*Status: Infrastructure improvements completed, ready for UI feature development*
+## 📋 **CONCRETE LOCALIZATION TASKS CHECKLIST** *(September 3, 2025)*
+
+### 🎯 **Audit Results: 39 Hardcoded Strings Found**
+
+Based on comprehensive codebase audit using automated grep search patterns, the following specific hardcoded strings need conversion to ARB-based localization system:
+
+### **📱 High Priority - Settings Screen** *(12 tasks)*
+- [ ] 1 - settings_screen.dart - line 193: "Pembaca"
+- [ ] 2 - settings_screen.dart - line 213: "History Cleanup" 
+- [ ] 3 - settings_screen.dart - line 237: "Auto Cleanup History"
+- [ ] 4 - settings_screen.dart - line 251: "Cleanup Interval"
+- [ ] 5 - settings_screen.dart - line 307: "Max History Days"
+- [ ] 6 - settings_screen.dart - line 356: "Cleanup on Inactivity"
+- [ ] 7 - settings_screen.dart - line 372: "Inactivity Threshold"
+- [ ] 8 - settings_screen.dart - line 417: "Lainnya"
+- [ ] 9 - settings_screen.dart - line 496: "Reset ke Default"
+- [ ] 10 - settings_screen.dart - line 511: "Yakin ingin mengembalikan semua pengaturan ke default?"
+- [ ] 11 - settings_screen.dart - line 517: "Batal"
+- [ ] 12 - settings_screen.dart - line 525: "Reset"
+
+### **📖 High Priority - Reader Screen** *(6 tasks)*
+- [ ] 13 - reader_screen.dart - line 873: "Reset to Defaults"
+- [ ] 14 - reader_screen.dart - line 921: "Reset Reader Settings"
+- [ ] 15 - reader_screen.dart - line 927: "This will reset all reader settings to their default values:\n\n"
+- [ ] 16 - reader_screen.dart - line 952: "Reset"
+- [ ] 17 - reader_screen.dart - line 976: "Reader settings have been reset to defaults"
+- [ ] 18 - reader_screen.dart - line 997: "Failed to reset settings: ${e.toString()}"
+
+### **🧹 Medium Priority - History Cleanup Widget** *(11 tasks)*
+- [ ] 19 - history_cleanup_info_widget.dart - line 86: "History Cleanup"
+- [ ] 20 - history_cleanup_info_widget.dart - line 169: "Auto Cleanup"
+- [ ] 21 - history_cleanup_info_widget.dart - line 221: "Cleanup interval"
+- [ ] 22 - history_cleanup_info_widget.dart - line 238: "Max history age"
+- [ ] 23 - history_cleanup_info_widget.dart - line 244: "Inactivity cleanup"
+- [ ] 24 - history_cleanup_info_widget.dart - line 258: "History Statistics"
+- [ ] 25 - history_cleanup_info_widget.dart - line 266: "Total items"
+- [ ] 26 - history_cleanup_info_widget.dart - line 272: "Last cleanup"
+- [ ] 27 - history_cleanup_info_widget.dart - line 278: "Last app access"
+- [ ] 28 - history_cleanup_info_widget.dart - line 226: "Next cleanup"
+- [ ] 29 - history_cleanup_info_widget.dart - line 246: "Cleanup Settings"
+
+### **⚠️ Medium Priority - Platform Dialog** *(4 tasks)*
+- [ ] 30 - platform_not_supported_dialog.dart - line 20: "Platform Not Supported"
+- [ ] 31 - platform_not_supported_dialog.dart - line 26: "NhasixApp is designed exclusively for Android devices."
+- [ ] 32 - platform_not_supported_dialog.dart - line 33: "Please install and run this app on an Android device."
+- [ ] 33 - platform_not_supported_dialog.dart - line 47: "OK"
+
+### **🔄 Medium Priority - DateTime Formatting** *(4 tasks)*
+- [ ] 34 - history_cleanup_info_widget.dart - line 395: "day" / "days" / "ago"
+- [ ] 35 - history_cleanup_info_widget.dart - line 397: "hour" / "hours" / "ago"  
+- [ ] 36 - history_cleanup_info_widget.dart - line 399: "minute" / "minutes" / "ago"
+- [ ] 37 - history_cleanup_info_widget.dart - line 401: "Just now"
+
+### **📊 Lower Priority - Download Stats** *(2 tasks)*
+- [ ] 38 - download_stats_widget.dart - line 144: Failed downloads warning text
+- [ ] 39 - download_stats_widget.dart - line 160: Error icon descriptions
+
+---
+
+### 📊 **Progress Tracking**
+- **📊 OVERALL PROGRESS**: 0/39 tasks completed (0%)
+- **🕒 ESTIMATED EFFORT**: 16-20 hours total
+- **🎯 NEXT PRIORITY**: Phase 1 - Complete high priority settings screen (tasks 1-18)
+
+### 🚀 **Implementation Strategy**
+
+#### **Phase 1: Critical UI Strings (Tasks 1-18)** - *Estimated: 6-8 hours*
+Fokus pada settings dan reader screen karena ini adalah interface utama yang dilihat user.
+
+#### **Phase 2: Dialog & Notifications (Tasks 19-33)** - *Estimated: 5-7 hours*  
+Konversi dialog dan popup yang muncul saat interaksi user.
+
+#### **Phase 3: Supporting Elements (Tasks 34-39)** - *Estimated: 3-4 hours*
+DateTime formatting dan stats widget.
+
+### 🔧 **Implementation Process**
+
+1. **Expand ARB files** dengan string baru yang dibutuhkan untuk setiap task
+2. **Update widget per widget** sesuai checklist urutan priority
+3. **Test language switching** setelah setiap phase selesai
+4. **Verify no hardcoded strings remaining** dengan grep search ulang
+
+### ✅ **Completion Criteria**
+
+- [ ] All 39 tasks completed and checked off
+- [ ] No hardcoded strings detected by automated scan
+- [ ] All major user journeys tested in both English and Indonesian
+- [ ] Language switching works seamlessly throughout app
+- [ ] No mixed-language text appears anywhere in UI
+
+---
+
+*Plan last updated: September 3, 2025*
+*Status: Infrastructure improvements completed, concrete localization tasks identified and documented for systematic implementation*
