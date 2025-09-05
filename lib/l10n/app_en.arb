@@ -413,5 +413,30 @@
       "days": {"type": "int"}
     }
   },
-  "analyticsSubtitle": "Helps app development with local data (not shared)"
+  "analyticsSubtitle": "Helps app development with local data (not shared)",
+
+  "loadingContent": "Loading content...",
+  "loadingError": "Loading Error",
+  "jumpToPage": "Jump to Page",
+  "pageInputLabel": "Page (1-{maxPages})",
+  "@pageInputLabel": {
+    "placeholders": {
+      "maxPages": {"type": "int"}
+    }
+  },
+  "pageOfPages": "Page {current} of {total}",
+  "@pageOfPages": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "jump": "Jump",
+  "readerSettings": "Reader Settings",
+  "readingMode": "Reading Mode",
+  "horizontalPages": "Horizontal Pages",
+  "verticalPages": "Vertical Pages", 
+  "continuousScroll": "Continuous Scroll",
+  "keepScreenOnLabel": "Keep Screen On: Off",
+  "showUILabel": "Show UI: On"
 }

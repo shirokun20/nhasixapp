@@ -1729,6 +1729,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Helps app development with local data (not shared)'**
   String get analyticsSubtitle;
+
+  /// No description provided for @loadingContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading content...'**
+  String get loadingContent;
+
+  /// No description provided for @loadingError.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading Error'**
+  String get loadingError;
+
+  /// No description provided for @jumpToPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump to Page'**
+  String get jumpToPage;
+
+  /// No description provided for @pageInputLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Page (1-{maxPages})'**
+  String pageInputLabel(int maxPages);
+
+  /// No description provided for @pageOfPages.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {current} of {total}'**
+  String pageOfPages(int current, int total);
+
+  /// No description provided for @jump.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump'**
+  String get jump;
+
+  /// No description provided for @readerSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Reader Settings'**
+  String get readerSettings;
+
+  /// No description provided for @readingMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading Mode'**
+  String get readingMode;
+
+  /// No description provided for @horizontalPages.
+  ///
+  /// In en, this message translates to:
+  /// **'Horizontal Pages'**
+  String get horizontalPages;
+
+  /// No description provided for @verticalPages.
+  ///
+  /// In en, this message translates to:
+  /// **'Vertical Pages'**
+  String get verticalPages;
+
+  /// No description provided for @continuousScroll.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuous Scroll'**
+  String get continuousScroll;
 }
 
 class _AppLocalizationsDelegate

@@ -890,4 +890,41 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get analyticsSubtitle =>
       'Helps app development with local data (not shared)';
+
+  @override
+  String get loadingContent => 'Loading content...';
+
+  @override
+  String get loadingError => 'Loading Error';
+
+  @override
+  String get jumpToPage => 'Jump to Page';
+
+  @override
+  String pageInputLabel(int maxPages) {
+    return 'Page (1-$maxPages)';
+  }
+
+  @override
+  String pageOfPages(int current, int total) {
+    return 'Page $current of $total';
+  }
+
+  @override
+  String get jump => 'Jump';
+
+  @override
+  String get readerSettings => 'Reader Settings';
+
+  @override
+  String get readingMode => 'Reading Mode';
+
+  @override
+  String get horizontalPages => 'Horizontal Pages';
+
+  @override
+  String get verticalPages => 'Vertical Pages';
+
+  @override
+  String get continuousScroll => 'Continuous Scroll';
 }

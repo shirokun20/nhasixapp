@@ -202,9 +202,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   Widget _buildBody(ReaderState state) {
     if (state is ReaderLoading) {
-      return const Center(
+      return Center(
         child: AppProgressIndicator(
-          message: 'Loading content...',
+          message: AppLocalizations.of(context)?.loadingContent ?? 'Loading content...',
         ),
       );
     }
@@ -212,7 +212,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     if (state is ReaderError) {
       return Center(
         child: AppErrorWidget(
-          title: 'Loading Error',
+          title: AppLocalizations.of(context)?.loadingError ?? 'Loading Error',
           message: state.message ?? '',
           onRetry: () => _readerCubit.loadContent(
             widget.contentId,
@@ -466,7 +466,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        state.content?.getDisplayTitle() ?? 'Loading...',
+                        state.content?.getDisplayTitle() ?? AppLocalizations.of(context)?.loading ?? 'Loading...',
                         style: TextStyleConst.headingMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -496,7 +496,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             ),
                             const SizedBox(width: 2),
                             Text(
-                              'OFFLINE',
+                              (AppLocalizations.of(context)?.offline ?? 'OFFLINE').toUpperCase(),
                               style: TextStyleConst.bodySmall.copyWith(
                                 color: Theme.of(context).colorScheme.primary,
                                 fontSize: 10,
@@ -512,7 +512,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 Row(
                   children: [
                     Text(
-                      'Page ${state.currentPage ?? 1} of ${state.content?.pageCount ?? 1}',
+                      AppLocalizations.of(context)?.pageOfPages(state.currentPage ?? 1, state.content?.pageCount ?? 1) ?? 'Page ${state.currentPage ?? 1} of ${state.content?.pageCount ?? 1}',
                       style: TextStyleConst.bodySmall.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -701,7 +701,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         title: Text(
-          'Jump to Page',
+          AppLocalizations.of(context)?.jumpToPage ?? 'Jump to Page',
           style: TextStyleConst.headingMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
@@ -714,7 +714,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             color: Theme.of(context).colorScheme.onSurface,
           ),
           decoration: InputDecoration(
-            labelText: 'Page (1-${state.content?.pageCount ?? 1})',
+            labelText: AppLocalizations.of(context)?.pageInputLabel(state.content?.pageCount ?? 1) ?? 'Page (1-${state.content?.pageCount ?? 1})',
             labelStyle: TextStyleConst.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -730,7 +730,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
-              'Cancel',
+              AppLocalizations.of(context)?.cancel ?? 'Cancel',
               style: TextStyleConst.buttonMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -752,7 +752,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               }
             },
             child: Text(
-              'Jump',
+              AppLocalizations.of(context)?.jump ?? 'Jump',
               style: TextStyleConst.buttonMedium.copyWith(
                 color: Theme.of(context).colorScheme.primary,
               ),
@@ -787,7 +787,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               ),
 
               Text(
-                'Reader Settings',
+                AppLocalizations.of(context)?.readerSettings ?? 'Reader Settings',
                 style: TextStyleConst.headingMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
@@ -798,7 +798,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               // Reading mode
               ListTile(
                 title: Text(
-                  'Reading Mode',
+                  AppLocalizations.of(context)?.readingMode ?? 'Reading Mode',
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
@@ -905,11 +905,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
   String _getReadingModeLabel(ReadingMode mode) {
     switch (mode) {
       case ReadingMode.singlePage:
-        return 'Horizontal Pages';
+        return AppLocalizations.of(context)?.horizontalPages ?? 'Horizontal Pages';
       case ReadingMode.verticalPage:
-        return 'Vertical Pages';
+        return AppLocalizations.of(context)?.verticalPages ?? 'Vertical Pages';
       case ReadingMode.continuousScroll:
-        return 'Continuous Scroll';
+        return AppLocalizations.of(context)?.continuousScroll ?? 'Continuous Scroll';
     }
   }
 

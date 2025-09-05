@@ -414,5 +414,30 @@
     "placeholders": {
       "days": {"type": "int"}
     }
-  }
+  },
+
+  "loadingContent": "Memuat konten...",
+  "loadingError": "Kesalahan Memuat",
+  "jumpToPage": "Loncat ke Halaman",
+  "pageInputLabel": "Halaman (1-{maxPages})",
+  "@pageInputLabel": {
+    "placeholders": {
+      "maxPages": {"type": "int"}
+    }
+  },
+  "pageOfPages": "Halaman {current} dari {total}",
+  "@pageOfPages": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "jump": "Loncat",
+  "readerSettings": "Pengaturan Pembaca",
+  "readingMode": "Mode Baca",
+  "horizontalPages": "Halaman Horizontal",
+  "verticalPages": "Halaman Vertikal", 
+  "continuousScroll": "Gulir Terus Menerus",
+  "keepScreenOnLabel": "Jaga Layar Hidup: Mati",
+  "showUILabel": "Tampilkan UI: Hidup"
 }

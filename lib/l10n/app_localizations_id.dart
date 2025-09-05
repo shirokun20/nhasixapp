@@ -596,10 +596,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get readingModeLabel => 'Mode Membaca: Halaman Horizontal';
 
   @override
-  String get keepScreenOnLabel => 'Tetap Nyalakan Layar: Mati';
+  String get keepScreenOnLabel => 'Jaga Layar Hidup: Mati';
 
   @override
-  String get showUILabel => 'Tampilkan UI: Aktif';
+  String get showUILabel => 'Tampilkan UI: Hidup';
 
   @override
   String get areYouSure => 'Apakah Anda yakin ingin melanjutkan?';
@@ -890,4 +890,41 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get analyticsSubtitle =>
       'Membantu pengembangan app dengan data lokal (tidak dibagikan)';
+
+  @override
+  String get loadingContent => 'Memuat konten...';
+
+  @override
+  String get loadingError => 'Kesalahan Memuat';
+
+  @override
+  String get jumpToPage => 'Loncat ke Halaman';
+
+  @override
+  String pageInputLabel(int maxPages) {
+    return 'Halaman (1-$maxPages)';
+  }
+
+  @override
+  String pageOfPages(int current, int total) {
+    return 'Halaman $current dari $total';
+  }
+
+  @override
+  String get jump => 'Loncat';
+
+  @override
+  String get readerSettings => 'Pengaturan Pembaca';
+
+  @override
+  String get readingMode => 'Mode Baca';
+
+  @override
+  String get horizontalPages => 'Halaman Horizontal';
+
+  @override
+  String get verticalPages => 'Halaman Vertikal';
+
+  @override
+  String get continuousScroll => 'Gulir Terus Menerus';
 }
