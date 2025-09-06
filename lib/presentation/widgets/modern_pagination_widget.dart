@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 
 /// Modern simplified pagination widget with tap-to-jump functionality
 /// Keeps essential functionality but with cleaner, smaller design
@@ -38,6 +39,7 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
   }
 
   void _showPageJumpDialog() {
+    final l10n = AppLocalizations.of(context)!;
     _pageController.text = widget.currentPage.toString();
 
     showDialog(
@@ -45,7 +47,7 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         title: Text(
-          'Jump to Page',
+          l10n.jumpToPage,
           style: TextStyleConst.headingSmall.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
@@ -54,7 +56,7 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Enter page number (1 - ${widget.totalPages})',
+              l10n.enterPageNumber(widget.totalPages),
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -71,7 +73,7 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
                 color: Theme.of(context).colorScheme.onSurface,
               ),
               decoration: InputDecoration(
-                hintText: 'Page number',
+                hintText: l10n.pageNumber,
                 hintStyle: TextStyleConst.bodyMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -102,7 +104,7 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
-              'Cancel',
+              l10n.cancel,
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -118,7 +120,7 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
               foregroundColor: Theme.of(context).colorScheme.onPrimary,
             ),
             child: Text(
-              'Go',
+              l10n.go,
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onPrimary,
                 fontWeight: FontWeight.bold,
@@ -131,6 +133,7 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
   }
 
   void _goToPage() {
+    final l10n = AppLocalizations.of(context)!;
     final pageText = _pageController.text.trim();
     if (pageText.isEmpty) return;
 
@@ -139,7 +142,7 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Please enter a valid page number between 1 and ${widget.totalPages}',
+            l10n.validPageNumberError(widget.totalPages),
             style: TextStyleConst.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onError,
             ),
@@ -155,6 +158,8 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -176,7 +181,7 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
             color: widget.hasPrevious
                 ? Theme.of(context).colorScheme.onSurface
                 : Theme.of(context).colorScheme.onSurfaceVariant,
-            tooltip: 'Previous page',
+            tooltip: l10n.previousPage,
           ),
           
           // Page info with tap-to-jump functionality
@@ -201,7 +206,7 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Tap to jump',
+                    l10n.tapToJump,
                     style: TextStyleConst.overline.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 10,
@@ -219,7 +224,7 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
             color: widget.hasNext
                 ? Theme.of(context).colorScheme.onSurface
                 : Theme.of(context).colorScheme.onSurfaceVariant,
-            tooltip: 'Next page',
+            tooltip: l10n.nextPage,
           ),
         ],
       ),

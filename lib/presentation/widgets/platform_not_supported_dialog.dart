@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 
+import 'package:nhasixapp/l10n/app_localizations.dart';
+
 import '../../core/constants/text_style_const.dart';
 
 class PlatformNotSupportedDialog extends StatelessWidget {
@@ -10,7 +12,7 @@ class PlatformNotSupportedDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return AlertDialog(
       backgroundColor: colorScheme.surface,
       icon: Icon(
@@ -19,7 +21,7 @@ class PlatformNotSupportedDialog extends StatelessWidget {
         size: 48,
       ),
       title: Text(
-        'Platform Not Supported',
+        AppLocalizations.of(context)!.platformNotSupported,
         style: TextStyleConst.headlineSmall.copyWith(
           color: colorScheme.onSurface,
         ),
@@ -28,7 +30,7 @@ class PlatformNotSupportedDialog extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'NhasixApp is designed exclusively for Android devices.',
+            AppLocalizations.of(context)!.platformNotSupportedBody,
             textAlign: TextAlign.center,
             style: TextStyleConst.bodyMedium.copyWith(
               color: colorScheme.onSurface,
@@ -36,7 +38,7 @@ class PlatformNotSupportedDialog extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Please install and run this app on an Android device.',
+            AppLocalizations.of(context)!.platformNotSupportedInstall,
             textAlign: TextAlign.center,
             style: TextStyleConst.titleMedium.copyWith(
               color: colorScheme.onSurface,
@@ -51,7 +53,7 @@ class PlatformNotSupportedDialog extends StatelessWidget {
             foregroundColor: colorScheme.primary,
           ),
           child: Text(
-            'OK',
+            AppLocalizations.of(context)!.ok,
             style: TextStyleConst.labelLarge.copyWith(
               color: colorScheme.primary,
             ),

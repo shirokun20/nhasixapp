@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 import '../../core/routing/app_route.dart';
 
 class AppMainDrawerWidget extends StatelessWidget {
@@ -14,6 +15,7 @@ class AppMainDrawerWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     
     return Drawer(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -41,14 +43,14 @@ class AppMainDrawerWidget extends StatelessWidget {
                   height: 16,
                 ),
                 Text(
-                  'Nhentai',
+                  l10n.appSubtitle,
                   style: TextStyleConst.headingLarge.copyWith(
                     fontSize: 30,
                     color: theme.textTheme.headlineLarge?.color,
                   ),
                 ),
                 Text(
-                  'Nhentai unofficial client',
+                  l10n.appSubtitleDescription,
                   style: TextStyleConst.caption.copyWith(
                     color: theme.textTheme.bodySmall?.color,
                   ),
@@ -62,7 +64,7 @@ class AppMainDrawerWidget extends StatelessWidget {
               color: theme.iconTheme.color,
             ),
             title: Text(
-              'Downloaded galleries',
+              l10n.downloadedGalleries,
               style: TextStyleConst.navigationLabel.copyWith(
                 color: theme.textTheme.titleMedium?.color,
               ),
@@ -78,7 +80,7 @@ class AppMainDrawerWidget extends StatelessWidget {
               color: theme.iconTheme.color,
             ),
             title: Text(
-              'Offline content',
+              l10n.offlineContent,
               style: TextStyleConst.navigationLabel.copyWith(
                 color: theme.textTheme.titleMedium?.color,
               ),
@@ -94,7 +96,7 @@ class AppMainDrawerWidget extends StatelessWidget {
               color: theme.iconTheme.color,
             ),
             title: Text(
-              'Random gallery',
+              l10n.randomGallery,
               style: TextStyleConst.navigationLabel.copyWith(
                 color: theme.textTheme.titleMedium?.color,
               ),
@@ -110,7 +112,7 @@ class AppMainDrawerWidget extends StatelessWidget {
               color: theme.iconTheme.color,
             ),
             title: Text(
-              'Favorite galleries',
+              l10n.favoriteGalleries,
               style: TextStyleConst.navigationLabel.copyWith(
                 color: theme.textTheme.titleMedium?.color,
               ),
@@ -126,7 +128,7 @@ class AppMainDrawerWidget extends StatelessWidget {
               color: theme.iconTheme.color,
             ),
             title: Text(
-              'View history',
+              l10n.viewHistory,
               style: TextStyleConst.navigationLabel.copyWith(
                 color: theme.textTheme.titleMedium?.color,
               ),
@@ -142,7 +144,7 @@ class AppMainDrawerWidget extends StatelessWidget {
               color: theme.iconTheme.color,
             ),
             title: Text(
-              'Settings',
+              l10n.settings,
               style: TextStyleConst.navigationLabel.copyWith(
                 color: theme.textTheme.titleMedium?.color,
               ),

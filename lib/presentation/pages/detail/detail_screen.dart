@@ -139,7 +139,7 @@ class _DetailScreenState extends State<DetailScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Loading Content',
+          AppLocalizations.of(context)!.loadingContentTitle,
           style: TextStyleConst.headingMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -216,14 +216,14 @@ class _DetailScreenState extends State<DetailScreen> {
                 child: Column(
                   children: [
                     Text(
-                      'Loading Content Details',
+                      AppLocalizations.of(context)!.loadingContentDetails,
                       style: TextStyleConst.headingMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Fetching metadata and images...',
+                      AppLocalizations.of(context)!.fetchingMetadata,
                       style: TextStyleConst.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -235,7 +235,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
               // Additional loading info
               Text(
-                'This may take a few moments',
+                AppLocalizations.of(context)!.thisMayTakeMoments,
                 style: TextStyleConst.bodySmall.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontStyle: FontStyle.italic,
@@ -269,7 +269,7 @@ class _DetailScreenState extends State<DetailScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'You are offline. Some features may be limited.',
+                  AppLocalizations.of(context)!.youAreOffline,
                   style: TextStyleConst.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.onSecondaryContainer,
                   ),
@@ -278,7 +278,7 @@ class _DetailScreenState extends State<DetailScreen> {
               TextButton(
                 onPressed: () => _showGoOnlineDialog(context),
                 child: Text(
-                  'Go Online',
+                  AppLocalizations.of(context)!.goOnline,
                   style: TextStyleConst.labelMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSecondaryContainer,
                   ),
@@ -314,7 +314,7 @@ class _DetailScreenState extends State<DetailScreen> {
                         size: 20,
                       ),
                       onPressed: () => _showGoOnlineDialog(context),
-                      tooltip: 'You are offline. Tap to go online.',
+                      tooltip: AppLocalizations.of(context)!.youAreOfflineTapToGoOnline,
                     ),
                   ),
                 // Favorite button
@@ -350,7 +350,7 @@ class _DetailScreenState extends State<DetailScreen> {
                               color: Theme.of(context).colorScheme.onSurface),
                           const SizedBox(width: 12),
                           Text(
-                            'Download',
+                            AppLocalizations.of(context)!.download,
                             style: TextStyleConst.bodyMedium.copyWith(
                               color: Theme.of(context).colorScheme.onSurface,
                             ),
@@ -366,7 +366,7 @@ class _DetailScreenState extends State<DetailScreen> {
                               color: Theme.of(context).colorScheme.onSurface),
                           const SizedBox(width: 12),
                           Text(
-                            'Copy Link',
+                            AppLocalizations.of(context)!.copyLink,
                             style: TextStyleConst.bodyMedium.copyWith(
                               color: Theme.of(context).colorScheme.onSurface,
                             ),
@@ -542,7 +542,7 @@ class _DetailScreenState extends State<DetailScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                'Content Information',
+                AppLocalizations.of(context)!.contentInformation,
                 style: TextStyleConst.headingMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
@@ -552,25 +552,25 @@ class _DetailScreenState extends State<DetailScreen> {
           const SizedBox(height: 16),
 
           // Metadata rows with enhanced styling
-          _buildMetadataRow('ID', content.id, Icons.tag),
-          _buildMetadataRow('Pages', '${content.pageCount}', Icons.menu_book),
+          _buildMetadataRow(AppLocalizations.of(context)!.idLabel, content.id, Icons.tag),
+          _buildMetadataRow(AppLocalizations.of(context)!.pagesLabel, '${content.pageCount}', Icons.menu_book),
           _buildMetadataRow(
-              'Language', content.language.toLowerCase(), Icons.language),
+              AppLocalizations.of(context)!.languageLabel, content.language.toLowerCase(), Icons.language),
           if (content.artists.isNotEmpty)
             _buildMetadataRow(
-                'Artist', content.artists.join(', '), Icons.person),
+                AppLocalizations.of(context)!.artistLabel, content.artists.join(', '), Icons.person),
           if (content.characters.isNotEmpty)
             _buildMetadataRow(
-                'Characters', content.characters.join(', '), Icons.people),
+                AppLocalizations.of(context)!.charactersLabel, content.characters.join(', '), Icons.people),
           if (content.parodies.isNotEmpty)
             _buildMetadataRow(
-                'Parodies', content.parodies.join(', '), Icons.movie),
+                AppLocalizations.of(context)!.parodiesLabel, content.parodies.join(', '), Icons.movie),
           if (content.groups.isNotEmpty)
-            _buildMetadataRow('Groups', content.groups.join(', '), Icons.group),
+            _buildMetadataRow(AppLocalizations.of(context)!.groupsLabel, content.groups.join(', '), Icons.group),
           _buildMetadataRow(
-              'Uploaded', _formatDate(content.uploadDate), Icons.schedule),
+              AppLocalizations.of(context)!.uploadedLabel, _formatDate(content.uploadDate), Icons.schedule),
           _buildMetadataRow(
-              'Favorites', _formatNumber(content.favorites), Icons.favorite),
+              AppLocalizations.of(context)!.favoritesLabel, _formatNumber(content.favorites), Icons.favorite),
         ],
       ),
     );
@@ -626,7 +626,7 @@ class _DetailScreenState extends State<DetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Tags',
+          AppLocalizations.of(context)!.tagsLabel,
           style: TextStyleConst.headingSmall.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
@@ -697,7 +697,7 @@ class _DetailScreenState extends State<DetailScreen> {
                 onPressed: () => _readContent(content),
                 icon: const Icon(Icons.menu_book, size: 24),
                 label: Text(
-                  'Read Now',
+                  AppLocalizations.of(context)!.readNow,
                   style: TextStyleConst.headingSmall.copyWith(
                     color: Theme.of(context).colorScheme.onPrimary,
                   ),
@@ -744,7 +744,7 @@ class _DetailScreenState extends State<DetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Statistics',
+            AppLocalizations.of(context)!.statistics,
             style: TextStyleConst.headingSmall.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
@@ -756,19 +756,19 @@ class _DetailScreenState extends State<DetailScreen> {
             children: [
               _buildStatItem(
                 icon: Icons.favorite,
-                label: 'Favorites',
+                label: AppLocalizations.of(context)!.favoritesLabel,
                 value: _formatNumber(content.favorites),
                 color: Theme.of(context).colorScheme.error,
               ),
               _buildStatItem(
                 icon: Icons.menu_book,
-                label: 'Pages',
+                label: AppLocalizations.of(context)!.pagesLabel,
                 value: '${content.pageCount}',
                 color: Theme.of(context).colorScheme.primary,
               ),
               _buildStatItem(
                 icon: Icons.label,
-                label: 'Tags',
+                label: AppLocalizations.of(context)!.tagsLabel,
                 value: '${content.tags.length}',
                 color: Theme.of(context).colorScheme.secondary,
               ),
@@ -784,20 +784,20 @@ class _DetailScreenState extends State<DetailScreen> {
                 if (content.artists.isNotEmpty)
                   _buildStatItem(
                     icon: Icons.person,
-                    label: 'Artists',
+                    label: AppLocalizations.of(context)!.artistsLabel,
                     value: '${content.artists.length}',
                     color: Theme.of(context).colorScheme.tertiary,
                   ),
                 _buildStatItem(
                   icon: Icons.language,
-                  label: 'Language',
+                  label: AppLocalizations.of(context)!.languageLabel,
                   value: content.language.toUpperCase(),
                   color: Theme.of(context).colorScheme.secondaryContainer,
                 ),
                 if (content.relatedContent.isNotEmpty)
                   _buildStatItem(
                     icon: Icons.recommend,
-                    label: 'Related',
+                    label: AppLocalizations.of(context)!.relatedLabel,
                     value: '${content.relatedContent.length}',
                     color: Theme.of(context).colorScheme.primary,
                   ),
@@ -814,7 +814,7 @@ class _DetailScreenState extends State<DetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'More Like This',
+          AppLocalizations.of(context)!.moreLikeThis,
           style: TextStyleConst.headingSmall.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
@@ -950,7 +950,7 @@ class _DetailScreenState extends State<DetailScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Error',
+          AppLocalizations.of(context)!.error,
           style: TextStyleConst.headingMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -986,7 +986,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
                 // Error title
                 Text(
-                  'Failed to load content',
+                  AppLocalizations.of(context)!.failedToLoadContent,
                   style: TextStyleConst.headingLarge.copyWith(
                     color: Theme.of(context).colorScheme.error,
                   ),
@@ -1066,19 +1066,22 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   String _formatDate(DateTime date) {
+    final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final difference = now.difference(date);
 
     if (difference.inDays > 365) {
-      return '${(difference.inDays / 365).floor()} year${(difference.inDays / 365).floor() > 1 ? 's' : ''} ago';
+      final years = (difference.inDays / 365).floor();
+      return l10n.yearAgo(years, years > 1 ? 's' : '');
     } else if (difference.inDays > 30) {
-      return '${(difference.inDays / 30).floor()} month${(difference.inDays / 30).floor() > 1 ? 's' : ''} ago';
+      final months = (difference.inDays / 30).floor();
+      return l10n.monthAgo(months, months > 1 ? 's' : '');
     } else if (difference.inDays > 0) {
-      return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
+      return l10n.dayAgo(difference.inDays, difference.inDays > 1 ? 's' : '');
     } else if (difference.inHours > 0) {
-      return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
+      return l10n.hourAgo(difference.inHours, difference.inHours > 1 ? 's' : '');
     } else {
-      return 'Just now';
+      return l10n.justNow;
     }
   }
 
@@ -1143,7 +1146,7 @@ class _DetailScreenState extends State<DetailScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Share panel opened successfully!',
+                    AppLocalizations.of(context)!.sharePanelOpened,
                     style: TextStyleConst.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSecondary,
                     ),
@@ -1175,7 +1178,7 @@ class _DetailScreenState extends State<DetailScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Share failed, but link copied to clipboard',
+                    AppLocalizations.of(context)!.shareFailed,
                     style: TextStyleConst.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onError,
                     ),
@@ -1255,7 +1258,7 @@ class _DetailScreenState extends State<DetailScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Download started for "${content.title}"',
+                  AppLocalizations.of(context)!.downloadStartedFor(content.title),
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSecondary,
                   ),
@@ -1265,7 +1268,7 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
           backgroundColor: Theme.of(context).colorScheme.secondary,
           action: SnackBarAction(
-            label: 'View',
+            label: AppLocalizations.of(context)!.viewDownloadsAction,
             textColor: Theme.of(context).colorScheme.onSecondary,
             onPressed: () {
               // Navigate to downloads screen
@@ -1290,7 +1293,7 @@ class _DetailScreenState extends State<DetailScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Failed to start download. Please try again.',
+                  AppLocalizations.of(context)!.failedToStartDownload,
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onError,
                   ),
@@ -1326,7 +1329,7 @@ class _DetailScreenState extends State<DetailScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Link copied to clipboard',
+                  AppLocalizations.of(context)!.linkCopiedToClipboard,
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSecondary,
                   ),
@@ -1336,7 +1339,7 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
           backgroundColor: Theme.of(context).colorScheme.secondary,
           action: SnackBarAction(
-            label: 'View',
+            label: AppLocalizations.of(context)!.viewDownloadsAction,
             textColor: Theme.of(context).colorScheme.onSecondary,
             onPressed: () {
               // Show copied link in a dialog for verification
@@ -1361,7 +1364,7 @@ class _DetailScreenState extends State<DetailScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Failed to copy link. Please try again.',
+                  AppLocalizations.of(context)!.failedToCopyLink,
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onError,
                   ),
@@ -1382,7 +1385,7 @@ class _DetailScreenState extends State<DetailScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         title: Text(
-          'Copied Link',
+          AppLocalizations.of(context)!.copiedLink,
           style: TextStyleConst.headingSmall.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
@@ -1392,7 +1395,7 @@ class _DetailScreenState extends State<DetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'The following link has been copied to your clipboard:',
+              AppLocalizations.of(context)!.linkCopiedToClipboardDescription,
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -1421,7 +1424,7 @@ class _DetailScreenState extends State<DetailScreen> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
-              'Close',
+              AppLocalizations.of(context)!.closeDialog,
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.primary,
               ),
@@ -1445,13 +1448,13 @@ class _DetailScreenState extends State<DetailScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         title: Text(
-          'Go Online',
+          AppLocalizations.of(context)!.goOnlineDialogTitle,
           style: TextStyleConst.headingSmall.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         content: Text(
-          'You are currently in offline mode. Would you like to go online to access the latest content?',
+          AppLocalizations.of(context)!.goOnlineDialogContent,
           style: TextStyleConst.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -1460,7 +1463,7 @@ class _DetailScreenState extends State<DetailScreen> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
-              'Cancel',
+              AppLocalizations.of(context)!.cancel,
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -1473,7 +1476,7 @@ class _DetailScreenState extends State<DetailScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    'Going online...',
+                    AppLocalizations.of(context)!.goingOnline,
                     style: TextStyleConst.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSecondary,
                     ),
@@ -1486,7 +1489,7 @@ class _DetailScreenState extends State<DetailScreen> {
               backgroundColor: Theme.of(context).colorScheme.primary,
             ),
             child: Text(
-              'Go Online',
+              AppLocalizations.of(context)!.goOnline,
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onPrimary,
               ),

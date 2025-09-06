@@ -140,7 +140,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
           }
         },
         child: AppScaffoldWithOffline(
-          title: 'Filter Data',
+          title: AppLocalizations.of(context)!.filterDataTitle,
           backgroundColor: Theme.of(context).colorScheme.surface,
           appBar: _buildAppBar(),
           body: Column(
@@ -175,7 +175,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
         onPressed: _onCancel,
       ),
       title: Text(
-        'Filter Data',
+        AppLocalizations.of(context)!.filterDataTitle,
         style: TextStyleConst.headingSmall.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
         ),
@@ -198,7 +198,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
               return TextButton(
                 onPressed: _onClearAllFilters,
                 child: Text(
-                  'Clear All',
+                  AppLocalizations.of(context)!.clearAllAction,
                   style: TextStyleConst.label.copyWith(
                     color: Theme.of(context).colorScheme.error,
                   ),
@@ -238,7 +238,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
         controller: _searchController,
         focusNode: _searchFocusNode,
         onChanged: _onSearchChanged,
-        hintText: 'Search ${_getCurrentFilterTypeDisplayName()}...',
+        hintText: AppLocalizations.of(context)!.searchFilterHint(_getCurrentFilterTypeDisplayName()),
       ),
     );
   }
@@ -267,7 +267,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: Text(
-                    'Selected (${state.selectedCount})',
+                    AppLocalizations.of(context)!.selectedCountFormat2(state.selectedCount),
                     style: TextStyleConst.headingSmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
@@ -324,7 +324,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Error loading filter data',
+                  AppLocalizations.of(context)!.errorLoadingFilterDataTitle,
                   style: TextStyleConst.headingMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
@@ -366,8 +366,8 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                   const SizedBox(height: 16),
                   Text(
                     state.searchQuery?.isEmpty == true
-                        ? 'No ${_getCurrentFilterTypeDisplayName().toLowerCase()} available'
-                        : 'No results found for "${state.searchQuery}"',
+                        ? AppLocalizations.of(context)!.noFilterTypeAvailable(_getCurrentFilterTypeDisplayName().toLowerCase())
+                        : AppLocalizations.of(context)!.noResultsFoundForQuery(state.searchQuery!),
                     style: TextStyleConst.headingMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),

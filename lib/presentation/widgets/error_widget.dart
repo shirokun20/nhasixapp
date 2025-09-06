@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/text_style_const.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Custom error widget with black theme and contextual information
 class AppErrorWidget extends StatelessWidget {
@@ -11,11 +12,11 @@ class AppErrorWidget extends StatelessWidget {
     this.icon,
     this.iconColor,
     this.onRetry,
-    this.retryText = 'Retry',
+  this.retryText,
     this.onSecondaryAction,
     this.secondaryActionText,
-    this.showDetails = false,
-    this.details,
+  this.showDetails = false,
+  this.details,
     this.suggestions = const [],
   });
 
@@ -24,7 +25,7 @@ class AppErrorWidget extends StatelessWidget {
   final IconData? icon;
   final Color? iconColor;
   final VoidCallback? onRetry;
-  final String retryText;
+  final String? retryText;
   final VoidCallback? onSecondaryAction;
   final String? secondaryActionText;
   final bool showDetails;
@@ -70,7 +71,7 @@ class AppErrorWidget extends StatelessWidget {
           // Suggestions
           if (suggestions.isNotEmpty) ...[
             const SizedBox(height: 16),
-            _buildSuggestions(context),
+              _buildSuggestions(context),
           ],
 
           // Error details (expandable)
@@ -103,7 +104,7 @@ class AppErrorWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Suggestions:',
+              AppLocalizations.of(context)!.suggestions,
             style: TextStyleConst.labelMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
@@ -139,7 +140,7 @@ class AppErrorWidget extends StatelessWidget {
   Widget _buildErrorDetails(BuildContext context) {
     return ExpansionTile(
       title: Text(
-        'Error Details',
+    AppLocalizations.of(context)!.error,
         style: TextStyleConst.bodyMedium.copyWith(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
@@ -184,7 +185,7 @@ class AppErrorWidget extends StatelessWidget {
                 ),
               ),
               child: Text(
-                retryText,
+                retryText ?? AppLocalizations.of(context)!.tryAgain,
                 style: TextStyleConst.buttonMedium.copyWith(
                   color: Theme.of(context).colorScheme.onPrimary,
                 ),
@@ -210,7 +211,7 @@ class AppErrorWidget extends StatelessWidget {
                 ),
               ),
               child: Text(
-                secondaryActionText!,
+                  secondaryActionText!,
                 style: TextStyleConst.buttonMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -237,20 +238,19 @@ class NetworkErrorWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppErrorWidget(
-      title: 'Connection Problem',
-      message:
-          'Unable to connect to the internet. Please check your connection and try again.',
+      title: AppLocalizations.of(context)!.connectionError,
+      message: AppLocalizations.of(context)!.unableToCheckConnection,
       icon: Icons.wifi_off,
       iconColor: Theme.of(context).colorScheme.error,
       onRetry: onRetry,
-      retryText: 'Try Again',
+      retryText: AppLocalizations.of(context)!.tryAgain,
       onSecondaryAction: onGoOffline,
-      secondaryActionText: 'Browse Offline',
-      suggestions: const [
-        'Check your internet connection',
-        'Try switching between WiFi and mobile data',
-        'Restart your router if using WiFi',
-        'Check if the website is down',
+      secondaryActionText: AppLocalizations.of(context)!.offline,
+      suggestions: [
+        AppLocalizations.of(context)!.suggestionCheckConnection,
+        AppLocalizations.of(context)!.suggestionTryWifiMobile,
+        AppLocalizations.of(context)!.suggestionRestartRouter,
+        AppLocalizations.of(context)!.suggestionCheckWebsite,
       ],
     );
   }
@@ -270,17 +270,17 @@ class ServerErrorWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppErrorWidget(
-      title: 'Server Error',
-      message: statusCode != null
-          ? 'Server returned error $statusCode. The service might be temporarily unavailable.'
-          : 'The server is currently unavailable. Please try again later.',
+      title: AppLocalizations.of(context)!.serverError,
+    message: statusCode != null
+      ? AppLocalizations.of(context)!.serverReturnedError(statusCode!)
+      : AppLocalizations.of(context)!.serverUnavailable,
       icon: Icons.dns,
       iconColor: Theme.of(context).colorScheme.error,
       onRetry: onRetry,
-      suggestions: const [
-        'Wait a few minutes and try again',
-        'Check if the service is under maintenance',
-        'Try refreshing the page',
+      suggestions: [
+        AppLocalizations.of(context)!.waitAndTry(5),
+        AppLocalizations.of(context)!.serviceUnderMaintenance,
+        AppLocalizations.of(context)!.tryRefreshingPage,
       ],
     );
   }
@@ -300,19 +300,19 @@ class CloudflareErrorWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppErrorWidget(
-      title: 'Access Blocked',
+      title: AppLocalizations.of(context)!.error,
       message:
-          'The website is protected by Cloudflare. We\'re trying to bypass the protection.',
+      AppLocalizations.of(context)!.cloudflareBypassMessage,
       icon: Icons.security,
       iconColor: Theme.of(context).colorScheme.tertiary,
       onRetry: onRetry,
-      retryText: 'Try Again',
+      retryText: AppLocalizations.of(context)!.tryAgain,
       onSecondaryAction: onBypass,
-      secondaryActionText: 'Force Bypass',
-      suggestions: const [
-        'Wait for automatic bypass to complete',
-        'Try using a VPN if available',
-        'Check back in a few minutes',
+    secondaryActionText: AppLocalizations.of(context)!.forceBypass,
+      suggestions: [
+        AppLocalizations.of(context)!.waitForBypass,
+        AppLocalizations.of(context)!.tryUsingVpn,
+        AppLocalizations.of(context)!.checkBackLater,
       ],
     );
   }
@@ -332,19 +332,19 @@ class ParseErrorWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppErrorWidget(
-      title: 'Data Error',
+      title: AppLocalizations.of(context)!.error,
       message:
-          'Unable to process the received data. The website structure might have changed.',
+      AppLocalizations.of(context)!.unableToProcessData,
       icon: Icons.code_off,
       iconColor: Theme.of(context).colorScheme.error,
       onRetry: onRetry,
-      retryText: 'Retry',
+      retryText: AppLocalizations.of(context)!.retryAction,
       onSecondaryAction: onReport,
-      secondaryActionText: 'Report Issue',
-      suggestions: const [
-        'Try refreshing the content',
-        'Check if the app needs an update',
-        'Report the issue if it persists',
+    secondaryActionText: AppLocalizations.of(context)!.reportIssue,
+      suggestions: [
+        AppLocalizations.of(context)!.tryRefreshingContent,
+        AppLocalizations.of(context)!.checkForAppUpdate,
+        AppLocalizations.of(context)!.reportIfPersists,
       ],
     );
   }
@@ -455,18 +455,18 @@ class NoSearchResultsWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EmptyStateWidget(
-      title: 'No Results Found',
+      title: AppLocalizations.of(context)!.noResults,
       message: query != null
-          ? 'No content found for "$query". Try adjusting your search terms or filters.'
-          : 'No content found. Try adjusting your search terms or filters.',
+          ? AppLocalizations.of(context)!.noContentFoundWithQuery(query!)
+          : AppLocalizations.of(context)!.noContentFound,
       icon: Icons.search_off,
       onAction: onClearFilters,
-      actionText: 'Clear Filters',
-      suggestions: const [
-        'Try different keywords',
-        'Remove some filters',
-        'Check spelling',
-        'Use broader search terms',
+      actionText: AppLocalizations.of(context)!.clearFilters,
+      suggestions: [
+        AppLocalizations.of(context)!.suggestionTryDifferentKeywords,
+        AppLocalizations.of(context)!.suggestionRemoveFilters,
+        AppLocalizations.of(context)!.suggestionCheckSpelling,
+        AppLocalizations.of(context)!.suggestionUseBroaderTerms,
       ],
     );
   }
@@ -484,17 +484,17 @@ class MaintenanceWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppErrorWidget(
-      title: 'Under Maintenance',
+      title: AppLocalizations.of(context)!.underMaintenanceTitle,
       message:
-          'The service is currently under maintenance. Please check back later.',
+          AppLocalizations.of(context)!.underMaintenanceMessage,
       icon: Icons.build,
       iconColor: Theme.of(context).colorScheme.tertiary,
       onRetry: onCheckAgain,
-      retryText: 'Check Again',
-      suggestions: const [
-        'Maintenance usually takes a few hours',
-        'Check social media for updates',
-        'Try again later',
+      retryText: AppLocalizations.of(context)!.tryAgain,
+      suggestions: [
+        AppLocalizations.of(context)!.suggestionMaintenanceHours,
+        AppLocalizations.of(context)!.suggestionCheckSocial,
+        AppLocalizations.of(context)!.suggestionTryLater,
       ],
     );
   }

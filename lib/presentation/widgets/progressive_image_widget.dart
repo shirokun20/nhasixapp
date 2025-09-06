@@ -6,6 +6,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:logger/logger.dart';
 
 import '../../core/constants/text_style_const.dart';
+import '../../l10n/app_localizations.dart';
 import '../../services/local_image_preloader.dart';
 import '../../utils/performance_monitor.dart';
 
@@ -495,7 +496,7 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
           ),
           const SizedBox(height: 16),
           Text(
-            'Failed to load page ${widget.pageNumber}',
+            AppLocalizations.of(context)!.failedToLoadPage(widget.pageNumber),
             style: TextStyleConst.bodyLarge.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),

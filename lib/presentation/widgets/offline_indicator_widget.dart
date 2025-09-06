@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/constants/text_style_const.dart';
+import '../../l10n/app_localizations.dart';
 import '../cubits/network/network_cubit.dart';
 
 /// Widget that shows offline/online status indicator
@@ -60,7 +61,8 @@ class OfflineIndicatorWidget extends StatelessWidget {
               if (!compact) ...[
                 const SizedBox(width: 4),
                 Text(
-                  isOffline ? 'OFFLINE' : _getConnectionText(connectionType),
+                  isOffline ? AppLocalizations.of(context)!.offlineStatus : 
+                    (connectionType == NetworkConnectionType.other ? AppLocalizations.of(context)!.onlineStatus : _getConnectionText(connectionType)),
                   style: compact 
                       ? TextStyleConst.overline.copyWith(
                           color: isOffline

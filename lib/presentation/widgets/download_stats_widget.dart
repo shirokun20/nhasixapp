@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/text_style_const.dart';
+import '../../l10n/app_localizations.dart';
 import '../blocs/download/download_bloc.dart';
 
 /// Widget for displaying download statistics and overall progress
@@ -36,7 +37,7 @@ class DownloadStatsWidget extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Overall Progress',
+                        AppLocalizations.of(context)!.overallProgress,
                         style: TextStyleConst.headingSmall.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -72,7 +73,7 @@ class DownloadStatsWidget extends StatelessWidget {
                 child: _buildStatCard(
                   context: context,
                   icon: Icons.download,
-                  label: 'Total',
+                  label: AppLocalizations.of(context)!.total,
                   value: state.downloads.length.toString(),
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
@@ -82,7 +83,7 @@ class DownloadStatsWidget extends StatelessWidget {
                 child: _buildStatCard(
                   context: context,
                   icon: Icons.downloading,
-                  label: 'Active',
+                  label: AppLocalizations.of(context)!.active,
                   value: state.activeDownloads.length.toString(),
                   color: Theme.of(context).colorScheme.primary,
                 ),
@@ -92,7 +93,7 @@ class DownloadStatsWidget extends StatelessWidget {
                 child: _buildStatCard(
                   context: context,
                   icon: Icons.schedule,
-                  label: 'Queued',
+                  label: AppLocalizations.of(context)!.queued,
                   value: state.queuedDownloads.length.toString(),
                   color: Theme.of(context).colorScheme.tertiary,
                 ),
@@ -102,7 +103,7 @@ class DownloadStatsWidget extends StatelessWidget {
                 child: _buildStatCard(
                   context: context,
                   icon: Icons.check_circle,
-                  label: 'Done',
+                  label: AppLocalizations.of(context)!.done,
                   value: state.completedDownloads.length.toString(),
                   color: Theme.of(context).colorScheme.secondary,
                 ),
@@ -121,7 +122,7 @@ class DownloadStatsWidget extends StatelessWidget {
                     child: _buildInfoRow(
                       context: context,
                       icon: Icons.speed,
-                      label: 'Speed',
+                      label: AppLocalizations.of(context)!.speed,
                       value: state.formattedTotalSpeed,
                     ),
                   ),
@@ -132,7 +133,7 @@ class DownloadStatsWidget extends StatelessWidget {
                     child: _buildInfoRow(
                       context: context,
                       icon: Icons.storage,
-                      label: 'Downloaded',
+                      label: AppLocalizations.of(context)!.downloaded,
                       value: state.formattedTotalSize,
                     ),
                   ),
@@ -164,7 +165,10 @@ class DownloadStatsWidget extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '${state.failedDownloads.length} download${state.failedDownloads.length == 1 ? '' : 's'} failed',
+                      AppLocalizations.of(context)!.downloadsFailed(
+                        state.failedDownloads.length,
+                        state.failedDownloads.length == 1 ? '' : 's'
+                      ),
                       style: TextStyleConst.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.error,
                       ),
@@ -181,7 +185,7 @@ class DownloadStatsWidget extends StatelessWidget {
                       minimumSize: const Size(0, 32),
                     ),
                     child: Text(
-                      'View',
+                      AppLocalizations.of(context)!.view,
                       style: TextStyleConst.labelLarge.copyWith(
                         color: Theme.of(context).colorScheme.error,
                       ),
@@ -210,7 +214,7 @@ class DownloadStatsWidget extends StatelessWidget {
                 Text(
                   state is DownloadProcessing
                       ? (state as DownloadProcessing).operation
-                      : 'Processing...',
+                      : AppLocalizations.of(context)!.processing,
                   style: TextStyleConst.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),

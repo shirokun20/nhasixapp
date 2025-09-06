@@ -101,13 +101,13 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'NhasixApp'**
+  /// **'NhentaiApp'**
   String get appTitle;
 
   /// No description provided for @appSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'NHentai'**
+  /// **'Enhanced Reading Experience'**
   String get appSubtitle;
 
   /// No description provided for @home.
@@ -199,6 +199,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap to load content'**
   String get tapToLoadContent;
+
+  /// No description provided for @checkInternetConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your internet connection'**
+  String get checkInternetConnection;
+
+  /// No description provided for @trySwitchingNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Try switching between WiFi and mobile data'**
+  String get trySwitchingNetwork;
+
+  /// No description provided for @restartRouter.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart your router if using WiFi'**
+  String get restartRouter;
+
+  /// No description provided for @checkWebsiteStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Check if the website is down'**
+  String get checkWebsiteStatus;
+
+  /// No description provided for @cloudflareBypassMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The website is protected by Cloudflare. We\'re trying to bypass the protection.'**
+  String get cloudflareBypassMessage;
+
+  /// No description provided for @forceBypass.
+  ///
+  /// In en, this message translates to:
+  /// **'Force Bypass'**
+  String get forceBypass;
+
+  /// No description provided for @unableToProcessData.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to process the received data. The website structure might have changed.'**
+  String get unableToProcessData;
+
+  /// No description provided for @reportIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'Report Issue'**
+  String get reportIssue;
+
+  /// No description provided for @serverReturnedError.
+  ///
+  /// In en, this message translates to:
+  /// **'Server returned error {statusCode}. The service might be temporarily unavailable.'**
+  String serverReturnedError(int statusCode);
 
   /// No description provided for @searchResults.
   ///
@@ -842,6 +896,126 @@ abstract class AppLocalizations {
   /// **'Opening: {title}'**
   String opening(String title);
 
+  /// No description provided for @lastUpdatedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated:'**
+  String get lastUpdatedLabel;
+
+  /// No description provided for @rangeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Range:'**
+  String get rangeLabel;
+
+  /// No description provided for @ofWord.
+  ///
+  /// In en, this message translates to:
+  /// **'of'**
+  String get ofWord;
+
+  /// No description provided for @waitAndTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait {minutes} minutes and try again'**
+  String waitAndTry(int minutes);
+
+  /// No description provided for @serviceUnderMaintenance.
+  ///
+  /// In en, this message translates to:
+  /// **'The service might be under maintenance'**
+  String get serviceUnderMaintenance;
+
+  /// No description provided for @tryRefreshingPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Try refreshing the page'**
+  String get tryRefreshingPage;
+
+  /// No description provided for @waitForBypass.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait for automatic bypass to complete'**
+  String get waitForBypass;
+
+  /// No description provided for @tryUsingVpn.
+  ///
+  /// In en, this message translates to:
+  /// **'Try using a VPN if available'**
+  String get tryUsingVpn;
+
+  /// No description provided for @checkBackLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Check back in a few minutes'**
+  String get checkBackLater;
+
+  /// No description provided for @tryRefreshingContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Try refreshing the content'**
+  String get tryRefreshingContent;
+
+  /// No description provided for @checkForAppUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Check if the app needs an update'**
+  String get checkForAppUpdate;
+
+  /// No description provided for @reportIfPersists.
+  ///
+  /// In en, this message translates to:
+  /// **'Report the issue if it persists'**
+  String get reportIfPersists;
+
+  /// No description provided for @maintenanceTakesHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintenance usually takes a few hours'**
+  String get maintenanceTakesHours;
+
+  /// No description provided for @checkSocialMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Check social media for updates'**
+  String get checkSocialMedia;
+
+  /// No description provided for @tryAgainLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again later'**
+  String get tryAgainLater;
+
+  /// No description provided for @tryDifferentKeywords.
+  ///
+  /// In en, this message translates to:
+  /// **'Try different keywords'**
+  String get tryDifferentKeywords;
+
+  /// No description provided for @serverUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The server is currently unavailable. Please try again later.'**
+  String get serverUnavailable;
+
+  /// No description provided for @removeSomeFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove some filters'**
+  String get removeSomeFilters;
+
+  /// No description provided for @checkSpelling.
+  ///
+  /// In en, this message translates to:
+  /// **'Check spelling'**
+  String get checkSpelling;
+
+  /// No description provided for @useBroaderSearchTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'Use broader search terms'**
+  String get useBroaderSearchTerms;
+
   /// No description provided for @loadingFavorites.
   ///
   /// In en, this message translates to:
@@ -1183,18 +1357,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Keep Screen On: Off'**
   String get keepScreenOnLabel;
-
-  /// No description provided for @keepScreenOn.
-  ///
-  /// In en, this message translates to:
-  /// **'Keep Screen On'**
-  String get keepScreenOn;
-
-  /// No description provided for @keepScreenOnDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Prevent screen from turning off while reading'**
-  String get keepScreenOnDescription;
 
   /// No description provided for @showUILabel.
   ///
@@ -1700,6 +1862,36 @@ abstract class AppLocalizations {
   /// **'Manage automatic cleanup of reading history to free up storage space.'**
   String get manageAutoCleanupDescription;
 
+  /// No description provided for @nextCleanup.
+  ///
+  /// In en, this message translates to:
+  /// **'Next cleanup'**
+  String get nextCleanup;
+
+  /// No description provided for @historyStatistics.
+  ///
+  /// In en, this message translates to:
+  /// **'History Statistics'**
+  String get historyStatistics;
+
+  /// No description provided for @totalItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Total items'**
+  String get totalItems;
+
+  /// No description provided for @lastCleanup.
+  ///
+  /// In en, this message translates to:
+  /// **'Last cleanup'**
+  String get lastCleanup;
+
+  /// No description provided for @lastAppAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Last app access'**
+  String get lastAppAccess;
+
   /// No description provided for @oneDay.
   ///
   /// In en, this message translates to:
@@ -1807,6 +1999,1303 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Continuous Scroll'**
   String get continuousScroll;
+
+  /// No description provided for @keepScreenOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Screen On'**
+  String get keepScreenOn;
+
+  /// No description provided for @keepScreenOnDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Prevent screen from turning off while reading'**
+  String get keepScreenOnDescription;
+
+  /// No description provided for @platformNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Platform Not Supported'**
+  String get platformNotSupported;
+
+  /// No description provided for @platformNotSupportedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'NhasixApp is designed exclusively for Android devices.'**
+  String get platformNotSupportedBody;
+
+  /// No description provided for @platformNotSupportedInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Please install and run this app on an Android device.'**
+  String get platformNotSupportedInstall;
+
+  /// No description provided for @storagePermissionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage Permission Required'**
+  String get storagePermissionRequired;
+
+  /// No description provided for @storagePermissionExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'This app needs storage permission to download files to your device. Files will be saved to the Downloads/nhasix folder.'**
+  String get storagePermissionExplanation;
+
+  /// No description provided for @grantPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Grant Permission'**
+  String get grantPermission;
+
+  /// No description provided for @permissionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission Required'**
+  String get permissionRequired;
+
+  /// No description provided for @storagePermissionSettingsPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage permission is required to download files. Please grant storage permission in app settings.'**
+  String get storagePermissionSettingsPrompt;
+
+  /// No description provided for @openSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get openSettings;
+
+  /// No description provided for @readingHistoryMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your reading history will appear here as you read content.'**
+  String get readingHistoryMessage;
+
+  /// No description provided for @startReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Reading'**
+  String get startReading;
+
+  /// No description provided for @browsePopularContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse popular content'**
+  String get browsePopularContent;
+
+  /// No description provided for @searchSomethingInteresting.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for something interesting'**
+  String get searchSomethingInteresting;
+
+  /// No description provided for @checkOutFeaturedItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Check out featured items'**
+  String get checkOutFeaturedItems;
+
+  /// No description provided for @appSubtitleDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Nhentai unofficial client'**
+  String get appSubtitleDescription;
+
+  /// No description provided for @downloadedGalleries.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded galleries'**
+  String get downloadedGalleries;
+
+  /// No description provided for @favoriteGalleries.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorite galleries'**
+  String get favoriteGalleries;
+
+  /// No description provided for @viewHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'View history'**
+  String get viewHistory;
+
+  /// No description provided for @openInBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in browser'**
+  String get openInBrowser;
+
+  /// No description provided for @downloadAllGalleries.
+  ///
+  /// In en, this message translates to:
+  /// **'Download all galleries in this page'**
+  String get downloadAllGalleries;
+
+  /// No description provided for @enterPageNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter page number (1 - {totalPages})'**
+  String enterPageNumber(int totalPages);
+
+  /// No description provided for @pageNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Page number'**
+  String get pageNumber;
+
+  /// No description provided for @go.
+  ///
+  /// In en, this message translates to:
+  /// **'Go'**
+  String get go;
+
+  /// No description provided for @validPageNumberError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid page number between 1 and {totalPages}'**
+  String validPageNumberError(int totalPages);
+
+  /// No description provided for @tapToJump.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to jump'**
+  String get tapToJump;
+
+  /// No description provided for @goToPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Page'**
+  String get goToPage;
+
+  /// No description provided for @previousPageTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous page'**
+  String get previousPageTooltip;
+
+  /// No description provided for @nextPageTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Next page'**
+  String get nextPageTooltip;
+
+  /// No description provided for @tapToJumpToPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to jump to page'**
+  String get tapToJumpToPage;
+
+  /// No description provided for @loadingContentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading Content'**
+  String get loadingContentTitle;
+
+  /// No description provided for @loadingContentDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading Content Details'**
+  String get loadingContentDetails;
+
+  /// No description provided for @fetchingMetadata.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetching metadata and images...'**
+  String get fetchingMetadata;
+
+  /// No description provided for @thisMayTakeMoments.
+  ///
+  /// In en, this message translates to:
+  /// **'This may take a few moments'**
+  String get thisMayTakeMoments;
+
+  /// No description provided for @youAreOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'You are offline. Some features may be limited.'**
+  String get youAreOffline;
+
+  /// No description provided for @goOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Go Online'**
+  String get goOnline;
+
+  /// No description provided for @youAreOfflineTapToGoOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'You are offline. Tap to go online.'**
+  String get youAreOfflineTapToGoOnline;
+
+  /// No description provided for @contentInformation.
+  ///
+  /// In en, this message translates to:
+  /// **'Content Information'**
+  String get contentInformation;
+
+  /// No description provided for @copyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Link'**
+  String get copyLink;
+
+  /// No description provided for @moreOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'More Options'**
+  String get moreOptions;
+
+  /// No description provided for @moreLikeThis.
+  ///
+  /// In en, this message translates to:
+  /// **'More Like This'**
+  String get moreLikeThis;
+
+  /// No description provided for @statistics.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get statistics;
+
+  /// No description provided for @failedToLoadContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load content'**
+  String get failedToLoadContent;
+
+  /// No description provided for @shareContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Share Content'**
+  String get shareContent;
+
+  /// No description provided for @sharePanelOpened.
+  ///
+  /// In en, this message translates to:
+  /// **'Share panel opened successfully!'**
+  String get sharePanelOpened;
+
+  /// No description provided for @shareFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Share failed, but link copied to clipboard'**
+  String get shareFailed;
+
+  /// No description provided for @downloadStartedFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Download started for \"{title}\"'**
+  String downloadStartedFor(String title);
+
+  /// No description provided for @viewDownloadsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get viewDownloadsAction;
+
+  /// No description provided for @failedToStartDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start download. Please try again.'**
+  String get failedToStartDownload;
+
+  /// No description provided for @linkCopiedToClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied to clipboard'**
+  String get linkCopiedToClipboard;
+
+  /// No description provided for @failedToCopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to copy link. Please try again.'**
+  String get failedToCopyLink;
+
+  /// No description provided for @copiedLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied Link'**
+  String get copiedLink;
+
+  /// No description provided for @linkCopiedToClipboardDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The following link has been copied to your clipboard:'**
+  String get linkCopiedToClipboardDescription;
+
+  /// No description provided for @closeDialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get closeDialog;
+
+  /// No description provided for @goOnlineDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Go Online'**
+  String get goOnlineDialogTitle;
+
+  /// No description provided for @goOnlineDialogContent.
+  ///
+  /// In en, this message translates to:
+  /// **'You are currently in offline mode. Would you like to go online to access the latest content?'**
+  String get goOnlineDialogContent;
+
+  /// No description provided for @goingOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Going online...'**
+  String get goingOnline;
+
+  /// No description provided for @idLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'ID'**
+  String get idLabel;
+
+  /// No description provided for @pagesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pages'**
+  String get pagesLabel;
+
+  /// No description provided for @languageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get languageLabel;
+
+  /// No description provided for @artistLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Artist'**
+  String get artistLabel;
+
+  /// No description provided for @charactersLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Characters'**
+  String get charactersLabel;
+
+  /// No description provided for @parodiesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Parodies'**
+  String get parodiesLabel;
+
+  /// No description provided for @groupsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups (comma separated)'**
+  String get groupsLabel;
+
+  /// No description provided for @uploadedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploaded'**
+  String get uploadedLabel;
+
+  /// No description provided for @favoritesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get favoritesLabel;
+
+  /// No description provided for @tagsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tags'**
+  String get tagsLabel;
+
+  /// No description provided for @artistsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Artists (comma separated)'**
+  String get artistsLabel;
+
+  /// No description provided for @relatedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Related'**
+  String get relatedLabel;
+
+  /// No description provided for @yearAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} year{plural} ago'**
+  String yearAgo(int count, String plural);
+
+  /// No description provided for @monthAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} month{plural} ago'**
+  String monthAgo(int count, String plural);
+
+  /// No description provided for @dayAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} day{plural} ago'**
+  String dayAgo(int count, String plural);
+
+  /// No description provided for @hourAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} hour{plural} ago'**
+  String hourAgo(int count, String plural);
+
+  /// No description provided for @selectFavoritesTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Select favorites'**
+  String get selectFavoritesTooltip;
+
+  /// No description provided for @deleteSelectedTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete selected'**
+  String get deleteSelectedTooltip;
+
+  /// No description provided for @selectAllAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get selectAllAction;
+
+  /// No description provided for @clearAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clearAction;
+
+  /// No description provided for @selectedCountFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'{selected} / {total}'**
+  String selectedCountFormat(int selected, int total);
+
+  /// No description provided for @loadingFavoritesMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading favorites...'**
+  String get loadingFavoritesMessage;
+
+  /// No description provided for @deletingFavoritesMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting favorites...'**
+  String get deletingFavoritesMessage;
+
+  /// No description provided for @removingFromFavoritesMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Removing from favorites...'**
+  String get removingFromFavoritesMessage;
+
+  /// No description provided for @favoritesDeletedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites deleted successfully'**
+  String get favoritesDeletedMessage;
+
+  /// No description provided for @failedToDeleteFavoritesMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete favorites'**
+  String get failedToDeleteFavoritesMessage;
+
+  /// No description provided for @confirmDeleteFavoritesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Favorites'**
+  String get confirmDeleteFavoritesTitle;
+
+  /// No description provided for @confirmDeleteFavoritesMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete {count} favorite{plural}?'**
+  String confirmDeleteFavoritesMessage(int count, String plural);
+
+  /// No description provided for @exportFavoritesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Favorites'**
+  String get exportFavoritesTitle;
+
+  /// No description provided for @exportingFavoritesMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Exporting favorites...'**
+  String get exportingFavoritesMessage;
+
+  /// No description provided for @favoritesExportedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites exported successfully'**
+  String get favoritesExportedMessage;
+
+  /// No description provided for @failedToExportFavoritesMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to export favorites'**
+  String get failedToExportFavoritesMessage;
+
+  /// No description provided for @searchFavoritesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search favorites...'**
+  String get searchFavoritesHint;
+
+  /// No description provided for @searchOfflineContentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search offline content...'**
+  String get searchOfflineContentHint;
+
+  /// No description provided for @failedToLoadPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load page {pageNumber}'**
+  String failedToLoadPage(int pageNumber);
+
+  /// No description provided for @failedToLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load'**
+  String get failedToLoad;
+
+  /// No description provided for @offlineContentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline Content'**
+  String get offlineContentTitle;
+
+  /// No description provided for @favorited.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorited'**
+  String get favorited;
+
+  /// No description provided for @favorite.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorite'**
+  String get favorite;
+
+  /// No description provided for @errorLoadingFavoritesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Error Loading Favorites'**
+  String get errorLoadingFavoritesTitle;
+
+  /// No description provided for @filterDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter Data'**
+  String get filterDataTitle;
+
+  /// No description provided for @clearAllAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear All'**
+  String get clearAllAction;
+
+  /// No description provided for @searchFilterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search {filterType}...'**
+  String searchFilterHint(String filterType);
+
+  /// No description provided for @selectedCountFormat2.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected ({count})'**
+  String selectedCountFormat2(int count);
+
+  /// No description provided for @errorLoadingFilterDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading filter data'**
+  String get errorLoadingFilterDataTitle;
+
+  /// No description provided for @noFilterTypeAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No {filterType} available'**
+  String noFilterTypeAvailable(String filterType);
+
+  /// No description provided for @noResultsFoundForQuery.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found for \"{query}\"'**
+  String noResultsFoundForQuery(String query);
+
+  /// No description provided for @contentNotFoundTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Content Not Found'**
+  String get contentNotFoundTitle;
+
+  /// No description provided for @contentNotFoundMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Content with ID \"{contentId}\" was not found.'**
+  String contentNotFoundMessage(String contentId);
+
+  /// No description provided for @filterCategoriesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter Categories'**
+  String get filterCategoriesTitle;
+
+  /// No description provided for @searchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get searchTitle;
+
+  /// No description provided for @advancedSearchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced Search'**
+  String get advancedSearchTitle;
+
+  /// No description provided for @enterSearchQueryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter search query (e.g. \"big breasts english\")'**
+  String get enterSearchQueryHint;
+
+  /// No description provided for @popularSearchesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Popular Searches'**
+  String get popularSearchesTitle;
+
+  /// No description provided for @recentSearchesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Searches'**
+  String get recentSearchesTitle;
+
+  /// No description provided for @pressSearchButtonMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Press the Search button to find content with your current filters'**
+  String get pressSearchButtonMessage;
+
+  /// No description provided for @searchingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching...'**
+  String get searchingMessage;
+
+  /// No description provided for @resultsCountFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} results'**
+  String resultsCountFormat(String count);
+
+  /// No description provided for @viewInMainAction.
+  ///
+  /// In en, this message translates to:
+  /// **'View in Main'**
+  String get viewInMainAction;
+
+  /// No description provided for @searchErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Error'**
+  String get searchErrorTitle;
+
+  /// No description provided for @noResultsFoundTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found'**
+  String get noResultsFoundTitle;
+
+  /// No description provided for @pageText.
+  ///
+  /// In en, this message translates to:
+  /// **'page {pageNumber}'**
+  String pageText(int pageNumber);
+
+  /// No description provided for @pagesText.
+  ///
+  /// In en, this message translates to:
+  /// **'pages {startPage}-{endPage}'**
+  String pagesText(int startPage, int endPage);
+
+  /// No description provided for @offlineStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'OFFLINE'**
+  String get offlineStatus;
+
+  /// No description provided for @onlineStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'ONLINE'**
+  String get onlineStatus;
+
+  /// No description provided for @errorOccurred.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred'**
+  String get errorOccurred;
+
+  /// No description provided for @tapToRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to retry'**
+  String get tapToRetry;
+
+  /// No description provided for @helpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Help'**
+  String get helpTitle;
+
+  /// No description provided for @helpNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found for your search'**
+  String get helpNoResults;
+
+  /// No description provided for @helpTryDifferent.
+  ///
+  /// In en, this message translates to:
+  /// **'Try using different keywords or check your spelling'**
+  String get helpTryDifferent;
+
+  /// No description provided for @helpUseFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Use filters to narrow down your search'**
+  String get helpUseFilters;
+
+  /// No description provided for @helpCheckConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your internet connection'**
+  String get helpCheckConnection;
+
+  /// No description provided for @sendReportText.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Report'**
+  String get sendReportText;
+
+  /// No description provided for @technicalDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Technical Details'**
+  String get technicalDetailsTitle;
+
+  /// No description provided for @reportSentText.
+  ///
+  /// In en, this message translates to:
+  /// **'Report sent!'**
+  String get reportSentText;
+
+  /// No description provided for @suggestionCheckConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your internet connection'**
+  String get suggestionCheckConnection;
+
+  /// No description provided for @suggestionTryWifiMobile.
+  ///
+  /// In en, this message translates to:
+  /// **'Try switching between WiFi and mobile data'**
+  String get suggestionTryWifiMobile;
+
+  /// No description provided for @suggestionRestartRouter.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart your router if using WiFi'**
+  String get suggestionRestartRouter;
+
+  /// No description provided for @suggestionCheckWebsite.
+  ///
+  /// In en, this message translates to:
+  /// **'Check if the website is down'**
+  String get suggestionCheckWebsite;
+
+  /// No description provided for @noContentFoundWithQuery.
+  ///
+  /// In en, this message translates to:
+  /// **'No content found for \"{query}\". Try adjusting your search terms or filters.'**
+  String noContentFoundWithQuery(String query);
+
+  /// No description provided for @noContentFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No content found. Try adjusting your search terms or filters.'**
+  String get noContentFound;
+
+  /// No description provided for @suggestionTryDifferentKeywords.
+  ///
+  /// In en, this message translates to:
+  /// **'Try different keywords'**
+  String get suggestionTryDifferentKeywords;
+
+  /// No description provided for @suggestionRemoveFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove some filters'**
+  String get suggestionRemoveFilters;
+
+  /// No description provided for @suggestionCheckSpelling.
+  ///
+  /// In en, this message translates to:
+  /// **'Check spelling'**
+  String get suggestionCheckSpelling;
+
+  /// No description provided for @suggestionUseBroaderTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'Use broader search terms'**
+  String get suggestionUseBroaderTerms;
+
+  /// No description provided for @underMaintenanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Under Maintenance'**
+  String get underMaintenanceTitle;
+
+  /// No description provided for @underMaintenanceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The service is currently under maintenance. Please check back later.'**
+  String get underMaintenanceMessage;
+
+  /// No description provided for @suggestionMaintenanceHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintenance usually takes a few hours'**
+  String get suggestionMaintenanceHours;
+
+  /// No description provided for @suggestionCheckSocial.
+  ///
+  /// In en, this message translates to:
+  /// **'Check social media for updates'**
+  String get suggestionCheckSocial;
+
+  /// No description provided for @suggestionTryLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again later'**
+  String get suggestionTryLater;
+
+  /// No description provided for @includeFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Include'**
+  String get includeFilter;
+
+  /// No description provided for @excludeFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Exclude'**
+  String get excludeFilter;
+
+  /// No description provided for @overallProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Overall Progress'**
+  String get overallProgress;
+
+  /// No description provided for @total.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get total;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
+  /// No description provided for @downloadsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} download{plural} failed'**
+  String downloadsFailed(int count, String plural);
+
+  /// No description provided for @processing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing...'**
+  String get processing;
+
+  /// No description provided for @readingCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get readingCompleted;
+
+  /// No description provided for @readAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Read Again'**
+  String get readAgain;
+
+  /// No description provided for @continueReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue Reading'**
+  String get continueReading;
+
+  /// No description provided for @lessThanOneMinute.
+  ///
+  /// In en, this message translates to:
+  /// **'Less than 1 minute'**
+  String get lessThanOneMinute;
+
+  /// No description provided for @readingTime.
+  ///
+  /// In en, this message translates to:
+  /// **'reading time'**
+  String get readingTime;
+
+  /// No description provided for @downloadActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Actions'**
+  String get downloadActions;
+
+  /// No description provided for @pause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get pause;
+
+  /// No description provided for @convertToPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert to PDF'**
+  String get convertToPdf;
+
+  /// No description provided for @details.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get details;
+
+  /// No description provided for @downloadActionPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get downloadActionPause;
+
+  /// No description provided for @downloadActionResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get downloadActionResume;
+
+  /// No description provided for @downloadActionCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get downloadActionCancel;
+
+  /// No description provided for @downloadActionRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get downloadActionRetry;
+
+  /// No description provided for @downloadActionConvertToPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert to PDF'**
+  String get downloadActionConvertToPdf;
+
+  /// No description provided for @downloadActionDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get downloadActionDetails;
+
+  /// No description provided for @downloadActionRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get downloadActionRemove;
+
+  /// No description provided for @downloadPagesRangeFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'{downloaded}/{total} (Pages {start}-{end} of {totalPages})'**
+  String downloadPagesRangeFormat(
+      int downloaded, int total, int start, int end, int totalPages);
+
+  /// No description provided for @downloadPagesFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'{downloaded}/{total}'**
+  String downloadPagesFormat(int downloaded, int total);
+
+  /// No description provided for @downloadContentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Content {contentId}'**
+  String downloadContentTitle(String contentId);
+
+  /// No description provided for @downloadEtaLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'ETA: {duration}'**
+  String downloadEtaLabel(String duration);
+
+  /// No description provided for @downloadSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Settings'**
+  String get downloadSettingsTitle;
+
+  /// No description provided for @performanceSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance'**
+  String get performanceSection;
+
+  /// No description provided for @maxConcurrentDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Max Concurrent Downloads'**
+  String get maxConcurrentDownloads;
+
+  /// No description provided for @concurrentDownloadsWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Higher values may consume more bandwidth and device resources'**
+  String get concurrentDownloadsWarning;
+
+  /// No description provided for @imageQualityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Image Quality'**
+  String get imageQualityLabel;
+
+  /// No description provided for @autoRetrySection.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Retry'**
+  String get autoRetrySection;
+
+  /// No description provided for @autoRetryFailedDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Retry Failed Downloads'**
+  String get autoRetryFailedDownloads;
+
+  /// No description provided for @autoRetryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically retry failed downloads'**
+  String get autoRetryDescription;
+
+  /// No description provided for @maxRetryAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Max Retry Attempts'**
+  String get maxRetryAttempts;
+
+  /// No description provided for @networkSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Network'**
+  String get networkSection;
+
+  /// No description provided for @wifiOnlyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'WiFi Only'**
+  String get wifiOnlyLabel;
+
+  /// No description provided for @wifiOnlyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Only download when connected to WiFi'**
+  String get wifiOnlyDescription;
+
+  /// No description provided for @downloadTimeoutLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Timeout'**
+  String get downloadTimeoutLabel;
+
+  /// No description provided for @notificationsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notificationsSection;
+
+  /// No description provided for @enableNotificationsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Notifications'**
+  String get enableNotificationsLabel;
+
+  /// No description provided for @enableNotificationsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Show notifications for download progress'**
+  String get enableNotificationsDescription;
+
+  /// No description provided for @minutesUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get minutesUnit;
+
+  /// No description provided for @searchContentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search content...'**
+  String get searchContentHint;
+
+  /// No description provided for @hideFiltersTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide filters'**
+  String get hideFiltersTooltip;
+
+  /// No description provided for @showMoreFiltersTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Show more filters'**
+  String get showMoreFiltersTooltip;
+
+  /// No description provided for @advancedFiltersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced Filters'**
+  String get advancedFiltersTitle;
+
+  /// No description provided for @sortByLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by'**
+  String get sortByLabel;
+
+  /// No description provided for @categoryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get categoryLabel;
+
+  /// No description provided for @includeTagsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Include tags (comma separated)'**
+  String get includeTagsLabel;
+
+  /// No description provided for @includeTagsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g., romance, comedy, school'**
+  String get includeTagsHint;
+
+  /// No description provided for @excludeTagsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Exclude tags (comma separated)'**
+  String get excludeTagsLabel;
+
+  /// No description provided for @excludeTagsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g., horror, violence'**
+  String get excludeTagsHint;
+
+  /// No description provided for @artistsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g., artist1, artist2'**
+  String get artistsHint;
+
+  /// No description provided for @pageCountRangeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Page Count Range'**
+  String get pageCountRangeTitle;
+
+  /// No description provided for @minPagesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Min pages'**
+  String get minPagesLabel;
+
+  /// No description provided for @maxPagesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Max pages'**
+  String get maxPagesLabel;
+
+  /// No description provided for @rangeToSeparator.
+  ///
+  /// In en, this message translates to:
+  /// **'to'**
+  String get rangeToSeparator;
+
+  /// No description provided for @popularTagsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Popular Tags'**
+  String get popularTagsTitle;
+
+  /// No description provided for @filtersActiveLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'active'**
+  String get filtersActiveLabel;
+
+  /// No description provided for @clearAllFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear All'**
+  String get clearAllFilters;
+
+  /// No description provided for @initializingApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Initializing Application...'**
+  String get initializingApp;
+
+  /// No description provided for @settingUpComponents.
+  ///
+  /// In en, this message translates to:
+  /// **'Setting up components and checking connection...'**
+  String get settingUpComponents;
+
+  /// No description provided for @bypassingProtection.
+  ///
+  /// In en, this message translates to:
+  /// **'Bypassing protection and establishing connection...'**
+  String get bypassingProtection;
+
+  /// No description provided for @connectionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection Failed'**
+  String get connectionFailed;
+
+  /// No description provided for @readyToGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to Go!'**
+  String get readyToGo;
+
+  /// No description provided for @launchingApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Launching main application...'**
+  String get launchingApp;
 }
 
 class _AppLocalizationsDelegate

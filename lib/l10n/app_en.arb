@@ -19,6 +19,20 @@
   "searchSuggestions": "Search Suggestions",
   "suggestions": "Suggestions:",
   "tapToLoadContent": "Tap to load content",
+  "checkInternetConnection": "Check your internet connection",
+  "trySwitchingNetwork": "Try switching between WiFi and mobile data",
+  "restartRouter": "Restart your router if using WiFi",
+  "checkWebsiteStatus": "Check if the website is down",
+  "cloudflareBypassMessage": "The website is protected by Cloudflare. We're trying to bypass the protection.",
+  "forceBypass": "Force Bypass",
+  "unableToProcessData": "Unable to process the received data. The website structure might have changed.",
+  "reportIssue": "Report Issue",
+  "serverReturnedError": "Server returned error {statusCode}. The service might be temporarily unavailable.",
+  "@serverReturnedError": {
+    "placeholders": {
+      "statusCode": {"type": "int"}
+    }
+  },
   "searchResults": "Search Results",
   "failedToOpenBrowser": "Failed to open browser",
   "viewDownloads": "View Downloads",
@@ -186,6 +200,56 @@
       "title": {"type": "String"}
     }
   },
+  "lastUpdatedLabel": "Updated:",
+  "rangeLabel": "Range:",
+  "ofWord": "of",
+  "waitAndTry": "Wait {minutes} minutes and try again",
+  "@waitAndTry": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "serviceUnderMaintenance": "The service might be under maintenance",
+  "tryRefreshingPage": "Try refreshing the page",
+  "waitForBypass": "Wait for automatic bypass to complete",
+  "tryUsingVpn": "Try using a VPN if available",
+  "checkBackLater": "Check back in a few minutes",
+  "tryRefreshingContent": "Try refreshing the content",
+  "checkForAppUpdate": "Check if the app needs an update",
+  "reportIfPersists": "Report the issue if it persists",
+  "maintenanceTakesHours": "Maintenance usually takes a few hours",
+  "checkSocialMedia": "Check social media for updates",
+  "tryAgainLater": "Try again later",
+  "tryDifferentKeywords": "Try different keywords",
+  "serverUnavailable": "The server is currently unavailable. Please try again later.",
+  "removeSomeFilters": "Remove some filters",
+  "checkSpelling": "Check spelling",
+  "useBroaderSearchTerms": "Use broader search terms",
+  "lastUpdatedLabel": "Updated:",
+  "rangeLabel": "Range:",
+  "ofWord": "of",
+  "waitAndTry": "Wait {minutes} minutes and try again",
+  "@waitAndTry": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "serviceUnderMaintenance": "The service might be under maintenance",
+  "tryRefreshingPage": "Try refreshing the page",
+  "waitForBypass": "Wait for automatic bypass to complete",
+  "tryUsingVpn": "Try using a VPN if available",
+  "checkBackLater": "Check back in a few minutes",
+  "tryRefreshingContent": "Try refreshing the content",
+  "checkForAppUpdate": "Check if the app needs an update",
+  "reportIfPersists": "Report the issue if it persists",
+  "maintenanceTakesHours": "Maintenance usually takes a few hours",
+  "checkSocialMedia": "Check social media for updates",
+  "tryAgainLater": "Try again later",
+  "tryDifferentKeywords": "Try different keywords",
+  "serverUnavailable": "The server is currently unavailable. Please try again later.",
+  "removeSomeFilters": "Remove some filters",
+  "checkSpelling": "Check spelling",
+  "useBroaderSearchTerms": "Use broader search terms",
   
   "loadingFavorites": "Loading favorites...",
   "errorLoadingFavorites": "Error Loading Favorites",
@@ -402,6 +466,11 @@
   "confirmResetSettings": "Are you sure you want to restore all settings to default?",
   "reset": "Reset",
   "manageAutoCleanupDescription": "Manage automatic cleanup of reading history to free up storage space.",
+  "nextCleanup": "Next cleanup",
+  "historyStatistics": "History Statistics",
+  "totalItems": "Total items",
+  "lastCleanup": "Last cleanup",
+  "lastAppAccess": "Last app access",
   "oneDay": "1 day",
   "twoDays": "2 days", 
   "oneWeek": "1 week",
@@ -438,8 +507,412 @@
   "verticalPages": "Vertical Pages", 
   "continuousScroll": "Continuous Scroll",
   "keepScreenOnLabel": "Keep Screen On: Off",
-  "showUILabel": "Show UI: On"
-  ,
+  "showUILabel": "Show UI: On",
   "keepScreenOn": "Keep Screen On",
-  "keepScreenOnDescription": "Prevent screen from turning off while reading"
+  "keepScreenOnDescription": "Prevent screen from turning off while reading",
+  "platformNotSupported": "Platform Not Supported",
+  "platformNotSupportedBody": "NhasixApp is designed exclusively for Android devices.",
+  "platformNotSupportedInstall": "Please install and run this app on an Android device.",
+  "storagePermissionRequired": "Storage Permission Required",
+  "storagePermissionExplanation": "This app needs storage permission to download files to your device. Files will be saved to the Downloads/nhasix folder.",
+  "grantPermission": "Grant Permission",
+  "permissionRequired": "Permission Required",
+  "storagePermissionSettingsPrompt": "Storage permission is required to download files. Please grant storage permission in app settings.",
+  "openSettings": "Open Settings",
+  
+  "noReadingHistory": "No Reading History",
+  "readingHistoryMessage": "Your reading history will appear here as you read content.",
+  "startReading": "Start Reading",
+  "browsePopularContent": "Browse popular content",
+  "searchSomethingInteresting": "Search for something interesting", 
+  "checkOutFeaturedItems": "Check out featured items",
+  
+  "appSubtitleDescription": "Nhentai unofficial client",
+  "downloadedGalleries": "Downloaded galleries",
+  "favoriteGalleries": "Favorite galleries",
+  "viewHistory": "View history",
+  
+  "openInBrowser": "Open in browser",
+  "downloadAllGalleries": "Download all galleries in this page",
+  
+  "enterPageNumber": "Enter page number (1 - {totalPages})",
+  "@enterPageNumber": {
+    "placeholders": {
+      "totalPages": {"type": "int"}
+    }
+  },
+  "pageNumber": "Page number",
+  "go": "Go",
+  "validPageNumberError": "Please enter a valid page number between 1 and {totalPages}",
+  "@validPageNumberError": {
+    "placeholders": {
+      "totalPages": {"type": "int"}
+    }
+  },
+  "tapToJump": "Tap to jump",
+  "goToPage": "Go to Page",
+  "previousPageTooltip": "Previous page", 
+  "nextPageTooltip": "Next page",
+  "tapToJumpToPage": "Tap to jump to page",
+  
+  "loadingContentTitle": "Loading Content",
+  "loadingContentDetails": "Loading Content Details",
+  "fetchingMetadata": "Fetching metadata and images...",
+  "thisMayTakeMoments": "This may take a few moments",
+  "youAreOffline": "You are offline. Some features may be limited.",
+  "goOnline": "Go Online",
+  "youAreOfflineTapToGoOnline": "You are offline. Tap to go online.",
+  "contentInformation": "Content Information",
+  "copyLink": "Copy Link",
+  "moreOptions": "More Options",
+  "moreLikeThis": "More Like This",
+  "statistics": "Statistics",
+  "failedToLoadContent": "Failed to load content",
+  "shareContent": "Share Content",
+  "sharePanelOpened": "Share panel opened successfully!",
+  "shareFailed": "Share failed, but link copied to clipboard",
+  "downloadStartedFor": "Download started for \"{title}\"",
+  "@downloadStartedFor": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "viewDownloadsAction": "View",
+  "failedToStartDownload": "Failed to start download. Please try again.",
+  "linkCopiedToClipboard": "Link copied to clipboard",
+  "failedToCopyLink": "Failed to copy link. Please try again.",
+  "copiedLink": "Copied Link",
+  "linkCopiedToClipboardDescription": "The following link has been copied to your clipboard:",
+  "closeDialog": "Close",
+  "goOnlineDialogTitle": "Go Online",
+  "goOnlineDialogContent": "You are currently in offline mode. Would you like to go online to access the latest content?",
+  "goingOnline": "Going online...",
+  "idLabel": "ID",
+  "pagesLabel": "Pages",
+  "languageLabel": "Language",
+  "artistLabel": "Artist",
+  "charactersLabel": "Characters",
+  "parodiesLabel": "Parodies",
+  "groupsLabel": "Groups",
+  "uploadedLabel": "Uploaded",
+  "favoritesLabel": "Favorites",
+  "tagsLabel": "Tags",
+  "artistsLabel": "Artists",
+  "relatedLabel": "Related",
+  "yearAgo": "{count} year{plural} ago",
+  "@yearAgo": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "plural": {"type": "String"}
+    }
+  },
+  "monthAgo": "{count} month{plural} ago", 
+  "@monthAgo": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "plural": {"type": "String"}
+    }
+  },
+  "dayAgo": "{count} day{plural} ago",
+  "@dayAgo": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "plural": {"type": "String"}
+    }
+  },
+  "hourAgo": "{count} hour{plural} ago",
+  "@hourAgo": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "plural": {"type": "String"}
+    }
+  },
+  
+  "selectFavoritesTooltip": "Select favorites",
+  "deleteSelectedTooltip": "Delete selected",
+  "exportAction": "Export",
+  "refreshAction": "Refresh",
+  "selectAllAction": "Select All",
+  "clearAction": "Clear",
+  "selectedCountFormat": "{selected} / {total}",
+  "@selectedCountFormat": {
+    "placeholders": {
+      "selected": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "loadingFavoritesMessage": "Loading favorites...",
+  "deletingFavoritesMessage": "Deleting favorites...",
+  "removingFromFavoritesMessage": "Removing from favorites...",
+  "favoritesDeletedMessage": "Favorites deleted successfully",
+  "failedToDeleteFavoritesMessage": "Failed to delete favorites",
+  "confirmDeleteFavoritesTitle": "Delete Favorites",
+  "confirmDeleteFavoritesMessage": "Are you sure you want to delete {count} favorite{plural}?",
+  "@confirmDeleteFavoritesMessage": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "plural": {"type": "String"}
+    }
+  },
+  "exportFavoritesTitle": "Export Favorites",
+  "exportingFavoritesMessage": "Exporting favorites...",
+  "favoritesExportedMessage": "Favorites exported successfully",
+  "failedToExportFavoritesMessage": "Failed to export favorites",
+  
+  "searchFavoritesHint": "Search favorites...",
+  "searchOfflineContentHint": "Search offline content...",
+  "failedToLoadPage": "Failed to load page {pageNumber}",
+  "@failedToLoadPage": {
+    "placeholders": {
+      "pageNumber": {"type": "int"}
+    }
+  },
+  "failedToLoad": "Failed to load",
+  "offlineContentTitle": "Offline Content",
+  "offlineContentError": "Offline Content Error",
+  "favorited": "Favorited",
+  "favorite": "Favorite",
+  "errorLoadingHistory": "Error Loading History",
+  "errorLoadingFavoritesTitle": "Error Loading Favorites",
+  
+  "filterDataTitle": "Filter Data",
+  "clearAllAction": "Clear All",
+  "searchFilterHint": "Search {filterType}...",
+  "@searchFilterHint": {
+    "placeholders": {
+      "filterType": {"type": "String"}
+    }
+  },
+  "selectedCountFormat2": "Selected ({count})",
+  "@selectedCountFormat2": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "errorLoadingFilterDataTitle": "Error loading filter data",
+  "noFilterTypeAvailable": "No {filterType} available",
+  "@noFilterTypeAvailable": {
+    "placeholders": {
+      "filterType": {"type": "String"}
+    }
+  },
+  "noResultsFoundForQuery": "No results found for \"{query}\"",
+  "@noResultsFoundForQuery": {
+    "placeholders": {
+      "query": {"type": "String"}
+    }
+  },
+  
+  "contentNotFoundTitle": "Content Not Found",
+  "contentNotFoundMessage": "Content with ID \"{contentId}\" was not found.",
+  "@contentNotFoundMessage": {
+    "placeholders": {
+      "contentId": {"type": "String"}
+    }
+  },
+  "filterCategoriesTitle": "Filter Categories",
+  "tagsLabel": "Tags",
+  "artistsLabel": "Artists", 
+  "charactersLabel": "Characters",
+  "parodiesLabel": "Parodies",
+  "groupsLabel": "Groups",
+  
+  "searchTitle": "Search",
+  "advancedSearchTitle": "Advanced Search",
+  "enterSearchQueryHint": "Enter search query (e.g. \"big breasts english\")",
+  "popularSearchesTitle": "Popular Searches",
+  "recentSearchesTitle": "Recent Searches",
+  "clearAllAction": "Clear All",
+  "pressSearchButtonMessage": "Press the Search button to find content with your current filters",
+  "searchingMessage": "Searching...",
+  "resultsCountFormat": "{count} results",
+  "@resultsCountFormat": {
+    "placeholders": {
+      "count": {"type": "String"}
+    }
+  },
+  "viewInMainAction": "View in Main",
+  "searchErrorTitle": "Search Error",
+  "noResultsFoundTitle": "No results found",
+  
+  "pageText": "page {pageNumber}",
+  "@pageText": {
+    "placeholders": {
+      "pageNumber": {"type": "int"}
+    }
+  },
+  "pagesText": "pages {startPage}-{endPage}",
+  "@pagesText": {
+    "placeholders": {
+      "startPage": {"type": "int"},
+      "endPage": {"type": "int"}
+    }
+  },
+  "offlineStatus": "OFFLINE",
+  "onlineStatus": "ONLINE",
+  
+  "sortBy": "Sort by",
+  "errorOccurred": "An error occurred",
+  "tapToRetry": "Tap to retry",
+  "helpTitle": "Help",
+  "helpNoResults": "No results found for your search",
+  "helpTryDifferent": "Try using different keywords or check your spelling",
+  "helpUseFilters": "Use filters to narrow down your search",
+  "helpCheckConnection": "Check your internet connection",
+  "sendReportText": "Send Report",
+  "technicalDetailsTitle": "Technical Details",
+  "reportSentText": "Report sent!",
+  
+  "suggestionCheckConnection": "Check your internet connection",
+  "suggestionTryWifiMobile": "Try switching between WiFi and mobile data",
+  "suggestionRestartRouter": "Restart your router if using WiFi",
+  "suggestionCheckWebsite": "Check if the website is down",
+  "noContentFoundWithQuery": "No content found for \"{query}\". Try adjusting your search terms or filters.",
+  "@noContentFoundWithQuery": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "noContentFound": "No content found. Try adjusting your search terms or filters.",
+  "suggestionTryDifferentKeywords": "Try different keywords",
+  "suggestionRemoveFilters": "Remove some filters",
+  "suggestionCheckSpelling": "Check spelling",
+  "suggestionUseBroaderTerms": "Use broader search terms",
+  "underMaintenanceTitle": "Under Maintenance",
+  "underMaintenanceMessage": "The service is currently under maintenance. Please check back later.",
+  "suggestionMaintenanceHours": "Maintenance usually takes a few hours",
+  "suggestionCheckSocial": "Check social media for updates",
+  "suggestionTryLater": "Try again later",
+  
+  "includeFilter": "Include",
+  "excludeFilter": "Exclude",
+  
+  "overallProgress": "Overall Progress",
+  "total": "Total",
+  "active": "Active", 
+  "queued": "Queued",
+  "done": "Done",
+  "speed": "Speed",
+  "downloaded": "Downloaded",
+  "downloadsFailed": "{count} download{plural} failed",
+  "@downloadsFailed": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "plural": {"type": "String"}
+    }
+  },
+  "view": "View",
+  "processing": "Processing...",
+  
+  "loading": "Loading...",
+  
+  "unknownTitle": "Unknown Title",
+  "readingCompleted": "Completed",
+  "readAgain": "Read Again", 
+  "continueReading": "Continue Reading",
+  "removeFromHistory": "Remove from History",
+  "lessThanOneMinute": "Less than 1 minute",
+  "readingTime": "reading time",
+  
+  "downloadActions": "Download Actions",
+  "pause": "Pause",
+  "resume": "Resume", 
+  "cancel": "Cancel",
+  "retry": "Retry",
+  "convertToPdf": "Convert to PDF",
+  "details": "Details",
+  "remove": "Remove",
+  
+  "downloadActionPause": "Pause",
+  "downloadActionResume": "Resume",
+  "downloadActionCancel": "Cancel", 
+  "downloadActionRetry": "Retry",
+  "downloadActionConvertToPdf": "Convert to PDF",
+  "downloadActionDetails": "Details",
+  "downloadActionRemove": "Remove",
+  
+  "downloadPagesRangeFormat": "{downloaded}/{total} (Pages {start}-{end} of {totalPages})",
+  "@downloadPagesRangeFormat": {
+    "placeholders": {
+      "downloaded": {"type": "int"},
+      "total": {"type": "int"},
+      "start": {"type": "int"},
+      "end": {"type": "int"},
+      "totalPages": {"type": "int"}
+    }
+  },
+  "downloadPagesFormat": "{downloaded}/{total}",
+  "@downloadPagesFormat": {
+    "placeholders": {
+      "downloaded": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  
+  "downloadContentTitle": "Content {contentId}",
+  "@downloadContentTitle": {
+    "placeholders": {
+      "contentId": {"type": "String"}
+    }
+  },
+  "downloadEtaLabel": "ETA: {duration}",
+  "@downloadEtaLabel": {
+    "placeholders": {
+      "duration": {"type": "String"}
+    }
+  },
+  
+  "downloadSettingsTitle": "Download Settings",
+  "performanceSection": "Performance",
+  "maxConcurrentDownloads": "Max Concurrent Downloads",
+  "concurrentDownloadsWarning": "Higher values may consume more bandwidth and device resources",
+  "imageQualityLabel": "Image Quality",
+  "autoRetrySection": "Auto Retry",
+  "autoRetryFailedDownloads": "Auto Retry Failed Downloads",
+  "autoRetryDescription": "Automatically retry failed downloads",
+  "maxRetryAttempts": "Max Retry Attempts",
+  "networkSection": "Network",
+  "wifiOnlyLabel": "WiFi Only",
+  "wifiOnlyDescription": "Only download when connected to WiFi",
+  "downloadTimeoutLabel": "Download Timeout",
+  "notificationsSection": "Notifications",
+  "enableNotificationsLabel": "Enable Notifications",
+  "enableNotificationsDescription": "Show notifications for download progress",
+  "minutesUnit": "min",
+  
+  "searchContentHint": "Search content...",
+  "hideFiltersTooltip": "Hide filters",
+  "showMoreFiltersTooltip": "Show more filters",
+  "advancedFiltersTitle": "Advanced Filters",
+  "sortByLabel": "Sort by",
+  "languageLabel": "Language",
+  "categoryLabel": "Category",
+  "recentSearchesTitle": "Recent Searches",
+  "includeTagsLabel": "Include tags (comma separated)",
+  "includeTagsHint": "e.g., romance, comedy, school",
+  "excludeTagsLabel": "Exclude tags (comma separated)",
+  "excludeTagsHint": "e.g., horror, violence",
+  "artistsLabel": "Artists (comma separated)",
+  "artistsHint": "e.g., artist1, artist2",
+  "charactersLabel": "Characters",
+  "parodiesLabel": "Parodies",
+  "groupsLabel": "Groups (comma separated)",
+  "pageCountRangeTitle": "Page Count Range",
+  "minPagesLabel": "Min pages",
+  "maxPagesLabel": "Max pages",
+  "rangeToSeparator": "to",
+  "popularTagsTitle": "Popular Tags",
+  "filtersActiveLabel": "active",
+  "clearAllFilters": "Clear All",
+  
+  "appTitle": "NhentaiApp",
+  "appSubtitle": "Enhanced Reading Experience",
+  "initializingApp": "Initializing Application...",
+  "settingUpComponents": "Setting up components and checking connection...",
+  "bypassingProtection": "Bypassing protection and establishing connection...",
+  "connectionFailed": "Connection Failed",
+  "readyToGo": "Ready to Go!",
+  "launchingApp": "Launching main application..."
 }

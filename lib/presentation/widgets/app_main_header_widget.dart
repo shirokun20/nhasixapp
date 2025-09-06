@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 
 import '../../core/constants/text_style_const.dart';
 import '../../core/routing/app_router.dart';
@@ -20,6 +21,8 @@ class AppMainHeaderWidget extends StatelessWidget
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return AppBar(
       leading: Builder(builder: (context) {
         return IconButton(
@@ -43,7 +46,7 @@ class AppMainHeaderWidget extends StatelessWidget
           icon: const Icon(
             Icons.search,
           ),
-          tooltip: 'Search',
+          tooltip: l10n.search,
         ),
         PopupMenuButton<String>(
           color: Theme.of(context).colorScheme.surfaceContainer,
@@ -68,7 +71,7 @@ class AppMainHeaderWidget extends StatelessWidget
               PopupMenuItem<String>(
                 value: 'opob',
                 child: Text(
-                  'Open in browser',
+                  l10n.openInBrowser,
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
@@ -77,7 +80,7 @@ class AppMainHeaderWidget extends StatelessWidget
               PopupMenuItem<String>(
                 value: 'download-all',
                 child: Text(
-                  'Download all galleries in this page',
+                  l10n.downloadAllGalleries,
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
@@ -88,7 +91,7 @@ class AppMainHeaderWidget extends StatelessWidget
         ),
       ],
       title: Text(
-        'Nhentai',
+        l10n.appSubtitle,
         style: TextStyleConst.headingMedium.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
         ),

@@ -9,10 +9,10 @@ class AppLocalizationsId extends AppLocalizations {
   AppLocalizationsId([String locale = 'id']) : super(locale);
 
   @override
-  String get appTitle => 'NhasixApp';
+  String get appTitle => 'NhentaiApp';
 
   @override
-  String get appSubtitle => 'NHentai';
+  String get appSubtitle => 'Pengalaman Membaca yang Ditingkatkan';
 
   @override
   String get home => 'Beranda';
@@ -58,6 +58,37 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get tapToLoadContent => 'Ketuk untuk memuat konten';
+
+  @override
+  String get checkInternetConnection => 'Periksa koneksi internet Anda';
+
+  @override
+  String get trySwitchingNetwork => 'Coba beralih antara WiFi dan data seluler';
+
+  @override
+  String get restartRouter => 'Restart router jika menggunakan WiFi';
+
+  @override
+  String get checkWebsiteStatus => 'Periksa apakah situs web sedang down';
+
+  @override
+  String get cloudflareBypassMessage =>
+      'Situs web dilindungi oleh Cloudflare. Kami sedang mencoba untuk melewati proteksi.';
+
+  @override
+  String get forceBypass => 'Paksa Bypass';
+
+  @override
+  String get unableToProcessData =>
+      'Tidak dapat memproses data yang diterima. Struktur situs mungkin telah berubah.';
+
+  @override
+  String get reportIssue => 'Laporkan Masalah';
+
+  @override
+  String serverReturnedError(int statusCode) {
+    return 'Server mengembalikan kesalahan $statusCode. Layanan mungkin sedang tidak tersedia.';
+  }
 
   @override
   String get searchResults => 'Hasil Pencarian';
@@ -298,10 +329,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get eta => 'ETA';
 
   @override
-  String get queued => 'Antrian';
+  String get queued => 'Antri';
 
   @override
-  String get downloaded => 'Diunduh';
+  String get downloaded => 'Terunduh';
 
   @override
   String get resume => 'Lanjutkan';
@@ -406,6 +437,72 @@ class AppLocalizationsId extends AppLocalizations {
   String opening(String title) {
     return 'Membuka: $title';
   }
+
+  @override
+  String get lastUpdatedLabel => 'Diperbarui:';
+
+  @override
+  String get rangeLabel => 'Rentang:';
+
+  @override
+  String get ofWord => 'dari';
+
+  @override
+  String waitAndTry(int minutes) {
+    return 'Tunggu $minutes menit dan coba lagi';
+  }
+
+  @override
+  String get serviceUnderMaintenance =>
+      'Layanan mungkin sedang dalam pemeliharaan';
+
+  @override
+  String get tryRefreshingPage => 'Coba muat ulang halaman';
+
+  @override
+  String get waitForBypass => 'Tunggu bypass otomatis selesai';
+
+  @override
+  String get tryUsingVpn => 'Coba gunakan VPN jika tersedia';
+
+  @override
+  String get checkBackLater => 'Periksa kembali beberapa menit lagi';
+
+  @override
+  String get tryRefreshingContent => 'Coba muat ulang konten';
+
+  @override
+  String get checkForAppUpdate => 'Periksa apakah aplikasi perlu diperbarui';
+
+  @override
+  String get reportIfPersists => 'Laporkan masalah jika terus berlanjut';
+
+  @override
+  String get maintenanceTakesHours =>
+      'Pemeliharaan biasanya memakan waktu beberapa jam';
+
+  @override
+  String get checkSocialMedia => 'Periksa media sosial untuk pembaruan';
+
+  @override
+  String get tryAgainLater => 'Coba lagi nanti';
+
+  @override
+  String get tryDifferentKeywords => 'Coba kata kunci berbeda';
+
+  @override
+  String get serverUnavailable =>
+      'Server saat ini tidak tersedia. Silakan coba lagi nanti.';
+
+  @override
+  String get removeSomeFilters => 'Hapus beberapa filter';
+
+  @override
+  String get checkSpelling => 'Periksa ejaan';
+
+  @override
+  String get useBroaderSearchTerms =>
+      'Gunakan istilah pencarian yang lebih luas';
 
   @override
   String get loadingFavorites => 'Memuat favorit...';
@@ -599,12 +696,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get keepScreenOnLabel => 'Jaga Layar Hidup: Mati';
 
   @override
-  String get keepScreenOn => 'Jaga Layar Hidup';
-
-  @override
-  String get keepScreenOnDescription => 'Mencegah layar mati saat membaca';
-
-  @override
   String get showUILabel => 'Tampilkan UI: Hidup';
 
   @override
@@ -759,7 +850,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get ok => 'OK';
 
   @override
-  String get cancel => 'Batal';
+  String get cancel => 'Batalkan';
 
   @override
   String get delete => 'Hapus';
@@ -873,6 +964,21 @@ class AppLocalizationsId extends AppLocalizations {
       'Kelola pembersihan otomatis riwayat baca untuk menghemat ruang penyimpanan.';
 
   @override
+  String get nextCleanup => 'Pembersihan berikutnya';
+
+  @override
+  String get historyStatistics => 'Statistik Riwayat';
+
+  @override
+  String get totalItems => 'Total item';
+
+  @override
+  String get lastCleanup => 'Pembersihan terakhir';
+
+  @override
+  String get lastAppAccess => 'Akses aplikasi terakhir';
+
+  @override
   String get oneDay => '1 hari';
 
   @override
@@ -933,4 +1039,723 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get continuousScroll => 'Gulir Terus Menerus';
+
+  @override
+  String get keepScreenOn => 'Jaga Layar Hidup';
+
+  @override
+  String get keepScreenOnDescription => 'Mencegah layar mati saat membaca';
+
+  @override
+  String get platformNotSupported => 'Platform Tidak Didukung';
+
+  @override
+  String get platformNotSupportedBody =>
+      'NhasixApp dirancang khusus untuk perangkat Android.';
+
+  @override
+  String get platformNotSupportedInstall =>
+      'Silakan pasang dan jalankan aplikasi ini di perangkat Android.';
+
+  @override
+  String get storagePermissionRequired => 'Izin Penyimpanan Diperlukan';
+
+  @override
+  String get storagePermissionExplanation =>
+      'Aplikasi ini membutuhkan izin penyimpanan untuk mengunduh file ke perangkat Anda. File akan disimpan di folder Downloads/nhasix.';
+
+  @override
+  String get grantPermission => 'Berikan Izin';
+
+  @override
+  String get permissionRequired => 'Izin Diperlukan';
+
+  @override
+  String get storagePermissionSettingsPrompt =>
+      'Izin penyimpanan diperlukan untuk mengunduh file. Silakan berikan izin penyimpanan di pengaturan aplikasi.';
+
+  @override
+  String get openSettings => 'Buka Pengaturan';
+
+  @override
+  String get readingHistoryMessage =>
+      'Riwayat bacaan Anda akan muncul di sini saat Anda membaca konten.';
+
+  @override
+  String get startReading => 'Mulai Membaca';
+
+  @override
+  String get browsePopularContent => 'Jelajahi konten populer';
+
+  @override
+  String get searchSomethingInteresting => 'Cari sesuatu yang menarik';
+
+  @override
+  String get checkOutFeaturedItems => 'Lihat item unggulan';
+
+  @override
+  String get appSubtitleDescription => 'Klien tidak resmi Nhentai';
+
+  @override
+  String get downloadedGalleries => 'Galeri yang diunduh';
+
+  @override
+  String get favoriteGalleries => 'Galeri favorit';
+
+  @override
+  String get viewHistory => 'Lihat riwayat';
+
+  @override
+  String get openInBrowser => 'Buka di browser';
+
+  @override
+  String get downloadAllGalleries => 'Unduh semua galeri di halaman ini';
+
+  @override
+  String enterPageNumber(int totalPages) {
+    return 'Masukkan nomor halaman (1 - $totalPages)';
+  }
+
+  @override
+  String get pageNumber => 'Nomor halaman';
+
+  @override
+  String get go => 'Pergi';
+
+  @override
+  String validPageNumberError(int totalPages) {
+    return 'Silakan masukkan nomor halaman yang valid antara 1 dan $totalPages';
+  }
+
+  @override
+  String get tapToJump => 'Ketuk untuk loncat';
+
+  @override
+  String get goToPage => 'Pergi ke Halaman';
+
+  @override
+  String get previousPageTooltip => 'Halaman sebelumnya';
+
+  @override
+  String get nextPageTooltip => 'Halaman berikutnya';
+
+  @override
+  String get tapToJumpToPage => 'Ketuk untuk lompat ke halaman';
+
+  @override
+  String get loadingContentTitle => 'Memuat Konten';
+
+  @override
+  String get loadingContentDetails => 'Memuat Detail Konten';
+
+  @override
+  String get fetchingMetadata => 'Mengambil metadata dan gambar...';
+
+  @override
+  String get thisMayTakeMoments => 'Ini mungkin memerlukan beberapa saat';
+
+  @override
+  String get youAreOffline =>
+      'Anda sedang offline. Beberapa fitur mungkin terbatas.';
+
+  @override
+  String get goOnline => 'Buka Online';
+
+  @override
+  String get youAreOfflineTapToGoOnline =>
+      'Anda sedang offline. Ketuk untuk online.';
+
+  @override
+  String get contentInformation => 'Informasi Konten';
+
+  @override
+  String get copyLink => 'Salin Link';
+
+  @override
+  String get moreOptions => 'Opsi Lainnya';
+
+  @override
+  String get moreLikeThis => 'Lebih Seperti Ini';
+
+  @override
+  String get statistics => 'Statistik';
+
+  @override
+  String get failedToLoadContent => 'Gagal memuat konten';
+
+  @override
+  String get shareContent => 'Bagikan Konten';
+
+  @override
+  String get sharePanelOpened => 'Panel berbagi berhasil dibuka!';
+
+  @override
+  String get shareFailed =>
+      'Berbagi gagal, tetapi link telah disalin ke clipboard';
+
+  @override
+  String downloadStartedFor(String title) {
+    return 'Unduhan dimulai untuk \"$title\"';
+  }
+
+  @override
+  String get viewDownloadsAction => 'Lihat';
+
+  @override
+  String get failedToStartDownload =>
+      'Gagal memulai unduhan. Silakan coba lagi.';
+
+  @override
+  String get linkCopiedToClipboard => 'Link telah disalin ke clipboard';
+
+  @override
+  String get failedToCopyLink => 'Gagal menyalin link. Silakan coba lagi.';
+
+  @override
+  String get copiedLink => 'Link Disalin';
+
+  @override
+  String get linkCopiedToClipboardDescription =>
+      'Link berikut telah disalin ke clipboard Anda:';
+
+  @override
+  String get closeDialog => 'Tutup';
+
+  @override
+  String get goOnlineDialogTitle => 'Buka Online';
+
+  @override
+  String get goOnlineDialogContent =>
+      'Anda saat ini dalam mode offline. Apakah Anda ingin online untuk mengakses konten terbaru?';
+
+  @override
+  String get goingOnline => 'Membuka online...';
+
+  @override
+  String get idLabel => 'ID';
+
+  @override
+  String get pagesLabel => 'Halaman';
+
+  @override
+  String get languageLabel => 'Bahasa';
+
+  @override
+  String get artistLabel => 'Artis';
+
+  @override
+  String get charactersLabel => 'Karakter';
+
+  @override
+  String get parodiesLabel => 'Parodi';
+
+  @override
+  String get groupsLabel => 'Grup (dipisahkan koma)';
+
+  @override
+  String get uploadedLabel => 'Diunggah';
+
+  @override
+  String get favoritesLabel => 'Favorit';
+
+  @override
+  String get tagsLabel => 'Tag';
+
+  @override
+  String get artistsLabel => 'Artis (dipisahkan koma)';
+
+  @override
+  String get relatedLabel => 'Terkait';
+
+  @override
+  String yearAgo(int count, String plural) {
+    return '$count tahun$plural lalu';
+  }
+
+  @override
+  String monthAgo(int count, String plural) {
+    return '$count bulan$plural lalu';
+  }
+
+  @override
+  String dayAgo(int count, String plural) {
+    return '$count hari$plural lalu';
+  }
+
+  @override
+  String hourAgo(int count, String plural) {
+    return '$count jam$plural lalu';
+  }
+
+  @override
+  String get selectFavoritesTooltip => 'Pilih favorit';
+
+  @override
+  String get deleteSelectedTooltip => 'Hapus yang dipilih';
+
+  @override
+  String get selectAllAction => 'Pilih Semua';
+
+  @override
+  String get clearAction => 'Bersihkan';
+
+  @override
+  String selectedCountFormat(int selected, int total) {
+    return '$selected / $total';
+  }
+
+  @override
+  String get loadingFavoritesMessage => 'Memuat favorit...';
+
+  @override
+  String get deletingFavoritesMessage => 'Menghapus favorit...';
+
+  @override
+  String get removingFromFavoritesMessage => 'Menghapus dari favorit...';
+
+  @override
+  String get favoritesDeletedMessage => 'Favorit berhasil dihapus';
+
+  @override
+  String get failedToDeleteFavoritesMessage => 'Gagal menghapus favorit';
+
+  @override
+  String get confirmDeleteFavoritesTitle => 'Hapus Favorit';
+
+  @override
+  String confirmDeleteFavoritesMessage(int count, String plural) {
+    return 'Apakah Anda yakin ingin menghapus $count favorit?';
+  }
+
+  @override
+  String get exportFavoritesTitle => 'Ekspor Favorit';
+
+  @override
+  String get exportingFavoritesMessage => 'Mengekspor favorit...';
+
+  @override
+  String get favoritesExportedMessage => 'Favorit berhasil diekspor';
+
+  @override
+  String get failedToExportFavoritesMessage => 'Gagal mengekspor favorit';
+
+  @override
+  String get searchFavoritesHint => 'Cari favorit...';
+
+  @override
+  String get searchOfflineContentHint => 'Cari konten offline...';
+
+  @override
+  String failedToLoadPage(int pageNumber) {
+    return 'Gagal memuat halaman $pageNumber';
+  }
+
+  @override
+  String get failedToLoad => 'Gagal memuat';
+
+  @override
+  String get offlineContentTitle => 'Konten Offline';
+
+  @override
+  String get favorited => 'Difavoritkan';
+
+  @override
+  String get favorite => 'Favorit';
+
+  @override
+  String get errorLoadingFavoritesTitle => 'Kesalahan Memuat Favorit';
+
+  @override
+  String get filterDataTitle => 'Filter Data';
+
+  @override
+  String get clearAllAction => 'Bersihkan Semua';
+
+  @override
+  String searchFilterHint(String filterType) {
+    return 'Cari $filterType...';
+  }
+
+  @override
+  String selectedCountFormat2(int count) {
+    return 'Dipilih ($count)';
+  }
+
+  @override
+  String get errorLoadingFilterDataTitle => 'Kesalahan memuat data filter';
+
+  @override
+  String noFilterTypeAvailable(String filterType) {
+    return 'Tidak ada $filterType tersedia';
+  }
+
+  @override
+  String noResultsFoundForQuery(String query) {
+    return 'Tidak ada hasil untuk \"$query\"';
+  }
+
+  @override
+  String get contentNotFoundTitle => 'Konten Tidak Ditemukan';
+
+  @override
+  String contentNotFoundMessage(String contentId) {
+    return 'Konten dengan ID \"$contentId\" tidak ditemukan.';
+  }
+
+  @override
+  String get filterCategoriesTitle => 'Kategori Filter';
+
+  @override
+  String get searchTitle => 'Cari';
+
+  @override
+  String get advancedSearchTitle => 'Pencarian Lanjutan';
+
+  @override
+  String get enterSearchQueryHint =>
+      'Masukkan kata kunci pencarian (contoh: \"big breasts english\")';
+
+  @override
+  String get popularSearchesTitle => 'Pencarian Populer';
+
+  @override
+  String get recentSearchesTitle => 'Pencarian Terbaru';
+
+  @override
+  String get pressSearchButtonMessage =>
+      'Tekan tombol Cari untuk menemukan konten dengan filter saat ini';
+
+  @override
+  String get searchingMessage => 'Mencari...';
+
+  @override
+  String resultsCountFormat(String count) {
+    return '$count hasil';
+  }
+
+  @override
+  String get viewInMainAction => 'Lihat di Utama';
+
+  @override
+  String get searchErrorTitle => 'Kesalahan Pencarian';
+
+  @override
+  String get noResultsFoundTitle => 'Tidak ada hasil';
+
+  @override
+  String pageText(int pageNumber) {
+    return 'halaman $pageNumber';
+  }
+
+  @override
+  String pagesText(int startPage, int endPage) {
+    return 'halaman $startPage-$endPage';
+  }
+
+  @override
+  String get offlineStatus => 'OFFLINE';
+
+  @override
+  String get onlineStatus => 'ONLINE';
+
+  @override
+  String get errorOccurred => 'Terjadi kesalahan';
+
+  @override
+  String get tapToRetry => 'Ketuk untuk mencoba lagi';
+
+  @override
+  String get helpTitle => 'Bantuan';
+
+  @override
+  String get helpNoResults => 'Tidak ada hasil ditemukan untuk pencarian Anda';
+
+  @override
+  String get helpTryDifferent =>
+      'Coba gunakan kata kunci yang berbeda atau periksa ejaan';
+
+  @override
+  String get helpUseFilters => 'Gunakan filter untuk mempersempit pencarian';
+
+  @override
+  String get helpCheckConnection => 'Periksa koneksi internet Anda';
+
+  @override
+  String get sendReportText => 'Kirim Laporan';
+
+  @override
+  String get technicalDetailsTitle => 'Detail Teknis';
+
+  @override
+  String get reportSentText => 'Laporan terkirim!';
+
+  @override
+  String get suggestionCheckConnection => 'Periksa koneksi internet Anda';
+
+  @override
+  String get suggestionTryWifiMobile =>
+      'Coba beralih antara WiFi dan data seluler';
+
+  @override
+  String get suggestionRestartRouter => 'Restart router jika menggunakan WiFi';
+
+  @override
+  String get suggestionCheckWebsite => 'Periksa apakah situs web sedang down';
+
+  @override
+  String noContentFoundWithQuery(String query) {
+    return 'Tidak ada konten ditemukan untuk \"$query\". Coba sesuaikan istilah pencarian atau filter.';
+  }
+
+  @override
+  String get noContentFound =>
+      'Tidak ada konten ditemukan. Coba sesuaikan istilah pencarian atau filter.';
+
+  @override
+  String get suggestionTryDifferentKeywords => 'Coba kata kunci yang berbeda';
+
+  @override
+  String get suggestionRemoveFilters => 'Hapus beberapa filter';
+
+  @override
+  String get suggestionCheckSpelling => 'Periksa ejaan';
+
+  @override
+  String get suggestionUseBroaderTerms =>
+      'Gunakan istilah pencarian yang lebih luas';
+
+  @override
+  String get underMaintenanceTitle => 'Sedang Maintenance';
+
+  @override
+  String get underMaintenanceMessage =>
+      'Layanan sedang dalam pemeliharaan. Silakan coba lagi nanti.';
+
+  @override
+  String get suggestionMaintenanceHours =>
+      'Maintenance biasanya memakan waktu beberapa jam';
+
+  @override
+  String get suggestionCheckSocial => 'Periksa media sosial untuk update';
+
+  @override
+  String get suggestionTryLater => 'Coba lagi nanti';
+
+  @override
+  String get includeFilter => 'Sertakan';
+
+  @override
+  String get excludeFilter => 'Kecualikan';
+
+  @override
+  String get overallProgress => 'Progress Keseluruhan';
+
+  @override
+  String get total => 'Total';
+
+  @override
+  String get done => 'Selesai';
+
+  @override
+  String downloadsFailed(int count, String plural) {
+    return '$count unduhan gagal';
+  }
+
+  @override
+  String get processing => 'Memproses...';
+
+  @override
+  String get readingCompleted => 'Selesai';
+
+  @override
+  String get readAgain => 'Baca Lagi';
+
+  @override
+  String get continueReading => 'Lanjutkan Membaca';
+
+  @override
+  String get lessThanOneMinute => 'Kurang dari 1 menit';
+
+  @override
+  String get readingTime => 'waktu baca';
+
+  @override
+  String get downloadActions => 'Tindakan Download';
+
+  @override
+  String get pause => 'Jeda';
+
+  @override
+  String get convertToPdf => 'Ubah ke PDF';
+
+  @override
+  String get details => 'Detail';
+
+  @override
+  String get downloadActionPause => 'Jeda';
+
+  @override
+  String get downloadActionResume => 'Lanjutkan';
+
+  @override
+  String get downloadActionCancel => 'Batalkan';
+
+  @override
+  String get downloadActionRetry => 'Coba Lagi';
+
+  @override
+  String get downloadActionConvertToPdf => 'Ubah ke PDF';
+
+  @override
+  String get downloadActionDetails => 'Detail';
+
+  @override
+  String get downloadActionRemove => 'Hapus';
+
+  @override
+  String downloadPagesRangeFormat(
+      int downloaded, int total, int start, int end, int totalPages) {
+    return '$downloaded/$total (Halaman $start-$end dari $totalPages)';
+  }
+
+  @override
+  String downloadPagesFormat(int downloaded, int total) {
+    return '$downloaded/$total';
+  }
+
+  @override
+  String downloadContentTitle(String contentId) {
+    return 'Konten $contentId';
+  }
+
+  @override
+  String downloadEtaLabel(String duration) {
+    return 'Perkiraan: $duration';
+  }
+
+  @override
+  String get downloadSettingsTitle => 'Pengaturan Download';
+
+  @override
+  String get performanceSection => 'Performa';
+
+  @override
+  String get maxConcurrentDownloads => 'Maks Download Bersamaan';
+
+  @override
+  String get concurrentDownloadsWarning =>
+      'Nilai tinggi mungkin menggunakan lebih banyak bandwidth dan resource perangkat';
+
+  @override
+  String get imageQualityLabel => 'Kualitas Gambar';
+
+  @override
+  String get autoRetrySection => 'Ulangi Otomatis';
+
+  @override
+  String get autoRetryFailedDownloads => 'Ulangi Download Gagal Otomatis';
+
+  @override
+  String get autoRetryDescription => 'Otomatis ulangi download yang gagal';
+
+  @override
+  String get maxRetryAttempts => 'Maks Percobaan Ulang';
+
+  @override
+  String get networkSection => 'Jaringan';
+
+  @override
+  String get wifiOnlyLabel => 'Hanya WiFi';
+
+  @override
+  String get wifiOnlyDescription => 'Hanya download saat terhubung ke WiFi';
+
+  @override
+  String get downloadTimeoutLabel => 'Timeout Download';
+
+  @override
+  String get notificationsSection => 'Notifikasi';
+
+  @override
+  String get enableNotificationsLabel => 'Aktifkan Notifikasi';
+
+  @override
+  String get enableNotificationsDescription =>
+      'Tampilkan notifikasi untuk progress download';
+
+  @override
+  String get minutesUnit => 'mnt';
+
+  @override
+  String get searchContentHint => 'Cari konten...';
+
+  @override
+  String get hideFiltersTooltip => 'Sembunyikan filter';
+
+  @override
+  String get showMoreFiltersTooltip => 'Tampilkan lebih banyak filter';
+
+  @override
+  String get advancedFiltersTitle => 'Filter Lanjutan';
+
+  @override
+  String get sortByLabel => 'Urutkan berdasarkan';
+
+  @override
+  String get categoryLabel => 'Kategori';
+
+  @override
+  String get includeTagsLabel => 'Sertakan tag (dipisahkan koma)';
+
+  @override
+  String get includeTagsHint => 'contoh: romansa, komedi, sekolah';
+
+  @override
+  String get excludeTagsLabel => 'Kecualikan tag (dipisahkan koma)';
+
+  @override
+  String get excludeTagsHint => 'contoh: horor, kekerasan';
+
+  @override
+  String get artistsHint => 'contoh: artis1, artis2';
+
+  @override
+  String get pageCountRangeTitle => 'Rentang Jumlah Halaman';
+
+  @override
+  String get minPagesLabel => 'Halaman minimal';
+
+  @override
+  String get maxPagesLabel => 'Halaman maksimal';
+
+  @override
+  String get rangeToSeparator => 'hingga';
+
+  @override
+  String get popularTagsTitle => 'Tag Populer';
+
+  @override
+  String get filtersActiveLabel => 'aktif';
+
+  @override
+  String get clearAllFilters => 'Hapus Semua';
+
+  @override
+  String get initializingApp => 'Menginisialisasi Aplikasi...';
+
+  @override
+  String get settingUpComponents =>
+      'Menyiapkan komponen dan memeriksa koneksi...';
+
+  @override
+  String get bypassingProtection => 'Melewati proteksi dan membuat koneksi...';
+
+  @override
+  String get connectionFailed => 'Koneksi Gagal';
+
+  @override
+  String get readyToGo => 'Siap Digunakan!';
+
+  @override
+  String get launchingApp => 'Meluncurkan aplikasi utama...';
 }

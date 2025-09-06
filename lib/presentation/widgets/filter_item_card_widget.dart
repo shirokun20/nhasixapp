@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/entities.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Modern card widget for filter items with include/exclude toggle
 class FilterItemCard extends StatelessWidget {
@@ -141,7 +142,7 @@ class FilterItemCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      isIncluded ? 'Include' : 'Exclude',
+                      isIncluded ? AppLocalizations.of(context)!.includeFilter : AppLocalizations.of(context)!.excludeFilter,
                       style: TextStyleConst.label.copyWith(
                         color: isIncluded
                             ? Theme.of(context).colorScheme.primary

@@ -42,7 +42,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return AppScaffoldWithOffline(
       title: AppLocalizations.of(context)!.downloads,
       backgroundColor: colorScheme.surface,
@@ -56,7 +56,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                 backgroundColor: colorScheme.error,
                 action: state.canRetry
                     ? SnackBarAction(
-                        label: 'Retry',
+                        label: AppLocalizations.of(context)!.retryAction,
                         textColor: colorScheme.onError,
                         onPressed: () {
                           context
@@ -72,7 +72,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         builder: (context, state) {
           if (state is DownloadInitial || state is DownloadInitializing) {
             return Center(
-              child: AppProgressIndicator(message: AppLocalizations.of(context)!.initializingDownloads),
+              child: AppProgressIndicator(
+                  message: AppLocalizations.of(context)!.initializingDownloads),
             );
           }
 
@@ -81,7 +82,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
               title: AppLocalizations.of(context)!.downloadError,
               message: state.message,
               onRetry: state.canRetry
-                  ? () => context.read<DownloadBloc>().add(const DownloadInitializeEvent())
+                  ? () => context
+                      .read<DownloadBloc>()
+                      .add(const DownloadInitializeEvent())
                   : null,
             );
           }
@@ -91,7 +94,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
           }
 
           return Center(
-            child: AppProgressIndicator(message: AppLocalizations.of(context)!.loadingDownloads),
+            child: AppProgressIndicator(
+                message: AppLocalizations.of(context)!.loadingDownloads),
           );
         },
       ),
@@ -127,11 +131,14 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                       state.queuedDownloads.isNotEmpty,
                   child: Row(
                     children: [
-                      Icon(Icons.pause, color: Theme.of(context).colorScheme.onSurface),
+                      Icon(Icons.pause,
+                          color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
-                      Text(AppLocalizations.of(context)!.pauseAll, style: TextStyleConst.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      )),
+                      Text(AppLocalizations.of(context)!.pauseAll,
+                          style: TextStyleConst.bodyMedium.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          )),
                     ],
                   ),
                 ),
@@ -141,11 +148,14 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                       .any((d) => d.state == DownloadState.paused),
                   child: Row(
                     children: [
-                      Icon(Icons.play_arrow, color: Theme.of(context).colorScheme.onSurface),
+                      Icon(Icons.play_arrow,
+                          color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
-                      Text(AppLocalizations.of(context)!.resumeAll, style: TextStyleConst.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      )),
+                      Text(AppLocalizations.of(context)!.resumeAll,
+                          style: TextStyleConst.bodyMedium.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          )),
                     ],
                   ),
                 ),
@@ -154,11 +164,12 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   enabled: state.downloads.any((d) => d.canCancel),
                   child: Row(
                     children: [
-                      Icon(Icons.cancel, color: Theme.of(context).colorScheme.error),
+                      Icon(Icons.cancel,
+                          color: Theme.of(context).colorScheme.error),
                       const SizedBox(width: 8),
                       Text(AppLocalizations.of(context)!.cancelAll,
-                          style: TextStyleConst.bodyMedium
-                              .copyWith(color: Theme.of(context).colorScheme.error)),
+                          style: TextStyleConst.bodyMedium.copyWith(
+                              color: Theme.of(context).colorScheme.error)),
                     ],
                   ),
                 ),
@@ -168,11 +179,14 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   enabled: state.completedDownloads.isNotEmpty,
                   child: Row(
                     children: [
-                      Icon(Icons.clear_all, color: Theme.of(context).colorScheme.onSurface),
+                      Icon(Icons.clear_all,
+                          color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
-                      Text(AppLocalizations.of(context)!.clearCompleted, style: TextStyleConst.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      )),
+                      Text(AppLocalizations.of(context)!.clearCompleted,
+                          style: TextStyleConst.bodyMedium.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          )),
                     ],
                   ),
                 ),
@@ -183,9 +197,11 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                       Icon(Icons.cleaning_services,
                           color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
-                      Text(AppLocalizations.of(context)!.cleanupStorage, style: TextStyleConst.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      )),
+                      Text(AppLocalizations.of(context)!.cleanupStorage,
+                          style: TextStyleConst.bodyMedium.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          )),
                     ],
                   ),
                 ),
@@ -194,11 +210,14 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   value: 'settings',
                   child: Row(
                     children: [
-                      Icon(Icons.settings, color: Theme.of(context).colorScheme.onSurface),
+                      Icon(Icons.settings,
+                          color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
-                      Text(AppLocalizations.of(context)!.settings, style: TextStyleConst.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      )),
+                      Text(AppLocalizations.of(context)!.settings,
+                          style: TextStyleConst.bodyMedium.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          )),
                     ],
                   ),
                 ),
@@ -206,11 +225,14 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   value: 'export',
                   child: Row(
                     children: [
-                      Icon(Icons.file_download, color: Theme.of(context).colorScheme.onSurface),
+                      Icon(Icons.file_download,
+                          color: Theme.of(context).colorScheme.onSurface),
                       const SizedBox(width: 8),
-                      Text(AppLocalizations.of(context)!.exportList, style: TextStyleConst.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      )),
+                      Text(AppLocalizations.of(context)!.exportList,
+                          style: TextStyleConst.bodyMedium.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          )),
                     ],
                   ),
                 ),
@@ -222,7 +244,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       bottom: TabBar(
         controller: _tabController,
         labelColor: Theme.of(context).colorScheme.primary,
-        unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+        unselectedLabelColor:
+            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
         indicatorColor: Theme.of(context).colorScheme.primary,
         tabs: [
           Tab(text: AppLocalizations.of(context)!.all),
@@ -246,12 +269,16 @@ class _DownloadsScreenState extends State<DownloadsScreen>
           child: TabBarView(
             controller: _tabController,
             children: [
-              _buildDownloadsList(state.downloads, AppLocalizations.of(context)!.noDownloadsYet),
-              _buildDownloadsList(state.activeDownloads, AppLocalizations.of(context)!.noActiveDownloads),
-              _buildDownloadsList(state.queuedDownloads, AppLocalizations.of(context)!.noQueuedDownloads),
-              _buildDownloadsList(
-                  state.completedDownloads, AppLocalizations.of(context)!.noCompletedDownloads),
-              _buildDownloadsList(state.failedDownloads, AppLocalizations.of(context)!.noFailedDownloads),
+              _buildDownloadsList(state.downloads,
+                  AppLocalizations.of(context)!.noDownloadsYet),
+              _buildDownloadsList(state.activeDownloads,
+                  AppLocalizations.of(context)!.noActiveDownloads),
+              _buildDownloadsList(state.queuedDownloads,
+                  AppLocalizations.of(context)!.noQueuedDownloads),
+              _buildDownloadsList(state.completedDownloads,
+                  AppLocalizations.of(context)!.noCompletedDownloads),
+              _buildDownloadsList(state.failedDownloads,
+                  AppLocalizations.of(context)!.noFailedDownloads),
             ],
           ),
         ),
@@ -327,7 +354,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       case 'export':
         downloadBloc.add(const DownloadExportEvent());
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.downloadListExported)),
+          SnackBar(
+              content:
+                  Text(AppLocalizations.of(context)!.downloadListExported)),
         );
         break;
     }
@@ -391,13 +420,14 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         ),
         content: Text(
           AppLocalizations.of(context)!.cancelAllConfirmation,
-          style:
-              TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface),
+          style: TextStyleConst.bodyMedium
+              .copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(AppLocalizations.of(context)!.cancel, style: TextStyleConst.labelLarge),
+            child: Text(AppLocalizations.of(context)!.cancel,
+                style: TextStyleConst.labelLarge),
           ),
           TextButton(
             onPressed: () {
@@ -406,8 +436,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             },
             child: Text(
               AppLocalizations.of(context)!.cancelAll,
-              style:
-                  TextStyleConst.labelLarge.copyWith(color: Theme.of(context).colorScheme.error),
+              style: TextStyleConst.labelLarge
+                  .copyWith(color: Theme.of(context).colorScheme.error),
             ),
           ),
         ],
@@ -427,13 +457,14 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         ),
         content: Text(
           AppLocalizations.of(context)!.cancelDownloadConfirmation,
-          style:
-              TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface),
+          style: TextStyleConst.bodyMedium
+              .copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('No', style: TextStyleConst.labelLarge),
+            child: Text(AppLocalizations.of(context)!.no,
+                style: TextStyleConst.labelLarge),
           ),
           TextButton(
             onPressed: () {
@@ -444,8 +475,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             },
             child: Text(
               AppLocalizations.of(context)!.cancelDownload,
-              style:
-                  TextStyleConst.labelLarge.copyWith(color: Theme.of(context).colorScheme.error),
+              style: TextStyleConst.labelLarge
+                  .copyWith(color: Theme.of(context).colorScheme.error),
             ),
           ),
         ],
@@ -465,13 +496,14 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         ),
         content: Text(
           AppLocalizations.of(context)!.removeDownloadConfirmation,
-          style:
-              TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface),
+          style: TextStyleConst.bodyMedium
+              .copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(AppLocalizations.of(context)!.cancel, style: TextStyleConst.labelLarge),
+            child: Text(AppLocalizations.of(context)!.cancel,
+                style: TextStyleConst.labelLarge),
           ),
           TextButton(
             onPressed: () {
@@ -482,8 +514,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             },
             child: Text(
               AppLocalizations.of(context)!.remove,
-              style:
-                  TextStyleConst.labelLarge.copyWith(color: Theme.of(context).colorScheme.error),
+              style: TextStyleConst.labelLarge
+                  .copyWith(color: Theme.of(context).colorScheme.error),
             ),
           ),
         ],
@@ -503,13 +535,14 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         ),
         content: Text(
           AppLocalizations.of(context)!.cleanupConfirmation,
-          style:
-              TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface),
+          style: TextStyleConst.bodyMedium
+              .copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(AppLocalizations.of(context)!.cancel, style: TextStyleConst.labelLarge),
+            child: Text(AppLocalizations.of(context)!.cancel,
+                style: TextStyleConst.labelLarge),
           ),
           TextButton(
             onPressed: () {
@@ -518,7 +551,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   .read<DownloadBloc>()
                   .add(const DownloadCleanupStorageEvent());
             },
-            child: Text(AppLocalizations.of(context)!.cleanup, style: TextStyleConst.labelLarge),
+            child: Text(AppLocalizations.of(context)!.cleanup,
+                style: TextStyleConst.labelLarge),
           ),
         ],
       ),
@@ -566,33 +600,42 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                     .copyWith(color: Theme.of(context).colorScheme.onSurface),
               ),
               const SizedBox(height: 16),
-              _buildDetailRow(AppLocalizations.of(context)!.status, download.statusText),
-              _buildDetailRow(AppLocalizations.of(context)!.progress, _buildProgressText(download)),
-              _buildDetailRow(AppLocalizations.of(context)!.progressPercent, '${(download.progressPercentage > 100) ? '100' : download.progressPercentage}%'),
+              _buildDetailRow(
+                  AppLocalizations.of(context)!.status, download.statusText),
+              _buildDetailRow(AppLocalizations.of(context)!.progress,
+                  _buildProgressText(download)),
+              _buildDetailRow(AppLocalizations.of(context)!.progressPercent,
+                  '${(download.progressPercentage > 100) ? '100' : download.progressPercentage}%'),
               if (download.speed > 0)
-                _buildDetailRow(AppLocalizations.of(context)!.speed, download.formattedSpeed),
+                _buildDetailRow(AppLocalizations.of(context)!.speed,
+                    download.formattedSpeed),
               if (download.fileSize > 0)
-                _buildDetailRow(AppLocalizations.of(context)!.size, download.formattedFileSize),
+                _buildDetailRow(AppLocalizations.of(context)!.size,
+                    download.formattedFileSize),
               if (download.startTime != null)
-                _buildDetailRow(
-                    AppLocalizations.of(context)!.started, _formatDateTime(download.startTime!)),
+                _buildDetailRow(AppLocalizations.of(context)!.started,
+                    _formatDateTime(download.startTime!)),
               if (download.endTime != null)
-                _buildDetailRow(AppLocalizations.of(context)!.ended, _formatDateTime(download.endTime!)),
+                _buildDetailRow(AppLocalizations.of(context)!.ended,
+                    _formatDateTime(download.endTime!)),
               if (download.downloadDuration != null)
-                _buildDetailRow(
-                    AppLocalizations.of(context)!.duration, _formatDuration(download.downloadDuration!)),
+                _buildDetailRow(AppLocalizations.of(context)!.duration,
+                    _formatDuration(download.downloadDuration!)),
               if (download.estimatedTimeRemaining != null)
-                _buildDetailRow(
-                    AppLocalizations.of(context)!.eta, _formatDuration(download.estimatedTimeRemaining!)),
+                _buildDetailRow(AppLocalizations.of(context)!.eta,
+                    _formatDuration(download.estimatedTimeRemaining!)),
               if (download.error != null)
-                _buildDetailRow(AppLocalizations.of(context)!.error, download.error!, isError: true),
+                _buildDetailRow(
+                    AppLocalizations.of(context)!.error, download.error!,
+                    isError: true),
               const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: Text('Close', style: TextStyleConst.labelLarge),
+                    child: Text(AppLocalizations.of(context)!.close,
+                        style: TextStyleConst.labelLarge),
                   ),
                 ],
               ),
@@ -623,7 +666,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             child: Text(
               value,
               style: TextStyleConst.bodySmall.copyWith(
-                color: isError ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.onSurface,
+                color: isError
+                    ? Theme.of(context).colorScheme.error
+                    : Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
@@ -653,10 +698,12 @@ class _DownloadsScreenState extends State<DownloadsScreen>
   String _buildProgressText(DownloadStatus download) {
     if (download.isRangeDownload) {
       // For range downloads, show: "X/Y pages (Pages A-B of C)"
-      return '${download.downloadedPages}/${download.pagesToDownload} pages (Range: ${download.startPage}-${download.endPage} of ${download.totalPages})';
+      final loc = AppLocalizations.of(context)!;
+      return '${download.downloadedPages}/${download.pagesToDownload} ${loc.pages} (${loc.rangeLabel} ${download.startPage}-${download.endPage} ${loc.ofWord} ${download.totalPages})';
     } else {
       // For full downloads, show: "X/Y pages"
-      return '${download.downloadedPages}/${download.totalPages} pages';
+      final loc = AppLocalizations.of(context)!;
+      return '${download.downloadedPages}/${download.totalPages} ${loc.pages}';
     }
   }
 }

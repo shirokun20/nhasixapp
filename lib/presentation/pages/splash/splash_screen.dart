@@ -148,7 +148,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
 
                 // App title
                 Text(
-                  'NhentaiApp',
+                  AppLocalizations.of(context)?.appTitle ?? 'NhentaiApp',
                   style: TextStyleConst.headingLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                     letterSpacing: 1.2,
@@ -156,7 +156,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Enhanced Reading Experience',
+                  AppLocalizations.of(context)?.appSubtitle ?? 'Enhanced Reading Experience',
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontStyle: FontStyle.italic,
@@ -228,7 +228,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                         ),
                         child: Text(
                           state is SplashInitializing
-                              ? 'Initializing Application...'
+                              ? AppLocalizations.of(context)?.initializingApp ?? 'Initializing Application...'
                               : (state as SplashBypassInProgress).message,
                           style: TextStyleConst.headingSmall.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
@@ -241,8 +241,8 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                       // Detailed progress text
                       Text(
                         state is SplashInitializing
-                            ? 'Setting up components and checking connection...'
-                            : 'Bypassing protection and establishing connection...',
+                            ? AppLocalizations.of(context)?.settingUpComponents ?? 'Setting up components and checking connection...'
+                            : AppLocalizations.of(context)?.bypassingProtection ?? 'Bypassing protection and establishing connection...',
                         style: TextStyleConst.bodyMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -271,7 +271,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
-                          'Connection Failed',
+                          AppLocalizations.of(context)?.connectionFailed ?? 'Connection Failed',
                           style: TextStyleConst.statusError.copyWith(
                             fontSize: 18,
                           ),
@@ -337,7 +337,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
 
                 // Success title
                 Text(
-                  'Ready to Go!',
+                  AppLocalizations.of(context)?.readyToGo ?? 'Ready to Go!',
                   style: TextStyleConst.headingMedium.copyWith(
                     color: Theme.of(context).colorScheme.tertiary,
                   ),
@@ -357,7 +357,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
 
                 // Additional success info
                 Text(
-                  'Launching main application...',
+                  AppLocalizations.of(context)?.launchingApp ?? 'Launching main application...',
                   style: TextStyleConst.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontStyle: FontStyle.italic,

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:logger/logger.dart';
 import 'package:flutter/material.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 
 /// Helper class untuk handle permissions dengan user-friendly approach
 class PermissionHelper {
@@ -77,19 +78,19 @@ class PermissionHelper {
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Storage Permission Required'),
-            content: const Text(
-              'This app needs storage permission to download files to your device. '
-              'Files will be saved to the Downloads/nhasix folder.',
+            title:
+                Text(AppLocalizations.of(context)!.storagePermissionRequired),
+            content: Text(
+              AppLocalizations.of(context)!.storagePermissionExplanation,
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
+                child: Text(AppLocalizations.of(context)!.cancel),
               ),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Grant Permission'),
+                child: Text(AppLocalizations.of(context)!.grantPermission),
               ),
             ],
           ),
@@ -102,22 +103,21 @@ class PermissionHelper {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Permission Required'),
-        content: const Text(
-          'Storage permission is required to download files. '
-          'Please grant storage permission in app settings.',
+        title: Text(AppLocalizations.of(context)!.permissionRequired),
+        content: Text(
+          AppLocalizations.of(context)!.storagePermissionSettingsPrompt,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
               openAppSettings();
             },
-            child: const Text('Open Settings'),
+            child: Text(AppLocalizations.of(context)!.openSettings),
           ),
         ],
       ),

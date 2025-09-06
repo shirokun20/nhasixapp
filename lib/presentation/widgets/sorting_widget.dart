@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 
@@ -91,7 +92,7 @@ class SortingWidget extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Text(
-                'Sort by',
+                AppLocalizations.of(context)!.sortBy,
                 style: TextStyleConst.headingMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),

@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/content.dart';
+import '../../l10n/app_localizations.dart';
 import 'progressive_image_widget.dart';
 
 /// Enhanced content card widget with image caching and improved UI
@@ -686,7 +687,7 @@ class ContentCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Failed to load',
+              AppLocalizations.of(context)!.failedToLoad,
               style: TextStyleConst.caption.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),

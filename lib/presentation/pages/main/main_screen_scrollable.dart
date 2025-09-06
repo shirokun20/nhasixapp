@@ -126,7 +126,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           // Show full screen loading during home initialization
           if (homeState is HomeLoading) {
             return SimpleOfflineScaffold(
-              title: 'NHentai',
+              title: AppLocalizations.of(context)?.appTitle ?? 'NHentai',
               body: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,

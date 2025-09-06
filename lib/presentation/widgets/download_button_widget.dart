@@ -458,8 +458,8 @@ class DownloadButtonWidget extends StatelessWidget {
     context.read<DownloadBloc>().add(DownloadStartEvent(content.id));
 
     final pageText = startPage == endPage 
-        ? 'page $startPage' 
-        : 'pages $startPage-$endPage';
+        ? AppLocalizations.of(context)!.pageText(startPage)
+        : AppLocalizations.of(context)!.pagesText(startPage, endPage);
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

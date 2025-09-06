@@ -259,7 +259,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     return BlocProvider(
       create: (context) => _favoriteCubit..loadFavorites(),
       child: AppScaffoldWithOffline(
-        title: 'Favorites',
+        title: AppLocalizations.of(context)!.favorites,
         backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: _buildAppBar(),
         body: BlocBuilder<FavoriteCubit, FavoriteState>(
@@ -302,7 +302,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             icon: Icon(Icons.select_all,
                 color: Theme.of(context).colorScheme.onSurface),
             onPressed: _toggleSelectionMode,
-            tooltip: 'Select favorites',
+            tooltip: AppLocalizations.of(context)!.selectFavoritesTooltip,
           ),
           PopupMenuButton<String>(
             icon:
@@ -327,7 +327,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         color: Theme.of(context).colorScheme.onSurfaceVariant),
                     const SizedBox(width: 12),
                     Text(
-                      'Export',
+                      AppLocalizations.of(context)!.exportAction,
                       style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
                           Theme.of(context).colorScheme.onSurface),
                     ),
@@ -342,7 +342,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         color: Theme.of(context).colorScheme.onSurfaceVariant),
                     const SizedBox(width: 12),
                     Text(
-                      'Refresh',
+                      AppLocalizations.of(context)!.refreshAction,
                       style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
                           Theme.of(context).colorScheme.onSurface),
                     ),
@@ -356,7 +356,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             IconButton(
               icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
               onPressed: _deleteSelected,
-              tooltip: 'Delete selected',
+              tooltip: AppLocalizations.of(context)!.deleteSelectedTooltip,
             ),
         ],
       ],
@@ -372,7 +372,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         style: TextStyleConst.withColor(
             TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onSurface),
         decoration: InputDecoration(
-          hintText: 'Search favorites...',
+          hintText: AppLocalizations.of(context)!.searchFavoritesHint,
           hintStyle: TextStyleConst.withColor(
               TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onSurfaceVariant),
           prefixIcon:
@@ -443,9 +443,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   Widget _buildContent(FavoriteState state) {
     if (state is FavoriteLoading) {
-      return const Center(
+      return Center(
         child: AppProgressIndicator(
-          message: 'Loading favorites...',
+          message: AppLocalizations.of(context)!.loadingFavoritesMessage,
         ),
       );
     }
@@ -453,7 +453,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     if (state is FavoriteError) {
       return Center(
         child: AppErrorWidget(
-          title: 'Error Loading Favorites',
+          title: AppLocalizations.of(context)!.errorLoadingFavoritesTitle,
           message: state.userMessage,
           onRetry: state.canRetry
               ? () => _favoriteCubit.retryLoading()
@@ -801,7 +801,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             backgroundColor: Theme.of(context).colorScheme.error,
             duration: const Duration(seconds: 4),
             action: SnackBarAction(
-              label: 'Retry',
+              label: AppLocalizations.of(context)!.retry,
               textColor: Theme.of(context).colorScheme.onError,
               onPressed: () => _removeFavorite(contentId),
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 
 import '../../../../core/constants/text_style_const.dart';
 import '../../../../domain/entities/entities.dart';
@@ -87,7 +88,7 @@ class HistoryItemWidget extends StatelessWidget {
       children: [
         // Title
         Text(
-          history.title ?? 'Unknown Title',
+          history.title ?? AppLocalizations.of(context)!.unknownTitle,
           style: TextStyleConst.contentTitle.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w500,
@@ -122,7 +123,7 @@ class HistoryItemWidget extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                'Completed',
+                AppLocalizations.of(context)!.readingCompleted,
                 style: TextStyleConst.bodySmall.copyWith(
                   color: Theme.of(context).colorScheme.primary,
                 ),
@@ -152,7 +153,7 @@ class HistoryItemWidget extends StatelessWidget {
         
         // Last viewed
         Text(
-          _formatLastViewed(history.lastViewed),
+          _formatLastViewed(context, history.lastViewed),
           style: TextStyleConst.caption.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
           ),
@@ -170,7 +171,7 @@ class HistoryItemWidget extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                _formatTimeSpent(history.timeSpent),
+                _formatTimeSpent(context, history.timeSpent),
                 style: TextStyleConst.caption.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                 ),
@@ -192,7 +193,7 @@ class HistoryItemWidget extends StatelessWidget {
             history.isCompleted ? Icons.replay : Icons.play_arrow,
             color: Theme.of(context).colorScheme.primary,
           ),
-          tooltip: history.isCompleted ? 'Read Again' : 'Continue Reading',
+          tooltip: history.isCompleted ? AppLocalizations.of(context)!.readAgain : AppLocalizations.of(context)!.continueReading,
           style: IconButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.primaryContainer,
             foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
@@ -208,7 +209,7 @@ class HistoryItemWidget extends StatelessWidget {
             Icons.delete_outline,
             color: Theme.of(context).colorScheme.error,
           ),
-          tooltip: 'Remove from History',
+          tooltip: AppLocalizations.of(context)!.removeFromHistory,
           style: IconButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.errorContainer,
             foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
@@ -218,28 +219,30 @@ class HistoryItemWidget extends StatelessWidget {
     );
   }
 
-  String _formatLastViewed(DateTime lastViewed) {
+  String _formatLastViewed(BuildContext context, DateTime lastViewed) {
+    final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final difference = now.difference(lastViewed);
 
     if (difference.inDays > 0) {
-      return 'Last read ${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
+      return l10n.daysAgo(difference.inDays);
     } else if (difference.inHours > 0) {
-      return 'Last read ${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
+      return l10n.hoursAgo(difference.inHours);
     } else if (difference.inMinutes > 0) {
-      return 'Last read ${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
+      return l10n.minutesAgo(difference.inMinutes);
     } else {
-      return 'Last read just now';
+      return l10n.justNow;
     }
   }
 
-  String _formatTimeSpent(Duration timeSpent) {
+  String _formatTimeSpent(BuildContext context, Duration timeSpent) {
+    final l10n = AppLocalizations.of(context)!;
     if (timeSpent.inHours > 0) {
-      return '${timeSpent.inHours}h ${timeSpent.inMinutes % 60}m reading time';
+      return '${timeSpent.inHours}h ${timeSpent.inMinutes % 60}m ${l10n.readingTime}';
     } else if (timeSpent.inMinutes > 0) {
-      return '${timeSpent.inMinutes}m reading time';
+      return '${timeSpent.inMinutes}m ${l10n.readingTime}';
     } else {
-      return 'Less than 1 minute';
+      return l10n.lessThanOneMinute;
     }
   }
 }

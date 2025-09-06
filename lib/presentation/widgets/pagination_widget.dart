@@ -57,7 +57,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         title: Text(
-          'Go to Page',
+          AppLocalizations.of(context)!.goToPage,
           style: TextStyleConst.headingSmall.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
@@ -66,7 +66,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Enter page number (1 - ${widget.totalPages})',
+              AppLocalizations.of(context)!.enterPageNumber(widget.totalPages),
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -83,7 +83,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                 color: Theme.of(context).colorScheme.onSurface,
               ),
               decoration: InputDecoration(
-                hintText: 'Page number',
+                hintText: AppLocalizations.of(context)!.pageNumber,
                 hintStyle: TextStyleConst.placeholderText.copyWith(
                   fontSize: 16,
                 ),
@@ -110,7 +110,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
-              'Cancel',
+              AppLocalizations.of(context)!.cancel,
               style: TextStyleConst.buttonMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -125,7 +125,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
               backgroundColor: Theme.of(context).colorScheme.primary,
             ),
             child: Text(
-              'Go',
+              AppLocalizations.of(context)!.go,
               style: TextStyleConst.buttonMedium.copyWith(
                 color: Theme.of(context).colorScheme.onPrimary,
                 fontWeight: FontWeight.bold,
@@ -146,7 +146,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Please enter a valid page number between 1 and ${widget.totalPages}',
+            AppLocalizations.of(context)!.validPageNumberError(widget.totalPages),
             style: TextStyleConst.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onError,
             ),
@@ -184,7 +184,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                 color: widget.hasPrevious
                     ? Theme.of(context).colorScheme.onSurface
                     : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                tooltip: 'Previous page',
+                tooltip: AppLocalizations.of(context)!.previousPageTooltip,
               ),
 
               const Spacer(),
@@ -242,7 +242,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                       if (widget.showPageInput) ...[
                         const SizedBox(height: 2),
                         Text(
-                          'Tap to jump to page',
+                          AppLocalizations.of(context)!.tapToJumpToPage,
                           style: TextStyleConst.overline.copyWith(
                             color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
@@ -264,7 +264,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                 color: widget.hasNext
                     ? Theme.of(context).colorScheme.onSurface
                     : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                tooltip: 'Next page',
+                tooltip: AppLocalizations.of(context)!.nextPageTooltip,
               ),
 
               const Spacer(),

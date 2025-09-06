@@ -16,7 +16,8 @@ class HistoryCleanupInfoWidget extends StatefulWidget {
   final HistoryCubit historyCubit;
 
   @override
-  State<HistoryCleanupInfoWidget> createState() => _HistoryCleanupInfoWidgetState();
+  State<HistoryCleanupInfoWidget> createState() =>
+      _HistoryCleanupInfoWidgetState();
 }
 
 class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
@@ -71,7 +72,7 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              
+
               // Header
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -83,7 +84,7 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'History Cleanup',
+                      AppLocalizations.of(context)!.historyCleanup,
                       style: TextStyleConst.headingMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
@@ -96,9 +97,9 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
                   ],
                 ),
               ),
-              
+
               const Divider(),
-              
+
               // Content
               Expanded(
                 child: _isLoading
@@ -112,7 +113,8 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
     );
   }
 
-  Widget _buildContent(BuildContext context, ScrollController scrollController) {
+  Widget _buildContent(
+      BuildContext context, ScrollController scrollController) {
     if (_cleanupStatus == null) {
       return Center(
         child: Text(AppLocalizations.of(context)!.failedToLoadCleanupStatus),
@@ -127,19 +129,19 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
         children: [
           // Current status
           _buildStatusCard(context),
-          
+
           const SizedBox(height: 20),
-          
+
           // Settings info
           _buildSettingsInfo(context),
-          
+
           const SizedBox(height: 20),
-          
+
           // History stats
           _buildHistoryStats(context),
-          
+
           const SizedBox(height: 20),
-          
+
           // Actions
           _buildActions(context),
         ],
@@ -149,7 +151,7 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
 
   Widget _buildStatusCard(BuildContext context) {
     final status = _cleanupStatus!;
-    
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -160,34 +162,31 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
               children: [
                 Icon(
                   status.isEnabled ? Icons.check_circle : Icons.pause_circle,
-                  color: status.isEnabled 
+                  color: status.isEnabled
                       ? Theme.of(context).colorScheme.primary
                       : Theme.of(context).colorScheme.outline,
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Auto Cleanup',
+                  AppLocalizations.of(context)!.autoCleanupHistory,
                   style: TextStyleConst.headingSmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ],
             ),
-            
             const SizedBox(height: 8),
-            
             Text(
               status.statusDescription,
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
-            
             if (status.isEnabled && status.nextCleanupEstimate != null) ...[
               const SizedBox(height: 8),
               _buildInfoRow(
                 context,
-                'Next cleanup',
+                AppLocalizations.of(context)!.nextCleanup,
                 _formatDateTime(status.nextCleanupEstimate!),
                 Icons.schedule,
               ),
@@ -200,7 +199,7 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
 
   Widget _buildSettingsInfo(BuildContext context) {
     final status = _cleanupStatus!;
-    
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -208,34 +207,30 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Cleanup Settings',
+              AppLocalizations.of(context)!.cleanupSettings,
               style: TextStyleConst.headingSmall.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
-            
             const SizedBox(height: 12),
-            
             _buildInfoRow(
               context,
-              'Cleanup interval',
-              '${status.intervalHours} hours',
+              AppLocalizations.of(context)!.cleanupInterval,
+              '${status.intervalHours} ${AppLocalizations.of(context)!.hours}',
               Icons.timer,
             ),
-            
             if (status.maxHistoryDays > 0)
               _buildInfoRow(
                 context,
-                'Max history age',
-                '${status.maxHistoryDays} days',
+                AppLocalizations.of(context)!.maxHistoryDays,
+                '${status.maxHistoryDays} ${AppLocalizations.of(context)!.days}',
                 Icons.calendar_today,
               ),
-            
             if (status.inactivityCleanupEnabled)
               _buildInfoRow(
                 context,
-                'Inactivity cleanup',
-                '${status.inactivityThresholdDays} days',
+                AppLocalizations.of(context)!.cleanupOnInactivity,
+                '${status.inactivityThresholdDays} ${AppLocalizations.of(context)!.days}',
                 Icons.schedule_outlined,
               ),
           ],
@@ -246,7 +241,7 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
 
   Widget _buildHistoryStats(BuildContext context) {
     final status = _cleanupStatus!;
-    
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -254,33 +249,29 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'History Statistics',
+              AppLocalizations.of(context)!.historyStatistics,
               style: TextStyleConst.headingSmall.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
-            
             const SizedBox(height: 12),
-            
             _buildInfoRow(
               context,
-              'Total items',
+              AppLocalizations.of(context)!.totalItems,
               '${status.historyCount}',
               Icons.history,
             ),
-            
             if (status.lastCleanup != null)
               _buildInfoRow(
                 context,
-                'Last cleanup',
+                AppLocalizations.of(context)!.lastCleanup,
                 _formatDateTime(status.lastCleanup!),
                 Icons.cleaning_services,
               ),
-            
             if (status.lastAppAccess != null)
               _buildInfoRow(
                 context,
-                'Last app access',
+                AppLocalizations.of(context)!.lastAppAccess,
                 _formatDateTime(status.lastAppAccess!),
                 Icons.access_time,
               ),
@@ -306,9 +297,7 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
             ),
           ),
         ),
-        
         const SizedBox(height: 12),
-        
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(

@@ -151,13 +151,13 @@ class _SearchScreenState extends State<SearchScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         title: Text(
-          'Content Not Found',
+          AppLocalizations.of(context)!.contentNotFoundTitle,
           style: TextStyleConst.headingSmall.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         content: Text(
-          'Content with ID "$contentId" was not found.',
+          AppLocalizations.of(context)!.contentNotFoundMessage(contentId),
           style: TextStyleConst.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -166,7 +166,7 @@ class _SearchScreenState extends State<SearchScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'OK',
+              AppLocalizations.of(context)!.ok,
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.primary,
               ),
@@ -195,31 +195,31 @@ class _SearchScreenState extends State<SearchScreen> {
     final filterTypes = [
       {
         'type': 'tag',
-        'label': 'Tags',
+        'label': AppLocalizations.of(context)!.tagsLabel,
         'icon': Icons.label,
         'filters': _currentFilter.tags
       },
       {
         'type': 'artist',
-        'label': 'Artists',
+        'label': AppLocalizations.of(context)!.artistsLabel,
         'icon': Icons.person,
         'filters': _currentFilter.artists
       },
       {
         'type': 'character',
-        'label': 'Characters',
+        'label': AppLocalizations.of(context)!.charactersLabel,
         'icon': Icons.face,
         'filters': _currentFilter.characters
       },
       {
         'type': 'parody',
-        'label': 'Parodies',
+        'label': AppLocalizations.of(context)!.parodiesLabel,
         'icon': Icons.movie,
         'filters': _currentFilter.parodies
       },
       {
         'type': 'group',
-        'label': 'Groups',
+        'label': AppLocalizations.of(context)!.groupsLabel,
         'icon': Icons.group,
         'filters': _currentFilter.groups
       },
@@ -229,7 +229,7 @@ class _SearchScreenState extends State<SearchScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Filter Categories',
+          AppLocalizations.of(context)!.filterCategoriesTitle,
           style: TextStyleConst.labelLarge.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -389,7 +389,7 @@ class _SearchScreenState extends State<SearchScreen> {
     return BlocProvider.value(
       value: _searchBloc,
       child: AppScaffoldWithOffline(
-        title: 'Search',
+        title: AppLocalizations.of(context)!.searchTitle,
         backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: _buildAppBar(),
         body: Column(
@@ -413,7 +413,7 @@ class _SearchScreenState extends State<SearchScreen> {
         onPressed: () => context.pop(),
       ),
       title: Text(
-        'Advanced Search',
+        AppLocalizations.of(context)!.advancedSearchTitle,
         style: TextStyleConst.headingMedium.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
         ),
@@ -463,7 +463,7 @@ class _SearchScreenState extends State<SearchScreen> {
               color: Theme.of(context).colorScheme.onSurface,
             ),
             decoration: InputDecoration(
-              hintText: 'Enter search query (e.g. "big breasts english")',
+              hintText: AppLocalizations.of(context)!.enterSearchQueryHint,
               hintStyle: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -761,7 +761,7 @@ class _SearchScreenState extends State<SearchScreen> {
         children: [
           if (popular.isNotEmpty) ...[
             Text(
-              'Popular Searches',
+              AppLocalizations.of(context)!.popularSearchesTitle,
               style: TextStyleConst.headingSmall.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
               ),
@@ -793,7 +793,7 @@ class _SearchScreenState extends State<SearchScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Recent Searches',
+                  AppLocalizations.of(context)!.recentSearchesTitle,
                   style: TextStyleConst.headingSmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
@@ -803,7 +803,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     _searchBloc.add(const SearchClearHistoryEvent());
                   },
                   child: Text(
-                    'Clear All',
+                    AppLocalizations.of(context)!.clearAllAction,
                     style: TextStyleConst.bodySmall.copyWith(
                       color: Theme.of(context).colorScheme.error,
                     ),
@@ -899,7 +899,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Press the Search button to find content with your current filters',
+              AppLocalizations.of(context)!.pressSearchButtonMessage,
               style: TextStyleConst.bodySmall.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -939,7 +939,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Searching...',
+            AppLocalizations.of(context)!.searchingMessage,
             style: TextStyleConst.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -964,7 +964,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                '${state.totalCount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} results',
+                AppLocalizations.of(context)!.resultsCountFormat(state.totalCount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')),
                 style: TextStyleConst.headingLarge.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
@@ -976,7 +976,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   context.pop();
                 },
                 child: Text(
-                  'View in Main',
+                  AppLocalizations.of(context)!.viewInMainAction,
                   style: TextStyleConst.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.primary,
                   ),
@@ -1026,7 +1026,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No results found',
+              AppLocalizations.of(context)!.noResultsFoundTitle,
               style: TextStyleConst.headingSmall.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -1069,7 +1069,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Search Error',
+              AppLocalizations.of(context)!.searchErrorTitle,
               style: TextStyleConst.headingSmall.copyWith(
                 color: Theme.of(context).colorScheme.error,
               ),

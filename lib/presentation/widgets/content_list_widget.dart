@@ -137,7 +137,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
   Widget build(BuildContext context) {
     return BlocConsumer<ContentBloc, ContentState>(
       listener: (context, state) {
-       if (state is ContentError) {
+        if (state is ContentError) {
           // Reset refresh state and notify controller
           // Show error snackbar
           ScaffoldMessenger.of(context).showSnackBar(
@@ -145,7 +145,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
               content: Text(state.userFriendlyMessage),
               action: state.canRetry
                   ? SnackBarAction(
-                      label: 'Retry',
+                      label: AppLocalizations.of(context)!.retry,
                       onPressed: () {
                         context
                             .read<ContentBloc>()
@@ -161,7 +161,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
         if (state is ContentInitial) {
           return Center(
             child: Text(
-              'Tap to load content',
+              AppLocalizations.of(context)!.tapToLoadContent,
               style: TextStyleConst.placeholderText.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -193,7 +193,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                 const SizedBox(height: 8),
                 if (state.suggestions.isNotEmpty) ...[
                   Text(
-                    'Suggestions:',
+                    AppLocalizations.of(context)!.suggestions,
                     style: TextStyleConst.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
@@ -262,7 +262,8 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                       // Show cached content
                       // This would require additional implementation
                     },
-                    child: Text(AppLocalizations.of(context)!.showCachedContent),
+                    child:
+                        Text(AppLocalizations.of(context)!.showCachedContent),
                   ),
                 ],
               ],
@@ -315,7 +316,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                   ),
                   if (state.lastUpdated != null)
                     Text(
-                      'Updated: ${_formatTime(state.lastUpdated!)}',
+                      '${AppLocalizations.of(context)!.lastUpdatedLabel} ${_formatTime(state.lastUpdated!)}',
                       style: TextStyleConst.bodySmall.copyWith(
                         color: Theme.of(context)
                             .colorScheme
@@ -381,13 +382,13 @@ class _ContentListWidgetState extends State<ContentListWidget> {
     final difference = now.difference(dateTime);
 
     if (difference.inMinutes < 1) {
-      return 'Just now';
+      return AppLocalizations.of(context)!.justNow;
     } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
+      return AppLocalizations.of(context)!.minutesAgo(difference.inMinutes);
     } else if (difference.inDays < 1) {
-      return '${difference.inHours}h ago';
+      return AppLocalizations.of(context)!.hoursAgo(difference.inHours);
     } else {
-      return '${difference.inDays}d ago';
+      return AppLocalizations.of(context)!.daysAgo(difference.inDays);
     }
   }
 }

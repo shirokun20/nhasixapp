@@ -376,7 +376,9 @@ class _RandomGalleryView extends StatelessWidget {
                           state.isFavorite ? Icons.favorite : Icons.favorite_border,
                           color: state.isFavorite ? Colors.red : null,
                         ),
-                  label: Text(state.isFavorite ? 'Favorited' : 'Favorite'),
+                  label: Text(state.isFavorite 
+                      ? AppLocalizations.of(context)!.favorited 
+                      : AppLocalizations.of(context)!.favorite),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: state.isFavorite 
                         ? Colors.red.withValues(alpha: 0.1) 

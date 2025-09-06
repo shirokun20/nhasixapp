@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/entities.dart';
+import '../../l10n/app_localizations.dart';
 import '../../services/download_service.dart';
 
 /// Widget for displaying individual download item with progress and actions
@@ -41,7 +42,7 @@ class DownloadItemWidget extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Content ${download.contentId}',
+                          AppLocalizations.of(context)?.downloadContentTitle(download.contentId) ?? 'Content ${download.contentId}',
                           style: TextStyleConst.titleMedium.copyWith(
                             color: colorScheme.onSurface,
                           ),
@@ -202,7 +203,7 @@ class DownloadItemWidget extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'ETA: ${_formatDuration(download.estimatedTimeRemaining!)}',
+                      AppLocalizations.of(context)?.downloadEtaLabel(_formatDuration(download.estimatedTimeRemaining!)) ?? 'ETA: ${_formatDuration(download.estimatedTimeRemaining!)}',
                       style: TextStyleConst.bodySmall.copyWith(
                         color: colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
@@ -297,7 +298,7 @@ class DownloadItemWidget extends StatelessWidget {
 
             // Title
             Text(
-              'Download Actions',
+              AppLocalizations.of(context)!.downloadActions,
               style: TextStyleConst.titleMedium.copyWith(
                 color: colorScheme.onSurface,
               ),
@@ -309,7 +310,7 @@ class DownloadItemWidget extends StatelessWidget {
               _buildActionTile(
                 context,
                 icon: Icons.pause,
-                title: 'Pause',
+                title: AppLocalizations.of(context)?.downloadActionPause ?? 'Pause',
                 action: 'pause',
               ),
 
@@ -317,7 +318,7 @@ class DownloadItemWidget extends StatelessWidget {
               _buildActionTile(
                 context,
                 icon: Icons.play_arrow,
-                title: 'Resume',
+                title: AppLocalizations.of(context)?.downloadActionResume ?? 'Resume',
                 action: 'start',
               ),
 
@@ -325,7 +326,7 @@ class DownloadItemWidget extends StatelessWidget {
               _buildActionTile(
                 context,
                 icon: Icons.cancel,
-                title: 'Cancel',
+                title: AppLocalizations.of(context)?.downloadActionCancel ?? 'Cancel',
                 action: 'cancel',
                 isDestructive: true,
               ),
@@ -334,7 +335,7 @@ class DownloadItemWidget extends StatelessWidget {
               _buildActionTile(
                 context,
                 icon: Icons.refresh,
-                title: 'Retry',
+                title: AppLocalizations.of(context)?.downloadActionRetry ?? 'Retry',
                 action: 'retry',
               ),
 
@@ -344,21 +345,21 @@ class DownloadItemWidget extends StatelessWidget {
               _buildActionTile(
                 context,
                 icon: Icons.picture_as_pdf,
-                title: 'Convert to PDF',
+                title: AppLocalizations.of(context)?.downloadActionConvertToPdf ?? 'Convert to PDF',
                 action: 'convert_pdf',
               ),
 
             _buildActionTile(
               context,
               icon: Icons.info_outline,
-              title: 'Details',
+              title: AppLocalizations.of(context)?.downloadActionDetails ?? 'Details',
               action: 'details',
             ),
 
             _buildActionTile(
               context,
               icon: Icons.delete_outline,
-              title: 'Remove',
+              title: AppLocalizations.of(context)?.downloadActionRemove ?? 'Remove',
               action: 'remove',
               isDestructive: true,
             ),
@@ -455,13 +456,22 @@ class DownloadItemWidget extends StatelessWidget {
     }
   }
 
-  String _buildPagesText(DownloadStatus download) {
+  String _buildPagesText(BuildContext context, DownloadStatus download) {
     if (download.isRangeDownload) {
       // For range downloads, show: "X/Y (Pages A-B of C)"
-      return '${download.downloadedPages}/${download.pagesToDownload} (Pages ${download.startPage}-${download.endPage} of ${download.totalPages})';
+      return AppLocalizations.of(context)?.downloadPagesRangeFormat(
+        download.downloadedPages,
+        download.pagesToDownload,
+        download.startPage ?? 1,
+        download.endPage ?? download.totalPages,
+        download.totalPages
+      ) ?? '${download.downloadedPages}/${download.pagesToDownload} (Pages ${download.startPage ?? 1}-${download.endPage ?? download.totalPages} of ${download.totalPages})';
     } else {
       // For full downloads, show: "X/Y"
-      return '${download.downloadedPages}/${download.totalPages}';
+      return AppLocalizations.of(context)?.downloadPagesFormat(
+        download.downloadedPages,
+        download.totalPages
+      ) ?? '${download.downloadedPages}/${download.totalPages}';
     }
   }
 
@@ -474,7 +484,7 @@ class DownloadItemWidget extends StatelessWidget {
         
         if (!snapshot.hasData) {
           return Text(
-            _buildPagesText(download),
+            _buildPagesText(context, download),
             style: TextStyleConst.bodySmall.copyWith(
               color: colorScheme.onSurface.withValues(alpha: 0.7),
             ),
@@ -489,7 +499,7 @@ class DownloadItemWidget extends StatelessWidget {
         // If expectedCount is null or 0, fall back to database values
         if (expectedCount == null || expectedCount == 0) {
           return Text(
-            _buildPagesText(download),
+            _buildPagesText(context, download),
             style: TextStyleConst.bodySmall.copyWith(
               color: colorScheme.onSurface.withValues(alpha: 0.7),
             ),
@@ -501,9 +511,18 @@ class DownloadItemWidget extends StatelessWidget {
           final rangeStart = data['rangeStart'] as int?;
           final rangeEnd = data['rangeEnd'] as int?;
           final totalPages = data['totalPages'] as int?;
-          text = '$actualCount/$expectedCount (Pages $rangeStart-$rangeEnd of $totalPages)';
+          text = AppLocalizations.of(context)?.downloadPagesRangeFormat(
+            actualCount,
+            expectedCount,
+            rangeStart ?? 1,
+            rangeEnd ?? totalPages ?? expectedCount,
+            totalPages ?? expectedCount
+          ) ?? '$actualCount/$expectedCount (Pages ${rangeStart ?? 1}-${rangeEnd ?? expectedCount} of ${totalPages ?? expectedCount})';
         } else {
-          text = '$actualCount/$expectedCount';
+          text = AppLocalizations.of(context)?.downloadPagesFormat(
+            actualCount,
+            expectedCount
+          ) ?? '$actualCount/$expectedCount';
         }
 
         return Text(

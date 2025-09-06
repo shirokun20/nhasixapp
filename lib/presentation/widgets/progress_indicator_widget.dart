@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../core/constants/text_style_const.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Custom progress indicator widgets with theme-aware colors
 class AppProgressIndicator extends StatelessWidget {
@@ -464,7 +465,7 @@ class LoadingOverlay extends StatelessWidget {
                   ],
                 ),
                 child: AppProgressIndicator(
-                  message: message ?? 'Loading...',
+                  message: message ?? AppLocalizations.of(context)!.loading,
                   size: 32,
                 ),
               ),

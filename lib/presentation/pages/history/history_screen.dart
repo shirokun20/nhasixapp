@@ -155,7 +155,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     if (state is HistoryError) {
       return AppErrorWidget(
-        title: 'Error Loading History',
+        title: AppLocalizations.of(context)!.errorLoadingHistory,
         message: state.message,
         onRetry: state.canRetry ? () => _historyCubit.loadHistory() : null,
         icon: Icons.history,

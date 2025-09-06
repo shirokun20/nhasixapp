@@ -50,7 +50,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     return BlocProvider<OfflineSearchCubit>(
       create: (context) => _offlineSearchCubit,
       child: AppScaffoldWithOffline(
-        title: 'Offline Content',
+        title: AppLocalizations.of(context)!.offlineContentTitle,
         backgroundColor: colorScheme.surface,
         appBar: _buildAppBar(),
         body: Column(
@@ -157,7 +157,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                 color: colorScheme.onSurface,
               ),
               decoration: InputDecoration(
-                hintText: 'Search offline content...',
+                hintText: AppLocalizations.of(context)!.searchOfflineContentHint,
                 hintStyle: TextStyleConst.bodyMedium.copyWith(
                   color: colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
@@ -250,7 +250,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     if (state is OfflineSearchError) {
       return Center(
         child: AppErrorWidget(
-          title: 'Offline Content Error',
+          title: AppLocalizations.of(context)!.offlineContentError,
           message: state.message,
           onRetry: () => _offlineSearchCubit.getAllOfflineContent(),
         ),
