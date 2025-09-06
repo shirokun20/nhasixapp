@@ -841,13 +841,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
               // Keep screen on
               ListTile(
                 title: Text(
-                  'Keep Screen On',
+                  AppLocalizations.of(context)?.keepScreenOn ?? 'Keep Screen On',
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 subtitle: Text(
-                  'Prevent screen from turning off while reading',
+                  AppLocalizations.of(context)?.keepScreenOnDescription ?? 'Prevent screen from turning off while reading',
                   style: TextStyleConst.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),

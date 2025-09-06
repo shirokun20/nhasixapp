@@ -598,6 +598,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keepScreenOnLabel => 'Keep Screen On: Off';
 
   @override
+  String get keepScreenOn => 'Keep Screen On';
+
+  @override
+  String get keepScreenOnDescription => 'Prevent screen from turning off while reading';
+
+  @override
   String get showUILabel => 'Show UI: On';
 
   @override

@@ -1184,6 +1184,18 @@ abstract class AppLocalizations {
   /// **'Keep Screen On: Off'**
   String get keepScreenOnLabel;
 
+  /// No description provided for @keepScreenOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Screen On'**
+  String get keepScreenOn;
+
+  /// No description provided for @keepScreenOnDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Prevent screen from turning off while reading'**
+  String get keepScreenOnDescription;
+
   /// No description provided for @showUILabel.
   ///
   /// In en, this message translates to:

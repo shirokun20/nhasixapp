@@ -599,6 +599,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get keepScreenOnLabel => 'Jaga Layar Hidup: Mati';
 
   @override
+  String get keepScreenOn => 'Jaga Layar Hidup';
+
+  @override
+  String get keepScreenOnDescription => 'Mencegah layar mati saat membaca';
+
+  @override
   String get showUILabel => 'Tampilkan UI: Hidup';
 
   @override

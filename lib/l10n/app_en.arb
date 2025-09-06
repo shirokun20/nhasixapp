@@ -439,4 +439,7 @@
   "continuousScroll": "Continuous Scroll",
   "keepScreenOnLabel": "Keep Screen On: Off",
   "showUILabel": "Show UI: On"
+  ,
+  "keepScreenOn": "Keep Screen On",
+  "keepScreenOnDescription": "Prevent screen from turning off while reading"
 }

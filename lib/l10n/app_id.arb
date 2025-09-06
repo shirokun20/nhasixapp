@@ -439,5 +439,7 @@
   "verticalPages": "Halaman Vertikal", 
   "continuousScroll": "Gulir Terus Menerus",
   "keepScreenOnLabel": "Jaga Layar Hidup: Mati",
-  "showUILabel": "Tampilkan UI: Hidup"
+  "showUILabel": "Tampilkan UI: Hidup",
+  "keepScreenOn": "Jaga Layar Hidup",
+  "keepScreenOnDescription": "Mencegah layar mati saat membaca"
 }

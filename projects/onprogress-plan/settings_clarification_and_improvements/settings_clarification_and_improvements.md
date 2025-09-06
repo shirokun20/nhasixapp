@@ -2328,3 +2328,8 @@ App router, download screen, dan utility strings.
 
 *Plan last updated: September 3, 2025*
 *Status: Infrastructure improvements completed, concrete localization tasks identified and documented for systematic implementation*
+
+## Delta - recent edits
+
+- Replaced hardcoded "Keep Screen On" and its subtitle in `reader_screen.dart` with localized lookups using keys `keepScreenOn` and `keepScreenOnDescription`.
+- Added the new keys to `lib/l10n/app_en.arb` and `lib/l10n/app_id.arb` and mirrored getters in localization Dart files to keep the build green. Recommended: run `flutter gen-l10n` to regenerate from ARB.
