@@ -98,7 +98,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         IconButton(
           icon: const Icon(Icons.info_outline),
           onPressed: () => _showCleanupInfo(context),
-          tooltip: 'Cleanup Info',
+          tooltip: AppLocalizations.of(context)?.cleanupInfo ?? 'Cleanup Info',
         ),
         // Clear all button
         PopupMenuButton<String>(
@@ -142,14 +142,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildBody(BuildContext context, HistoryState state) {
     if (state is HistoryLoading) {
-      return const Center(
-        child: AppProgressIndicator(message: 'Loading history...'),
+      return Center(
+        child: AppProgressIndicator(message: AppLocalizations.of(context)?.loadingHistory ?? 'Loading history...'),
       );
     }
 
     if (state is HistoryClearing) {
-      return const Center(
-        child: AppProgressIndicator(message: 'Clearing history...'),
+      return Center(
+        child: AppProgressIndicator(message: AppLocalizations.of(context)?.clearingHistory ?? 'Clearing history...'),
       );
     }
 
@@ -240,8 +240,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(AppLocalizations.of(context)!.clearAllHistory),
-        content: const Text(
-          'Are you sure you want to clear all reading history? This action cannot be undone.',
+        content: Text(
+          AppLocalizations.of(context)?.areYouSureClearHistory ?? 'Are you sure you want to clear all reading history? This action cannot be undone.',
         ),
         actions: [
           TextButton(

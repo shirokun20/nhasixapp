@@ -82,7 +82,7 @@ class _RandomGalleryView extends StatelessWidget {
           if (state is RandomGalleryLoaded) {
             return FloatingActionButton(
               onPressed: cubit.canShuffle ? () => cubit.shuffleToNext() : null,
-              tooltip: 'Shuffle to next gallery',
+              tooltip: AppLocalizations.of(context)?.shuffleToNextGallery ?? 'Shuffle to next gallery',
               child: state.isShuffling
                   ? const SizedBox(
                       width: 20,
@@ -237,14 +237,14 @@ class _RandomGalleryView extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Content Hidden',
+              AppLocalizations.of(context)?.contentHidden ?? 'Content Hidden',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: Colors.white.withValues(alpha: 0.8),
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              'Tap to view anyway',
+              AppLocalizations.of(context)?.tapToViewAnyway ?? 'Tap to view anyway',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Colors.white.withValues(alpha: 0.6),
               ),
@@ -433,7 +433,7 @@ class _RandomGalleryView extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           Text(
-            '$preloadedCount galleries preloaded',
+            AppLocalizations.of(context)?.galleriesPreloaded(preloadedCount) ?? '$preloadedCount galleries preloaded',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -459,7 +459,7 @@ class _RandomGalleryView extends StatelessWidget {
             const SizedBox(height: 16),
             
             Text(
-              'Oops! Something went wrong',
+              AppLocalizations.of(context)?.oopsSomethingWentWrong ?? 'Oops! Something went wrong',
               style: Theme.of(context).textTheme.headlineSmall,
               textAlign: TextAlign.center,
             ),
@@ -510,7 +510,7 @@ class _RandomGalleryView extends StatelessWidget {
     final shareText = '${gallery.title}\n\nCheck out this gallery: ${gallery.id}';
     Share.share(
       shareText,
-      subject: 'Check out this gallery!',
+      subject: AppLocalizations.of(context)?.checkOutThisGallery ?? 'Check out this gallery!',
     );
   }
 }

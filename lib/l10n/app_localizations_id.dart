@@ -118,6 +118,254 @@ class AppLocalizationsId extends AppLocalizations {
   String get errorBrowsingTag => 'Error menjelajahi tag';
 
   @override
+  String get shuffleToNextGallery => 'Acak ke galeri berikutnya';
+
+  @override
+  String get contentHidden => 'Konten Disembunyikan';
+
+  @override
+  String get tapToViewAnyway => 'Ketuk untuk tetap melihat';
+
+  @override
+  String get checkOutThisGallery => 'Lihat galeri ini!';
+
+  @override
+  String galleriesPreloaded(int count) {
+    return '$count galeri dimuat sebelumnya';
+  }
+
+  @override
+  String get oopsSomethingWentWrong => 'Ups! Ada yang salah';
+
+  @override
+  String get cleanupInfo => 'Info Pembersihan';
+
+  @override
+  String get loadingHistory => 'Memuat riwayat...';
+
+  @override
+  String get clearingHistory => 'Menghapus riwayat...';
+
+  @override
+  String get areYouSureClearHistory =>
+      'Apakah Anda yakin ingin menghapus semua riwayat bacaan? Tindakan ini tidak dapat dibatalkan.';
+
+  @override
+  String get justNow => 'Baru saja';
+
+  @override
+  String get artistCg => 'artist cg';
+
+  @override
+  String get gameCg => 'game cg';
+
+  @override
+  String get manga => 'manga';
+
+  @override
+  String get doujinshi => 'doujinshi';
+
+  @override
+  String get imageSet => 'image set';
+
+  @override
+  String get cosplay => 'cosplay';
+
+  @override
+  String get artistcg => 'artistcg';
+
+  @override
+  String get gamecg => 'gamecg';
+
+  @override
+  String get bigBreasts => 'big breasts';
+
+  @override
+  String get soleFemale => 'sole female';
+
+  @override
+  String get soleMale => 'sole male';
+
+  @override
+  String get fullColor => 'full color';
+
+  @override
+  String get schoolgirlUniform => 'schoolgirl uniform';
+
+  @override
+  String get tryADifferentSearchTerm => 'Coba istilah pencarian yang berbeda';
+
+  @override
+  String get unknownError => 'Error tidak diketahui';
+
+  @override
+  String get loadingOfflineContent => 'Memuat konten offline...';
+
+  @override
+  String get excludeTags => 'Kecualikan Tag';
+
+  @override
+  String get excludeGroups => 'Kecualikan Grup';
+
+  @override
+  String get excludeCharacters => 'Kecualikan Karakter';
+
+  @override
+  String get excludeParodies => 'Kecualikan Parodi';
+
+  @override
+  String get excludeArtists => 'Kecualikan Artis';
+
+  @override
+  String get noResultsFound => 'Tidak ada hasil ditemukan';
+
+  @override
+  String get tryAdjustingFilters =>
+      'Coba sesuaikan filter pencarian atau istilah pencarian Anda.';
+
+  @override
+  String get tryDifferentKeywords => 'Coba kata kunci berbeda';
+
+  @override
+  String get networkError =>
+      'Error jaringan. Silakan periksa koneksi Anda dan coba lagi.';
+
+  @override
+  String get serverError => 'Kesalahan server';
+
+  @override
+  String get accessBlocked => 'Akses diblokir. Mencoba melewati proteksi...';
+
+  @override
+  String get tooManyRequests =>
+      'Terlalu banyak permintaan. Silakan tunggu sebentar dan coba lagi.';
+
+  @override
+  String get errorProcessingResults =>
+      'Error memproses hasil pencarian. Silakan coba lagi.';
+
+  @override
+  String get invalidSearchParameters =>
+      'Parameter pencarian tidak valid. Silakan periksa input Anda.';
+
+  @override
+  String get unexpectedError =>
+      'Terjadi error yang tidak terduga. Silakan coba lagi.';
+
+  @override
+  String get retryBypass => 'Coba Bypass Lagi';
+
+  @override
+  String get retryConnection => 'Coba Koneksi Lagi';
+
+  @override
+  String get retrySearch => 'Coba Cari Lagi';
+
+  @override
+  String get networkErrorTitle => 'Error Jaringan';
+
+  @override
+  String get serverErrorTitle => 'Error Server';
+
+  @override
+  String get unknownErrorTitle => 'Error Tidak Diketahui';
+
+  @override
+  String get loadingContent => 'Memuat konten...';
+
+  @override
+  String get refreshingContent => 'Menyegarkan konten...';
+
+  @override
+  String get loadingMoreContent => 'Memuat konten lainnya...';
+
+  @override
+  String get latestContent => 'Konten Terbaru';
+
+  @override
+  String get noInternetConnection => 'Tidak ada koneksi internet';
+
+  @override
+  String get serverTemporarilyUnavailable =>
+      'Server sementara tidak tersedia. Silakan coba lagi nanti.';
+
+  @override
+  String get failedToLoadContent => 'Gagal memuat konten';
+
+  @override
+  String get cloudflareProtectionDetected =>
+      'Proteksi Cloudflare terdeteksi. Silakan tunggu dan coba lagi.';
+
+  @override
+  String get tooManyRequestsWait =>
+      'Terlalu banyak permintaan. Silakan tunggu sebentar sebelum mencoba lagi.';
+
+  @override
+  String get noContentFoundMatching =>
+      'Tidak ada konten yang ditemukan sesuai kriteria pencarian Anda. Coba sesuaikan filter Anda.';
+
+  @override
+  String noContentFoundForTag(String tagName) {
+    return 'Tidak ada konten ditemukan untuk tag \"$tagName\".';
+  }
+
+  @override
+  String get removeSomeFilters => 'Hapus beberapa filter';
+
+  @override
+  String get checkSpelling => 'Periksa ejaan';
+
+  @override
+  String get useGeneralTerms => 'Gunakan istilah pencarian yang lebih umum';
+
+  @override
+  String get browsePopularContent => 'Jelajahi konten populer';
+
+  @override
+  String get tryBrowsingOtherTags => 'Coba jelajahi tag lain';
+
+  @override
+  String get checkPopularContent => 'Periksa konten populer';
+
+  @override
+  String get useSearchFunction => 'Gunakan fungsi pencarian';
+
+  @override
+  String get checkInternetConnectionSuggestion =>
+      'Periksa koneksi internet Anda';
+
+  @override
+  String get tryRefreshingPage => 'Coba muat ulang halaman';
+
+  @override
+  String get browsePopularContentSuggestion => 'Jelajahi konten populer';
+
+  @override
+  String get failedToInitializeSearch => 'Gagal menginisialisasi pencarian';
+
+  @override
+  String noResultsFoundFor(String query) {
+    return 'Tidak ada hasil ditemukan untuk \"$query\"';
+  }
+
+  @override
+  String get searchingWithFilters => 'Mencari dengan filter...';
+
+  @override
+  String get noResultsFoundWithCurrentFilters =>
+      'Tidak ada hasil ditemukan dengan filter saat ini';
+
+  @override
+  String invalidFilter(String errors) {
+    return 'Filter tidak valid: $errors';
+  }
+
+  @override
+  String invalidSearchFilter(String errors) {
+    return 'Filter pencarian tidak valid: $errors';
+  }
+
+  @override
   String get pages => 'Halaman';
 
   @override
@@ -457,9 +705,6 @@ class AppLocalizationsId extends AppLocalizations {
       'Layanan mungkin sedang dalam pemeliharaan';
 
   @override
-  String get tryRefreshingPage => 'Coba muat ulang halaman';
-
-  @override
   String get waitForBypass => 'Tunggu bypass otomatis selesai';
 
   @override
@@ -488,17 +733,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get tryAgainLater => 'Coba lagi nanti';
 
   @override
-  String get tryDifferentKeywords => 'Coba kata kunci berbeda';
-
-  @override
   String get serverUnavailable =>
       'Server saat ini tidak tersedia. Silakan coba lagi nanti.';
-
-  @override
-  String get removeSomeFilters => 'Hapus beberapa filter';
-
-  @override
-  String get checkSpelling => 'Periksa ejaan';
 
   @override
   String get useBroaderSearchTerms =>
@@ -772,13 +1008,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get unableToCheckConnection => 'Tidak dapat memeriksa koneksi.';
 
   @override
-  String get noInternetConnection => 'Tidak ada koneksi internet';
-
-  @override
   String get connectionError => 'Kesalahan koneksi';
-
-  @override
-  String get serverError => 'Kesalahan server';
 
   @override
   String get low => 'Rendah';
@@ -923,21 +1153,18 @@ class AppLocalizationsId extends AppLocalizations {
   String get unknown => 'Tidak diketahui';
 
   @override
-  String get justNow => 'Baru saja';
-
-  @override
-  String daysAgo(int days) {
+  String daysAgo(int count, String s) {
     return '${days}h yang lalu';
   }
 
   @override
-  String hoursAgo(int hours) {
+  String hoursAgo(int count, String s) {
     return '${hours}j yang lalu';
   }
 
   @override
-  String minutesAgo(int minutes) {
-    return '${minutes}m yang lalu';
+  String minutesAgo(int count, String s) {
+    return '${count}m yang lalu';
   }
 
   @override
@@ -1002,9 +1229,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get analyticsSubtitle =>
       'Membantu pengembangan app dengan data lokal (tidak dibagikan)';
-
-  @override
-  String get loadingContent => 'Memuat konten...';
 
   @override
   String get loadingError => 'Kesalahan Memuat';
@@ -1083,9 +1307,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get startReading => 'Mulai Membaca';
-
-  @override
-  String get browsePopularContent => 'Jelajahi konten populer';
 
   @override
   String get searchSomethingInteresting => 'Cari sesuatu yang menarik';
@@ -1179,9 +1400,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get statistics => 'Statistik';
-
-  @override
-  String get failedToLoadContent => 'Gagal memuat konten';
 
   @override
   String get shareContent => 'Bagikan Konten';
@@ -1758,4 +1976,73 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get launchingApp => 'Meluncurkan aplikasi utama...';
+
+  @override
+  String get imageNotAvailable => 'Gambar tidak tersedia';
+
+  @override
+  String loadingPage(int pageNumber) {
+    return 'Memuat halaman $pageNumber...';
+  }
+
+  @override
+  String selectedItemsCount(int count) {
+    return '$count terpilih';
+  }
+
+  @override
+  String get noImage => 'Tidak ada gambar';
+
+  @override
+  String get youAreOfflineShort => 'Anda sedang offline';
+
+  @override
+  String get someFeaturesLimited =>
+      'Beberapa fitur terbatas. Sambungkan ke internet untuk akses penuh.';
+
+  @override
+  String get wifi => 'WIFI';
+
+  @override
+  String get ethernet => 'ETHERNET';
+
+  @override
+  String get mobile => 'MOBILE';
+
+  @override
+  String get online => 'ONLINE';
+
+  @override
+  String get offlineMode => 'Mode Offline';
+
+  @override
+  String get applySearch => 'Terapkan Pencarian';
+
+  @override
+  String get addFiltersToSearch =>
+      'Tambahkan filter di atas untuk mengaktifkan pencarian';
+
+  @override
+  String get startSearching => 'Mulai mencari';
+
+  @override
+  String get enterKeywordsAdvancedHint =>
+      'Masukkan kata kunci, tag, atau gunakan filter lanjutan untuk menemukan konten';
+
+  @override
+  String get filtersReady => 'Filter Siap';
+
+  @override
+  String get clearAllFiltersTooltip => 'Bersihkan semua filter';
+
+  @override
+  String get offlineSomeFeaturesUnavailable =>
+      'Anda sedang offline. Beberapa fitur mungkin tidak tersedia.';
+
+  @override
+  String get usingDownloadedContentOnly =>
+      'Menggunakan konten yang diunduh saja';
+
+  @override
+  String get onlineModeWithNetworkAccess => 'Mode online dengan akses jaringan';
 }

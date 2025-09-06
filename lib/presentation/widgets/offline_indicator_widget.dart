@@ -192,7 +192,7 @@ class OfflineBanner extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'You are offline. Some features may not be available.',
+                  AppLocalizations.of(context)!.offlineSomeFeaturesUnavailable,
                   style: TextStyleConst.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.onErrorContainer,
                   ),
@@ -203,7 +203,7 @@ class OfflineBanner extends StatelessWidget {
                   context.read<NetworkCubit>().checkConnectivity();
                 },
                 child: Text(
-                  'Retry',
+                  AppLocalizations.of(context)?.retry ?? 'Retry',
                   style: TextStyleConst.buttonSmall.copyWith(
                     color: Theme.of(context).colorScheme.error,
                   ),
@@ -256,7 +256,7 @@ class OfflineModeToggle extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Offline Mode',
+                  AppLocalizations.of(context)?.offlineMode ?? 'Offline Mode',
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -264,8 +264,8 @@ class OfflineModeToggle extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   isOfflineMode
-                      ? 'Using downloaded content only'
-                      : 'Online mode with network access',
+                      ? AppLocalizations.of(context)!.usingDownloadedContentOnly
+                      : AppLocalizations.of(context)!.onlineModeWithNetworkAccess,
                   style: TextStyleConst.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                   ),

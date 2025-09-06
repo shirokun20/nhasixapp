@@ -84,7 +84,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
           ),
           const SizedBox(width: 8),
           Text(
-            'Offline Content',
+            AppLocalizations.of(context)!.offlineContent,
             style: TextStyleConst.headingMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
@@ -225,7 +225,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
               ),
             ),
             child: Text(
-              'Search',
+              AppLocalizations.of(context)!.search,
               style: TextStyleConst.buttonMedium.copyWith(
                 color: colorScheme.onPrimary,
               ),
@@ -240,9 +240,9 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     
     if (state is OfflineSearchLoading) {
-      return const Center(
+      return Center(
         child: AppProgressIndicator(
-          message: 'Loading offline content...',
+          message: AppLocalizations.of(context)?.loadingOfflineContent ?? 'Loading offline content...',
         ),
       );
     }
@@ -348,9 +348,9 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     }
 
     // Initial state
-    return const Center(
+    return Center(
       child: AppProgressIndicator(
-        message: 'Loading offline content...',
+        message: AppLocalizations.of(context)?.loadingOfflineContent ?? 'Loading offline content...',
       ),
     );
   }

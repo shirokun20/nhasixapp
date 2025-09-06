@@ -358,7 +358,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                       isHighlighted:
                           isDownloaded, // NEW: Highlight downloaded content instead of search match
                       highlightReason: isDownloaded
-                          ? 'Downloaded'
+                          ? AppLocalizations.of(context)!.downloaded
                           : null, // NEW: Indicate download status
                     );
                   },
@@ -384,11 +384,11 @@ class _ContentListWidgetState extends State<ContentListWidget> {
     if (difference.inMinutes < 1) {
       return AppLocalizations.of(context)!.justNow;
     } else if (difference.inHours < 1) {
-      return AppLocalizations.of(context)!.minutesAgo(difference.inMinutes);
+      return AppLocalizations.of(context)!.minutesAgo(difference.inMinutes, difference.inMinutes == 1 ? '' : 's');
     } else if (difference.inDays < 1) {
-      return AppLocalizations.of(context)!.hoursAgo(difference.inHours);
+      return AppLocalizations.of(context)!.hoursAgo(difference.inHours, difference.inHours == 1 ? '' : 's');
     } else {
-      return AppLocalizations.of(context)!.daysAgo(difference.inDays);
+      return AppLocalizations.of(context)!.daysAgo(difference.inDays, difference.inDays == 1 ? '' : 's');
     }
   }
 }

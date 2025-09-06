@@ -433,7 +433,7 @@ class _SearchScreenState extends State<SearchScreen> {
           },
         ),
         IconButton(
-          tooltip: 'Clear all filters',
+          tooltip: AppLocalizations.of(context)!.clearAllFiltersTooltip,
           icon: Icon(Icons.clear_all, color: Theme.of(context).colorScheme.onSurfaceVariant),
           onPressed: _clearAllFilters,
         ),
@@ -530,7 +530,7 @@ class _SearchScreenState extends State<SearchScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Advanced Filters',
+                AppLocalizations.of(context)!.advancedFiltersTitle,
                 style: TextStyleConst.headingSmall.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
@@ -678,7 +678,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               : Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                   label: Text(
-                    isLoading ? 'Searching...' : 'Apply Search',
+                    isLoading ? AppLocalizations.of(context)!.searchingMessage : AppLocalizations.of(context)!.applySearch,
                     style: TextStyleConst.labelLarge.copyWith(
                       color: hasFilters
                           ? Theme.of(context).colorScheme.onPrimary
@@ -713,7 +713,7 @@ class _SearchScreenState extends State<SearchScreen> {
               if (!hasFilters) ...[
                 const SizedBox(height: 8),
                 Text(
-                  'Add filters above to enable search',
+                  AppLocalizations.of(context)!.addFiltersToSearch,
                   style: TextStyleConst.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontStyle: FontStyle.italic,
@@ -856,14 +856,14 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Start searching',
+                    AppLocalizations.of(context)!.startSearching,
                     style: TextStyleConst.headingSmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Enter keywords, tags, or use advanced filters to find content',
+                    AppLocalizations.of(context)!.enterKeywordsAdvancedHint,
                     style: TextStyleConst.bodySmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -892,7 +892,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Filters Ready',
+              AppLocalizations.of(context)!.filtersReady,
               style: TextStyleConst.headingSmall.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
               ),

@@ -91,7 +91,7 @@ class AppScaffoldWithOffline extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            'OFFLINE',
+            (AppLocalizations.of(context)?.offline ?? 'OFFLINE').toUpperCase(),
             style: TextStyleConst.overline.copyWith(
               color: Theme.of(context).colorScheme.error,
             ),
@@ -129,13 +129,13 @@ class AppScaffoldWithOffline extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'You are offline',
+                  AppLocalizations.of(context)?.youAreOfflineShort ?? 'You are offline',
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.error,
                   ),
                 ),
                 Text(
-                  'Some features are limited. Connect to internet for full access.',
+                  AppLocalizations.of(context)?.someFeaturesLimited ?? 'Some features are limited. Connect to internet for full access.',
                   style: TextStyleConst.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.error,
                   ),
@@ -153,7 +153,7 @@ class AppScaffoldWithOffline extends StatelessWidget {
               color: Theme.of(context).colorScheme.error,
             ),
             label: Text(
-              'Go Online',
+              AppLocalizations.of(context)?.goOnline ?? 'Go Online',
               style: TextStyleConst.buttonSmall.copyWith(
                 color: Theme.of(context).colorScheme.error,
               ),

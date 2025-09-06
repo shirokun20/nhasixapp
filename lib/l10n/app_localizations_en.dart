@@ -119,6 +119,254 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorBrowsingTag => 'Error browsing tag';
 
   @override
+  String get shuffleToNextGallery => 'Shuffle to next gallery';
+
+  @override
+  String get contentHidden => 'Content Hidden';
+
+  @override
+  String get tapToViewAnyway => 'Tap to view anyway';
+
+  @override
+  String get checkOutThisGallery => 'Check out this gallery!';
+
+  @override
+  String galleriesPreloaded(int count) {
+    return '$count galleries preloaded';
+  }
+
+  @override
+  String get oopsSomethingWentWrong => 'Oops! Something went wrong';
+
+  @override
+  String get cleanupInfo => 'Cleanup Info';
+
+  @override
+  String get loadingHistory => 'Loading history...';
+
+  @override
+  String get clearingHistory => 'Clearing history...';
+
+  @override
+  String get areYouSureClearHistory =>
+      'Are you sure you want to clear all reading history? This action cannot be undone.';
+
+  @override
+  String get justNow => 'Just now';
+
+  @override
+  String get artistCg => 'artist cg';
+
+  @override
+  String get gameCg => 'game cg';
+
+  @override
+  String get manga => 'manga';
+
+  @override
+  String get doujinshi => 'doujinshi';
+
+  @override
+  String get imageSet => 'image set';
+
+  @override
+  String get cosplay => 'cosplay';
+
+  @override
+  String get artistcg => 'artistcg';
+
+  @override
+  String get gamecg => 'gamecg';
+
+  @override
+  String get bigBreasts => 'big breasts';
+
+  @override
+  String get soleFemale => 'sole female';
+
+  @override
+  String get soleMale => 'sole male';
+
+  @override
+  String get fullColor => 'full color';
+
+  @override
+  String get schoolgirlUniform => 'schoolgirl uniform';
+
+  @override
+  String get tryADifferentSearchTerm => 'Try a different search term';
+
+  @override
+  String get unknownError => 'Unknown error';
+
+  @override
+  String get loadingOfflineContent => 'Loading offline content...';
+
+  @override
+  String get excludeTags => 'Exclude Tags';
+
+  @override
+  String get excludeGroups => 'Exclude Groups';
+
+  @override
+  String get excludeCharacters => 'Exclude Characters';
+
+  @override
+  String get excludeParodies => 'Exclude Parodies';
+
+  @override
+  String get excludeArtists => 'Exclude Artists';
+
+  @override
+  String get noResultsFound => 'No results found';
+
+  @override
+  String get tryAdjustingFilters =>
+      'Try adjusting your search filters or search terms.';
+
+  @override
+  String get tryDifferentKeywords => 'Try different keywords';
+
+  @override
+  String get networkError =>
+      'Network error. Please check your connection and try again.';
+
+  @override
+  String get serverError => 'Server error';
+
+  @override
+  String get accessBlocked => 'Access blocked. Trying to bypass protection...';
+
+  @override
+  String get tooManyRequests =>
+      'Too many requests. Please wait a moment and try again.';
+
+  @override
+  String get errorProcessingResults =>
+      'Error processing search results. Please try again.';
+
+  @override
+  String get invalidSearchParameters =>
+      'Invalid search parameters. Please check your input.';
+
+  @override
+  String get unexpectedError =>
+      'An unexpected error occurred. Please try again.';
+
+  @override
+  String get retryBypass => 'Retry Bypass';
+
+  @override
+  String get retryConnection => 'Retry Connection';
+
+  @override
+  String get retrySearch => 'Retry Search';
+
+  @override
+  String get networkErrorTitle => 'Network Error';
+
+  @override
+  String get serverErrorTitle => 'Server Error';
+
+  @override
+  String get unknownErrorTitle => 'Unknown Error';
+
+  @override
+  String get loadingContent => 'Loading content...';
+
+  @override
+  String get refreshingContent => 'Refreshing content...';
+
+  @override
+  String get loadingMoreContent => 'Loading more content...';
+
+  @override
+  String get latestContent => 'Latest Content';
+
+  @override
+  String get noInternetConnection => 'No internet connection';
+
+  @override
+  String get serverTemporarilyUnavailable =>
+      'Server is temporarily unavailable. Please try again later.';
+
+  @override
+  String get failedToLoadContent => 'Failed to load content';
+
+  @override
+  String get cloudflareProtectionDetected =>
+      'Cloudflare protection detected. Please wait and try again.';
+
+  @override
+  String get tooManyRequestsWait =>
+      'Too many requests. Please wait a moment before trying again.';
+
+  @override
+  String get noContentFoundMatching =>
+      'No content found matching your search criteria. Try adjusting your filters.';
+
+  @override
+  String noContentFoundForTag(String tagName) {
+    return 'No content found for tag \"$tagName\".';
+  }
+
+  @override
+  String get removeSomeFilters => 'Remove some filters';
+
+  @override
+  String get checkSpelling => 'Check spelling';
+
+  @override
+  String get useGeneralTerms => 'Use more general search terms';
+
+  @override
+  String get browsePopularContent => 'Browse popular content';
+
+  @override
+  String get tryBrowsingOtherTags => 'Try browsing other tags';
+
+  @override
+  String get checkPopularContent => 'Check popular content';
+
+  @override
+  String get useSearchFunction => 'Use the search function';
+
+  @override
+  String get checkInternetConnectionSuggestion =>
+      'Check your internet connection';
+
+  @override
+  String get tryRefreshingPage => 'Try refreshing the page';
+
+  @override
+  String get browsePopularContentSuggestion => 'Browse popular content';
+
+  @override
+  String get failedToInitializeSearch => 'Failed to initialize search';
+
+  @override
+  String noResultsFoundFor(String query) {
+    return 'No results found for \"$query\"';
+  }
+
+  @override
+  String get searchingWithFilters => 'Searching with filters...';
+
+  @override
+  String get noResultsFoundWithCurrentFilters =>
+      'No results found with current filters';
+
+  @override
+  String invalidFilter(String errors) {
+    return 'Invalid filter: $errors';
+  }
+
+  @override
+  String invalidSearchFilter(String errors) {
+    return 'Invalid search filter: $errors';
+  }
+
+  @override
   String get pages => 'Pages';
 
   @override
@@ -457,9 +705,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'The service might be under maintenance';
 
   @override
-  String get tryRefreshingPage => 'Try refreshing the page';
-
-  @override
   String get waitForBypass => 'Wait for automatic bypass to complete';
 
   @override
@@ -487,17 +732,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tryAgainLater => 'Try again later';
 
   @override
-  String get tryDifferentKeywords => 'Try different keywords';
-
-  @override
   String get serverUnavailable =>
       'The server is currently unavailable. Please try again later.';
-
-  @override
-  String get removeSomeFilters => 'Remove some filters';
-
-  @override
-  String get checkSpelling => 'Check spelling';
 
   @override
   String get useBroaderSearchTerms => 'Use broader search terms';
@@ -771,13 +1007,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unableToCheckConnection => 'Unable to check connection.';
 
   @override
-  String get noInternetConnection => 'No internet connection';
-
-  @override
   String get connectionError => 'Connection error';
-
-  @override
-  String get serverError => 'Server error';
 
   @override
   String get low => 'Low';
@@ -922,21 +1152,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unknown => 'Unknown';
 
   @override
-  String get justNow => 'Just now';
-
-  @override
-  String daysAgo(int days) {
-    return '${days}d ago';
+  String daysAgo(int count, String s) {
+    return '$count day$s ago';
   }
 
   @override
-  String hoursAgo(int hours) {
-    return '${hours}h ago';
+  String hoursAgo(int count, String s) {
+    return '$count hour$s ago';
   }
 
   @override
-  String minutesAgo(int minutes) {
-    return '${minutes}m ago';
+  String minutesAgo(int count, String s) {
+    return '$count minute$s ago';
   }
 
   @override
@@ -1001,9 +1228,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get analyticsSubtitle =>
       'Helps app development with local data (not shared)';
-
-  @override
-  String get loadingContent => 'Loading content...';
 
   @override
   String get loadingError => 'Loading Error';
@@ -1083,9 +1307,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get startReading => 'Start Reading';
-
-  @override
-  String get browsePopularContent => 'Browse popular content';
 
   @override
   String get searchSomethingInteresting => 'Search for something interesting';
@@ -1177,9 +1398,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statistics => 'Statistics';
-
-  @override
-  String get failedToLoadContent => 'Failed to load content';
 
   @override
   String get shareContent => 'Share Content';
@@ -1755,4 +1973,71 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get launchingApp => 'Launching main application...';
+
+  @override
+  String get imageNotAvailable => 'Image not available';
+
+  @override
+  String loadingPage(int pageNumber) {
+    return 'Loading page $pageNumber...';
+  }
+
+  @override
+  String selectedItemsCount(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get noImage => 'No image';
+
+  @override
+  String get youAreOfflineShort => 'You are offline';
+
+  @override
+  String get someFeaturesLimited =>
+      'Some features are limited. Connect to internet for full access.';
+
+  @override
+  String get wifi => 'WIFI';
+
+  @override
+  String get ethernet => 'ETHERNET';
+
+  @override
+  String get mobile => 'MOBILE';
+
+  @override
+  String get online => 'ONLINE';
+
+  @override
+  String get offlineMode => 'Offline Mode';
+
+  @override
+  String get applySearch => 'Apply Search';
+
+  @override
+  String get addFiltersToSearch => 'Add filters above to enable search';
+
+  @override
+  String get startSearching => 'Start searching';
+
+  @override
+  String get enterKeywordsAdvancedHint =>
+      'Enter keywords, tags, or use advanced filters to find content';
+
+  @override
+  String get filtersReady => 'Filters Ready';
+
+  @override
+  String get clearAllFiltersTooltip => 'Clear all filters';
+
+  @override
+  String get offlineSomeFeaturesUnavailable =>
+      'You are offline. Some features may not be available.';
+
+  @override
+  String get usingDownloadedContentOnly => 'Using downloaded content only';
+
+  @override
+  String get onlineModeWithNetworkAccess => 'Online mode with network access';
 }

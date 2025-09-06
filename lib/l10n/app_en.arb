@@ -43,6 +43,115 @@
   "errorOpeningFilter": "Error opening filter selection",
   "errorBrowsingTag": "Error browsing tag",
   
+  "shuffleToNextGallery": "Shuffle to next gallery",
+  "contentHidden": "Content Hidden",
+  "tapToViewAnyway": "Tap to view anyway",
+  "checkOutThisGallery": "Check out this gallery!",
+  "galleriesPreloaded": "{count} galleries preloaded",
+  "@galleriesPreloaded": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "oopsSomethingWentWrong": "Oops! Something went wrong",
+  "cleanupInfo": "Cleanup Info",
+  "loadingHistory": "Loading history...",
+  "clearingHistory": "Clearing history...",
+  "areYouSureClearHistory": "Are you sure you want to clear all reading history? This action cannot be undone.",
+  "justNow": "Just now",
+  
+  "artistCg": "artist cg",
+  "gameCg": "game cg",
+  "manga": "manga",
+  "doujinshi": "doujinshi",
+  "imageSet": "image set",
+  "cosplay": "cosplay",
+  "artistcg": "artistcg",
+  "gamecg": "gamecg",
+  
+  "bigBreasts": "big breasts",
+  "soleFemale": "sole female",
+  "soleMale": "sole male",
+  "fullColor": "full color",
+  "schoolgirlUniform": "schoolgirl uniform",
+  
+  "tryADifferentSearchTerm": "Try a different search term",
+  "unknownError": "Unknown error",
+  "loadingOfflineContent": "Loading offline content...",
+  
+  "excludeTags": "Exclude Tags",
+  "excludeGroups": "Exclude Groups", 
+  "excludeCharacters": "Exclude Characters",
+  "excludeParodies": "Exclude Parodies",
+  "excludeArtists": "Exclude Artists",
+  
+  "noResultsFound": "No results found",
+  "tryAdjustingFilters": "Try adjusting your search filters or search terms.",
+  "tryDifferentKeywords": "Try searching with different keywords.",
+  "networkError": "Network error. Please check your connection and try again.",
+  "serverError": "Server error. Please try again later.",
+  "accessBlocked": "Access blocked. Trying to bypass protection...",
+  "tooManyRequests": "Too many requests. Please wait a moment and try again.",
+  "errorProcessingResults": "Error processing search results. Please try again.",
+  "invalidSearchParameters": "Invalid search parameters. Please check your input.",
+  "unexpectedError": "An unexpected error occurred. Please try again.",
+  "retryBypass": "Retry Bypass",
+  "retryConnection": "Retry Connection",
+  "retrySearch": "Retry Search",
+  "networkErrorTitle": "Network Error",
+  "serverErrorTitle": "Server Error",
+  "unknownErrorTitle": "Unknown Error",
+  
+  "loadingContent": "Loading content...",
+  "refreshingContent": "Refreshing content...",
+  "loadingMoreContent": "Loading more content...",
+  "searchResults": "Search Results",
+  "latestContent": "Latest Content",
+  "noInternetConnection": "No internet connection. Please check your network and try again.",
+  "serverTemporarilyUnavailable": "Server is temporarily unavailable. Please try again later.",
+  "failedToLoadContent": "Failed to load content. The website structure may have changed.",
+  "cloudflareProtectionDetected": "Cloudflare protection detected. Please wait and try again.",
+  "tooManyRequestsWait": "Too many requests. Please wait a moment before trying again.",
+  "noContentFoundMatching": "No content found matching your search criteria. Try adjusting your filters.",
+  "noContentFoundForTag": "No content found for tag \"{tagName}\".",
+  "@noContentFoundForTag": {
+    "placeholders": {
+      "tagName": {"type": "String"}
+    }
+  },
+  "removeSomeFilters": "Try removing some filters",
+  "checkSpelling": "Check your spelling",
+  "useGeneralTerms": "Use more general search terms",
+  "browsePopularContent": "Browse popular content instead",
+  "tryBrowsingOtherTags": "Try browsing other tags",
+  "checkPopularContent": "Check popular content",
+  "useSearchFunction": "Use the search function",
+  "checkInternetConnectionSuggestion": "Check your internet connection",
+  "tryRefreshingPage": "Try refreshing the page",
+  "browsePopularContentSuggestion": "Browse popular content",
+  
+  "failedToInitializeSearch": "Failed to initialize search",
+  "noResultsFoundFor": "No results found for \"{query}\"",
+  "@noResultsFoundFor": {
+    "placeholders": {
+      "query": {"type": "String"}
+    }
+  },
+  "searchingWithFilters": "Searching with filters...",
+  "noResultsFoundWithCurrentFilters": "No results found with current filters",
+  "invalidFilter": "Invalid filter: {errors}",
+  "@invalidFilter": {
+    "placeholders": {
+      "errors": {"type": "String"}
+    }
+  },
+  "invalidSearchFilter": "Invalid search filter: {errors}",
+  "@invalidSearchFilter": {
+    "placeholders": {
+      "errors": {"type": "String"}
+    }
+  },
+  
   "pages": "Pages",
   "tags": "Tags",
   "language": "Language",
@@ -914,5 +1023,62 @@
   "bypassingProtection": "Bypassing protection and establishing connection...",
   "connectionFailed": "Connection Failed",
   "readyToGo": "Ready to Go!",
-  "launchingApp": "Launching main application..."
+  "launchingApp": "Launching main application...",
+  "downloaded": "Downloaded",
+  "imageNotAvailable": "Image not available",
+  "loadingPage": "Loading page {pageNumber}...",
+  "@loadingPage": {
+    "placeholders": {
+      "pageNumber": {"type": "int"}
+    }
+  },
+  "checkInternetConnection": "Check your internet connection",
+  "justNow": "Just now",
+  "daysAgo": "{count} day{s} ago",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "s": {"type": "String"}
+    }
+  },
+  "hoursAgo": "{count} hour{s} ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "s": {"type": "String"}
+    }
+  },
+  "minutesAgo": "{count} minute{s} ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "s": {"type": "String"}
+    }
+  },
+  
+  "selectedItemsCount": "{count} selected",
+  "@selectedItemsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "removeFavorite": "Remove Favorite",
+  "noImage": "No image",
+  "youAreOfflineShort": "You are offline",
+  "someFeaturesLimited": "Some features are limited. Connect to internet for full access.",
+  "wifi": "WIFI",
+  "ethernet": "ETHERNET", 
+  "mobile": "MOBILE",
+  "online": "ONLINE",
+  "offlineMode": "Offline Mode",
+  
+  "applySearch": "Apply Search",
+  "addFiltersToSearch": "Add filters above to enable search",
+  "startSearching": "Start searching",
+  "enterKeywordsAdvancedHint": "Enter keywords, tags, or use advanced filters to find content",
+  "filtersReady": "Filters Ready",
+  "clearAllFiltersTooltip": "Clear all filters",
+  "offlineSomeFeaturesUnavailable": "You are offline. Some features may not be available.",
+  "usingDownloadedContentOnly": "Using downloaded content only",
+  "onlineModeWithNetworkAccess": "Online mode with network access"
 }

@@ -24,7 +24,17 @@
   "nextPageTooltip": "Halaman berikutnya", 
   "tapToJumpToPage": "Ketuk untuk lompat ke halaman",
   "tapToLoadContent": "Ketuk untuk memuat konten",
+  "connectionFailed": "Koneksi Gagal",
+  "readyToGo": "Siap Berangkat!",
+  "launchingApp": "Meluncurkan aplikasi utama...",
+  "downloaded": "Diunduh",
+  "imageNotAvailable": "Gambar tidak tersedia",
+  "loadingPage": "Memuat halaman {pageNumber}...",
   "checkInternetConnection": "Periksa koneksi internet Anda",
+  "justNow": "Baru saja",
+  "daysAgo": "{count} hari{s} yang lalu",
+  "hoursAgo": "{count} jam{s} yang lalu",
+  "minutesAgo": "{count} menit{s} yang lalu",
   "trySwitchingNetwork": "Coba beralih antara WiFi dan data seluler",
   "restartRouter": "Restart router jika menggunakan WiFi",
   "checkWebsiteStatus": "Periksa apakah situs web sedang down",
@@ -47,6 +57,115 @@
   "anyCategory": "Kategori Apa Saja",
   "errorOpeningFilter": "Error membuka pilihan filter",
   "errorBrowsingTag": "Error menjelajahi tag",
+  
+  "shuffleToNextGallery": "Acak ke galeri berikutnya",
+  "contentHidden": "Konten Disembunyikan",
+  "tapToViewAnyway": "Ketuk untuk tetap melihat",
+  "checkOutThisGallery": "Lihat galeri ini!",
+  "galleriesPreloaded": "{count} galeri dimuat sebelumnya",
+  "@galleriesPreloaded": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "oopsSomethingWentWrong": "Ups! Ada yang salah",
+  "cleanupInfo": "Info Pembersihan",
+  "loadingHistory": "Memuat riwayat...",
+  "clearingHistory": "Menghapus riwayat...",
+  "areYouSureClearHistory": "Apakah Anda yakin ingin menghapus semua riwayat bacaan? Tindakan ini tidak dapat dibatalkan.",
+  "justNow": "Baru saja",
+  
+  "artistCg": "artist cg",
+  "gameCg": "game cg",
+  "manga": "manga",
+  "doujinshi": "doujinshi",
+  "imageSet": "image set",
+  "cosplay": "cosplay",
+  "artistcg": "artistcg",
+  "gamecg": "gamecg",
+  
+  "bigBreasts": "big breasts",
+  "soleFemale": "sole female",
+  "soleMale": "sole male",
+  "fullColor": "full color",
+  "schoolgirlUniform": "schoolgirl uniform",
+  
+  "tryADifferentSearchTerm": "Coba istilah pencarian yang berbeda",
+  "unknownError": "Error tidak diketahui",
+  "loadingOfflineContent": "Memuat konten offline...",
+  
+  "excludeTags": "Kecualikan Tag",
+  "excludeGroups": "Kecualikan Grup", 
+  "excludeCharacters": "Kecualikan Karakter",
+  "excludeParodies": "Kecualikan Parodi",
+  "excludeArtists": "Kecualikan Artis",
+  
+  "noResultsFound": "Tidak ada hasil ditemukan",
+  "tryAdjustingFilters": "Coba sesuaikan filter pencarian atau istilah pencarian Anda.",
+  "tryDifferentKeywords": "Coba cari dengan kata kunci yang berbeda.",
+  "networkError": "Error jaringan. Silakan periksa koneksi Anda dan coba lagi.",
+  "serverError": "Error server. Silakan coba lagi nanti.",
+  "accessBlocked": "Akses diblokir. Mencoba melewati proteksi...",
+  "tooManyRequests": "Terlalu banyak permintaan. Silakan tunggu sebentar dan coba lagi.",
+  "errorProcessingResults": "Error memproses hasil pencarian. Silakan coba lagi.",
+  "invalidSearchParameters": "Parameter pencarian tidak valid. Silakan periksa input Anda.",
+  "unexpectedError": "Terjadi error yang tidak terduga. Silakan coba lagi.",
+  "retryBypass": "Coba Bypass Lagi",
+  "retryConnection": "Coba Koneksi Lagi",
+  "retrySearch": "Coba Cari Lagi",
+  "networkErrorTitle": "Error Jaringan",
+  "serverErrorTitle": "Error Server",
+  "unknownErrorTitle": "Error Tidak Diketahui",
+  
+  "loadingContent": "Memuat konten...",
+  "refreshingContent": "Menyegarkan konten...",
+  "loadingMoreContent": "Memuat konten lainnya...",
+  "searchResults": "Hasil Pencarian",
+  "latestContent": "Konten Terbaru",
+  "noInternetConnection": "Tidak ada koneksi internet. Silakan periksa jaringan Anda dan coba lagi.",
+  "serverTemporarilyUnavailable": "Server sementara tidak tersedia. Silakan coba lagi nanti.",
+  "failedToLoadContent": "Gagal memuat konten. Struktur situs mungkin telah berubah.",
+  "cloudflareProtectionDetected": "Proteksi Cloudflare terdeteksi. Silakan tunggu dan coba lagi.",
+  "tooManyRequestsWait": "Terlalu banyak permintaan. Silakan tunggu sebentar sebelum mencoba lagi.",
+  "noContentFoundMatching": "Tidak ada konten yang ditemukan sesuai kriteria pencarian Anda. Coba sesuaikan filter Anda.",
+  "noContentFoundForTag": "Tidak ada konten ditemukan untuk tag \"{tagName}\".",
+  "@noContentFoundForTag": {
+    "placeholders": {
+      "tagName": {"type": "String"}
+    }
+  },
+  "removeSomeFilters": "Coba hapus beberapa filter",
+  "checkSpelling": "Periksa ejaan Anda",
+  "useGeneralTerms": "Gunakan istilah pencarian yang lebih umum",
+  "browsePopularContent": "Jelajahi konten populer sebagai gantinya",
+  "tryBrowsingOtherTags": "Coba jelajahi tag lain",
+  "checkPopularContent": "Periksa konten populer",
+  "useSearchFunction": "Gunakan fungsi pencarian",
+  "checkInternetConnectionSuggestion": "Periksa koneksi internet Anda",
+  "tryRefreshingPage": "Coba segarkan halaman",
+  "browsePopularContentSuggestion": "Jelajahi konten populer",
+  
+  "failedToInitializeSearch": "Gagal menginisialisasi pencarian",
+  "noResultsFoundFor": "Tidak ada hasil ditemukan untuk \"{query}\"",
+  "@noResultsFoundFor": {
+    "placeholders": {
+      "query": {"type": "String"}
+    }
+  },
+  "searchingWithFilters": "Mencari dengan filter...",
+  "noResultsFoundWithCurrentFilters": "Tidak ada hasil ditemukan dengan filter saat ini",
+  "invalidFilter": "Filter tidak valid: {errors}",
+  "@invalidFilter": {
+    "placeholders": {
+      "errors": {"type": "String"}
+    }
+  },
+  "invalidSearchFilter": "Filter pencarian tidak valid: {errors}",
+  "@invalidSearchFilter": {
+    "placeholders": {
+      "errors": {"type": "String"}
+    }
+  },
   
   "pages": "Halaman",
   "tags": "Tag",
@@ -316,7 +435,7 @@
   "justNow": "Baru saja",
   "daysAgo": "{days}h yang lalu",
   "hoursAgo": "{hours}j yang lalu",
-  "minutesAgo": "{minutes}m yang lalu",
+  "minutesAgo": "{count}m yang lalu",
   
   "noData": "Tidak Ada Data",
   "unknownTitle": "Judul Tidak Diketahui",
@@ -799,5 +918,31 @@
   "bypassingProtection": "Melewati proteksi dan membuat koneksi...",
   "connectionFailed": "Koneksi Gagal",
   "readyToGo": "Siap Digunakan!",
-  "launchingApp": "Meluncurkan aplikasi utama..."
+  "launchingApp": "Meluncurkan aplikasi utama...",
+  
+  "selectedItemsCount": "{count} terpilih",
+  "@selectedItemsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "removeFavorite": "Hapus Favorit",
+  "noImage": "Tidak ada gambar",
+  "youAreOfflineShort": "Anda sedang offline",
+  "someFeaturesLimited": "Beberapa fitur terbatas. Sambungkan ke internet untuk akses penuh.",
+  "wifi": "WIFI",
+  "ethernet": "ETHERNET",
+  "mobile": "MOBILE", 
+  "online": "ONLINE",
+  "offlineMode": "Mode Offline",
+  
+  "applySearch": "Terapkan Pencarian",
+  "addFiltersToSearch": "Tambahkan filter di atas untuk mengaktifkan pencarian",
+  "startSearching": "Mulai mencari",
+  "enterKeywordsAdvancedHint": "Masukkan kata kunci, tag, atau gunakan filter lanjutan untuk menemukan konten",
+  "filtersReady": "Filter Siap",
+  "clearAllFiltersTooltip": "Bersihkan semua filter",
+  "offlineSomeFeaturesUnavailable": "Anda sedang offline. Beberapa fitur mungkin tidak tersedia.",
+  "usingDownloadedContentOnly": "Menggunakan konten yang diunduh saja",
+  "onlineModeWithNetworkAccess": "Mode online dengan akses jaringan"
 }

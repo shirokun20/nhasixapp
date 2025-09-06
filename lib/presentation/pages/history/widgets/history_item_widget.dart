@@ -225,11 +225,11 @@ class HistoryItemWidget extends StatelessWidget {
     final difference = now.difference(lastViewed);
 
     if (difference.inDays > 0) {
-      return l10n.daysAgo(difference.inDays);
+      return l10n.daysAgo(difference.inDays, difference.inDays == 1 ? '' : 's');
     } else if (difference.inHours > 0) {
-      return l10n.hoursAgo(difference.inHours);
+      return l10n.hoursAgo(difference.inHours, difference.inHours == 1 ? '' : 's');
     } else if (difference.inMinutes > 0) {
-      return l10n.minutesAgo(difference.inMinutes);
+      return l10n.minutesAgo(difference.inMinutes, difference.inMinutes == 1 ? '' : 's');
     } else {
       return l10n.justNow;
     }

@@ -282,7 +282,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
       elevation: 0,
       title: Text(
-        _isSelectionMode ? '${_selectedItems.length} selected' : 'Favorites',
+        _isSelectionMode ? AppLocalizations.of(context)!.selectedItemsCount(_selectedItems.length) : AppLocalizations.of(context)!.favorites,
         style: TextStyleConst.withColor(
             TextStyleConst.headingMedium, Theme.of(context).colorScheme.onSurface),
       ),
@@ -415,7 +415,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             onPressed: () => _selectAll(state.favorites),
             icon: Icon(Icons.select_all, color: Theme.of(context).colorScheme.primary),
             label: Text(
-              'Select All',
+              AppLocalizations.of(context)!.selectAll,
               style: TextStyleConst.withColor(
                   TextStyleConst.buttonMedium, Theme.of(context).colorScheme.primary),
             ),
@@ -425,7 +425,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             onPressed: _clearSelection,
             icon: Icon(Icons.clear, color: Theme.of(context).colorScheme.onSurfaceVariant),
             label: Text(
-              'Clear',
+              AppLocalizations.of(context)!.clear,
               style: TextStyleConst.withColor(
                   TextStyleConst.buttonMedium, Theme.of(context).colorScheme.onSurfaceVariant),
             ),
@@ -667,13 +667,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         builder: (context) => AlertDialog(
                           backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
                           title: Text(
-                            'Remove Favorite',
+                            AppLocalizations.of(context)!.removeFavorite,
                             style: TextStyleConst.withColor(
                                 TextStyleConst.headingMedium, 
                                 Theme.of(context).colorScheme.onSurface),
                           ),
                           content: Text(
-                            'Are you sure you want to remove this content from favorites?',
+                            AppLocalizations.of(context)!.removeFavoriteConfirmation,
                             style: TextStyleConst.withColor(
                                 TextStyleConst.bodyMedium, 
                                 Theme.of(context).colorScheme.onSurfaceVariant),
@@ -682,7 +682,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                             TextButton(
                               onPressed: () => Navigator.of(context).pop(),
                               child: Text(
-                                'Cancel',
+                                AppLocalizations.of(context)!.cancel,
                                 style: TextStyleConst.withColor(
                                     TextStyleConst.buttonMedium,
                                     Theme.of(context).colorScheme.onSurfaceVariant),
@@ -694,7 +694,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                 _removeFavorite(contentId);
                               },
                               child: Text(
-                                'Remove',
+                                AppLocalizations.of(context)!.remove,
                                 style: TextStyleConst.withColor(
                                     TextStyleConst.buttonMedium, 
                                     Theme.of(context).colorScheme.error),
@@ -733,7 +733,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       } else if (difference.inMinutes > 0) {
         return '${difference.inMinutes}m ago';
       } else {
-        return 'Just now';
+        return AppLocalizations.of(context)?.justNow ?? 'Just now';
       }
     } catch (e) {
       return 'Unknown';
@@ -754,7 +754,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               ),
               const SizedBox(width: 12),
               Text(
-                'Removing from favorites...',
+                AppLocalizations.of(context)!.removingFromFavorites,
                 style: TextStyleConst.withColor(
                     TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onSurface),
               ),
@@ -775,7 +775,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Removed from favorites',
+              AppLocalizations.of(context)!.removedFromFavorites,
               style: TextStyleConst.withColor(
                   TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onPrimary),
             ),

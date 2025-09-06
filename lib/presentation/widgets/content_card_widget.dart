@@ -245,7 +245,7 @@ class ContentCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 3),
                 Text(
-                  'OFFLINE',
+                  (AppLocalizations.of(context)?.offline ?? 'OFFLINE').toUpperCase(),
                   style: TextStyleConst.labelSmall.copyWith(
                     color: Theme.of(context).colorScheme.onSecondary,
                     fontSize: 8,
@@ -295,7 +295,7 @@ class ContentCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Image not available',
+              AppLocalizations.of(context)?.imageNotAvailable ?? 'Image not available',
               style: TextStyleConst.caption.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -385,7 +385,7 @@ class ContentCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 2),
                         Text(
-                          'OFFLINE',
+                          (AppLocalizations.of(context)?.offline ?? 'OFFLINE').toUpperCase(),
                           style: TextStyleConst.labelSmall.copyWith(
                             color: Theme.of(context).colorScheme.onTertiary,
                             fontSize: 8,
@@ -646,7 +646,7 @@ class ContentCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'No image',
+              AppLocalizations.of(context)?.noImage ?? 'No image',
               style: TextStyleConst.caption.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),

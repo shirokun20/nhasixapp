@@ -331,7 +331,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  state.message ?? "Unknown error",
+                  state.message ?? (AppLocalizations.of(context)?.unknownError ?? "Unknown error"),
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -375,7 +375,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                   if (state.searchQuery?.isNotEmpty == true) ...[
                     const SizedBox(height: 8),
                     Text(
-                      'Try a different search term',
+                      AppLocalizations.of(context)?.tryADifferentSearchTerm ?? 'Try a different search term',
                       style: TextStyleConst.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
