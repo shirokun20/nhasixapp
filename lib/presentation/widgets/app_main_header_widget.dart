@@ -91,7 +91,7 @@ class AppMainHeaderWidget extends StatelessWidget
         ),
       ],
       title: Text(
-        l10n.appSubtitle,
+        l10n.appTitle,
         style: TextStyleConst.headingMedium.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
         ),

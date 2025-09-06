@@ -43,7 +43,7 @@ class AppMainDrawerWidget extends StatelessWidget {
                   height: 16,
                 ),
                 Text(
-                  l10n.appSubtitle,
+                  l10n.appTitle,
                   style: TextStyleConst.headingLarge.copyWith(
                     fontSize: 30,
                     color: theme.textTheme.headlineLarge?.color,
