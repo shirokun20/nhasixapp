@@ -340,7 +340,7 @@ class _SearchScreenState extends State<SearchScreen> {
       );
 
       // Update filter if result is not null (including empty results for clearing filters)
-      if (result != null) {
+      if (result != null && mounted) {
         // Update the current filter with the returned filters
         switch (filterType.toLowerCase()) {
           case 'tag':

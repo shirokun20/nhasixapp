@@ -44,14 +44,17 @@ class ThemeDebugUtility {
   static Future<void> testThemeChange(BuildContext context, String newTheme) async {
     try {
       _logger.i('Testing theme change to: $newTheme');
-      
+
       final settingsCubit = context.read<SettingsCubit>();
       await settingsCubit.updateTheme(newTheme);
-      
+
       // Wait a bit for state updates
       await Future.delayed(const Duration(milliseconds: 100));
-      
-      logCurrentTheme(context);
+
+      // Check if context is still valid before logging
+      if (context.mounted) {
+        logCurrentTheme(context);
+      }
     } catch (e) {
       _logger.e('Error testing theme change: $e');
     }

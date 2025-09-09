@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:logger/logger.dart';
 
 import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
@@ -39,7 +40,7 @@ class ContentDownloadCache {
 
     // 🐛 FIXED: Priority 1 - Check DownloadBloc state (single source of truth)
     bool isDownloaded = false;
-    if (context != null) {
+    if (context != null && context.mounted) {
       try {
         final downloadState = context.read<DownloadBloc>().state;
         if (downloadState is DownloadLoaded) {
@@ -52,7 +53,8 @@ class ContentDownloadCache {
           return isDownloaded;
         }
       } catch (e) {
-        // DownloadBloc not available, fallback to filesystem check
+        // DownloadBloc not available or context invalid, fallback to filesystem check
+        Logger().w('Failed to read DownloadBloc state, falling back to filesystem check: $e');
       }
     }
 

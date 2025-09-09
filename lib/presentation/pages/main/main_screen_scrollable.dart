@@ -1086,21 +1086,21 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
       final galleriesNeedDownload = <Content>[];
       int alreadyDownloadedCount = 0;
 
-      for (final content in contentState.contents) {
-        try {
-          final isDownloaded = await ContentDownloadCache.isDownloaded(content.id, context);
-          if (isDownloaded) {
-            alreadyDownloadedCount++;
-            Logger().i('Skipping already downloaded gallery: ${content.title}');
-          } else {
-            galleriesNeedDownload.add(content);
-          }
-        } catch (e) {
-          Logger().e('Error checking download status for ${content.id}: $e');
-          // If we can't check status, assume it needs download to be safe
-          galleriesNeedDownload.add(content);
-        }
-      }
+       for (final content in contentState.contents) {
+         try {
+           final isDownloaded = await ContentDownloadCache.isDownloaded(content.id, mounted ? context : null);
+           if (isDownloaded) {
+             alreadyDownloadedCount++;
+             Logger().i('Skipping already downloaded gallery: ${content.title}');
+           } else {
+             galleriesNeedDownload.add(content);
+           }
+         } catch (e) {
+           Logger().e('Error checking download status for ${content.id}: $e');
+           // If we can't check status, assume it needs download to be safe
+           galleriesNeedDownload.add(content);
+         }
+       }
 
       // Hide the loading snackbar
       if (mounted) {
@@ -1130,29 +1130,30 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
       }
 
       // Show confirmation dialog with accurate count
-      final confirm = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(AppLocalizations.of(context)!.downloadNewGalleries),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(AppLocalizations.of(context)!.foundGalleries),
-              SizedBox(height: 8),
-              Text(AppLocalizations.of(context)!.newGalleriesToDownload(galleriesNeedDownload.length)),
-              Text(AppLocalizations.of(context)!.alreadyDownloaded(alreadyDownloadedCount)),
-              SizedBox(height: 12),
-              if (galleriesNeedDownload.isNotEmpty)
-                Text(
-                  AppLocalizations.of(context)!.downloadInfo(galleriesNeedDownload.length),
-                  style: TextStyle(fontWeight: FontWeight.normal),
-                ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
+      if (mounted) {
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(AppLocalizations.of(context)!.downloadNewGalleries),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(AppLocalizations.of(context)!.foundGalleries),
+                SizedBox(height: 8),
+                Text(AppLocalizations.of(context)!.newGalleriesToDownload(galleriesNeedDownload.length)),
+                Text(AppLocalizations.of(context)!.alreadyDownloaded(alreadyDownloadedCount)),
+                SizedBox(height: 12),
+                if (galleriesNeedDownload.isNotEmpty)
+                  Text(
+                    AppLocalizations.of(context)!.downloadInfo(galleriesNeedDownload.length),
+                    style: TextStyle(fontWeight: FontWeight.normal),
+                  ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
               child: Text(AppLocalizations.of(context)!.cancel),
             ),
             ElevatedButton(
@@ -1164,9 +1165,11 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
       );
 
       if (confirm != true) return;
+      }
+
+      if (!mounted) return;
 
       // Get download bloc and queue only new downloads
-      if (!mounted) return;
       final downloadBloc = context.read<DownloadBloc>();
       int queuedCount = 0;
 

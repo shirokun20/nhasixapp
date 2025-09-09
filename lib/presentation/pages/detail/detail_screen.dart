@@ -1162,34 +1162,33 @@ class _DetailScreenState extends State<DetailScreen> {
       Logger().e('Error sharing content: $e');
       
       // Fallback: copy to clipboard if sharing fails
-      if (mounted) {
         final contentUrl = 'https://nhentai.net/g/${content.id}/';
         await Clipboard.setData(ClipboardData(text: contentUrl));
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(
-                  Icons.content_copy,
-                  color: Theme.of(context).colorScheme.onError,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    AppLocalizations.of(context)!.shareFailed,
-                    style: TextStyleConst.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onError,
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(
+                    Icons.content_copy,
+                    color: Theme.of(context).colorScheme.onError,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      AppLocalizations.of(context)!.shareFailed,
+                      style: TextStyleConst.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onError,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
+          );
+        }
     }
   }
 

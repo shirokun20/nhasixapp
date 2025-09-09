@@ -501,6 +501,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       elevation: 0,
                     ),
                     onPressed: () async {
+                      final settingsCubit = context.read<SettingsCubit>();
                       final confirm = await showDialog<bool>(
                         context: context,
                         builder: (ctx) => AlertDialog(
@@ -528,7 +529,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       );
                       if (confirm == true) {
-                        context.read<SettingsCubit>().resetToDefaults();
+                        settingsCubit.resetToDefaults();
                       }
                     },
                   ),

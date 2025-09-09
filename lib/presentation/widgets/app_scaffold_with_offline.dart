@@ -198,30 +198,32 @@ class AppScaffoldWithOffline extends StatelessWidget {
         ),
       );
 
-      // Check actual connectivity
-      final connectivity = Connectivity();
-      final connectivityResult = await connectivity.checkConnectivity();
-      
-      if (connectivityResult != ConnectivityResult.none) {
-        // Connection available - switch to online mode
-        AppStateManager().enableOnlineMode();
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onPrimary),
-                SizedBox(width: 12),
-                Text(AppLocalizations.of(context)!.backOnline),
-              ],
-            ),
-            duration: Duration(seconds: 3),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
-        );
-      } else {
-        // Still no connection
-        ScaffoldMessenger.of(context).showSnackBar(
+       // Check actual connectivity
+       final connectivity = Connectivity();
+       final connectivityResult = await connectivity.checkConnectivity();
+
+       if (!context.mounted) return;
+
+       if (connectivityResult != ConnectivityResult.none) {
+         // Connection available - switch to online mode
+         AppStateManager().enableOnlineMode();
+
+         ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(
+             content: Row(
+               children: [
+                 Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onPrimary),
+                 SizedBox(width: 12),
+                 Text(AppLocalizations.of(context)!.backOnline),
+               ],
+             ),
+             duration: Duration(seconds: 3),
+             backgroundColor: Theme.of(context).colorScheme.primary,
+           ),
+         );
+       } else {
+         // Still no connection
+         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
               children: [
