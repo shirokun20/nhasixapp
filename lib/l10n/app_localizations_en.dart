@@ -2040,4 +2040,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onlineModeWithNetworkAccess => 'Online mode with network access';
+
+  @override
+  String get tagsScreenPlaceholder => 'Tags Screen - To be implemented';
+
+  @override
+  String get artistsScreenPlaceholder => 'Artists Screen - To be implemented';
+
+  @override
+  String get statusScreenPlaceholder => 'Status Screen - To be implemented';
+
+  @override
+  String get pageNotFound => 'Page Not Found';
+
+  @override
+  String pageNotFoundWithUri(String uri) {
+    return 'Page not found: $uri';
+  }
+
+  @override
+  String get goHome => 'Go Home';
+
+  @override
+  String get debugThemeInfo => 'DEBUG: Theme Info';
+
+  @override
+  String get lightTheme => 'Light';
+
+  @override
+  String get darkTheme => 'Dark';
+
+  @override
+  String get amoledTheme => 'AMOLED';
 }

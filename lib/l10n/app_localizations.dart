@@ -3806,6 +3806,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Online mode with network access'**
   String get onlineModeWithNetworkAccess;
+
+  /// No description provided for @tagsScreenPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Tags Screen - To be implemented'**
+  String get tagsScreenPlaceholder;
+
+  /// No description provided for @artistsScreenPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Artists Screen - To be implemented'**
+  String get artistsScreenPlaceholder;
+
+  /// No description provided for @statusScreenPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Status Screen - To be implemented'**
+  String get statusScreenPlaceholder;
+
+  /// No description provided for @pageNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Page Not Found'**
+  String get pageNotFound;
+
+  /// No description provided for @pageNotFoundWithUri.
+  ///
+  /// In en, this message translates to:
+  /// **'Page not found: {uri}'**
+  String pageNotFoundWithUri(String uri);
+
+  /// No description provided for @goHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Go Home'**
+  String get goHome;
+
+  /// No description provided for @debugThemeInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'DEBUG: Theme Info'**
+  String get debugThemeInfo;
+
+  /// No description provided for @lightTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get lightTheme;
+
+  /// No description provided for @darkTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get darkTheme;
+
+  /// No description provided for @amoledTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'AMOLED'**
+  String get amoledTheme;
 }
 
 class _AppLocalizationsDelegate

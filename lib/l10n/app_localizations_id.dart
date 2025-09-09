@@ -2045,4 +2045,36 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get onlineModeWithNetworkAccess => 'Mode online dengan akses jaringan';
+
+  @override
+  String get tagsScreenPlaceholder => 'Layar Tag - Akan diimplementasikan';
+
+  @override
+  String get artistsScreenPlaceholder => 'Layar Artis - Akan diimplementasikan';
+
+  @override
+  String get statusScreenPlaceholder => 'Layar Status - Akan diimplementasikan';
+
+  @override
+  String get pageNotFound => 'Halaman Tidak Ditemukan';
+
+  @override
+  String pageNotFoundWithUri(String uri) {
+    return 'Halaman tidak ditemukan: $uri';
+  }
+
+  @override
+  String get goHome => 'Kembali ke Beranda';
+
+  @override
+  String get debugThemeInfo => 'DEBUG: Info Tema';
+
+  @override
+  String get lightTheme => 'Terang';
+
+  @override
+  String get darkTheme => 'Gelap';
+
+  @override
+  String get amoledTheme => 'AMOLED';
 }

@@ -944,5 +944,22 @@
   "clearAllFiltersTooltip": "Bersihkan semua filter",
   "offlineSomeFeaturesUnavailable": "Anda sedang offline. Beberapa fitur mungkin tidak tersedia.",
   "usingDownloadedContentOnly": "Menggunakan konten yang diunduh saja",
-  "onlineModeWithNetworkAccess": "Mode online dengan akses jaringan"
+  "onlineModeWithNetworkAccess": "Mode online dengan akses jaringan",
+
+  "tagsScreenPlaceholder": "Layar Tag - Akan diimplementasikan",
+  "artistsScreenPlaceholder": "Layar Artis - Akan diimplementasikan",
+  "statusScreenPlaceholder": "Layar Status - Akan diimplementasikan",
+  "pageNotFound": "Halaman Tidak Ditemukan",
+  "pageNotFoundWithUri": "Halaman tidak ditemukan: {uri}",
+  "@pageNotFoundWithUri": {
+    "placeholders": {
+      "uri": {"type": "String"}
+    }
+  },
+  "goHome": "Kembali ke Beranda",
+
+  "debugThemeInfo": "DEBUG: Info Tema",
+  "lightTheme": "Terang",
+  "darkTheme": "Gelap",
+  "amoledTheme": "AMOLED"
 }

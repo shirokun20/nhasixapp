@@ -1080,5 +1080,22 @@
   "clearAllFiltersTooltip": "Clear all filters",
   "offlineSomeFeaturesUnavailable": "You are offline. Some features may not be available.",
   "usingDownloadedContentOnly": "Using downloaded content only",
-  "onlineModeWithNetworkAccess": "Online mode with network access"
+  "onlineModeWithNetworkAccess": "Online mode with network access",
+
+  "tagsScreenPlaceholder": "Tags Screen - To be implemented",
+  "artistsScreenPlaceholder": "Artists Screen - To be implemented",
+  "statusScreenPlaceholder": "Status Screen - To be implemented",
+  "pageNotFound": "Page Not Found",
+  "pageNotFoundWithUri": "Page not found: {uri}",
+  "@pageNotFoundWithUri": {
+    "placeholders": {
+      "uri": {"type": "String"}
+    }
+  },
+  "goHome": "Go Home",
+
+  "debugThemeInfo": "DEBUG: Theme Info",
+  "lightTheme": "Light",
+  "darkTheme": "Dark",
+  "amoledTheme": "AMOLED"
 }

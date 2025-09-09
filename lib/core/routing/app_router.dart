@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/presentation/pages/reader/reader_screen.dart';
 import 'package:nhasixapp/presentation/pages/settings/settings_screen.dart';
@@ -183,8 +184,8 @@ class AppRouter {
       GoRoute(
         path: AppRoute.tags,
         name: AppRoute.tagsName,
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Tags Screen - To be implemented')),
+        builder: (context, state) => Scaffold(
+          body: Center(child: Text(AppLocalizations.of(context)!.tagsScreenPlaceholder)),
         ),
       ),
 
@@ -192,8 +193,8 @@ class AppRouter {
       GoRoute(
         path: AppRoute.artists,
         name: AppRoute.artistsName,
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Artists Screen - To be implemented')),
+        builder: (context, state) => Scaffold(
+          body: Center(child: Text(AppLocalizations.of(context)!.artistsScreenPlaceholder)),
         ),
       ),
 
@@ -213,8 +214,8 @@ class AppRouter {
       GoRoute(
         path: AppRoute.status,
         name: AppRoute.statusName,
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Status Screen - To be implemented')),
+        builder: (context, state) => Scaffold(
+          body: Center(child: Text(AppLocalizations.of(context)!.statusScreenPlaceholder)),
         ),
       ),
 
@@ -228,7 +229,7 @@ class AppRouter {
 
     // Error handling
     errorBuilder: (context, state) => Scaffold(
-      appBar: AppBar(title: const Text('Page Not Found')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.pageNotFound)),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -236,13 +237,13 @@ class AppRouter {
             const Icon(Icons.error_outline, size: 64, color: Colors.red),
             const SizedBox(height: 16),
             Text(
-              'Page not found: ${state.uri}',
+              AppLocalizations.of(context)!.pageNotFoundWithUri(state.uri.toString()),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => context.go(AppRoute.home),
-              child: const Text('Go Home'),
+              child: Text(AppLocalizations.of(context)!.goHome),
             ),
           ],
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:logger/logger.dart';
 
 import '../presentation/cubits/settings/settings_cubit.dart';
@@ -77,7 +78,7 @@ class ThemeDebugUtility {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('DEBUG: Theme Info', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(AppLocalizations.of(context)!.debugThemeInfo, style: const TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   Text('ThemeCubit.currentTheme: ${themeState.currentTheme}'),
                   Text('ThemeCubit.themeMode: ${themeState.themeMode}'),
@@ -90,17 +91,17 @@ class ThemeDebugUtility {
                     children: [
                       ElevatedButton(
                         onPressed: () => testThemeChange(context, 'light'),
-                        child: const Text('Light'),
+                        child: Text(AppLocalizations.of(context)!.lightTheme),
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: () => testThemeChange(context, 'dark'),
-                        child: const Text('Dark'),
+                        child: Text(AppLocalizations.of(context)!.darkTheme),
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: () => testThemeChange(context, 'amoled'),
-                        child: const Text('AMOLED'),
+                        child: Text(AppLocalizations.of(context)!.amoledTheme),
                       ),
                     ],
                   ),
