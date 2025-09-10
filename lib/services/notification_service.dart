@@ -58,6 +58,9 @@ class NotificationService {
   void Function(String contentId)? onPdfRetry;
   void Function(String contentId)? onOpenDownload;
   void Function(String? contentId)? onNavigateToDownloads;
+
+  // Localization callback
+  String Function(String key, {Map<String, dynamic>? args})? _localize;
   
   bool _permissionGranted = false;
   bool _initialized = false;
@@ -171,11 +174,11 @@ class NotificationService {
       debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - Using channel: $_downloadChannelId');
       debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - About to call _notificationsPlugin.show()');
       
-      await _notificationsPlugin.show(
-        notificationId,
-        'Converting to PDF',
-        'Converting ${_truncateTitle(title)} to PDF...',
-        NotificationDetails(
+       await _notificationsPlugin.show(
+         notificationId,
+         _getLocalized('convertingToPdf', fallback: 'Converting to PDF'),
+         _getLocalized('convertingToPdfWithTitle', args: {'title': _truncateTitle(title)}, fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
+         NotificationDetails(
           android: AndroidNotificationDetails(
             _downloadChannelId,
             _downloadChannelName,
@@ -222,11 +225,11 @@ class NotificationService {
 
     try {
       final notificationId = _getNotificationId('pdf_$contentId');
-      await _notificationsPlugin.show(
-        notificationId,
-        'Converting to PDF ($progress%)',
-        'Converting ${_truncateTitle(title)} to PDF...',
-        NotificationDetails(
+       await _notificationsPlugin.show(
+         notificationId,
+         _getLocalized('convertingToPdfProgress', args: {'progress': progress}, fallback: 'Converting to PDF ($progress%)'),
+         _getLocalized('convertingToPdfProgressWithTitle', args: {'title': _truncateTitle(title), 'progress': progress}, fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
+         NotificationDetails(
           android: AndroidNotificationDetails(
             _downloadChannelId,
             _downloadChannelName,
@@ -274,14 +277,14 @@ class NotificationService {
     try {
       _logger.i('NotificationService: Showing PDF conversion completed notification for $contentId');
       final notificationId = _getNotificationId('pdf_$contentId');
-      final message = partsCount > 1 
-          ? '${_truncateTitle(title)} converted to $partsCount PDF files'
-          : '${_truncateTitle(title)} converted to PDF';
+       final message = partsCount > 1
+           ? _getLocalized('pdfCreatedWithParts', args: {'title': _truncateTitle(title), 'partsCount': partsCount}, fallback: '${_truncateTitle(title)} converted to $partsCount PDF files')
+           : _getLocalized('convertingToPdfWithTitle', args: {'title': _truncateTitle(title)}, fallback: '${_truncateTitle(title)} converted to PDF');
 
-      await _notificationsPlugin.show(
-        notificationId,
-        'PDF Created Successfully',
-        message,
+       await _notificationsPlugin.show(
+         notificationId,
+         _getLocalized('pdfCreatedSuccessfully', fallback: 'PDF Created Successfully'),
+         message,
         NotificationDetails(
           android: AndroidNotificationDetails(
             _downloadChannelId,
@@ -353,10 +356,10 @@ class NotificationService {
     try {
       _logger.i('NotificationService: Showing PDF conversion error notification for $contentId');
       final notificationId = _getNotificationId('pdf_$contentId');
-      await _notificationsPlugin.show(
-        notificationId,
-        'PDF Conversion Failed',
-        'Failed to convert ${_truncateTitle(title)} to PDF: ${_truncateError(error)}',
+       await _notificationsPlugin.show(
+         notificationId,
+         _getLocalized('pdfConversionFailed', fallback: 'PDF Conversion Failed'),
+         _getLocalized('pdfConversionFailedWithError', args: {'title': _truncateTitle(title), 'error': _truncateError(error)}, fallback: 'Failed to convert ${_truncateTitle(title)} to PDF: ${_truncateError(error)}'),
         NotificationDetails(
           android: AndroidNotificationDetails(
             _downloadChannelId,
@@ -727,10 +730,10 @@ class NotificationService {
     try {
       final notificationId = _getNotificationId(contentId);
 
-      await _notificationsPlugin.show(
-        notificationId,
-        'Download Started',
-        'Downloading: ${_truncateTitle(title)}',
+       await _notificationsPlugin.show(
+         notificationId,
+         _getLocalized('downloadStarted', fallback: 'Download Started'),
+         _getLocalized('downloadingWithTitle', args: {'title': _truncateTitle(title)}, fallback: 'Downloading: ${_truncateTitle(title)}'),
         NotificationDetails(
           android: AndroidNotificationDetails(
             _downloadChannelId,
@@ -774,12 +777,14 @@ class NotificationService {
     
     try {
       final notificationId = _getNotificationId(contentId);
-      final statusText = isPaused ? 'Paused' : 'Downloading';
+       final statusText = isPaused
+           ? _getLocalized('downloadPaused', fallback: 'Paused')
+           : _getLocalized('downloadingProgress', args: {'progress': progress}, fallback: 'Downloading ($progress%)');
 
-      await _notificationsPlugin.show(
-        notificationId,
-        '$statusText ($progress%)',
-        _truncateTitle(title),
+       await _notificationsPlugin.show(
+         notificationId,
+         statusText,
+         _truncateTitle(title),
         NotificationDetails(
           android: AndroidNotificationDetails(
             _downloadChannelId,
@@ -850,10 +855,10 @@ class NotificationService {
     try {
       final notificationId = _getNotificationId(contentId);
 
-      await _notificationsPlugin.show(
-        notificationId,
-        'Download Complete',
-        'Downloaded: ${_truncateTitle(title)}',
+       await _notificationsPlugin.show(
+         notificationId,
+         _getLocalized('downloadComplete', fallback: 'Download Complete'),
+         _getLocalized('downloadedWithTitle', args: {'title': _truncateTitle(title)}, fallback: 'Downloaded: ${_truncateTitle(title)}'),
         NotificationDetails(
           android: AndroidNotificationDetails(
             _downloadChannelId,
@@ -900,10 +905,10 @@ class NotificationService {
     try {
       final notificationId = _getNotificationId(contentId);
 
-      await _notificationsPlugin.show(
-        notificationId,
-        'Download Failed',
-        'Failed: ${_truncateTitle(title)}',
+       await _notificationsPlugin.show(
+         notificationId,
+         _getLocalized('downloadFailed', fallback: 'Download Failed'),
+         _getLocalized('downloadFailedWithTitle', args: {'title': _truncateTitle(title)}, fallback: 'Failed: ${_truncateTitle(title)}'),
         NotificationDetails(
           android: AndroidNotificationDetails(
             _downloadChannelId,
@@ -1116,7 +1121,23 @@ class NotificationService {
     if (onPdfRetry != null) this.onPdfRetry = onPdfRetry;
     if (onOpenDownload != null) this.onOpenDownload = onOpenDownload;
     if (onNavigateToDownloads != null) this.onNavigateToDownloads = onNavigateToDownloads;
-    
+
     _logger.i('NotificationService: Callbacks updated');
+  }
+
+  /// Set localization callback for getting localized strings
+  void setLocalizationCallback(String Function(String key, {Map<String, dynamic>? args}) localize) {
+    _localize = localize;
+    _logger.i('NotificationService: Localization callback set');
+  }
+
+  /// Get localized string with fallback
+  String _getLocalized(String key, {Map<String, dynamic>? args, String? fallback}) {
+    try {
+      return _localize?.call(key, args: args) ?? fallback ?? key;
+    } catch (e) {
+      _logger.w('Failed to get localized string for key: $key, error: $e');
+      return fallback ?? key;
+    }
   }
 }

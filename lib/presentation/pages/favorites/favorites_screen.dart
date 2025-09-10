@@ -603,13 +603,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'ID: $contentId',
-                        style: TextStyleConst.withColor(TextStyleConst.caption,
-                            Theme.of(context).colorScheme.onSurfaceVariant),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                       Text(
+                         '${AppLocalizations.of(context)?.idLabel ?? 'ID'}: $contentId',
+                         style: TextStyleConst.withColor(TextStyleConst.caption,
+                             Theme.of(context).colorScheme.onSurfaceVariant),
+                         maxLines: 1,
+                         overflow: TextOverflow.ellipsis,
+                       ),
                       const SizedBox(height: 4),
                       Text(
                         _formatDate(favorite['added_at']),
@@ -719,7 +719,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   String _formatDate(dynamic timestamp) {
-    if (timestamp == null) return 'Unknown';
+    if (timestamp == null) return AppLocalizations.of(context)?.unknown ?? 'Unknown';
 
     try {
       final date = DateTime.fromMillisecondsSinceEpoch(timestamp as int);
@@ -727,16 +727,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       final difference = now.difference(date);
 
       if (difference.inDays > 0) {
-        return '${difference.inDays}d ago';
+        return AppLocalizations.of(context)?.daysAgo(difference.inDays, difference.inDays == 1 ? '' : 's') ?? '${difference.inDays}d ago';
       } else if (difference.inHours > 0) {
-        return '${difference.inHours}h ago';
+        return AppLocalizations.of(context)?.hoursAgo(difference.inHours, difference.inHours == 1 ? '' : 's') ?? '${difference.inHours}h ago';
       } else if (difference.inMinutes > 0) {
-        return '${difference.inMinutes}m ago';
+        return AppLocalizations.of(context)?.minutesAgo(difference.inMinutes, difference.inMinutes == 1 ? '' : 's') ?? '${difference.inMinutes}m ago';
       } else {
         return AppLocalizations.of(context)?.justNow ?? 'Just now';
       }
     } catch (e) {
-      return 'Unknown';
+      return AppLocalizations.of(context)?.unknown ?? 'Unknown';
     }
   }
 
@@ -794,7 +794,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Failed to remove favorite: ${e.toString()}',
+              AppLocalizations.of(context)?.failedToRemoveFavorite(e.toString()) ?? 'Failed to remove favorite: ${e.toString()}',
               style: TextStyleConst.withColor(
                   TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onError),
             ),

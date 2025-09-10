@@ -135,21 +135,7 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
     }
   }
 
-  /// Clear corrupt data and reset flag
-  Future<void> _clearCorruptData() async {
-    try {
-      await Future.wait([
-        _prefs.remove(_keyReaderSettings),
-        _prefs.remove(_keyReadingMode),
-        _prefs.remove(_keyKeepScreenOn),
-        _prefs.remove(_keyShowUI),
-        _prefs.remove(_keyCorruptDataFlag),
-      ]);
-      _logInfo('clearCorruptData', 'Cleared corrupt settings data');
-    } catch (e) {
-      _logError('clearCorruptData', e);
-    }
-  }
+
 
   /// Retry operation with exponential backoff
   Future<T> _retryOperation<T>(
@@ -179,85 +165,39 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
 
   @override
   Future<ReaderSettings> getReaderSettings() async {
-    return _withLock('getReaderSettings', () async {
-      return _retryOperation(
-        'getReaderSettings',
-        () async {
-          _logInfo('getReaderSettings', 'Loading reader settings');
+    // 🚀 OPTIMIZATION: Simplified fast path for reader loading
+    try {
+      // Try to get complete settings first (new format)
+      final settingsJson = _prefs.getString(_keyReaderSettings);
+      if (settingsJson != null && settingsJson.isNotEmpty) {
+        final settings = ReaderSettings.fromJsonString(settingsJson);
+        return settings.validate();
+      }
 
-          // Check if SharedPreferences is available
-          if (!await _isSharedPreferencesAvailable()) {
-            _logError(
-                'getReaderSettings', 'SharedPreferences is not available');
-            return const ReaderSettings();
-          }
+      // Fallback to individual keys for backward compatibility (old format)
+      final readingModeString = _prefs.getString(_keyReadingMode);
+      final keepScreenOn = _prefs.getBool(_keyKeepScreenOn);
+      final showUI = _prefs.getBool(_keyShowUI);
 
-          // Check for corrupt data
-          if (await _isDataCorrupt()) {
-            _logWarning('getReaderSettings',
-                'Corrupt data detected, clearing and using defaults');
-            await _clearCorruptData();
-            return const ReaderSettings();
-          }
+      // Parse reading mode with fallback to default
+      ReadingMode readingMode = ReadingMode.singlePage;
+      if (readingModeString != null) {
+        readingMode = ReadingMode.values.firstWhere(
+          (mode) => mode.name == readingModeString,
+          orElse: () => ReadingMode.singlePage,
+        );
+      }
 
-          try {
-            // Try to get complete settings first (new format)
-            final settingsJson = _prefs.getString(_keyReaderSettings);
-            if (settingsJson != null && settingsJson.isNotEmpty) {
-              _logInfo('getReaderSettings', 'Found complete settings JSON');
-              final settings = ReaderSettings.fromJsonString(settingsJson);
-
-              // Validate the loaded settings
-              final validatedSettings = settings.validate();
-              if (validatedSettings != settings) {
-                _logWarning('getReaderSettings',
-                    'Settings required validation correction');
-              }
-
-              return validatedSettings;
-            }
-
-            // Fallback to individual keys for backward compatibility (old format)
-            _logInfo('getReaderSettings', 'Using backward compatibility mode');
-            final readingModeString = _prefs.getString(_keyReadingMode);
-            final keepScreenOn = _prefs.getBool(_keyKeepScreenOn);
-            final showUI = _prefs.getBool(_keyShowUI);
-
-            // Parse reading mode with fallback to default
-            ReadingMode readingMode = ReadingMode.singlePage;
-            if (readingModeString != null) {
-              try {
-                readingMode = ReadingMode.values.firstWhere(
-                  (mode) => mode.name == readingModeString,
-                  orElse: () => ReadingMode.singlePage,
-                );
-              } catch (e) {
-                _logError('getReaderSettings',
-                    'Invalid reading mode: $readingModeString');
-                readingMode = ReadingMode.singlePage;
-              }
-            }
-
-            final settings = ReaderSettings(
-              readingMode: readingMode,
-              keepScreenOn: keepScreenOn ?? false,
-              showUI: showUI ?? true,
-            );
-
-            _logInfo(
-                'getReaderSettings', 'Successfully loaded settings: $settings');
-            return settings;
-          } catch (e, stackTrace) {
-            _logError('getReaderSettings', e, stackTrace);
-
-            // If we get here, the data might be corrupt
-            await _markDataAsCorrupt();
-            rethrow; // Re-throw to trigger retry mechanism
-          }
-        },
-        const ReaderSettings(), // Fallback to defaults
+      return ReaderSettings(
+        readingMode: readingMode,
+        keepScreenOn: keepScreenOn ?? false,
+        showUI: showUI ?? true,
       );
-    });
+    } catch (e) {
+      // 🚀 OPTIMIZATION: Fast fallback to defaults on any error
+      _logWarning('getReaderSettings', 'Using defaults due to error: $e');
+      return const ReaderSettings();
+    }
   }
 
   @override

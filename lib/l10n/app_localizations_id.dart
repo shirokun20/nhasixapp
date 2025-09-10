@@ -458,7 +458,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String downloadStarted(String title) {
-    return 'Unduhan dimulai: $title';
+    return 'Unduhan Dimulai';
   }
 
   @override
@@ -519,7 +519,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get noFailedDownloads => 'Tidak ada unduhan gagal';
 
   @override
-  String get pdfConversionStarted => 'Konversi PDF dimulai';
+  String pdfConversionStarted(String contentId) {
+    return 'Konversi PDF dimulai untuk $contentId';
+  }
 
   @override
   String get cancelAllDownloads => 'Batalkan Semua Unduhan';
@@ -1282,7 +1284,8 @@ class AppLocalizationsId extends AppLocalizations {
       'Silakan pasang dan jalankan aplikasi ini di perangkat Android.';
 
   @override
-  String get storagePermissionRequired => 'Izin Penyimpanan Diperlukan';
+  String get storagePermissionRequired =>
+      'Izin penyimpanan diperlukan untuk unduhan. Harap berikan izin penyimpanan di pengaturan aplikasi.';
 
   @override
   String get storagePermissionExplanation =>
@@ -2077,4 +2080,409 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get amoledTheme => 'AMOLED';
+
+  @override
+  String get systemMessages => 'Pesan Sistem dan Layanan Latar Belakang';
+
+  @override
+  String get notificationMessages => 'Pesan Notifikasi';
+
+  @override
+  String get convertingToPdf => 'Mengkonversi ke PDF';
+
+  @override
+  String convertingToPdfWithTitle(String title) {
+    return 'Mengkonversi $title ke PDF...';
+  }
+
+  @override
+  String convertingToPdfProgress(Object progress) {
+    return 'Mengkonversi ke PDF ($progress%)';
+  }
+
+  @override
+  String convertingToPdfProgressWithTitle(String title, int progress) {
+    return 'Mengkonversi $title ke PDF ($progress%)';
+  }
+
+  @override
+  String get pdfCreatedSuccessfully => 'PDF Berhasil Dibuat';
+
+  @override
+  String pdfCreatedWithParts(String title, int partsCount) {
+    return '$title dikonversi ke $partsCount file PDF';
+  }
+
+  @override
+  String pdfConversionFailed(String contentId, String error) {
+    return 'Konversi PDF gagal untuk $contentId: $error';
+  }
+
+  @override
+  String pdfConversionFailedWithError(String title, String error) {
+    return 'Gagal mengkonversi $title ke PDF: $error';
+  }
+
+  @override
+  String downloadingWithTitle(String title) {
+    return 'Mengunduh: $title';
+  }
+
+  @override
+  String downloadingProgress(Object progress) {
+    return 'Mengunduh ($progress%)';
+  }
+
+  @override
+  String downloadedWithTitle(String title) {
+    return 'Diunduh: $title';
+  }
+
+  @override
+  String downloadFailedWithTitle(String title) {
+    return 'Gagal: $title';
+  }
+
+  @override
+  String get downloadPaused => 'Dijeda';
+
+  @override
+  String get downloadResumed => 'Dilanjutkan';
+
+  @override
+  String get downloadCancelled => 'Dibatalkan';
+
+  @override
+  String get downloadRetry => 'Coba Lagi';
+
+  @override
+  String get downloadOpen => 'Buka';
+
+  @override
+  String get pdfOpen => 'Buka PDF';
+
+  @override
+  String get pdfShare => 'Bagikan';
+
+  @override
+  String get pdfRetry => 'Coba Lagi PDF';
+
+  @override
+  String get downloadServiceMessages => 'Pesan Layanan Unduhan';
+
+  @override
+  String downloadRangeInfo(int startPage, int endPage) {
+    return ' (Halaman $startPage-$endPage)';
+  }
+
+  @override
+  String downloadRangeComplete(int startPage, int endPage) {
+    return ' (Halaman $startPage-$endPage)';
+  }
+
+  @override
+  String invalidPageRange(int start, int end, int total) {
+    return 'Rentang halaman tidak valid: $start-$end (total: $total)';
+  }
+
+  @override
+  String noDataReceived(String url) {
+    return 'Tidak ada data yang diterima untuk gambar: $url';
+  }
+
+  @override
+  String createdNoMediaFile(String path) {
+    return 'File .nomedia dibuat untuk privasi: $path';
+  }
+
+  @override
+  String get privacyProtectionEnsured =>
+      'Perlindungan privasi dipastikan untuk unduhan yang ada';
+
+  @override
+  String get pdfConversionMessages => 'Pesan Layanan Konversi PDF';
+
+  @override
+  String pdfConversionCompleted(String contentId) {
+    return 'Konversi PDF berhasil diselesaikan untuk $contentId';
+  }
+
+  @override
+  String pdfPartProcessing(int part) {
+    return 'Memproses bagian $part dalam isolate...';
+  }
+
+  @override
+  String get pdfSingleProcessing => 'Memproses PDF tunggal dalam isolate...';
+
+  @override
+  String pdfSplitRequired(int totalParts, int totalPages) {
+    return 'Memisahkan menjadi $totalParts bagian ($totalPages halaman)';
+  }
+
+  @override
+  String pdfCreatedFiles(int partsCount, int pageCount) {
+    return 'Dibuat $partsCount file PDF dengan $pageCount total halaman';
+  }
+
+  @override
+  String get pdfNoImagesProvided =>
+      'Tidak ada gambar yang disediakan untuk konversi PDF';
+
+  @override
+  String pdfFailedToCreatePart(int part, String error) {
+    return 'Gagal membuat bagian PDF $part: $error';
+  }
+
+  @override
+  String pdfFailedToCreate(String error) {
+    return 'Gagal membuat PDF: $error';
+  }
+
+  @override
+  String pdfOutputDirectoryCreated(String path) {
+    return 'Direktori output PDF dibuat: $path';
+  }
+
+  @override
+  String pdfUsingFallbackDirectory(String path) {
+    return 'Menggunakan direktori fallback: $path';
+  }
+
+  @override
+  String pdfInfoSaved(String contentId, int partsCount, int pageCount) {
+    return 'Info PDF disimpan untuk $contentId ($partsCount bagian, $pageCount halaman)';
+  }
+
+  @override
+  String pdfExistsForContent(String contentId, String exists) {
+    return 'PDF ada untuk $contentId: $exists';
+  }
+
+  @override
+  String pdfFoundFiles(String contentId, int count) {
+    return 'Ditemukan $count file PDF untuk $contentId';
+  }
+
+  @override
+  String pdfDeletedFiles(String contentId, int count) {
+    return 'Berhasil menghapus $count file PDF untuk $contentId';
+  }
+
+  @override
+  String pdfTotalSize(String contentId, int sizeBytes) {
+    return 'Total ukuran PDF untuk $contentId: $sizeBytes bytes';
+  }
+
+  @override
+  String pdfCleanupStarted(int maxAge) {
+    return 'Memulai pembersihan PDF, menghapus file yang lebih lama dari $maxAge hari';
+  }
+
+  @override
+  String pdfCleanupCompleted(int deletedCount) {
+    return 'Pembersihan selesai, menghapus $deletedCount file PDF lama';
+  }
+
+  @override
+  String pdfStatistics(Object averageFilesPerContent, Object totalFiles,
+      Object totalSizeFormatted, Object uniqueContents) {
+    return 'Statistik PDF - $totalFiles file, $totalSizeFormatted total ukuran, $uniqueContents konten unik, $averageFilesPerContent rata-rata file per konten';
+  }
+
+  @override
+  String get historyCleanupMessages => 'Pesan Layanan Pembersihan Riwayat';
+
+  @override
+  String get historyCleanupServiceInitialized =>
+      'Layanan Pembersihan Riwayat diinisialisasi';
+
+  @override
+  String get historyCleanupServiceDisposed =>
+      'Layanan Pembersihan Riwayat dibuang';
+
+  @override
+  String get autoCleanupDisabled =>
+      'Pembersihan otomatis riwayat dinonaktifkan';
+
+  @override
+  String cleanupServiceStarted(int intervalHours) {
+    return 'Layanan pembersihan dimulai dengan interval $intervalHours jam';
+  }
+
+  @override
+  String performingHistoryCleanup(String reason) {
+    return 'Melakukan pembersihan riwayat: $reason';
+  }
+
+  @override
+  String historyCleanupCompleted(int clearedCount, String reason) {
+    return 'Pembersihan riwayat selesai: membersihkan $clearedCount entri ($reason)';
+  }
+
+  @override
+  String get manualHistoryCleanup => 'Melakukan pembersihan riwayat manual';
+
+  @override
+  String get updatedLastAppAccess =>
+      'Memperbarui waktu akses aplikasi terakhir';
+
+  @override
+  String get updatedLastCleanupTime => 'Memperbarui waktu pembersihan terakhir';
+
+  @override
+  String intervalCleanup(int intervalHours) {
+    return 'Pembersihan interval ($intervalHours jam)';
+  }
+
+  @override
+  String inactivityCleanup(int inactivityDays) {
+    return 'Pembersihan tidak aktif ($inactivityDays hari)';
+  }
+
+  @override
+  String maxAgeCleanup(int maxDays) {
+    return 'Pembersihan usia maksimal ($maxDays hari)';
+  }
+
+  @override
+  String get initialCleanupSetup => 'Pengaturan pembersihan awal';
+
+  @override
+  String shouldCleanupOldHistory(String shouldCleanup) {
+    return 'Harus membersihkan riwayat lama: $shouldCleanup';
+  }
+
+  @override
+  String get analyticsMessages => 'Pesan Layanan Analytics';
+
+  @override
+  String analyticsServiceInitialized(String enabled) {
+    return 'Layanan analytics diinisialisasi - pelacakan $enabled';
+  }
+
+  @override
+  String get analyticsTrackingEnabled =>
+      'Pelacakan analytics diaktifkan oleh pengguna';
+
+  @override
+  String get analyticsTrackingDisabled =>
+      'Pelacakan analytics dinonaktifkan oleh pengguna - data dibersihkan';
+
+  @override
+  String get analyticsDataCleared =>
+      'Data analytics dibersihkan atas permintaan pengguna';
+
+  @override
+  String get analyticsServiceDisposed => 'Layanan analytics dibuang';
+
+  @override
+  String analyticsEventTracked(String eventType, String eventName) {
+    return '📊 Analytics: $eventType - $eventName';
+  }
+
+  @override
+  String get appStartedEvent => 'Event aplikasi dimulai dilacak';
+
+  @override
+  String sessionEndEvent(int minutes) {
+    return 'Event akhir sesi dilacak ($minutes menit)';
+  }
+
+  @override
+  String get analyticsEnabledEvent => 'Event analytics diaktifkan dilacak';
+
+  @override
+  String get analyticsDisabledEvent => 'Event analytics dinonaktifkan dilacak';
+
+  @override
+  String screenViewEvent(String screenName) {
+    return 'Tampilan layar dilacak: $screenName';
+  }
+
+  @override
+  String userActionEvent(String action) {
+    return 'Aksi pengguna dilacak: $action';
+  }
+
+  @override
+  String performanceEvent(String operation, int durationMs) {
+    return 'Performa dilacak: $operation (${durationMs}ms)';
+  }
+
+  @override
+  String errorEvent(String errorType, String errorMessage) {
+    return 'Error dilacak: $errorType - $errorMessage';
+  }
+
+  @override
+  String featureUsageEvent(String feature) {
+    return 'Penggunaan fitur dilacak: $feature';
+  }
+
+  @override
+  String readingSessionEvent(String contentId, int minutes, int pages) {
+    return 'Sesi membaca dilacak: $contentId (${minutes}mnt, $pages halaman)';
+  }
+
+  @override
+  String get offlineManagerMessages => 'Pesan Manajer Konten Offline';
+
+  @override
+  String offlineContentAvailable(String contentId, String available) {
+    return 'Konten $contentId tersedia offline: $available';
+  }
+
+  @override
+  String offlineContentPath(String contentId, String path) {
+    return 'Path konten offline untuk $contentId: $path';
+  }
+
+  @override
+  String foundExistingFiles(int count) {
+    return 'Ditemukan $count file yang sudah diunduh';
+  }
+
+  @override
+  String offlineImageUrlsFound(String contentId, int count) {
+    return 'Ditemukan $count URL gambar offline untuk $contentId';
+  }
+
+  @override
+  String offlineContentIdsFound(int count) {
+    return 'Ditemukan $count ID konten offline';
+  }
+
+  @override
+  String searchingOfflineContent(String query) {
+    return 'Mencari konten offline untuk: $query';
+  }
+
+  @override
+  String offlineContentMetadata(String contentId, String source) {
+    return 'Metadata konten offline untuk $contentId: $source';
+  }
+
+  @override
+  String offlineContentCreated(String contentId) {
+    return 'Konten offline dibuat untuk $contentId';
+  }
+
+  @override
+  String offlineStorageUsage(int sizeBytes) {
+    return 'Penggunaan penyimpanan offline: $sizeBytes bytes';
+  }
+
+  @override
+  String get cleanupOrphanedFilesStarted =>
+      'Memulai pembersihan file offline yang yatim piatu';
+
+  @override
+  String get cleanupOrphanedFilesCompleted =>
+      'Pembersihan file offline yang yatim piatu selesai';
+
+  @override
+  String removedOrphanedDirectory(String path) {
+    return 'Direktori yatim piatu dihapus: $path';
+  }
 }

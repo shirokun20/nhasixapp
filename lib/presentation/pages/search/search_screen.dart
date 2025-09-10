@@ -541,21 +541,21 @@ class _SearchScreenState extends State<SearchScreen> {
               _buildFilterNavigationButtons(),
               const SizedBox(height: 16),
 
-              // Single select filters (kept in SearchScreen)
-              _buildSingleSelectFilter(
-                  'Language', _languages, _currentFilter.language, (value) {
-                _currentFilter = _currentFilter.copyWith(language: value);
-                Logger().i(_currentFilter.language);
-                _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
-                setState(() {});
-              }),
-              const SizedBox(height: 16),
-              _buildSingleSelectFilter(
-                  'Category', _categories, _currentFilter.category, (value) {
-                _currentFilter = _currentFilter.copyWith(category: value);
-                _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
-                setState(() {});
-              }),
+               // Single select filters (kept in SearchScreen)
+               _buildSingleSelectFilter(
+                   AppLocalizations.of(context)!.languageLabel, _languages, _currentFilter.language, (value) {
+                 _currentFilter = _currentFilter.copyWith(language: value);
+                 Logger().i(_currentFilter.language);
+                 _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
+                 setState(() {});
+               }),
+               const SizedBox(height: 16),
+               _buildSingleSelectFilter(
+                   AppLocalizations.of(context)!.categoryLabel, _categories, _currentFilter.category, (value) {
+                 _currentFilter = _currentFilter.copyWith(category: value);
+                 _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
+                 setState(() {});
+               }),
             ],
           ),
         ),

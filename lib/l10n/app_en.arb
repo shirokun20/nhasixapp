@@ -1094,8 +1094,416 @@
   },
   "goHome": "Go Home",
 
-  "debugThemeInfo": "DEBUG: Theme Info",
-  "lightTheme": "Light",
-  "darkTheme": "Dark",
-  "amoledTheme": "AMOLED"
+   "debugThemeInfo": "DEBUG: Theme Info",
+   "lightTheme": "Light",
+   "darkTheme": "Dark",
+   "amoledTheme": "AMOLED",
+
+   "systemMessages": "System Messages and Background Services",
+
+   "notificationMessages": "Notification Messages",
+   "convertingToPdf": "Converting to PDF",
+   "convertingToPdfWithTitle": "Converting {title} to PDF...",
+   "@convertingToPdfWithTitle": {
+     "placeholders": {
+       "title": {"type": "String"}
+     }
+   },
+   "convertingToPdfProgress": "Converting to PDF ({progress}%)",
+   "convertingToPdfProgressWithTitle": "Converting {title} to PDF ({progress}%)",
+   "@convertingToPdfProgressWithTitle": {
+     "placeholders": {
+       "title": {"type": "String"},
+       "progress": {"type": "int"}
+     }
+   },
+   "pdfCreatedSuccessfully": "PDF Created Successfully",
+   "pdfCreatedWithParts": "{title} converted to {partsCount} PDF files",
+   "@pdfCreatedWithParts": {
+     "placeholders": {
+       "title": {"type": "String"},
+       "partsCount": {"type": "int"}
+     }
+   },
+   "pdfConversionFailed": "PDF Conversion Failed",
+   "pdfConversionFailedWithError": "Failed to convert {title} to PDF: {error}",
+   "@pdfConversionFailedWithError": {
+     "placeholders": {
+       "title": {"type": "String"},
+       "error": {"type": "String"}
+     }
+   },
+   "downloadStarted": "Download Started",
+   "downloadingWithTitle": "Downloading: {title}",
+   "@downloadingWithTitle": {
+     "placeholders": {
+       "title": {"type": "String"}
+     }
+   },
+   "downloadingProgress": "Downloading ({progress}%)",
+   "downloadComplete": "Download Complete",
+   "downloadedWithTitle": "Downloaded: {title}",
+   "@downloadedWithTitle": {
+     "placeholders": {
+       "title": {"type": "String"}
+     }
+   },
+   "downloadFailed": "Download Failed",
+   "downloadFailedWithTitle": "Failed: {title}",
+   "@downloadFailedWithTitle": {
+     "placeholders": {
+       "title": {"type": "String"}
+     }
+   },
+   "downloadPaused": "Paused",
+   "downloadResumed": "Resumed",
+   "downloadCancelled": "Cancelled",
+   "downloadRetry": "Retry",
+   "downloadOpen": "Open",
+   "pdfOpen": "Open PDF",
+   "pdfShare": "Share",
+   "pdfRetry": "Retry PDF",
+
+   "downloadServiceMessages": "Download Service Messages",
+   "downloadRangeInfo": " (Pages {startPage}-{endPage})",
+   "@downloadRangeInfo": {
+     "placeholders": {
+       "startPage": {"type": "int"},
+       "endPage": {"type": "int"}
+     }
+   },
+   "downloadRangeComplete": " (Pages {startPage}-{endPage})",
+   "@downloadRangeComplete": {
+     "placeholders": {
+       "startPage": {"type": "int"},
+       "endPage": {"type": "int"}
+     }
+   },
+   "invalidPageRange": "Invalid page range: {start}-{end} (total: {total})",
+   "@invalidPageRange": {
+     "placeholders": {
+       "start": {"type": "int"},
+       "end": {"type": "int"},
+       "total": {"type": "int"}
+     }
+   },
+   "storagePermissionRequired": "Storage permission is required for downloads. Please grant storage permission in app settings.",
+   "noDataReceived": "No data received for image: {url}",
+   "@noDataReceived": {
+     "placeholders": {
+       "url": {"type": "String"}
+     }
+   },
+   "createdNoMediaFile": "Created .nomedia file for privacy: {path}",
+   "@createdNoMediaFile": {
+     "placeholders": {
+       "path": {"type": "String"}
+     }
+   },
+   "privacyProtectionEnsured": "Privacy protection ensured for existing downloads",
+
+   "pdfConversionMessages": "PDF Conversion Service Messages",
+   "pdfConversionStarted": "PDF conversion started for {contentId}",
+   "@pdfConversionStarted": {
+     "placeholders": {
+       "contentId": {"type": "String"}
+     }
+   },
+   "pdfConversionCompleted": "PDF conversion completed successfully for {contentId}",
+   "@pdfConversionCompleted": {
+     "placeholders": {
+       "contentId": {"type": "String"}
+     }
+   },
+   "pdfConversionFailed": "PDF conversion failed for {contentId}: {error}",
+   "@pdfConversionFailed": {
+     "placeholders": {
+       "contentId": {"type": "String"},
+       "error": {"type": "String"}
+     }
+   },
+   "pdfPartProcessing": "Processing part {part} in isolate...",
+   "@pdfPartProcessing": {
+     "placeholders": {
+       "part": {"type": "int"}
+     }
+   },
+   "pdfSingleProcessing": "Processing single PDF in isolate...",
+   "pdfSplitRequired": "Splitting into {totalParts} parts ({totalPages} pages)",
+   "@pdfSplitRequired": {
+     "placeholders": {
+       "totalParts": {"type": "int"},
+       "totalPages": {"type": "int"}
+     }
+   },
+   "pdfCreatedFiles": "Created {partsCount} PDF file(s) with {pageCount} total pages",
+   "@pdfCreatedFiles": {
+     "placeholders": {
+       "partsCount": {"type": "int"},
+       "pageCount": {"type": "int"}
+     }
+   },
+   "pdfNoImagesProvided": "No images provided for PDF conversion",
+   "pdfFailedToCreatePart": "Failed to create PDF part {part}: {error}",
+   "@pdfFailedToCreatePart": {
+     "placeholders": {
+       "part": {"type": "int"},
+       "error": {"type": "String"}
+     }
+   },
+   "pdfFailedToCreate": "Failed to create PDF: {error}",
+   "@pdfFailedToCreate": {
+     "placeholders": {
+       "error": {"type": "String"}
+     }
+   },
+   "pdfOutputDirectoryCreated": "Created PDF output directory: {path}",
+   "@pdfOutputDirectoryCreated": {
+     "placeholders": {
+       "path": {"type": "String"}
+     }
+   },
+   "pdfUsingFallbackDirectory": "Using fallback directory: {path}",
+   "@pdfUsingFallbackDirectory": {
+     "placeholders": {
+       "path": {"type": "String"}
+     }
+   },
+   "pdfInfoSaved": "PDF info saved for {contentId} ({partsCount} parts, {pageCount} pages)",
+   "@pdfInfoSaved": {
+     "placeholders": {
+       "contentId": {"type": "String"},
+       "partsCount": {"type": "int"},
+       "pageCount": {"type": "int"}
+     }
+   },
+   "pdfExistsForContent": "PDF exists for {contentId}: {exists}",
+   "@pdfExistsForContent": {
+     "placeholders": {
+       "contentId": {"type": "String"},
+       "exists": {"type": "String"}
+     }
+   },
+   "pdfFoundFiles": "Found {count} PDF file(s) for {contentId}",
+   "@pdfFoundFiles": {
+     "placeholders": {
+       "contentId": {"type": "String"},
+       "count": {"type": "int"}
+     }
+   },
+   "pdfDeletedFiles": "Successfully deleted {count} PDF file(s) for {contentId}",
+   "@pdfDeletedFiles": {
+     "placeholders": {
+       "contentId": {"type": "String"},
+       "count": {"type": "int"}
+     }
+   },
+   "pdfTotalSize": "Total PDF size for {contentId}: {sizeBytes} bytes",
+   "@pdfTotalSize": {
+     "placeholders": {
+       "contentId": {"type": "String"},
+       "sizeBytes": {"type": "int"}
+     }
+   },
+   "pdfCleanupStarted": "Starting PDF cleanup, deleting files older than {maxAge} days",
+   "@pdfCleanupStarted": {
+     "placeholders": {
+       "maxAge": {"type": "int"}
+     }
+   },
+   "pdfCleanupCompleted": "Cleanup completed, deleted {deletedCount} old PDF files",
+   "@pdfCleanupCompleted": {
+     "placeholders": {
+       "deletedCount": {"type": "int"}
+     }
+   },
+   "pdfStatistics": "PDF statistics - {totalFiles} files, {totalSizeFormatted} total size, {uniqueContents} unique contents, {averageFilesPerContent} avg files per content",
+
+   "historyCleanupMessages": "History Cleanup Service Messages",
+   "historyCleanupServiceInitialized": "History Cleanup Service initialized",
+   "historyCleanupServiceDisposed": "History Cleanup Service disposed",
+   "autoCleanupDisabled": "Auto cleanup history is disabled",
+   "cleanupServiceStarted": "Cleanup service started with {intervalHours}h interval",
+   "@cleanupServiceStarted": {
+     "placeholders": {
+       "intervalHours": {"type": "int"}
+     }
+   },
+   "performingHistoryCleanup": "Performing history cleanup: {reason}",
+   "@performingHistoryCleanup": {
+     "placeholders": {
+       "reason": {"type": "String"}
+     }
+   },
+   "historyCleanupCompleted": "History cleanup completed: cleared {clearedCount} entries ({reason})",
+   "@historyCleanupCompleted": {
+     "placeholders": {
+       "clearedCount": {"type": "int"},
+       "reason": {"type": "String"}
+     }
+   },
+   "manualHistoryCleanup": "Performing manual history cleanup",
+   "updatedLastAppAccess": "Updated last app access time",
+   "updatedLastCleanupTime": "Updated last cleanup time",
+   "intervalCleanup": "Interval cleanup ({intervalHours}h)",
+   "@intervalCleanup": {
+     "placeholders": {
+       "intervalHours": {"type": "int"}
+     }
+   },
+   "inactivityCleanup": "Inactivity cleanup ({inactivityDays} days)",
+   "@inactivityCleanup": {
+     "placeholders": {
+       "inactivityDays": {"type": "int"}
+     }
+   },
+   "maxAgeCleanup": "Max age cleanup ({maxDays} days)",
+   "@maxAgeCleanup": {
+     "placeholders": {
+       "maxDays": {"type": "int"}
+     }
+   },
+   "initialCleanupSetup": "Initial cleanup setup",
+   "shouldCleanupOldHistory": "Should cleanup old history: {shouldCleanup}",
+   "@shouldCleanupOldHistory": {
+     "placeholders": {
+       "shouldCleanup": {"type": "String"}
+     }
+   },
+
+   "analyticsMessages": "Analytics Service Messages",
+   "analyticsServiceInitialized": "Analytics service initialized - tracking {enabled}",
+   "@analyticsServiceInitialized": {
+     "placeholders": {
+       "enabled": {"type": "String"}
+     }
+   },
+   "analyticsTrackingEnabled": "Analytics tracking enabled by user",
+   "analyticsTrackingDisabled": "Analytics tracking disabled by user - data cleared",
+   "analyticsDataCleared": "Analytics data cleared by user request",
+   "analyticsServiceDisposed": "Analytics service disposed",
+   "analyticsEventTracked": "📊 Analytics: {eventType} - {eventName}",
+   "@analyticsEventTracked": {
+     "placeholders": {
+       "eventType": {"type": "String"},
+       "eventName": {"type": "String"}
+     }
+   },
+   "appStartedEvent": "App started event tracked",
+   "sessionEndEvent": "Session end event tracked ({minutes} minutes)",
+   "@sessionEndEvent": {
+     "placeholders": {
+       "minutes": {"type": "int"}
+     }
+   },
+   "analyticsEnabledEvent": "Analytics enabled event tracked",
+   "analyticsDisabledEvent": "Analytics disabled event tracked",
+   "screenViewEvent": "Screen view tracked: {screenName}",
+   "@screenViewEvent": {
+     "placeholders": {
+       "screenName": {"type": "String"}
+     }
+   },
+   "userActionEvent": "User action tracked: {action}",
+   "@userActionEvent": {
+     "placeholders": {
+       "action": {"type": "String"}
+     }
+   },
+   "performanceEvent": "Performance tracked: {operation} ({durationMs}ms)",
+   "@performanceEvent": {
+     "placeholders": {
+       "operation": {"type": "String"},
+       "durationMs": {"type": "int"}
+     }
+   },
+   "errorEvent": "Error tracked: {errorType} - {errorMessage}",
+   "@errorEvent": {
+     "placeholders": {
+       "errorType": {"type": "String"},
+       "errorMessage": {"type": "String"}
+     }
+   },
+   "featureUsageEvent": "Feature usage tracked: {feature}",
+   "@featureUsageEvent": {
+     "placeholders": {
+       "feature": {"type": "String"}
+     }
+   },
+   "readingSessionEvent": "Reading session tracked: {contentId} ({minutes}min, {pages} pages)",
+   "@readingSessionEvent": {
+     "placeholders": {
+       "contentId": {"type": "String"},
+       "minutes": {"type": "int"},
+       "pages": {"type": "int"}
+     }
+   },
+
+   "offlineManagerMessages": "Offline Content Manager Messages",
+   "offlineContentAvailable": "Content {contentId} is available offline: {available}",
+   "@offlineContentAvailable": {
+     "placeholders": {
+       "contentId": {"type": "String"},
+       "available": {"type": "String"}
+     }
+   },
+   "offlineContentPath": "Offline content path for {contentId}: {path}",
+   "@offlineContentPath": {
+     "placeholders": {
+       "contentId": {"type": "String"},
+       "path": {"type": "String"}
+     }
+   },
+   "foundExistingFiles": "Found {count} existing downloaded files",
+   "@foundExistingFiles": {
+     "placeholders": {
+       "count": {"type": "int"}
+     }
+   },
+   "offlineImageUrlsFound": "Found {count} offline image URLs for {contentId}",
+   "@offlineImageUrlsFound": {
+     "placeholders": {
+       "contentId": {"type": "String"},
+       "count": {"type": "int"}
+     }
+   },
+   "offlineContentIdsFound": "Found {count} offline content IDs",
+   "@offlineContentIdsFound": {
+     "placeholders": {
+       "count": {"type": "int"}
+     }
+   },
+   "searchingOfflineContent": "Searching offline content for: {query}",
+   "@searchingOfflineContent": {
+     "placeholders": {
+       "query": {"type": "String"}
+     }
+   },
+   "offlineContentMetadata": "Offline content metadata for {contentId}: {source}",
+   "@offlineContentMetadata": {
+     "placeholders": {
+       "contentId": {"type": "String"},
+       "source": {"type": "String"}
+     }
+   },
+   "offlineContentCreated": "Offline content created for {contentId}",
+   "@offlineContentCreated": {
+     "placeholders": {
+       "contentId": {"type": "String"}
+     }
+   },
+   "offlineStorageUsage": "Offline storage usage: {sizeBytes} bytes",
+   "@offlineStorageUsage": {
+     "placeholders": {
+       "sizeBytes": {"type": "int"}
+     }
+   },
+   "cleanupOrphanedFilesStarted": "Starting cleanup of orphaned offline files",
+   "cleanupOrphanedFilesCompleted": "Cleanup of orphaned offline files completed",
+   "removedOrphanedDirectory": "Removed orphaned directory: {path}",
+   "@removedOrphanedDirectory": {
+     "placeholders": {
+       "path": {"type": "String"}
+     }
+   }
 }

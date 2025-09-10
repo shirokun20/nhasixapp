@@ -33,48 +33,53 @@ class ReaderCubit extends Cubit<ReaderState> {
   Timer? _readingTimer;
   Timer? _autoHideTimer;
 
-  /// Load content for reading with offline support
+  /// Load content for reading with offline support - OPTIMIZED VERSION
   Future<void> loadContent(String contentId, {int initialPage = 1}) async {
     try {
       _stopAutoHideTimer();
-
       emit(ReaderLoading(state));
+
+      final isConnected = networkCubit.isConnected;
+
+      // 🚀 OPTIMIZATION: Run multiple async operations in parallel
+      final results = await Future.wait([
+        // Check offline availability
+        offlineContentManager.isContentAvailableOffline(contentId),
+        // Load reader settings (simplified version)
+        _loadReaderSettingsOptimized(),
+        // If connected, start loading online content in parallel
+        if (isConnected)
+          () async {
+            try {
+              return await getContentDetailUseCase(GetContentDetailParams.fromString(contentId));
+            } catch (e) {
+              _logger.w("Online content load failed: $e");
+              return null;
+            }
+          }()
+        else
+          Future<Content?>.value(null),
+      ]);
+
+      final isOfflineAvailable = results[0] as bool;
+      final savedSettings = results[1] as ReaderSettings;
+      final onlineContent = results.length > 2 ? results[2] as Content? : null;
 
       Content? content;
       bool isOfflineMode = false;
 
-      // Check if content is available offline first
-      final isOfflineAvailable =
-          await offlineContentManager.isContentAvailableOffline(contentId);
-      final isConnected = networkCubit.isConnected;
-
+      // 🚀 OPTIMIZATION: Use cached/preloaded content when possible
       if (isOfflineAvailable && (!isConnected || _shouldPreferOffline())) {
         _logger.i("Loading content from offline storage: $contentId");
         content = await offlineContentManager.createOfflineContent(contentId);
         isOfflineMode = true;
+      } else if (onlineContent != null) {
+        _logger.i("Using preloaded online content: $contentId");
+        content = onlineContent;
+        isOfflineMode = false;
       }
 
-      // If offline content not available or failed, try online
-      if (content == null && isConnected) {
-        _logger.i("Loading content from online source: $contentId");
-        try {
-          final params = GetContentDetailParams.fromString(contentId);
-          content = await getContentDetailUseCase(params);
-          isOfflineMode = false;
-        } catch (e) {
-          _logger
-              .w("Failed to load online content, trying offline fallback: $e");
-          if (isOfflineAvailable) {
-            content =
-                await offlineContentManager.createOfflineContent(contentId);
-            isOfflineMode = true;
-          } else {
-            rethrow;
-          }
-        }
-      }
-
-      // If still no content and offline available, use offline
+      // Fallback to offline if online failed
       if (content == null && isOfflineAvailable) {
         _logger.i("Using offline content as fallback: $contentId");
         content = await offlineContentManager.createOfflineContent(contentId);
@@ -85,18 +90,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         throw Exception('Content not available online or offline');
       }
 
-      // Load saved settings with error handling
-      ReaderSettings savedSettings;
-      try {
-        savedSettings = await readerSettingsRepository.getReaderSettings();
-        _logger.i("Successfully loaded reader settings: $savedSettings");
-      } catch (e, stackTrace) {
-        _logger.e("Failed to load reader settings, using defaults: $e",
-            error: e, stackTrace: stackTrace);
-        savedSettings = const ReaderSettings(); // Use defaults
-      }
-
-      // Emit loaded state with saved settings and offline mode info
+      // 🚀 OPTIMIZATION: Emit loaded state immediately, then handle side effects
       emit(state.copyWith(
         content: content,
         currentPage: initialPage,
@@ -109,6 +103,34 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       emit(ReaderLoaded(state));
 
+      // 🚀 OPTIMIZATION: Handle side effects asynchronously (don't block UI)
+      _handlePostLoadSetup(savedSettings);
+
+    } catch (e, stackTrace) {
+      _logger.e("Reader Cubit: $e, $stackTrace");
+      _stopAutoHideTimer();
+
+      if (!isClosed) {
+        emit(ReaderError(state.copyWith(
+          message: 'Failed to load content: ${e.toString()}',
+        )));
+      }
+    }
+  }
+
+  /// 🚀 OPTIMIZATION: Simplified reader settings loading
+  Future<ReaderSettings> _loadReaderSettingsOptimized() async {
+    try {
+      return await readerSettingsRepository.getReaderSettings();
+    } catch (e) {
+      _logger.w("Failed to load reader settings, using defaults: $e");
+      return const ReaderSettings(); // Use defaults
+    }
+  }
+
+  /// 🚀 OPTIMIZATION: Handle post-load setup asynchronously
+  Future<void> _handlePostLoadSetup(ReaderSettings savedSettings) async {
+    try {
       // Apply keep screen on setting
       if (savedSettings.keepScreenOn) {
         await WakelockPlus.enable();
@@ -117,19 +139,10 @@ class ReaderCubit extends Cubit<ReaderState> {
       // Start reading timer
       _startReadingTimer();
 
-      // Save to history
-      await _saveToHistory();
-    } catch (e, stackTrace) {
-      _logger.e("Reader Cubit: $e, $stackTrace");
-      _stopAutoHideTimer();
-
-      // Check if cubit is still active before emitting state
-      if (!isClosed) {
-        final errorState = state.copyWith(
-          message: 'Failed to load content: ${e.toString()}',
-        );
-        emit(ReaderError(errorState));
-      }
+      // Save to history (don't await to avoid blocking)
+      _saveToHistory();
+    } catch (e) {
+      _logger.w("Post-load setup failed: $e");
     }
   }
 

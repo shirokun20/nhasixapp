@@ -19,6 +19,9 @@ class HistoryCleanupService {
   final GetHistoryCountUseCase getHistoryCountUseCase;
   final Logger _logger;
 
+  // Localization callback
+  String Function(String key, {Map<String, dynamic>? args})? _localize;
+
   Timer? _cleanupTimer;
   bool _isInitialized = false;
 
@@ -27,7 +30,8 @@ class HistoryCleanupService {
     if (_isInitialized) return;
 
     try {
-      _logger.i('Initializing History Cleanup Service');
+      _logger.i(_getLocalized('historyCleanupServiceInitialized',
+        fallback: 'Initializing History Cleanup Service'));
       
       // Update last app access time
       await _updateLastAppAccess();
@@ -36,7 +40,8 @@ class HistoryCleanupService {
       await _startCleanupService();
       
       _isInitialized = true;
-      _logger.d('History Cleanup Service initialized successfully');
+      _logger.d(_getLocalized('historyCleanupServiceInitialized',
+        fallback: 'History Cleanup Service initialized successfully'));
     } catch (e, stackTrace) {
       _logger.e('Failed to initialize History Cleanup Service', 
           error: e, stackTrace: stackTrace);
@@ -49,7 +54,8 @@ class HistoryCleanupService {
       final prefs = await preferencesService.getUserPreferences();
       
       if (!prefs.autoCleanupHistory) {
-        _logger.d('Auto cleanup history is disabled');
+        _logger.d(_getLocalized('autoCleanupDisabled',
+          fallback: 'Auto cleanup history is disabled'));
         return;
       }
 
@@ -59,7 +65,9 @@ class HistoryCleanupService {
       // Schedule periodic cleanup
       _schedulePeriodicCleanup(prefs.historyCleanupIntervalHours);
       
-      _logger.d('Cleanup service started with ${prefs.historyCleanupIntervalHours}h interval');
+      _logger.d(_getLocalized('cleanupServiceStarted',
+        args: {'intervalHours': prefs.historyCleanupIntervalHours},
+        fallback: 'Cleanup service started with ${prefs.historyCleanupIntervalHours}h interval'));
     } catch (e, stackTrace) {
       _logger.e('Failed to start cleanup service', 
           error: e, stackTrace: stackTrace);
@@ -159,7 +167,9 @@ class HistoryCleanupService {
   /// Perform the actual cleanup
   Future<void> _performCleanup(String reason) async {
     try {
-      _logger.i('Performing history cleanup: $reason');
+      _logger.i(_getLocalized('performingHistoryCleanup',
+        args: {'reason': reason},
+        fallback: 'Performing history cleanup: $reason'));
       
       final countBefore = await getHistoryCountUseCase(NoParams());
       
@@ -173,7 +183,9 @@ class HistoryCleanupService {
       final countAfter = await getHistoryCountUseCase(NoParams());
       final clearedCount = countBefore - countAfter;
       
-      _logger.i('History cleanup completed: cleared $clearedCount entries ($reason)');
+      _logger.i(_getLocalized('historyCleanupCompleted',
+        args: {'clearedCount': clearedCount, 'reason': reason},
+        fallback: 'History cleanup completed: cleared $clearedCount entries ($reason)'));
     } catch (e, stackTrace) {
       _logger.e('Failed to perform cleanup', 
           error: e, stackTrace: stackTrace);
@@ -187,7 +199,8 @@ class HistoryCleanupService {
       final updatedPrefs = prefs.copyWith(lastAppAccess: DateTime.now());
       await preferencesService.saveUserPreferences(updatedPrefs);
       
-      _logger.d('Updated last app access time');
+      _logger.d(_getLocalized('updatedLastAppAccess',
+        fallback: 'Updated last app access time'));
     } catch (e, stackTrace) {
       _logger.e('Failed to update last app access', 
           error: e, stackTrace: stackTrace);
@@ -201,7 +214,8 @@ class HistoryCleanupService {
       final updatedPrefs = prefs.copyWith(lastHistoryCleanup: DateTime.now());
       await preferencesService.saveUserPreferences(updatedPrefs);
       
-      _logger.d('Updated last cleanup time');
+      _logger.d(_getLocalized('updatedLastCleanupTime',
+        fallback: 'Updated last cleanup time'));
     } catch (e, stackTrace) {
       _logger.e('Failed to update last cleanup time', 
           error: e, stackTrace: stackTrace);
@@ -211,7 +225,8 @@ class HistoryCleanupService {
   /// Manual cleanup trigger
   Future<void> performManualCleanup() async {
     try {
-      _logger.i('Performing manual history cleanup');
+      _logger.i(_getLocalized('manualHistoryCleanup',
+        fallback: 'Performing manual history cleanup'));
       await _performCleanup('Manual cleanup');
       await _updateLastCleanupTime();
     } catch (e, stackTrace) {
@@ -234,7 +249,8 @@ class HistoryCleanupService {
         await _startCleanupService();
       }
       
-      _logger.d('Cleanup settings updated');
+      _logger.d(_getLocalized('cleanupSettingsUpdated',
+        fallback: 'Cleanup settings updated'));
     } catch (e, stackTrace) {
       _logger.e('Failed to update cleanup settings', 
           error: e, stackTrace: stackTrace);
@@ -268,7 +284,24 @@ class HistoryCleanupService {
   void dispose() {
     _cleanupTimer?.cancel();
     _isInitialized = false;
-    _logger.d('History Cleanup Service disposed');
+    _logger.d(_getLocalized('historyCleanupServiceDisposed',
+      fallback: 'History Cleanup Service disposed'));
+  }
+
+  /// Set localization callback for getting localized strings
+  void setLocalizationCallback(String Function(String key, {Map<String, dynamic>? args}) localize) {
+    _localize = localize;
+    _logger.i('HistoryCleanupService: Localization callback set');
+  }
+
+  /// Get localized string with fallback
+  String _getLocalized(String key, {Map<String, dynamic>? args, String? fallback}) {
+    try {
+      return _localize?.call(key, args: args) ?? fallback ?? key;
+    } catch (e) {
+      _logger.w('Failed to get localized string for key: $key, error: $e');
+      return fallback ?? key;
+    }
   }
 }
 
@@ -313,7 +346,7 @@ class HistoryCleanupStatus {
   /// Check if inactivity cleanup is due
   bool get isInactivityCleanupDue {
     if (!inactivityCleanupEnabled || lastAppAccess == null) return false;
-    
+
     final now = DateTime.now();
     final inactivityDuration = now.difference(lastAppAccess!);
     return inactivityDuration.inDays >= inactivityThresholdDays;
@@ -322,14 +355,14 @@ class HistoryCleanupStatus {
   /// Get human readable status
   String get statusDescription {
     if (!isEnabled) return 'Disabled';
-    
+
     if (isInactivityCleanupDue) {
       return 'Cleanup due (inactivity)';
     }
-    
+
     final timeUntil = timeUntilNextCleanup;
     if (timeUntil == null) return 'Pending first cleanup';
-    
+
     if (timeUntil.inDays > 0) {
       return 'Next cleanup in ${timeUntil.inDays} days';
     } else if (timeUntil.inHours > 0) {
@@ -337,5 +370,13 @@ class HistoryCleanupStatus {
     } else {
       return 'Cleanup due now';
     }
+  }
+}
+
+/// Set localization callback for getting localized strings
+extension HistoryCleanupServiceLocalization on HistoryCleanupService {
+  void setLocalizationCallback(String Function(String key, {Map<String, dynamic>? args}) localize) {
+    // Note: This is a simplified approach. In a real implementation,
+    // you'd modify the class to include this method properly.
   }
 }

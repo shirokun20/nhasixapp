@@ -400,7 +400,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         downloadBloc.add(DownloadConvertToPdfEvent(download.contentId));
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!.pdfConversionStarted),
+            content: Text(AppLocalizations.of(context)!.pdfConversionStarted(download.contentId)),
             duration: Duration(seconds: 2),
           ),
         );
@@ -678,6 +678,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
   }
 
   String _formatDateTime(DateTime dateTime) {
+    // Use localized date format
     return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
@@ -687,7 +688,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     final seconds = duration.inSeconds.remainder(60);
 
     if (hours > 0) {
-      return '${hours}h ${minutes}m ${seconds}s';
+      return '${AppLocalizations.of(context)!.hours(hours)} ${minutes}m ${seconds}s';
     } else if (minutes > 0) {
       return '${minutes}m ${seconds}s';
     } else {

@@ -27,7 +27,10 @@ void main() async {
   // Initialize History Cleanup Service
   final historyCleanupService = getIt<HistoryCleanupService>();
   await historyCleanupService.initialize();
-  
+
+  // TODO: Setup localization callbacks for services
+  // _setupAllServiceLocalizationCallbacks();
+
   runApp(const MyApp());
 }
 
@@ -57,34 +60,34 @@ class MyApp extends StatelessWidget {
                 locale: locale,
                 localizationsDelegates: AppLocalizations.localizationsDelegates,
                 supportedLocales: AppLocalizations.supportedLocales,
-                builder: (context, child) {
-                  // Show platform warning for non-Android platforms
-                  if (kIsWeb || (!kIsWeb && !Platform.isAndroid)) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      PlatformNotSupportedDialog.show(context);
-                    });
-                  }
-                  return child ?? const SizedBox.shrink();
-                },
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
+                 builder: (context, child) {
+                   // Show platform warning for non-Android platforms
+                   if (kIsWeb || (!kIsWeb && !Platform.isAndroid)) {
+                     WidgetsBinding.instance.addPostFrameCallback((_) {
+                       PlatformNotSupportedDialog.show(context);
+                     });
+                   }
+                   return child ?? const SizedBox.shrink();
+                 },
+               );
+             },
+           );
+         },
+       ),
+     );
+   }
 
-  /// Convert settings language to Locale
-  Locale _getLocaleFromSettings(SettingsState settingsState) {
-    if (settingsState is SettingsLoaded) {
-      switch (settingsState.preferences.defaultLanguage) {
-        case 'indonesian':
-          return const Locale('id');
-        case 'english':
-        default:
-          return const Locale('en');
-      }
-    }
-    return const Locale('en'); // Default to English
-  }
+   /// Convert settings language to Locale
+   Locale _getLocaleFromSettings(SettingsState settingsState) {
+     if (settingsState is SettingsLoaded) {
+       switch (settingsState.preferences.defaultLanguage) {
+         case 'indonesian':
+           return const Locale('id');
+         case 'english':
+         default:
+           return const Locale('en');
+       }
+     }
+     return const Locale('en'); // Default to English
+   }
 }

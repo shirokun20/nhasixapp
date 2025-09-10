@@ -18,6 +18,9 @@ class OfflineContentManager {
   final UserDataRepository _userDataRepository;
   final Logger _logger;
 
+  // Localization callback
+  String Function(String key, {Map<String, dynamic>? args})? _localize;
+
   /// Check if content is available offline
   Future<bool> isContentAvailableOffline(String contentId) async {
     try {
@@ -55,7 +58,9 @@ class OfflineContentManager {
     try {
       final downloadStatus =
           await _userDataRepository.getDownloadStatus(contentId);
-      // _logger.i("Location: path: ${downloadStatus?.downloadPath}");
+      // _logger.i(_getLocalized('offlineContentPath',
+      //   args: {'contentId': contentId, 'path': downloadStatus?.downloadPath ?? 'null'},
+      //   fallback: "Location: path: ${downloadStatus?.downloadPath}"));
       return downloadStatus?.downloadPath;
     } catch (e, stackTrace) {
       _logger.e('Error getting offline content path for $contentId',
@@ -103,7 +108,9 @@ class OfflineContentManager {
 
       for (final download in downloads) {
         if (await isContentAvailableOffline(download.contentId)) {
-          // _logger.i("isi file nya: $download");
+          // _logger.i(_getLocalized('offlineContentAvailable',
+          //   args: {'contentId': download.contentId, 'available': 'true'},
+          //   fallback: "isi file nya: $download"));
           offlineIds.add(download.contentId);
         }
       }
@@ -177,7 +184,9 @@ class OfflineContentManager {
       final favorites = await _userDataRepository.getFavorites(limit: 1000);
       final favorite =
           favorites.where((fav) => fav['id'] == contentId).firstOrNull;
-      _logger.i("apakah data dari favorite? ${favorite != null}");
+      _logger.i(_getLocalized('offlineContentMetadata',
+        args: {'contentId': contentId, 'source': 'favorites'},
+        fallback: "apakah data dari favorite? ${favorite != null}"));
       if (favorite != null) {
         return {
           'id': contentId,
@@ -189,7 +198,9 @@ class OfflineContentManager {
 
       // Try to get from history
       final historyEntry = await _userDataRepository.getHistoryEntry(contentId);
-      _logger.i("apakah data dari history? ${historyEntry != null}");
+      _logger.i(_getLocalized('offlineContentMetadata',
+        args: {'contentId': contentId, 'source': 'history'},
+        fallback: "apakah data dari history? ${historyEntry != null}"));
       _logger.i("isi file history nya: $historyEntry");
       if (historyEntry != null) {
         return {
@@ -221,13 +232,15 @@ class OfflineContentManager {
       if (metadata == null) return null;
 
       final imageUrls = await getOfflineImageUrls(contentId);
-      _logger.i("apakah ada gambarnya? ${imageUrls.isEmpty}");
+      _logger.i(_getLocalized('offlineImageUrlsFound',
+        args: {'contentId': contentId, 'count': imageUrls.length},
+        fallback: "apakah ada gambarnya? ${imageUrls.isEmpty}"));
       if (imageUrls.isEmpty) return null;
 
       return Content(
         id: contentId,
         title: metadata['title'] as String,
-        coverUrl: metadata['coverUrl'] as String,
+        coverUrl: imageUrls.isNotEmpty ? imageUrls.first : '', // Use first local image as thumbnail
         tags: [], // No tags available offline
         artists: [], // No artists available offline
         characters: [], // No characters available offline
@@ -280,7 +293,8 @@ class OfflineContentManager {
   /// Clean up orphaned offline files
   Future<void> cleanupOrphanedFiles() async {
     try {
-      _logger.i('Starting cleanup of orphaned offline files');
+      _logger.i(_getLocalized('cleanupOrphanedFilesStarted',
+        fallback: 'Starting cleanup of orphaned offline files'));
 
       final appDir = await getApplicationDocumentsDirectory();
       final downloadsDir = Directory(path.join(appDir.path, 'downloads'));
@@ -307,7 +321,8 @@ class OfflineContentManager {
         }
       }
 
-      _logger.i('Cleanup of orphaned offline files completed');
+      _logger.i(_getLocalized('cleanupOrphanedFilesCompleted',
+        fallback: 'Cleanup of orphaned offline files completed'));
     } catch (e, stackTrace) {
       _logger.e('Error during cleanup of orphaned files',
           error: e, stackTrace: stackTrace);
@@ -342,5 +357,21 @@ class OfflineContentManager {
     }
 
     return '${size.toStringAsFixed(1)} ${suffixes[suffixIndex]}';
+  }
+
+  /// Set localization callback for getting localized strings
+  void setLocalizationCallback(String Function(String key, {Map<String, dynamic>? args}) localize) {
+    _localize = localize;
+    _logger.i('OfflineContentManager: Localization callback set');
+  }
+
+  /// Get localized string with fallback
+  String _getLocalized(String key, {Map<String, dynamic>? args, String? fallback}) {
+    try {
+      return _localize?.call(key, args: args) ?? fallback ?? key;
+    } catch (e) {
+      _logger.w('Failed to get localized string for key: $key, error: $e');
+      return fallback ?? key;
+    }
   }
 }

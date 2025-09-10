@@ -304,15 +304,15 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
-                        Text(
-                          '${state.totalCount} items • Page ${state.currentPage} of ${state.totalPages}',
-                          style: TextStyleConst.bodySmall.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.7),
-                          ),
-                        ),
+                         Text(
+                           '${state.totalCount} ${AppLocalizations.of(context)?.content ?? 'items'} • ${AppLocalizations.of(context)?.pageOf ?? 'Page'} ${state.currentPage} ${AppLocalizations.of(context)?.ofWord ?? 'of'} ${state.totalPages}',
+                           style: TextStyleConst.bodySmall.copyWith(
+                             color: Theme.of(context)
+                                 .colorScheme
+                                 .onSurface
+                                 .withValues(alpha: 0.7),
+                           ),
+                         ),
                       ],
                     ),
                   ),

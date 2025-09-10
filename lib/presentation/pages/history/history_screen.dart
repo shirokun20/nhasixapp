@@ -241,7 +241,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       builder: (context) => AlertDialog(
         title: Text(AppLocalizations.of(context)!.clearAllHistory),
         content: Text(
-          AppLocalizations.of(context)?.areYouSureClearHistory ?? 'Are you sure you want to clear all reading history? This action cannot be undone.',
+          AppLocalizations.of(context)!.areYouSureClearHistory,
         ),
         actions: [
           TextButton(

@@ -941,7 +941,7 @@ abstract class AppLocalizations {
   /// No description provided for @downloadStarted.
   ///
   /// In en, this message translates to:
-  /// **'Download started for \"{title}\"'**
+  /// **'Download Started'**
   String downloadStarted(String title);
 
   /// No description provided for @downloadNewGalleries.
@@ -1061,8 +1061,8 @@ abstract class AppLocalizations {
   /// No description provided for @pdfConversionStarted.
   ///
   /// In en, this message translates to:
-  /// **'PDF conversion started'**
-  String get pdfConversionStarted;
+  /// **'PDF conversion started for {contentId}'**
+  String pdfConversionStarted(String contentId);
 
   /// No description provided for @cancelAllDownloads.
   ///
@@ -2435,7 +2435,7 @@ abstract class AppLocalizations {
   /// No description provided for @storagePermissionRequired.
   ///
   /// In en, this message translates to:
-  /// **'Storage Permission Required'**
+  /// **'Storage permission is required for downloads. Please grant storage permission in app settings.'**
   String get storagePermissionRequired;
 
   /// No description provided for @storagePermissionExplanation.
@@ -3866,6 +3866,565 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'AMOLED'**
   String get amoledTheme;
+
+  /// No description provided for @systemMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'System Messages and Background Services'**
+  String get systemMessages;
+
+  /// No description provided for @notificationMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification Messages'**
+  String get notificationMessages;
+
+  /// No description provided for @convertingToPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Converting to PDF'**
+  String get convertingToPdf;
+
+  /// No description provided for @convertingToPdfWithTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Converting {title} to PDF...'**
+  String convertingToPdfWithTitle(String title);
+
+  /// No description provided for @convertingToPdfProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Converting to PDF ({progress}%)'**
+  String convertingToPdfProgress(Object progress);
+
+  /// No description provided for @convertingToPdfProgressWithTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Converting {title} to PDF ({progress}%)'**
+  String convertingToPdfProgressWithTitle(String title, int progress);
+
+  /// No description provided for @pdfCreatedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF Created Successfully'**
+  String get pdfCreatedSuccessfully;
+
+  /// No description provided for @pdfCreatedWithParts.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} converted to {partsCount} PDF files'**
+  String pdfCreatedWithParts(String title, int partsCount);
+
+  /// No description provided for @pdfConversionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF conversion failed for {contentId}: {error}'**
+  String pdfConversionFailed(String contentId, String error);
+
+  /// No description provided for @pdfConversionFailedWithError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to convert {title} to PDF: {error}'**
+  String pdfConversionFailedWithError(String title, String error);
+
+  /// No description provided for @downloadingWithTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading: {title}'**
+  String downloadingWithTitle(String title);
+
+  /// No description provided for @downloadingProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading ({progress}%)'**
+  String downloadingProgress(Object progress);
+
+  /// No description provided for @downloadedWithTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded: {title}'**
+  String downloadedWithTitle(String title);
+
+  /// No description provided for @downloadFailedWithTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed: {title}'**
+  String downloadFailedWithTitle(String title);
+
+  /// No description provided for @downloadPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get downloadPaused;
+
+  /// No description provided for @downloadResumed.
+  ///
+  /// In en, this message translates to:
+  /// **'Resumed'**
+  String get downloadResumed;
+
+  /// No description provided for @downloadCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get downloadCancelled;
+
+  /// No description provided for @downloadRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get downloadRetry;
+
+  /// No description provided for @downloadOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get downloadOpen;
+
+  /// No description provided for @pdfOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open PDF'**
+  String get pdfOpen;
+
+  /// No description provided for @pdfShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get pdfShare;
+
+  /// No description provided for @pdfRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry PDF'**
+  String get pdfRetry;
+
+  /// No description provided for @downloadServiceMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Service Messages'**
+  String get downloadServiceMessages;
+
+  /// No description provided for @downloadRangeInfo.
+  ///
+  /// In en, this message translates to:
+  /// **' (Pages {startPage}-{endPage})'**
+  String downloadRangeInfo(int startPage, int endPage);
+
+  /// No description provided for @downloadRangeComplete.
+  ///
+  /// In en, this message translates to:
+  /// **' (Pages {startPage}-{endPage})'**
+  String downloadRangeComplete(int startPage, int endPage);
+
+  /// No description provided for @invalidPageRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid page range: {start}-{end} (total: {total})'**
+  String invalidPageRange(int start, int end, int total);
+
+  /// No description provided for @noDataReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'No data received for image: {url}'**
+  String noDataReceived(String url);
+
+  /// No description provided for @createdNoMediaFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Created .nomedia file for privacy: {path}'**
+  String createdNoMediaFile(String path);
+
+  /// No description provided for @privacyProtectionEnsured.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy protection ensured for existing downloads'**
+  String get privacyProtectionEnsured;
+
+  /// No description provided for @pdfConversionMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF Conversion Service Messages'**
+  String get pdfConversionMessages;
+
+  /// No description provided for @pdfConversionCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF conversion completed successfully for {contentId}'**
+  String pdfConversionCompleted(String contentId);
+
+  /// No description provided for @pdfPartProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing part {part} in isolate...'**
+  String pdfPartProcessing(int part);
+
+  /// No description provided for @pdfSingleProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing single PDF in isolate...'**
+  String get pdfSingleProcessing;
+
+  /// No description provided for @pdfSplitRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Splitting into {totalParts} parts ({totalPages} pages)'**
+  String pdfSplitRequired(int totalParts, int totalPages);
+
+  /// No description provided for @pdfCreatedFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Created {partsCount} PDF file(s) with {pageCount} total pages'**
+  String pdfCreatedFiles(int partsCount, int pageCount);
+
+  /// No description provided for @pdfNoImagesProvided.
+  ///
+  /// In en, this message translates to:
+  /// **'No images provided for PDF conversion'**
+  String get pdfNoImagesProvided;
+
+  /// No description provided for @pdfFailedToCreatePart.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create PDF part {part}: {error}'**
+  String pdfFailedToCreatePart(int part, String error);
+
+  /// No description provided for @pdfFailedToCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create PDF: {error}'**
+  String pdfFailedToCreate(String error);
+
+  /// No description provided for @pdfOutputDirectoryCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Created PDF output directory: {path}'**
+  String pdfOutputDirectoryCreated(String path);
+
+  /// No description provided for @pdfUsingFallbackDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Using fallback directory: {path}'**
+  String pdfUsingFallbackDirectory(String path);
+
+  /// No description provided for @pdfInfoSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF info saved for {contentId} ({partsCount} parts, {pageCount} pages)'**
+  String pdfInfoSaved(String contentId, int partsCount, int pageCount);
+
+  /// No description provided for @pdfExistsForContent.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF exists for {contentId}: {exists}'**
+  String pdfExistsForContent(String contentId, String exists);
+
+  /// No description provided for @pdfFoundFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Found {count} PDF file(s) for {contentId}'**
+  String pdfFoundFiles(String contentId, int count);
+
+  /// No description provided for @pdfDeletedFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully deleted {count} PDF file(s) for {contentId}'**
+  String pdfDeletedFiles(String contentId, int count);
+
+  /// No description provided for @pdfTotalSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Total PDF size for {contentId}: {sizeBytes} bytes'**
+  String pdfTotalSize(String contentId, int sizeBytes);
+
+  /// No description provided for @pdfCleanupStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting PDF cleanup, deleting files older than {maxAge} days'**
+  String pdfCleanupStarted(int maxAge);
+
+  /// No description provided for @pdfCleanupCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleanup completed, deleted {deletedCount} old PDF files'**
+  String pdfCleanupCompleted(int deletedCount);
+
+  /// No description provided for @pdfStatistics.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF statistics - {totalFiles} files, {totalSizeFormatted} total size, {uniqueContents} unique contents, {averageFilesPerContent} avg files per content'**
+  String pdfStatistics(Object averageFilesPerContent, Object totalFiles,
+      Object totalSizeFormatted, Object uniqueContents);
+
+  /// No description provided for @historyCleanupMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'History Cleanup Service Messages'**
+  String get historyCleanupMessages;
+
+  /// No description provided for @historyCleanupServiceInitialized.
+  ///
+  /// In en, this message translates to:
+  /// **'History Cleanup Service initialized'**
+  String get historyCleanupServiceInitialized;
+
+  /// No description provided for @historyCleanupServiceDisposed.
+  ///
+  /// In en, this message translates to:
+  /// **'History Cleanup Service disposed'**
+  String get historyCleanupServiceDisposed;
+
+  /// No description provided for @autoCleanupDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto cleanup history is disabled'**
+  String get autoCleanupDisabled;
+
+  /// No description provided for @cleanupServiceStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleanup service started with {intervalHours}h interval'**
+  String cleanupServiceStarted(int intervalHours);
+
+  /// No description provided for @performingHistoryCleanup.
+  ///
+  /// In en, this message translates to:
+  /// **'Performing history cleanup: {reason}'**
+  String performingHistoryCleanup(String reason);
+
+  /// No description provided for @historyCleanupCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'History cleanup completed: cleared {clearedCount} entries ({reason})'**
+  String historyCleanupCompleted(int clearedCount, String reason);
+
+  /// No description provided for @manualHistoryCleanup.
+  ///
+  /// In en, this message translates to:
+  /// **'Performing manual history cleanup'**
+  String get manualHistoryCleanup;
+
+  /// No description provided for @updatedLastAppAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated last app access time'**
+  String get updatedLastAppAccess;
+
+  /// No description provided for @updatedLastCleanupTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated last cleanup time'**
+  String get updatedLastCleanupTime;
+
+  /// No description provided for @intervalCleanup.
+  ///
+  /// In en, this message translates to:
+  /// **'Interval cleanup ({intervalHours}h)'**
+  String intervalCleanup(int intervalHours);
+
+  /// No description provided for @inactivityCleanup.
+  ///
+  /// In en, this message translates to:
+  /// **'Inactivity cleanup ({inactivityDays} days)'**
+  String inactivityCleanup(int inactivityDays);
+
+  /// No description provided for @maxAgeCleanup.
+  ///
+  /// In en, this message translates to:
+  /// **'Max age cleanup ({maxDays} days)'**
+  String maxAgeCleanup(int maxDays);
+
+  /// No description provided for @initialCleanupSetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Initial cleanup setup'**
+  String get initialCleanupSetup;
+
+  /// No description provided for @shouldCleanupOldHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Should cleanup old history: {shouldCleanup}'**
+  String shouldCleanupOldHistory(String shouldCleanup);
+
+  /// No description provided for @analyticsMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics Service Messages'**
+  String get analyticsMessages;
+
+  /// No description provided for @analyticsServiceInitialized.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics service initialized - tracking {enabled}'**
+  String analyticsServiceInitialized(String enabled);
+
+  /// No description provided for @analyticsTrackingEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics tracking enabled by user'**
+  String get analyticsTrackingEnabled;
+
+  /// No description provided for @analyticsTrackingDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics tracking disabled by user - data cleared'**
+  String get analyticsTrackingDisabled;
+
+  /// No description provided for @analyticsDataCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics data cleared by user request'**
+  String get analyticsDataCleared;
+
+  /// No description provided for @analyticsServiceDisposed.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics service disposed'**
+  String get analyticsServiceDisposed;
+
+  /// No description provided for @analyticsEventTracked.
+  ///
+  /// In en, this message translates to:
+  /// **'📊 Analytics: {eventType} - {eventName}'**
+  String analyticsEventTracked(String eventType, String eventName);
+
+  /// No description provided for @appStartedEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'App started event tracked'**
+  String get appStartedEvent;
+
+  /// No description provided for @sessionEndEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Session end event tracked ({minutes} minutes)'**
+  String sessionEndEvent(int minutes);
+
+  /// No description provided for @analyticsEnabledEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics enabled event tracked'**
+  String get analyticsEnabledEvent;
+
+  /// No description provided for @analyticsDisabledEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics disabled event tracked'**
+  String get analyticsDisabledEvent;
+
+  /// No description provided for @screenViewEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen view tracked: {screenName}'**
+  String screenViewEvent(String screenName);
+
+  /// No description provided for @userActionEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'User action tracked: {action}'**
+  String userActionEvent(String action);
+
+  /// No description provided for @performanceEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance tracked: {operation} ({durationMs}ms)'**
+  String performanceEvent(String operation, int durationMs);
+
+  /// No description provided for @errorEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Error tracked: {errorType} - {errorMessage}'**
+  String errorEvent(String errorType, String errorMessage);
+
+  /// No description provided for @featureUsageEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature usage tracked: {feature}'**
+  String featureUsageEvent(String feature);
+
+  /// No description provided for @readingSessionEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading session tracked: {contentId} ({minutes}min, {pages} pages)'**
+  String readingSessionEvent(String contentId, int minutes, int pages);
+
+  /// No description provided for @offlineManagerMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline Content Manager Messages'**
+  String get offlineManagerMessages;
+
+  /// No description provided for @offlineContentAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Content {contentId} is available offline: {available}'**
+  String offlineContentAvailable(String contentId, String available);
+
+  /// No description provided for @offlineContentPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline content path for {contentId}: {path}'**
+  String offlineContentPath(String contentId, String path);
+
+  /// No description provided for @foundExistingFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Found {count} existing downloaded files'**
+  String foundExistingFiles(int count);
+
+  /// No description provided for @offlineImageUrlsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Found {count} offline image URLs for {contentId}'**
+  String offlineImageUrlsFound(String contentId, int count);
+
+  /// No description provided for @offlineContentIdsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Found {count} offline content IDs'**
+  String offlineContentIdsFound(int count);
+
+  /// No description provided for @searchingOfflineContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching offline content for: {query}'**
+  String searchingOfflineContent(String query);
+
+  /// No description provided for @offlineContentMetadata.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline content metadata for {contentId}: {source}'**
+  String offlineContentMetadata(String contentId, String source);
+
+  /// No description provided for @offlineContentCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline content created for {contentId}'**
+  String offlineContentCreated(String contentId);
+
+  /// No description provided for @offlineStorageUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline storage usage: {sizeBytes} bytes'**
+  String offlineStorageUsage(int sizeBytes);
+
+  /// No description provided for @cleanupOrphanedFilesStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting cleanup of orphaned offline files'**
+  String get cleanupOrphanedFilesStarted;
+
+  /// No description provided for @cleanupOrphanedFilesCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleanup of orphaned offline files completed'**
+  String get cleanupOrphanedFilesCompleted;
+
+  /// No description provided for @removedOrphanedDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed orphaned directory: {path}'**
+  String removedOrphanedDirectory(String path);
 }
 
 class _AppLocalizationsDelegate

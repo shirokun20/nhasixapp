@@ -25,6 +25,9 @@ class DownloadService {
   final NotificationService _notificationService;
   final Logger _logger;
 
+  // Localization callback
+  String Function(String key, {Map<String, dynamic>? args})? _localize;
+
   /// Download content dengan progress tracking dan notification
   Future<DownloadResult> downloadContent({
     required Content content,
@@ -49,9 +52,11 @@ class DownloadService {
       final actualEndPage = endPage ?? content.imageUrls.length;
       
       // Validate range
-      if (actualStartPage < 1 || actualEndPage > content.imageUrls.length || actualStartPage > actualEndPage) {
-        throw ArgumentError('Invalid page range: $actualStartPage-$actualEndPage (total: ${content.imageUrls.length})');
-      }
+        if (actualStartPage < 1 || actualEndPage > content.imageUrls.length || actualStartPage > actualEndPage) {
+          throw ArgumentError(_getLocalized('invalidPageRange',
+            args: {'start': actualStartPage, 'end': actualEndPage, 'total': content.imageUrls.length},
+            fallback: 'Invalid page range: $actualStartPage-$actualEndPage (total: ${content.imageUrls.length})'));
+        }
       
       final isRangeDownload = startPage != null || endPage != null;
       final pagesToDownload = actualEndPage - actualStartPage + 1;
@@ -239,7 +244,9 @@ class DownloadService {
       final file = File(filePath);
       await file.writeAsBytes(response.data!);
     } else {
-      throw Exception('No data received for image: $imageUrl');
+      throw Exception(_getLocalized('noDataReceived',
+        args: {'url': imageUrl},
+        fallback: 'No data received for image: $imageUrl'));
     }
   }
 
@@ -300,7 +307,9 @@ class DownloadService {
           '# Images in this folder and subfolders will not appear in Gallery apps\n'
           '# Created by NhasixApp for privacy protection\n'
         );
-        _logger.i('Created .nomedia file for privacy: ${nomediaFile.path}');
+        _logger.i(_getLocalized('createdNoMediaFile',
+          args: {'path': nomediaFile.path},
+          fallback: 'Created .nomedia file for privacy: ${nomediaFile.path}'));
       }
     } catch (e) {
       _logger.w('Failed to create .nomedia file: $e');
@@ -317,7 +326,8 @@ class DownloadService {
       
       if (await nhasixDir.exists()) {
         await _createNoMediaFile(nhasixDir);
-        _logger.i('Privacy protection ensured for existing downloads');
+        _logger.i(_getLocalized('privacyProtectionEnsured',
+          fallback: 'Privacy protection ensured for existing downloads'));
       }
     } catch (e) {
       _logger.e('Error ensuring privacy protection: $e');
@@ -487,8 +497,8 @@ class DownloadService {
                 final manageResult =
                     await Permission.manageExternalStorage.request();
                 if (!manageResult.isGranted) {
-                  throw Exception(
-                      'Storage permission is required for downloads. Please grant storage permission in app settings.');
+                   throw Exception(_getLocalized('storagePermissionRequired',
+                     fallback: 'Storage permission is required for downloads. Please grant storage permission in app settings.'));
                 }
               }
             }
@@ -502,8 +512,8 @@ class DownloadService {
       _logger.i('Storage permission check completed successfully');
     } catch (e) {
       _logger.e('Permission check failed: $e');
-      throw Exception(
-          'Storage permission is required for downloads. Error: $e');
+      throw Exception(_getLocalized('storagePermissionRequired',
+        fallback: 'Storage permission is required for downloads. Error: $e'));
     }
   }
 
@@ -580,6 +590,22 @@ class DownloadService {
     }
   }
   
+  /// Set localization callback for getting localized strings
+  void setLocalizationCallback(String Function(String key, {Map<String, dynamic>? args}) localize) {
+    _localize = localize;
+    _logger.i('DownloadService: Localization callback set');
+  }
+
+  /// Get localized string with fallback
+  String _getLocalized(String key, {Map<String, dynamic>? args, String? fallback}) {
+    try {
+      return _localize?.call(key, args: args) ?? fallback ?? key;
+    } catch (e) {
+      _logger.w('Failed to get localized string for key: $key, error: $e');
+      return fallback ?? key;
+    }
+  }
+
   /// Get optimized image URL based on quality setting
   String _getOptimizedImageUrl(String originalUrl, String imageQuality) {
     // Convert string quality to ImageQuality enum
@@ -600,11 +626,11 @@ class DownloadService {
       default:
         quality = img.ImageQuality.high; // Default to high quality
     }
-    
+
     // Create ImageUrl object and get optimized version
     final imageUrl = img.ImageUrl(originalUrl);
     final optimizedUrl = imageUrl.getOptimized(quality);
-    
+
     return optimizedUrl.value;
   }
 

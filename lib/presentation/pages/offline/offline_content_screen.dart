@@ -46,7 +46,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return BlocProvider<OfflineSearchCubit>(
       create: (context) => _offlineSearchCubit,
       child: AppScaffoldWithOffline(
@@ -73,7 +73,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
       elevation: 0,
       leading: IconButton(
         onPressed: () => context.pop(),
-        icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+        icon: Icon(Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface),
       ),
       title: Row(
         children: [
@@ -110,7 +111,10 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                           Text(
                             '${stats['totalContent']} items',
                             style: TextStyleConst.bodySmall.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.7),
                             ),
                           ),
                           Text(
@@ -135,7 +139,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
 
   Widget _buildSearchBar() {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -157,7 +161,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                 color: colorScheme.onSurface,
               ),
               decoration: InputDecoration(
-                hintText: AppLocalizations.of(context)!.searchOfflineContentHint,
+                hintText:
+                    AppLocalizations.of(context)!.searchOfflineContentHint,
                 hintStyle: TextStyleConst.bodyMedium.copyWith(
                   color: colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
@@ -238,11 +243,12 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
 
   Widget _buildBody(OfflineSearchState state) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     if (state is OfflineSearchLoading) {
       return Center(
         child: AppProgressIndicator(
-          message: AppLocalizations.of(context)?.loadingOfflineContent ?? 'Loading offline content...',
+          message: AppLocalizations.of(context)?.loadingOfflineContent ??
+              'Loading offline content...',
         ),
       );
     }
@@ -323,7 +329,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
               builder: (context, settingsState) {
                 return GridView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  gridDelegate: ResponsiveGridDelegate.createStandardGridDelegate(
+                  gridDelegate:
+                      ResponsiveGridDelegate.createStandardGridDelegate(
                     context,
                     context.read<SettingsCubit>(),
                     crossAxisSpacing: 12,
@@ -336,9 +343,10 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                     return ContentCard(
                       content: content,
                       onTap: () => context.push('/reader/${content.id}'),
-                  showOfflineIndicator: true,
-                );
-              },
+                      showOfflineIndicator: true,
+                      isHighlighted: false,
+                    );
+                  },
                 );
               },
             ),
@@ -350,7 +358,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     // Initial state
     return Center(
       child: AppProgressIndicator(
-        message: AppLocalizations.of(context)?.loadingOfflineContent ?? 'Loading offline content...',
+        message: AppLocalizations.of(context)?.loadingOfflineContent ??
+            'Loading offline content...',
       ),
     );
   }

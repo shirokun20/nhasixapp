@@ -58,21 +58,23 @@ class ContentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     final cardWidget = Card(
       clipBehavior: Clip.antiAlias,
       color: Theme.of(context).colorScheme.surfaceContainer,
       elevation: isHighlighted ? 6 : 2,
-      shadowColor: isHighlighted 
-          ? (isDarkMode 
-              ? const Color(0xFF00FF88).withValues(alpha: 0.5) // Neon green for dark mode
-              : const Color(0xFF2E7D32).withValues(alpha: 0.5)) // Dark green for light mode
+      shadowColor: isHighlighted
+          ? (isDarkMode
+              ? const Color(0xFF00FF88)
+                  .withValues(alpha: 0.5) // Neon green for dark mode
+              : const Color(0xFF2E7D32)
+                  .withValues(alpha: 0.5)) // Dark green for light mode
           : Theme.of(context).colorScheme.shadow.withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: isHighlighted
             ? BorderSide(
-                color: isDarkMode 
+                color: isDarkMode
                     ? const Color(0xFF00FF88) // Neon green for dark mode
                     : const Color(0xFF2E7D32), // Dark green for light mode
                 width: 2.5,
@@ -82,7 +84,8 @@ class ContentCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         onLongPress: onLongPress,
-        splashColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+        splashColor:
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
         highlightColor: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         child: AspectRatio(
@@ -154,15 +157,15 @@ class ContentCard extends StatelessWidget {
     // Apply additional highlight effect untuk downloaded content
     if (isHighlighted) {
       final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-      
+
       return Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: (isDarkMode 
-                  ? const Color(0xFF00FF88) // Neon green for dark mode
-                  : const Color(0xFF2E7D32)) // Dark green for light mode
+              color: (isDarkMode
+                      ? const Color(0xFF00FF88) // Neon green for dark mode
+                      : const Color(0xFF2E7D32)) // Dark green for light mode
                   .withValues(alpha: 0.3),
               blurRadius: 8,
               spreadRadius: 2,
@@ -193,7 +196,8 @@ class ContentCard extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.5),
+                color:
+                    Theme.of(context).colorScheme.scrim.withValues(alpha: 0.5),
               ),
               child: Center(
                 child: Icon(
@@ -216,14 +220,14 @@ class ContentCard extends StatelessWidget {
     return Builder(
       builder: (context) {
         final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-        
+
         return Positioned(
           top: 8,
           right: 8,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
             decoration: BoxDecoration(
-              color: isDarkMode 
+              color: isDarkMode
                   ? const Color(0xFF00FF88) // Neon green for dark mode
                   : const Color(0xFF2E7D32), // Dark green for light mode
               borderRadius: BorderRadius.circular(12),
@@ -245,7 +249,8 @@ class ContentCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 3),
                 Text(
-                  (AppLocalizations.of(context)?.offline ?? 'OFFLINE').toUpperCase(),
+                  (AppLocalizations.of(context)?.offline ?? 'OFFLINE')
+                      .toUpperCase(),
                   style: TextStyleConst.labelSmall.copyWith(
                     color: Theme.of(context).colorScheme.onSecondary,
                     fontSize: 8,
@@ -271,7 +276,8 @@ class ContentCard extends StatelessWidget {
                 networkUrl: content.coverUrl,
                 contentId: content.id,
                 aspectRatio: aspectRatio,
-                borderRadius: BorderRadius.zero, // No border radius, handled by parent
+                borderRadius:
+                    BorderRadius.zero, // No border radius, handled by parent
                 showOfflineIndicator: showOfflineIndicator,
               )
             : _buildImageError(),
@@ -295,7 +301,8 @@ class ContentCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              AppLocalizations.of(context)?.imageNotAvailable ?? 'Image not available',
+              AppLocalizations.of(context)?.imageNotAvailable ??
+                  'Image not available',
               style: TextStyleConst.caption.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -353,11 +360,14 @@ class ContentCard extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surface
+                          .withValues(alpha: 0.8),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      '${content.pageCount}p',
+                      '${content.pageCount}${AppLocalizations.of(context)?.pages ?? 'p'}',
                       style: TextStyleConst.labelSmall.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
@@ -372,7 +382,10 @@ class ContentCard extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.9),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .tertiary
+                          .withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -385,7 +398,8 @@ class ContentCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 2),
                         Text(
-                          (AppLocalizations.of(context)?.offline ?? 'OFFLINE').toUpperCase(),
+                          (AppLocalizations.of(context)?.offline ?? 'OFFLINE')
+                              .toUpperCase(),
                           style: TextStyleConst.labelSmall.copyWith(
                             color: Theme.of(context).colorScheme.onTertiary,
                             fontSize: 8,
@@ -405,7 +419,10 @@ class ContentCard extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .surface
+                        .withValues(alpha: 0.8),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -484,12 +501,15 @@ class ContentCard extends StatelessWidget {
         runSpacing: 2,
         children: visibleTags
             .map((tag) => Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                   decoration: BoxDecoration(
-                    color: _getTagColor(context, tag.type).withValues(alpha: 0.2),
+                    color:
+                        _getTagColor(context, tag.type).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: _getTagColor(context, tag.type).withValues(alpha: 0.5),
+                      color: _getTagColor(context, tag.type)
+                          .withValues(alpha: 0.5),
                       width: 0.5,
                     ),
                   ),
@@ -530,15 +550,17 @@ class ContentCard extends StatelessWidget {
     return Builder(
       builder: (context) {
         final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-        
+
         return Row(
           children: [
             // Upload date (only show if enabled)
             if (showUploadDate)
-              Text(
-                _formatUploadDate(content.uploadDate),
-                style: TextStyleConst.caption.copyWith(
-                  fontSize: 10,
+              Builder(
+                builder: (context) => Text(
+                  _formatUploadDate(content.uploadDate, context),
+                  style: TextStyleConst.caption.copyWith(
+                    fontSize: 10,
+                  ),
                 ),
               ),
 
@@ -549,7 +571,7 @@ class ContentCard extends StatelessWidget {
               Icon(
                 Icons.offline_pin,
                 size: 14,
-                color: isDarkMode 
+                color: isDarkMode
                     ? const Color(0xFF00FF88) // Neon green for dark mode
                     : const Color(0xFF2E7D32), // Dark green for light mode
               ),
@@ -604,20 +626,24 @@ class ContentCard extends StatelessWidget {
     );
   }
 
-  String _formatUploadDate(DateTime date) {
+  String _formatUploadDate(DateTime date, BuildContext context) {
     final now = DateTime.now();
     final difference = now.difference(date);
+    final loc = AppLocalizations.of(context)!;
 
     if (difference.inDays > 365) {
-      return '${(difference.inDays / 365).floor()}y';
+      final years = (difference.inDays / 365).floor();
+      return loc.yearAgo(years, years > 1 ? 's' : '');
     } else if (difference.inDays > 30) {
-      return '${(difference.inDays / 30).floor()}mo';
+      final months = (difference.inDays / 30).floor();
+      return loc.monthAgo(months, months > 1 ? 's' : '');
     } else if (difference.inDays > 0) {
-      return '${difference.inDays}d';
+      return loc.daysAgo(difference.inDays, difference.inDays == 1 ? '' : 's');
     } else if (difference.inHours > 0) {
-      return '${difference.inHours}h';
+      return loc.hoursAgo(
+          difference.inHours, difference.inHours == 1 ? '' : 's');
     } else {
-      return 'now';
+      return loc.justNow;
     }
   }
 
@@ -743,7 +769,8 @@ class CompactContentCard extends StatelessWidget {
                     width: 60,
                     height: 80,
                     placeholder: (context, url) => Container(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       child: Center(
                         child: CircularProgressIndicator(
                           color: Theme.of(context).colorScheme.primary,
@@ -752,7 +779,8 @@ class CompactContentCard extends StatelessWidget {
                       ),
                     ),
                     errorWidget: (context, url, error) => Container(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       child: Icon(
                         Icons.broken_image,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -795,9 +823,10 @@ class CompactContentCard extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          '${content.pageCount} pages',
+                          '${content.pageCount} ${AppLocalizations.of(context)?.pages ?? 'pages'}',
                           style: TextStyleConst.caption.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -808,14 +837,18 @@ class CompactContentCard extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
                               content.language.toUpperCase(),
                               style: TextStyleConst.labelSmall.copyWith(
                                 fontSize: 10,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                               ),
                             ),
                           ),

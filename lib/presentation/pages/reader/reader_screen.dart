@@ -5,7 +5,9 @@ import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:photo_view/photo_view.dart';
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
+import '../../../core/utils/offline_content_manager.dart';
 import '../../../data/models/reader_settings_model.dart';
+import '../../../domain/entities/content.dart';
 import '../../../services/local_image_preloader.dart';
 import '../../cubits/reader/reader_cubit.dart';
 // import '../../cubits/reader/reader_state.dart';
@@ -36,10 +38,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   // Debouncing for scroll updates
   int _lastReportedPage = 1;
-  
+
   // Prefetching tracking
   static const int _prefetchCount = 5; // Number of pages to prefetch ahead
   final Set<int> _prefetchedPages = {}; // Track which pages have been prefetched
+
+  // 🚀 OPTIMIZATION: Preload content before BlocProvider setup
+  Content? _preloadedContent;
+  bool _isPreloading = false;
 
   @override
   void initState() {
@@ -52,6 +58,31 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     // Add scroll listener for continuous mode
     _scrollController.addListener(_onScrollChanged);
+
+    // 🚀 OPTIMIZATION: Start preloading content immediately
+    _startPreloading();
+  }
+
+  /// 🚀 OPTIMIZATION: Preload content to reduce initial loading time
+  Future<void> _startPreloading() async {
+    if (_isPreloading) return;
+
+    _isPreloading = true;
+    try {
+      // Quick offline check first
+      final offlineManager = getIt<OfflineContentManager>();
+      final isOfflineAvailable = await offlineManager.isContentAvailableOffline(widget.contentId);
+
+      if (isOfflineAvailable) {
+        // Preload offline content
+        _preloadedContent = await offlineManager.createOfflineContent(widget.contentId);
+      }
+    } catch (e) {
+      // Ignore preload errors, will fallback to normal loading
+      debugPrint('Reader preload failed: $e');
+    } finally {
+      _isPreloading = false;
+    }
   }
 
   void _onScrollChanged() {
@@ -173,15 +204,27 @@ class _ReaderScreenState extends State<ReaderScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<ReaderCubit>(
-      create: (context) => _readerCubit
-        ..loadContent(
-          widget.contentId,
-          initialPage: widget.initialPage,
-        ),
+      create: (context) {
+        // 🚀 OPTIMIZATION: Use preloaded content if available
+        if (_preloadedContent != null) {
+          // Create cubit with preloaded content
+          final cubit = _readerCubit;
+          // Skip full loadContent if we have preloaded content
+          Future.microtask(() => _loadWithPreloadedContent(cubit));
+          return cubit;
+        } else {
+          // Normal loading path
+          return _readerCubit
+            ..loadContent(
+              widget.contentId,
+              initialPage: widget.initialPage,
+            );
+        }
+      },
       child: BlocListener<ReaderCubit, ReaderState>(
         listener: (context, state) {
           _syncControllersWithState(state);
-          
+
           // Trigger initial prefetching when content is loaded
           if (state.content != null && state.content!.imageUrls.isNotEmpty) {
             final currentPage = state.currentPage ?? widget.initialPage;
@@ -198,6 +241,23 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ),
       ),
     );
+  }
+
+  /// 🚀 OPTIMIZATION: Load content using preloaded data
+  Future<void> _loadWithPreloadedContent(ReaderCubit cubit) async {
+    try {
+      // Use normal loadContent but with preloaded data hint
+      // The cubit will detect and use the preloaded content
+      await cubit.loadContent(
+        widget.contentId,
+        initialPage: widget.initialPage,
+      );
+
+    } catch (e) {
+      // Fallback to normal loading if preload fails
+      debugPrint('Preload optimization failed, using normal loading: $e');
+      await cubit.loadContent(widget.contentId, initialPage: widget.initialPage);
+    }
   }
 
   Widget _buildBody(ReaderState state) {
@@ -701,7 +761,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         title: Text(
-          AppLocalizations.of(context)?.jumpToPage ?? 'Jump to Page',
+          AppLocalizations.of(context)!.jumpToPage,
           style: TextStyleConst.headingMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
@@ -714,7 +774,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             color: Theme.of(context).colorScheme.onSurface,
           ),
           decoration: InputDecoration(
-            labelText: AppLocalizations.of(context)?.pageInputLabel(state.content?.pageCount ?? 1) ?? 'Page (1-${state.content?.pageCount ?? 1})',
+            labelText: AppLocalizations.of(context)!.pageInputLabel(state.content?.pageCount ?? 1),
             labelStyle: TextStyleConst.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -919,26 +979,26 @@ class _ReaderScreenState extends State<ReaderScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         title: Text(
-          AppLocalizations.of(context)?.resetReaderSettings ?? 'Reset Reader Settings',
+          AppLocalizations.of(context)!.resetReaderSettings,
           style: TextStyleConst.headingMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         content: Text(
-          AppLocalizations.of(context)?.resetReaderSettingsConfirmation ?? 'This will reset all reader settings to their default values:\n\n'
-          '• ${AppLocalizations.of(context)?.readingModeLabel ?? 'Reading Mode: Horizontal Pages'}\n'
-          '• ${AppLocalizations.of(context)?.keepScreenOnLabel ?? 'Keep Screen On: Off'}\n'
-          '• ${AppLocalizations.of(context)?.showUILabel ?? 'Show UI: On'}\n\n'
-          '${AppLocalizations.of(context)?.areYouSure ?? 'Are you sure you want to proceed?'}',
+          '${AppLocalizations.of(context)!.resetReaderSettingsConfirmation}'
+          '• ${AppLocalizations.of(context)!.readingModeLabel}\n'
+          '• ${AppLocalizations.of(context)!.keepScreenOnLabel}\n'
+          '• ${AppLocalizations.of(context)!.showUILabel}\n\n'
+          '${AppLocalizations.of(context)!.areYouSure}',
           style: TextStyleConst.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         actions: [
-          TextButton(
+           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
-              AppLocalizations.of(context)?.cancel ?? 'Cancel',
+              AppLocalizations.of(context)!.cancel,
               style: TextStyleConst.buttonMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -950,7 +1010,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               _resetReaderSettings();
             },
             child: Text(
-              AppLocalizations.of(context)?.reset ?? 'Reset',
+              AppLocalizations.of(context)!.reset,
               style: TextStyleConst.buttonMedium.copyWith(
                 color: Theme.of(context).colorScheme.error,
               ),

@@ -150,7 +150,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
 
           // Main screen UI when home is loaded
           return AppScaffoldWithOffline(
-            title: 'Nhentai',
+            title: AppLocalizations.of(context)?.appTitle ?? 'Nhentai',
             appBar: AppMainHeaderWidget(
               context: context,
               onSearchPressed: () async {
@@ -331,7 +331,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
             ),
             const SizedBox(height: 24),
             Text(
-              state.message.isNotEmpty ? state.message : 'Loading content...',
+              state.message.isNotEmpty ? state.message : AppLocalizations.of(context)?.loadingContent ?? 'Loading content...',
               style: TextStyleConst.bodyLarge.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
               ),

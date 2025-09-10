@@ -254,7 +254,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
               controller: _queryController,
               style: TextStyleConst.bodyLarge,
               decoration: InputDecoration(
-                hintText: AppLocalizations.of(context)?.searchContentHint ?? 'Search content...',
+                hintText: AppLocalizations.of(context)!.searchContentHint,
                 hintStyle: TextStyleConst.placeholderText,
                 prefixIcon: Icon(
                   Icons.search,
@@ -555,9 +555,9 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
           controller: _includeTagsController,
           style: TextStyleConst.bodyMedium,
           decoration: InputDecoration(
-            labelText: AppLocalizations.of(context)?.includeTagsLabel ?? 'Include tags (comma separated)',
+            labelText: AppLocalizations.of(context)!.includeTagsLabel,
             labelStyle: TextStyleConst.label,
-            hintText: AppLocalizations.of(context)?.includeTagsHint ?? 'e.g., romance, comedy, school',
+            hintText: AppLocalizations.of(context)!.includeTagsHint,
             hintStyle: TextStyleConst.placeholderText,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -574,9 +574,9 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
           controller: _excludeTagsController,
           style: TextStyleConst.bodyMedium,
           decoration: InputDecoration(
-            labelText: AppLocalizations.of(context)?.excludeTagsLabel ?? 'Exclude tags (comma separated)',
+            labelText: AppLocalizations.of(context)!.excludeTagsLabel,
             labelStyle: TextStyleConst.label,
-            hintText: AppLocalizations.of(context)?.excludeTagsHint ?? 'e.g., horror, violence',
+            hintText: AppLocalizations.of(context)!.excludeTagsHint,
             hintStyle: TextStyleConst.placeholderText,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -599,9 +599,9 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
           controller: _artistsController,
           style: TextStyleConst.bodyMedium,
           decoration: InputDecoration(
-            labelText: AppLocalizations.of(context)?.artistsLabel ?? 'Artists (comma separated)',
+            labelText: AppLocalizations.of(context)!.artistsLabel,
             labelStyle: TextStyleConst.label,
-            hintText: AppLocalizations.of(context)?.artistsHint ?? 'e.g., artist1, artist2',
+            hintText: AppLocalizations.of(context)!.artistsHint,
             hintStyle: TextStyleConst.placeholderText,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -621,7 +621,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
                 controller: _charactersController,
                 style: TextStyleConst.bodyMedium,
                 decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)?.charactersLabel ?? 'Characters',
+                  labelText: AppLocalizations.of(context)!.charactersLabel,
                   labelStyle: TextStyleConst.label,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -640,7 +640,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
                 controller: _parodiesController,
                 style: TextStyleConst.bodyMedium,
                 decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)?.parodiesLabel ?? 'Parodies',
+                  labelText: AppLocalizations.of(context)!.parodiesLabel,
                   labelStyle: TextStyleConst.label,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -660,7 +660,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
           controller: _groupsController,
           style: TextStyleConst.bodyMedium,
           decoration: InputDecoration(
-            labelText: AppLocalizations.of(context)?.groupsLabel ?? 'Groups (comma separated)',
+            labelText: AppLocalizations.of(context)!.groupsLabel,
             labelStyle: TextStyleConst.label,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -694,7 +694,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)?.minPagesLabel ?? 'Min pages',
+                  labelText: AppLocalizations.of(context)!.minPagesLabel,
                   labelStyle: TextStyleConst.label,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -705,7 +705,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
             ),
             const SizedBox(width: 12),
             Text(
-              AppLocalizations.of(context)?.rangeToSeparator ?? 'to',
+              AppLocalizations.of(context)!.rangeToSeparator,
               style: TextStyleConst.bodyMedium,
             ),
             const SizedBox(width: 12),
@@ -716,7 +716,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)?.maxPagesLabel ?? 'Max pages',
+                  labelText: AppLocalizations.of(context)!.maxPagesLabel,
                   labelStyle: TextStyleConst.label,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),

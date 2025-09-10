@@ -458,7 +458,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String downloadStarted(String title) {
-    return 'Download started for \"$title\"';
+    return 'Download Started';
   }
 
   @override
@@ -519,7 +519,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noFailedDownloads => 'No failed downloads';
 
   @override
-  String get pdfConversionStarted => 'PDF conversion started';
+  String pdfConversionStarted(String contentId) {
+    return 'PDF conversion started for $contentId';
+  }
 
   @override
   String get cancelAllDownloads => 'Cancel All Downloads';
@@ -1282,7 +1284,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Please install and run this app on an Android device.';
 
   @override
-  String get storagePermissionRequired => 'Storage Permission Required';
+  String get storagePermissionRequired =>
+      'Storage permission is required for downloads. Please grant storage permission in app settings.';
 
   @override
   String get storagePermissionExplanation =>
@@ -2072,4 +2075,404 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get amoledTheme => 'AMOLED';
+
+  @override
+  String get systemMessages => 'System Messages and Background Services';
+
+  @override
+  String get notificationMessages => 'Notification Messages';
+
+  @override
+  String get convertingToPdf => 'Converting to PDF';
+
+  @override
+  String convertingToPdfWithTitle(String title) {
+    return 'Converting $title to PDF...';
+  }
+
+  @override
+  String convertingToPdfProgress(Object progress) {
+    return 'Converting to PDF ($progress%)';
+  }
+
+  @override
+  String convertingToPdfProgressWithTitle(String title, int progress) {
+    return 'Converting $title to PDF ($progress%)';
+  }
+
+  @override
+  String get pdfCreatedSuccessfully => 'PDF Created Successfully';
+
+  @override
+  String pdfCreatedWithParts(String title, int partsCount) {
+    return '$title converted to $partsCount PDF files';
+  }
+
+  @override
+  String pdfConversionFailed(String contentId, String error) {
+    return 'PDF conversion failed for $contentId: $error';
+  }
+
+  @override
+  String pdfConversionFailedWithError(String title, String error) {
+    return 'Failed to convert $title to PDF: $error';
+  }
+
+  @override
+  String downloadingWithTitle(String title) {
+    return 'Downloading: $title';
+  }
+
+  @override
+  String downloadingProgress(Object progress) {
+    return 'Downloading ($progress%)';
+  }
+
+  @override
+  String downloadedWithTitle(String title) {
+    return 'Downloaded: $title';
+  }
+
+  @override
+  String downloadFailedWithTitle(String title) {
+    return 'Failed: $title';
+  }
+
+  @override
+  String get downloadPaused => 'Paused';
+
+  @override
+  String get downloadResumed => 'Resumed';
+
+  @override
+  String get downloadCancelled => 'Cancelled';
+
+  @override
+  String get downloadRetry => 'Retry';
+
+  @override
+  String get downloadOpen => 'Open';
+
+  @override
+  String get pdfOpen => 'Open PDF';
+
+  @override
+  String get pdfShare => 'Share';
+
+  @override
+  String get pdfRetry => 'Retry PDF';
+
+  @override
+  String get downloadServiceMessages => 'Download Service Messages';
+
+  @override
+  String downloadRangeInfo(int startPage, int endPage) {
+    return ' (Pages $startPage-$endPage)';
+  }
+
+  @override
+  String downloadRangeComplete(int startPage, int endPage) {
+    return ' (Pages $startPage-$endPage)';
+  }
+
+  @override
+  String invalidPageRange(int start, int end, int total) {
+    return 'Invalid page range: $start-$end (total: $total)';
+  }
+
+  @override
+  String noDataReceived(String url) {
+    return 'No data received for image: $url';
+  }
+
+  @override
+  String createdNoMediaFile(String path) {
+    return 'Created .nomedia file for privacy: $path';
+  }
+
+  @override
+  String get privacyProtectionEnsured =>
+      'Privacy protection ensured for existing downloads';
+
+  @override
+  String get pdfConversionMessages => 'PDF Conversion Service Messages';
+
+  @override
+  String pdfConversionCompleted(String contentId) {
+    return 'PDF conversion completed successfully for $contentId';
+  }
+
+  @override
+  String pdfPartProcessing(int part) {
+    return 'Processing part $part in isolate...';
+  }
+
+  @override
+  String get pdfSingleProcessing => 'Processing single PDF in isolate...';
+
+  @override
+  String pdfSplitRequired(int totalParts, int totalPages) {
+    return 'Splitting into $totalParts parts ($totalPages pages)';
+  }
+
+  @override
+  String pdfCreatedFiles(int partsCount, int pageCount) {
+    return 'Created $partsCount PDF file(s) with $pageCount total pages';
+  }
+
+  @override
+  String get pdfNoImagesProvided => 'No images provided for PDF conversion';
+
+  @override
+  String pdfFailedToCreatePart(int part, String error) {
+    return 'Failed to create PDF part $part: $error';
+  }
+
+  @override
+  String pdfFailedToCreate(String error) {
+    return 'Failed to create PDF: $error';
+  }
+
+  @override
+  String pdfOutputDirectoryCreated(String path) {
+    return 'Created PDF output directory: $path';
+  }
+
+  @override
+  String pdfUsingFallbackDirectory(String path) {
+    return 'Using fallback directory: $path';
+  }
+
+  @override
+  String pdfInfoSaved(String contentId, int partsCount, int pageCount) {
+    return 'PDF info saved for $contentId ($partsCount parts, $pageCount pages)';
+  }
+
+  @override
+  String pdfExistsForContent(String contentId, String exists) {
+    return 'PDF exists for $contentId: $exists';
+  }
+
+  @override
+  String pdfFoundFiles(String contentId, int count) {
+    return 'Found $count PDF file(s) for $contentId';
+  }
+
+  @override
+  String pdfDeletedFiles(String contentId, int count) {
+    return 'Successfully deleted $count PDF file(s) for $contentId';
+  }
+
+  @override
+  String pdfTotalSize(String contentId, int sizeBytes) {
+    return 'Total PDF size for $contentId: $sizeBytes bytes';
+  }
+
+  @override
+  String pdfCleanupStarted(int maxAge) {
+    return 'Starting PDF cleanup, deleting files older than $maxAge days';
+  }
+
+  @override
+  String pdfCleanupCompleted(int deletedCount) {
+    return 'Cleanup completed, deleted $deletedCount old PDF files';
+  }
+
+  @override
+  String pdfStatistics(Object averageFilesPerContent, Object totalFiles,
+      Object totalSizeFormatted, Object uniqueContents) {
+    return 'PDF statistics - $totalFiles files, $totalSizeFormatted total size, $uniqueContents unique contents, $averageFilesPerContent avg files per content';
+  }
+
+  @override
+  String get historyCleanupMessages => 'History Cleanup Service Messages';
+
+  @override
+  String get historyCleanupServiceInitialized =>
+      'History Cleanup Service initialized';
+
+  @override
+  String get historyCleanupServiceDisposed =>
+      'History Cleanup Service disposed';
+
+  @override
+  String get autoCleanupDisabled => 'Auto cleanup history is disabled';
+
+  @override
+  String cleanupServiceStarted(int intervalHours) {
+    return 'Cleanup service started with ${intervalHours}h interval';
+  }
+
+  @override
+  String performingHistoryCleanup(String reason) {
+    return 'Performing history cleanup: $reason';
+  }
+
+  @override
+  String historyCleanupCompleted(int clearedCount, String reason) {
+    return 'History cleanup completed: cleared $clearedCount entries ($reason)';
+  }
+
+  @override
+  String get manualHistoryCleanup => 'Performing manual history cleanup';
+
+  @override
+  String get updatedLastAppAccess => 'Updated last app access time';
+
+  @override
+  String get updatedLastCleanupTime => 'Updated last cleanup time';
+
+  @override
+  String intervalCleanup(int intervalHours) {
+    return 'Interval cleanup (${intervalHours}h)';
+  }
+
+  @override
+  String inactivityCleanup(int inactivityDays) {
+    return 'Inactivity cleanup ($inactivityDays days)';
+  }
+
+  @override
+  String maxAgeCleanup(int maxDays) {
+    return 'Max age cleanup ($maxDays days)';
+  }
+
+  @override
+  String get initialCleanupSetup => 'Initial cleanup setup';
+
+  @override
+  String shouldCleanupOldHistory(String shouldCleanup) {
+    return 'Should cleanup old history: $shouldCleanup';
+  }
+
+  @override
+  String get analyticsMessages => 'Analytics Service Messages';
+
+  @override
+  String analyticsServiceInitialized(String enabled) {
+    return 'Analytics service initialized - tracking $enabled';
+  }
+
+  @override
+  String get analyticsTrackingEnabled => 'Analytics tracking enabled by user';
+
+  @override
+  String get analyticsTrackingDisabled =>
+      'Analytics tracking disabled by user - data cleared';
+
+  @override
+  String get analyticsDataCleared => 'Analytics data cleared by user request';
+
+  @override
+  String get analyticsServiceDisposed => 'Analytics service disposed';
+
+  @override
+  String analyticsEventTracked(String eventType, String eventName) {
+    return '📊 Analytics: $eventType - $eventName';
+  }
+
+  @override
+  String get appStartedEvent => 'App started event tracked';
+
+  @override
+  String sessionEndEvent(int minutes) {
+    return 'Session end event tracked ($minutes minutes)';
+  }
+
+  @override
+  String get analyticsEnabledEvent => 'Analytics enabled event tracked';
+
+  @override
+  String get analyticsDisabledEvent => 'Analytics disabled event tracked';
+
+  @override
+  String screenViewEvent(String screenName) {
+    return 'Screen view tracked: $screenName';
+  }
+
+  @override
+  String userActionEvent(String action) {
+    return 'User action tracked: $action';
+  }
+
+  @override
+  String performanceEvent(String operation, int durationMs) {
+    return 'Performance tracked: $operation (${durationMs}ms)';
+  }
+
+  @override
+  String errorEvent(String errorType, String errorMessage) {
+    return 'Error tracked: $errorType - $errorMessage';
+  }
+
+  @override
+  String featureUsageEvent(String feature) {
+    return 'Feature usage tracked: $feature';
+  }
+
+  @override
+  String readingSessionEvent(String contentId, int minutes, int pages) {
+    return 'Reading session tracked: $contentId (${minutes}min, $pages pages)';
+  }
+
+  @override
+  String get offlineManagerMessages => 'Offline Content Manager Messages';
+
+  @override
+  String offlineContentAvailable(String contentId, String available) {
+    return 'Content $contentId is available offline: $available';
+  }
+
+  @override
+  String offlineContentPath(String contentId, String path) {
+    return 'Offline content path for $contentId: $path';
+  }
+
+  @override
+  String foundExistingFiles(int count) {
+    return 'Found $count existing downloaded files';
+  }
+
+  @override
+  String offlineImageUrlsFound(String contentId, int count) {
+    return 'Found $count offline image URLs for $contentId';
+  }
+
+  @override
+  String offlineContentIdsFound(int count) {
+    return 'Found $count offline content IDs';
+  }
+
+  @override
+  String searchingOfflineContent(String query) {
+    return 'Searching offline content for: $query';
+  }
+
+  @override
+  String offlineContentMetadata(String contentId, String source) {
+    return 'Offline content metadata for $contentId: $source';
+  }
+
+  @override
+  String offlineContentCreated(String contentId) {
+    return 'Offline content created for $contentId';
+  }
+
+  @override
+  String offlineStorageUsage(int sizeBytes) {
+    return 'Offline storage usage: $sizeBytes bytes';
+  }
+
+  @override
+  String get cleanupOrphanedFilesStarted =>
+      'Starting cleanup of orphaned offline files';
+
+  @override
+  String get cleanupOrphanedFilesCompleted =>
+      'Cleanup of orphaned offline files completed';
+
+  @override
+  String removedOrphanedDirectory(String path) {
+    return 'Removed orphaned directory: $path';
+  }
 }

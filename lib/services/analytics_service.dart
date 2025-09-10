@@ -22,6 +22,9 @@ class AnalyticsService {
   bool _isInitialized = false;
   bool _analyticsEnabled = false;
   DateTime? _sessionStartTime;
+
+  // Localization callback
+  String Function(String key, {Map<String, dynamic>? args})? _localize;
   
   /// Initialize analytics service
   Future<void> initialize() async {
@@ -35,9 +38,13 @@ class AnalyticsService {
       
       if (_analyticsEnabled) {
         await _trackEvent(AnalyticsEvent.appStarted());
-        _logger.i('Analytics service initialized - tracking enabled');
+        _logger.i(_getLocalized('analyticsServiceInitialized',
+          args: {'enabled': 'enabled'},
+          fallback: 'Analytics service initialized - tracking enabled'));
       } else {
-        _logger.i('Analytics service initialized - tracking disabled');
+        _logger.i(_getLocalized('analyticsServiceInitialized',
+          args: {'enabled': 'disabled'},
+          fallback: 'Analytics service initialized - tracking disabled'));
       }
     } catch (e) {
       _logger.e('Failed to initialize analytics service: $e');
@@ -53,11 +60,13 @@ class AnalyticsService {
     
     if (enabled) {
       await _trackEvent(AnalyticsEvent.analyticsEnabled());
-      _logger.i('Analytics tracking enabled by user');
+      _logger.i(_getLocalized('analyticsTrackingEnabled',
+        fallback: 'Analytics tracking enabled by user'));
     } else {
       await _trackEvent(AnalyticsEvent.analyticsDisabled());
       await _clearAnalyticsData();
-      _logger.i('Analytics tracking disabled by user - data cleared');
+      _logger.i(_getLocalized('analyticsTrackingDisabled',
+        fallback: 'Analytics tracking disabled by user - data cleared'));
     }
   }
   
@@ -162,7 +171,8 @@ class AnalyticsService {
   Future<void> clearAnalyticsData() async {
     if (!_isInitialized) await initialize();
     await _clearAnalyticsData();
-    _logger.i('Analytics data cleared by user request');
+    _logger.i(_getLocalized('analyticsDataCleared',
+      fallback: 'Analytics data cleared by user request'));
   }
   
   /// Internal method to track events
@@ -190,7 +200,9 @@ class AnalyticsService {
       await _prefs.setString(_analyticsDataKey, jsonEncode(events));
       
       if (kDebugMode) {
-        _logger.d('📊 Analytics: ${event.eventType} - ${event.eventName}');
+        _logger.d(_getLocalized('analyticsEventTracked',
+          args: {'eventType': event.eventType, 'eventName': event.eventName},
+          fallback: '📊 Analytics: ${event.eventType} - ${event.eventName}'));
       }
     } catch (e) {
       _logger.e('Failed to track analytics event: $e');
@@ -213,7 +225,24 @@ class AnalyticsService {
       final sessionDuration = DateTime.now().difference(_sessionStartTime!);
       await _trackEvent(AnalyticsEvent.sessionEnd(sessionDuration));
     }
-    _logger.i('Analytics service disposed');
+    _logger.i(_getLocalized('analyticsServiceDisposed',
+      fallback: 'Analytics service disposed'));
+  }
+
+  /// Set localization callback for getting localized strings
+  void setLocalizationCallback(String Function(String key, {Map<String, dynamic>? args}) localize) {
+    _localize = localize;
+    _logger.i('AnalyticsService: Localization callback set');
+  }
+
+  /// Get localized string with fallback
+  String _getLocalized(String key, {Map<String, dynamic>? args, String? fallback}) {
+    try {
+      return _localize?.call(key, args: args) ?? fallback ?? key;
+    } catch (e) {
+      _logger.w('Failed to get localized string for key: $key, error: $e');
+      return fallback ?? key;
+    }
   }
 }
 

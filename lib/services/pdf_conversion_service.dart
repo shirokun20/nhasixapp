@@ -28,6 +28,9 @@ class PdfConversionService {
   final UserDataRepository _userDataRepository;
   final Logger _logger;
 
+  // Localization callback
+  String Function(String key, {Map<String, dynamic>? args})? _localize;
+
   /// Test method untuk verify apakah notification service bisa menampilkan notification
   /// Test method to verify if notification service can display notifications
   /// 
@@ -193,7 +196,8 @@ class PdfConversionService {
       
       // Validasi input parameters
       if (imagePaths.isEmpty) {
-        throw Exception('No images provided for PDF conversion');
+        throw Exception(_getLocalized('pdfNoImagesProvided',
+          fallback: 'No images provided for PDF conversion'));
       }
 
       // Tampilkan notifikasi bahwa konversi PDF dimulai
@@ -262,7 +266,9 @@ class PdfConversionService {
           if (result.success && result.pdfPath != null) {
             pdfPaths.add(result.pdfPath!);
           } else {
-            throw Exception('Failed to create PDF part $part: ${result.error}');
+            throw Exception(_getLocalized('pdfFailedToCreatePart',
+              args: {'part': part, 'error': result.error ?? 'Unknown error'},
+              fallback: 'Failed to create PDF part $part: ${result.error}'));
           }
         }
       } else {
@@ -286,7 +292,9 @@ class PdfConversionService {
         if (result.success && result.pdfPath != null) {
           pdfPaths.add(result.pdfPath!);
         } else {
-          throw Exception('Failed to create PDF: ${result.error}');
+          throw Exception(_getLocalized('pdfFailedToCreate',
+            args: {'error': result.error ?? 'Unknown error'},
+            fallback: 'Failed to create PDF: ${result.error}'));
         }
       }
 
@@ -380,10 +388,12 @@ class PdfConversionService {
 
       // Buat direktori jika belum ada (recursive: true untuk membuat parent dirs)
       // Create directory if it doesn't exist (recursive: true to create parent dirs)
-      if (!await outputDir.exists()) {
-        await outputDir.create(recursive: true);
-        _logger.i('PdfConversionService: Created PDF output directory: ${outputDir.path}');
-      }
+        if (!await outputDir.exists()) {
+          await outputDir.create(recursive: true);
+          _logger.i(_getLocalized('pdfOutputDirectoryCreated',
+            args: {'path': outputDir.path},
+            fallback: 'PdfConversionService: Created PDF output directory: ${outputDir.path}'));
+        }
 
       return outputDir;
     } catch (e) {
@@ -398,7 +408,9 @@ class PdfConversionService {
         await fallbackDir.create(recursive: true);
       }
       
-      _logger.w('PdfConversionService: Using fallback directory: ${fallbackDir.path}');
+      _logger.w(_getLocalized('pdfUsingFallbackDirectory',
+        args: {'path': fallbackDir.path},
+        fallback: 'PdfConversionService: Using fallback directory: ${fallbackDir.path}'));
       return fallbackDir;
     }
   }
@@ -526,7 +538,9 @@ class PdfConversionService {
       //   'createdAt': DateTime.now().toIso8601String(),
       // }
       
-      _logger.d('PdfConversionService: PDF info saved for $contentId (${result.partsCount} parts, ${result.pageCount} pages)');
+      _logger.d(_getLocalized('pdfInfoSaved',
+        args: {'contentId': contentId, 'partsCount': result.partsCount, 'pageCount': result.pageCount},
+        fallback: 'PdfConversionService: PDF info saved for $contentId (${result.partsCount} parts, ${result.pageCount} pages)'));
     } catch (e) {
       _logger.w('PdfConversionService: Failed to save PDF conversion info', error: e);
       // Non-critical error, tidak perlu throw exception
@@ -551,7 +565,9 @@ class PdfConversionService {
         path.extension(file.path).toLowerCase() == '.pdf'
       );
       
-      _logger.d('PdfConversionService: PDF exists for $contentId: $pdfExists');
+      _logger.d(_getLocalized('pdfExistsForContent',
+        args: {'contentId': contentId, 'exists': pdfExists.toString()},
+        fallback: 'PdfConversionService: PDF exists for $contentId: $pdfExists'));
       return pdfExists;
     } catch (e) {
       _logger.e('PdfConversionService: Error checking PDF existence for $contentId', error: e);
@@ -584,7 +600,9 @@ class PdfConversionService {
       // Sort by filename for correct part order
       pdfPaths.sort();
       
-      _logger.d('PdfConversionService: Found ${pdfPaths.length} PDF file(s) for $contentId');
+      _logger.d(_getLocalized('pdfFoundFiles',
+        args: {'contentId': contentId, 'count': pdfPaths.length},
+        fallback: 'PdfConversionService: Found ${pdfPaths.length} PDF file(s) for $contentId'));
       return pdfPaths;
     } catch (e) {
       _logger.e('PdfConversionService: Error getting PDF paths for $contentId', error: e);
@@ -615,7 +633,9 @@ class PdfConversionService {
         }
       }
       
-      _logger.i('PdfConversionService: Successfully deleted ${pdfPaths.length} PDF file(s) for $contentId');
+      _logger.i(_getLocalized('pdfDeletedFiles',
+        args: {'contentId': contentId, 'count': pdfPaths.length},
+        fallback: 'PdfConversionService: Successfully deleted ${pdfPaths.length} PDF file(s) for $contentId'));
       return true;
     } catch (e) {
       _logger.e('PdfConversionService: Error deleting PDF files for $contentId', error: e);
@@ -641,7 +661,9 @@ class PdfConversionService {
         }
       }
       
-      _logger.d('PdfConversionService: Total PDF size for $contentId: $totalSize bytes');
+      _logger.d(_getLocalized('pdfTotalSize',
+        args: {'contentId': contentId, 'sizeBytes': totalSize},
+        fallback: 'PdfConversionService: Total PDF size for $contentId: $totalSize bytes'));
       return totalSize;
     } catch (e) {
       _logger.e('PdfConversionService: Error calculating PDF size for $contentId', error: e);
@@ -682,7 +704,9 @@ class PdfConversionService {
       final cutoffDate = DateTime.now().subtract(Duration(days: maxAge));
       int deletedCount = 0;
       
-      _logger.i('PdfConversionService: Starting PDF cleanup, deleting files older than $maxAge days');
+      _logger.i(_getLocalized('pdfCleanupStarted',
+        args: {'maxAge': maxAge},
+        fallback: 'PdfConversionService: Starting PDF cleanup, deleting files older than $maxAge days'));
       
       // Scan semua file PDF di direktori
       // Scan all PDF files in directory
@@ -702,7 +726,9 @@ class PdfConversionService {
         }
       }
       
-      _logger.i('PdfConversionService: Cleanup completed, deleted $deletedCount old PDF files');
+      _logger.i(_getLocalized('pdfCleanupCompleted',
+        args: {'deletedCount': deletedCount},
+        fallback: 'PdfConversionService: Cleanup completed, deleted $deletedCount old PDF files'));
       return deletedCount;
     } catch (e) {
       _logger.e('PdfConversionService: Error during PDF cleanup', error: e);
@@ -766,6 +792,22 @@ class PdfConversionService {
         'averageFilesPerContent': 0,
         'directoryPath': 'Unknown',
       };
+    }
+  }
+
+  /// Set localization callback for getting localized strings
+  void setLocalizationCallback(String Function(String key, {Map<String, dynamic>? args}) localize) {
+    _localize = localize;
+    _logger.i('PdfConversionService: Localization callback set');
+  }
+
+  /// Get localized string with fallback
+  String _getLocalized(String key, {Map<String, dynamic>? args, String? fallback}) {
+    try {
+      return _localize?.call(key, args: args) ?? fallback ?? key;
+    } catch (e) {
+      _logger.w('Failed to get localized string for key: $key, error: $e');
+      return fallback ?? key;
     }
   }
 }
