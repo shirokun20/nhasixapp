@@ -278,7 +278,7 @@ class ContentCard extends StatelessWidget {
                 aspectRatio: aspectRatio,
                 borderRadius:
                     BorderRadius.zero, // No border radius, handled by parent
-                showOfflineIndicator: showOfflineIndicator,
+                showOfflineIndicator: false, // Disable to prevent duplicate with ContentCard's own indicator
               )
             : _buildImageError(),
       ),
