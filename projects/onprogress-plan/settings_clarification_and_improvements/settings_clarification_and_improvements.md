@@ -13,9 +13,9 @@ Dokumen ini berisi rencana, solusi, dan status implementasi untuk perbaikan sett
 - ✅ **Image Quality Setting**: Dynamic image quality control
 
 ### **Phase 2: Advanced Features** *(Priority: MEDIUM)*
-- ❌ **App Disguise/Stealth Mode**: Multiple launcher aliases untuk privacy
-- ❌ **Bulk Delete in Downloads**: Select multiple downloads untuk cleanup
-- ❌ **Settings UI Enhancement**: Descriptions, preview, help dialog
+- ❌ **App Disguise/Stealth Mode**: Multiple launcher aliases untuk privacy *(ENHANCEMENT PLAN)*
+- ❌ **Bulk Delete in Downloads**: Select multiple downloads untuk cleanup *(ENHANCEMENT PLAN)*
+- ❌ **Settings UI Enhancement**: Descriptions, preview, help dialog *(ENHANCEMENT PLAN)*
 
 ### **Phase 3: Localization Completion** *(Priority: HIGH)*
 - ✅ **PHASE 1-4 Localization**: All user-facing strings localized
@@ -31,42 +31,69 @@ Dokumen ini berisi rencana, solusi, dan status implementasi untuk perbaikan sett
 
 ## 🔧 **SOLUTION** - Solusi Teknis
 
-### **1. Grid Columns Implementation**
+### **1. Grid Columns Implementation** ✅ **IMPLEMENTED**
 ```dart
-// Helper class untuk dynamic grid
+// ✅ EXISTING: ResponsiveGridDelegate in lib/core/utils/responsive_grid_delegate.dart
 class ResponsiveGridDelegate {
   static SliverGridDelegate createGridDelegate(
     BuildContext context,
-    SettingsCubit settingsCubit,
-    // ... parameters
-  ) {
-    final columns = settingsCubit.getColumnsForOrientation(context);
+    SettingsCubit settingsCubit, {
+    double childAspectRatio = 0.7,
+    double crossAxisSpacing = 8.0,
+    double mainAxisSpacing = 8.0,
+  }) {
+    final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+    final columns = settingsCubit.getColumnsForOrientation(isPortrait);
+    
     return SliverGridDelegateWithFixedCrossAxisCount(
       crossAxisCount: columns,
-      // ... other properties
+      childAspectRatio: childAspectRatio,
+      crossAxisSpacing: crossAxisSpacing,
+      mainAxisSpacing: mainAxisSpacing,
     );
   }
 }
+
+// ✅ EXISTING: Usage in main_screen_scrollable.dart
+SliverGrid(
+  gridDelegate: ResponsiveGridDelegate.createGridDelegate(
+    context,
+    context.read<SettingsCubit>(),
+  ),
+  delegate: SliverChildBuilderDelegate(
+    // ... content grid items
+  ),
+),
 ```
 
-### **2. Language/Localization System**
+### **2. Language/Localization System** ✅ **IMPLEMENTED**
 ```dart
-// App-level localization setup
+// ✅ EXISTING: App-level localization setup in main.dart
 MaterialApp.router(
-  localizationsDelegates: [
-    AppLocalizations.delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ],
+  locale: _getLocaleFromSettings(settingsState),
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
-  locale: _getCurrentLocale(),
   // ... other properties
 )
+
+// ✅ EXISTING: Locale conversion in main.dart
+Locale _getLocaleFromSettings(SettingsState settingsState) {
+  if (settingsState is SettingsLoaded) {
+    switch (settingsState.preferences.defaultLanguage) {
+      case 'indonesian':
+        return const Locale('id');
+      case 'english':
+      default:
+        return const Locale('en');
+    }
+  }
+  return const Locale('en');
+}
 ```
 
-### **3. App Disguise/Stealth Mode**
+### **3. App Disguise/Stealth Mode** ❌ **ENHANCEMENT PLAN**
 ```xml
-<!-- AndroidManifest.xml - Multiple activity aliases -->
+<!-- 🔧 TO BE ADDED: AndroidManifest.xml enhancements -->
 <activity-alias
     android:name=".CalculatorActivity"
     android:targetActivity=".MainActivity"
@@ -93,7 +120,7 @@ MaterialApp.router(
 ```
 
 ```dart
-// Flutter Method Channel untuk Dynamic Icon Switching
+// 🔧 TO BE IMPLEMENTED: AppDisguiseService with method channel
 class AppDisguiseService {
   static const platform = MethodChannel('app_disguise');
 
@@ -116,7 +143,7 @@ class AppDisguiseService {
 ```
 
 ```kotlin
-// Android Native Implementation (MainActivity.kt)
+// 🔧 TO BE IMPLEMENTED: Android native code in MainActivity.kt
 class MainActivity: FlutterActivity() {
     private val CHANNEL = "app_disguise"
     
@@ -176,13 +203,17 @@ class MainActivity: FlutterActivity() {
 }
 ```
 
-### **4. Bulk Delete Implementation**
+### **4. Bulk Delete Implementation** ❌ **ENHANCEMENT PLAN**
 ```dart
-// Enhanced DownloadBloc untuk Bulk Operations
-abstract class DownloadEvent extends Equatable {
-  const DownloadEvent();
+// 🏗️ CURRENT STATE: DownloadBloc has these existing events
+// ✅ EXISTING in lib/presentation/blocs/download/download_bloc.dart:
+class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
+  // Existing events: DownloadInitializeEvent, DownloadQueueEvent, 
+  // DownloadStartEvent, DownloadPauseEvent, DownloadCancelEvent,
+  // DownloadRemoveEvent, DownloadRefreshEvent, etc.
 }
 
+// 🔧 TO BE ADDED: Bulk operation events
 class DownloadBulkDeleteEvent extends DownloadEvent {
   final List<String> contentIds;
   const DownloadBulkDeleteEvent(this.contentIds);
@@ -204,355 +235,43 @@ class DownloadSelectItemEvent extends DownloadEvent {
   List<Object> get props => [contentId, isSelected];
 }
 
-class DownloadSelectAllEvent extends DownloadEvent {
-  const DownloadSelectAllEvent();
-  @override
-  List<Object> get props => [];
-}
-
-class DownloadClearSelectionEvent extends DownloadEvent {
-  const DownloadClearSelectionEvent();
-  @override
-  List<Object> get props => [];
-}
-
-// Enhanced DownloadState
-abstract class DownloadState extends Equatable {
-  const DownloadState();
-}
-
-class DownloadLoaded extends DownloadState {
-  final List<DownloadedContent> downloads;
+// 🔧 TO BE ENHANCED: DownloadLoaded state (currently exists without selection mode)
+class DownloadLoaded extends DownloadBlocState {
+  final List<DownloadStatus> downloads;
+  final DownloadSettings settings;
+  final DateTime? lastUpdated;
+  // 🔧 TO BE ADDED:
   final bool isSelectionMode;
   final Set<String> selectedItems;
   final bool isBulkDeleting;
   
   const DownloadLoaded({
     required this.downloads,
+    required this.settings,
+    this.lastUpdated,
+    // 🔧 TO BE ADDED:
     this.isSelectionMode = false,
     this.selectedItems = const {},
     this.isBulkDeleting = false,
   });
-  
-  DownloadLoaded copyWith({
-    List<DownloadedContent>? downloads,
-    bool? isSelectionMode,
-    Set<String>? selectedItems,
-    bool? isBulkDeleting,
-  }) {
-    return DownloadLoaded(
-      downloads: downloads ?? this.downloads,
-      isSelectionMode: isSelectionMode ?? this.isSelectionMode,
-      selectedItems: selectedItems ?? this.selectedItems,
-      isBulkDeleting: isBulkDeleting ?? this.isBulkDeleting,
-    );
-  }
-  
-  @override
-  List<Object> get props => [downloads, isSelectionMode, selectedItems, isBulkDeleting];
 }
 
-// DownloadBloc Enhancement
-class DownloadBloc extends Bloc<DownloadEvent, DownloadState> {
-  final DownloadService _downloadService;
-  final AppLocalizations _localizations;
-
-  DownloadBloc(this._downloadService, this._localizations) : super(DownloadInitial()) {
-    on<DownloadBulkDeleteEvent>(_onBulkDelete);
-    on<DownloadToggleSelectionModeEvent>(_onToggleSelectionMode);
-    on<DownloadSelectItemEvent>(_onSelectItem);
-    on<DownloadSelectAllEvent>(_onSelectAll);
-    on<DownloadClearSelectionEvent>(_onClearSelection);
-  }
-
-  Future<void> _onBulkDelete(
-    DownloadBulkDeleteEvent event,
-    Emitter<DownloadState> emit,
-  ) async {
-    final currentState = state;
-    if (currentState is DownloadLoaded) {
-      emit(currentState.copyWith(isBulkDeleting: true));
-      
-      try {
-        // Bulk delete operation
-        await _downloadService.bulkDeleteDownloads(event.contentIds);
-        
-        // Remove deleted items dari state
-        final remainingDownloads = currentState.downloads
-            .where((download) => !event.contentIds.contains(download.contentId))
-            .toList();
-        
-        emit(DownloadLoaded(
-          downloads: remainingDownloads,
-          isSelectionMode: false,
-          selectedItems: {},
-          isBulkDeleting: false,
-        ));
-        
-        // Show success message
-        _showSuccessMessage(event.contentIds.length);
-        
-      } catch (error) {
-        emit(currentState.copyWith(isBulkDeleting: false));
-        _showErrorMessage(error.toString());
-      }
-    }
-  }
-
-  void _onToggleSelectionMode(
-    DownloadToggleSelectionModeEvent event,
-    Emitter<DownloadState> emit,
-  ) {
-    final currentState = state;
-    if (currentState is DownloadLoaded) {
-      emit(currentState.copyWith(
-        isSelectionMode: !currentState.isSelectionMode,
-        selectedItems: {},
-      ));
-    }
-  }
-
-  void _onSelectItem(
-    DownloadSelectItemEvent event,
-    Emitter<DownloadState> emit,
-  ) {
-    final currentState = state;
-    if (currentState is DownloadLoaded) {
-      final newSelection = Set<String>.from(currentState.selectedItems);
-      if (event.isSelected) {
-        newSelection.add(event.contentId);
-      } else {
-        newSelection.remove(event.contentId);
-      }
-      
-      emit(currentState.copyWith(selectedItems: newSelection));
-    }
-  }
-
-  void _onSelectAll(
-    DownloadSelectAllEvent event,
-    Emitter<DownloadState> emit,
-  ) {
-    final currentState = state;
-    if (currentState is DownloadLoaded) {
-      final allIds = currentState.downloads.map((d) => d.contentId).toSet();
-      emit(currentState.copyWith(selectedItems: allIds));
-    }
-  }
-
-  void _onClearSelection(
-    DownloadClearSelectionEvent event,
-    Emitter<DownloadState> emit,
-  ) {
-    final currentState = state;
-    if (currentState is DownloadLoaded) {
-      emit(currentState.copyWith(selectedItems: {}));
-    }
-  }
+// 🔧 TO BE ENHANCED: DownloadsScreen (currently uses TabController)
+// Current: TabController with 5 tabs (All, Active, Queued, Completed, Failed)
+// Enhancement: Add selection mode UI overlay
+class DownloadsScreen extends StatefulWidget {
+  // Current implementation has TabController
+  // Enhancement: Add selection mode state management
 }
 ```
 
 ```dart
-// Enhanced DownloadsScreen UI Implementation
-class DownloadsScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return BlocConsumer<DownloadBloc, DownloadState>(
-      listener: (context, state) {
-        if (state is DownloadLoaded && state.isBulkDeleting) {
-          // Show loading indicator
-        }
-      },
-      builder: (context, state) {
-        if (state is DownloadLoaded) {
-          return Scaffold(
-            appBar: _buildAppBar(context, state),
-            body: _buildBody(context, state),
-            floatingActionButton: _buildFAB(context, state),
-          );
-        }
-        return const SizedBox.shrink();
-      },
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar(BuildContext context, DownloadLoaded state) {
-    final localizations = AppLocalizations.of(context);
-    
-    if (state.isSelectionMode) {
-      return AppBar(
-        title: Text('${state.selectedItems.length} ${localizations.selected}'),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => context.read<DownloadBloc>().add(
-            const DownloadToggleSelectionModeEvent(),
-          ),
-        ),
-        actions: [
-          if (state.selectedItems.isNotEmpty) ...[
-            IconButton(
-              icon: const Icon(Icons.select_all),
-              onPressed: () => context.read<DownloadBloc>().add(
-                const DownloadSelectAllEvent(),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () => _showBulkDeleteConfirmation(context, state),
-            ),
-          ],
-          IconButton(
-            icon: const Icon(Icons.clear_all),
-            onPressed: () => context.read<DownloadBloc>().add(
-              const DownloadClearSelectionEvent(),
-            ),
-          ),
-        ],
-      );
-    }
-    
-    return AppBar(
-      title: Text(localizations.downloads),
-      actions: [
-        if (state.downloads.isNotEmpty)
-          IconButton(
-            icon: const Icon(Icons.checklist),
-            onPressed: () => context.read<DownloadBloc>().add(
-              const DownloadToggleSelectionModeEvent(),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildBody(BuildContext context, DownloadLoaded state) {
-    if (state.downloads.isEmpty) {
-      return _buildEmptyState(context);
-    }
-
-    return ListView.builder(
-      itemCount: state.downloads.length,
-      itemBuilder: (context, index) {
-        final download = state.downloads[index];
-        final isSelected = state.selectedItems.contains(download.contentId);
-        
-        return _buildDownloadItem(
-          context,
-          download,
-          state.isSelectionMode,
-          isSelected,
-        );
-      },
-    );
-  }
-
-  Widget _buildDownloadItem(
-    BuildContext context,
-    DownloadedContent download,
-    bool isSelectionMode,
-    bool isSelected,
-  ) {
-    return ListTile(
-      leading: isSelectionMode
-          ? Checkbox(
-              value: isSelected,
-              onChanged: (value) => context.read<DownloadBloc>().add(
-                DownloadSelectItemEvent(download.contentId, value ?? false),
-              ),
-            )
-          : _buildThumbnail(download),
-      title: Text(download.title),
-      subtitle: Text(_formatFileSize(download.fileSize)),
-      trailing: isSelectionMode
-          ? null
-          : PopupMenuButton<String>(
-              onSelected: (value) => _handleItemAction(context, download, value),
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: 'delete',
-                  child: Text(AppLocalizations.of(context).delete),
-                ),
-                PopupMenuItem(
-                  value: 'share',
-                  child: Text(AppLocalizations.of(context).share),
-                ),
-              ],
-            ),
-      onTap: isSelectionMode
-          ? () => context.read<DownloadBloc>().add(
-              DownloadSelectItemEvent(download.contentId, !isSelected),
-            )
-          : () => _openDownload(context, download),
-      onLongPress: !isSelectionMode
-          ? () => context.read<DownloadBloc>().add(
-              const DownloadToggleSelectionModeEvent(),
-            )
-          : null,
-    );
-  }
-
-  Widget? _buildFAB(BuildContext context, DownloadLoaded state) {
-    if (!state.isSelectionMode || state.selectedItems.isEmpty) {
-      return null;
-    }
-
-    return FloatingActionButton.extended(
-      onPressed: () => _showBulkDeleteConfirmation(context, state),
-      icon: const Icon(Icons.delete),
-      label: Text(AppLocalizations.of(context).deleteSelected),
-      backgroundColor: Theme.of(context).colorScheme.error,
-      foregroundColor: Theme.of(context).colorScheme.onError,
-    );
-  }
-
-  Future<void> _showBulkDeleteConfirmation(
-    BuildContext context,
-    DownloadLoaded state,
-  ) async {
-    final localizations = AppLocalizations.of(context);
-    final count = state.selectedItems.length;
-    
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(localizations.confirmDelete),
-        content: Text(
-          localizations.bulkDeleteConfirmMessage(count),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(localizations.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: Text(localizations.delete),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      context.read<DownloadBloc>().add(
-        DownloadBulkDeleteEvent(state.selectedItems.toList()),
-      );
-    }
-  }
-}
-```
-
-```dart
-// Enhanced DownloadService untuk Bulk Operations
+// 🔧 TO BE IMPLEMENTED: Enhanced DownloadService for bulk operations
 class DownloadService {
   final DatabaseHelper _databaseHelper;
   final FileService _fileService;
-  final AppLocalizations _localizations;
-
-  DownloadService(this._databaseHelper, this._fileService, this._localizations);
-
+  
+  // 🔧 TO BE ADDED: Bulk delete functionality
   Future<void> bulkDeleteDownloads(List<String> contentIds) async {
     if (contentIds.isEmpty) return;
 
@@ -560,10 +279,9 @@ class DownloadService {
     
     for (final contentId in contentIds) {
       try {
-        // Delete dari database
-        await _databaseHelper.deleteDownload(contentId);
-        
-        // Delete file dari storage
+        // Use existing DownloadRemoveEvent for each item
+        // Or implement direct database/file deletion
+        await _databaseHelper.deleteDownloadStatus(contentId);
         await _fileService.deleteDownloadFile(contentId);
         
         results[contentId] = true;
@@ -573,27 +291,14 @@ class DownloadService {
       }
     }
 
-    // Check for partial failures
+    // Handle partial failures
     final failures = results.entries.where((entry) => !entry.value).length;
     if (failures > 0) {
       throw BulkDeleteException(
-        _localizations.bulkDeletePartialFailure(failures, contentIds.length),
+        'Failed to delete $failures out of ${contentIds.length} items',
       );
     }
   }
-
-  Future<void> deleteDownload(String contentId) async {
-    await _databaseHelper.deleteDownload(contentId);
-    await _fileService.deleteDownloadFile(contentId);
-  }
-}
-
-class BulkDeleteException implements Exception {
-  final String message;
-  BulkDeleteException(this.message);
-  
-  @override
-  String toString() => message;
 }
 ```
 
@@ -614,18 +319,18 @@ class BulkDeleteException implements Exception {
 - [ ] Verify app restart maintains selected disguise mode
 
 #### **Task 2: Bulk Delete in Downloads** *(3-4 hours)*
-- [ ] Enhance DownloadBloc dengan bulk operation events dan states
-- [ ] Add selection mode state management (toggle, select all, clear selection)
-- [ ] Implement enhanced DownloadsScreen dengan selection mode UI
-- [ ] Create dynamic AppBar untuk selection mode dengan item count
-- [ ] Add multi-select UI dengan checkboxes dan visual feedback
+- [ ] Add bulk operation events to existing DownloadBloc (BulkDeleteEvent, SelectionModeEvent, etc.)
+- [ ] Enhance DownloadLoaded state dengan selection mode properties (isSelectionMode, selectedItems)
+- [ ] Modify DownloadsScreen to support selection mode overlay on existing TabController
+- [ ] Create selection mode AppBar yang menggantikan default AppBar
+- [ ] Add multi-select UI dengan checkboxes pada existing ListTile items
 - [ ] Implement FloatingActionButton untuk bulk delete action
-- [ ] Create confirmation dialog dengan localized messages
-- [ ] Enhance DownloadService untuk bulk file operations
+- [ ] Create confirmation dialog dengan localized messages untuk bulk operations
+- [ ] Integrate dengan existing DownloadRemoveEvent atau create bulk delete service
 - [ ] Add error handling untuk partial failures dalam bulk operations
-- [ ] Test selection mode functionality dan bulk delete operations
+- [ ] Test selection mode functionality dengan existing download states (queued, active, completed, failed)
 - [ ] Add progress indicator untuk bulk operations
-- [ ] Verify memory efficiency untuk large selections
+- [ ] Verify integration dengan existing notification system
 
 #### **Task 3: Settings UI Enhancement** *(2-3 hours)*
 - [ ] Add descriptions for all settings
