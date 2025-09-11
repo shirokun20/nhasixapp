@@ -1292,7 +1292,7 @@ class _DetailScreenState extends State<DetailScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  AppLocalizations.of(context)!.failedToStartDownload,
+                  AppLocalizations.of(context)!.failedToStartDownload('Unknown error'),
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onError,
                   ),

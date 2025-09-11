@@ -38,7 +38,24 @@ class SettingsLoaded extends SettingsState {
   }
 
   /// Get theme display name
-  String get themeDisplayName {
+  String getThemeDisplayName(AppLocalizations? localizations) {
+    if (localizations == null) {
+      return _getFallbackThemeDisplayName();
+    }
+    
+    switch (preferences.theme) {
+      case 'light':
+        return localizations.lightTheme;
+      case 'dark':
+        return localizations.darkTheme;
+      case 'amoled':
+        return localizations.amoledTheme;
+      default:
+        return localizations.darkTheme;
+    }
+  }
+
+  String _getFallbackThemeDisplayName() {
     switch (preferences.theme) {
       case 'light':
         return 'Light';
@@ -52,7 +69,26 @@ class SettingsLoaded extends SettingsState {
   }
 
   /// Get image quality display name
-  String get imageQualityDisplayName {
+  String getImageQualityDisplayName(AppLocalizations? localizations) {
+    if (localizations == null) {
+      return _getFallbackImageQualityDisplayName();
+    }
+    
+    switch (preferences.imageQuality) {
+      case 'low':
+        return localizations.lowQuality;
+      case 'medium':
+        return localizations.mediumQuality;
+      case 'high':
+        return localizations.highQuality;
+      case 'original':
+        return localizations.originalQuality;
+      default:
+        return localizations.highQuality;
+    }
+  }
+
+  String _getFallbackImageQualityDisplayName() {
     switch (preferences.imageQuality) {
       case 'low':
         return 'Low (Faster loading)';
@@ -68,7 +104,22 @@ class SettingsLoaded extends SettingsState {
   }
 
   /// Get reading direction display name
-  String get readingDirectionDisplayName {
+  String getReadingDirectionDisplayName(AppLocalizations? localizations) {
+    if (localizations == null) {
+      return _getFallbackReadingDirectionDisplayName();
+    }
+    
+    switch (preferences.readingDirection) {
+      case ReadingDirection.leftToRight:
+        return localizations.horizontalPages;
+      case ReadingDirection.rightToLeft:
+        return 'Right to Left'; // Fallback since no specific key exists
+      case ReadingDirection.vertical:
+        return localizations.verticalPages;
+    }
+  }
+
+  String _getFallbackReadingDirectionDisplayName() {
     switch (preferences.readingDirection) {
       case ReadingDirection.leftToRight:
         return 'Left to Right';
@@ -80,12 +131,35 @@ class SettingsLoaded extends SettingsState {
   }
 
   /// Get default language display name
-  String get defaultLanguageDisplayName {
+  String getDefaultLanguageDisplayName(AppLocalizations? localizations) {
+    if (localizations == null) {
+      return _getFallbackDefaultLanguageDisplayName();
+    }
+    
+    switch (preferences.defaultLanguage.toLowerCase()) {
+      case 'english':
+        return localizations.english;
+      case 'japanese':
+        return localizations.japanese;
+      case 'indonesian':
+        return localizations.indonesian;
+      case 'chinese':
+        return 'Chinese'; // Fallback since no specific key exists
+      case 'korean':
+        return 'Korean'; // Fallback since no specific key exists
+      default:
+        return preferences.defaultLanguage;
+    }
+  }
+
+  String _getFallbackDefaultLanguageDisplayName() {
     switch (preferences.defaultLanguage.toLowerCase()) {
       case 'english':
         return 'English';
       case 'japanese':
         return 'Japanese';
+      case 'indonesian':
+        return 'Indonesian';
       case 'chinese':
         return 'Chinese';
       case 'korean':
@@ -159,7 +233,22 @@ class SettingsError extends SettingsState {
   List<Object?> get props => [message, errorType];
 
   /// Get user-friendly error message
-  String get userFriendlyMessage {
+  String getUserFriendlyMessage(AppLocalizations? localizations) {
+    if (localizations == null) {
+      return _getFallbackUserFriendlyMessage();
+    }
+    
+    switch (errorType) {
+      case 'network':
+        return localizations.unableToSyncSettings;
+      case 'storage':
+        return localizations.unableToSaveSettings;
+      default:
+        return localizations.failedToUpdateSettings;
+    }
+  }
+
+  String _getFallbackUserFriendlyMessage() {
     switch (errorType) {
       case 'network':
         return 'Unable to sync settings. Changes will be saved locally.';

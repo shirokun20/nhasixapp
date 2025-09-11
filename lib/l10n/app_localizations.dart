@@ -353,7 +353,7 @@ abstract class AppLocalizations {
   /// No description provided for @loadingHistory.
   ///
   /// In en, this message translates to:
-  /// **'Loading history...'**
+  /// **'Loading history'**
   String get loadingHistory;
 
   /// No description provided for @clearingHistory.
@@ -1490,6 +1490,12 @@ abstract class AppLocalizations {
   /// **'Export Favorites'**
   String get exportFavorites;
 
+  /// Message shown when user has no favorites
+  ///
+  /// In en, this message translates to:
+  /// **'No favorites yet. Start adding content to your favorites!'**
+  String get noFavoritesYet;
+
   /// No description provided for @exportingFavorites.
   ///
   /// In en, this message translates to:
@@ -1499,8 +1505,8 @@ abstract class AppLocalizations {
   /// No description provided for @exportComplete.
   ///
   /// In en, this message translates to:
-  /// **'Export Complete'**
-  String get exportComplete;
+  /// **'Export Complete: Downloads exported to {fileName}'**
+  String exportComplete(String fileName);
 
   /// No description provided for @exportedFavoritesCount.
   ///
@@ -1511,7 +1517,7 @@ abstract class AppLocalizations {
   /// No description provided for @exportFailed.
   ///
   /// In en, this message translates to:
-  /// **'Export failed: {error}'**
+  /// **'Export Failed: {error}'**
   String exportFailed(String error);
 
   /// No description provided for @selectedCount.
@@ -1806,7 +1812,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Failed to reset settings: {error}'**
-  String failedToResetSettings(Object error);
+  String failedToResetSettings(String error);
 
   /// No description provided for @readingHistory.
   ///
@@ -2687,8 +2693,8 @@ abstract class AppLocalizations {
   /// No description provided for @failedToStartDownload.
   ///
   /// In en, this message translates to:
-  /// **'Failed to start download. Please try again.'**
-  String get failedToStartDownload;
+  /// **'Failed to start download: {error}'**
+  String failedToStartDownload(String error);
 
   /// No description provided for @linkCopiedToClipboard.
   ///
@@ -4467,6 +4473,636 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count}s'**
   String seconds(int count);
+
+  /// No description provided for @loadingUserPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading user preferences'**
+  String get loadingUserPreferences;
+
+  /// No description provided for @successfullyLoadedUserPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully loaded user preferences'**
+  String get successfullyLoadedUserPreferences;
+
+  /// No description provided for @invalidColumnsPortraitValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid columns portrait value: {value}'**
+  String invalidColumnsPortraitValue(int value);
+
+  /// No description provided for @invalidColumnsLandscapeValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid columns landscape value: {value}'**
+  String invalidColumnsLandscapeValue(int value);
+
+  /// No description provided for @updatingSettingsViaPreferencesService.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating settings via PreferencesService'**
+  String get updatingSettingsViaPreferencesService;
+
+  /// No description provided for @successfullyUpdatedSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully updated settings'**
+  String get successfullyUpdatedSettings;
+
+  /// No description provided for @failedToUpdateSetting.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update setting: {error}'**
+  String failedToUpdateSetting(String error);
+
+  /// No description provided for @resettingAllSettingsToDefaults.
+  ///
+  /// In en, this message translates to:
+  /// **'Resetting all settings to defaults'**
+  String get resettingAllSettingsToDefaults;
+
+  /// No description provided for @successfullyResetAllSettingsToDefaults.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully reset all settings to defaults'**
+  String get successfullyResetAllSettingsToDefaults;
+
+  /// No description provided for @settingsNotLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings not loaded'**
+  String get settingsNotLoaded;
+
+  /// No description provided for @exportingSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Exporting settings'**
+  String get exportingSettings;
+
+  /// No description provided for @successfullyExportedSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully exported settings'**
+  String get successfullyExportedSettings;
+
+  /// No description provided for @failedToExportSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to export settings: {error}'**
+  String failedToExportSettings(String error);
+
+  /// No description provided for @importingSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing settings'**
+  String get importingSettings;
+
+  /// No description provided for @successfullyImportedSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully imported settings'**
+  String get successfullyImportedSettings;
+
+  /// No description provided for @failedToImportSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to import settings: {error}'**
+  String failedToImportSettings(String error);
+
+  /// Error message when settings cannot be synced
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to sync settings. Changes will be saved locally.'**
+  String get unableToSyncSettings;
+
+  /// Error message when settings cannot be saved due to storage issues
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to save settings. Please check device storage.'**
+  String get unableToSaveSettings;
+
+  /// Generic error message when settings update fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update settings. Please try again.'**
+  String get failedToUpdateSettings;
+
+  /// No description provided for @noHistoryFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No history found'**
+  String get noHistoryFound;
+
+  /// No description provided for @loadedHistoryEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'Loaded {count} history entries'**
+  String loadedHistoryEntries(int count);
+
+  /// No description provided for @failedToLoadHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load history: {error}'**
+  String failedToLoadHistory(String error);
+
+  /// No description provided for @loadingMoreHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading more history (page {page})'**
+  String loadingMoreHistory(int page);
+
+  /// No description provided for @loadedMoreHistoryEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'Loaded {count} more entries, total: {total}'**
+  String loadedMoreHistoryEntries(int count, int total);
+
+  /// No description provided for @refreshingHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Refreshing history'**
+  String get refreshingHistory;
+
+  /// No description provided for @refreshedHistoryWithEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'Refreshed history with {count} entries'**
+  String refreshedHistoryWithEntries(int count);
+
+  /// No description provided for @failedToRefreshHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to refresh history: {error}'**
+  String failedToRefreshHistory(String error);
+
+  /// No description provided for @clearingAllHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Clearing all history'**
+  String get clearingAllHistory;
+
+  /// No description provided for @allHistoryCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'All history cleared'**
+  String get allHistoryCleared;
+
+  /// No description provided for @failedToClearHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to clear history: {error}'**
+  String failedToClearHistory(String error);
+
+  /// No description provided for @removingHistoryItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Removing history item: {contentId}'**
+  String removingHistoryItem(String contentId);
+
+  /// No description provided for @removedHistoryItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed history item: {contentId}'**
+  String removedHistoryItem(String contentId);
+
+  /// No description provided for @failedToRemoveHistoryItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to remove history item: {error}'**
+  String failedToRemoveHistoryItem(String error);
+
+  /// No description provided for @performingManualHistoryCleanup.
+  ///
+  /// In en, this message translates to:
+  /// **'Performing manual history cleanup'**
+  String get performingManualHistoryCleanup;
+
+  /// No description provided for @manualCleanupCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual cleanup completed'**
+  String get manualCleanupCompleted;
+
+  /// No description provided for @failedToPerformCleanup.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to perform cleanup: {error}'**
+  String failedToPerformCleanup(String error);
+
+  /// No description provided for @updatingCleanupSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating cleanup settings'**
+  String get updatingCleanupSettings;
+
+  /// No description provided for @cleanupSettingsUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleanup settings updated'**
+  String get cleanupSettingsUpdated;
+
+  /// No description provided for @addingContentToFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Adding content to favorites: {title}'**
+  String addingContentToFavorites(String title);
+
+  /// No description provided for @successfullyAddedToFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully added to favorites: {title}'**
+  String successfullyAddedToFavorites(String title);
+
+  /// No description provided for @contentNotInFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Content {contentId} is not in favorites, skipping removal'**
+  String contentNotInFavorites(String contentId);
+
+  /// No description provided for @callingRemoveFromFavoritesUseCase.
+  ///
+  /// In en, this message translates to:
+  /// **'Calling removeFromFavoritesUseCase with params: {params}'**
+  String callingRemoveFromFavoritesUseCase(String params);
+
+  /// No description provided for @successfullyCalledRemoveFromFavoritesUseCase.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully called removeFromFavoritesUseCase'**
+  String get successfullyCalledRemoveFromFavoritesUseCase;
+
+  /// No description provided for @updatingFavoritesListInState.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating favorites list in state, removing contentId: {contentId}'**
+  String updatingFavoritesListInState(String contentId);
+
+  /// No description provided for @favoritesCountBeforeAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites count: before={before}, after={after}'**
+  String favoritesCountBeforeAfter(int before, int after);
+
+  /// No description provided for @stateUpdatedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'State updated successfully'**
+  String get stateUpdatedSuccessfully;
+
+  /// No description provided for @successfullyRemovedFromFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully removed from favorites: {contentId}'**
+  String successfullyRemovedFromFavorites(String contentId);
+
+  /// No description provided for @errorRemovingContentFromFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Error removing content {contentId} from favorites: {error}'**
+  String errorRemovingContentFromFavorites(String contentId, String error);
+
+  /// No description provided for @removingFavoritesInBatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Removing {count} favorites in batch'**
+  String removingFavoritesInBatch(int count);
+
+  /// No description provided for @successfullyRemovedFavoritesInBatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully removed {count} favorites in batch'**
+  String successfullyRemovedFavoritesInBatch(int count);
+
+  /// No description provided for @searchingFavoritesWithQuery.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching favorites with query: {query}'**
+  String searchingFavoritesWithQuery(String query);
+
+  /// No description provided for @foundFavoritesMatchingQuery.
+  ///
+  /// In en, this message translates to:
+  /// **'Found {count} favorites matching query'**
+  String foundFavoritesMatchingQuery(int count);
+
+  /// No description provided for @clearingFavoritesSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Clearing favorites search'**
+  String get clearingFavoritesSearch;
+
+  /// No description provided for @exportingFavoritesData.
+  ///
+  /// In en, this message translates to:
+  /// **'Exporting favorites data'**
+  String get exportingFavoritesData;
+
+  /// No description provided for @successfullyExportedFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully exported {count} favorites'**
+  String successfullyExportedFavorites(int count);
+
+  /// No description provided for @importingFavoritesData.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing favorites data'**
+  String get importingFavoritesData;
+
+  /// No description provided for @successfullyImportedFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully imported {count} favorites'**
+  String successfullyImportedFavorites(int count);
+
+  /// No description provided for @failedToImportFavorite.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to import favorite: {error}'**
+  String failedToImportFavorite(String error);
+
+  /// No description provided for @retryingFavoritesLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying favorites loading'**
+  String get retryingFavoritesLoading;
+
+  /// No description provided for @refreshingFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Refreshing favorites'**
+  String get refreshingFavorites;
+
+  /// No description provided for @failedToLoadFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load favorites: {error}'**
+  String failedToLoadFavorites(String error);
+
+  /// No description provided for @failedToInitializeDownloadManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to initialize download manager: {error}'**
+  String failedToInitializeDownloadManager(String error);
+
+  /// No description provided for @waitingForWifiConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for WiFi connection'**
+  String get waitingForWifiConnection;
+
+  /// No description provided for @failedToQueueDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to queue download: {error}'**
+  String failedToQueueDownload(String error);
+
+  /// No description provided for @retryingDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying... ({current}/{total})'**
+  String retryingDownload(int current, int total);
+
+  /// No description provided for @downloadCancelledByUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Download cancelled by user'**
+  String get downloadCancelledByUser;
+
+  /// No description provided for @failedToPauseDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to pause download: {error}'**
+  String failedToPauseDownload(String error);
+
+  /// No description provided for @failedToCancelDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to cancel download: {error}'**
+  String failedToCancelDownload(String error);
+
+  /// No description provided for @failedToRetryDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to retry download: {error}'**
+  String failedToRetryDownload(String error);
+
+  /// No description provided for @failedToResumeDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to resume download: {error}'**
+  String failedToResumeDownload(String error);
+
+  /// No description provided for @failedToRemoveDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to remove download: {error}'**
+  String failedToRemoveDownload(String error);
+
+  /// No description provided for @failedToRefreshDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to refresh downloads: {error}'**
+  String failedToRefreshDownloads(String error);
+
+  /// No description provided for @failedToUpdateDownloadSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update download settings: {error}'**
+  String failedToUpdateDownloadSettings(String error);
+
+  /// No description provided for @pausingAllDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Pausing all downloads'**
+  String get pausingAllDownloads;
+
+  /// No description provided for @resumingAllDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Resuming all downloads'**
+  String get resumingAllDownloads;
+
+  /// No description provided for @cancellingAllDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelling all downloads'**
+  String get cancellingAllDownloads;
+
+  /// No description provided for @clearingCompletedDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Clearing completed downloads'**
+  String get clearingCompletedDownloads;
+
+  /// No description provided for @failedToPauseAllDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to pause all downloads: {error}'**
+  String failedToPauseAllDownloads(String error);
+
+  /// No description provided for @failedToResumeAllDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to resume all downloads: {error}'**
+  String failedToResumeAllDownloads(String error);
+
+  /// No description provided for @failedToCancelAllDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to cancel all downloads: {error}'**
+  String failedToCancelAllDownloads(String error);
+
+  /// No description provided for @failedToQueueRangeDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to queue range download: {error}'**
+  String failedToQueueRangeDownload(String error);
+
+  /// No description provided for @failedToClearCompletedDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to clear completed downloads: {error}'**
+  String failedToClearCompletedDownloads(String error);
+
+  /// No description provided for @downloadNotCompletedYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Download is not completed yet'**
+  String get downloadNotCompletedYet;
+
+  /// No description provided for @noImagesFoundForConversion.
+  ///
+  /// In en, this message translates to:
+  /// **'No images found for conversion'**
+  String get noImagesFoundForConversion;
+
+  /// No description provided for @storageCleanupCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage cleanup completed. Cleaned {cleanedFiles} directories, freed {freedSpace} MB'**
+  String storageCleanupCompleted(int cleanedFiles, String freedSpace);
+
+  /// No description provided for @storageCleanupComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage Cleanup Complete: Cleaned {cleanedFiles} items, freed {freedSpace} MB'**
+  String storageCleanupComplete(int cleanedFiles, String freedSpace);
+
+  /// No description provided for @storageCleanupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage Cleanup Failed: {error}'**
+  String storageCleanupFailed(String error);
+
+  /// No description provided for @failedToDeleteDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete directory: {path}, error: {error}'**
+  String failedToDeleteDirectory(String path, String error);
+
+  /// No description provided for @failedToDeleteTempFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete temp file: {path}, error: {error}'**
+  String failedToDeleteTempFile(String path, String error);
+
+  /// No description provided for @downloadDirectoryNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Download directory not found: {path}'**
+  String downloadDirectoryNotFound(String path);
+
+  /// No description provided for @cannotOpenIncompleteDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot open - download not completed or path missing for {contentId}'**
+  String cannotOpenIncompleteDownload(String contentId);
+
+  /// No description provided for @errorOpeningDownloadedContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Error opening downloaded content: {error}'**
+  String errorOpeningDownloadedContent(String error);
+
+  /// No description provided for @allStrategiesFailedToOpenDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'All strategies failed to open downloaded content for {contentId}'**
+  String allStrategiesFailedToOpenDownload(String contentId);
+
+  /// No description provided for @failedToSaveProgressToDatabase.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save progress to database: {error}'**
+  String failedToSaveProgressToDatabase(String error);
+
+  /// No description provided for @failedToUpdatePauseNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update pause notification: {error}'**
+  String failedToUpdatePauseNotification(String error);
+
+  /// No description provided for @failedToUpdateResumeNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update resume notification: {error}'**
+  String failedToUpdateResumeNotification(String error);
+
+  /// No description provided for @failedToUpdateNotificationProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update notification progress: {error}'**
+  String failedToUpdateNotificationProgress(String error);
+
+  /// No description provided for @errorCalculatingDirectorySize.
+  ///
+  /// In en, this message translates to:
+  /// **'Error calculating directory size: {error}'**
+  String errorCalculatingDirectorySize(String error);
+
+  /// No description provided for @errorCleaningTempFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Error cleaning temp files in: {path}, error: {error}'**
+  String errorCleaningTempFiles(String path, String error);
+
+  /// No description provided for @errorDetectingDownloadsDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Error detecting Downloads directory: {error}'**
+  String errorDetectingDownloadsDirectory(String error);
+
+  /// No description provided for @usingEmergencyFallbackDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Using emergency fallback directory: {path}'**
+  String usingEmergencyFallbackDirectory(String path);
+
+  /// No description provided for @errorDuringStorageCleanup.
+  ///
+  /// In en, this message translates to:
+  /// **'Error during storage cleanup'**
+  String get errorDuringStorageCleanup;
+
+  /// No description provided for @errorDuringExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Error during export'**
+  String get errorDuringExport;
+
+  /// No description provided for @errorDuringPdfConversion.
+  ///
+  /// In en, this message translates to:
+  /// **'Error during PDF conversion for {contentId}'**
+  String errorDuringPdfConversion(String contentId);
+
+  /// No description provided for @errorRetryingPdfConversion.
+  ///
+  /// In en, this message translates to:
+  /// **'Error retrying PDF conversion: {error}'**
+  String errorRetryingPdfConversion(String error);
 }
 
 class _AppLocalizationsDelegate

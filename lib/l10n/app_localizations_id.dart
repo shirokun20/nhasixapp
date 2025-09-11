@@ -141,7 +141,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get cleanupInfo => 'Info Pembersihan';
 
   @override
-  String get loadingHistory => 'Memuat riwayat...';
+  String get loadingHistory => 'Memuat riwayat';
 
   @override
   String get clearingHistory => 'Menghapus riwayat...';
@@ -770,10 +770,16 @@ class AppLocalizationsId extends AppLocalizations {
   String get exportFavorites => 'Ekspor Favorit';
 
   @override
+  String get noFavoritesYet =>
+      'Belum ada favorit. Mulai tambahkan konten ke favorit Anda!';
+
+  @override
   String get exportingFavorites => 'Mengekspor favorit...';
 
   @override
-  String get exportComplete => 'Ekspor Selesai';
+  String exportComplete(String fileName) {
+    return 'Ekspor Selesai: Unduhan diekspor ke $fileName';
+  }
 
   @override
   String exportedFavoritesCount(int count) {
@@ -782,7 +788,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String exportFailed(String error) {
-    return 'Ekspor gagal: $error';
+    return 'Ekspor Gagal: $error';
   }
 
   @override
@@ -944,8 +950,8 @@ class AppLocalizationsId extends AppLocalizations {
       'Pengaturan pembaca telah direset ke default.';
 
   @override
-  String failedToResetSettings(Object error) {
-    return 'Gagal mengatur ulang pengaturan: $error';
+  String failedToResetSettings(String error) {
+    return 'Gagal mereset pengaturan: $error';
   }
 
   @override
@@ -1423,8 +1429,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get viewDownloadsAction => 'Lihat';
 
   @override
-  String get failedToStartDownload =>
-      'Gagal memulai unduhan. Silakan coba lagi.';
+  String failedToStartDownload(String error) {
+    return 'Gagal memulai unduhan: $error';
+  }
 
   @override
   String get linkCopiedToClipboard => 'Link telah disalin ke clipboard';
@@ -2509,5 +2516,463 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String seconds(int count) {
     return '${count}d';
+  }
+
+  @override
+  String get loadingUserPreferences => 'Memuat preferensi pengguna';
+
+  @override
+  String get successfullyLoadedUserPreferences =>
+      'Berhasil memuat preferensi pengguna';
+
+  @override
+  String invalidColumnsPortraitValue(int value) {
+    return 'Nilai kolom potret tidak valid: $value';
+  }
+
+  @override
+  String invalidColumnsLandscapeValue(int value) {
+    return 'Nilai kolom lanskap tidak valid: $value';
+  }
+
+  @override
+  String get updatingSettingsViaPreferencesService =>
+      'Memperbarui pengaturan melalui PreferencesService';
+
+  @override
+  String get successfullyUpdatedSettings => 'Berhasil memperbarui pengaturan';
+
+  @override
+  String failedToUpdateSetting(String error) {
+    return 'Gagal memperbarui pengaturan: $error';
+  }
+
+  @override
+  String get resettingAllSettingsToDefaults =>
+      'Mereset semua pengaturan ke default';
+
+  @override
+  String get successfullyResetAllSettingsToDefaults =>
+      'Berhasil mereset semua pengaturan ke default';
+
+  @override
+  String get settingsNotLoaded => 'Pengaturan tidak dimuat';
+
+  @override
+  String get exportingSettings => 'Mengekspor pengaturan';
+
+  @override
+  String get successfullyExportedSettings => 'Berhasil mengekspor pengaturan';
+
+  @override
+  String failedToExportSettings(String error) {
+    return 'Gagal mengekspor pengaturan: $error';
+  }
+
+  @override
+  String get importingSettings => 'Mengimpor pengaturan';
+
+  @override
+  String get successfullyImportedSettings => 'Berhasil mengimpor pengaturan';
+
+  @override
+  String failedToImportSettings(String error) {
+    return 'Gagal mengimpor pengaturan: $error';
+  }
+
+  @override
+  String get unableToSyncSettings =>
+      'Tidak dapat menyinkronkan pengaturan. Perubahan akan disimpan secara lokal.';
+
+  @override
+  String get unableToSaveSettings =>
+      'Tidak dapat menyimpan pengaturan. Silakan periksa penyimpanan perangkat.';
+
+  @override
+  String get failedToUpdateSettings =>
+      'Gagal memperbarui pengaturan. Silakan coba lagi.';
+
+  @override
+  String get noHistoryFound => 'Tidak ada riwayat ditemukan';
+
+  @override
+  String loadedHistoryEntries(int count) {
+    return 'Memuat $count entri riwayat';
+  }
+
+  @override
+  String failedToLoadHistory(String error) {
+    return 'Gagal memuat riwayat: $error';
+  }
+
+  @override
+  String loadingMoreHistory(int page) {
+    return 'Memuat lebih banyak riwayat (halaman $page)';
+  }
+
+  @override
+  String loadedMoreHistoryEntries(int count, int total) {
+    return 'Memuat $count entri lagi, total: $total';
+  }
+
+  @override
+  String get refreshingHistory => 'Menyegarkan riwayat';
+
+  @override
+  String refreshedHistoryWithEntries(int count) {
+    return 'Riwayat disegarkan dengan $count entri';
+  }
+
+  @override
+  String failedToRefreshHistory(String error) {
+    return 'Gagal menyegarkan riwayat: $error';
+  }
+
+  @override
+  String get clearingAllHistory => 'Menghapus semua riwayat';
+
+  @override
+  String get allHistoryCleared => 'Semua riwayat dihapus';
+
+  @override
+  String failedToClearHistory(String error) {
+    return 'Gagal menghapus riwayat: $error';
+  }
+
+  @override
+  String removingHistoryItem(String contentId) {
+    return 'Menghapus item riwayat: $contentId';
+  }
+
+  @override
+  String removedHistoryItem(String contentId) {
+    return 'Item riwayat dihapus: $contentId';
+  }
+
+  @override
+  String failedToRemoveHistoryItem(String error) {
+    return 'Gagal menghapus item riwayat: $error';
+  }
+
+  @override
+  String get performingManualHistoryCleanup =>
+      'Melakukan pembersihan riwayat manual';
+
+  @override
+  String get manualCleanupCompleted => 'Pembersihan manual selesai';
+
+  @override
+  String failedToPerformCleanup(String error) {
+    return 'Gagal melakukan pembersihan: $error';
+  }
+
+  @override
+  String get updatingCleanupSettings => 'Memperbarui pengaturan pembersihan';
+
+  @override
+  String get cleanupSettingsUpdated => 'Pengaturan pembersihan diperbarui';
+
+  @override
+  String addingContentToFavorites(String title) {
+    return 'Menambahkan konten ke favorit: $title';
+  }
+
+  @override
+  String successfullyAddedToFavorites(String title) {
+    return 'Berhasil ditambahkan ke favorit: $title';
+  }
+
+  @override
+  String contentNotInFavorites(String contentId) {
+    return 'Konten $contentId tidak ada di favorit, melewati penghapusan';
+  }
+
+  @override
+  String callingRemoveFromFavoritesUseCase(String params) {
+    return 'Memanggil removeFromFavoritesUseCase dengan parameter: $params';
+  }
+
+  @override
+  String get successfullyCalledRemoveFromFavoritesUseCase =>
+      'Berhasil memanggil removeFromFavoritesUseCase';
+
+  @override
+  String updatingFavoritesListInState(String contentId) {
+    return 'Memperbarui daftar favorit di state, menghapus contentId: $contentId';
+  }
+
+  @override
+  String favoritesCountBeforeAfter(int before, int after) {
+    return 'Jumlah favorit: sebelum=$before, setelah=$after';
+  }
+
+  @override
+  String get stateUpdatedSuccessfully => 'State berhasil diperbarui';
+
+  @override
+  String successfullyRemovedFromFavorites(String contentId) {
+    return 'Berhasil dihapus dari favorit: $contentId';
+  }
+
+  @override
+  String errorRemovingContentFromFavorites(String contentId, String error) {
+    return 'Kesalahan menghapus konten $contentId dari favorit: $error';
+  }
+
+  @override
+  String removingFavoritesInBatch(int count) {
+    return 'Menghapus $count favorit dalam batch';
+  }
+
+  @override
+  String successfullyRemovedFavoritesInBatch(int count) {
+    return 'Berhasil menghapus $count favorit dalam batch';
+  }
+
+  @override
+  String searchingFavoritesWithQuery(String query) {
+    return 'Mencari favorit dengan query: $query';
+  }
+
+  @override
+  String foundFavoritesMatchingQuery(int count) {
+    return 'Ditemukan $count favorit yang cocok dengan query';
+  }
+
+  @override
+  String get clearingFavoritesSearch => 'Menghapus pencarian favorit';
+
+  @override
+  String get exportingFavoritesData => 'Mengekspor data favorit';
+
+  @override
+  String successfullyExportedFavorites(int count) {
+    return 'Berhasil mengekspor $count favorit';
+  }
+
+  @override
+  String get importingFavoritesData => 'Mengimpor data favorit';
+
+  @override
+  String successfullyImportedFavorites(int count) {
+    return 'Berhasil mengimpor $count favorit';
+  }
+
+  @override
+  String failedToImportFavorite(String error) {
+    return 'Gagal mengimpor favorit: $error';
+  }
+
+  @override
+  String get retryingFavoritesLoading => 'Mencoba lagi memuat favorit';
+
+  @override
+  String get refreshingFavorites => 'Menyegarkan favorit';
+
+  @override
+  String failedToLoadFavorites(String error) {
+    return 'Gagal memuat favorit: $error';
+  }
+
+  @override
+  String failedToInitializeDownloadManager(String error) {
+    return 'Gagal menginisialisasi manajer unduhan: $error';
+  }
+
+  @override
+  String get waitingForWifiConnection => 'Menunggu koneksi WiFi';
+
+  @override
+  String failedToQueueDownload(String error) {
+    return 'Gagal mengantri unduhan: $error';
+  }
+
+  @override
+  String retryingDownload(int current, int total) {
+    return 'Mencoba lagi... ($current/$total)';
+  }
+
+  @override
+  String get downloadCancelledByUser => 'Unduhan dibatalkan oleh pengguna';
+
+  @override
+  String failedToPauseDownload(String error) {
+    return 'Gagal menjeda unduhan: $error';
+  }
+
+  @override
+  String failedToCancelDownload(String error) {
+    return 'Gagal membatalkan unduhan: $error';
+  }
+
+  @override
+  String failedToRetryDownload(String error) {
+    return 'Gagal mencoba lagi unduhan: $error';
+  }
+
+  @override
+  String failedToResumeDownload(String error) {
+    return 'Gagal melanjutkan unduhan: $error';
+  }
+
+  @override
+  String failedToRemoveDownload(String error) {
+    return 'Gagal menghapus unduhan: $error';
+  }
+
+  @override
+  String failedToRefreshDownloads(String error) {
+    return 'Gagal menyegarkan unduhan: $error';
+  }
+
+  @override
+  String failedToUpdateDownloadSettings(String error) {
+    return 'Gagal memperbarui pengaturan unduhan: $error';
+  }
+
+  @override
+  String get pausingAllDownloads => 'Menjeda semua unduhan';
+
+  @override
+  String get resumingAllDownloads => 'Melanjutkan semua unduhan';
+
+  @override
+  String get cancellingAllDownloads => 'Membatalkan semua unduhan';
+
+  @override
+  String get clearingCompletedDownloads => 'Menghapus unduhan yang selesai';
+
+  @override
+  String failedToPauseAllDownloads(String error) {
+    return 'Gagal menjeda semua unduhan: $error';
+  }
+
+  @override
+  String failedToResumeAllDownloads(String error) {
+    return 'Gagal melanjutkan semua unduhan: $error';
+  }
+
+  @override
+  String failedToCancelAllDownloads(String error) {
+    return 'Gagal membatalkan semua unduhan: $error';
+  }
+
+  @override
+  String failedToQueueRangeDownload(String error) {
+    return 'Gagal mengantri unduhan rentang: $error';
+  }
+
+  @override
+  String failedToClearCompletedDownloads(String error) {
+    return 'Gagal menghapus unduhan yang selesai: $error';
+  }
+
+  @override
+  String get downloadNotCompletedYet => 'Unduhan belum selesai';
+
+  @override
+  String get noImagesFoundForConversion =>
+      'Tidak ada gambar yang ditemukan untuk konversi';
+
+  @override
+  String storageCleanupCompleted(int cleanedFiles, String freedSpace) {
+    return 'Pembersihan penyimpanan selesai. Membersihkan $cleanedFiles direktori, membebaskan $freedSpace MB';
+  }
+
+  @override
+  String storageCleanupComplete(int cleanedFiles, String freedSpace) {
+    return 'Pembersihan Penyimpanan Selesai: Membersihkan $cleanedFiles item, membebaskan $freedSpace MB';
+  }
+
+  @override
+  String storageCleanupFailed(String error) {
+    return 'Pembersihan Penyimpanan Gagal: $error';
+  }
+
+  @override
+  String failedToDeleteDirectory(String path, String error) {
+    return 'Gagal menghapus direktori: $path, error: $error';
+  }
+
+  @override
+  String failedToDeleteTempFile(String path, String error) {
+    return 'Gagal menghapus file temp: $path, error: $error';
+  }
+
+  @override
+  String downloadDirectoryNotFound(String path) {
+    return 'Direktori unduhan tidak ditemukan: $path';
+  }
+
+  @override
+  String cannotOpenIncompleteDownload(String contentId) {
+    return 'Tidak dapat membuka - unduhan belum selesai atau path hilang untuk $contentId';
+  }
+
+  @override
+  String errorOpeningDownloadedContent(String error) {
+    return 'Error membuka konten yang diunduh: $error';
+  }
+
+  @override
+  String allStrategiesFailedToOpenDownload(String contentId) {
+    return 'Semua strategi gagal membuka konten yang diunduh untuk $contentId';
+  }
+
+  @override
+  String failedToSaveProgressToDatabase(String error) {
+    return 'Gagal menyimpan progress ke database: $error';
+  }
+
+  @override
+  String failedToUpdatePauseNotification(String error) {
+    return 'Gagal memperbarui notifikasi jeda: $error';
+  }
+
+  @override
+  String failedToUpdateResumeNotification(String error) {
+    return 'Gagal memperbarui notifikasi lanjut: $error';
+  }
+
+  @override
+  String failedToUpdateNotificationProgress(String error) {
+    return 'Gagal memperbarui progress notifikasi: $error';
+  }
+
+  @override
+  String errorCalculatingDirectorySize(String error) {
+    return 'Error menghitung ukuran direktori: $error';
+  }
+
+  @override
+  String errorCleaningTempFiles(String path, String error) {
+    return 'Error membersihkan file temp di: $path, error: $error';
+  }
+
+  @override
+  String errorDetectingDownloadsDirectory(String error) {
+    return 'Error mendeteksi direktori Downloads: $error';
+  }
+
+  @override
+  String usingEmergencyFallbackDirectory(String path) {
+    return 'Menggunakan direktori fallback darurat: $path';
+  }
+
+  @override
+  String get errorDuringStorageCleanup =>
+      'Error selama pembersihan penyimpanan';
+
+  @override
+  String get errorDuringExport => 'Error selama ekspor';
+
+  @override
+  String errorDuringPdfConversion(String contentId) {
+    return 'Error selama konversi PDF untuk $contentId';
+  }
+
+  @override
+  String errorRetryingPdfConversion(String error) {
+    return 'Error mencoba lagi konversi PDF: $error';
   }
 }

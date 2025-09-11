@@ -214,12 +214,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           builder: (context) => AlertDialog(
             backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
             title: Text(
-              AppLocalizations.of(context)!.exportComplete,
+              'Export Complete',
               style: TextStyleConst.withColor(
                   TextStyleConst.headingMedium, Theme.of(context).colorScheme.onSurface),
             ),
             content: Text(
-              AppLocalizations.of(context)!.exportedFavoritesCount(exportData['total_count']),
+              'Exported ${exportData['total_count']} favorites successfully.',
               style: TextStyleConst.withColor(
                   TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onSurfaceVariant),
             ),
@@ -454,7 +454,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       return Center(
         child: AppErrorWidget(
           title: AppLocalizations.of(context)!.errorLoadingFavoritesTitle,
-          message: state.userMessage,
+          message: state.getUserMessage(AppLocalizations.of(context)),
           onRetry: state.canRetry
               ? () => _favoriteCubit.retryLoading()
               : null,
@@ -487,7 +487,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              state.emptyMessage,
+              state.getEmptyMessage(AppLocalizations.of(context)),
               style: TextStyleConst.withColor(
                   TextStyleConst.headingSmall, Theme.of(context).colorScheme.onSurfaceVariant),
               textAlign: TextAlign.center,

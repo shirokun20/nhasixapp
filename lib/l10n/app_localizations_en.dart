@@ -142,7 +142,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cleanupInfo => 'Cleanup Info';
 
   @override
-  String get loadingHistory => 'Loading history...';
+  String get loadingHistory => 'Loading history';
 
   @override
   String get clearingHistory => 'Clearing history...';
@@ -768,10 +768,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportFavorites => 'Export Favorites';
 
   @override
+  String get noFavoritesYet =>
+      'No favorites yet. Start adding content to your favorites!';
+
+  @override
   String get exportingFavorites => 'Exporting favorites...';
 
   @override
-  String get exportComplete => 'Export Complete';
+  String exportComplete(String fileName) {
+    return 'Export Complete: Downloads exported to $fileName';
+  }
 
   @override
   String exportedFavoritesCount(int count) {
@@ -780,7 +786,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String exportFailed(String error) {
-    return 'Export failed: $error';
+    return 'Export Failed: $error';
   }
 
   @override
@@ -942,7 +948,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Reader settings have been reset to defaults.';
 
   @override
-  String failedToResetSettings(Object error) {
+  String failedToResetSettings(String error) {
     return 'Failed to reset settings: $error';
   }
 
@@ -1420,8 +1426,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewDownloadsAction => 'View';
 
   @override
-  String get failedToStartDownload =>
-      'Failed to start download. Please try again.';
+  String failedToStartDownload(String error) {
+    return 'Failed to start download: $error';
+  }
 
   @override
   String get linkCopiedToClipboard => 'Link copied to clipboard';
@@ -2499,5 +2506,461 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String seconds(int count) {
     return '${count}s';
+  }
+
+  @override
+  String get loadingUserPreferences => 'Loading user preferences';
+
+  @override
+  String get successfullyLoadedUserPreferences =>
+      'Successfully loaded user preferences';
+
+  @override
+  String invalidColumnsPortraitValue(int value) {
+    return 'Invalid columns portrait value: $value';
+  }
+
+  @override
+  String invalidColumnsLandscapeValue(int value) {
+    return 'Invalid columns landscape value: $value';
+  }
+
+  @override
+  String get updatingSettingsViaPreferencesService =>
+      'Updating settings via PreferencesService';
+
+  @override
+  String get successfullyUpdatedSettings => 'Successfully updated settings';
+
+  @override
+  String failedToUpdateSetting(String error) {
+    return 'Failed to update setting: $error';
+  }
+
+  @override
+  String get resettingAllSettingsToDefaults =>
+      'Resetting all settings to defaults';
+
+  @override
+  String get successfullyResetAllSettingsToDefaults =>
+      'Successfully reset all settings to defaults';
+
+  @override
+  String get settingsNotLoaded => 'Settings not loaded';
+
+  @override
+  String get exportingSettings => 'Exporting settings';
+
+  @override
+  String get successfullyExportedSettings => 'Successfully exported settings';
+
+  @override
+  String failedToExportSettings(String error) {
+    return 'Failed to export settings: $error';
+  }
+
+  @override
+  String get importingSettings => 'Importing settings';
+
+  @override
+  String get successfullyImportedSettings => 'Successfully imported settings';
+
+  @override
+  String failedToImportSettings(String error) {
+    return 'Failed to import settings: $error';
+  }
+
+  @override
+  String get unableToSyncSettings =>
+      'Unable to sync settings. Changes will be saved locally.';
+
+  @override
+  String get unableToSaveSettings =>
+      'Unable to save settings. Please check device storage.';
+
+  @override
+  String get failedToUpdateSettings =>
+      'Failed to update settings. Please try again.';
+
+  @override
+  String get noHistoryFound => 'No history found';
+
+  @override
+  String loadedHistoryEntries(int count) {
+    return 'Loaded $count history entries';
+  }
+
+  @override
+  String failedToLoadHistory(String error) {
+    return 'Failed to load history: $error';
+  }
+
+  @override
+  String loadingMoreHistory(int page) {
+    return 'Loading more history (page $page)';
+  }
+
+  @override
+  String loadedMoreHistoryEntries(int count, int total) {
+    return 'Loaded $count more entries, total: $total';
+  }
+
+  @override
+  String get refreshingHistory => 'Refreshing history';
+
+  @override
+  String refreshedHistoryWithEntries(int count) {
+    return 'Refreshed history with $count entries';
+  }
+
+  @override
+  String failedToRefreshHistory(String error) {
+    return 'Failed to refresh history: $error';
+  }
+
+  @override
+  String get clearingAllHistory => 'Clearing all history';
+
+  @override
+  String get allHistoryCleared => 'All history cleared';
+
+  @override
+  String failedToClearHistory(String error) {
+    return 'Failed to clear history: $error';
+  }
+
+  @override
+  String removingHistoryItem(String contentId) {
+    return 'Removing history item: $contentId';
+  }
+
+  @override
+  String removedHistoryItem(String contentId) {
+    return 'Removed history item: $contentId';
+  }
+
+  @override
+  String failedToRemoveHistoryItem(String error) {
+    return 'Failed to remove history item: $error';
+  }
+
+  @override
+  String get performingManualHistoryCleanup =>
+      'Performing manual history cleanup';
+
+  @override
+  String get manualCleanupCompleted => 'Manual cleanup completed';
+
+  @override
+  String failedToPerformCleanup(String error) {
+    return 'Failed to perform cleanup: $error';
+  }
+
+  @override
+  String get updatingCleanupSettings => 'Updating cleanup settings';
+
+  @override
+  String get cleanupSettingsUpdated => 'Cleanup settings updated';
+
+  @override
+  String addingContentToFavorites(String title) {
+    return 'Adding content to favorites: $title';
+  }
+
+  @override
+  String successfullyAddedToFavorites(String title) {
+    return 'Successfully added to favorites: $title';
+  }
+
+  @override
+  String contentNotInFavorites(String contentId) {
+    return 'Content $contentId is not in favorites, skipping removal';
+  }
+
+  @override
+  String callingRemoveFromFavoritesUseCase(String params) {
+    return 'Calling removeFromFavoritesUseCase with params: $params';
+  }
+
+  @override
+  String get successfullyCalledRemoveFromFavoritesUseCase =>
+      'Successfully called removeFromFavoritesUseCase';
+
+  @override
+  String updatingFavoritesListInState(String contentId) {
+    return 'Updating favorites list in state, removing contentId: $contentId';
+  }
+
+  @override
+  String favoritesCountBeforeAfter(int before, int after) {
+    return 'Favorites count: before=$before, after=$after';
+  }
+
+  @override
+  String get stateUpdatedSuccessfully => 'State updated successfully';
+
+  @override
+  String successfullyRemovedFromFavorites(String contentId) {
+    return 'Successfully removed from favorites: $contentId';
+  }
+
+  @override
+  String errorRemovingContentFromFavorites(String contentId, String error) {
+    return 'Error removing content $contentId from favorites: $error';
+  }
+
+  @override
+  String removingFavoritesInBatch(int count) {
+    return 'Removing $count favorites in batch';
+  }
+
+  @override
+  String successfullyRemovedFavoritesInBatch(int count) {
+    return 'Successfully removed $count favorites in batch';
+  }
+
+  @override
+  String searchingFavoritesWithQuery(String query) {
+    return 'Searching favorites with query: $query';
+  }
+
+  @override
+  String foundFavoritesMatchingQuery(int count) {
+    return 'Found $count favorites matching query';
+  }
+
+  @override
+  String get clearingFavoritesSearch => 'Clearing favorites search';
+
+  @override
+  String get exportingFavoritesData => 'Exporting favorites data';
+
+  @override
+  String successfullyExportedFavorites(int count) {
+    return 'Successfully exported $count favorites';
+  }
+
+  @override
+  String get importingFavoritesData => 'Importing favorites data';
+
+  @override
+  String successfullyImportedFavorites(int count) {
+    return 'Successfully imported $count favorites';
+  }
+
+  @override
+  String failedToImportFavorite(String error) {
+    return 'Failed to import favorite: $error';
+  }
+
+  @override
+  String get retryingFavoritesLoading => 'Retrying favorites loading';
+
+  @override
+  String get refreshingFavorites => 'Refreshing favorites';
+
+  @override
+  String failedToLoadFavorites(String error) {
+    return 'Failed to load favorites: $error';
+  }
+
+  @override
+  String failedToInitializeDownloadManager(String error) {
+    return 'Failed to initialize download manager: $error';
+  }
+
+  @override
+  String get waitingForWifiConnection => 'Waiting for WiFi connection';
+
+  @override
+  String failedToQueueDownload(String error) {
+    return 'Failed to queue download: $error';
+  }
+
+  @override
+  String retryingDownload(int current, int total) {
+    return 'Retrying... ($current/$total)';
+  }
+
+  @override
+  String get downloadCancelledByUser => 'Download cancelled by user';
+
+  @override
+  String failedToPauseDownload(String error) {
+    return 'Failed to pause download: $error';
+  }
+
+  @override
+  String failedToCancelDownload(String error) {
+    return 'Failed to cancel download: $error';
+  }
+
+  @override
+  String failedToRetryDownload(String error) {
+    return 'Failed to retry download: $error';
+  }
+
+  @override
+  String failedToResumeDownload(String error) {
+    return 'Failed to resume download: $error';
+  }
+
+  @override
+  String failedToRemoveDownload(String error) {
+    return 'Failed to remove download: $error';
+  }
+
+  @override
+  String failedToRefreshDownloads(String error) {
+    return 'Failed to refresh downloads: $error';
+  }
+
+  @override
+  String failedToUpdateDownloadSettings(String error) {
+    return 'Failed to update download settings: $error';
+  }
+
+  @override
+  String get pausingAllDownloads => 'Pausing all downloads';
+
+  @override
+  String get resumingAllDownloads => 'Resuming all downloads';
+
+  @override
+  String get cancellingAllDownloads => 'Cancelling all downloads';
+
+  @override
+  String get clearingCompletedDownloads => 'Clearing completed downloads';
+
+  @override
+  String failedToPauseAllDownloads(String error) {
+    return 'Failed to pause all downloads: $error';
+  }
+
+  @override
+  String failedToResumeAllDownloads(String error) {
+    return 'Failed to resume all downloads: $error';
+  }
+
+  @override
+  String failedToCancelAllDownloads(String error) {
+    return 'Failed to cancel all downloads: $error';
+  }
+
+  @override
+  String failedToQueueRangeDownload(String error) {
+    return 'Failed to queue range download: $error';
+  }
+
+  @override
+  String failedToClearCompletedDownloads(String error) {
+    return 'Failed to clear completed downloads: $error';
+  }
+
+  @override
+  String get downloadNotCompletedYet => 'Download is not completed yet';
+
+  @override
+  String get noImagesFoundForConversion => 'No images found for conversion';
+
+  @override
+  String storageCleanupCompleted(int cleanedFiles, String freedSpace) {
+    return 'Storage cleanup completed. Cleaned $cleanedFiles directories, freed $freedSpace MB';
+  }
+
+  @override
+  String storageCleanupComplete(int cleanedFiles, String freedSpace) {
+    return 'Storage Cleanup Complete: Cleaned $cleanedFiles items, freed $freedSpace MB';
+  }
+
+  @override
+  String storageCleanupFailed(String error) {
+    return 'Storage Cleanup Failed: $error';
+  }
+
+  @override
+  String failedToDeleteDirectory(String path, String error) {
+    return 'Failed to delete directory: $path, error: $error';
+  }
+
+  @override
+  String failedToDeleteTempFile(String path, String error) {
+    return 'Failed to delete temp file: $path, error: $error';
+  }
+
+  @override
+  String downloadDirectoryNotFound(String path) {
+    return 'Download directory not found: $path';
+  }
+
+  @override
+  String cannotOpenIncompleteDownload(String contentId) {
+    return 'Cannot open - download not completed or path missing for $contentId';
+  }
+
+  @override
+  String errorOpeningDownloadedContent(String error) {
+    return 'Error opening downloaded content: $error';
+  }
+
+  @override
+  String allStrategiesFailedToOpenDownload(String contentId) {
+    return 'All strategies failed to open downloaded content for $contentId';
+  }
+
+  @override
+  String failedToSaveProgressToDatabase(String error) {
+    return 'Failed to save progress to database: $error';
+  }
+
+  @override
+  String failedToUpdatePauseNotification(String error) {
+    return 'Failed to update pause notification: $error';
+  }
+
+  @override
+  String failedToUpdateResumeNotification(String error) {
+    return 'Failed to update resume notification: $error';
+  }
+
+  @override
+  String failedToUpdateNotificationProgress(String error) {
+    return 'Failed to update notification progress: $error';
+  }
+
+  @override
+  String errorCalculatingDirectorySize(String error) {
+    return 'Error calculating directory size: $error';
+  }
+
+  @override
+  String errorCleaningTempFiles(String path, String error) {
+    return 'Error cleaning temp files in: $path, error: $error';
+  }
+
+  @override
+  String errorDetectingDownloadsDirectory(String error) {
+    return 'Error detecting Downloads directory: $error';
+  }
+
+  @override
+  String usingEmergencyFallbackDirectory(String path) {
+    return 'Using emergency fallback directory: $path';
+  }
+
+  @override
+  String get errorDuringStorageCleanup => 'Error during storage cleanup';
+
+  @override
+  String get errorDuringExport => 'Error during export';
+
+  @override
+  String errorDuringPdfConversion(String contentId) {
+    return 'Error during PDF conversion for $contentId';
+  }
+
+  @override
+  String errorRetryingPdfConversion(String error) {
+    return 'Error retrying PDF conversion: $error';
   }
 }

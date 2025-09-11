@@ -2,6 +2,7 @@
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/usecases.dart';
 import '../../../services/history_cleanup_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../base/base_cubit.dart';
 import 'history_state.dart';
 
@@ -14,6 +15,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     required this.getHistoryCountUseCase,
     required this.historyCleanupService,
     required super.logger,
+    this.localizations,
   }) : super(
           initialState: const HistoryInitial(),
         );
@@ -23,6 +25,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
   final RemoveHistoryItemUseCase removeHistoryItemUseCase;
   final GetHistoryCountUseCase getHistoryCountUseCase;
   final HistoryCleanupService historyCleanupService;
+  final AppLocalizations? localizations;
 
   static const int _pageSize = 50;
   
@@ -50,7 +53,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'load history');
       emit(HistoryError(
-        message: 'Failed to load history: ${e.toString()}',
+        message: localizations?.failedToLoadHistory(e.toString()) ?? 'Failed to load history: ${e.toString()}',
         canRetry: true,
       ));
     }
@@ -121,7 +124,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'refresh history');
       emit(HistoryError(
-        message: 'Failed to refresh history: ${e.toString()}',
+        message: localizations?.failedToRefreshHistory(e.toString()) ?? 'Failed to refresh history: ${e.toString()}',
         canRetry: true,
       ));
     }
@@ -140,7 +143,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'clear history');
       emit(HistoryError(
-        message: 'Failed to clear history: ${e.toString()}',
+        message: localizations?.failedToClearHistory(e.toString()) ?? 'Failed to clear history: ${e.toString()}',
         canRetry: false,
       ));
     }
@@ -172,7 +175,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'remove history item');
       emit(HistoryError(
-        message: 'Failed to remove history item: ${e.toString()}',
+        message: localizations?.failedToRemoveHistoryItem(e.toString()) ?? 'Failed to remove history item: ${e.toString()}',
         canRetry: false,
       ));
     }
@@ -213,7 +216,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'manual cleanup');
       emit(HistoryError(
-        message: 'Failed to perform cleanup: ${e.toString()}',
+        message: localizations?.failedToPerformCleanup(e.toString()) ?? 'Failed to perform cleanup: ${e.toString()}',
         canRetry: true,
       ));
     }

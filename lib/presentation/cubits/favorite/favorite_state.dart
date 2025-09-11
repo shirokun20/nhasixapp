@@ -84,7 +84,18 @@ class FavoriteLoaded extends FavoriteState {
   bool get isSearching => searchQuery != null && searchQuery!.isNotEmpty;
 
   /// Get display message for empty state
-  String get emptyMessage {
+  String getEmptyMessage(AppLocalizations? localizations) {
+    if (localizations == null) {
+      return _getFallbackEmptyMessage();
+    }
+    
+    if (isSearching) {
+      return 'No favorites found for "$searchQuery"'; // Keep dynamic for now
+    }
+    return localizations.noFavoritesYet;
+  }
+
+  String _getFallbackEmptyMessage() {
     if (isSearching) {
       return 'No favorites found for "$searchQuery"';
     }
@@ -142,7 +153,29 @@ class FavoriteError extends FavoriteState {
   }
 
   /// Get user-friendly error message
-  String get userMessage {
+  String getUserMessage(AppLocalizations? localizations) {
+    if (localizations == null) {
+      return _getFallbackUserMessage();
+    }
+    
+    switch (errorType) {
+      case 'network':
+        return localizations.networkError;
+      case 'server':
+        return localizations.serverError;
+      case 'cache':
+        return 'Storage error. Please check your device storage.'; // Fallback since no specific key exists
+      case 'validation':
+        return 'Invalid data. Please try again.'; // Fallback since no specific key exists
+      case 'notFound':
+        return 'Favorites not found.'; // Fallback since no specific key exists
+      case 'unknown':
+      default:
+        return localizations.unknownError;
+    }
+  }
+
+  String _getFallbackUserMessage() {
     switch (errorType) {
       case 'network':
         return 'No internet connection. Please check your network and try again.';

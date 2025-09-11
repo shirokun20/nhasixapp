@@ -537,7 +537,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             );
           } else if (state is SettingsError) {
-            return Center(child: Text(state.userFriendlyMessage));
+            return Center(child: Text(state.getUserFriendlyMessage(AppLocalizations.of(context))));
           } else {
             return const Center(child: CircularProgressIndicator());
           }

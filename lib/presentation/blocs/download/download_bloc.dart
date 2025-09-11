@@ -9,6 +9,7 @@ import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../domain/entities/entities.dart';
 import '../../../domain/entities/download_task.dart';
@@ -33,6 +34,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     required Connectivity connectivity,
     required NotificationService notificationService,
     required PdfConversionService pdfConversionService,
+    AppLocalizations? appLocalizations,
   })  : _downloadContentUseCase = downloadContentUseCase,
         _getContentDetailUseCase = getContentDetailUseCase,
         _userDataRepository = userDataRepository,
@@ -40,6 +42,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _connectivity = connectivity,
         _notificationService = notificationService,
         _pdfConversionService = pdfConversionService,
+        _appLocalizations = appLocalizations,
         super(const DownloadInitial()) {
     // Register event handlers
     on<DownloadInitializeEvent>(_onInitialize);
@@ -79,6 +82,15 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   final Connectivity _connectivity;
   final NotificationService _notificationService;
   final PdfConversionService _pdfConversionService;
+  final AppLocalizations? _appLocalizations;
+
+  /// Helper method to get localized string with fallback
+  String _getLocalizedString(String Function(AppLocalizations) getter, String fallback) {
+    if (_appLocalizations != null) {
+      return getter(_appLocalizations);
+    }
+    return fallback;
+  }
 
   // Internal state
   DownloadSettings _settings = DownloadSettings.defaultSettings();
@@ -189,7 +201,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _logger.e('DownloadBloc: Error initializing',
           error: e, stackTrace: stackTrace);
       emit(DownloadError(
-        message: 'Failed to initialize download manager: ${e.toString()}',
+        message: _getLocalizedString(
+          (l10n) => l10n.failedToInitializeDownloadManager(e.toString()),
+          'Failed to initialize download manager: ${e.toString()}',
+        ),
         errorType: _determineErrorType(e),
         stackTrace: stackTrace,
       ));
@@ -309,7 +324,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _logger.e('DownloadBloc: Error queuing download',
           error: e, stackTrace: stackTrace);
       emit(DownloadError(
-        message: 'Failed to queue download: ${e.toString()}',
+        message: _getLocalizedString(
+          (l10n) => l10n.failedToQueueDownload(e.toString()),
+          'Failed to queue download: ${e.toString()}',
+        ),
         errorType: _determineErrorType(e),
         previousState: currentState,
         stackTrace: stackTrace,
@@ -389,7 +407,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _logger.e('DownloadBloc: Error queuing range download',
           error: e, stackTrace: stackTrace);
       emit(DownloadError(
-        message: 'Failed to queue range download: ${e.toString()}',
+        message: _getLocalizedString(
+          (l10n) => l10n.failedToQueueRangeDownload(e.toString()),
+          'Failed to queue range download: ${e.toString()}',
+        ),
         errorType: _determineErrorType(e),
         previousState: currentState,
         stackTrace: stackTrace,
@@ -434,7 +455,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           
           final waitingDownload = download.copyWith(
             state: DownloadState.queued,
-            error: 'Waiting for WiFi connection',
+            error: _getLocalizedString(
+              (l10n) => l10n.waitingForWifiConnection,
+              'Waiting for WiFi connection',
+            ),
           );
           
           await _userDataRepository.saveDownloadStatus(waitingDownload);
@@ -540,7 +564,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           final retryDownload = currentDownload.copyWith(
             retryCount: currentDownload.retryCount + 1,
             state: DownloadState.queued,
-            error: 'Retrying... (${currentDownload.retryCount + 1}/${currentState.settings.retryAttempts})',
+            error: _getLocalizedString(
+              (l10n) => l10n.retryingDownload(currentDownload.retryCount + 1, currentState.settings.retryAttempts),
+              'Retrying download (attempt ${currentDownload.retryCount + 1}/${currentState.settings.retryAttempts})',
+            ),
             endTime: null, // Reset end time for retry
           );
           
@@ -599,7 +626,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       } else {
         // Emit error state only if we can't update the download status
         emit(DownloadError(
-          message: 'Failed to start download: ${e.toString()}',
+          message: _getLocalizedString(
+            (l10n) => l10n.failedToStartDownload(e.toString()),
+            'Failed to start download: ${e.toString()}',
+          ),
           errorType: _determineErrorType(e),
           previousState: currentState,
           stackTrace: stackTrace,
@@ -664,7 +694,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _logger.e('DownloadBloc: Error pausing download',
           error: e, stackTrace: stackTrace);
       emit(DownloadError(
-        message: 'Failed to pause download: ${e.toString()}',
+        message: _getLocalizedString(
+          (l10n) => l10n.failedToPauseDownload(e.toString()),
+          'Failed to pause download: ${e.toString()}',
+        ),
         errorType: _determineErrorType(e),
         previousState: currentState,
         stackTrace: stackTrace,
@@ -711,7 +744,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _logger.e('DownloadBloc: Error cancelling download',
           error: e, stackTrace: stackTrace);
       emit(DownloadError(
-        message: 'Failed to cancel download: ${e.toString()}',
+        message: _getLocalizedString(
+          (l10n) => l10n.failedToCancelDownload(e.toString()),
+          'Failed to cancel download: ${e.toString()}',
+        ),
         errorType: _determineErrorType(e),
         previousState: currentState,
         stackTrace: stackTrace,
@@ -755,7 +791,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _logger.e('DownloadBloc: Error retrying download',
           error: e, stackTrace: stackTrace);
       emit(DownloadError(
-        message: 'Failed to retry download: ${e.toString()}',
+        message: _getLocalizedString(
+          (l10n) => l10n.failedToRetryDownload(e.toString()),
+          'Failed to retry download: ${e.toString()}',
+        ),
         errorType: _determineErrorType(e),
         previousState: currentState,
         stackTrace: stackTrace,
@@ -821,7 +860,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _logger.e('DownloadBloc: Error resuming download',
           error: e, stackTrace: stackTrace);
       emit(DownloadError(
-        message: 'Failed to resume download: ${e.toString()}',
+        message: _getLocalizedString(
+          (l10n) => l10n.failedToResumeDownload(e.toString()),
+          'Failed to resume download: ${e.toString()}',
+        ),
         errorType: _determineErrorType(e),
         previousState: currentState,
         stackTrace: stackTrace,
@@ -869,7 +911,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _logger.e('DownloadBloc: Error removing download',
           error: e, stackTrace: stackTrace);
       emit(DownloadError(
-        message: 'Failed to remove download: ${e.toString()}',
+        message: _getLocalizedString(
+          (l10n) => l10n.failedToRemoveDownload(e.toString()),
+          'Failed to remove download: ${e.toString()}',
+        ),
         errorType: _determineErrorType(e),
         previousState: currentState,
         stackTrace: stackTrace,
@@ -916,7 +961,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Only emit error if we don't have a valid state to preserve
       if (currentState is! DownloadLoaded) {
         emit(DownloadError(
-          message: 'Failed to refresh downloads: ${e.toString()}',
+          message: _getLocalizedString(
+            (l10n) => l10n.failedToRefreshDownloads(e.toString()),
+            'Failed to refresh downloads: ${e.toString()}',
+          ),
           errorType: _determineErrorType(e),
           previousState: currentState is DownloadLoaded ? currentState : null,
           stackTrace: stackTrace,
@@ -1065,7 +1113,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _logger.e('DownloadBloc: Error updating settings',
           error: e, stackTrace: stackTrace);
       emit(DownloadError(
-        message: 'Failed to update settings: ${e.toString()}',
+        message: _getLocalizedString(
+          (l10n) => l10n.failedToUpdateDownloadSettings(e.toString()),
+          'Failed to update download settings: ${e.toString()}',
+        ),
         errorType: _determineErrorType(e),
         previousState: currentState,
         stackTrace: stackTrace,
@@ -1165,7 +1216,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _logger.e('DownloadBloc: Error pausing all downloads',
           error: e, stackTrace: stackTrace);
       emit(DownloadError(
-        message: 'Failed to pause all downloads: ${e.toString()}',
+        message: _getLocalizedString(
+          (l10n) => l10n.failedToPauseAllDownloads(e.toString()),
+          'Failed to pause all downloads: ${e.toString()}',
+        ),
         errorType: _determineErrorType(e),
         previousState: currentState,
         stackTrace: stackTrace,
@@ -1220,7 +1274,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _logger.e('DownloadBloc: Error resuming all downloads',
           error: e, stackTrace: stackTrace);
       emit(DownloadError(
-        message: 'Failed to resume all downloads: ${e.toString()}',
+        message: _getLocalizedString(
+          (l10n) => l10n.failedToResumeAllDownloads(e.toString()),
+          'Failed to resume all downloads: ${e.toString()}',
+        ),
         errorType: _determineErrorType(e),
         previousState: currentState,
         stackTrace: stackTrace,
@@ -1279,7 +1336,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _logger.e('DownloadBloc: Error cancelling all downloads',
           error: e, stackTrace: stackTrace);
       emit(DownloadError(
-        message: 'Failed to cancel all downloads: ${e.toString()}',
+        message: _getLocalizedString(
+          (l10n) => l10n.failedToCancelAllDownloads(e.toString()),
+          'Failed to cancel all downloads: ${e.toString()}',
+        ),
         errorType: _determineErrorType(e),
         previousState: currentState,
         stackTrace: stackTrace,
@@ -1327,7 +1387,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _logger.e('DownloadBloc: Error clearing completed downloads',
           error: e, stackTrace: stackTrace);
       emit(DownloadError(
-        message: 'Failed to clear completed downloads: ${e.toString()}',
+        message: _getLocalizedString(
+          (l10n) => l10n.failedToClearCompletedDownloads(e.toString()),
+          'Failed to clear completed downloads: ${e.toString()}',
+        ),
         errorType: _determineErrorType(e),
         previousState: currentState,
         stackTrace: stackTrace,
@@ -1363,7 +1426,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         await _notificationService.showPdfConversionError(
           contentId: event.contentId,
           title: event.contentId,
-          error: 'Download is not completed yet',
+          error: _getLocalizedString(
+            (l10n) => l10n.downloadNotCompletedYet,
+            'Download not completed yet',
+          ),
         );
         return;
       }
@@ -1398,7 +1464,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         await _notificationService.showPdfConversionError(
           contentId: event.contentId,
           title: contentTitle,
-          error: 'No images found for conversion',
+          error: _getLocalizedString(
+            (l10n) => l10n.noImagesFoundForConversion,
+            'No images found for conversion',
+          ),
         );
         return;
       }

@@ -323,6 +323,7 @@ void _setupBlocs() {
         connectivity: getIt<Connectivity>(),
         notificationService: getIt<NotificationService>(),
         pdfConversionService: getIt<PdfConversionService>(),
+        appLocalizations: null, // Will be provided via context in MultiBlocProviderConfig
       ));
 
   // Register other BLoCs when implemented

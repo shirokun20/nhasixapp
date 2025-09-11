@@ -1454,13 +1454,6 @@
      }
    },
 
-   "failedToQueueDownload": "Gagal mengantri unduhan: {error}",
-   "@failedToQueueDownload": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-
    "failedToInitializeDownloadManager": "Gagal menginisialisasi manajer unduhan: {error}",
    "@failedToInitializeDownloadManager": {
      "placeholders": {
@@ -1624,8 +1617,7 @@
        "error": {"type": "String"}
      }
    },
-   "downloadNotCompletedYet": "Unduhan belum selesai",
-   "noImagesFoundForConversion": "Tidak ada gambar yang ditemukan untuk konversi",
+   "noImagesFoundForConversion": "Tidak ada gambar ditemukan untuk konversi",
    "storageCleanupCompleted": "Pembersihan penyimpanan selesai. Membersihkan {cleanedFiles} direktori, membebaskan {freedSpace} MB",
    "@storageCleanupCompleted": {
      "placeholders": {
@@ -1764,5 +1756,5 @@
      "placeholders": {
        "error": {"type": "String"}
      }
-   }
+   },
 }

@@ -1,5 +1,6 @@
 import '../../../domain/entities/entities.dart';
 import '../../../services/preferences_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../base/base_cubit.dart';
 
 part 'settings_state.dart';
@@ -10,6 +11,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
   SettingsCubit({
     required PreferencesService preferencesService,
     required super.logger,
+    this.localizations,
   })  : _preferencesService = preferencesService,
         super(
           initialState: const SettingsInitial(),
@@ -18,6 +20,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
   }
 
   final PreferencesService _preferencesService;
+  final AppLocalizations? localizations;
 
   /// Load settings from PreferencesService
   Future<void> _loadSettings() async {
@@ -181,7 +184,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
       handleError(e, stackTrace, 'update setting');
 
       emit(SettingsError(
-        message: 'Failed to update setting: ${e.toString()}',
+        message: localizations?.failedToUpdateSetting(e.toString()) ?? 'Failed to update setting: ${e.toString()}',
         errorType: determineErrorType(e),
       ));
     }
@@ -203,7 +206,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
       handleError(e, stackTrace, 'reset settings');
 
       emit(SettingsError(
-        message: 'Failed to reset settings: ${e.toString()}',
+        message: localizations?.failedToResetSettings(e.toString()) ?? 'Failed to reset settings: ${e.toString()}',
         errorType: determineErrorType(e),
       ));
     }
@@ -214,7 +217,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
     try {
       final currentState = state;
       if (currentState is! SettingsLoaded) {
-        throw Exception('Settings not loaded');
+        throw Exception(localizations?.settingsNotLoaded ?? 'Settings not loaded');
       }
 
       logInfo('Exporting settings');
@@ -244,7 +247,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
       return jsonString;
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'export settings');
-      throw Exception('Failed to export settings: ${e.toString()}');
+      throw Exception(localizations?.failedToExportSettings(e.toString()) ?? 'Failed to export settings: ${e.toString()}');
     }
   }
 
@@ -262,7 +265,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
       handleError(e, stackTrace, 'import settings');
 
       emit(SettingsError(
-        message: 'Failed to import settings: ${e.toString()}',
+        message: localizations?.failedToImportSettings(e.toString()) ?? 'Failed to import settings: ${e.toString()}',
         errorType: determineErrorType(e),
       ));
     }

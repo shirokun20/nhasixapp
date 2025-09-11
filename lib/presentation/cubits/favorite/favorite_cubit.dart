@@ -2,6 +2,7 @@
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/favorites/favorites_usecases.dart';
 import '../../../domain/repositories/repositories.dart';
+import '../../../l10n/app_localizations.dart';
 import '../base/base_cubit.dart';
 
 part 'favorite_state.dart';
@@ -15,6 +16,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     required RemoveFromFavoritesUseCase removeFromFavoritesUseCase,
     required UserDataRepository userDataRepository,
     required super.logger,
+    this.localizations,
   })  : _addToFavoritesUseCase = addToFavoritesUseCase,
         _getFavoritesUseCase = getFavoritesUseCase,
         _removeFromFavoritesUseCase = removeFromFavoritesUseCase,
@@ -27,6 +29,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
   final GetFavoritesUseCase _getFavoritesUseCase;
   final RemoveFromFavoritesUseCase _removeFromFavoritesUseCase;
   final UserDataRepository _userDataRepository;
+  final AppLocalizations? localizations;
 
   // Current page for pagination
   int _currentPage = 1;
@@ -66,7 +69,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
 
       final errorType = determineErrorType(e);
       emit(FavoriteError(
-        message: 'Failed to load favorites: ${e.toString()}',
+        message: localizations?.failedToLoadFavorites(e.toString()) ?? 'Failed to load favorites: ${e.toString()}',
         errorType: errorType,
         canRetry: isRetryableError(errorType),
       ));
