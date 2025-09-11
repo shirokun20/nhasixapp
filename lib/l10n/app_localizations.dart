@@ -2195,7 +2195,7 @@ abstract class AppLocalizations {
   /// No description provided for @hours.
   ///
   /// In en, this message translates to:
-  /// **'{count} hours'**
+  /// **'{count}h'**
   String hours(int count);
 
   /// No description provided for @days.
@@ -2213,20 +2213,20 @@ abstract class AppLocalizations {
   /// No description provided for @daysAgo.
   ///
   /// In en, this message translates to:
-  /// **'{count} day{s} ago'**
-  String daysAgo(int count, String s);
+  /// **'{count}{suffix} ago'**
+  String daysAgo(int count, String suffix);
 
   /// No description provided for @hoursAgo.
   ///
   /// In en, this message translates to:
-  /// **'{count} hour{s} ago'**
-  String hoursAgo(int count, String s);
+  /// **'{count}{suffix} ago'**
+  String hoursAgo(int count, String suffix);
 
   /// No description provided for @minutesAgo.
   ///
   /// In en, this message translates to:
-  /// **'{count} minute{s} ago'**
-  String minutesAgo(int count, String s);
+  /// **'{count}{suffix} ago'**
+  String minutesAgo(int count, String suffix);
 
   /// No description provided for @noData.
   ///
@@ -2777,7 +2777,7 @@ abstract class AppLocalizations {
   /// No description provided for @groupsLabel.
   ///
   /// In en, this message translates to:
-  /// **'Groups (comma separated)'**
+  /// **'Groups'**
   String get groupsLabel;
 
   /// No description provided for @uploadedLabel.
@@ -2801,7 +2801,7 @@ abstract class AppLocalizations {
   /// No description provided for @artistsLabel.
   ///
   /// In en, this message translates to:
-  /// **'Artists (comma separated)'**
+  /// **'Artists'**
   String get artistsLabel;
 
   /// No description provided for @relatedLabel.
@@ -3594,7 +3594,7 @@ abstract class AppLocalizations {
   /// No description provided for @excludeTagsLabel.
   ///
   /// In en, this message translates to:
-  /// **'Exclude tags (comma separated)'**
+  /// **'Exclude Tags'**
   String get excludeTagsLabel;
 
   /// No description provided for @excludeTagsHint.
@@ -4425,6 +4425,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Removed orphaned directory: {path}'**
   String removedOrphanedDirectory(String path);
+
+  /// No description provided for @queryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Query'**
+  String get queryLabel;
+
+  /// No description provided for @excludeGroupsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Exclude Groups'**
+  String get excludeGroupsLabel;
+
+  /// No description provided for @excludeCharactersLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Exclude Characters'**
+  String get excludeCharactersLabel;
+
+  /// No description provided for @excludeParodiesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Exclude Parodies'**
+  String get excludeParodiesLabel;
+
+  /// No description provided for @excludeArtistsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Exclude Artists'**
+  String get excludeArtistsLabel;
+
+  /// No description provided for @minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m'**
+  String minutes(int count);
+
+  /// No description provided for @seconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}s'**
+  String seconds(int count);
 }
 
 class _AppLocalizationsDelegate

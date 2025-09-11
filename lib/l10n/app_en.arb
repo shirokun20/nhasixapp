@@ -1505,5 +1505,61 @@
      "placeholders": {
        "path": {"type": "String"}
      }
+   },
+
+   "daysAgo": "{count}{suffix} ago",
+   "@daysAgo": {
+     "placeholders": {
+       "count": {"type": "int"},
+       "suffix": {"type": "String"}
+     }
+   },
+   "hoursAgo": "{count}{suffix} ago",
+   "@hoursAgo": {
+     "placeholders": {
+       "count": {"type": "int"},
+       "suffix": {"type": "String"}
+     }
+   },
+   "minutesAgo": "{count}{suffix} ago",
+   "@minutesAgo": {
+     "placeholders": {
+       "count": {"type": "int"},
+       "suffix": {"type": "String"}
+     }
+   },
+   "justNow": "Just now",
+
+   "queryLabel": "Query",
+   "tagsLabel": "Tags",
+   "excludeTagsLabel": "Exclude Tags",
+   "groupsLabel": "Groups", 
+   "excludeGroupsLabel": "Exclude Groups",
+   "charactersLabel": "Characters",
+   "excludeCharactersLabel": "Exclude Characters",
+   "parodiesLabel": "Parodies",
+   "excludeParodiesLabel": "Exclude Parodies",
+   "artistsLabel": "Artists",
+   "excludeArtistsLabel": "Exclude Artists",
+   "languageLabel": "Language",
+   "categoryLabel": "Category",
+
+   "hours": "{count}h",
+   "@hours": {
+     "placeholders": {
+       "count": {"type": "int"}
+     }
+   },
+   "minutes": "{count}m",
+   "@minutes": {
+     "placeholders": {
+       "count": {"type": "int"}
+     }
+   },
+   "seconds": "{count}s",
+   "@seconds": {
+     "placeholders": {
+       "count": {"type": "int"}
+     }
    }
 }

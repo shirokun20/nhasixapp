@@ -678,8 +678,13 @@ class _DownloadsScreenState extends State<DownloadsScreen>
   }
 
   String _formatDateTime(DateTime dateTime) {
-    // Use localized date format
-    return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+    // Use localized date format - DD/MM/YYYY HH:MM
+    final day = dateTime.day.toString().padLeft(2, '0');
+    final month = dateTime.month.toString().padLeft(2, '0');
+    final year = dateTime.year.toString();
+    final hour = dateTime.hour.toString().padLeft(2, '0');
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    return '$day/$month/$year $hour:$minute';
   }
 
   String _formatDuration(Duration duration) {
@@ -688,11 +693,11 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     final seconds = duration.inSeconds.remainder(60);
 
     if (hours > 0) {
-      return '${AppLocalizations.of(context)!.hours(hours)} ${minutes}m ${seconds}s';
+      return '${AppLocalizations.of(context)!.hours(hours)} ${AppLocalizations.of(context)!.minutes(minutes)} ${AppLocalizations.of(context)!.seconds(seconds)}';
     } else if (minutes > 0) {
-      return '${minutes}m ${seconds}s';
+      return '${AppLocalizations.of(context)!.minutes(minutes)} ${AppLocalizations.of(context)!.seconds(seconds)}';
     } else {
-      return '${seconds}s';
+      return AppLocalizations.of(context)!.seconds(seconds);
     }
   }
 

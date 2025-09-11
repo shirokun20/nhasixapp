@@ -1067,5 +1067,61 @@
    "offlineStorageUsage": "Penggunaan penyimpanan offline: {sizeBytes} bytes",
    "cleanupOrphanedFilesStarted": "Memulai pembersihan file offline yang yatim piatu",
    "cleanupOrphanedFilesCompleted": "Pembersihan file offline yang yatim piatu selesai",
-   "removedOrphanedDirectory": "Direktori yatim piatu dihapus: {path}"
+   "removedOrphanedDirectory": "Direktori yatim piatu dihapus: {path}",
+
+   "daysAgo": "{count} hari{suffix} yang lalu",
+   "@daysAgo": {
+     "placeholders": {
+       "count": {"type": "int"},
+       "suffix": {"type": "String"}
+     }
+   },
+   "hoursAgo": "{count} jam{suffix} yang lalu",
+   "@hoursAgo": {
+     "placeholders": {
+       "count": {"type": "int"},
+       "suffix": {"type": "String"}
+     }
+   },
+   "minutesAgo": "{count} menit{suffix} yang lalu",
+   "@minutesAgo": {
+     "placeholders": {
+       "count": {"type": "int"},
+       "suffix": {"type": "String"}
+     }
+   },
+   "justNow": "Baru saja",
+
+   "queryLabel": "Kueri",
+   "tagsLabel": "Tag",
+   "excludeTagsLabel": "Kecualikan Tag",
+   "groupsLabel": "Grup",
+   "excludeGroupsLabel": "Kecualikan Grup", 
+   "charactersLabel": "Karakter",
+   "excludeCharactersLabel": "Kecualikan Karakter",
+   "parodiesLabel": "Parodi",
+   "excludeParodiesLabel": "Kecualikan Parodi",
+   "artistsLabel": "Artis",
+   "excludeArtistsLabel": "Kecualikan Artis",
+   "languageLabel": "Bahasa",
+   "categoryLabel": "Kategori",
+
+   "hours": "{count}j",
+   "@hours": {
+     "placeholders": {
+       "count": {"type": "int"}
+     }
+   },
+   "minutes": "{count}m",
+   "@minutes": {
+     "placeholders": {
+       "count": {"type": "int"}
+     }
+   },
+   "seconds": "{count}d",
+   "@seconds": {
+     "placeholders": {
+       "count": {"type": "int"}
+     }
+   }
 }

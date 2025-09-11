@@ -642,28 +642,28 @@ grep -r "SnackBar\|showDialog\|AlertDialog" lib/ --include="*.dart" -A 3 -B 3 | 
 *User-facing strings seen frequently*
 
 #### **A1. App Scaffolds & Navigation** *(1.5 hours)*
-- [ ] **`lib/presentation/widgets/app_scaffold_with_offline.dart`**
+- [x] **`lib/presentation/widgets/app_scaffold_with_offline.dart`**
   - AppBar titles, navigation labels
   - Bottom navigation labels if any
   - Back button text, menu labels
   
-- [ ] **`lib/presentation/widgets/simple_offline_scaffold.dart`**
+- [x] **`lib/presentation/widgets/simple_offline_scaffold.dart`**
   - Offline status messages
   - Connection retry text
   - Network error messages
 
 #### **A2. Main Navigation Screens** *(2 hours)*
-- [ ] **`lib/presentation/pages/main/main_screen.dart`**
+- [x] **`lib/presentation/pages/main/main_screen.dart`**
   - Screen title, search hints
   - Empty state messages
   - Loading text, refresh indicators
   
-- [ ] **`lib/presentation/pages/search/search_screen.dart`**
+- [x] **`lib/presentation/pages/search/search_screen.dart`**
   - Search placeholder text
   - Filter labels, sort options
   - "No results found" messages
   
-- [ ] **`lib/presentation/pages/favorites/favorites_screen.dart`**
+- [x] **`lib/presentation/pages/favorites/favorites_screen.dart`**
   - Screen title, empty favorites message
   - Remove from favorites text
   - Favorites export labels
@@ -674,7 +674,7 @@ grep -r "SnackBar\|showDialog\|AlertDialog" lib/ --include="*.dart" -A 3 -B 3 | 
   - Export downloads text
 
 #### **A3. Settings & Configuration** *(1.5 hours)*
-- [ ] **`lib/presentation/pages/settings/settings_screen.dart`** ✅ **PARTIALLY COMPLETED**
+- [x] **`lib/presentation/pages/settings/settings_screen.dart`** ✅ **COMPLETED**
   - Remaining setting descriptions
   - Help text, tooltip messages
   - Reset confirmation text

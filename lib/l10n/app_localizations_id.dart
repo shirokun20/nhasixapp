@@ -1143,7 +1143,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String hours(int count) {
-    return '$count jam';
+    return '${count}j';
   }
 
   @override
@@ -1155,18 +1155,18 @@ class AppLocalizationsId extends AppLocalizations {
   String get unknown => 'Tidak diketahui';
 
   @override
-  String daysAgo(int count, String s) {
-    return '${days}h yang lalu';
+  String daysAgo(int count, String suffix) {
+    return '$count hari$suffix yang lalu';
   }
 
   @override
-  String hoursAgo(int count, String s) {
-    return '${hours}j yang lalu';
+  String hoursAgo(int count, String suffix) {
+    return '$count jam$suffix yang lalu';
   }
 
   @override
-  String minutesAgo(int count, String s) {
-    return '${count}m yang lalu';
+  String minutesAgo(int count, String suffix) {
+    return '$count menit$suffix yang lalu';
   }
 
   @override
@@ -1471,7 +1471,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get parodiesLabel => 'Parodi';
 
   @override
-  String get groupsLabel => 'Grup (dipisahkan koma)';
+  String get groupsLabel => 'Grup';
 
   @override
   String get uploadedLabel => 'Diunggah';
@@ -1483,7 +1483,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get tagsLabel => 'Tag';
 
   @override
-  String get artistsLabel => 'Artis (dipisahkan koma)';
+  String get artistsLabel => 'Artis';
 
   @override
   String get relatedLabel => 'Terkait';
@@ -1932,7 +1932,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get includeTagsHint => 'contoh: romansa, komedi, sekolah';
 
   @override
-  String get excludeTagsLabel => 'Kecualikan tag (dipisahkan koma)';
+  String get excludeTagsLabel => 'Kecualikan Tag';
 
   @override
   String get excludeTagsHint => 'contoh: horor, kekerasan';
@@ -2484,5 +2484,30 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String removedOrphanedDirectory(String path) {
     return 'Direktori yatim piatu dihapus: $path';
+  }
+
+  @override
+  String get queryLabel => 'Kueri';
+
+  @override
+  String get excludeGroupsLabel => 'Kecualikan Grup';
+
+  @override
+  String get excludeCharactersLabel => 'Kecualikan Karakter';
+
+  @override
+  String get excludeParodiesLabel => 'Kecualikan Parodi';
+
+  @override
+  String get excludeArtistsLabel => 'Kecualikan Artis';
+
+  @override
+  String minutes(int count) {
+    return '${count}m';
+  }
+
+  @override
+  String seconds(int count) {
+    return '${count}d';
   }
 }

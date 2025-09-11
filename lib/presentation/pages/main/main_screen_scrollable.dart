@@ -666,7 +666,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
     final parts = <String>[];
 
     if (filter.query != null && filter.query!.isNotEmpty) {
-      parts.add('Query: "${filter.query}"');
+      parts.add('${AppLocalizations.of(context)?.queryLabel ?? 'Query'}: "${filter.query}"');
     }
 
     if (filter.tags.isNotEmpty) {
@@ -678,10 +678,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           .map((item) => item.value);
 
       if (includeTags.isNotEmpty) {
-        parts.add('Tags: ${includeTags.join(', ')}');
+        parts.add('${AppLocalizations.of(context)?.tagsLabel ?? 'Tags'}: ${includeTags.join(', ')}');
       }
       if (excludeTags.isNotEmpty) {
-        parts.add('Exclude Tags: ${excludeTags.join(', ')}');
+        parts.add('${AppLocalizations.of(context)?.excludeTagsLabel ?? 'Exclude Tags'}: ${excludeTags.join(', ')}');
       }
     }
 
@@ -694,10 +694,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           .map((item) => item.value);
 
       if (includeGroups.isNotEmpty) {
-        parts.add('Groups: ${includeGroups.join(', ')}');
+        parts.add('${AppLocalizations.of(context)?.groupsLabel ?? 'Groups'}: ${includeGroups.join(', ')}');
       }
       if (excludeGroups.isNotEmpty) {
-        parts.add('Exclude Groups: ${excludeGroups.join(', ')}');
+        parts.add('${AppLocalizations.of(context)?.excludeGroupsLabel ?? 'Exclude Groups'}: ${excludeGroups.join(', ')}');
       }
     }
 
@@ -710,10 +710,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           .map((item) => item.value);
 
       if (includeCharacters.isNotEmpty) {
-        parts.add('Characters: ${includeCharacters.join(', ')}');
+        parts.add('${AppLocalizations.of(context)?.charactersLabel ?? 'Characters'}: ${includeCharacters.join(', ')}');
       }
       if (excludeCharacters.isNotEmpty) {
-        parts.add('Exclude Characters: ${excludeCharacters.join(', ')}');
+        parts.add('${AppLocalizations.of(context)?.excludeCharactersLabel ?? 'Exclude Characters'}: ${excludeCharacters.join(', ')}');
       }
     }
 
@@ -726,10 +726,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           .map((item) => item.value);
 
       if (includeParodies.isNotEmpty) {
-        parts.add('Parodies: ${includeParodies.join(', ')}');
+        parts.add('${AppLocalizations.of(context)?.parodiesLabel ?? 'Parodies'}: ${includeParodies.join(', ')}');
       }
       if (excludeParodies.isNotEmpty) {
-        parts.add('Exclude Parodies: ${excludeParodies.join(', ')}');
+        parts.add('${AppLocalizations.of(context)?.excludeParodiesLabel ?? 'Exclude Parodies'}: ${excludeParodies.join(', ')}');
       }
     }
 
@@ -742,19 +742,19 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           .map((item) => item.value);
 
       if (includeArtists.isNotEmpty) {
-        parts.add('Artists: ${includeArtists.join(', ')}');
+        parts.add('${AppLocalizations.of(context)?.artistsLabel ?? 'Artists'}: ${includeArtists.join(', ')}');
       }
       if (excludeArtists.isNotEmpty) {
-        parts.add('Exclude Artists: ${excludeArtists.join(', ')}');
+        parts.add('${AppLocalizations.of(context)?.excludeArtistsLabel ?? 'Exclude Artists'}: ${excludeArtists.join(', ')}');
       }
     }
 
     if (filter.language != null) {
-      parts.add('Language: ${filter.language}');
+      parts.add('${AppLocalizations.of(context)?.languageLabel ?? 'Language'}: ${filter.language}');
     }
 
     if (filter.category != null) {
-      parts.add('Category: ${filter.category}');
+      parts.add('${AppLocalizations.of(context)?.categoryLabel ?? 'Category'}: ${filter.category}');
     }
 
     return parts.join(' • ');
