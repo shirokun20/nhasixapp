@@ -236,3 +236,39 @@ class DownloadConvertToPdfEvent extends DownloadEvent {
   @override
   List<Object?> get props => [contentId];
 }
+
+/// Event to toggle selection mode for bulk operations
+class DownloadToggleSelectionModeEvent extends DownloadEvent {
+  const DownloadToggleSelectionModeEvent();
+}
+
+/// Event to select/deselect an item in selection mode
+class DownloadSelectItemEvent extends DownloadEvent {
+  const DownloadSelectItemEvent(this.contentId, this.isSelected);
+
+  final String contentId;
+  final bool isSelected;
+
+  @override
+  List<Object?> get props => [contentId, isSelected];
+}
+
+/// Event to select all items in current tab
+class DownloadSelectAllEvent extends DownloadEvent {
+  const DownloadSelectAllEvent();
+}
+
+/// Event to clear all selections
+class DownloadClearSelectionEvent extends DownloadEvent {
+  const DownloadClearSelectionEvent();
+}
+
+/// Event to perform bulk delete operation
+class DownloadBulkDeleteEvent extends DownloadEvent {
+  const DownloadBulkDeleteEvent(this.contentIds);
+
+  final List<String> contentIds;
+
+  @override
+  List<Object?> get props => [contentIds];
+}

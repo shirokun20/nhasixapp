@@ -43,6 +43,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: Text(AppLocalizations.of(context)?.theme ?? 'Theme', style: TextStyleConst.bodyLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   )),
+                  subtitle: Text(
+                    'Choose your preferred color theme for the app interface.',
+                    style: TextStyleConst.bodySmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                   trailing: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                     margin: const EdgeInsets.symmetric(vertical: 7),
@@ -80,6 +86,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: Text(AppLocalizations.of(context)?.appLanguage ?? 'Language', style: TextStyleConst.bodyLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   )),
+                  subtitle: Text(
+                    'Select your preferred language for the app interface and content.',
+                    style: TextStyleConst.bodySmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                   trailing: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                     margin: const EdgeInsets.symmetric(vertical: 7),
@@ -122,6 +134,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: Text(AppLocalizations.of(context)?.imageQuality ?? 'Image Quality', style: TextStyleConst.bodyLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   )),
+                  subtitle: Text(
+                    'Choose image quality for downloads. Higher quality uses more storage and data.',
+                    style: TextStyleConst.bodySmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                   trailing: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                     margin: const EdgeInsets.symmetric(vertical: 7),
@@ -159,6 +177,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: Text(AppLocalizations.of(context)?.gridColumns ?? 'Grid Columns (Portrait)', style: TextStyleConst.bodyLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   )),
+                  subtitle: Text(
+                    'Choose how many columns to display content in portrait mode. More columns show more content but smaller items.',
+                    style: TextStyleConst.bodySmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                   trailing: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                     margin: const EdgeInsets.symmetric(vertical: 7),
@@ -186,6 +210,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         }
                       },
                     ),
+                  ),
+                ),
+                // Live preview for grid columns
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Grid Preview',
+                        style: TextStyleConst.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      // Preview grid
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: prefs.columnsPortrait,
+                          childAspectRatio: 0.7,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                        ),
+                        itemCount: prefs.columnsPortrait * 2, // Show 2 rows
+                        itemBuilder: (context, index) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Center(
+                              child: Icon(
+                                Icons.image_outlined,
+                                color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                size: 24,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
                 Padding(
@@ -545,4 +626,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
+
+
 }

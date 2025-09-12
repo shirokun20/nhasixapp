@@ -64,6 +64,11 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     on<DownloadConvertToPdfEvent>(_onConvertToPdf);
     on<DownloadCleanupStorageEvent>(_onCleanupStorage);
     on<DownloadExportEvent>(_onExport);
+    on<DownloadToggleSelectionModeEvent>(_onToggleSelectionMode);
+    on<DownloadSelectItemEvent>(_onSelectItem);
+    on<DownloadSelectAllEvent>(_onSelectAll);
+    on<DownloadClearSelectionEvent>(_onClearSelection);
+    on<DownloadBulkDeleteEvent>(_onBulkDelete);
 
     // Initialize notifications
     _notificationService.initialize();
@@ -1954,13 +1959,220 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     }
   }
 
+  /// Handle toggle selection mode event
+  Future<void> _onToggleSelectionMode(
+    DownloadToggleSelectionModeEvent event,
+    Emitter<DownloadBlocState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! DownloadLoaded) return;
+
+    try {
+      _logger.i('DownloadBloc: Toggling selection mode');
+
+      emit(currentState.copyWith(
+        isSelectionMode: !currentState.isSelectionMode,
+        selectedItems: const {},
+        lastUpdated: DateTime.now(),
+      ));
+
+      _logger.i('DownloadBloc: Selection mode toggled to ${!currentState.isSelectionMode}');
+    } catch (e, stackTrace) {
+      _logger.e('DownloadBloc: Error toggling selection mode',
+          error: e, stackTrace: stackTrace);
+    }
+  }
+
+  /// Handle select item event
+  Future<void> _onSelectItem(
+    DownloadSelectItemEvent event,
+    Emitter<DownloadBlocState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! DownloadLoaded) return;
+
+    try {
+      _logger.i('DownloadBloc: Selecting item ${event.contentId}: ${event.isSelected}');
+
+      final updatedSelectedItems = Set<String>.from(currentState.selectedItems);
+      if (event.isSelected) {
+        updatedSelectedItems.add(event.contentId);
+      } else {
+        updatedSelectedItems.remove(event.contentId);
+      }
+
+      emit(currentState.copyWith(
+        selectedItems: updatedSelectedItems,
+        lastUpdated: DateTime.now(),
+      ));
+
+      _logger.i('DownloadBloc: Selected items count: ${updatedSelectedItems.length}');
+    } catch (e, stackTrace) {
+      _logger.e('DownloadBloc: Error selecting item',
+          error: e, stackTrace: stackTrace);
+    }
+  }
+
+  /// Handle select all event
+  Future<void> _onSelectAll(
+    DownloadSelectAllEvent event,
+    Emitter<DownloadBlocState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! DownloadLoaded) return;
+
+    try {
+      _logger.i('DownloadBloc: Selecting all items in current tab');
+
+      // Get current tab's downloads (this would need to be passed or determined)
+      // For now, select all downloads
+      final allContentIds = currentState.downloads.map((d) => d.contentId).toSet();
+
+      emit(currentState.copyWith(
+        selectedItems: allContentIds,
+        lastUpdated: DateTime.now(),
+      ));
+
+      _logger.i('DownloadBloc: Selected all ${allContentIds.length} items');
+    } catch (e, stackTrace) {
+      _logger.e('DownloadBloc: Error selecting all items',
+          error: e, stackTrace: stackTrace);
+    }
+  }
+
+  /// Handle clear selection event
+  Future<void> _onClearSelection(
+    DownloadClearSelectionEvent event,
+    Emitter<DownloadBlocState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! DownloadLoaded) return;
+
+    try {
+      _logger.i('DownloadBloc: Clearing all selections');
+
+      emit(currentState.copyWith(
+        selectedItems: const {},
+        lastUpdated: DateTime.now(),
+      ));
+
+      _logger.i('DownloadBloc: All selections cleared');
+    } catch (e, stackTrace) {
+      _logger.e('DownloadBloc: Error clearing selections',
+          error: e, stackTrace: stackTrace);
+    }
+  }
+
+  /// Handle bulk delete event
+  Future<void> _onBulkDelete(
+    DownloadBulkDeleteEvent event,
+    Emitter<DownloadBlocState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! DownloadLoaded) return;
+
+    try {
+      _logger.i('DownloadBloc: Starting bulk delete of ${event.contentIds.length} items');
+
+      emit(DownloadProcessing(
+        downloads: currentState.downloads,
+        settings: currentState.settings,
+        operation: 'Deleting ${event.contentIds.length} downloads',
+        lastUpdated: currentState.lastUpdated,
+      ));
+
+      int successCount = 0;
+      int failureCount = 0;
+      final errors = <String>[];
+
+      for (final contentId in event.contentIds) {
+        try {
+          // Cancel if in progress
+          if (currentState.getDownload(contentId)?.isInProgress == true) {
+            _cancelDownloadTask(contentId);
+          }
+
+          // Remove from database
+          await _userDataRepository.deleteDownloadStatus(contentId);
+          await _downloadContentUseCase.deleteCall(contentId);
+
+          // Invalidate download status cache
+          ContentDownloadCache.invalidateCache(contentId);
+
+          successCount++;
+          _logger.d('DownloadBloc: Successfully deleted $contentId');
+        } catch (e) {
+          failureCount++;
+          errors.add('$contentId: $e');
+          _logger.w('DownloadBloc: Failed to delete $contentId: $e');
+        }
+      }
+
+      // Create updated downloads list without deleted items
+      final updatedDownloads = currentState.downloads
+          .where((d) => !event.contentIds.contains(d.contentId))
+          .toList();
+
+      // Emit DownloadLoaded immediately with updated data and exit selection mode
+      emit(DownloadLoaded(
+        downloads: updatedDownloads,
+        settings: currentState.settings,
+        isSelectionMode: false, // Exit selection mode
+        selectedItems: const {}, // Clear selections
+        lastUpdated: DateTime.now(),
+      ));
+
+      // Show result notification
+      if (currentState.settings.enableNotifications) {
+        if (failureCount == 0) {
+          _notificationService.showDownloadCompleted(
+            contentId: 'bulk_delete',
+            title: 'Bulk Delete Completed',
+            downloadPath: '',
+          );
+        } else {
+          _notificationService.showDownloadError(
+            contentId: 'bulk_delete',
+            title: 'Bulk Delete Partial',
+            error: 'Deleted $successCount items, failed $failureCount items',
+          );
+        }
+      }
+
+      _logger.i('DownloadBloc: Bulk delete completed. Success: $successCount, Failures: $failureCount');
+
+      // Optionally trigger refresh for data consistency (but UI is already updated)
+      add(const DownloadRefreshEvent());
+
+      if (errors.isNotEmpty) {
+        throw BulkDeleteException(
+          'Bulk delete completed with $failureCount failures: ${errors.join(', ')}',
+        );
+      }
+    } catch (e, stackTrace) {
+      _logger.e('DownloadBloc: Error during bulk delete',
+          error: e, stackTrace: stackTrace);
+
+      // Emit error state
+        emit(DownloadError(
+          message: _getLocalizedString(
+            (l10n) => l10n.failedToRemoveDownload(e.toString()),
+            'Bulk delete failed: ${e.toString()}',
+          ),
+          errorType: _determineErrorType(e),
+          previousState: currentState,
+          stackTrace: stackTrace,
+        ));
+    }
+  }
+
   /// Cleanup resources when BLoC is closed
   @override
   Future<void> close() {
     // Cancel progress stream subscription
     _progressSubscription?.cancel();
     _logger.i('DownloadBloc: Progress stream subscription cancelled');
-    
+
     // Cancel all active downloads
     for (final task in _activeTasks.values) {
       if (!task.isCancelled) {
@@ -1973,4 +2185,13 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
     return super.close();
   }
+}
+
+/// Exception for bulk delete operations
+class BulkDeleteException implements Exception {
+  final String message;
+  const BulkDeleteException(this.message);
+
+  @override
+  String toString() => message;
 }

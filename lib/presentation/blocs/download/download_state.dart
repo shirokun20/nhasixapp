@@ -40,27 +40,42 @@ class DownloadLoaded extends DownloadBlocState {
     required this.settings,
     this.lastUpdated,
     this.isProcessing = false,
+    this.isSelectionMode = false,
+    this.selectedItems = const {},
+    this.isBulkDeleting = false,
   });
 
   @override
   final List<DownloadStatus> downloads;
-  
+
   @override
   final DownloadSettings settings;
-  
+
   @override
   final DateTime? lastUpdated;
-  
+
   @override
   final bool isProcessing;
 
+  /// Whether selection mode is active for bulk operations
+  final bool isSelectionMode;
+
+  /// Set of selected content IDs
+  final Set<String> selectedItems;
+
+  /// Whether bulk delete operation is in progress
+  final bool isBulkDeleting;
+
   @override
   List<Object?> get props => [
-        downloads,
-        settings,
-        lastUpdated,
-        isProcessing,
-      ];
+         downloads,
+         settings,
+         lastUpdated,
+         isProcessing,
+         isSelectionMode,
+         selectedItems,
+         isBulkDeleting,
+       ];
 
   /// Get download by content ID
   @override
@@ -177,12 +192,18 @@ class DownloadLoaded extends DownloadBlocState {
     DownloadSettings? settings,
     DateTime? lastUpdated,
     bool? isProcessing,
+    bool? isSelectionMode,
+    Set<String>? selectedItems,
+    bool? isBulkDeleting,
   }) {
     return DownloadLoaded(
       downloads: downloads ?? this.downloads,
       settings: settings ?? this.settings,
       lastUpdated: lastUpdated ?? this.lastUpdated,
       isProcessing: isProcessing ?? this.isProcessing,
+      isSelectionMode: isSelectionMode ?? this.isSelectionMode,
+      selectedItems: selectedItems ?? this.selectedItems,
+      isBulkDeleting: isBulkDeleting ?? this.isBulkDeleting,
     );
   }
 }
@@ -194,18 +215,24 @@ class DownloadProcessing extends DownloadLoaded {
     required super.settings,
     required this.operation,
     super.lastUpdated,
+    super.isSelectionMode,
+    super.selectedItems,
+    super.isBulkDeleting,
   }) : super(isProcessing: true);
 
   final String operation;
 
   @override
   List<Object?> get props => [
-        downloads,
-        settings,
-        lastUpdated,
-        isProcessing,
-        operation,
-      ];
+         downloads,
+         settings,
+         lastUpdated,
+         isProcessing,
+         operation,
+         isSelectionMode,
+         selectedItems,
+         isBulkDeleting,
+       ];
 
   @override
   DownloadProcessing copyWith({
@@ -214,12 +241,18 @@ class DownloadProcessing extends DownloadLoaded {
     DateTime? lastUpdated,
     bool? isProcessing,
     String? operation,
+    bool? isSelectionMode,
+    Set<String>? selectedItems,
+    bool? isBulkDeleting,
   }) {
     return DownloadProcessing(
       downloads: downloads ?? this.downloads,
       settings: settings ?? this.settings,
       lastUpdated: lastUpdated ?? this.lastUpdated,
       operation: operation ?? this.operation,
+      isSelectionMode: isSelectionMode ?? this.isSelectionMode,
+      selectedItems: selectedItems ?? this.selectedItems,
+      isBulkDeleting: isBulkDeleting ?? this.isBulkDeleting,
     );
   }
 }

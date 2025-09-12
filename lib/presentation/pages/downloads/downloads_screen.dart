@@ -103,157 +103,214 @@ class _DownloadsScreenState extends State<DownloadsScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      foregroundColor: Theme.of(context).colorScheme.onSurface,
-      title: Text(
-        AppLocalizations.of(context)!.downloads,
-        style: TextStyleConst.headlineMedium.copyWith(
-          color: Theme.of(context).colorScheme.onSurface,
-        ),
-      ),
-      actions: [
-        BlocBuilder<DownloadBloc, DownloadBlocState>(
-          builder: (context, state) {
-            if (state is! DownloadLoaded) return const SizedBox.shrink();
-
-            return PopupMenuButton<String>(
-              icon: Icon(
-                Icons.more_vert,
-                color: Theme.of(context).colorScheme.onSurface,
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(kToolbarHeight + kTextTabBarHeight),
+      child: BlocBuilder<DownloadBloc, DownloadBlocState>(
+        builder: (context, state) {
+          if (state is! DownloadLoaded) {
+            return AppBar(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              foregroundColor: Theme.of(context).colorScheme.onSurface,
+              title: Text(
+                AppLocalizations.of(context)!.downloads,
+                style: TextStyleConst.headlineMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-              color: Theme.of(context).colorScheme.surface,
-              onSelected: (value) => _handleMenuAction(value, state),
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: 'pause_all',
-                  enabled: state.activeDownloads.isNotEmpty ||
-                      state.queuedDownloads.isNotEmpty,
-                  child: Row(
-                    children: [
-                      Icon(Icons.pause,
-                          color: Theme.of(context).colorScheme.onSurface),
-                      const SizedBox(width: 8),
-                      Text(AppLocalizations.of(context)!.pauseAll,
-                          style: TextStyleConst.bodyMedium.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          )),
-                    ],
-                  ),
+            );
+          }
+
+          // Selection mode AppBar
+          if (state.isSelectionMode) {
+            return AppBar(
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => context.read<DownloadBloc>().add(const DownloadToggleSelectionModeEvent()),
+              ),
+              title: Text(
+                '${state.selectedItems.length} selected',
+                style: TextStyleConst.headlineSmall.copyWith(
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
                 ),
-                PopupMenuItem(
-                  value: 'resume_all',
-                  enabled: state.downloads
-                      .any((d) => d.state == DownloadState.paused),
-                  child: Row(
-                    children: [
-                      Icon(Icons.play_arrow,
-                          color: Theme.of(context).colorScheme.onSurface),
-                      const SizedBox(width: 8),
-                      Text(AppLocalizations.of(context)!.resumeAll,
-                          style: TextStyleConst.bodyMedium.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          )),
-                    ],
+              ),
+              actions: [
+                if (state.selectedItems.isNotEmpty) ...[
+                  IconButton(
+                    icon: const Icon(Icons.select_all),
+                    onPressed: () => context.read<DownloadBloc>().add(const DownloadSelectAllEvent()),
+                    tooltip: 'Select All',
                   ),
-                ),
-                PopupMenuItem(
-                  value: 'cancel_all',
-                  enabled: state.downloads.any((d) => d.canCancel),
-                  child: Row(
-                    children: [
-                      Icon(Icons.cancel,
-                          color: Theme.of(context).colorScheme.error),
-                      const SizedBox(width: 8),
-                      Text(AppLocalizations.of(context)!.cancelAll,
-                          style: TextStyleConst.bodyMedium.copyWith(
-                              color: Theme.of(context).colorScheme.error)),
-                    ],
+                  IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () => context.read<DownloadBloc>().add(const DownloadClearSelectionEvent()),
+                    tooltip: 'Clear Selection',
                   ),
-                ),
-                const PopupMenuDivider(),
-                PopupMenuItem(
-                  value: 'clear_completed',
-                  enabled: state.completedDownloads.isNotEmpty,
-                  child: Row(
-                    children: [
-                      Icon(Icons.clear_all,
-                          color: Theme.of(context).colorScheme.onSurface),
-                      const SizedBox(width: 8),
-                      Text(AppLocalizations.of(context)!.clearCompleted,
-                          style: TextStyleConst.bodyMedium.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          )),
-                    ],
+                  IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () => _showBulkDeleteDialog(state),
+                    tooltip: 'Delete',
                   ),
-                ),
-                PopupMenuItem(
-                  value: 'cleanup_storage',
-                  child: Row(
-                    children: [
-                      Icon(Icons.cleaning_services,
-                          color: Theme.of(context).colorScheme.onSurface),
-                      const SizedBox(width: 8),
-                      Text(AppLocalizations.of(context)!.cleanupStorage,
-                          style: TextStyleConst.bodyMedium.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          )),
-                    ],
-                  ),
-                ),
-                const PopupMenuDivider(),
-                PopupMenuItem(
-                  value: 'settings',
-                  child: Row(
-                    children: [
-                      Icon(Icons.settings,
-                          color: Theme.of(context).colorScheme.onSurface),
-                      const SizedBox(width: 8),
-                      Text(AppLocalizations.of(context)!.settings,
-                          style: TextStyleConst.bodyMedium.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          )),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'export',
-                  child: Row(
-                    children: [
-                      Icon(Icons.file_download,
-                          color: Theme.of(context).colorScheme.onSurface),
-                      const SizedBox(width: 8),
-                      Text(AppLocalizations.of(context)!.exportList,
-                          style: TextStyleConst.bodyMedium.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          )),
-                    ],
-                  ),
-                ),
+                ],
               ],
             );
-          },
-        ),
-      ],
-      bottom: TabBar(
-        controller: _tabController,
-        labelColor: Theme.of(context).colorScheme.primary,
-        unselectedLabelColor:
-            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-        indicatorColor: Theme.of(context).colorScheme.primary,
-        tabs: [
-          Tab(text: AppLocalizations.of(context)!.all),
-          Tab(text: AppLocalizations.of(context)!.active),
-          Tab(text: AppLocalizations.of(context)!.queued),
-          Tab(text: AppLocalizations.of(context)!.completed),
-          Tab(text: AppLocalizations.of(context)!.failed),
-        ],
+          }
+
+          // Normal AppBar
+          return AppBar(
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            foregroundColor: Theme.of(context).colorScheme.onSurface,
+            title: Text(
+              AppLocalizations.of(context)!.downloads,
+              style: TextStyleConst.headlineMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.checklist),
+                onPressed: () => context.read<DownloadBloc>().add(const DownloadToggleSelectionModeEvent()),
+                tooltip: 'Select Mode',
+              ),
+              PopupMenuButton<String>(
+                icon: Icon(
+                  Icons.more_vert,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                color: Theme.of(context).colorScheme.surface,
+                onSelected: (value) => _handleMenuAction(value, state),
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'pause_all',
+                    enabled: state.activeDownloads.isNotEmpty ||
+                        state.queuedDownloads.isNotEmpty,
+                    child: Row(
+                      children: [
+                        Icon(Icons.pause,
+                            color: Theme.of(context).colorScheme.onSurface),
+                        const SizedBox(width: 8),
+                        Text(AppLocalizations.of(context)!.pauseAll,
+                            style: TextStyleConst.bodyMedium.copyWith(
+                              color:
+                                  Theme.of(context).colorScheme.onSurfaceVariant,
+                            )),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'resume_all',
+                    enabled: state.downloads
+                        .any((d) => d.state == DownloadState.paused),
+                    child: Row(
+                      children: [
+                        Icon(Icons.play_arrow,
+                            color: Theme.of(context).colorScheme.onSurface),
+                        const SizedBox(width: 8),
+                        Text(AppLocalizations.of(context)!.resumeAll,
+                            style: TextStyleConst.bodyMedium.copyWith(
+                              color:
+                                  Theme.of(context).colorScheme.onSurfaceVariant,
+                            )),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'cancel_all',
+                    enabled: state.downloads.any((d) => d.canCancel),
+                    child: Row(
+                      children: [
+                        Icon(Icons.cancel,
+                            color: Theme.of(context).colorScheme.error),
+                        const SizedBox(width: 8),
+                        Text(AppLocalizations.of(context)!.cancelAll,
+                            style: TextStyleConst.bodyMedium.copyWith(
+                                color: Theme.of(context).colorScheme.error)),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuDivider(),
+                  PopupMenuItem(
+                    value: 'clear_completed',
+                    enabled: state.completedDownloads.isNotEmpty,
+                    child: Row(
+                      children: [
+                        Icon(Icons.clear_all,
+                            color: Theme.of(context).colorScheme.onSurface),
+                        const SizedBox(width: 8),
+                        Text(AppLocalizations.of(context)!.clearCompleted,
+                            style: TextStyleConst.bodyMedium.copyWith(
+                              color:
+                                  Theme.of(context).colorScheme.onSurfaceVariant,
+                            )),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'cleanup_storage',
+                    child: Row(
+                      children: [
+                        Icon(Icons.cleaning_services,
+                            color: Theme.of(context).colorScheme.onSurface),
+                        const SizedBox(width: 8),
+                        Text(AppLocalizations.of(context)!.cleanupStorage,
+                            style: TextStyleConst.bodyMedium.copyWith(
+                              color:
+                                  Theme.of(context).colorScheme.onSurfaceVariant,
+                            )),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuDivider(),
+                  PopupMenuItem(
+                    value: 'settings',
+                    child: Row(
+                      children: [
+                        Icon(Icons.settings,
+                            color: Theme.of(context).colorScheme.onSurface),
+                        const SizedBox(width: 8),
+                        Text(AppLocalizations.of(context)!.settings,
+                            style: TextStyleConst.bodyMedium.copyWith(
+                              color:
+                                  Theme.of(context).colorScheme.onSurfaceVariant,
+                            )),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'export',
+                    child: Row(
+                      children: [
+                        Icon(Icons.file_download,
+                            color: Theme.of(context).colorScheme.onSurface),
+                        const SizedBox(width: 8),
+                        Text(AppLocalizations.of(context)!.exportList,
+                            style: TextStyleConst.bodyMedium.copyWith(
+                              color:
+                                  Theme.of(context).colorScheme.onSurfaceVariant,
+                            )),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            bottom: TabBar(
+              controller: _tabController,
+              labelColor: Theme.of(context).colorScheme.primary,
+              unselectedLabelColor:
+                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              indicatorColor: Theme.of(context).colorScheme.primary,
+              tabs: [
+                Tab(text: AppLocalizations.of(context)!.all),
+                Tab(text: AppLocalizations.of(context)!.active),
+                Tab(text: AppLocalizations.of(context)!.queued),
+                Tab(text: AppLocalizations.of(context)!.completed),
+                Tab(text: AppLocalizations.of(context)!.failed),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -288,44 +345,54 @@ class _DownloadsScreenState extends State<DownloadsScreen>
 
   Widget _buildDownloadsList(
       List<DownloadStatus> downloads, String emptyMessage) {
-    if (downloads.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.download_outlined,
-              size: 64,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+    return BlocBuilder<DownloadBloc, DownloadBlocState>(
+      builder: (context, state) {
+        if (downloads.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.download_outlined,
+                  size: 64,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  emptyMessage,
+                  style: TextStyleConst.bodyLarge.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              emptyMessage,
-              style: TextStyleConst.bodyLarge.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: () async {
-        context.read<DownloadBloc>().add(const DownloadRefreshEvent());
-      },
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: downloads.length,
-        itemBuilder: (context, index) {
-          final download = downloads[index];
-          return DownloadItemWidget(
-            download: download,
-            onTap: () => _handleDownloadTap(download),
-            onAction: (action) => _handleDownloadAction(action, download),
           );
-        },
-      ),
+        }
+
+        final isSelectionMode = state is DownloadLoaded && state.isSelectionMode;
+
+        return RefreshIndicator(
+          onRefresh: () async {
+            context.read<DownloadBloc>().add(const DownloadRefreshEvent());
+          },
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: downloads.length,
+            itemBuilder: (context, index) {
+              final download = downloads[index];
+              final isSelected = state is DownloadLoaded && state.selectedItems.contains(download.contentId);
+
+              return DownloadItemWidget(
+                download: download,
+                onTap: () => _handleDownloadTap(download),
+                onAction: (action) => _handleDownloadAction(action, download),
+                isSelectionMode: isSelectionMode,
+                isSelected: isSelected,
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -363,12 +430,22 @@ class _DownloadsScreenState extends State<DownloadsScreen>
   }
 
   void _handleDownloadTap(DownloadStatus download) {
-    if (download.isCompleted) {
-      // Navigate to reader if download is completed
-      context.push('/reader/${download.contentId}');
+    final downloadBloc = context.read<DownloadBloc>();
+    final currentState = downloadBloc.state;
+
+    if (currentState is DownloadLoaded && currentState.isSelectionMode) {
+      // In selection mode, toggle selection
+      final isSelected = currentState.selectedItems.contains(download.contentId);
+      downloadBloc.add(DownloadSelectItemEvent(download.contentId, !isSelected));
     } else {
-      // Show download details
-      _showDownloadDetails(download);
+      // Normal mode behavior
+      if (download.isCompleted) {
+        // Navigate to reader if download is completed
+        context.push('/reader/${download.contentId}');
+      } else {
+        // Show download details
+        _showDownloadDetails(download);
+      }
     }
   }
 
@@ -579,6 +656,43 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                 ));
           },
         ),
+      ),
+    );
+  }
+
+  void _showBulkDeleteDialog(DownloadLoaded state) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        title: Text(
+          'Bulk Delete',
+          style: TextStyleConst.headlineSmall
+              .copyWith(color: Theme.of(context).colorScheme.onSurface),
+        ),
+        content: Text(
+          'Are you sure you want to delete ${state.selectedItems.length} downloads?',
+          style: TextStyleConst.bodyMedium
+              .copyWith(color: Theme.of(context).colorScheme.onSurface),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancel',
+                style: TextStyleConst.labelLarge),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              context.read<DownloadBloc>().add(DownloadBulkDeleteEvent(state.selectedItems.toList()));
+            },
+            child: Text(
+              'Delete',
+              style: TextStyleConst.labelLarge
+                  .copyWith(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        ],
       ),
     );
   }

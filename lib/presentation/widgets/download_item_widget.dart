@@ -13,18 +13,22 @@ class DownloadItemWidget extends StatelessWidget {
     required this.download,
     this.onTap,
     this.onAction,
+    this.isSelectionMode = false,
+    this.isSelected = false,
   });
 
   final DownloadStatus download;
   final VoidCallback? onTap;
   final Function(String action)? onAction;
+  final bool isSelectionMode;
+  final bool isSelected;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Card(
-      color: colorScheme.surface,
+      color: isSelected ? colorScheme.primaryContainer.withValues(alpha: 0.3) : colorScheme.surface,
       margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
         onTap: onTap,
@@ -37,6 +41,16 @@ class DownloadItemWidget extends StatelessWidget {
               // Header with title and status
               Row(
                 children: [
+                  if (isSelectionMode) ...[
+                    Checkbox(
+                      value: isSelected,
+                      onChanged: (value) {
+                        onTap?.call();
+                      },
+                      activeColor: colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,7 +73,7 @@ class DownloadItemWidget extends StatelessWidget {
                       ],
                     ),
                   ),
-                  _buildActionButton(context),
+                  if (!isSelectionMode) _buildActionButton(context),
                 ],
               ),
 
