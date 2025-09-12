@@ -122,7 +122,7 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   - Update skema database untuk fungsi pencarian
   - Dukungan migrasi untuk tabel baru
 
-## [0.3.0] - 2025-01-30
+## [0.3.0] - 2025-09-12
 
 ### Ditambahkan
 - **Implementasi SearchBloc Lanjutan** 🔍
@@ -288,6 +288,6 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ---
 
-**Status Saat Ini**: 70% Selesai (7/13 tugas)  
-**Status Implementasi**: Fitur inti operasional  
-**Milestone Berikutnya**: Implementasi Sistem Favorit dan Download
+**Status Saat Ini**: 75% Selesai (8/13 tugas)
+**Status Implementasi**: Fitur inti + sistem download operasional
+**Milestone Berikutnya**: Penyelesaian pengaturan dan operasi bulk

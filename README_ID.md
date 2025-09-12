@@ -4,56 +4,67 @@
 ![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)
 ![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)
 ![18+](https://img.shields.io/badge/Batasan_Usia-18%2B-red?style=for-the-badge&logo=warning&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Beta](https://img.shields.io/badge/Status-BETA_v0.2.0-blue?style=for-the-badge&logo=android&logoColor=white)
+![Beta](https://img.shields.io/badge/Status-BETA_v0.3.0-blue?style=for-the-badge&logo=android&logoColor=white)
 
-> **⚠️ PERINGATAN BATASAN USIA**  
-> **Aplikasi ini ditujukan untuk pengguna berusia 18 tahun ke atas saja.**  
-> **Konten yang diakses melalui aplikasi ini mungkin mengandung tema dewasa dan tidak sesuai untuk anak di bawah umur.**  
-> **Dengan menggunakan aplikasi ini, Anda mengkonfirmasi bahwa Anda berusia minimal 18 tahun dan diizinkan secara hukum untuk mengakses konten tersebut di wilayah hukum Anda.**
+> **⚠️ 18+ SAJA** • **Android Only** • **Pengalaman Membaca Ditingkatkan**
 
-## 🚀 **BETA v0.2.0 - SEKARANG TERSEDIA!**
+**NhasixApp** adalah aplikasi Flutter Android yang menyediakan **70% pemuatan konten lebih cepat**, membaca offline cerdas, dan UI modern. Dibangun dengan Clean Architecture untuk performa optimal.
 
-**NhasixApp** adalah aplikasi Android Flutter yang komprehensif yang menyediakan pengalaman membaca mobile yang ditingkatkan dengan **70% pemuatan konten lebih cepat**, kemampuan offline yang cerdas, dan peningkatan UI modern. Dibangun dengan **Clean Architecture** dan dioptimalkan untuk performa.
+## 📥 **Download Rilis Terbaru**
 
-### 📱 **Download Beta APK**
+[📦 **Download v0.3.0-beta**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.3.0-beta)
 
-| **Jenis APK** | **Ukuran** | **Target Perangkat** | **Download** |
-|--------------|----------|-------------------|--------------|
-| **ARM64** ⭐ | 24MB | Perangkat modern (2019+) | `nhasix_0.2.0_20250828_release_arm64_optimized.apk` |
-| **ARM32** | 22MB | Perangkat lama (2015-2019) | `nhasix_0.2.0_20250828_release_arm_optimized.apk` |
-| **Universal** | 22MB | Semua perangkat | `nhasix_0.2.0_20250828_release_universal_optimized.apk` |
+| **Jenis APK** | **Ukuran** | **Target Perangkat** | **Status** |
+|--------------|----------|-------------------|------------|
+| **ARM64** ⭐ | 24MB | Perangkat modern (2019+) | ✅ Tersedia |
+| **ARM32** | 22MB | Perangkat lama (2015-2019) | ✅ Tersedia |
+| **Universal** | 22MB | Semua perangkat | ✅ Tersedia |
 
-> **Rekomendasi**: Download APK ARM64 untuk performa terbaik di perangkat Android modern
+> **💡 Tip**: Pilih ARM64 untuk perangkat modern, ARM32 untuk perangkat lama. Semua APK tersedia di halaman [GitHub Releases](https://github.com/shirokun20/nhasixapp/releases/tag/v0.3.0-beta).
 
-## 🚀 Fitur
+## ✨ **Fitur Utama**
 
-### 🆕 Pembaruan Terbaru
+### 🎯 **Fitur Inti**
+- 📚 **Membaca Ditingkatkan**: Interface bersih dengan rendering gambar berkualitas tinggi
+- 🔍 **Pencarian Cerdas**: Pencarian lanjutan dengan filter tag dan kategori
+- 💾 **Membaca Offline**: Akses offline penuh dengan manajemen download
+- 🎨 **UI Modern**: Desain responsif dengan dukungan tema gelap/terang
 
-- [x] Setup dependency injection komprehensif menggunakan get_it untuk skalabilitas lebih baik
-- [x] Menambahkan dependensi eksternal seperti SharedPreferences dan Connectivity
-- [x] Konfigurasi utilitas inti: Logger, Dio HTTP client, CacheManager, TagDataManager
-- [x] Data source untuk scraping remote, anti-detection, bypass cloudflare, dan database lokal
-- [x] Implementasi repository untuk konten, data pengguna, pengaturan pembaca, dan konten offline
-- [x] Use case untuk konten, favorit, unduhan, dan manajemen riwayat
-- [x] BLoC untuk splash, home, konten, pencarian, dan fitur unduhan
-- [x] Cubit untuk network, pengaturan, detail, filter data, pembaca, pencarian offline, dan favorit
-- [x] Konfigurasi MultiBlocProvider diperbarui untuk semua BLoC dan Cubit
-- [x] Dependensi di pubspec.yaml diperbarui untuk mendukung fitur baru
-- Setup dependency injection komprehensif menggunakan get_it untuk skalabilitas lebih baik
-- Menambahkan dependensi eksternal seperti SharedPreferences dan Connectivity
-- Konfigurasi utilitas inti: Logger, Dio HTTP client, CacheManager, TagDataManager
-- Data source untuk scraping remote, anti-detection, bypass cloudflare, dan database lokal
-- Implementasi repository untuk konten, data pengguna, pengaturan pembaca, dan konten offline
-- Use case untuk konten, favorit, unduhan, dan manajemen riwayat
-- BLoC untuk splash, home, konten, pencarian, dan fitur unduhan
-- Cubit untuk network, pengaturan, detail, filter data, pembaca, pencarian offline, dan favorit
-- Konfigurasi MultiBlocProvider diperbarui untuk semua BLoC dan Cubit
-- Dependensi di pubspec.yaml diperbarui untuk mendukung fitur baru
+### 🚀 **Performa & Privasi**
+- ⚡ **70% Lebih Cepat**: Smart image preloader dan optimasi
+- 🔒 **Download Privat**: Tersembunyi dari galeri sistem (`.nomedia`)
+- 📱 **Build Dioptimalkan**: Varian ARM64/ARM32/Universal APK
+- 🎯 **Fitur Cerdas**: Intelligent prefetching dan manajemen memori
+
+### 🆕 **Terbaru di v0.3.0**
+- ✅ **Bulk Delete**: Pilih dan hapus multiple download sekaligus
+- ✅ **Pengaturan Ditingkatkan**: Live preview dan dialog bantuan
+- ✅ **Perbaikan Bug**: Stabilitas dan performa yang diperbaiki
 
 ## 🚀 Fitur
 
-## ✨ **BARU di BETA v0.2.0**
+## 📋 **CHANGELOG**
+
+### v0.3.0-beta (Terbaru)
+- ✨ **Operasi Bulk Delete**: Pilih dan hapus multiple download sekaligus
+- 🎨 **UI Pengaturan Ditingkatkan**: Live preview untuk kolom grid, dialog bantuan, deskripsi diperbaiki
+- 🐛 **Perbaikan Bug**: Memperbaiki pesan loading yang persisten setelah bulk delete
+- ⚡ **Performa**: Manajemen memori yang ditingkatkan dan kecepatan loading
+- 🔧 **Teknis**: Manajemen state dan penanganan error yang ditingkatkan
+
+### v0.2.0-beta
+- 🚀 **Terobosan Performa**: 70% pemuatan konten lebih cepat dengan smart image preloader
+- 🔒 **Privasi & Keamanan**: Privasi download yang ditingkatkan dengan perlindungan file `.nomedia`
+- 📱 **Peningkatan UI/UX**: Paginasi modern, interface reader yang ditingkatkan
+- 🎯 **Fitur Cerdas**: Preloading gambar cerdas dan download berbasis rentang
+
+### v0.1.0-beta.01
+- 🎯 **Pengalaman Membaca Inti**: Interface bersih, rendering gambar berkualitas tinggi
+- 🔍 **Pencarian Lanjutan**: Pencarian kuat dengan filter tag dan kategori
+- 💾 **Fitur Offline**: Membaca offline penuh dengan manajemen download
+- 🎨 **Pengalaman Pengguna**: Desain responsif dengan dukungan tema gelap/terang
+
+## ✨ **BARU di BETA v0.3.0**
 
 ### � **Terobosan Performa**
 - **70% pemuatan konten lebih cepat** dengan smart image preloader
@@ -76,6 +87,8 @@
 - **Preloading gambar cerdas** - halaman berikutnya dimuat saat Anda membaca
 - **Download berbasis rentang** - download rentang halaman tertentu
 - **Manajemen download background** dengan pelacakan progress
+- **Operasi bulk delete** - pilih dan hapus multiple download sekaligus (BARU!)
+- **Mode seleksi lanjutan** - toggle seleksi untuk operasi batch (BARU!)
 - **Penggunaan memori yang dioptimalkan** untuk performa yang lebih baik
 
 ---
@@ -100,6 +113,8 @@
 - **Download pribadi** - konten tersembunyi dari galeri sistem
 - **Pelacakan progress download** dengan indikator visual
 - **Download background** - lanjutkan browsing saat mendownload
+- **Operasi bulk delete** - pilih dan hapus multiple download secara efisien
+- **Mode seleksi** - toggle mode seleksi untuk operasi batch
 
 ### 🎨 **Pengalaman Pengguna**
 - **Desain responsif** yang bekerja di semua ukuran layar
@@ -125,74 +140,30 @@
 - [x] Implementasi dukungan download di background
 - [x] Menambahkan dashboard statistik dan fungsi backup & sync
 
-## 🛠️ **Arsitektur Teknis**
+## 🛠️ **Tech Stack**
 
-### 🏗️ **Implementasi Clean Architecture**
-```
-📁 lib/
-├── 🎯 presentation/     # Layer UI (Widget, Page, Bloc)
-├── 🏢 domain/          # Logika Bisnis (Entity, Use Case)
-├── 💾 data/            # Layer Data (Repository, Data Source)
-├── 🔧 core/            # Utilitas Inti (DI, Konstanta, Error)
-├── 🌐 services/        # Layanan Eksternal (API, Storage)
-└── 🛠️ utils/           # Fungsi Helper dan Extension
-```
-
-### � **Tech Stack**
 - **Framework**: Flutter 3.24+ dengan Dart 3.5+
-- **State Management**: Flutter Bloc dengan Cubit
-- **Arsitektur**: Clean Architecture dengan MVVM
-- **Storage**: SharedPreferences + SQLite (sqflite)
-- **Network**: HTTP dengan custom interceptor
-- **Image Processing**: Dioptimalkan dengan native caching
-- **Performa**: Smart preloading dan pagination
-
-### 🚀 **Optimasi Performa**
-- **Smart Image Preloader**: 70% loading lebih cepat dengan prefetching cerdas
-- **Build APK Dioptimalkan**: Varian terpisah ARM64/ARM32/Universal
-- **Manajemen Memori**: Caching dan disposal gambar yang efisien
-- **Background Processing**: Download dan operasi non-blocking
+- **Arsitektur**: Clean Architecture (Presentation → Domain → Data)
+- **State Management**: Flutter Bloc + Cubit
+- **Storage**: SQLite + SharedPreferences
+- **Performa**: Smart preloading, build dioptimalkan
+- **Platform**: Android Only (ARM64/ARM32/Universal)
 
 ---
 
-## 📥 **Instalasi**
+## 🚀 **Mulai Cepat**
 
-### 📱 **Metode 1: Instalasi APK (Direkomendasikan)**
+### 📱 **Install APK (Direkomendasikan)**
+1. **Download** APK untuk perangkat Anda dari halaman [GitHub Releases](https://github.com/shirokun20/nhasixapp/releases/tag/v0.3.0-beta)
+2. **Aktifkan Sumber Tidak Dikenal**: Pengaturan → Keamanan → Sumber Tidak Dikenal
+3. **Install** APK dan berikan izin saat diminta
 
-1. **Download APK yang sesuai**:
-   - **ARM64** (perangkat modern): `nhasix_0.2.0_20250828_release_arm64_optimized.apk`
-   - **ARM32** (perangkat lama): `nhasix_0.2.0_20250828_release_arm_optimized.apk`
-   - **Universal** (semua perangkat): `nhasix_0.2.0_20250828_release_universal_optimized.apk`
-
-2. **Aktifkan instalasi dari sumber tidak dikenal**:
-   - Buka **Pengaturan → Keamanan → Sumber Tidak Dikenal**
-   - Atau **Pengaturan → Aplikasi → Akses Khusus → Instal Aplikasi Tidak Dikenal**
-
-3. **Instal APK**:
-   - Ketuk file APK yang telah didownload
-   - Ikuti petunjuk instalasi
-   - Berikan izin yang diperlukan saat diminta
-
-### 🛠️ **Metode 2: Build dari Source**
-
-#### **Prasyarat**
-- Flutter SDK 3.24+
-- Android Studio dengan Android SDK 34+
-- Dart 3.5+
-- Git
-
-#### **Build Cepat**
+### 🛠️ **Build dari Source**
 ```bash
-# Clone repository
-git clone https://github.com/yourusername/nhasixapp.git
+git clone https://github.com/shirokun20/nhasixapp.git
 cd nhasixapp
-
-# Dapatkan dependencies
 flutter pub get
-
-# Build APK release yang dioptimalkan
-chmod +x build_optimized.sh
-./build_optimized.sh
+flutter run
 ```
 
 #### **Setup Development**
@@ -209,62 +180,65 @@ flutter build apk --release
 
 ---
 
-## 🎮 **Panduan Penggunaan**
+## 🎮 **Cara Menggunakan**
 
-### 🔍 **Navigasi Dasar**
-1. **Browse Konten**: Swipe melalui feed utama
-2. **Pencarian**: Gunakan search bar dengan filter dan tag
-3. **Baca**: Ketuk item mana pun untuk mulai membaca
-4. **Download**: Long press atau gunakan tombol download untuk akses offline
+### 📱 **Memulai**
+1. **Browse**: Swipe melalui feed konten
+2. **Cari**: Gunakan search bar dengan filter
+3. **Baca**: Ketuk item untuk mulai membaca
+4. **Download**: Long press untuk akses offline
 
-### 📥 **Fitur Download**
-- **Download Penuh**: Download seluruh konten untuk membaca offline
-- **Download Rentang**: Pilih halaman tertentu untuk didownload
-- **Mode Pribadi**: Download tersembunyi dari galeri sistem (`.nomedia`)
-- **Pelacakan Progress**: Indikator visual menunjukkan status download
-
-### ⚙️ **Pengaturan & Kustomisasi**
-- **Tema**: Beralih antara mode terang dan gelap
-- **Preferensi Membaca**: Sesuaikan zoom, efek transisi
-- **Lokasi Download**: Pilih direktori penyimpanan
-- **Pengaturan Privasi**: Konfigurasi visibilitas download
+### ⚙️ **Pengaturan Utama**
+- **Tema**: Toggle mode terang/gelap
+- **Grid Layout**: 2, 3, atau 4 kolom
+- **Download Privat**: Tersembunyi dari galeri
+- **Operasi Batch**: Pilih multiple item
 
 ---
 
-## 🧪 **Beta Testing & Feedback**
+## 🧪 **Beta Testing**
 
-### 🐛 **Masalah yang Diketahui**
-- Beberapa perangkat langka mungkin mengalami loading lebih lambat pada startup pertama
-- Progress download mungkin tidak update real-time di versi Android lama
-- Filter pencarian mungkin perlu penyempurnaan untuk query yang sangat spesifik
+### 🐛 **Masalah Diketahui**
+- Beberapa perangkat lama mungkin loading lebih lambat saat pertama kali
+- Progress download mungkin tidak update real-time di Android < 8.0
 
-### 📝 **Feedback Beta**
-Kami secara aktif mencari feedback untuk meningkatkan NhasixApp! Silakan laporkan:
-- **Masalah performa** pada perangkat spesifik Anda
-- **Saran UI/UX** untuk kegunaan yang lebih baik
-- **Permintaan fitur** yang akan meningkatkan pengalaman Anda
-- **Bug atau crash** dengan detail perangkat/versi Android
-
-**Kontak**: Buat issue di GitHub atau hubungi melalui project discussions.
+### 📝 **Feedback**
+Temukan bug atau punya saran? [Buat issue](https://github.com/shirokun20/nhasixapp/issues) di GitHub!
 
 ---
 
 ## 📜 **Lisensi & Legal**
 
-### 📋 **Lisensi**
-Proyek ini dilisensikan di bawah **MIT License** - lihat file [LICENSE](LICENSE) untuk detail.
+### ⚖️ **Catatan Penting**
+- **18+ Saja**: App ini mengandung konten dewasa
+- **Penggunaan Edukasi**: Untuk tujuan pribadi dan edukasi saja
+- **Kepatuhan Legal**: Pengguna bertanggung jawab atas hukum lokal
+- **Lisensi MIT**: Lihat [LICENSE](LICENSE) untuk detail
 
-### ⚖️ **Disclaimer Legal**
-- Aplikasi ini untuk **penggunaan edukasi dan pribadi saja**
-- Pengguna bertanggung jawab atas kepatuhan terhadap hukum dan regulasi lokal
-- Developer tidak meng-host atau mendistribusikan konten melalui aplikasi ini
-- Semua konten yang diakses melalui app ini berasal dari sumber yang tersedia publik
-- **Batasan usia: 18+ saja** - App ini mengakses konten dewasa
+### 🤝 **Dukung Creator**
 
-### 🤝 **Menghormati Creator Konten**
-- Kami mendorong pengguna untuk mendukung creator konten asli
-- App ini dirancang untuk meningkatkan pengalaman membaca, bukan mengganti channel resmi
-- Pertimbangkan untuk mendukung artist dan creator melalui platform resmi
+<div align="center">
+
+**Bantu ciptaan tetap hidup!** 💝
+
+</div>
+
+Kami percaya untuk mendukung seniman dan kreator hebat yang membuat konten ini mungkin. Dukungan Anda membantu mereka terus berkarya:
+
+- 🎨 **Karya Asli** - Dukung melalui platform resmi
+- 📝 **Komunitas Kreator** - Bergabung dengan komunitas mereka
+- 💰 **Patreon/Ko-fi** - Dukungan finansial langsung
+- 🌟 **Channel Resmi** - Ikuti karya mereka secara sah
+
+> **Setiap dukungan berarti!** Kontribusi Anda membantu kreator fokus pada apa yang mereka cintai.
+
+---
+
+<div align="center">
+
+**❤️ Terima kasih telah mendukung kreator! ❤️**
+
+</div>
 
 ---
 
@@ -508,83 +482,27 @@ flutter analyze
 
 > **Catatan**: Screenshot menampilkan progress pengembangan saat ini dengan komponen UI Material Design 3 modern dan layout responsif.
 
-## 📚 Referensi Pengembangan
+## 🤝 **Kontribusi**
 
-Proyek ini mencakup materi referensi komprehensif untuk pengembangan dan testing:
+Ikuti prinsip Clean Architecture dan BLoC untuk manajemen state. Untuk berkontribusi:
 
-### **File Referensi HTML**
-Terletak di direktori `references/`, file-file ini berisi struktur website asli untuk pengembangan:
-
-- **`halaman_utama.html`** - Struktur halaman utama dan layout grid konten
-- **`halaman_search.html`** - Halaman hasil pencarian dengan opsi filtering
-- **`halaman_detail.html`** - Halaman detail konten dengan metadata dan tag
-- **`halaman_baca.html`** - Halaman reader dengan struktur galeri gambar
-- **`halaman_last_page.html`** - Struktur pagination dan navigasi
-
-### **Referensi Data JSON**
-- **`halaman_detail.json`** - Metadata konten terstruktur untuk pengembangan API
-
-### **Penggunaan dalam Pengembangan**
-File referensi ini digunakan untuk:
-- **Pengembangan Web Scraping** - Memahami struktur HTML untuk parsing
-- **Referensi Desain UI/UX** - Mencocokkan layout dan fungsi website asli
-- **Data Testing** - Menyediakan skenario test yang realistis
-- **Perencanaan Struktur API** - Mendefinisikan model data dan format response
-
-## 🤝 Kontribusi
-
-Proyek ini mengikuti prinsip Clean Architecture dan menggunakan BLoC untuk manajemen state. Saat berkontribusi:
-
-1. Ikuti pola arsitektur yang telah ditetapkan
+1. Ikuti pola arsitektur yang ditetapkan
 2. Tulis test komprehensif untuk fitur baru
 3. Update dokumentasi untuk perubahan signifikan
 4. Ikuti panduan style Dart/Flutter
-5. Gunakan file referensi di `references/` untuk memahami struktur website
-6. Test dengan skenario data real menggunakan sampel HTML yang disediakan
 
-## ⚖️ Pemberitahuan Hukum
+## ⚖️ **Catatan Hukum**
 
-**PEMBATASAN USIA:** Aplikasi ini secara khusus ditujukan untuk pengguna berusia 18 tahun ke atas. Konten yang diakses melalui aplikasi ini mengandung tema dewasa dan materi dewasa yang tidak cocok untuk anak di bawah umur.
+**18+ SAJA**: App ini untuk pengguna dewasa. Konten mengandung tema dewasa. Pengguna bertanggung jawab atas kepatuhan hukum lokal.
 
-Aplikasi ini dibuat untuk tujuan edukasi dan penggunaan pribadi saja. Ini mendemonstrasikan praktik pengembangan Flutter modern dan implementasi Clean Architecture. Pengguna bertanggung jawab untuk:
-- Memverifikasi bahwa mereka memenuhi persyaratan usia minimum (18+) di wilayah hukum mereka
-- Mematuhi hukum yang berlaku dan ketentuan layanan sumber konten
-- Menggunakan aplikasi secara bertanggung jawab dan legal
+## 🙏 **Kredit**
 
-Dengan mengunduh, menginstal, atau menggunakan aplikasi ini, Anda mengakui dan mengkonfirmasi bahwa Anda berusia minimal 18 tahun dan diizinkan secara hukum untuk mengakses konten dewasa di lokasi Anda.
+Dibuat dengan ❤️ menggunakan Flutter, Bloc, dan SQLite.
 
-## 📄 Lisensi
-
-Proyek ini dilisensikan di bawah MIT License - lihat file [LICENSE](LICENSE) untuk detail.
-
-## 🙏 Penghargaan
-
-- Tim Flutter untuk framework yang luar biasa
-- Maintainer library BLoC untuk manajemen state yang excellent
-- Prinsip Clean Architecture oleh Robert C. Martin
-- Komunitas open source untuk package-package fantastis yang digunakan
+**⚠️ 18+ Saja** • **Android Only** • **Lisensi MIT**
 
 ---
 
-## 📊 Statistik Proyek
-
-- **Arsitektur**: Clean Architecture dengan 3 layer
-- **Manajemen State**: Pola BLoC/Cubit dengan pemisahan yang tepat
-- **Dependensi**: 45+ package yang dipilih dengan hati-hati
-- **Cakupan Test**: Unit test dengan mocking untuk komponen kritis
-- **Progress Pengembangan**: 70% selesai (7/13 tugas)
-- **Status Implementasi**: Fitur inti operasional
-- **Platform Target**: Android
-- **SDK Minimum**: Android API 21+ (Android 5.0)
-- **Pencapaian Terbaru**: Sistem pencarian lengkap dan fungsi reader dengan fitur lanjutan ✨
-
----
-
-**Dibangun dengan ❤️ menggunakan Flutter dan Clean Architecture**
-
----
-
-## 🌐 Bahasa Lain
-
-- [English](README.md)
-- [Bahasa Indonesia](README_ID.md) ← Anda di sini
+<div align="center">
+**🌟 Star repo ini jika terbantu! 🌟**
+</div>

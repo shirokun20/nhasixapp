@@ -331,6 +331,7 @@ class DownloadService {
 - [x] Test selection mode functionality dengan existing download states (queued, active, completed, failed)
 - [x] Add progress indicator untuk bulk operations
 - [x] Verify integration dengan existing notification system
+- [x] **BUG FIX**: Fix loading message persistence after bulk delete completes (immediate UI state transition)
 
 #### **Task 3: Settings UI Enhancement** *(2-3 hours)*
 - [x] Add descriptions for all settings
@@ -389,7 +390,7 @@ class DownloadService {
 
 #### **Advanced Features** *(100% Complete)*
 - 🔄 **App Disguise Mode**: Planned but not implemented
-- ✅ **Bulk Delete**: Implemented with selection mode and bulk operations
+- ✅ **Bulk Delete**: Implemented with selection mode and bulk operations (bug fix applied for loading message)
 - ✅ **Settings UI Enhancement**: Implemented with descriptions, preview, and help dialog
 
 #### **Documentation & Testing** *(20% Complete)*
@@ -454,6 +455,7 @@ class DownloadService {
   - [x] Progress indication untuk bulk operations
   - [x] Error handling untuk partial failures
   - [x] Memory efficiency dengan large selections
+  - [x] **BUG FIX**: Loading message no longer persists after bulk delete completes
 - [x] **Settings UI**: All descriptions and previews working
   - [x] Live preview untuk grid columns
   - [x] Help dialogs untuk each setting
@@ -503,4 +505,4 @@ For questions about this plan or implementation details:
 - **Testing**: Run `flutter test` for unit tests
 
 **Last Updated**: September 12, 2025
-**Version**: 2.1 - Task 2 & 3 Completed
+**Version**: 2.1.1 - Task 2 Bug Fix Applied

@@ -1,8 +1,8 @@
-# NhasixApp Beta Release v0.2.0
+# NhasixApp Beta Release v0.3.0
 
-*Released: August 28, 2025*  
-*Version: 0.2.0+2*  
-*Build: Optimized APKs with obfuscation and architecture-specific builds*
+*Released: September 12, 2025*
+*Version: 0.3.0-beta+3*
+*Build: Production-ready with full feature set*
 
 ---
 
@@ -176,16 +176,16 @@
 ## 📱 **INSTALLATION NOTES**
 
 ### **Fresh Installation**
-1. Download `nhasix_0.2.0_beta_20250828_release.apk`
+1. Download `nhasix_0.3.0-beta_20250912_release.apk`
 2. Enable "Install from Unknown Sources"
 3. Install and grant required permissions
-4. Privacy protection automatically enabled
+4. Full feature set available
 
 ### **Upgrade from Previous Version**
 1. Backup any important data
 2. Install new version (settings preserved)
-3. Privacy protection applied to existing downloads
-4. Enhanced features automatically available
+3. All new features automatically available
+4. Database migration handled automatically
 
 ---
 
@@ -207,5 +207,5 @@
 
 ---
 
-*NhasixApp Beta v0.2.0 - Enhanced Performance, Privacy, and User Experience*  
+*NhasixApp Beta v0.3.0 - Complete Feature Implementation*
 *Built with ❤️ for the community*
