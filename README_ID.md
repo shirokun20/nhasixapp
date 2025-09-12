@@ -121,8 +121,6 @@ lib/
 
 ## 🚀 **Mulai Cepat**
 
-## 🚀 **Mulai Cepat**
-
 ### 📱 **Install APK (Direkomendasikan)**
 1. **Download** APK untuk perangkat Anda dari halaman [GitHub Releases](https://github.com/shirokun20/nhasixapp/releases/tag/v0.3.0-beta)
 2. **Aktifkan Sumber Tidak Dikenal**: Pengaturan → Keamanan → Sumber Tidak Dikenal
