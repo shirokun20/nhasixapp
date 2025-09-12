@@ -24,22 +24,38 @@
 
 ## ✨ **Fitur Utama**
 
-### 🎯 **Fitur Inti**
-- 📚 **Membaca Ditingkatkan**: Interface bersih dengan rendering gambar berkualitas tinggi
-- 🔍 **Pencarian Cerdas**: Pencarian lanjutan dengan filter tag dan kategori
-- 💾 **Membaca Offline**: Akses offline penuh dengan manajemen download
-- 🎨 **UI Modern**: Desain responsif dengan dukungan tema gelap/terang
+### 🎯 **Pengalaman Membaca Inti**
+- **Interface bersih dan modern** dioptimalkan untuk membaca mobile
+- **Rendering gambar berkualitas tinggi** dengan dukungan zoom dan pan
+- **Mode membaca layar penuh** untuk pengalaman yang imersif
+- **Transisi halaman yang halus** dengan kontrol gesture
+- **Pelacakan progress baca** dengan bookmark otomatis
+
+### 🔍 **Pencarian & Penemuan Lanjutan**
+- **Mesin pencari yang kuat** dengan filter tag dan kategori
+- **Filtering lanjutan** berdasarkan popularitas, tanggal, dan tag
+- **Rekomendasi cerdas** berdasarkan riwayat baca
+- **Manajemen bookmark** dengan akses offline
+
+### 💾 **Fitur Offline & Download**
+- **Membaca offline penuh** - download untuk membaca tanpa internet
+- **Download rentang** - download halaman atau chapter tertentu
+- **Download pribadi** - konten tersembunyi dari galeri sistem
+- **Pelacakan progress download** dengan indikator visual
+- **Download background** - lanjutkan browsing saat mendownload
+- **Operasi bulk delete** - pilih dan hapus multiple download secara efisien
+
+### 🎨 **Pengalaman Pengguna**
+- **Desain responsif** yang bekerja di semua ukuran layar
+- **Dukungan tema Gelap/Terang** dengan deteksi preferensi sistem
+- **Navigasi gesture** - kontrol swipe, pinch, dan tap
+- **UI Modern** dengan komponen Material Design 3
 
 ### 🚀 **Performa & Privasi**
-- ⚡ **70% Lebih Cepat**: Smart image preloader dan optimasi
-- 🔒 **Download Privat**: Tersembunyi dari galeri sistem (`.nomedia`)
-- 📱 **Build Dioptimalkan**: Varian ARM64/ARM32/Universal APK
-- 🎯 **Fitur Cerdas**: Intelligent prefetching dan manajemen memori
-
-### 🆕 **Terbaru di v0.3.0**
-- ✅ **Bulk Delete**: Pilih dan hapus multiple download sekaligus
-- ✅ **Pengaturan Ditingkatkan**: Live preview dan dialog bantuan
-- ✅ **Perbaikan Bug**: Stabilitas dan performa yang diperbaiki
+- **70% pemuatan konten lebih cepat** dengan smart image preloader
+- **Download privat** tersembunyi dari galeri sistem (`.nomedia`)
+- **Build dioptimalkan** untuk arsitektur perangkat berbeda
+- **Smart caching** dan manajemen memori
 
 ## 🚀 Fitur
 
@@ -93,37 +109,6 @@
 
 ---
 
-## � **Fitur Utama**
-
-### 📚 **Pengalaman Membaca Inti**
-- **Interface bersih dan modern** dioptimalkan untuk membaca mobile
-- **Rendering gambar berkualitas tinggi** dengan dukungan zoom dan pan
-- **Mode membaca layar penuh** untuk pengalaman yang imersif
-- **Transisi halaman yang halus** dengan kontrol gesture
-
-### 🔍 **Pencarian & Penemuan Lanjutan**
-- **Mesin pencari yang kuat** dengan filter tag dan kategori
-- **Filtering lanjutan** berdasarkan popularitas, tanggal, dan tag
-- **Rekomendasi cerdas** berdasarkan riwayat baca
-- **Manajemen bookmark** dengan akses offline
-
-### � **Fitur Offline & Download**
-- **Membaca offline penuh** - download untuk membaca tanpa internet
-- **Download rentang** - download halaman atau chapter tertentu
-- **Download pribadi** - konten tersembunyi dari galeri sistem
-- **Pelacakan progress download** dengan indikator visual
-- **Download background** - lanjutkan browsing saat mendownload
-- **Operasi bulk delete** - pilih dan hapus multiple download secara efisien
-- **Mode seleksi** - toggle mode seleksi untuk operasi batch
-
-### 🎨 **Pengalaman Pengguna**
-- **Desain responsif** yang bekerja di semua ukuran layar
-- **Dukungan tema Gelap/Terang** dengan deteksi preferensi sistem
-- **Navigasi gesture** - kontrol swipe, pinch, dan tap
-- **Pelacakan progress baca** dengan bookmark otomatis
-
-## 🏗️ Arsitektur
-
 ## 🛠️ Progres Pengembangan
 
 - [x] Setup dependency injection komprehensif menggunakan get_it untuk skalabilitas lebih baik
@@ -142,14 +127,67 @@
 
 ## 🛠️ **Tech Stack**
 
-- **Framework**: Flutter 3.24+ dengan Dart 3.5+
-- **Arsitektur**: Clean Architecture (Presentation → Domain → Data)
-- **State Management**: Flutter Bloc + Cubit
-- **Storage**: SQLite + SharedPreferences
-- **Performa**: Smart preloading, build dioptimalkan
-- **Platform**: Android Only (ARM64/ARM32/Universal)
+### **Framework Inti**
+- **Flutter** 3.24+ - Pengembangan mobile cross-platform
+- **Dart** 3.5+ - Bahasa pemrograman
 
----
+### **Arsitektur & State Management**
+- **Clean Architecture** - Pemisahan kepentingan (Presentation → Domain → Data)
+- **Flutter BLoC** - Manajemen state reaktif
+- **Get It** - Dependency injection
+- **Equatable** - Kesetaraan nilai dan immutability
+
+### **Data & Storage**
+- **SQLite** - Database lokal untuk data offline
+- **SharedPreferences** - Penyimpanan key-value sederhana
+- **Offline-First Architecture** - Intelligent caching
+
+### **Networking & APIs**
+- **Dio** - HTTP client untuk pemanggilan API
+- **HTML Parser** - Kemampuan web scraping
+- **Connectivity Plus** - Monitoring konektivitas jaringan
+
+### **UI & Pengalaman Pengguna**
+- **Cached Network Image** - Caching dan loading gambar
+- **Photo View** - Fungsi zoom dan pan gambar
+- **Pull to Refresh** - Fungsi pull-to-refresh
+- **Shimmer** - Animasi skeleton loading
+
+### **Background & Sistem**
+- **Flutter Local Notifications** - Notifikasi push lokal
+- **Wakelock Plus** - Menjaga layar tetap menyala saat membaca
+- **Permission Handler** - Runtime permissions
+
+## 📁 **Struktur Proyek**
+
+```
+lib/
+├── core/                    # Utilitas dan konfigurasi inti
+│   ├── config/             # Konfigurasi aplikasi
+│   ├── constants/          # Konstanta aplikasi (warna, gaya)
+│   ├── di/                 # Setup dependency injection
+│   ├── network/            # Klien jaringan dan manager
+│   ├── routing/            # Konfigurasi routing aplikasi
+│   └── utils/              # Fungsi utilitas
+├── data/                   # Layer data
+│   ├── datasources/        # Sumber data (lokal/remote)
+│   ├── models/            # Model data
+│   ├── repositories/      # Implementasi repository
+│   └── value_objects/     # Value objects
+├── domain/                 # Layer domain
+│   ├── entities/          # Entitas domain
+│   ├── repositories/      # Interface repository
+│   └── usecases/          # Logika bisnis use cases
+├── presentation/          # Layer presentation
+│   ├── blocs/            # Manajemen state BLoC
+│   ├── cubits/           # Manajemen state Cubit
+│   ├── pages/            # Layar/halaman UI
+│   ├── widgets/          # Komponen UI yang dapat digunakan ulang
+│   └── services/         # Layanan UI
+└── utils/                 # Utilitas global
+```
+
+## 🚀 **Mulai Cepat**
 
 ## 🚀 **Mulai Cepat**
 
@@ -159,23 +197,33 @@
 3. **Install** APK dan berikan izin saat diminta
 
 ### 🛠️ **Build dari Source**
+
+#### **Prasyarat**
+- Flutter SDK (>=3.5.4)
+- Dart SDK (>=3.5.4)
+- Android Studio / VS Code
+- Android SDK
+
+#### **Instalasi**
 ```bash
+# Clone repository
 git clone https://github.com/shirokun20/nhasixapp.git
 cd nhasixapp
+
+# Install dependensi
 flutter pub get
+
+# Jalankan aplikasi
 flutter run
 ```
 
-#### **Setup Development**
+#### **Build untuk Release**
 ```bash
-# Install dependencies
-flutter pub get
-
-# Jalankan dalam mode debug
-flutter run
-
-# Build untuk release
+# Android APK
 flutter build apk --release
+
+# Android App Bundle (untuk Google Play Store)
+flutter build appbundle --release
 ```
 
 ---
@@ -194,71 +242,34 @@ flutter build apk --release
 - **Download Privat**: Tersembunyi dari galeri
 - **Operasi Batch**: Pilih multiple item
 
----
+## 📱 **Screenshot**
 
-## 🧪 **Beta Testing**
-
-### 🐛 **Masalah Diketahui**
-- Beberapa perangkat lama mungkin loading lebih lambat saat pertama kali
-- Progress download mungkin tidak update real-time di Android < 8.0
-
-### 📝 **Feedback**
-Temukan bug atau punya saran? [Buat issue](https://github.com/shirokun20/nhasixapp/issues) di GitHub!
-
----
-
-## 📜 **Lisensi & Legal**
-
-### ⚖️ **Catatan Penting**
-- **18+ Saja**: App ini mengandung konten dewasa
-- **Penggunaan Edukasi**: Untuk tujuan pribadi dan edukasi saja
-- **Kepatuhan Legal**: Pengguna bertanggung jawab atas hukum lokal
-- **Lisensi MIT**: Lihat [LICENSE](LICENSE) untuk detail
-
-### 🤝 **Dukung Creator**
-
+### 🏠 Beranda & Detail
 <div align="center">
-
-**Bantu ciptaan tetap hidup!** 💝
-
+  <img src="screenshots/flutter_01.png" width="250" alt="Layar Beranda"/>
+  <img src="screenshots/flutter_02.png" width="250" alt="Grid Konten"/>
+  <img src="screenshots/flutter_03.png" width="250" alt="List Konten"/>
 </div>
 
-Kami percaya untuk mendukung seniman dan kreator hebat yang membuat konten ini mungkin. Dukungan Anda membantu mereka terus berkarya:
-
-- 🎨 **Karya Asli** - Dukung melalui platform resmi
-- 📝 **Komunitas Kreator** - Bergabung dengan komunitas mereka
-- 💰 **Patreon/Ko-fi** - Dukungan finansial langsung
-- 🌟 **Channel Resmi** - Ikuti karya mereka secara sah
-
-> **Setiap dukungan berarti!** Kontribusi Anda membantu kreator fokus pada apa yang mereka cintai.
-
----
-
+### 🔍 Membaca, Detail & Mode Membaca
 <div align="center">
-
-**❤️ Terima kasih telah mendukung kreator! ❤️**
-
+  <img src="screenshots/flutter_04.png" width="250" alt="Layar Pencarian"/>
+  <img src="screenshots/flutter_05.png" width="250" alt="Filter Lanjutan"/>
+  <img src="screenshots/flutter_06.png" width="250" alt="Pemilihan Tag"/>
 </div>
 
----
+### 📖 Membaca, Menu Samping, Pencarian & Filter
+<div align="center">
+  <img src="screenshots/flutter_07.png" width="250" alt="Detail Konten"/>
+  <img src="screenshots/flutter_08.png" width="250" alt="Mode Reader"/>
+  <img src="screenshots/flutter_09.png" width="250" alt="Pengaturan Reader"/>
+</div>
 
-## � **Berkontribusi**
-
-### 🤝 **Cara Berkontribusi**
-1. **Fork** repository
-2. **Buat** branch fitur (`git checkout -b feature/fitur-amazing`)
-3. **Commit** perubahan Anda (`git commit -m 'Tambahkan fitur amazing'`)
-4. **Push** ke branch (`git push origin feature/fitur-amazing`)
-5. **Buka** Pull Request
-
-### 📋 **Panduan Kontribusi**
-- Ikuti best practice Flutter/Dart
-- Pertahankan prinsip clean architecture
-- Tambahkan test untuk fitur baru
-- Update dokumentasi sesuai kebutuhan
-- Pastikan kode diformat dengan `dart format`
-
----
+### ⚙️ Filter & Pencarian
+<div align="center">
+  <img src="screenshots/flutter_10.png" width="250" alt="Pengaturan Aplikasi"/>
+  <img src="screenshots/flutter_11.png" width="250" alt="Opsi Tema"/>
+</div>
 
 ## 🆘 **Dukungan & FAQ**
 
@@ -282,149 +293,23 @@ J: Saat ini hanya Android. Dukungan iOS mungkin dipertimbangkan untuk rilis masa
 - **Masalah pencarian**: Hapus cache aplikasi atau coba kata pencarian berbeda
 - **Crash**: Laporkan dengan model perangkat dan versi Android Anda
 
----
+## 👥 **Berkontribusi**
 
-## 🔮 **Roadmap**
+### 🤝 **Cara Berkontribusi**
+1. **Fork** repository
+2. **Buat** branch fitur (`git checkout -b feature/fitur-amazing`)
+3. **Commit** perubahan Anda (`git commit -m 'Tambahkan fitur amazing'`)
+4. **Push** ke branch (`git push origin feature/fitur-amazing`)
+5. **Buka** Pull Request
 
-### 🚀 **Fitur yang Akan Datang (v0.3.0)**
-- [ ] **Cloud sync** untuk bookmark dan progress baca
-- [ ] **Fitur reader lanjutan** - night mode, tema baca
-- [ ] **Rekomendasi yang diperbaiki** dengan saran bertenaga AI
-- [ ] **Fitur sosial** - reading list dan sharing komunitas
-- [ ] **Optimasi performa** - waktu loading yang bahkan lebih cepat
+### 📋 **Panduan Kontribusi**
+- Ikuti best practice Flutter/Dart
+- Pertahankan prinsip clean architecture
+- Tambahkan test untuk fitur baru
+- Update dokumentasi sesuai kebutuhan
+- Pastikan kode diformat dengan `dart format`
 
-### 🎯 **Tujuan Jangka Panjang**
-- [ ] **Dukungan iOS** - aplikasi iOS native
-- [ ] **Versi web** - PWA untuk penggunaan desktop/tablet
-- [ ] **Kustomisasi lanjutan** - tema, layout, gesture
-- [ ] **Arsitektur offline-first** - fungsionalitas offline lengkap
-
----
-
-## 📞 **Kontak & Link**
-
-### 🔗 **Link Proyek**
-- **Repository GitHub**: [NhasixApp](https://github.com/yourusername/nhasixapp)
-- **Issue Tracker**: [Laporkan Bug](https://github.com/yourusername/nhasixapp/issues)
-- **Diskusi**: [Forum Komunitas](https://github.com/yourusername/nhasixapp/discussions)
-
-### 📧 **Kontak**
-- **Developer**: [Nama Anda]
-- **Email**: your.email@example.com
-- **Diskusi Proyek**: Tab GitHub Discussions
-
----
-
-## 🎉 **Ucapan Terima Kasih**
-
-### 🙏 **Terima Kasih Khusus**
-- **Tim Flutter** - untuk framework yang luar biasa
-- **Kontributor Komunitas** - untuk feedback dan saran
-- **Beta Tester** - untuk membantu meningkatkan aplikasi
-- **Library Open Source** - yang membuat proyek ini mungkin
-
-### 📚 **Dibangun Dengan**
-- [Flutter](https://flutter.dev/) - UI framework
-- [Bloc](https://bloclibrary.dev/) - State management
-- [Get It](https://pub.dev/packages/get_it) - Dependency injection
-- [Sqflite](https://pub.dev/packages/sqflite) - Database lokal
-- [HTTP](https://pub.dev/packages/http) - Network request
-
----
-
-<div align="center">
-
-**🌟 Star repository ini jika Anda merasa terbantu! 🌟**
-
-Dibuat dengan ❤️ menggunakan Flutter
-
-**⚠️ Ingat: App ini untuk pengguna 18+ saja ⚠️**
-
-</div>
-
-### ✅ **Fitur Utama Selesai (~70%)**
-- [x] **Arsitektur Inti**: Clean Architecture dengan pola BLoC/Cubit
-- [x] **Sistem Pencarian**: SearchBloc, FilterDataScreen, TagDataManager, Matrix Filter Support
-- [x] **Sistem Reader**: ReaderCubit dengan 3 mode baca, persistensi pengaturan, pelacakan progress
-- [x] **Framework UI**: Widget komprehensif dengan desain modern (ColorsConst, TextStyleConst)
-- [x] **Navigasi**: Go Router dengan deep linking dan parameter passing
-- [x] **Database**: SQLite dengan persistensi state pencarian dan pengaturan reader
-- [x] **Web Scraping**: NhentaiScraper dengan anti-deteksi dan TagResolver
-
-### ✅ **Tugas Selesai (1-7)**
-- [x] **Tugas 1**: Setup struktur proyek dan dependensi inti
-- [x] **Tugas 2**: Implementasi layer domain inti
-- [x] **Tugas 3**: Fondasi layer data (Disederhanakan)
-- [x] **Tugas 4**: Manajemen state BLoC inti
-  - [x] SplashBloc, ContentBloc, SearchBloc, HomeBloc
-  - [x] DetailCubit, ReaderCubit, FilterDataCubit
-- [x] **Tugas 5**: Komponen UI inti
-  - [x] AppMainDrawerWidget, AppMainHeaderWidget, ContentListWidget
-  - [x] PaginationWidget, SortingWidget, FilterDataSearchWidget
-- [x] **Tugas 6**: Alur pencarian lanjutan
-  - [x] SearchScreen, FilterDataScreen, TagDataManager
-  - [x] Matrix Filter Support, persistensi state
-- [x] **Tugas 7**: Fungsi reader
-  - [x] ReaderScreen dengan 3 mode baca
-  - [x] Persistensi pengaturan, pelacakan progress, navigasi gesture
-- [x] **Tugas 8**: Sistem favorit dan download
-  - [x] FavoritesScreen dengan FavoriteCubit
-  - [x] DownloadBloc dengan sistem antrian
-  - [x] Kemampuan membaca offline
-### 🎯 **Fitur Prioritas Berikutnya (30% Tersisa)**
-- [ ] **Tugas 9**: Pengaturan dan preferensi
-  - [ ] SettingsScreen dengan SettingsCubit
-  - [ ] Kustomisasi tema dan fungsi backup
-- [ ] **Tugas 10**: Fitur lanjutan dan manajemen jaringan
-  - [ ] NetworkCubit untuk monitoring konektivitas
-  - [ ] Manajemen tag dan statistik riwayat
-- [ ] **Tugas 11**: Optimisasi performa dan testing
-  - [ ] Manajemen memori dan testing perangkat nyata
-  - [ ] Pembersihan proyek dan dokumentasi
-- [ ] **Tugas 12**: Polish UI dan aksesibilitas
-  - [ ] Animasi, loading skeleton, fitur aksesibilitas
-- [ ] **Tugas 13**: Persiapan deployment
-  - [ ] Branding aplikasi, konfigurasi build, testing rilis
-
-## 🚀 Memulai
-
-### Prasyarat
-- Flutter SDK (>=3.5.4)
-- Dart SDK (>=3.5.4)
-- Android Studio / VS Code
-- Android SDK
-
-### Instalasi
-
-1. **Clone repository**
-   ```bash
-   git clone <repository-url>
-   cd nhasixapp
-   ```
-
-2. **Install dependensi**
-   ```bash
-   flutter pub get
-   ```
-
-3. **Jalankan aplikasi**
-   ```bash
-   flutter run
-   ```
-
-### Build untuk Release
-
-```bash
-# Android APK
-flutter build apk --release
-
-# Android App Bundle (untuk Google Play Store)
-flutter build appbundle --release
-```
-
-## 🧪 Testing
-
-Proyek ini mencakup testing komprehensif dengan mocking untuk unit test yang reliable:
+## 🧪 **Testing**
 
 ```bash
 # Jalankan semua test
@@ -436,73 +321,45 @@ flutter test test/presentation/blocs/splash/splash_bloc_test.dart
 # Jalankan test dengan coverage
 flutter test --coverage
 
-# Generate file mock
-flutter packages pub run build_runner build
-
 # Analisis kode
 flutter analyze
 ```
 
-### **Cakupan Test**
-- **Test SplashBloc** - Testing manajemen state lengkap dengan dependensi yang di-mock
-- **Test ContentBloc** - 10/10 unit test + 8/8 integration test passing
-- **Test Repository** - Testing layer data dengan skenario offline-first
-- **Test Use Case** - Validasi logika bisnis
-- **Integration Test** - Testing end-to-end untuk alur kritis
-- **Test Koneksi Real** - Verifikasi konektivitas nhentai.net
+---
 
-## 📱 Screenshot
+## 📜 **Lisensi & Legal**
 
-### 🏠 Beranda & Detail
+### ⚖️ **Catatan Penting**
+- **18+ Saja**: App ini mengandung konten dewasa
+- **Penggunaan Edukasi**: Untuk tujuan pribadi dan edukasi saja
+- **Kepatuhan Legal**: Pengguna bertanggung jawab atas hukum lokal
+- **Lisensi MIT**: Lihat [LICENSE](LICENSE) untuk detail
+
+### 🤝 **Dukung Creator**
+
 <div align="center">
-  <img src="screenshots/flutter_01.png" width="250" alt="Layar Beranda"/>
-  <img src="screenshots/flutter_02.png" width="250" alt="Grid Konten"/>
-  <img src="screenshots/flutter_03.png" width="250" alt="List Konten"/>
+
+**Bantu pembuat tetap hidup!** 💝
+
 </div>
 
-### 🔍 Halaman Baca, detail & Mode Baca
-<div align="center">
-  <img src="screenshots/flutter_04.png" width="250" alt="Layar Pencarian"/>
-  <img src="screenshots/flutter_05.png" width="250" alt="Filter Lanjutan"/>
-  <img src="screenshots/flutter_06.png" width="250" alt="Pemilihan Tag"/>
-</div>
+Kami percaya untuk mendukung seniman dan kreator hebat yang membuat konten ini mungkin. Dukungan Anda membantu mereka terus berkarya:
 
-### 📖 Halaman Baca, Menu samping, Filter & Pencarian
-<div align="center">
-  <img src="screenshots/flutter_07.png" width="250" alt="Detail Konten"/>
-  <img src="screenshots/flutter_08.png" width="250" alt="Mode Reader"/>
-  <img src="screenshots/flutter_09.png" width="250" alt="Pengaturan Reader"/>
-</div>
+- 🎨 **Karya Asli** - Dukung melalui platform resmi
+- 📝 **Komunitas Kreator** - Bergabung dengan komunitas mereka
+- 💰 **Patreon/Ko-fi** - Dukungan finansial langsung
+- 🌟 **Channel Resmi** - Ikuti karya mereka secara sah
 
-### ⚙️ Pencarian & Filter
-<div align="center">
-  <img src="screenshots/flutter_10.png" width="250" alt="Pengaturan Aplikasi"/>
-  <img src="screenshots/flutter_11.png" width="250" alt="Opsi Tema"/>
-</div>
-
-> **Catatan**: Screenshot menampilkan progress pengembangan saat ini dengan komponen UI Material Design 3 modern dan layout responsif.
-
-## 🤝 **Kontribusi**
-
-Ikuti prinsip Clean Architecture dan BLoC untuk manajemen state. Untuk berkontribusi:
-
-1. Ikuti pola arsitektur yang ditetapkan
-2. Tulis test komprehensif untuk fitur baru
-3. Update dokumentasi untuk perubahan signifikan
-4. Ikuti panduan style Dart/Flutter
-
-## ⚖️ **Catatan Hukum**
-
-**18+ SAJA**: App ini untuk pengguna dewasa. Konten mengandung tema dewasa. Pengguna bertanggung jawab atas kepatuhan hukum lokal.
-
-## 🙏 **Kredit**
-
-Dibuat dengan ❤️ menggunakan Flutter, Bloc, dan SQLite.
-
-**⚠️ 18+ Saja** • **Android Only** • **Lisensi MIT**
+> **Setiap dukungan berarti!** Kontribusi Anda membantu kreator fokus pada apa yang mereka cintai.
 
 ---
 
 <div align="center">
-**🌟 Star repo ini jika terbantu! 🌟**
+
+**❤️ Terima kasih telah mendukung kreator! ❤️**
+
 </div>
+
+---
+
+**⚠️ Hanya 18+ ** • **Android Saja** • **MIT License**

@@ -288,12 +288,4 @@ We believe in supporting the amazing artists and creators who make this content 
 
 ---
 
-<div align="center">
-
-**🌟 Star this repo if you found it helpful! 🌟**
-
-</div>
-
----
-
 **⚠️ 18+ Only** • **Android Only** • **MIT License**
