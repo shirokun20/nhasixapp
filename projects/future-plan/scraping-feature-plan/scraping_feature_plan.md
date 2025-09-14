@@ -4,7 +4,7 @@
 This plan outlines the implementation of a web scraping feature for NhasixApp to fetch manga and image content from three websites: e-hentai.org, hitomi.la, and pixhentai.com. The feature will focus exclusively on images and manga content, ignoring video content. This is a future plan requiring careful consideration of legal, technical, and ethical aspects.
 
 ## Background Analysis
-- **e-hentai.org**: Large hentai gallery system with doujinshi, manga, and image sets. No official API detected. Content is organized by categories, tags, and uploader. Advanced search with multiple filters, rich metadata including uploader, rating, and detailed tags.
+- **e-hentai.org**: Large hentai gallery system with doujinshi, manga, and image sets. No official API detected. Content is organized by categories, tags, and uploader. Simple search with basic tag filtering, rich metadata including uploader, rating, and detailed tags.
 - **hitomi.la**: Indonesian-focused hentai manga site with tag-based organization. Has "nozomi.la" integration which may provide API-like access. No official API found. Simple tag navigation, focused on manga content.
 - **pixhentai.com**: WordPress-based hentai comic site with categories and tags. No official API detected. Standard blog-style search and categorization.
 - **API Availability**: No official APIs found for any of the three websites. Scraping will be necessary using HTTP requests and HTML parsing.
@@ -13,36 +13,42 @@ This plan outlines the implementation of a web scraping feature for NhasixApp to
 ## Detailed Website Analysis
 
 ### e-hentai.org Scraping Details
-- **Search Mechanism**: Uses `f_search` parameter in URL (e.g., `?f_search=keyword&page=1`). Supports advanced search with categories, tags, and filters.
+- **Search Mechanism**: Uses `f_search` parameter in URL (e.g., `?f_search=keyword&page=1`). Supports simple search with basic tag filtering.
+- **Language Filtering**: Focus on Indonesian (if available) and English content only. Skip other languages.
 - **Tags Extraction**: Tags displayed in gallery list and detail pages. Extract from class `.gt` elements, includes namespaces like `f:` (female), `m:` (male), etc.
 - **Pagination**: Next/previous links with `?next=ID` format. Page numbers not directly available, use sequential loading.
 - **Content Structure**: Each gallery has thumbnail, title, uploader, page count, and tags. Detail page contains image URLs.
 - **Image URLs**: Extract from gallery detail pages, images hosted on `ehgt.org` or similar.
 - **CSS Selectors** (from HTML analysis): Gallery items: `.gl1t`, Titles: `.glname`, Thumbnails: `img`, Tags: `.gt a`, Pagination: `.ptt td a`.
-- **Completeness**: Most comprehensive due to rich metadata, advanced search, and large content variety.
+- **Language Detection**: Extract language from tags or content metadata (look for Indonesian language tags).
+- **Completeness**: Most comprehensive due to rich metadata, simple search, and large content variety.
 
 ### hitomi.la Scraping Details
 - **Search Mechanism**: Primarily tag-based search via `/tag/tagname-1.html`. Indonesian content via `/index-indonesian.html?page=1`.
+- **Language Filtering**: Focus on English and Javanese content only. Skip other languages.
 - **Tags Extraction**: Tags listed on gallery pages, extract from `.tag` elements. No namespaces, simpler tag system.
 - **Pagination**: Simple page numbers in URL (e.g., `?page=2`). Limited to Indonesian index.
 - **Content Structure**: Focus on manga, each entry has thumbnail, title, artist, and basic tags.
 - **Image URLs**: Images accessed via reader URLs, need to parse reader pages for actual image links.
 - **CSS Selectors** (from HTML analysis): Gallery covers: `.gallery-content .cover img`, Titles: `.gallery-content h3 a`, Tags: `.tag`, Pagination: `.page-list a`.
+- **Language Detection**: Extract language from content metadata or URL patterns (e.g., `/index-indonesian.html` for Indonesian, detect Javanese from tags).
 - **Completeness**: Less comprehensive than e-hentai, focused on Indonesian-translated content, simpler metadata.
 
 ### pixhentai.com Scraping Details
 - **Search Mechanism**: WordPress search using `?s=keyword` parameter. Category-based filtering via `/category/name/`.
+- **Language Filtering**: Focus on Indonesian (if available) and English content only. Skip other languages.
 - **Tags Extraction**: Tags and categories displayed in post metadata. Extract from `.tag` or category links.
 - **Pagination**: Standard WordPress pagination with `/page/2/` format.
 - **Content Structure**: Blog-style posts containing comic images. Each post has title, thumbnail, and content with embedded images.
 - **Image URLs**: Images directly in post content, extract from `<img>` tags within post body.
 - **CSS Selectors** (from Playwright snapshot): Posts: `article`, Thumbnails: `article img`, Titles: `article h2 a`, Content: `article .entry-content img`, Categories: `.cat-links a`, Pagination: `.pagination a`.
+- **Language Detection**: Extract language from post content or category names (look for Indonesian language indicators).
 - **Completeness**: Basic search and categorization, least comprehensive of the three, more like a blog than dedicated gallery.
 
 ## Detailed Website Analysis
 
 ### e-hentai.org Scraping Details
-- **Search Mechanism**: Uses `f_search` parameter in URL (e.g., `?f_search=keyword&page=1`). Supports advanced search with categories, tags, and filters.
+- **Search Mechanism**: Uses `f_search` parameter in URL (e.g., `?f_search=keyword&page=1`). Supports simple search with basic tag filtering.
 - **Tags Extraction**: Tags displayed in gallery list and detail pages. Extract from class `.gt` elements, includes namespaces like `f:` (female), `m:` (male), etc.
 - **Pagination**: Next/previous links with `?next=ID` format. Page numbers not directly available, use sequential loading.
 - **Content Structure**: Each gallery has thumbnail, title, uploader, page count, and tags. Detail page contains image URLs.
@@ -50,7 +56,7 @@ This plan outlines the implementation of a web scraping feature for NhasixApp to
 - **CSS Selectors** (from HTML analysis): Gallery items: `.gl1t`, Titles: `.glname`, Thumbnails: `img`, Tags: `.gt a`, Pagination: `.ptt td a`.
 - **API Detection**: No official API found. Network requests show only ad servers, no data APIs. All data via HTML scraping.
 - **JavaScript Dependencies**: May require JS execution for dynamic content, but basic structure is static HTML.
-- **Completeness**: Most comprehensive due to rich metadata, advanced search, and large content variety.
+- **Completeness**: Most comprehensive due to rich metadata, simple search, and large content variety.
 
 ### hitomi.la Scraping Details
 - **Search Mechanism**: Primarily tag-based search via `/tag/tagname-1.html`. Indonesian content via `/index-indonesian.html?page=1`.
@@ -96,6 +102,9 @@ This plan outlines the implementation of a web scraping feature for NhasixApp to
 - Download and cache images locally
 - Support pagination for large result sets
 - Offline viewing of downloaded content
+- **Language filtering by source**:
+  - hitomi.la: English and Javanese only
+  - e-hentai.org & pixhentai.com: Indonesian (if available) and English only
 - Respect website terms of service and robots.txt
 - Rate limiting to avoid overloading servers
 
@@ -194,6 +203,7 @@ class SearchQuery {
 ### Performance Risks
 - **Slow Scraping**: Mitigation - Concurrent requests with limits, caching
 - **Memory Usage**: Mitigation - Stream processing, garbage collection
+- **Language Detection Overhead**: Mitigation - Efficient pattern matching, caching
 - **Network Issues**: Mitigation - Retry logic, offline fallbacks
 
 ## Dependencies
@@ -211,44 +221,41 @@ dependencies:
 - Successfully scrape content from all three websites
 - Display results in user-friendly gallery format
 - Download and view images offline
+- **Implement accurate language filtering per source**
 - Handle errors gracefully
 - Pass all tests and code review
 - No violations of website terms
 
 ## Future Enhancements
 - Support for additional websites
-- Advanced search filters
+- Enhanced search with more tag options
 - Batch download functionality
 - Content recommendation system
+- **Multi-language support expansion**
 - Cloud sync for downloaded content
 
 ## Timeline
-- **Week 1-2**: Research and core implementation
+- **Week 1-2**: Research and core implementation (with language analysis)
 - **Week 3**: UI development
 - **Week 4**: Testing and deployment
 
 ## Resources Needed
 - Flutter developer (1)
 - Web scraping knowledge
+- **Language detection and NLP expertise**
 - Testing environment
 - Legal review for adult content handling
 
 ## Source-Specific Feature Limitations
 
-### e-hentai.org Exclusive Features
-- **Advanced Filter System**: Similar to existing `filter_data_screen.dart` with tab-based filtering (tag, artist, character, parody, group)
-- **Tag Namespaces**: Support for namespaced tags (f:, m:, etc.)
-- **Complex Search Filters**: Multiple filter combinations, include/exclude logic
-- **Rich Metadata**: Uploader info, ratings, detailed categorization
-
-### Other Sources Limitations
-- **hitomi.la**: Basic tag filtering only, no advanced filter UI
-- **pixhentai.com**: Category-based filtering, no complex tag system
-- **Filter Data Screen**: Only available when e-hentai is selected as source
-- **Fallback Behavior**: When switching from e-hentai to other sources, advanced filters are disabled/cleared
+### Unified Simple Features for All Sources
+- **Simple Search**: Basic keyword and tag search across all sources
+- **Tag/Category Filtering**: Dropdown or chips for tag/category selection
+- **No Advanced Filters**: Keep interface simple and consistent
+- **Unified UI**: Same search components for all sources
 
 ### UI Adaptation Logic
-- Hide/show filter data screen based on selected source
-- Disable advanced filter options for non-e-hentai sources
-- Show appropriate filter UI per source capabilities
-- Maintain filter state when switching sources where possible
+- Simple filter UI for all sources
+- Consistent search experience
+- No complex filter state management
+- Basic tag selection across all sources

@@ -48,11 +48,13 @@ This document outlines the detailed requirements for implementing a web scraping
 - **Description**: Configure which sources are active and their specific settings.
 - **Priority**: Medium
 - **Acceptance Criteria**:
-  - Enable/disable individual sources
-  - Source-specific rate limits
-  - Content type preferences per source
-  - **Advanced filters only available for e-hentai source**
-  - Automatic disabling of advanced features when e-hentai is deselected
+   - Enable/disable individual sources
+   - Source-specific rate limits
+   - Content type preferences per source
+   - Simple search and tag filtering for all sources
+   - **Language filtering**: 
+     - hitomi.la: English, Javanese only
+     - Other sources: Indonesian (if available), English only
 
 ## Non-Functional Requirements
 
@@ -110,6 +112,8 @@ This document outlines the detailed requirements for implementing a web scraping
   - dio: ^5.3.2
   - path_provider: ^2.1.1
   - cached_network_image: ^3.3.0
+- **Language Processing Dependencies**:
+  - intl: ^0.19.0 (for language detection)
 - **Optional Dependencies**:
   - flutter_inappwebview: For advanced scraping
   - flutter_downloader: For background downloads
@@ -119,17 +123,20 @@ This document outlines the detailed requirements for implementing a web scraping
 - **SearchQuery**: Search parameters with builder pattern
 - **DownloadTask**: Download management with progress tracking
 - **ScrapingConfig**: Source-specific configuration
+- **LanguageConfig**: Language filtering configuration per source
 
 ### TR-004: Network Requirements
 - **Rate Limiting**: 1 request/second per source
 - **Timeout**: 30 seconds for requests
 - **Retry Logic**: Exponential backoff (3 attempts)
 - **User-Agent**: Realistic browser user agent
+- **Language Detection**: Efficient pattern matching for content language
 
 ### TR-005: Storage Requirements
 - **Cache Size**: 500MB maximum
 - **File Organization**: Source-based directory structure
 - **Metadata Storage**: SQLite for content metadata
+- **Language Preferences**: Store user language preferences per source
 - **Encryption**: Sensitive data encryption
 
 ## Business Requirements
@@ -143,12 +150,14 @@ This document outlines the detailed requirements for implementing a web scraping
 ### BR-002: Ethical Considerations
 - **Content Filtering**: Optional NSFW content filtering
 - **User Consent**: Explicit opt-in for scraping features
+- **Language Content**: Respect user language preferences and content availability
 - **Transparency**: Clear disclosure of data collection
 - **Moderation**: Community guidelines adherence
 
 ### BR-003: Monetization Readiness
 - **Ad Integration**: Space for non-intrusive ads
 - **Premium Features**: Potential for paid advanced features
+- **Language Expansion**: Premium language options for additional languages
 - **Analytics**: Anonymous usage tracking
 - **Feedback System**: User feedback collection
 
@@ -159,6 +168,7 @@ This document outlines the detailed requirements for implementing a web scraping
 - **State Management**: Compatible with current Bloc/Cubit setup
 - **Theming**: Consistent with app design system
 - **Localization**: Use existing i18n setup
+- **Language Preferences**: Integrate with existing settings system
 
 ### IR-002: External Services
 - **Analytics**: Integration with existing analytics service
@@ -182,6 +192,7 @@ This document outlines the detailed requirements for implementing a web scraping
 - **User Flows**: Complete search and download workflows
 - **Network Conditions**: Offline and poor connectivity
 - **Device Compatibility**: Various screen sizes and orientations
+- **Language Filtering**: Test language detection accuracy across sources
 
 ## Deployment Requirements
 
@@ -198,4 +209,5 @@ This document outlines the detailed requirements for implementing a web scraping
 ### DR-003: Maintenance
 - **Website Monitoring**: Automated checks for structure changes
 - **Dependency Updates**: Regular package updates
+- **Language Pattern Updates**: Monitor and update language detection patterns
 - **Security Patches**: Timely security fixes
