@@ -1,7 +1,7 @@
 # NhasixApp Beta Release v0.4.0
 
 *Released: September 14, 2025*
-*Version: 0.4.0-beta+1*
+*Version: 0.4.0-beta+4*
 *Build: App Disguise Feature - Privacy Enhancement*
 
 ---
