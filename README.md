@@ -4,15 +4,15 @@
 ![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)
 ![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)
 ![18+](https://img.shields.io/badge/Age_Restriction-18%2B-red?style=for-the-badge&logo=warning&logoColor=white)
-![Beta](https://img.shields.io/badge/Status-BETA_v0.3.0-blue?style=for-the-badge&logo=android&logoColor=white)
+![Beta](https://img.shields.io/badge/Status-BETA_v0.4.0-blue?style=for-the-badge&logo=android&logoColor=white)
 
-> **⚠️ 18+ ONLY** • **Android Only** • **Enhanced Reading Experience**
+> **⚠️ 18+ ONLY** • **Android Only** • **Enhanced Reading Experience with Privacy Protection**
 
-**NhasixApp** is a Flutter Android app that provides **70% faster content loading**, smart offline reading, and modern UI. Built with Clean Architecture for optimal performance and user experience.
+**NhasixApp** is a Flutter Android app that provides **70% faster content loading**, smart offline reading, modern UI, and **App Disguise privacy protection**. Built with Clean Architecture for optimal performance and user experience.
 
 ## 📥 **Download Latest Release**
 
-[📦 **Download v0.3.0-beta**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.3.0-beta)
+[📦 **Download v0.4.0-beta**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.4.0-beta)
 
 | **APK Type** | **Size** | **Target Devices** | **Status** |
 |--------------|----------|-------------------|------------|
@@ -20,7 +20,7 @@
 | **ARM32** | 22MB | Older devices (2015-2019) | ✅ Available |
 | **Universal** | 22MB | All devices | ✅ Available |
 
-> **💡 Tip**: Choose ARM64 for modern devices, ARM32 for older devices. All APKs are available in the [GitHub Releases](https://github.com/shirokun20/nhasixapp/releases/tag/v0.3.0-beta) page.
+> **💡 Tip**: Choose ARM64 for modern devices, ARM32 for older devices. All APKs are available in the [GitHub Releases](https://github.com/shirokun20/nhasixapp/releases/tag/v0.4.0-beta) page.
 
 ## ✨ **Key Features**
 
@@ -54,6 +54,8 @@
 ### 🚀 **Performance & Privacy**
 - **70% faster loading** with smart image preloader
 - **Private downloads** hidden from system gallery (`.nomedia`)
+- **App Disguise Mode** - Transform app appearance for privacy (Calculator, Notes, Weather)
+- **Dynamic launcher icons** with seamless mode switching
 - **Optimized builds** for different device architectures
 - **Smart caching** and memory management
 
@@ -167,6 +169,7 @@ flutter build appbundle --release
 ### ⚙️ **Key Settings**
 - **Theme**: Light/Dark mode toggle
 - **Grid Layout**: 2, 3, or 4 columns
+- **App Disguise**: Calculator, Notes, Weather disguises
 - **Download Privacy**: Hidden from gallery
 - **Bulk Operations**: Select multiple items
 
@@ -230,6 +233,9 @@ A: Try the ARM32 APK for older devices, or clear the app cache in Android settin
 
 **Q: Can I use this on iOS?**
 A: Currently Android only. iOS support may be considered for future releases.
+
+**Q: How does the App Disguise feature work?**
+A: App Disguise transforms your app's appearance to look like Calculator, Notes, or Weather apps for privacy. The disguise persists after app restart and can be changed anytime in settings.
 
 ### 🛠️ **Troubleshooting**
 - **Slow loading**: Check your internet connection and try restarting the app

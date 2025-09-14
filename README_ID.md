@@ -4,15 +4,15 @@
 ![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)
 ![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)
 ![18+](https://img.shields.io/badge/Batasan_Usia-18%2B-red?style=for-the-badge&logo=warning&logoColor=white)
-![Beta](https://img.shields.io/badge/Status-BETA_v0.3.0-blue?style=for-the-badge&logo=android&logoColor=white)
+![Beta](https://img.shields.io/badge/Status-BETA_v0.4.0-blue?style=for-the-badge&logo=android&logoColor=white)
 
-> **⚠️ 18+ SAJA** • **Android Only** • **Pengalaman Membaca Ditingkatkan**
+> **⚠️ 18+ SAJA** • **Android Only** • **Pengalaman Membaca Ditingkatkan dengan Perlindungan Privasi**
 
-**NhasixApp** adalah aplikasi Flutter Android yang menyediakan **70% pemuatan konten lebih cepat**, membaca offline cerdas, dan UI modern. Dibangun dengan Clean Architecture untuk performa optimal.
+**NhasixApp** adalah aplikasi Flutter Android yang menyediakan **70% pemuatan konten lebih cepat**, membaca offline cerdas, UI modern, dan **perlindungan privasi App Disguise**. Dibangun dengan Clean Architecture untuk performa optimal.
 
 ## 📥 **Download Rilis Terbaru**
 
-[📦 **Download v0.3.0-beta**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.3.0-beta)
+[📦 **Download v0.4.0-beta**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.4.0-beta)
 
 | **Jenis APK** | **Ukuran** | **Target Perangkat** | **Status** |
 |--------------|----------|-------------------|------------|
@@ -20,7 +20,7 @@
 | **ARM32** | 22MB | Perangkat lama (2015-2019) | ✅ Tersedia |
 | **Universal** | 22MB | Semua perangkat | ✅ Tersedia |
 
-> **💡 Tip**: Pilih ARM64 untuk perangkat modern, ARM32 untuk perangkat lama. Semua APK tersedia di halaman [GitHub Releases](https://github.com/shirokun20/nhasixapp/releases/tag/v0.3.0-beta).
+> **💡 Tip**: Pilih ARM64 untuk perangkat modern, ARM32 untuk perangkat lama. Semua APK tersedia di halaman [GitHub Releases](https://github.com/shirokun20/nhasixapp/releases/tag/v0.4.0-beta).
 
 ## ✨ **Fitur Utama**
 
@@ -54,6 +54,8 @@
 ### 🚀 **Performa & Privasi**
 - **70% pemuatan konten lebih cepat** dengan smart image preloader
 - **Download privat** tersembunyi dari galeri sistem (`.nomedia`)
+- **Mode App Disguise** - Transformasi tampilan aplikasi untuk privasi (Calculator, Notes, Weather)
+- **Ikon launcher dinamis** dengan perpindahan mode yang mulus
 - **Build dioptimalkan** untuk arsitektur perangkat berbeda
 - **Smart caching** dan manajemen memori
 
@@ -169,6 +171,7 @@ flutter build appbundle --release
 ### ⚙️ **Pengaturan Utama**
 - **Tema**: Toggle mode terang/gelap
 - **Grid Layout**: 2, 3, atau 4 kolom
+- **App Disguise**: Disguise Calculator, Notes, Weather
 - **Download Privat**: Tersembunyi dari galeri
 - **Operasi Batch**: Pilih multiple item
 
@@ -216,6 +219,9 @@ J: Coba APK ARM32 untuk perangkat lama, atau hapus cache aplikasi di pengaturan 
 
 **T: Bisakah saya menggunakan ini di iOS?**
 J: Saat ini hanya Android. Dukungan iOS mungkin dipertimbangkan untuk rilis masa depan.
+
+**T: Bagaimana cara kerja fitur App Disguise?**
+J: App Disguise mengubah tampilan aplikasi Anda agar terlihat seperti aplikasi Calculator, Notes, atau Weather untuk privasi. Disguise akan bertahan setelah restart aplikasi dan dapat diubah kapan saja di pengaturan.
 
 ### 🛠️ **Troubleshooting**
 - **Loading lambat**: Periksa koneksi internet dan coba restart aplikasi
