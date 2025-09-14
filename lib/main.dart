@@ -28,7 +28,6 @@ void main() async {
   final historyCleanupService = getIt<HistoryCleanupService>();
   await historyCleanupService.initialize();
 
-  // TODO: Setup localization callbacks for services
   // _setupAllServiceLocalizationCallbacks();
 
   runApp(const MyApp());

@@ -292,4 +292,6 @@ Kami percaya untuk mendukung seniman dan kreator hebat yang membuat konten ini m
 
 ---
 
-**⚠️ Hanya 18+ ** • **Android Saja** • **MIT License**
+**⚠️ Hanya 18+** • **Android Saja** • **MIT License**
+
+---

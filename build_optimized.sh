@@ -41,46 +41,75 @@ else
     flutter build apk --debug --target-platform android-arm --split-per-abi
 fi
 
+# Universal APK (all architectures)
+echo "📱 Building Universal APK..."
+if [ "$BUILD_TYPE" = "release" ]; then
+    flutter build apk --release --obfuscate --split-debug-info=build/debug-info/
+else
+    flutter build apk --debug
+fi
+
 echo ""
 echo "✅ Optimized builds completed!"
 echo ""
 
-# Show results
+# Create output directory
+OUTPUT_DIR="apk-output"
+mkdir -p "$OUTPUT_DIR"
+
+# Show results and copy files
 echo "📁 OPTIMIZED APK FILES:"
-find build -name "*${BUILD_TYPE}*.apk" -path "*/apk/*" -type f | while read apk; do
-    size=$(du -h "$apk" | cut -f1)
-    filename=$(basename "$apk")
-    echo "  📱 $filename - $size"
-    
-    # Copy to root with optimized naming
-    if [[ "$filename" == *"arm64"* ]]; then
-        arch="arm64"
-    elif [[ "$filename" == *"armeabi"* ]]; then
-        arch="arm"
-    elif [[ "$filename" == *"x86_64"* ]]; then
-        arch="x86_64"
-    else
-        arch="universal"
-    fi
-    
+echo "📂 Output directory: $OUTPUT_DIR/"
+echo ""
+
+# Copy ARM64 APK
+if [ -f "build/app/outputs/flutter-apk/app-arm64-v8a-${BUILD_TYPE}.apk" ]; then
+    size=$(du -h "build/app/outputs/flutter-apk/app-arm64-v8a-${BUILD_TYPE}.apk" | cut -f1)
     version=$(grep 'version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1)
     date=$(date +%Y%m%d)
-    optimized_name="nhasix_${version}_${date}_${BUILD_TYPE}_${arch}_optimized.apk"
-    
-    cp "$apk" "./$optimized_name"
-    echo "    📋 Copied as: $optimized_name"
-done
+    optimized_name="nhasix_${version}_${date}_${BUILD_TYPE}_arm64_optimized.apk"
+
+    cp "build/app/outputs/flutter-apk/app-arm64-v8a-${BUILD_TYPE}.apk" "$OUTPUT_DIR/$optimized_name"
+    echo "  📱 ARM64 APK: $optimized_name - $size"
+fi
+
+# Copy ARM APK
+if [ -f "build/app/outputs/flutter-apk/app-armeabi-v7a-${BUILD_TYPE}.apk" ]; then
+    size=$(du -h "build/app/outputs/flutter-apk/app-armeabi-v7a-${BUILD_TYPE}.apk" | cut -f1)
+    version=$(grep 'version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1)
+    date=$(date +%Y%m%d)
+    optimized_name="nhasix_${version}_${date}_${BUILD_TYPE}_arm_optimized.apk"
+
+    cp "build/app/outputs/flutter-apk/app-armeabi-v7a-${BUILD_TYPE}.apk" "$OUTPUT_DIR/$optimized_name"
+    echo "  📱 ARM APK: $optimized_name - $size"
+fi
+
+# Copy Universal APK
+if [ -f "build/app/outputs/flutter-apk/app-${BUILD_TYPE}.apk" ]; then
+    size=$(du -h "build/app/outputs/flutter-apk/app-${BUILD_TYPE}.apk" | cut -f1)
+    version=$(grep 'version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1)
+    date=$(date +%Y%m%d)
+    optimized_name="nhasix_${version}_${date}_${BUILD_TYPE}_universal_optimized.apk"
+
+    cp "build/app/outputs/flutter-apk/app-${BUILD_TYPE}.apk" "$OUTPUT_DIR/$optimized_name"
+    echo "  📱 Universal APK: $optimized_name - $size"
+fi
 
 echo ""
 echo "📏 SIZE COMPARISON:"
 echo "📦 Original (universal): ~29MB"
-echo "✨ ARM64 optimized: $(du -h ./nhasix_*_${BUILD_TYPE}_arm64_optimized.apk 2>/dev/null | cut -f1 || echo 'N/A')"
-echo "✨ ARM optimized: $(du -h ./nhasix_*_${BUILD_TYPE}_arm_optimized.apk 2>/dev/null | cut -f1 || echo 'N/A')"
+echo "✨ ARM64 optimized: $(du -h $OUTPUT_DIR/nhasix_*_${BUILD_TYPE}_arm64_optimized.apk 2>/dev/null | cut -f1 || echo 'N/A')"
+echo "✨ ARM optimized: $(du -h $OUTPUT_DIR/nhasix_*_${BUILD_TYPE}_arm_optimized.apk 2>/dev/null | cut -f1 || echo 'N/A')"
+echo "✨ Universal optimized: $(du -h $OUTPUT_DIR/nhasix_*_${BUILD_TYPE}_universal_optimized.apk 2>/dev/null | cut -f1 || echo 'N/A')"
 
 echo ""
+echo "📂 All APKs saved to: $OUTPUT_DIR/"
+echo ""
+
 echo "🎯 RECOMMENDATIONS:"
 echo "📱 Use ARM64 APK for modern devices (95% of users)"
 echo "📱 Use ARM APK for older devices (compatibility)"
+echo "📱 Use Universal APK for maximum compatibility"
 echo "🚀 Upload to Google Play as App Bundle for automatic optimization"
 echo ""
-echo "🎉 Optimization complete! APK size reduced significantly."
+echo "🎉 Optimization complete! All APKs ready in $OUTPUT_DIR/"

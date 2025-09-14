@@ -1945,7 +1945,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           // If all strategies failed, show error
           if (!opened) {
             _logger.e('DownloadBloc: All strategies failed to open downloaded content for $contentId');
-            // TODO: Could show a user-facing error notification here
           }
           
         } else {

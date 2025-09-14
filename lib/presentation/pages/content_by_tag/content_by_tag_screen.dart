@@ -11,6 +11,7 @@ import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
 import 'package:nhasixapp/presentation/widgets/pagination_widget.dart';
 import 'package:nhasixapp/presentation/widgets/sorting_widget.dart';
 import 'package:nhasixapp/presentation/widgets/offline_indicator_widget.dart';
+import 'package:nhasixapp/presentation/widgets/progress_indicator_widget.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 
 /// Screen for browsing content by specific tag
@@ -111,6 +112,25 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
       color: Theme.of(context).colorScheme.surface,
       child: BlocBuilder<ContentBloc, ContentState>(
         builder: (context, state) {
+          // Show loading indicator when loading
+          if (state is ContentLoading) {
+            return Column(
+              children: [
+                // Offline banner
+                const OfflineBanner(),
+                // Loading indicator
+                Expanded(
+                  child: Center(
+                    child: AppProgressIndicator(
+                      message: state.message,
+                      size: 40,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
+
           return Column(
             children: [
               // Offline banner
