@@ -158,6 +158,18 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settings;
 
+  /// No description provided for @appDisguise.
+  ///
+  /// In en, this message translates to:
+  /// **'App Disguise'**
+  String get appDisguise;
+
+  /// No description provided for @disguiseMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Disguise Mode'**
+  String get disguiseMode;
+
   /// No description provided for @offline.
   ///
   /// In en, this message translates to:

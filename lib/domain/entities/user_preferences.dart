@@ -39,6 +39,7 @@ class UserPreferences extends Equatable {
     this.inactivityCleanupDays = 7,
     this.lastAppAccess,
     this.lastHistoryCleanup,
+    this.disguiseMode = 'default',
   });
 
   final String theme; // light, dark, amoled
@@ -78,6 +79,7 @@ class UserPreferences extends Equatable {
   final int inactivityCleanupDays; // Days of inactivity before cleanup
   final DateTime? lastAppAccess; // Track last app access
   final DateTime? lastHistoryCleanup; // Track last cleanup
+  final String disguiseMode; // App disguise mode: default, calculator, notes, weather
 
   @override
   List<Object?> get props => [
@@ -115,6 +117,7 @@ class UserPreferences extends Equatable {
         inactivityCleanupDays,
         lastAppAccess,
         lastHistoryCleanup,
+        disguiseMode,
       ];
 
   UserPreferences copyWith({
@@ -153,6 +156,7 @@ class UserPreferences extends Equatable {
     int? inactivityCleanupDays,
     DateTime? lastAppAccess,
     DateTime? lastHistoryCleanup,
+    String? disguiseMode,
   }) {
     return UserPreferences(
       theme: theme ?? this.theme,
@@ -193,6 +197,7 @@ class UserPreferences extends Equatable {
       inactivityCleanupDays: inactivityCleanupDays ?? this.inactivityCleanupDays,
       lastAppAccess: lastAppAccess ?? this.lastAppAccess,
       lastHistoryCleanup: lastHistoryCleanup ?? this.lastHistoryCleanup,
+      disguiseMode: disguiseMode ?? this.disguiseMode,
     );
   }
 
@@ -299,6 +304,7 @@ class UserPreferences extends Equatable {
       'inactivityCleanupDays': inactivityCleanupDays,
       'lastAppAccess': lastAppAccess?.millisecondsSinceEpoch,
       'lastHistoryCleanup': lastHistoryCleanup?.millisecondsSinceEpoch,
+      'disguiseMode': disguiseMode,
     };
   }
 
@@ -343,6 +349,7 @@ class UserPreferences extends Equatable {
       inactivityCleanupDays: _safeParseInt(json['inactivityCleanupDays'], 7),
       lastAppAccess: json['lastAppAccess'] != null ? DateTime.fromMillisecondsSinceEpoch(_safeParseInt(json['lastAppAccess'], 0)) : null,
       lastHistoryCleanup: json['lastHistoryCleanup'] != null ? DateTime.fromMillisecondsSinceEpoch(_safeParseInt(json['lastHistoryCleanup'], 0)) : null,
+      disguiseMode: json['disguiseMode'] ?? 'default',
     );
   }
 

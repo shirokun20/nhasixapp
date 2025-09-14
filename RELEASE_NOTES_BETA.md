@@ -1,3 +1,35 @@
+# NhasixApp Beta Release v0.4.0
+
+*Released: September 14, 2025*
+*Version: 0.4.0-beta+1*
+*Build: App Disguise Feature - Privacy Enhancement*
+
+---
+
+## 🚀 **NEW MAJOR FEATURE: APP DISGUISE**
+
+### 🎭 **Privacy Protection System**
+- **Multiple App Identities**: Transform app appearance for privacy
+- **Dynamic Launcher Icons**: Calculator, Notes, Weather disguises
+- **Seamless Mode Switching**: Instant disguise changes
+- **Persistent Settings**: Mode survives app restarts
+- **Loading Indicators**: Visual feedback during mode changes
+
+### 🔧 **Technical Implementation**
+- **Activity Aliases**: Android native disguise system
+- **Method Channels**: Flutter-Android communication
+- **State Synchronization**: Auto-sync between Android and Flutter
+- **Error Handling**: Robust disguise mode management
+- **Performance Optimized**: Minimal impact on app performance
+
+### 📱 **User Experience**
+- **One-Click Disguise**: Simple dropdown selection
+- **Visual Feedback**: Loading states and progress indicators
+- **Auto-Restart**: Seamless mode transitions
+- **Privacy Focused**: Hide sensitive content browsing
+
+---
+
 # NhasixApp Beta Release v0.3.0
 
 *Released: September 12, 2025*
@@ -138,6 +170,7 @@
 ## 🔮 **FUTURE ROADMAP**
 
 ### **Planned Enhancements**
+- ✅ **App Disguise**: Privacy protection with multiple identities *(COMPLETED)*
 - **Enhanced Privacy**: Individual folder `.nomedia` protection
 - **Bulk Downloads**: Multi-content batch downloading
 - **Advanced Search**: Enhanced filtering and sorting
@@ -176,15 +209,15 @@
 ## 📱 **INSTALLATION NOTES**
 
 ### **Fresh Installation**
-1. Download `nhasix_0.3.0-beta_20250912_release.apk`
+1. Download `nhasix_0.4.0-beta_20250914_release.apk`
 2. Enable "Install from Unknown Sources"
 3. Install and grant required permissions
-4. Full feature set available
+4. Full feature set + App Disguise available
 
 ### **Upgrade from Previous Version**
 1. Backup any important data
 2. Install new version (settings preserved)
-3. All new features automatically available
+3. App Disguise feature automatically available
 4. Database migration handled automatically
 
 ---
@@ -192,6 +225,7 @@
 ## 🎯 **USER IMPACT SUMMARY**
 
 ### **Immediate Benefits**
+- **Privacy Protection**: App Disguise for sensitive browsing
 - **Faster Experience**: 70% faster content loading
 - **Better Privacy**: Images hidden from gallery
 - **Smarter Downloads**: Save storage with range selection
@@ -204,6 +238,13 @@
 - **Efficient Storage**: Download only what you need
 - **Better Search**: Faster, more responsive input
 - **Clean Interface**: Modern, simplified pagination
+
+---
+
+---
+
+*NhasixApp Beta v0.4.0 - App Disguise Feature*
+*Built with ❤️ for the community*
 
 ---
 

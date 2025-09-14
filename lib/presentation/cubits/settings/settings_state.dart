@@ -18,22 +18,26 @@ class SettingsLoaded extends SettingsState {
   const SettingsLoaded({
     required this.preferences,
     required this.lastUpdated,
+    this.isUpdatingDisguiseMode = false,
   });
 
   final UserPreferences preferences;
   final DateTime lastUpdated;
+  final bool isUpdatingDisguiseMode;
 
   @override
-  List<Object?> get props => [preferences, lastUpdated];
+  List<Object?> get props => [preferences, lastUpdated, isUpdatingDisguiseMode];
 
   /// Create a copy with updated properties
   SettingsLoaded copyWith({
     UserPreferences? preferences,
     DateTime? lastUpdated,
+    bool? isUpdatingDisguiseMode,
   }) {
     return SettingsLoaded(
       preferences: preferences ?? this.preferences,
       lastUpdated: lastUpdated ?? this.lastUpdated,
+      isUpdatingDisguiseMode: isUpdatingDisguiseMode ?? this.isUpdatingDisguiseMode,
     );
   }
 

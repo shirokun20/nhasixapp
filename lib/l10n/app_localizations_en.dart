@@ -39,6 +39,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Settings';
 
   @override
+  String get appDisguise => 'App Disguise';
+
+  @override
+  String get disguiseMode => 'Disguise Mode';
+
+  @override
   String get offline => 'Offline';
 
   @override

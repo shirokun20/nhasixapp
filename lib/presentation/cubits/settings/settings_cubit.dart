@@ -1,5 +1,6 @@
 import '../../../domain/entities/entities.dart';
 import '../../../services/preferences_service.dart';
+import '../../../services/app_disguise_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../base/base_cubit.dart';
 
@@ -29,10 +30,34 @@ class SettingsCubit extends BaseCubit<SettingsState> {
       
       final preferences = await _preferencesService.getUserPreferences();
 
-      emit(SettingsLoaded(
-        preferences: preferences,
-        lastUpdated: DateTime.now(),
-      ));
+      // Check current disguise mode from Android
+      try {
+        final currentAndroidMode = await AppDisguiseService.getCurrentDisguiseMode();
+        logInfo('Current Android disguise mode: $currentAndroidMode, saved mode: ${preferences.disguiseMode}');
+
+        // If Android mode differs from saved preferences, update preferences
+        if (currentAndroidMode != preferences.disguiseMode) {
+          logInfo('Updating preferences to match Android mode: $currentAndroidMode');
+          final updatedPreferences = preferences.copyWith(disguiseMode: currentAndroidMode);
+          await _preferencesService.saveUserPreferences(updatedPreferences);
+
+          emit(SettingsLoaded(
+            preferences: updatedPreferences,
+            lastUpdated: DateTime.now(),
+          ));
+        } else {
+          emit(SettingsLoaded(
+            preferences: preferences,
+            lastUpdated: DateTime.now(),
+          ));
+        }
+      } catch (e) {
+        logWarning('Failed to get current disguise mode from Android: $e');
+        emit(SettingsLoaded(
+          preferences: preferences,
+          lastUpdated: DateTime.now(),
+        ));
+      }
 
       logInfo('Successfully loaded user preferences');
     } catch (e, stackTrace) {
@@ -156,6 +181,45 @@ class SettingsCubit extends BaseCubit<SettingsState> {
   Future<void> updateInactivityCleanupDays(int inactivityDays) async {
     await _updateSetting(
         (prefs) => prefs.copyWith(inactivityCleanupDays: inactivityDays));
+  }
+
+  /// Update disguise mode setting with loading
+  Future<void> updateDisguiseMode(String disguiseMode) async {
+    try {
+      // Emit loading state
+      final currentState = state;
+      if (currentState is SettingsLoaded) {
+        emit(currentState.copyWith(isUpdatingDisguiseMode: true));
+      }
+
+      // Update preferences directly (without calling _updateSetting to avoid double emit)
+      final currentState2 = state;
+      if (currentState2 is SettingsLoaded) {
+        final updatedPreferences = currentState2.preferences.copyWith(disguiseMode: disguiseMode);
+        await _preferencesService.saveUserPreferences(updatedPreferences);
+
+        emit(currentState2.copyWith(
+          preferences: updatedPreferences,
+          lastUpdated: DateTime.now(),
+          isUpdatingDisguiseMode: true, // Keep loading
+        ));
+      }
+
+      // Apply disguise mode to Android
+      await AppDisguiseService.setDisguiseMode(disguiseMode);
+
+      // Small delay for UI feedback
+      await Future.delayed(const Duration(milliseconds: 800));
+
+    } catch (e) {
+      logWarning('Failed to update disguise mode: $e');
+    } finally {
+      // Clear loading state
+      final currentState = state;
+      if (currentState is SettingsLoaded) {
+        emit(currentState.copyWith(isUpdatingDisguiseMode: false));
+      }
+    }
   }
 
   /// Generic method to update a setting

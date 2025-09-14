@@ -39,6 +39,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get settings => 'Pengaturan';
 
   @override
+  String get appDisguise => 'Penyamaran Aplikasi';
+
+  @override
+  String get disguiseMode => 'Mode Penyamaran';
+
+  @override
   String get offline => 'Offline';
 
   @override

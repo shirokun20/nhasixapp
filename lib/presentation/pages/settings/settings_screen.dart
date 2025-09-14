@@ -567,9 +567,94 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                   ),
-                ),
-                
-                // Contoh: Reset ke default
+                 ),
+
+                 // App Disguise Section
+                 Padding(
+                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                   child: Text(AppLocalizations.of(context)?.appDisguise ?? 'App Disguise', style: TextStyleConst.headingSmall.copyWith(
+                     color: Theme.of(context).colorScheme.primary,
+                   )),
+                 ),
+                BlocBuilder<SettingsCubit, SettingsState>(
+                  builder: (context, settingsState) {
+                    final isLoading = settingsState is SettingsLoaded && settingsState.isUpdatingDisguiseMode;
+
+                    return ListTile(
+                      tileColor: Theme.of(context).colorScheme.surface,
+                      title: Text(AppLocalizations.of(context)?.disguiseMode ?? 'Disguise Mode', style: TextStyleConst.bodyLarge.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      )),
+                      subtitle: Text(
+                        isLoading
+                            ? 'Applying disguise mode changes...'
+                            : 'Choose how the app appears in your launcher for privacy.',
+                        style: TextStyleConst.bodySmall.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                        margin: const EdgeInsets.symmetric(vertical: 7),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainer,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.2),
+                        ),
+                        child: DropdownButton<String>(
+                          value: prefs.disguiseMode,
+                          underline: const SizedBox(),
+                          icon: isLoading
+                              ? SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                )
+                              : Icon(Icons.arrow_drop_down, color: Theme.of(context).colorScheme.outline),
+                          style: TextStyleConst.bodyLarge.copyWith(color: Theme.of(context).colorScheme.onSurface),
+                          dropdownColor: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(8),
+                          items: [
+                            DropdownMenuItem(
+                              value: 'default',
+                              child: Text('Default', style: TextStyleConst.bodyLarge.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              )),
+                            ),
+                            DropdownMenuItem(
+                              value: 'calculator',
+                              child: Text('Calculator', style: TextStyleConst.bodyLarge.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              )),
+                            ),
+                            DropdownMenuItem(
+                              value: 'notes',
+                              child: Text('Notes', style: TextStyleConst.bodyLarge.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              )),
+                            ),
+                            DropdownMenuItem(
+                              value: 'weather',
+                              child: Text('Weather', style: TextStyleConst.bodyLarge.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              )),
+                            ),
+                          ],
+                          onChanged: isLoading ? null : (mode) {
+                            if (mode != null) {
+                              context.read<SettingsCubit>().updateDisguiseMode(mode);
+                            }
+                          },
+                        ),
+                       ),
+                     );
+                   },
+                 ),
+
+                 // Contoh: Reset ke default
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: ElevatedButton.icon(
