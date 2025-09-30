@@ -42,6 +42,7 @@ import 'package:nhasixapp/domain/repositories/repositories.dart';
 import 'package:nhasixapp/data/repositories/content_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/user_data_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/reader_settings_repository_impl.dart';
+import 'package:nhasixapp/data/repositories/reader_repository_impl.dart';
 
 // Use Cases
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
@@ -219,6 +220,11 @@ void _setupRepositories() {
             getIt<SharedPreferences>(),
           ));
 
+  // Reader Repository
+  getIt.registerLazySingleton<ReaderRepository>(() => ReaderRepositoryImpl(
+        localDataSource: getIt<LocalDataSource>(),
+      ));
+
   // Settings Repository
   // getIt.registerLazySingleton<SettingsRepository>(() => SettingsRepositoryImpl(
   //   sharedPreferences: getIt(),
@@ -371,6 +377,7 @@ void _setupCubits() {
         getContentDetailUseCase: getIt<GetContentDetailUseCase>(),
         addToHistoryUseCase: getIt<AddToHistoryUseCase>(),
         readerSettingsRepository: getIt<ReaderSettingsRepository>(),
+        readerRepository: getIt<ReaderRepository>(),
         offlineContentManager: getIt<OfflineContentManager>(),
         networkCubit: getIt<NetworkCubit>(),
       ));

@@ -70,30 +70,40 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           await getIt<LocalDataSource>().getLastSearchFilter();
 
       if (savedFilterData != null) {
-        // Convert saved data back to SearchFilter
-        final savedFilter = SearchFilter.fromJson(savedFilterData);
+        try {
+          // Convert saved data back to SearchFilter
+          final savedFilter = SearchFilter.fromJson(savedFilterData);
 
-        if (savedFilter.hasFilters) {
-          // Load search results if there's a saved filter, but use current sort option
-          _currentSearchFilter =
-              savedFilter.copyWith(sortBy: _currentSortOption);
-          _isShowingSearchResults = true;
-          _contentBloc.add(ContentSearchEvent(_currentSearchFilter!));
-          Logger().i(
-              'MainScreen: Loading saved search results with sort: $_currentSortOption');
-        } else {
-          // Load normal content list with saved sort option
+          // Validate if the filter is meaningful and not just empty/cleared data
+          if (savedFilter.hasFilters && _isValidSearchFilter(savedFilter)) {
+            // Load search results if there's a saved filter, but use current sort option
+            _currentSearchFilter =
+                savedFilter.copyWith(sortBy: _currentSortOption);
+            _isShowingSearchResults = true;
+            _contentBloc.add(ContentSearchEvent(_currentSearchFilter!));
+            Logger().i(
+                'MainScreen: Loading saved search results with sort: $_currentSortOption');
+          } else {
+            // Invalid or empty filter, clear it and load normal content
+            await getIt<LocalDataSource>().removeLastSearchFilter();
+            _isShowingSearchResults = false;
+            _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
+            Logger().i(
+                'MainScreen: Cleared invalid search filter, loading normal content with sort: $_currentSortOption');
+          }
+        } catch (filterError) {
+          // Error parsing filter data, clear it and load normal content
+          Logger().w('MainScreen: Error parsing saved filter, clearing it: $filterError');
+          await getIt<LocalDataSource>().removeLastSearchFilter();
           _isShowingSearchResults = false;
           _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
-          Logger().i(
-              'MainScreen: Loading normal content list with sort: $_currentSortOption');
         }
       } else {
-        // Load normal content list with saved sort option
+        // No saved filter, load normal content list with saved sort option
         _isShowingSearchResults = false;
         _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
         Logger().i(
-            'MainScreen: Loading normal content list with sort: $_currentSortOption');
+            'MainScreen: No saved search filter, loading normal content with sort: $_currentSortOption');
       }
 
       setState(() {});
@@ -103,6 +113,19 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
       _isShowingSearchResults = false;
       _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
     }
+  }
+
+  /// Validate if search filter is meaningful and not empty/cleared
+  bool _isValidSearchFilter(SearchFilter filter) {
+    // Check if filter has any meaningful content beyond just having non-null values
+    return filter.query != null && filter.query!.trim().isNotEmpty ||
+           filter.tags.isNotEmpty ||
+           filter.groups.isNotEmpty ||
+           filter.characters.isNotEmpty ||
+           filter.parodies.isNotEmpty ||
+           filter.artists.isNotEmpty ||
+           filter.language != null ||
+           filter.category != null;
   }
 
   @override
@@ -768,15 +791,50 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
     });
 
     try {
-      // Clear saved search filter using removeLastSearchFilter or similar method
-      // Note: We need to check if this method exists in LocalDataSource
-      // For now, we'll skip the clear operation
+      // Clear saved search filter from local storage completely
+      await getIt<LocalDataSource>().removeLastSearchFilter();
       
       // Load normal content
       _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
-      Logger().i('MainScreen: Cleared search results, loading normal content');
+      Logger().i('MainScreen: Cleared search results and storage, loading normal content');
+      
+      // Show confirmation to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+'Search cleared successfully',
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onPrimary,
+              ),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
     } catch (e) {
       Logger().e('MainScreen: Error clearing search results: $e');
+      
+      // Show error to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+'Failed to clear search state',
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onError,
+              ),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
     }
   }
 

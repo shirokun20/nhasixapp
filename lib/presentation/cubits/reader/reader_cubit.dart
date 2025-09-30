@@ -4,9 +4,11 @@ import 'package:logger/logger.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:equatable/equatable.dart';
 import '../../../domain/entities/content.dart';
+import '../../../domain/entities/reader_position.dart';
 import '../../../domain/usecases/content/get_content_detail_usecase.dart';
 import '../../../domain/usecases/history/add_to_history_usecase.dart';
 import '../../../domain/repositories/reader_settings_repository.dart';
+import '../../../domain/repositories/reader_repository.dart';
 import '../../../data/models/reader_settings_model.dart';
 import '../../../core/utils/offline_content_manager.dart';
 import '../network/network_cubit.dart';
@@ -19,6 +21,7 @@ class ReaderCubit extends Cubit<ReaderState> {
     required this.getContentDetailUseCase,
     required this.addToHistoryUseCase,
     required this.readerSettingsRepository,
+    required this.readerRepository,
     required this.offlineContentManager,
     required this.networkCubit,
   }) : super(const ReaderInitial());
@@ -26,6 +29,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   final GetContentDetailUseCase getContentDetailUseCase;
   final AddToHistoryUseCase addToHistoryUseCase;
   final ReaderSettingsRepository readerSettingsRepository;
+  final ReaderRepository readerRepository;
   final OfflineContentManager offlineContentManager;
   final NetworkCubit networkCubit;
   final Logger _logger = Logger();
@@ -47,6 +51,8 @@ class ReaderCubit extends Cubit<ReaderState> {
         offlineContentManager.isContentAvailableOffline(contentId),
         // Load reader settings (simplified version)
         _loadReaderSettingsOptimized(),
+        // Restore reader position if exists (override initialPage)
+        _restoreReaderPosition(contentId),
         // If connected, start loading online content in parallel
         if (isConnected)
           () async {
@@ -63,7 +69,11 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       final isOfflineAvailable = results[0] as bool;
       final savedSettings = results[1] as ReaderSettings;
-      final onlineContent = results.length > 2 ? results[2] as Content? : null;
+      final restoredPage = results[2] as int;
+      final onlineContent = results.length > 3 ? results[3] as Content? : null;
+
+      // Use restored page if available, otherwise use initialPage
+      final startPage = restoredPage > 1 ? restoredPage : initialPage;
 
       Content? content;
       bool isOfflineMode = false;
@@ -93,7 +103,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       // 🚀 OPTIMIZATION: Emit loaded state immediately, then handle side effects
       emit(state.copyWith(
         content: content,
-        currentPage: initialPage,
+        currentPage: startPage,
         readingMode: savedSettings.readingMode,
         showUI: savedSettings.showUI,
         keepScreenOn: savedSettings.keepScreenOn,
@@ -158,6 +168,7 @@ class ReaderCubit extends Cubit<ReaderState> {
     if (!state.isLastPage && !isClosed) {
       final newPage = (state.currentPage ?? 1) + 1;
       emit(state.copyWith(currentPage: newPage));
+      _saveReaderPosition();
       _saveToHistory();
     }
   }
@@ -167,6 +178,7 @@ class ReaderCubit extends Cubit<ReaderState> {
     if (!state.isFirstPage && !isClosed) {
       final newPage = (state.currentPage ?? 1) - 1;
       emit(state.copyWith(currentPage: newPage));
+      _saveReaderPosition();
       _saveToHistory();
     }
   }
@@ -180,6 +192,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   void goToPage(int page) {
     if (!isClosed) {
       emit(state.copyWith(currentPage: page));
+      _saveReaderPosition();
       _saveToHistory();
     }
   }
@@ -333,6 +346,44 @@ class ReaderCubit extends Cubit<ReaderState> {
     } catch (e) {
       // Log error but don't emit error state for history saving
     }
+  }
+
+  /// Save reader position for persistence
+  Future<void> _saveReaderPosition() async {
+    if (state.content == null) return;
+
+    try {
+      final position = ReaderPosition.create(
+        contentId: state.content!.id,
+        currentPage: state.currentPage ?? 1,
+        totalPages: state.content!.pageCount,
+        title: state.content!.title,
+        coverUrl: state.content!.coverUrl,
+        readingTimeMinutes: (state.readingTimer?.inMinutes ?? 0),
+      );
+
+      await readerRepository.saveReaderPosition(position);
+      _logger.d('Saved reader position: ${state.content!.id} at page ${state.currentPage}');
+    } catch (e) {
+      _logger.e('Failed to save reader position: $e');
+      // Don't emit error state for position saving
+    }
+  }
+
+  /// Restore reader position if exists
+  Future<int> _restoreReaderPosition(String contentId) async {
+    try {
+      final position = await readerRepository.getReaderPosition(contentId);
+      if (position != null) {
+        _logger.d('Restored reader position: $contentId at page ${position.currentPage}');
+        return position.currentPage;
+      }
+    } catch (e) {
+      _logger.e('Failed to restore reader position: $e');
+    }
+    
+    // Return first page as default
+    return 1;
   }
 
   /// Start reading timer
