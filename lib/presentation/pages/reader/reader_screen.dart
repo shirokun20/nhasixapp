@@ -1,5 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+// import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:photo_view/photo_view.dart';
@@ -39,9 +40,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
   // Debouncing for scroll updates
   int _lastReportedPage = 1;
 
-  // Prefetching tracking
-  static const int _prefetchCount = 5; // Number of pages to prefetch ahead
-  final Set<int> _prefetchedPages = {}; // Track which pages have been prefetched
+  // Prefetch control
+  final Set<int> _prefetchedPages = <int>{};
+  static const int _prefetchCount = 5;
+
+  // Debounce mechanism to prevent onPageChanged loops
+  bool _isProgrammaticAnimation = false;
 
   // 🚀 OPTIMIZATION: Preload content before BlocProvider setup
   Content? _preloadedContent;
@@ -71,11 +75,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
     try {
       // Quick offline check first
       final offlineManager = getIt<OfflineContentManager>();
-      final isOfflineAvailable = await offlineManager.isContentAvailableOffline(widget.contentId);
+      final isOfflineAvailable =
+          await offlineManager.isContentAvailableOffline(widget.contentId);
 
       if (isOfflineAvailable) {
         // Preload offline content
-        _preloadedContent = await offlineManager.createOfflineContent(widget.contentId);
+        _preloadedContent =
+            await offlineManager.createOfflineContent(widget.contentId);
       }
     } catch (e) {
       // Ignore preload errors, will fallback to normal loading
@@ -102,12 +108,30 @@ class _ReaderScreenState extends State<ReaderScreen> {
           clampedPage != (state.currentPage ?? 1)) {
         _lastReportedPage = clampedPage;
         _readerCubit.jumpToPage(clampedPage);
-        
+
         // Trigger prefetching for continuous scroll mode too
         final imageUrls = state.content?.imageUrls ?? [];
         _prefetchImages(clampedPage, imageUrls);
       }
     }
+  }
+
+  /// Extract page number from image URL for validation
+  int? _extractPageNumberFromUrl(String url) {
+    // Try to extract page number from patterns like:
+    // https://i.nhentai.net/galleries/123456/22.jpg -> 22
+    final match = RegExp(r'/galleries/\d+/(\d+)\.[^/]+$').firstMatch(url);
+    if (match != null) {
+      return int.tryParse(match.group(1)!);
+    }
+
+    // Try other patterns if needed
+    final match2 = RegExp(r'/(\d+)\.[^/]*$').firstMatch(url);
+    if (match2 != null) {
+      return int.tryParse(match2.group(1)!);
+    }
+
+    return null;
   }
 
   @override
@@ -122,26 +146,40 @@ class _ReaderScreenState extends State<ReaderScreen> {
   /// Prefetch next few images in background for smoother reading experience
   void _prefetchImages(int currentPage, List<String> imageUrls) {
     if (imageUrls.isEmpty) return;
-    
+
     // Prefetch next _prefetchCount pages
     for (int i = 1; i <= _prefetchCount; i++) {
       final targetPage = currentPage + i;
-      
+
       // Check bounds and avoid duplicate prefetching
-      if (targetPage <= imageUrls.length && !_prefetchedPages.contains(targetPage)) {
+      if (targetPage <= imageUrls.length &&
+          !_prefetchedPages.contains(targetPage)) {
         _prefetchedPages.add(targetPage);
-        
+
         final imageUrl = imageUrls[targetPage - 1]; // Convert to 0-based index
-        
-        // Prefetch in background (non-blocking)
+
+        // 🔍 VALIDATE: Check if URL matches expected page number
+        final urlPageNumber = _extractPageNumberFromUrl(imageUrl);
+        if (urlPageNumber != null && urlPageNumber != targetPage) {
+          debugPrint(
+              '⚠️ IMAGE URL MISMATCH: Expected page $targetPage but URL contains page $urlPageNumber');
+          debugPrint('   URL: $imageUrl');
+          // Skip prefetch to prevent wrong caching
+          _prefetchedPages.remove(targetPage); // Allow retry later
+          return;
+        }
+
+        // Prefetch in background (non-blocking) - only if URL validates
         LocalImagePreloader.downloadAndCacheImage(
           imageUrl,
           widget.contentId,
           targetPage,
         ).then((_) {
           if (mounted) {
-            // Optionally log success for debugging
-            debugPrint('📥 Prefetched page $targetPage');
+            // Log success with URL validation status
+            final status = urlPageNumber == targetPage ? '✅' : '❓';
+            debugPrint(
+                '📥 $status Prefetched page $targetPage (URL page: $urlPageNumber)');
           }
         }).catchError((error) {
           // Remove from prefetched set if failed, so it can be retried
@@ -158,25 +196,76 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     // Sync PageController for horizontal single page mode
     if (state.readingMode == ReadingMode.singlePage) {
-      if (_pageController.hasClients &&
-          _pageController.page?.round() != targetPageIndex) {
-        _pageController.animateToPage(
-          targetPageIndex,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
+      if (_pageController.hasClients) {
+        final currentPageControllerIndex = _pageController.page?.round();
+
+        // Early return if already in sync - prevents infinite loop
+        if (currentPageControllerIndex == targetPageIndex) {
+          return;
+        }
+
+        final distance =
+            ((currentPageControllerIndex ?? 0) - targetPageIndex).abs();
+
+        if (distance > 5) {
+          // Use immediate jump for large distances to avoid animation interruption
+          debugPrint(
+              '🔄 SYNC: Jumping PageController from $currentPageControllerIndex to $targetPageIndex (distance: $distance)');
+          _isProgrammaticAnimation = true;
+          _pageController.jumpToPage(targetPageIndex);
+          _isProgrammaticAnimation = false;
+        } else {
+          // Use smooth animation for small distances
+          debugPrint(
+              '🔄 SYNC: Animating PageController from $currentPageControllerIndex to $targetPageIndex (distance: $distance)');
+          _isProgrammaticAnimation = true;
+          _pageController
+              .animateToPage(
+            targetPageIndex,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          )
+              .then((_) {
+            _isProgrammaticAnimation = false;
+          });
+        }
       }
     }
 
     // Sync PageController for vertical page mode
     else if (state.readingMode == ReadingMode.verticalPage) {
-      if (_verticalPageController.hasClients &&
-          _verticalPageController.page?.round() != targetPageIndex) {
-        _verticalPageController.animateToPage(
-          targetPageIndex,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
+      if (_verticalPageController.hasClients) {
+        final currentVerticalIndex = _verticalPageController.page?.round();
+
+        // Early return if already in sync - prevents infinite loop
+        if (currentVerticalIndex == targetPageIndex) {
+          return;
+        }
+
+        final distance = ((currentVerticalIndex ?? 0) - targetPageIndex).abs();
+
+        if (distance > 5) {
+          // Use immediate jump for large distances to avoid animation interruption
+          debugPrint(
+              '🔄 SYNC: Jumping VerticalPageController from $currentVerticalIndex to $targetPageIndex (distance: $distance)');
+          _isProgrammaticAnimation = true;
+          _verticalPageController.jumpToPage(targetPageIndex);
+          _isProgrammaticAnimation = false;
+        } else {
+          // Use smooth animation for small distances
+          debugPrint(
+              '🔄 SYNC: Animating VerticalPageController from $currentVerticalIndex to $targetPageIndex (distance: $distance)');
+          _isProgrammaticAnimation = true;
+          _verticalPageController
+              .animateToPage(
+            targetPageIndex,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          )
+              .then((_) {
+            _isProgrammaticAnimation = false;
+          });
+        }
       }
     }
 
@@ -252,11 +341,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
         widget.contentId,
         initialPage: widget.initialPage,
       );
-
     } catch (e) {
       // Fallback to normal loading if preload fails
       debugPrint('Preload optimization failed, using normal loading: $e');
-      await cubit.loadContent(widget.contentId, initialPage: widget.initialPage);
+      await cubit.loadContent(widget.contentId,
+          initialPage: widget.initialPage);
     }
   }
 
@@ -264,7 +353,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
     if (state is ReaderLoading) {
       return Center(
         child: AppProgressIndicator(
-          message: AppLocalizations.of(context)?.loadingContent ?? 'Loading content...',
+          message: AppLocalizations.of(context)?.loadingContent ??
+              'Loading content...',
         ),
       );
     }
@@ -331,16 +421,34 @@ class _ReaderScreenState extends State<ReaderScreen> {
         scrollDirection: Axis.horizontal,
         onPageChanged: (index) {
           final newPage = index + 1;
-          _readerCubit.jumpToPage(newPage);
-          
-          // Trigger prefetching for next pages
+
+          debugPrint('� PageView changed to index=$index (page $newPage)');
+
+          // Only handle UI tasks, no navigation logic
+          // This prevents recursive loops with jumpToPage
           final imageUrls = state.content?.imageUrls ?? [];
           _prefetchImages(newPage, imageUrls);
+
+          // Update ReaderCubit state to reflect the current page without triggering navigation
+          if (!_isProgrammaticAnimation) {
+            // Only update state if this was a real user swipe
+            _readerCubit.updateCurrentPageFromSwipe(newPage);
+          }
         },
         itemCount: state.content?.imageUrls.length ?? 0,
         itemBuilder: (context, index) {
           final imageUrl = state.content?.imageUrls[index] ?? '';
-          return _buildImageViewer(imageUrl, index + 1);
+          final pageNumber = index + 1;
+
+          // 🔍 DEBUG: Validate URL-page mapping during viewing
+          final urlPageNumber = _extractPageNumberFromUrl(imageUrl);
+          if (urlPageNumber != null && urlPageNumber != pageNumber) {
+            debugPrint(
+                '🚨 VIEWING MISMATCH: Showing page $pageNumber but URL contains page $urlPageNumber');
+            debugPrint('   Index: $index, URL: $imageUrl');
+          }
+
+          return _buildImageViewer(imageUrl, pageNumber);
         },
       ),
     );
@@ -370,11 +478,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
         scrollDirection: Axis.vertical,
         onPageChanged: (index) {
           final newPage = index + 1;
-          _readerCubit.jumpToPage(newPage);
-          
-          // Trigger prefetching for next pages
+
+          debugPrint(
+              '� Vertical PageView changed to index=$index (page $newPage)');
+
+          // Only handle UI tasks, no navigation logic
+          // This prevents recursive loops with jumpToPage
           final imageUrls = state.content?.imageUrls ?? [];
           _prefetchImages(newPage, imageUrls);
+
+          // Update ReaderCubit state to reflect the current page without triggering navigation
+          if (!_isProgrammaticAnimation) {
+            // Only update state if this was a real user swipe
+            _readerCubit.updateCurrentPageFromSwipe(newPage);
+          }
         },
         itemCount: state.content?.imageUrls.length ?? 0,
         itemBuilder: (context, index) {
@@ -526,7 +643,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        state.content?.getDisplayTitle() ?? AppLocalizations.of(context)?.loading ?? 'Loading...',
+                        state.content?.getDisplayTitle() ??
+                            AppLocalizations.of(context)?.loading ??
+                            'Loading...',
                         style: TextStyleConst.headingMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -544,7 +663,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                           color: Theme.of(context).colorScheme.primaryContainer,
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                              color: Theme.of(context).colorScheme.primary, width: 1),
+                              color: Theme.of(context).colorScheme.primary,
+                              width: 1),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -556,7 +676,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             ),
                             const SizedBox(width: 2),
                             Text(
-                              (AppLocalizations.of(context)?.offline ?? 'OFFLINE').toUpperCase(),
+                              (AppLocalizations.of(context)?.offline ??
+                                      'OFFLINE')
+                                  .toUpperCase(),
                               style: TextStyleConst.bodySmall.copyWith(
                                 color: Theme.of(context).colorScheme.primary,
                                 fontSize: 10,
@@ -572,7 +694,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 Row(
                   children: [
                     Text(
-                      AppLocalizations.of(context)?.pageOfPages(state.currentPage ?? 1, state.content?.pageCount ?? 1) ?? 'Page ${state.currentPage ?? 1} of ${state.content?.pageCount ?? 1}',
+                      AppLocalizations.of(context)?.pageOfPages(
+                              state.currentPage ?? 1,
+                              state.content?.pageCount ?? 1) ??
+                          'Page ${state.currentPage ?? 1} of ${state.content?.pageCount ?? 1}',
                       style: TextStyleConst.bodySmall.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -595,7 +720,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     padding: const EdgeInsets.only(top: 4),
                     child: LinearProgressIndicator(
                       value: state.progress,
-                      backgroundColor: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                      backgroundColor: Theme.of(context)
+                          .colorScheme
+                          .outline
+                          .withValues(alpha: 0.3),
                       valueColor: AlwaysStoppedAnimation<Color>(
                           Theme.of(context).colorScheme.primary),
                       minHeight: 2,
@@ -647,8 +775,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
           // Settings button
           IconButton(
             onPressed: () => _showReaderSettings(state),
-            icon:
-                Icon(Icons.settings, color: Theme.of(context).colorScheme.onSurface),
+            icon: Icon(Icons.settings,
+                color: Theme.of(context).colorScheme.onSurface),
           ),
         ],
       ),
@@ -678,7 +806,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
               Expanded(
                 child: LinearProgressIndicator(
                   value: state.progress,
-                  backgroundColor: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                  backgroundColor: Theme.of(context)
+                      .colorScheme
+                      .outline
+                      .withValues(alpha: 0.3),
                   valueColor: AlwaysStoppedAnimation<Color>(
                       Theme.of(context).colorScheme.primary),
                 ),
@@ -707,31 +838,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 icon: Icon(
                   Icons.skip_previous,
                   color: state.isFirstPage
-                      ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)
+                      ? Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.38)
                       : Theme.of(context).colorScheme.onSurface,
                 ),
               ),
 
               // Page info and jump
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextButton(
-                    onPressed: () => _showPageJumpDialog(state),
-                    child: Text(
-                      '${state.progressPercentage}%',
-                      style: TextStyleConst.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    '${(state.readingTimer ?? Duration.zero).inMinutes}m',
-                    style: TextStyleConst.bodySmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
+              Text(
+                '${state.progressPercentage}%',
+                style: TextStyleConst.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
 
               // Next page
@@ -741,7 +861,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 icon: Icon(
                   Icons.skip_next,
                   color: state.isLastPage
-                      ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)
+                      ? Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.38)
                       : Theme.of(context).colorScheme.onSurface,
                 ),
               ),
@@ -752,6 +875,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
   }
 
+  // DISABLED: Jump to page feature temporarily disabled to prevent navigation bugs
+  // Users should focus on sequential reading for better experience
+  /*
   void _showPageJumpDialog(ReaderState state) {
     final controller =
         TextEditingController(text: (state.currentPage ?? 1).toString());
@@ -803,12 +929,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
               if (page != null &&
                   page >= 1 &&
                   page <= (state.content?.pageCount ?? 1)) {
+                
+                debugPrint('🎯 JUMP DEBUG: User requested page $page');
+                
+                // Let ReaderCubit handle all navigation via BlocListener → _syncControllersWithState()
+                // This prevents race condition between manual PageController animation and automatic sync
                 _readerCubit.jumpToPage(page);
-                _pageController.animateToPage(
-                  page - 1,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                );
               }
             },
             child: Text(
@@ -822,6 +948,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       ),
     );
   }
+  */
 
   void _showReaderSettings(ReaderState state) {
     showModalBottomSheet(
@@ -841,13 +968,17 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.38),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
 
               Text(
-                AppLocalizations.of(context)?.readerSettings ?? 'Reader Settings',
+                AppLocalizations.of(context)?.readerSettings ??
+                    'Reader Settings',
                 style: TextStyleConst.headingMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
@@ -901,13 +1032,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
               // Keep screen on
               ListTile(
                 title: Text(
-                  AppLocalizations.of(context)?.keepScreenOn ?? 'Keep Screen On',
+                  AppLocalizations.of(context)?.keepScreenOn ??
+                      'Keep Screen On',
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 subtitle: Text(
-                  AppLocalizations.of(context)?.keepScreenOnDescription ?? 'Prevent screen from turning off while reading',
+                  AppLocalizations.of(context)?.keepScreenOnDescription ??
+                      'Prevent screen from turning off while reading',
                   style: TextStyleConst.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -931,13 +1064,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     color: Theme.of(context).colorScheme.error,
                   ),
                   label: Text(
-                    AppLocalizations.of(context)?.resetToDefaults ?? 'Reset to Defaults',
+                    AppLocalizations.of(context)?.resetToDefaults ??
+                        'Reset to Defaults',
                     style: TextStyleConst.buttonMedium.copyWith(
                       color: Theme.of(context).colorScheme.error,
                     ),
                   ),
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Theme.of(context).colorScheme.error),
+                    side:
+                        BorderSide(color: Theme.of(context).colorScheme.error),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
@@ -965,11 +1100,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
   String _getReadingModeLabel(ReadingMode mode) {
     switch (mode) {
       case ReadingMode.singlePage:
-        return AppLocalizations.of(context)?.horizontalPages ?? 'Horizontal Pages';
+        return AppLocalizations.of(context)?.horizontalPages ??
+            'Horizontal Pages';
       case ReadingMode.verticalPage:
         return AppLocalizations.of(context)?.verticalPages ?? 'Vertical Pages';
       case ReadingMode.continuousScroll:
-        return AppLocalizations.of(context)?.continuousScroll ?? 'Continuous Scroll';
+        return AppLocalizations.of(context)?.continuousScroll ??
+            'Continuous Scroll';
     }
   }
 
@@ -995,7 +1132,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           ),
         ),
         actions: [
-           TextButton(
+          TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
               AppLocalizations.of(context)!.cancel,
@@ -1034,7 +1171,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppLocalizations.of(context)?.readerSettingsResetSuccess ?? 'Reader settings have been reset to defaults.'  ,
+              AppLocalizations.of(context)?.readerSettingsResetSuccess ??
+                  'Reader settings have been reset to defaults.',
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onPrimary,
               ),
@@ -1055,7 +1193,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppLocalizations.of(context)?.failedToResetSettings(e.toString()) ?? 'Failed to reset settings: ${e.toString()}'  ,
+              AppLocalizations.of(context)
+                      ?.failedToResetSettings(e.toString()) ??
+                  'Failed to reset settings: ${e.toString()}',
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onError,
               ),
@@ -1068,7 +1208,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             action: SnackBarAction(
-              label: AppLocalizations.of(context)?.retry ?? 'Retry' ,
+              label: AppLocalizations.of(context)?.retry ?? 'Retry',
               textColor: Theme.of(context).colorScheme.onError,
               onPressed: () => _resetReaderSettings(),
             ),

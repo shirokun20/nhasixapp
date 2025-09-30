@@ -11,6 +11,7 @@ import '../../../domain/repositories/reader_settings_repository.dart';
 import '../../../domain/repositories/reader_repository.dart';
 import '../../../data/models/reader_settings_model.dart';
 import '../../../core/utils/offline_content_manager.dart';
+import '../../../services/local_image_preloader.dart';
 import '../network/network_cubit.dart';
 
 part 'reader_state.dart';
@@ -72,8 +73,11 @@ class ReaderCubit extends Cubit<ReaderState> {
       final restoredPage = results[2] as int;
       final onlineContent = results.length > 3 ? results[3] as Content? : null;
 
-      // Use restored page if available, otherwise use initialPage
-      final startPage = restoredPage > 1 ? restoredPage : initialPage;
+      // Use initialPage if user explicitly requested a specific page (initialPage > 1)
+      // Otherwise use restored page if available, fallback to initialPage
+      final startPage = initialPage > 1 ? initialPage : (restoredPage > 1 ? restoredPage : initialPage);
+      
+      _logger.i('📍 Loading content: $contentId, initialPage: $initialPage, restoredPage: $restoredPage, startPage: $startPage');
 
       Content? content;
       bool isOfflineMode = false;
@@ -110,6 +114,9 @@ class ReaderCubit extends Cubit<ReaderState> {
         readingTimer: Duration.zero,
         isOfflineMode: isOfflineMode,
       ));
+
+      // 🐛 DEBUG: Log all image URLs with their page numbers
+      _logImageUrlMapping(content);
 
       emit(ReaderLoaded(state));
 
@@ -165,8 +172,12 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   /// Navigate to next page
   void nextPage() {
-    if (!state.isLastPage && !isClosed) {
-      final newPage = (state.currentPage ?? 1) + 1;
+    if (!state.isLastPage && !isClosed && state.content != null) {
+      final currentPage = state.currentPage ?? 1;
+      final newPage = (currentPage + 1).clamp(1, state.content!.pageCount);
+      
+      _logger.d('Next page: $currentPage -> $newPage (total: ${state.content!.pageCount})');
+      
       emit(state.copyWith(currentPage: newPage));
       _saveReaderPosition();
       _saveToHistory();
@@ -175,8 +186,12 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   /// Navigate to previous page
   void previousPage() {
-    if (!state.isFirstPage && !isClosed) {
-      final newPage = (state.currentPage ?? 1) - 1;
+    if (!state.isFirstPage && !isClosed && state.content != null) {
+      final currentPage = state.currentPage ?? 1;
+      final newPage = (currentPage - 1).clamp(1, state.content!.pageCount);
+      
+      _logger.d('Previous page: $currentPage -> $newPage (total: ${state.content!.pageCount})');
+      
       emit(state.copyWith(currentPage: newPage));
       _saveReaderPosition();
       _saveToHistory();
@@ -190,8 +205,36 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   /// Navigate to specific page
   void goToPage(int page) {
-    if (!isClosed) {
-      emit(state.copyWith(currentPage: page));
+    if (!isClosed && state.content != null) {
+      // Validate page range
+      final totalPages = state.content!.pageCount;
+      final validPage = page.clamp(1, totalPages);
+      
+      if (page != validPage) {
+        _logger.w('Invalid page requested: $page, clamped to: $validPage (total: $totalPages)');
+      }
+      
+      _logger.d('Navigating to page: $validPage (requested: $page, total: $totalPages)');
+      
+      emit(state.copyWith(currentPage: validPage));
+      _saveReaderPosition();
+      _saveToHistory();
+    } else {
+      _logger.e('Cannot navigate to page $page - cubit closed or content not loaded');
+    }
+  }
+
+  /// Update current page from user swipe (without triggering navigation sync)
+  void updateCurrentPageFromSwipe(int page) {
+    if (!isClosed && state.content != null) {
+      // Validate page range
+      final totalPages = state.content!.pageCount;
+      final validPage = page.clamp(1, totalPages);
+      
+      _logger.d('Updating page from swipe: $validPage (total: $totalPages)');
+      
+      // Only emit state change, don't trigger sync navigation
+      emit(state.copyWith(currentPage: validPage));
       _saveReaderPosition();
       _saveToHistory();
     }
@@ -283,6 +326,87 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
+  /// Clear reader position for specific content (useful for debugging)
+  Future<void> clearReaderPosition(String contentId) async {
+    try {
+      await readerRepository.deleteReaderPosition(contentId);
+      _logger.i('🗑️ Cleared reader position for content: $contentId');
+    } catch (e) {
+      _logger.e('Failed to clear reader position: $e');
+    }
+  }
+
+  /// Clear all reader positions (useful for debugging)
+  Future<void> clearAllReaderPositions() async {
+    try {
+      await readerRepository.clearAllReaderPositions();
+      _logger.i('🗑️ Cleared all reader positions');
+    } catch (e) {
+      _logger.e('Failed to clear all reader positions: $e');
+    }
+  }
+
+  /// Clear image cache for specific content (useful for debugging)
+  Future<void> clearImageCache(String contentId) async {
+    try {
+      await LocalImagePreloader.clearContentCache(contentId);
+      _logger.i('🖼️ Cleared image cache for content: $contentId');
+      
+      // Note: CachedNetworkImage cache clearing requires DefaultCacheManager
+      // Users can manually clear app data if needed
+      _logger.i('ℹ️ To clear network image cache, clear app data or restart app');
+    } catch (e) {
+      _logger.e('Failed to clear image cache: $e');
+    }
+  }
+
+  /// Debug: Log image URL mapping for current content
+  void _logImageUrlMapping(Content content) {
+    if (content.imageUrls.isEmpty) {
+      _logger.w('⚠️ No image URLs found for content: ${content.id}');
+      return;
+    }
+
+    _logger.i('🖼️ Image URL Mapping for ${content.id} (${content.imageUrls.length} pages):');
+    
+    for (int i = 0; i < content.imageUrls.length && i < 10; i++) {
+      final pageNumber = i + 1;
+      final url = content.imageUrls[i];
+      
+      // Extract page number from URL if possible
+      final urlPageNumber = _extractPageNumberFromUrl(url);
+      
+      final isMatch = urlPageNumber == pageNumber;
+      final status = isMatch ? '✅' : '❌';
+      
+      _logger.i('  Page $pageNumber: $status URL contains page $urlPageNumber');
+      _logger.d('    URL: $url');
+    }
+    
+    if (content.imageUrls.length > 10) {
+      _logger.i('  ... and ${content.imageUrls.length - 10} more pages');
+    }
+  }
+
+  /// Extract page number from image URL
+  int? _extractPageNumberFromUrl(String url) {
+    // Try to extract page number from patterns like:
+    // https://i.nhentai.net/galleries/123456/1.jpg -> 1
+    // https://i.nhentai.net/galleries/123456/86.jpg -> 86
+    final match = RegExp(r'/galleries/\d+/(\d+)\.[^/]+$').firstMatch(url);
+    if (match != null) {
+      return int.tryParse(match.group(1)!);
+    }
+    
+    // Try other patterns if needed
+    final match2 = RegExp(r'/(\d+)\.[^/]*$').firstMatch(url);
+    if (match2 != null) {
+      return int.tryParse(match2.group(1)!);
+    }
+    
+    return null;
+  }
+
   /// Reset all reader settings to defaults
   Future<void> resetReaderSettings() async {
     try {
@@ -363,7 +487,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       );
 
       await readerRepository.saveReaderPosition(position);
-      _logger.d('Saved reader position: ${state.content!.id} at page ${state.currentPage}');
+      _logger.i('✅ Saved reader position: ${state.content!.id} at page ${state.currentPage}/${state.content!.pageCount}');
     } catch (e) {
       _logger.e('Failed to save reader position: $e');
       // Don't emit error state for position saving
@@ -375,7 +499,7 @@ class ReaderCubit extends Cubit<ReaderState> {
     try {
       final position = await readerRepository.getReaderPosition(contentId);
       if (position != null) {
-        _logger.d('Restored reader position: $contentId at page ${position.currentPage}');
+        _logger.i('📖 Restored reader position: $contentId at page ${position.currentPage}/${position.totalPages}');
         return position.currentPage;
       }
     } catch (e) {

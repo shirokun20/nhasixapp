@@ -785,6 +785,35 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
 
   /// Clear search results and return to normal content
   void _clearSearchResults() async {
+    // Show loading indicator immediately for better UX
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Clearing search...',
+                style: TextStyleConst.bodyMedium.copyWith(
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          duration: const Duration(seconds: 10), // Longer duration for loading
+        ),
+      );
+    }
+
     setState(() {
       _currentSearchFilter = null;
       _isShowingSearchResults = false;
@@ -798,17 +827,28 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
       _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
       Logger().i('MainScreen: Cleared search results and storage, loading normal content');
       
-      // Show confirmation to user
+      // Hide loading snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      }
+      
+      // Show success confirmation to user
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-'Search cleared successfully',
-              style: TextStyleConst.bodyMedium.copyWith(
-                color: Theme.of(context).colorScheme.onPrimary,
-              ),
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  'Search cleared successfully',
+                  style: TextStyleConst.bodyMedium.copyWith(
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
-            backgroundColor: Theme.of(context).colorScheme.primary,
+            backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(16),
@@ -818,15 +858,28 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
     } catch (e) {
       Logger().e('MainScreen: Error clearing search results: $e');
       
+      // Hide loading snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      }
+      
       // Show error to user
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-'Failed to clear search state',
-              style: TextStyleConst.bodyMedium.copyWith(
-                color: Theme.of(context).colorScheme.onError,
-              ),
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Failed to clear search state',
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
             ),
             backgroundColor: Theme.of(context).colorScheme.error,
             duration: const Duration(seconds: 3),

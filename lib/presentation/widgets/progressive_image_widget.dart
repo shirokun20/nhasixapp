@@ -351,7 +351,8 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
     widget.onLoadingStateChange?.call(true);
     
     if (kDebugMode) {
-      _logger.d('Reader: Resolving local path for contentId: ${widget.contentId}, pageNumber: ${widget.pageNumber}');
+      _logger.i('🖼️ READER IMAGE DEBUG: Resolving contentId: ${widget.contentId}, pageNumber: ${widget.pageNumber}');
+      _logger.d('🌐 Network URL: ${widget.networkUrl}');
     }
     
     // First try to get existing local image
