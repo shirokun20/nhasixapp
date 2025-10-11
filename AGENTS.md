@@ -20,9 +20,13 @@
 - **State Management**: flutter_bloc for complex state, Cubit for simple local state, extend BaseCubit for error handling
 - **Dependency Injection**: All dependencies registered in `core/di/service_locator.dart` using GetIt
 
+## Development Focus Guidelines
+- **Follow On-Progress Plans**: Always follow the rules and guidelines specified in the `.md` files located in the `projects/onprogress-plan` folder to maintain focus on current development tasks and avoid distractions.
+- **File Update Policy**: For `.md` files in `projects/onprogress-plan`, only update them if urgent. Otherwise, only mark completed items with `[x]` checkbox.
+
 ## ✅ COMPLETED FEATURES
 
-### 🎭 App Disguise System (v0.4.0-beta)
+### 🎭 App Disguise System (v0.4.0-alpha)
 - **Multiple Identities**: Calculator, Notes, Weather disguises
 - **Dynamic Launcher Icons**: Real-time icon switching
 - **Activity Aliases**: Android native disguise implementation
