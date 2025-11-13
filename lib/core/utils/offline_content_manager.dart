@@ -18,6 +18,16 @@ class OfflineContentManager {
   final UserDataRepository _userDataRepository;
   final Logger _logger;
 
+  // Cache for offline content IDs with TTL
+  List<String>? _cachedOfflineIds;
+  DateTime? _offlineIdsCacheTime;
+  static const Duration _cacheDuration = Duration(minutes: 5);
+
+  // Cache for content metadata
+  final Map<String, Map<String, dynamic>> _metadataCache = {};
+  final Map<String, DateTime> _metadataCacheTime = {};
+  static const Duration _metadataCacheDuration = Duration(minutes: 10);
+
   // Localization callback
   String Function(String key, {Map<String, dynamic>? args})? _localize;
 
@@ -99,6 +109,14 @@ class OfflineContentManager {
   /// Get all offline content IDs
   Future<List<String>> getOfflineContentIds() async {
     try {
+      // Check cache first
+      if (_cachedOfflineIds != null &&
+          _offlineIdsCacheTime != null &&
+          DateTime.now().difference(_offlineIdsCacheTime!) < _cacheDuration) {
+        _logger.d('Using cached offline content IDs');
+        return _cachedOfflineIds!;
+      }
+
       final downloads = await _userDataRepository.getAllDownloads(
         state: DownloadState.completed,
         limit: 1000, // Get all completed downloads
@@ -108,12 +126,13 @@ class OfflineContentManager {
 
       for (final download in downloads) {
         if (await isContentAvailableOffline(download.contentId)) {
-          // _logger.i(_getLocalized('offlineContentAvailable',
-          //   args: {'contentId': download.contentId, 'available': 'true'},
-          //   fallback: "isi file nya: $download"));
           offlineIds.add(download.contentId);
         }
       }
+
+      // Update cache
+      _cachedOfflineIds = offlineIds;
+      _offlineIdsCacheTime = DateTime.now();
 
       return offlineIds;
     } catch (e, stackTrace) {
@@ -180,44 +199,65 @@ class OfflineContentManager {
   Future<Map<String, dynamic>?> getOfflineContentMetadata(
       String contentId) async {
     try {
+      // Check cache first
+      if (_metadataCache.containsKey(contentId) &&
+          _metadataCacheTime.containsKey(contentId) &&
+          DateTime.now().difference(_metadataCacheTime[contentId]!) <
+              _metadataCacheDuration) {
+        _logger.d('Using cached metadata for $contentId');
+        return _metadataCache[contentId];
+      }
+
       // Try to get from favorites first
       final favorites = await _userDataRepository.getFavorites(limit: 1000);
       final favorite =
           favorites.where((fav) => fav['id'] == contentId).firstOrNull;
       _logger.i(_getLocalized('offlineContentMetadata',
-        args: {'contentId': contentId, 'source': 'favorites'},
-        fallback: "apakah data dari favorite? ${favorite != null}"));
+          args: {'contentId': contentId, 'source': 'favorites'},
+          fallback: "apakah data dari favorite? ${favorite != null}"));
       if (favorite != null) {
-        return {
+        final metadata = {
           'id': contentId,
           'title': favorite['title'] ?? 'Unknown Title',
           'coverUrl': favorite['cover_url'] ?? '',
           'source': 'favorites',
         };
+        // Cache the result
+        _metadataCache[contentId] = metadata;
+        _metadataCacheTime[contentId] = DateTime.now();
+        return metadata;
       }
 
       // Try to get from history
       final historyEntry = await _userDataRepository.getHistoryEntry(contentId);
       _logger.i(_getLocalized('offlineContentMetadata',
-        args: {'contentId': contentId, 'source': 'history'},
-        fallback: "apakah data dari history? ${historyEntry != null}"));
+          args: {'contentId': contentId, 'source': 'history'},
+          fallback: "apakah data dari history? ${historyEntry != null}"));
       _logger.i("isi file history nya: $historyEntry");
       if (historyEntry != null) {
-        return {
+        final metadata = {
           'id': contentId,
           'title': historyEntry.title ?? 'Unknown Title',
           'coverUrl': historyEntry.coverUrl ?? '',
           'source': 'history',
         };
+        // Cache the result
+        _metadataCache[contentId] = metadata;
+        _metadataCacheTime[contentId] = DateTime.now();
+        return metadata;
       }
 
       // Fallback to basic info
-      return {
+      final metadata = {
         'id': contentId,
         'title': 'Offline Content $contentId',
         'coverUrl': '',
         'source': 'offline',
       };
+      // Cache the result
+      _metadataCache[contentId] = metadata;
+      _metadataCacheTime[contentId] = DateTime.now();
+      return metadata;
     } catch (e, stackTrace) {
       _logger.e('Error getting offline content metadata for $contentId',
           error: e, stackTrace: stackTrace);
@@ -233,14 +273,35 @@ class OfflineContentManager {
 
       final imageUrls = await getOfflineImageUrls(contentId);
       _logger.i(_getLocalized('offlineImageUrlsFound',
-        args: {'contentId': contentId, 'count': imageUrls.length},
-        fallback: "apakah ada gambarnya? ${imageUrls.isEmpty}"));
+          args: {'contentId': contentId, 'count': imageUrls.length},
+          fallback: "apakah ada gambarnya? ${imageUrls.isEmpty}"));
       if (imageUrls.isEmpty) return null;
+
+      // Ensure first page image exists and is valid
+      String coverUrl = '';
+      if (imageUrls.isNotEmpty) {
+        final firstImagePath = imageUrls.first;
+        final firstImageFile = File(firstImagePath);
+        if (await firstImageFile.exists() &&
+            await firstImageFile.length() > 0) {
+          coverUrl = firstImagePath;
+        } else {
+          // Try second image if first is invalid
+          if (imageUrls.length > 1) {
+            final secondImagePath = imageUrls[1];
+            final secondImageFile = File(secondImagePath);
+            if (await secondImageFile.exists() &&
+                await secondImageFile.length() > 0) {
+              coverUrl = secondImagePath;
+            }
+          }
+        }
+      }
 
       return Content(
         id: contentId,
         title: metadata['title'] as String,
-        coverUrl: imageUrls.isNotEmpty ? imageUrls.first : '', // Use first local image as thumbnail
+        coverUrl: coverUrl,
         tags: [], // No tags available offline
         artists: [], // No artists available offline
         characters: [], // No characters available offline
@@ -294,7 +355,7 @@ class OfflineContentManager {
   Future<void> cleanupOrphanedFiles() async {
     try {
       _logger.i(_getLocalized('cleanupOrphanedFilesStarted',
-        fallback: 'Starting cleanup of orphaned offline files'));
+          fallback: 'Starting cleanup of orphaned offline files'));
 
       final appDir = await getApplicationDocumentsDirectory();
       final downloadsDir = Directory(path.join(appDir.path, 'downloads'));
@@ -322,7 +383,7 @@ class OfflineContentManager {
       }
 
       _logger.i(_getLocalized('cleanupOrphanedFilesCompleted',
-        fallback: 'Cleanup of orphaned offline files completed'));
+          fallback: 'Cleanup of orphaned offline files completed'));
     } catch (e, stackTrace) {
       _logger.e('Error during cleanup of orphaned files',
           error: e, stackTrace: stackTrace);
@@ -359,14 +420,25 @@ class OfflineContentManager {
     return '${size.toStringAsFixed(1)} ${suffixes[suffixIndex]}';
   }
 
-  /// Set localization callback for getting localized strings
-  void setLocalizationCallback(String Function(String key, {Map<String, dynamic>? args}) localize) {
-    _localize = localize;
-    _logger.i('OfflineContentManager: Localization callback set');
+  /// Clear all caches
+  void clearCache() {
+    _cachedOfflineIds = null;
+    _offlineIdsCacheTime = null;
+    _metadataCache.clear();
+    _metadataCacheTime.clear();
+    _logger.d('Offline content cache cleared');
+  }
+
+  /// Clear cache for specific content ID
+  void clearContentCache(String contentId) {
+    _metadataCache.remove(contentId);
+    _metadataCacheTime.remove(contentId);
+    _logger.d('Cache cleared for content: $contentId');
   }
 
   /// Get localized string with fallback
-  String _getLocalized(String key, {Map<String, dynamic>? args, String? fallback}) {
+  String _getLocalized(String key,
+      {Map<String, dynamic>? args, String? fallback}) {
     try {
       return _localize?.call(key, args: args) ?? fallback ?? key;
     } catch (e) {

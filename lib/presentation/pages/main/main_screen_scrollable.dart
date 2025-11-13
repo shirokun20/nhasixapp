@@ -93,7 +93,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           }
         } catch (filterError) {
           // Error parsing filter data, clear it and load normal content
-          Logger().w('MainScreen: Error parsing saved filter, clearing it: $filterError');
+          Logger().w(
+              'MainScreen: Error parsing saved filter, clearing it: $filterError');
           await getIt<LocalDataSource>().removeLastSearchFilter();
           _isShowingSearchResults = false;
           _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
@@ -119,13 +120,13 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
   bool _isValidSearchFilter(SearchFilter filter) {
     // Check if filter has any meaningful content beyond just having non-null values
     return filter.query != null && filter.query!.trim().isNotEmpty ||
-           filter.tags.isNotEmpty ||
-           filter.groups.isNotEmpty ||
-           filter.characters.isNotEmpty ||
-           filter.parodies.isNotEmpty ||
-           filter.artists.isNotEmpty ||
-           filter.language != null ||
-           filter.category != null;
+        filter.tags.isNotEmpty ||
+        filter.groups.isNotEmpty ||
+        filter.characters.isNotEmpty ||
+        filter.parodies.isNotEmpty ||
+        filter.artists.isNotEmpty ||
+        filter.language != null ||
+        filter.category != null;
   }
 
   @override
@@ -242,14 +243,13 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
             ),
           );
         }
-        
-
       },
       builder: (context, state) {
         if (state is ContentInitial) {
           return Center(
             child: Text(
-              AppLocalizations.of(context)?.tapToLoadContent ?? 'Tap to load content',
+              AppLocalizations.of(context)?.tapToLoadContent ??
+                  'Tap to load content',
               style: TextStyleConst.placeholderText,
             ),
           );
@@ -310,7 +310,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Theme.of(context).shadowColor.withValues(alpha: 0.5),
+                      color:
+                          Theme.of(context).shadowColor.withValues(alpha: 0.5),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -329,7 +330,9 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                     ),
                     const SizedBox(width: 16),
                     Text(
-                      state.message.isNotEmpty ? state.message : AppLocalizations.of(context)!.loading,
+                      state.message.isNotEmpty
+                          ? state.message
+                          : AppLocalizations.of(context)!.loading,
                       style: TextStyleConst.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
@@ -356,7 +359,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
             ),
             const SizedBox(height: 24),
             Text(
-              state.message.isNotEmpty ? state.message : AppLocalizations.of(context)?.loadingContent ?? 'Loading content...',
+              state.message.isNotEmpty
+                  ? state.message
+                  : AppLocalizations.of(context)?.loadingContent ??
+                      'Loading content...',
               style: TextStyleConst.bodyLarge.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
               ),
@@ -376,7 +382,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           Icon(
             Icons.inbox_outlined,
             size: 64,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
           const SizedBox(height: 16),
           Text(
@@ -402,7 +409,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
               onPressed: () {
                 context.read<ContentBloc>().add(const ContentRetryEvent());
               },
-              child: Text(AppLocalizations.of(context)?.tryAgain ?? 'Try Again'),
+              child:
+                  Text(AppLocalizations.of(context)?.tryAgain ?? 'Try Again'),
             ),
           ],
         ],
@@ -459,71 +467,76 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
 
   /// Build the main scrollable content grid with integrated components
   Widget _buildScrollableContentGrid(ContentLoaded state) {
-    return CustomScrollView(
-      slivers: [
-        // Search results header (if showing search results) - sebagai sliver
-        if (_isShowingSearchResults) 
-          SliverToBoxAdapter(
-            child: _buildSearchResultsHeader(),
-          ),
+    return RefreshIndicator(
+      onRefresh: _handleRefresh,
+      child: CustomScrollView(
+        slivers: [
+          // Search results header (if showing search results) - sebagai sliver
+          if (_isShowingSearchResults)
+            SliverToBoxAdapter(
+              child: _buildSearchResultsHeader(),
+            ),
 
-        // Sorting widget - sebagai sliver
-        if (_shouldShowSorting(state))
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: SortingWidget(
-                currentSort: _currentSortOption,
-                onSortChanged: _onSortingChanged,
+          // Sorting widget - sebagai sliver
+          if (_shouldShowSorting(state))
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: SortingWidget(
+                  currentSort: _currentSortOption,
+                  onSortChanged: _onSortingChanged,
+                ),
               ),
             ),
+
+          // Content grid dengan downloaded highlight effect
+          BlocBuilder<SettingsCubit, SettingsState>(
+            builder: (context, settingsState) {
+              return SliverPadding(
+                padding: const EdgeInsets.all(16.0),
+                sliver: SliverGrid(
+                  gridDelegate: ResponsiveGridDelegate.createGridDelegate(
+                    context,
+                    context.read<SettingsCubit>(),
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final content = state.contents[index];
+
+                      // Use FutureBuilder to check download status for highlight
+                      return FutureBuilder<bool>(
+                        future: ContentDownloadCache.isDownloaded(content.id,
+                            context), // 🐛 FIXED: Pass context for DownloadBloc access
+                        builder: (context, snapshot) {
+                          final isDownloaded = snapshot.data ?? false;
+
+                          return ContentCard(
+                            content: content,
+                            onTap: () => _onContentTap(content),
+                            isHighlighted:
+                                isDownloaded, // Phase 4: Highlight downloaded content
+                          );
+                        },
+                      );
+                    },
+                    childCount: state.contents.length,
+                  ),
+                ),
+              );
+            },
           ),
 
-        // Content grid dengan downloaded highlight effect
-        BlocBuilder<SettingsCubit, SettingsState>(
-          builder: (context, settingsState) {
-            return SliverPadding(
-              padding: const EdgeInsets.all(16.0),
-              sliver: SliverGrid(
-                gridDelegate: ResponsiveGridDelegate.createGridDelegate(
-                  context,
-                  context.read<SettingsCubit>(),
-                ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final content = state.contents[index];
-                    
-                    // Use FutureBuilder to check download status for highlight
-                    return FutureBuilder<bool>(
-                      future: ContentDownloadCache.isDownloaded(content.id, context), // 🐛 FIXED: Pass context for DownloadBloc access
-                      builder: (context, snapshot) {
-                        final isDownloaded = snapshot.data ?? false;
-                        
-                        return ContentCard(
-                          content: content,
-                          onTap: () => _onContentTap(content),
-                          isHighlighted: isDownloaded, // Phase 4: Highlight downloaded content
-                        );
-                      },
-                    );
-                  },
-                  childCount: state.contents.length,
-                ),
-              ),
-            );
-          },
-        ),
+          // Pagination footer - sebagai sliver di bottom
+          SliverToBoxAdapter(
+            child: _buildContentFooter(state),
+          ),
 
-        // Pagination footer - sebagai sliver di bottom
-        SliverToBoxAdapter(
-          child: _buildContentFooter(state),
-        ),
-
-        // Bottom padding
-        const SliverToBoxAdapter(
-          child: SizedBox(height: 16),
-        ),
-      ],
+          // Bottom padding
+          const SliverToBoxAdapter(
+            child: SizedBox(height: 16),
+          ),
+        ],
+      ),
     );
   }
 
@@ -577,13 +590,60 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
     }
   }
 
+  /// Handle refresh indicator pull-to-refresh
+  Future<void> _handleRefresh() async {
+    try {
+      Logger().i('MainScreen: Refresh triggered by user pull-to-refresh');
+
+      // Show refresh feedback
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text(AppLocalizations.of(context)?.refreshingContent ??
+                    'Refreshing content...'),
+              ],
+            ),
+            duration: Duration(seconds: 2),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+      }
+
+      // Get current page from ContentBloc state
+      final contentState = _contentBloc.state;
+      final currentPage =
+          contentState is ContentLoaded ? contentState.currentPage : 1;
+
+      // Trigger ContentRefreshEvent with current sort option and current page
+      _contentBloc.add(ContentRefreshEvent(
+          sortBy: _currentSortOption, currentPage: currentPage));
+
+      Logger().i(
+          'MainScreen: Refresh event sent with sort: $_currentSortOption, page: $currentPage');
+    } catch (e) {
+      Logger().e('MainScreen: Error during refresh: $e');
+      // Error handling is managed by ContentBloc state changes
+    }
+  }
+
   /// Check if sorting should be shown
   bool _shouldShowSorting(ContentState state) {
     // Only show sorting when there's an active search/filter AND there's data
     if (!_isShowingSearchResults) {
       return false; // Hide sorting for normal content browsing
     }
-    
+
     // Show sorting only when there's data (loaded state with content) and search is active
     if (state is ContentLoaded && state.contents.isNotEmpty) {
       return true;
@@ -627,7 +687,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(
@@ -642,7 +705,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppLocalizations.of(context)?.searchResults ?? 'Search Results',
+                      AppLocalizations.of(context)?.searchResults ??
+                          'Search Results',
                       style: TextStyleConst.headingSmall.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
@@ -691,7 +755,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
     final parts = <String>[];
 
     if (filter.query != null && filter.query!.isNotEmpty) {
-      parts.add('${AppLocalizations.of(context)?.queryLabel ?? 'Query'}: "${filter.query}"');
+      parts.add(
+          '${AppLocalizations.of(context)?.queryLabel ?? 'Query'}: "${filter.query}"');
     }
 
     if (filter.tags.isNotEmpty) {
@@ -703,10 +768,12 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           .map((item) => item.value);
 
       if (includeTags.isNotEmpty) {
-        parts.add('${AppLocalizations.of(context)?.tagsLabel ?? 'Tags'}: ${includeTags.join(', ')}');
+        parts.add(
+            '${AppLocalizations.of(context)?.tagsLabel ?? 'Tags'}: ${includeTags.join(', ')}');
       }
       if (excludeTags.isNotEmpty) {
-        parts.add('${AppLocalizations.of(context)?.excludeTagsLabel ?? 'Exclude Tags'}: ${excludeTags.join(', ')}');
+        parts.add(
+            '${AppLocalizations.of(context)?.excludeTagsLabel ?? 'Exclude Tags'}: ${excludeTags.join(', ')}');
       }
     }
 
@@ -719,10 +786,12 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           .map((item) => item.value);
 
       if (includeGroups.isNotEmpty) {
-        parts.add('${AppLocalizations.of(context)?.groupsLabel ?? 'Groups'}: ${includeGroups.join(', ')}');
+        parts.add(
+            '${AppLocalizations.of(context)?.groupsLabel ?? 'Groups'}: ${includeGroups.join(', ')}');
       }
       if (excludeGroups.isNotEmpty) {
-        parts.add('${AppLocalizations.of(context)?.excludeGroupsLabel ?? 'Exclude Groups'}: ${excludeGroups.join(', ')}');
+        parts.add(
+            '${AppLocalizations.of(context)?.excludeGroupsLabel ?? 'Exclude Groups'}: ${excludeGroups.join(', ')}');
       }
     }
 
@@ -735,10 +804,12 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           .map((item) => item.value);
 
       if (includeCharacters.isNotEmpty) {
-        parts.add('${AppLocalizations.of(context)?.charactersLabel ?? 'Characters'}: ${includeCharacters.join(', ')}');
+        parts.add(
+            '${AppLocalizations.of(context)?.charactersLabel ?? 'Characters'}: ${includeCharacters.join(', ')}');
       }
       if (excludeCharacters.isNotEmpty) {
-        parts.add('${AppLocalizations.of(context)?.excludeCharactersLabel ?? 'Exclude Characters'}: ${excludeCharacters.join(', ')}');
+        parts.add(
+            '${AppLocalizations.of(context)?.excludeCharactersLabel ?? 'Exclude Characters'}: ${excludeCharacters.join(', ')}');
       }
     }
 
@@ -751,10 +822,12 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           .map((item) => item.value);
 
       if (includeParodies.isNotEmpty) {
-        parts.add('${AppLocalizations.of(context)?.parodiesLabel ?? 'Parodies'}: ${includeParodies.join(', ')}');
+        parts.add(
+            '${AppLocalizations.of(context)?.parodiesLabel ?? 'Parodies'}: ${includeParodies.join(', ')}');
       }
       if (excludeParodies.isNotEmpty) {
-        parts.add('${AppLocalizations.of(context)?.excludeParodiesLabel ?? 'Exclude Parodies'}: ${excludeParodies.join(', ')}');
+        parts.add(
+            '${AppLocalizations.of(context)?.excludeParodiesLabel ?? 'Exclude Parodies'}: ${excludeParodies.join(', ')}');
       }
     }
 
@@ -767,19 +840,23 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           .map((item) => item.value);
 
       if (includeArtists.isNotEmpty) {
-        parts.add('${AppLocalizations.of(context)?.artistsLabel ?? 'Artists'}: ${includeArtists.join(', ')}');
+        parts.add(
+            '${AppLocalizations.of(context)?.artistsLabel ?? 'Artists'}: ${includeArtists.join(', ')}');
       }
       if (excludeArtists.isNotEmpty) {
-        parts.add('${AppLocalizations.of(context)?.excludeArtistsLabel ?? 'Exclude Artists'}: ${excludeArtists.join(', ')}');
+        parts.add(
+            '${AppLocalizations.of(context)?.excludeArtistsLabel ?? 'Exclude Artists'}: ${excludeArtists.join(', ')}');
       }
     }
 
     if (filter.language != null) {
-      parts.add('${AppLocalizations.of(context)?.languageLabel ?? 'Language'}: ${filter.language}');
+      parts.add(
+          '${AppLocalizations.of(context)?.languageLabel ?? 'Language'}: ${filter.language}');
     }
 
     if (filter.category != null) {
-      parts.add('${AppLocalizations.of(context)?.categoryLabel ?? 'Category'}: ${filter.category}');
+      parts.add(
+          '${AppLocalizations.of(context)?.categoryLabel ?? 'Category'}: ${filter.category}');
     }
 
     return parts.join(' • ');
@@ -799,8 +876,9 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
     // 3. Load normal content with current sort option
     // 4. Show success/error states properly
     _contentBloc.add(ContentClearSearchEvent(sortBy: _currentSortOption));
-    
-    Logger().i('MainScreen: Triggered clear search event with sort: $_currentSortOption');
+
+    Logger().i(
+        'MainScreen: Triggered clear search event with sort: $_currentSortOption');
   }
 
   /// Build content footer with pagination
@@ -865,11 +943,12 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
 
       // Build URL based on current page and context
       String url;
-      
+
       if (_isShowingSearchResults && _currentSearchFilter != null) {
         // Search results page - use current search filter
-        final filter = _currentSearchFilter!.copyWith(page: contentState.currentPage);
-        
+        final filter =
+            _currentSearchFilter!.copyWith(page: contentState.currentPage);
+
         if (filter.isEmpty) {
           // Empty filter - redirect to main page
           url = _buildMainPageUrl(contentState.currentPage);
@@ -890,28 +969,29 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
 
       // Clean up URL (remove trailing ? or & and empty parameters)
       url = _cleanUrl(url);
-      
+
       Logger().i('Built URL for browser: $url');
-      
+
       // Validate URL format
       if (url.isEmpty) {
         throw 'Generated URL is empty';
       }
-      
+
       final uri = Uri.parse(url);
       Logger().i('Parsed URI: $uri');
-      Logger().i('URI scheme: ${uri.scheme}, host: ${uri.host}, path: ${uri.path}');
+      Logger()
+          .i('URI scheme: ${uri.scheme}, host: ${uri.host}, path: ${uri.path}');
       Logger().i('URI query: ${uri.query}');
-      
+
       // Additional validation
       if (uri.scheme.isEmpty || uri.host.isEmpty) {
         throw 'Invalid URL format: $url';
       }
-      
+
       // Try to launch the URL
       bool launched = false;
       String lastError = '';
-      
+
       // First try with canLaunchUrl check
       try {
         if (await canLaunchUrl(uri)) {
@@ -926,7 +1006,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
         Logger().e('canLaunchUrl failed: $e');
         lastError = 'canLaunchUrl failed: $e';
       }
-      
+
       // Fallback: try launching directly for https URLs
       if (!launched && uri.scheme == 'https') {
         try {
@@ -939,7 +1019,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           lastError = 'Direct launch failed: $e';
         }
       }
-      
+
       if (launched) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -969,7 +1049,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                 Icon(Icons.error, color: Colors.white),
                 SizedBox(width: 8),
                 Expanded(
-                  child: Text('${AppLocalizations.of(context)?.failedToOpenBrowser ?? 'Failed to open browser'}: ${e.toString().replaceAll('Exception: ', '')}'),
+                  child: Text(
+                      '${AppLocalizations.of(context)?.failedToOpenBrowser ?? 'Failed to open browser'}: ${e.toString().replaceAll('Exception: ', '')}'),
                 ),
               ],
             ),
@@ -991,13 +1072,18 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
     if (contentState.tag != null) {
       // Tag browsing page
       final tagName = Uri.encodeComponent(contentState.tag!.name);
-      final pageParam = contentState.currentPage > 1 ? '?page=${contentState.currentPage}' : '';
+      final pageParam = contentState.currentPage > 1
+          ? '?page=${contentState.currentPage}'
+          : '';
       return 'https://nhentai.net/tag/$tagName/$pageParam';
     } else if (contentState.timeframe != null) {
       // Popular content page
       final timeframe = contentState.timeframe!;
-      final timeframeSuffix = timeframe.apiValue.isNotEmpty ? '-${timeframe.apiValue}' : '';
-      final pageParam = contentState.currentPage > 1 ? '?page=${contentState.currentPage}' : '';
+      final timeframeSuffix =
+          timeframe.apiValue.isNotEmpty ? '-${timeframe.apiValue}' : '';
+      final pageParam = contentState.currentPage > 1
+          ? '?page=${contentState.currentPage}'
+          : '';
       return 'https://nhentai.net/popular$timeframeSuffix/$pageParam';
     } else {
       // Main page with sort options
@@ -1009,7 +1095,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
   String _buildMainPageUrl(int currentPage, [SortOption? sortBy]) {
     final sort = sortBy ?? SortOption.newest;
     final sortParam = sort == SortOption.newest ? '' : '?sort=${sort.apiValue}';
-    final pageParam = currentPage > 1 
+    final pageParam = currentPage > 1
         ? (sortParam.isEmpty ? '?page=$currentPage' : '&page=$currentPage')
         : '';
     return 'https://nhentai.net/$sortParam$pageParam';
@@ -1019,7 +1105,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
   String _cleanUrl(String url) {
     try {
       final uri = Uri.parse(url);
-      
+
       // Clean query parameters by removing empty values
       final cleanParams = <String, String>{};
       uri.queryParameters.forEach((key, value) {
@@ -1028,14 +1114,15 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           cleanParams[key] = value;
         }
       });
-      
+
       // Rebuild the URL with clean parameters
-      final cleanUri = uri.replace(queryParameters: cleanParams.isEmpty ? null : cleanParams);
+      final cleanUri = uri.replace(
+          queryParameters: cleanParams.isEmpty ? null : cleanParams);
       String cleanedUrl = cleanUri.toString();
-      
+
       Logger().i('URL cleaned from: $url');
       Logger().i('URL cleaned to: $cleanedUrl');
-      
+
       return cleanedUrl;
     } catch (e) {
       Logger().e('Error cleaning URL: $e');
@@ -1045,9 +1132,12 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
         cleaned = cleaned.substring(0, cleaned.length - 1);
       }
       // Remove empty parameters (basic approach)
-      cleaned = cleaned.replaceAllMapped(RegExp(r'[?&]([^=]+)=(?=[&]|$)'), (match) {
+      cleaned =
+          cleaned.replaceAllMapped(RegExp(r'[?&]([^=]+)=(?=[&]|$)'), (match) {
         // Remove empty parameters, but keep the separator if needed
-        return cleaned.indexOf(match.group(0)!) == cleaned.indexOf('?') ? '?' : '';
+        return cleaned.indexOf(match.group(0)!) == cleaned.indexOf('?')
+            ? '?'
+            : '';
       });
       return cleaned;
     }
@@ -1100,7 +1190,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                 Text(AppLocalizations.of(context)!.checkingDownloadStatus),
               ],
             ),
-            duration: Duration(seconds: 10), // Longer duration for checking process
+            duration:
+                Duration(seconds: 10), // Longer duration for checking process
           ),
         );
       }
@@ -1109,21 +1200,22 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
       final galleriesNeedDownload = <Content>[];
       int alreadyDownloadedCount = 0;
 
-       for (final content in contentState.contents) {
-         try {
-           final isDownloaded = await ContentDownloadCache.isDownloaded(content.id, mounted ? context : null);
-           if (isDownloaded) {
-             alreadyDownloadedCount++;
-             Logger().i('Skipping already downloaded gallery: ${content.title}');
-           } else {
-             galleriesNeedDownload.add(content);
-           }
-         } catch (e) {
-           Logger().e('Error checking download status for ${content.id}: $e');
-           // If we can't check status, assume it needs download to be safe
-           galleriesNeedDownload.add(content);
-         }
-       }
+      for (final content in contentState.contents) {
+        try {
+          final isDownloaded = await ContentDownloadCache.isDownloaded(
+              content.id, mounted ? context : null);
+          if (isDownloaded) {
+            alreadyDownloadedCount++;
+            Logger().i('Skipping already downloaded gallery: ${content.title}');
+          } else {
+            galleriesNeedDownload.add(content);
+          }
+        } catch (e) {
+          Logger().e('Error checking download status for ${content.id}: $e');
+          // If we can't check status, assume it needs download to be safe
+          galleriesNeedDownload.add(content);
+        }
+      }
 
       // Hide the loading snackbar
       if (mounted) {
@@ -1140,7 +1232,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                   Icon(Icons.check_circle, color: Colors.white),
                   SizedBox(width: 8),
                   Expanded(
-                    child: Text(AppLocalizations.of(context)!.allGalleriesDownloaded),
+                    child: Text(
+                        AppLocalizations.of(context)!.allGalleriesDownloaded),
                   ),
                 ],
               ),
@@ -1164,12 +1257,15 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
               children: [
                 Text(AppLocalizations.of(context)!.foundGalleries),
                 SizedBox(height: 8),
-                Text(AppLocalizations.of(context)!.newGalleriesToDownload(galleriesNeedDownload.length)),
-                Text(AppLocalizations.of(context)!.alreadyDownloaded(alreadyDownloadedCount)),
+                Text(AppLocalizations.of(context)!
+                    .newGalleriesToDownload(galleriesNeedDownload.length)),
+                Text(AppLocalizations.of(context)!
+                    .alreadyDownloaded(alreadyDownloadedCount)),
                 SizedBox(height: 12),
                 if (galleriesNeedDownload.isNotEmpty)
                   Text(
-                    AppLocalizations.of(context)!.downloadInfo(galleriesNeedDownload.length),
+                    AppLocalizations.of(context)!
+                        .downloadInfo(galleriesNeedDownload.length),
                     style: TextStyle(fontWeight: FontWeight.normal),
                   ),
               ],
@@ -1177,17 +1273,18 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-              child: Text(AppLocalizations.of(context)!.cancel),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(AppLocalizations.of(context)!.downloadNew(galleriesNeedDownload.length)),
-            ),
-          ],
-        ),
-      );
+                child: Text(AppLocalizations.of(context)!.cancel),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(AppLocalizations.of(context)!
+                    .downloadNew(galleriesNeedDownload.length)),
+              ),
+            ],
+          ),
+        );
 
-      if (confirm != true) return;
+        if (confirm != true) return;
       }
 
       if (!mounted) return;
@@ -1218,10 +1315,12 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(AppLocalizations.of(context)!.queuedDownloads(queuedCount)),
+                      Text(AppLocalizations.of(context)!
+                          .queuedDownloads(queuedCount)),
                       if (alreadyDownloadedCount > 0)
                         Text(
-                          AppLocalizations.of(context)!.countAlreadyDownloaded(alreadyDownloadedCount),
+                          AppLocalizations.of(context)!
+                              .countAlreadyDownloaded(alreadyDownloadedCount),
                           style: TextStyle(fontSize: 12, color: Colors.white70),
                         ),
                     ],
@@ -1232,7 +1331,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
             backgroundColor: queuedCount > 0 ? Colors.green : Colors.orange,
             duration: Duration(seconds: 5),
             action: SnackBarAction(
-              label: AppLocalizations.of(context)?.viewDownloads ?? 'View Downloads',
+              label: AppLocalizations.of(context)?.viewDownloads ??
+                  'View Downloads',
               textColor: Colors.white,
               onPressed: () {
                 AppRouter.goToDownloads(context);
@@ -1242,8 +1342,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
         );
       }
 
-      Logger().i('Bulk download completed: $queuedCount/${galleriesNeedDownload.length} queued successfully, $alreadyDownloadedCount skipped');
-      
+      Logger().i(
+          'Bulk download completed: $queuedCount/${galleriesNeedDownload.length} queued successfully, $alreadyDownloadedCount skipped');
     } catch (e) {
       Logger().e('Error in bulk download: $e');
       if (mounted) {

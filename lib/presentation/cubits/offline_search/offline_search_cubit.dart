@@ -135,6 +135,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     try {
       logInfo('Starting cleanup of orphaned offline files');
       await _offlineContentManager.cleanupOrphanedFiles();
+      // Clear cache after cleanup
+      _offlineContentManager.clearCache();
       logInfo('Cleanup completed successfully');
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'cleanup offline files');

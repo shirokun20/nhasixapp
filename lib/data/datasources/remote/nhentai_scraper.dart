@@ -428,18 +428,22 @@ class NhentaiScraper {
         final content = script.text;
         if (content.contains('window._gallery')) {
           // Look for: window._gallery = JSON.parse("{\u0022id\u0022:588417,...")
-          final galleryMatch = RegExp(r'window\._gallery\s*=\s*JSON\.parse\("([^"]+)"\)').firstMatch(content);
+          final galleryMatch =
+              RegExp(r'window\._gallery\s*=\s*JSON\.parse\("([^"]+)"\)')
+                  .firstMatch(content);
           if (galleryMatch != null) {
             try {
               final jsonString = galleryMatch.group(1)!;
               // Decode unicode escapes
               final decodedJson = jsonString.replaceAllMapped(
                 RegExp(r'\\u([0-9a-fA-F]{4})'),
-                (match) => String.fromCharCode(int.parse(match.group(1)!, radix: 16)),
+                (match) =>
+                    String.fromCharCode(int.parse(match.group(1)!, radix: 16)),
               );
-              
+
               // Extract ID from JSON string pattern
-              final idMatch = RegExp(r'"id"\s*:\s*(\d+)').firstMatch(decodedJson);
+              final idMatch =
+                  RegExp(r'"id"\s*:\s*(\d+)').firstMatch(decodedJson);
               if (idMatch != null) {
                 return idMatch.group(1);
               }
@@ -448,7 +452,7 @@ class NhentaiScraper {
             }
           }
         }
-        
+
         // Fallback: Try original gallery_id pattern
         if (content.contains('gallery_id')) {
           final match =
@@ -957,6 +961,8 @@ class NhentaiScraper {
 
     try {
       final thumbElements = document.querySelectorAll(detailPagesSelector);
+      _logger.i(
+          '🖼️ DEBUG: Found ${thumbElements.length} thumbnail elements for content $contentId');
 
       for (int i = 0; i < thumbElements.length; i++) {
         final element = thumbElements[i];
@@ -964,22 +970,44 @@ class NhentaiScraper {
             element.attributes['data-src'] ?? element.attributes['src'];
 
         if (thumbUrl != null) {
+          _logger.d('🖼️ DEBUG: Thumbnail ${i + 1} - Raw URL: $thumbUrl');
           // Convert thumbnail URL to full image URL
-          // _logger.i("url sebelum: ${thumbUrl}");
           final fullImageUrl = _convertThumbnailToFull(thumbUrl);
+          _logger.d(
+              '🖼️ DEBUG: Thumbnail ${i + 1} - Converted URL: $fullImageUrl');
           imageUrls.add(fullImageUrl);
+        } else {
+          _logger.w(
+              '🖼️ DEBUG: Thumbnail ${i + 1} - No src or data-src attribute found');
         }
       }
+
+      _logger.i(
+          '🖼️ DEBUG: Successfully converted ${imageUrls.length} thumbnail URLs to full image URLs');
 
       // Fallback: generate URLs based on page count if no thumbnails found
       if (imageUrls.isEmpty) {
         final pageCount = thumbElements.length;
+        _logger.w(
+            '🖼️ DEBUG: No image URLs extracted, using fallback generation for $pageCount pages');
         for (int i = 1; i <= pageCount; i++) {
-          imageUrls.add(_generateImageUrl(contentId, i));
+          final generatedUrl = _generateImageUrl(contentId, i);
+          _logger.d('🖼️ DEBUG: Fallback URL $i: $generatedUrl');
+          imageUrls.add(generatedUrl);
         }
       }
-    } catch (e) {
-      _logger.w('Failed to parse image URLs: $e');
+
+      // Final validation
+      _logger.i('🖼️ DEBUG: Final imageUrls array for content $contentId:');
+      for (int i = 0; i < imageUrls.length && i < 5; i++) {
+        _logger.i('  Page ${i + 1}: ${imageUrls[i]}');
+      }
+      if (imageUrls.length > 5) {
+        _logger.i('  ... and ${imageUrls.length - 5} more URLs');
+      }
+    } catch (e, stackTrace) {
+      _logger.e('🖼️ DEBUG: Failed to parse image URLs: $e',
+          error: e, stackTrace: stackTrace);
     }
 
     return imageUrls;
@@ -987,27 +1015,52 @@ class NhentaiScraper {
 
   /// Parse image URLs using media ID for accurate URL generation
   String _convertThumbnailToFull(String thumbUrl) {
-    // Pastikan url mulai dari https
-    String url = thumbUrl.replaceFirst('//', 'https://');
+    _logger.d('🔄 Converting thumbnail URL: $thumbUrl');
+
+    String url = thumbUrl;
+
+    // Ensure URL starts with https://
+    if (url.startsWith('//')) {
+      url = 'https:$url';
+    } else if (!url.startsWith('https://')) {
+      // If it doesn't start with // or https://, it might be a relative URL
+      url = 'https://$url';
+    }
+    _logger.d('🔄 After https prefix: $url');
 
     // Ganti domain tX -> iX
     url = url.replaceFirstMapped(RegExp(r'//t(\d)\.nhentai\.net'), (match) {
-      return '//i${match.group(1)}.nhentai.net';
+      final result = '//i${match.group(1)}.nhentai.net';
+      _logger.d(
+          '🔄 Domain conversion t${match.group(1)} -> i${match.group(1)}: $result');
+      return result;
     });
+    _logger.d('🔄 After domain conversion: $url');
 
     // Hilangkan huruf 't' sebelum ekstensi gambar
     url = url.replaceFirstMapped(
       RegExp(r'(\d+)t\.(webp|jpg|png|gif|jpeg)'),
-      (match) => '${match.group(1)}.${match.group(2)}',
+      (match) {
+        final result = '${match.group(1)}.${match.group(2)}';
+        _logger.d(
+            '🔄 Extension conversion ${match.group(1)}t.${match.group(2)} -> ${match.group(1)}.${match.group(2)}: $result');
+        return result;
+      },
     );
+    _logger.d('🔄 After extension conversion: $url');
 
     // Hapus ekstensi ganda (misal .webp.webp -> .webp)
     url = url.replaceAllMapped(
       RegExp(r'\.(webp|jpg|png|gif|jpeg)\.(webp|jpg|png|gif|jpeg)$'),
-      (match) => '.${match.group(1)}',
+      (match) {
+        final result = '.${match.group(1)}';
+        _logger.d(
+            '🔄 Duplicate extension removal ${match.group(1)}.${match.group(2)} -> ${match.group(1)}: $result');
+        return result;
+      },
     );
 
-    // _logger.i(url);
+    _logger.d('🔄 Final converted URL: $url');
     return url;
   }
 

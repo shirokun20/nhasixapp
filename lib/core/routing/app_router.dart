@@ -57,7 +57,8 @@ class AppRouter {
         name: AppRoute.filterDataName,
         builder: (context, state) {
           final filterType = state.uri.queryParameters['type'] ?? 'tag';
-          final hideOtherTabs = state.uri.queryParameters['hideOtherTabs'] == 'true';
+          final hideOtherTabs =
+              state.uri.queryParameters['hideOtherTabs'] == 'true';
 
           // Safe type casting for List<FilterItem>
           List<FilterItem> selectedFilters = [];
@@ -128,9 +129,14 @@ class AppRouter {
           final contentId = state.pathParameters['id']!;
           final page =
               int.tryParse(state.uri.queryParameters['page'] ?? '1') ?? 1;
+          final forceStartFromBeginning =
+              state.uri.queryParameters['forceStartFromBeginning'] == 'true';
+          final content = state.extra as Content?;
           return ReaderScreen(
             contentId: contentId,
             initialPage: page,
+            forceStartFromBeginning: forceStartFromBeginning,
+            preloadedContent: content,
           );
         },
       ),
@@ -185,7 +191,8 @@ class AppRouter {
         path: AppRoute.tags,
         name: AppRoute.tagsName,
         builder: (context, state) => Scaffold(
-          body: Center(child: Text(AppLocalizations.of(context)!.tagsScreenPlaceholder)),
+          body: Center(
+              child: Text(AppLocalizations.of(context)!.tagsScreenPlaceholder)),
         ),
       ),
 
@@ -194,7 +201,9 @@ class AppRouter {
         path: AppRoute.artists,
         name: AppRoute.artistsName,
         builder: (context, state) => Scaffold(
-          body: Center(child: Text(AppLocalizations.of(context)!.artistsScreenPlaceholder)),
+          body: Center(
+              child:
+                  Text(AppLocalizations.of(context)!.artistsScreenPlaceholder)),
         ),
       ),
 
@@ -215,7 +224,9 @@ class AppRouter {
         path: AppRoute.status,
         name: AppRoute.statusName,
         builder: (context, state) => Scaffold(
-          body: Center(child: Text(AppLocalizations.of(context)!.statusScreenPlaceholder)),
+          body: Center(
+              child:
+                  Text(AppLocalizations.of(context)!.statusScreenPlaceholder)),
         ),
       ),
 
@@ -237,7 +248,8 @@ class AppRouter {
             const Icon(Icons.error_outline, size: 64, color: Colors.red),
             const SizedBox(height: 16),
             Text(
-              AppLocalizations.of(context)!.pageNotFoundWithUri(state.uri.toString()),
+              AppLocalizations.of(context)!
+                  .pageNotFoundWithUri(state.uri.toString()),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 16),
@@ -270,8 +282,10 @@ class AppRouter {
   }
 
   static void goToReader(BuildContext context, String contentId,
-      {int page = 1}) {
-    context.push('/reader/$contentId?page=$page');
+      {int page = 1, bool forceStartFromBeginning = false, Content? content}) {
+    context.push(
+        '/reader/$contentId?page=$page&forceStartFromBeginning=$forceStartFromBeginning',
+        extra: content);
   }
 
   static void goToFavorites(BuildContext context) {

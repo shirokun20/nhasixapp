@@ -22,10 +22,14 @@ class ReaderScreen extends StatefulWidget {
     super.key,
     required this.contentId,
     this.initialPage = 1,
+    this.forceStartFromBeginning = false,
+    this.preloadedContent,
   });
 
   final String contentId;
   final int initialPage;
+  final bool forceStartFromBeginning;
+  final Content? preloadedContent;
 
   @override
   State<ReaderScreen> createState() => _ReaderScreenState();
@@ -69,6 +73,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   /// 🚀 OPTIMIZATION: Preload content to reduce initial loading time
   Future<void> _startPreloading() async {
+    // If we already have preloaded content, use it directly
+    if (widget.preloadedContent != null) {
+      _preloadedContent = widget.preloadedContent;
+      return;
+    }
+
     if (_isPreloading) return;
 
     _isPreloading = true;
@@ -307,6 +317,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
             ..loadContent(
               widget.contentId,
               initialPage: widget.initialPage,
+              forceStartFromBeginning: widget.forceStartFromBeginning,
+              preloadedContent: widget.preloadedContent,
             );
         }
       },
@@ -340,12 +352,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
       await cubit.loadContent(
         widget.contentId,
         initialPage: widget.initialPage,
+        forceStartFromBeginning: widget.forceStartFromBeginning,
+        preloadedContent: widget.preloadedContent,
       );
     } catch (e) {
       // Fallback to normal loading if preload fails
       debugPrint('Preload optimization failed, using normal loading: $e');
       await cubit.loadContent(widget.contentId,
-          initialPage: widget.initialPage);
+          initialPage: widget.initialPage,
+          forceStartFromBeginning: widget.forceStartFromBeginning);
     }
   }
 
@@ -367,6 +382,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
           onRetry: () => _readerCubit.loadContent(
             widget.contentId,
             initialPage: widget.initialPage,
+            forceStartFromBeginning: widget.forceStartFromBeginning,
+            preloadedContent: widget.preloadedContent,
           ),
         ),
       );
@@ -521,6 +538,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   Widget _buildImageViewer(String imageUrl, int pageNumber,
       {bool isContinuous = false}) {
+    // Add debug logging to track which image is being displayed
+    debugPrint(
+        '🖼️ Building image viewer for page $pageNumber with URL: $imageUrl');
+
     return BlocBuilder<ReaderCubit, ReaderState>(
       builder: (context, state) {
         final isOffline = state.isOfflineMode ?? false;
@@ -542,40 +563,30 @@ class _ReaderScreenState extends State<ReaderScreen> {
             ),
           );
         } else {
-          // For single page, use PhotoView for offline files or CachedNetworkImage for online
-          if (isOffline) {
-            return PhotoView.customChild(
-              backgroundDecoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-              ),
-              minScale: PhotoViewComputedScale.contained,
-              maxScale: PhotoViewComputedScale.covered * 3.0,
-              initialScale: PhotoViewComputedScale.contained,
-              heroAttributes: PhotoViewHeroAttributes(tag: imageUrl),
-              child: ProgressiveReaderImageWidget(
-                key: ValueKey('photo_image_1_${widget.contentId}_$pageNumber'),
-                networkUrl: imageUrl,
-                contentId: widget.contentId,
-                pageNumber: pageNumber,
-              ),
-            );
-          } else {
-            return PhotoView.customChild(
-              backgroundDecoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-              ),
-              minScale: PhotoViewComputedScale.contained,
-              maxScale: PhotoViewComputedScale.covered * 3.0,
-              initialScale: PhotoViewComputedScale.contained,
-              heroAttributes: PhotoViewHeroAttributes(tag: imageUrl),
-              child: ProgressiveReaderImageWidget(
-                key: ValueKey('photo_image_2_${widget.contentId}_$pageNumber'),
-                networkUrl: imageUrl,
-                contentId: widget.contentId,
-                pageNumber: pageNumber,
-              ),
-            );
-          }
+          // For single/vertical page, use PhotoView with UNIQUE key per page
+          // CRITICAL: Use index-based key to ensure widget uniqueness
+          final uniqueKey = ValueKey(
+              'photoview_${widget.contentId}_page${pageNumber}_${imageUrl.hashCode}');
+
+          return PhotoView.customChild(
+            key: uniqueKey,
+            backgroundDecoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+            ),
+            minScale: PhotoViewComputedScale.contained,
+            maxScale: PhotoViewComputedScale.covered * 3.0,
+            initialScale: PhotoViewComputedScale.contained,
+            // Use page number in hero tag to prevent collisions
+            heroAttributes: PhotoViewHeroAttributes(
+                tag: '${widget.contentId}_page_$pageNumber'),
+            child: ProgressiveReaderImageWidget(
+              key: ValueKey(
+                  'progressive_image_${widget.contentId}_page${pageNumber}_${imageUrl.hashCode}'),
+              networkUrl: imageUrl,
+              contentId: widget.contentId,
+              pageNumber: pageNumber,
+            ),
+          );
         }
       },
     );

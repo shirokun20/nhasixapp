@@ -230,26 +230,27 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
       // Refresh always goes back to page 1 - that's the concept of "refresh"
       if (currentState is ContentLoaded) {
         if (currentState.searchFilter != null) {
-          // Refresh search results from page 1
-          final refreshFilter = currentState.searchFilter!.copyWith(page: 1);
+          // Refresh search results from current page
+          final refreshFilter =
+              currentState.searchFilter!.copyWith(page: event.currentPage);
           result = await _searchContentUseCase(refreshFilter);
         } else if (currentState.tag != null) {
-          // Refresh content by tag from page 1
+          // Refresh content by tag from current page
           result = await _contentRepository.getContentByTag(
             tag: currentState.tag!,
-            page: 1,
+            page: event.currentPage,
             sortBy: currentState.sortBy,
           );
         } else if (currentState.timeframe != null) {
-          // Refresh popular content from page 1
+          // Refresh popular content from current page
           result = await _contentRepository.getPopularContent(
             timeframe: currentState.timeframe!,
-            page: 1,
+            page: event.currentPage,
           );
         } else {
-          // Refresh regular content from page 1
+          // Refresh regular content from current page
           final params = GetContentListParams(
-            page: 1,
+            page: event.currentPage,
             sortBy: event.sortBy,
           );
           result = await _getContentListUseCase(params);
@@ -396,7 +397,8 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     Emitter<ContentState> emit,
   ) async {
     try {
-      _logger.i('ContentBloc: Clearing search results and loading normal content');
+      _logger
+          .i('ContentBloc: Clearing search results and loading normal content');
 
       // Show loading state with proper message
       ContentLoaded? previousState;
@@ -411,7 +413,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
 
       // Get LocalDataSource from GetIt
       final localDataSource = GetIt.instance<LocalDataSource>();
-      
+
       // Clear saved search filter from local storage
       await localDataSource.removeLastSearchFilter();
       _logger.i('ContentBloc: Cleared search filter from local storage');
@@ -446,17 +448,20 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         lastUpdated: _lastFetchTime,
       ));
 
-      _logger.i('ContentBloc: Successfully cleared search and loaded ${result.contents.length} normal contents');
+      _logger.i(
+          'ContentBloc: Successfully cleared search and loaded ${result.contents.length} normal contents');
     } catch (e, stackTrace) {
-      _logger.e('ContentBloc: Error clearing search results', error: e, stackTrace: stackTrace);
-      
+      _logger.e('ContentBloc: Error clearing search results',
+          error: e, stackTrace: stackTrace);
+
       final errorType = _determineErrorType(e);
       emit(ContentError(
         message: 'Failed to clear search results: ${e.toString()}',
         canRetry: true,
         errorType: errorType,
         stackTrace: stackTrace,
-        previousContents: (state is ContentLoaded) ? (state as ContentLoaded).contents : null,
+        previousContents:
+            (state is ContentLoaded) ? (state as ContentLoaded).contents : null,
       ));
     }
   }

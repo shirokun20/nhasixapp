@@ -9,10 +9,10 @@ import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/responsive_grid_delegate.dart';
 import '../../cubits/offline_search/offline_search_cubit.dart';
 import '../../cubits/settings/settings_cubit.dart';
-import '../../widgets/content_card_widget.dart';
-import '../../widgets/progress_indicator_widget.dart';
-import '../../widgets/error_widget.dart';
 import '../../widgets/app_scaffold_with_offline.dart';
+import '../../widgets/content_card_widget.dart';
+import '../../widgets/error_widget.dart';
+import '../../widgets/offline_content_shimmer.dart';
 
 /// Screen for browsing offline/downloaded content
 class OfflineContentScreen extends StatefulWidget {
@@ -245,12 +245,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     if (state is OfflineSearchLoading) {
-      return Center(
-        child: AppProgressIndicator(
-          message: AppLocalizations.of(context)?.loadingOfflineContent ??
-              'Loading offline content...',
-        ),
-      );
+      return const OfflineContentGridShimmer();
     }
 
     if (state is OfflineSearchError) {
@@ -356,11 +351,6 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     }
 
     // Initial state
-    return Center(
-      child: AppProgressIndicator(
-        message: AppLocalizations.of(context)?.loadingOfflineContent ??
-            'Loading offline content...',
-      ),
-    );
+    return const OfflineContentGridShimmer();
   }
 }

@@ -31,12 +31,14 @@ class ContentLoadMoreEvent extends ContentEvent {
 class ContentRefreshEvent extends ContentEvent {
   const ContentRefreshEvent({
     this.sortBy = SortOption.newest,
+    this.currentPage = 1,
   });
 
   final SortOption sortBy;
+  final int currentPage;
 
   @override
-  List<Object?> get props => [sortBy];
+  List<Object?> get props => [sortBy, currentPage];
 }
 
 /// Event to change sort option

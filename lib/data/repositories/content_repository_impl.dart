@@ -3,20 +3,27 @@ import 'package:logger/logger.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/content_repository.dart';
 import '../../domain/value_objects/value_objects.dart';
+import '../../domain/usecases/base_usecase.dart';
 // import '../datasources/local/pagination_cache_keys.dart';
 import '../datasources/remote/remote_data_source.dart';
 import '../models/content_model.dart';
 import '../models/tag_model.dart';
+import '../../services/detail_cache_service.dart';
+import '../../services/request_deduplication_service.dart';
 
 /// Implementation of ContentRepository with caching strategy and offline-first architecture
 class ContentRepositoryImpl implements ContentRepository {
   ContentRepositoryImpl({
     required this.remoteDataSource,
+    required this.detailCacheService,
+    required this.requestDeduplicationService,
     // required this.localDataSource,
     Logger? logger,
   }) : _logger = logger ?? Logger();
 
   final RemoteDataSource remoteDataSource;
+  final DetailCacheService detailCacheService;
+  final RequestDeduplicationService requestDeduplicationService;
   // final LocalDataSource localDataSource;
   final Logger _logger;
 
@@ -58,24 +65,44 @@ class ContentRepositoryImpl implements ContentRepository {
 
   @override
   Future<Content> getContentDetail(ContentId contentId) async {
-    try {
-      _logger.i('Getting content detail for ID: ${contentId.value}');
-      try {
-        // Fetch from remote
-        final remoteContent =
-            await remoteDataSource.getContentDetail(contentId.value);
-        // Cache the content
-        _logger.i('Fetched and cached content detail');
-        return remoteContent.toEntity();
-      } catch (e) {
-        _logger.w('Failed to fetch detail from remote, using cache: $e');
-        rethrow;
-      }
-    } catch (e, stackTrace) {
-      _logger.e('Failed to get content detail',
-          error: e, stackTrace: stackTrace);
-      rethrow;
-    }
+    final requestKey = 'content_detail_${contentId.value}';
+
+    return requestDeduplicationService.deduplicate(
+      requestKey,
+      () async {
+        try {
+          _logger.i('Getting content detail for ID: ${contentId.value}');
+
+          // Try to get from cache first
+          final cachedContent =
+              await detailCacheService.getCachedDetail(contentId.value);
+          if (cachedContent != null) {
+            _logger.i(
+                'Returning cached content detail for ID: ${contentId.value}');
+            return cachedContent;
+          }
+
+          // If not in cache, fetch from remote
+          try {
+            final remoteContent =
+                await remoteDataSource.getContentDetail(contentId.value);
+
+            // Cache the content for future use
+            await detailCacheService.cacheDetail(remoteContent.toEntity());
+
+            _logger.i('Fetched and cached content detail from remote');
+            return remoteContent.toEntity();
+          } catch (e) {
+            _logger.w('Failed to fetch detail from remote: $e');
+            throw NetworkException('Failed to fetch content detail: $e');
+          }
+        } catch (e, stackTrace) {
+          _logger.e('Failed to get content detail',
+              error: e, stackTrace: stackTrace);
+          rethrow;
+        }
+      },
+    );
   }
 
   @override
@@ -116,20 +143,23 @@ class ContentRepositoryImpl implements ContentRepository {
         try {
           // Add progressive delay between requests to avoid rate limiting
           if (i > 0) {
-            final delay = Duration(milliseconds: 2000 + (i * 500)); // Progressive delay: 2s, 2.5s, 3s, etc.
+            final delay = Duration(
+                milliseconds:
+                    2000 + (i * 500)); // Progressive delay: 2s, 2.5s, 3s, etc.
             await Future.delayed(delay);
           }
-          
+
           final remoteContent = await remoteDataSource.getRandomContent();
           randomContents.add(remoteContent.toEntity());
-          
+
           _logger.d('Successfully got random content ${i + 1}/$count');
         } catch (e) {
           _logger.w('Failed to get random content ${i + 1}/$count: $e');
           // Continue with other random content, but add exponential backoff on error
           if (e.toString().toLowerCase().contains('rate limit')) {
             _logger.w('Rate limit detected, applying exponential backoff');
-            final backoffDelay = Duration(seconds: 10 + (i * 5)); // 10s, 15s, 20s, etc.
+            final backoffDelay =
+                Duration(seconds: 10 + (i * 5)); // 10s, 15s, 20s, etc.
             await Future.delayed(backoffDelay);
           } else {
             // Regular error, add shorter delay
@@ -137,7 +167,7 @@ class ContentRepositoryImpl implements ContentRepository {
           }
         }
       }
-      
+
       _logger.i('Returning ${randomContents.length} random content(s)');
       return randomContents;
     } catch (e, stackTrace) {
