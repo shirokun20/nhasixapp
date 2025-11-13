@@ -20,7 +20,7 @@ dependencies:
   flutter_bloc: ^9.1.1
   bloc: ^9.1.0
   equatable: ^2.0.7
-  get_it: ^8.0.2
+  get_it: ^8.0.3
 
   # Code Generation & Immutability
   freezed_annotation: ^2.4.4
@@ -32,7 +32,7 @@ dependencies:
   connectivity_plus: ^7.0.0
 
   # Navigation & Routing
-  go_router: ^15.1.1
+  go_router: ^14.6.1
 
   # Local Storage & Caching
   sqflite: ^2.3.0
@@ -51,7 +51,7 @@ dependencies:
   shimmer: ^3.0.0
 
   # Background Tasks & Notifications
-  flutter_local_notifications: ^17.2.2
+  flutter_local_notifications: ^18.0.1
   wakelock_plus: ^1.2.8
 
   # File Management & Sharing
@@ -74,8 +74,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
-  build_runner: ^2.4.13
+  flutter_lints: ^6.0.0
+  build_runner: ^2.5.4
   
   # Code Generation
   freezed: ^2.5.7

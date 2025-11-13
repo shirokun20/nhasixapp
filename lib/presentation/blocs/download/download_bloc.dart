@@ -72,10 +72,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
     // Initialize notifications
     _notificationService.initialize();
-    
+
     // Setup notification action callbacks
     _setupNotificationCallbacks();
-    
+
     // Initialize progress stream subscription
     _initializeProgressStream();
   }
@@ -90,7 +90,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   final AppLocalizations? _appLocalizations;
 
   /// Helper method to get localized string with fallback
-  String _getLocalizedString(String Function(AppLocalizations) getter, String fallback) {
+  String _getLocalizedString(
+      String Function(AppLocalizations) getter, String fallback) {
     if (_appLocalizations != null) {
       return getter(_appLocalizations);
     }
@@ -107,10 +108,11 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     _progressSubscription = DownloadManager().progressStream.listen(
       (update) {
         _logger.d('DownloadBloc: Received progress update: $update');
-        
+
         // Check if this is a completion event (special marker)
         if (update.downloadedPages == -1 && update.totalPages == -1) {
-          _logger.d('DownloadBloc: Received completion event for ${update.contentId}');
+          _logger.d(
+              'DownloadBloc: Received completion event for ${update.contentId}');
           add(DownloadRefreshEvent());
         } else {
           // Regular progress update
@@ -160,7 +162,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _openDownloadedContent(contentId);
       },
       onNavigateToDownloads: (contentId) {
-        _logger.i('NotificationAction: Navigate to downloads requested for $contentId');
+        _logger.i(
+            'NotificationAction: Navigate to downloads requested for $contentId');
         // Navigate to downloads screen - this should be handled by the UI layer
         // For now, just log and potentially show the downloads list via BLoC state
         add(const DownloadRefreshEvent());
@@ -169,7 +172,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     _logger.i('DownloadBloc: Notification callbacks configured');
   }
 
-    /// Initialize download manager
+  /// Initialize download manager
   Future<void> _onInitialize(
     DownloadInitializeEvent event,
     Emitter<DownloadBlocState> emit,
@@ -180,16 +183,16 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // Load existing downloads
       final downloads = await _userDataRepository.getAllDownloads();
-      
+
       // Load settings (use existing settings)
       final userPrefs = await _userDataRepository.getUserPreferences();
       _settings = DownloadSettings(
         maxConcurrentDownloads: userPrefs.maxConcurrentDownloads,
         imageQuality: userPrefs.imageQuality,
         autoRetry: true, // Default to true
-        retryAttempts: 3,  // Default to 3
+        retryAttempts: 3, // Default to 3
         enableNotifications: true, // Default to true
-        wifiOnly: false,   // Default to false
+        wifiOnly: false, // Default to false
       );
 
       emit(DownloadLoaded(
@@ -199,7 +202,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       ));
 
       _logger.i('DownloadBloc: Initialized with ${downloads.length} downloads');
-      
+
       // Process queue - auto-start any queued downloads if needed
       _processQueue();
     } catch (e, stackTrace) {
@@ -215,41 +218,43 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       ));
     }
   }
-  
+
   /// Process the download queue, starting downloads if possible
   Future<void> _processQueue() async {
     if (state is! DownloadLoaded) return;
     final currentState = state as DownloadLoaded;
-    
+
     try {
       // Get queued and active downloads
       final queuedDownloads = currentState.queuedDownloads;
       final activeDownloads = currentState.activeDownloads;
-      
+
       // Check if we can start more downloads
       if (queuedDownloads.isEmpty) {
         _logger.d('DownloadBloc: No queued downloads to process');
         return;
       }
-      
+
       // Get max concurrent downloads from settings
       final maxConcurrent = currentState.settings.maxConcurrentDownloads;
-      
+
       // Check if we're at the limit
       if (activeDownloads.length >= maxConcurrent) {
-        _logger.d('DownloadBloc: Already at max concurrent downloads: $maxConcurrent');
+        _logger.d(
+            'DownloadBloc: Already at max concurrent downloads: $maxConcurrent');
         return;
       }
-      
+
       // Sort queued downloads by priority (implement priority later)
       final sortedQueue = List<DownloadStatus>.from(queuedDownloads);
-      
+
       // Calculate how many new downloads we can start
       final availableSlots = maxConcurrent - activeDownloads.length;
       final toStart = sortedQueue.take(availableSlots).toList();
-      
-      _logger.i('DownloadBloc: Starting ${toStart.length} downloads from queue');
-      
+
+      _logger
+          .i('DownloadBloc: Starting ${toStart.length} downloads from queue');
+
       // Start each download
       for (final download in toStart) {
         add(DownloadStartEvent(download.contentId));
@@ -280,14 +285,16 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           .firstOrNull;
 
       if (existingDownload != null) {
-        _logger.w('DownloadBloc: Content ${event.content.id} already in download list');
-        
+        _logger.w(
+            'DownloadBloc: Content ${event.content.id} already in download list');
+
         // If download failed or was cancelled, retry it
         if (existingDownload.canRetry) {
-          _logger.i('DownloadBloc: Retrying existing download for ${event.content.id}');
+          _logger.i(
+              'DownloadBloc: Retrying existing download for ${event.content.id}');
           add(DownloadRetryEvent(event.content.id));
         }
-        
+
         return;
       }
 
@@ -312,7 +319,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Send notification
       if (currentState.settings.enableNotifications) {
         final title = event.content.title;
-        final rangeText = downloadStatus.isRangeDownload 
+        final rangeText = downloadStatus.isRangeDownload
             ? ' (Pages ${downloadStatus.startPage}-${downloadStatus.endPage})'
             : '';
         _notificationService.showDownloadStarted(
@@ -322,7 +329,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       }
 
       _logger.i('DownloadBloc: Queued download for ${event.content.id}');
-      
+
       // Check if we can start downloading right away
       _processQueue();
     } catch (e, stackTrace) {
@@ -347,16 +354,19 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   ) async {
     final currentState = state;
     if (currentState is! DownloadLoaded) {
-      _logger.w('DownloadBloc: Cannot queue range download - not in loaded state');
+      _logger
+          .w('DownloadBloc: Cannot queue range download - not in loaded state');
       return;
     }
 
     try {
-      _logger.i('DownloadBloc: Queuing range download for ${event.content.id} (pages ${event.startPage}-${event.endPage})');
+      _logger.i(
+          'DownloadBloc: Queuing range download for ${event.content.id} (pages ${event.startPage}-${event.endPage})');
 
       // Validate page range
       if (!event.isValidRange) {
-        throw ArgumentError('Invalid page range: ${event.startPage}-${event.endPage} (total: ${event.content.pageCount})');
+        throw ArgumentError(
+            'Invalid page range: ${event.startPage}-${event.endPage} (total: ${event.content.pageCount})');
       }
 
       // Check if already exists
@@ -365,14 +375,16 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           .firstOrNull;
 
       if (existingDownload != null) {
-        _logger.w('DownloadBloc: Content ${event.content.id} already in download list');
-        
+        _logger.w(
+            'DownloadBloc: Content ${event.content.id} already in download list');
+
         // If download failed or was cancelled, retry it
         if (existingDownload.canRetry) {
-          _logger.i('DownloadBloc: Retrying existing download for ${event.content.id}');
+          _logger.i(
+              'DownloadBloc: Retrying existing download for ${event.content.id}');
           add(DownloadRetryEvent(event.content.id));
         }
-        
+
         return;
       }
 
@@ -405,7 +417,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       }
 
       _logger.i('DownloadBloc: Queued range download for ${event.content.id}');
-      
+
       // Check if we can start downloading right away
       _processQueue();
     } catch (e, stackTrace) {
@@ -445,19 +457,24 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _logger.w('DownloadBloc: Download not found: ${event.contentId}');
         return;
       }
-      
+
       // Skip if already downloading
       if (download.isInProgress) {
-        _logger.i('DownloadBloc: Download already in progress: ${event.contentId}');
+        _logger.i(
+            'DownloadBloc: Download already in progress: ${event.contentId}');
         return;
       }
 
       // Check WiFi requirement before starting download
       if (currentState.settings.wifiOnly) {
-        final connectivityResult = await _connectivity.checkConnectivity();
+        final connectivityResults = await _connectivity.checkConnectivity();
+        final connectivityResult = connectivityResults.isNotEmpty
+            ? connectivityResults.first
+            : ConnectivityResult.none;
         if (connectivityResult != ConnectivityResult.wifi) {
-          _logger.i('DownloadBloc: WiFi required but not connected, queuing download for ${event.contentId}');
-          
+          _logger.i(
+              'DownloadBloc: WiFi required but not connected, queuing download for ${event.contentId}');
+
           final waitingDownload = download.copyWith(
             state: DownloadState.queued,
             error: _getLocalizedString(
@@ -465,7 +482,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
               'Waiting for WiFi connection',
             ),
           );
-          
+
           await _userDataRepository.saveDownloadStatus(waitingDownload);
           add(const DownloadRefreshEvent());
           return;
@@ -478,14 +495,14 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         startTime: DateTime.now(),
         error: null,
       );
-      
+
       await _userDataRepository.saveDownloadStatus(updatedDownload);
-      
+
       // Update state immediately to show downloading
-      final updatedDownloads = currentState.downloads.map((d) => 
-        d.contentId == event.contentId ? updatedDownload : d
-      ).toList();
-      
+      final updatedDownloads = currentState.downloads
+          .map((d) => d.contentId == event.contentId ? updatedDownload : d)
+          .toList();
+
       emit(currentState.copyWith(
         downloads: updatedDownloads,
         lastUpdated: DateTime.now(),
@@ -502,10 +519,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         title: content.title,
       );
       _activeTasks[event.contentId] = task;
-      
+
       // Register task with DownloadManager for global access
       DownloadManager().registerTask(task);
-      
+
       // Show notification
       if (currentState.settings.enableNotifications) {
         _notificationService.showDownloadStarted(
@@ -526,10 +543,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // Remove task
       _activeTasks.remove(event.contentId);
-      
+
       // Unregister task from DownloadManager
       DownloadManager().unregisterTask(event.contentId);
-      
+
       // Show completion notification
       if (currentState.settings.enableNotifications && result.isCompleted) {
         _notificationService.showDownloadCompleted(
@@ -552,80 +569,86 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // Remove task on error
       _activeTasks.remove(event.contentId);
-      
+
       // Unregister task from DownloadManager
       DownloadManager().unregisterTask(event.contentId);
-      
+
       // Update download status to failed
       if (currentState.getDownload(event.contentId) != null) {
         final currentDownload = currentState.getDownload(event.contentId)!;
-        
+
         // Check if auto retry is enabled and we haven't exceeded retry attempts
-        if (currentState.settings.autoRetry && 
+        if (currentState.settings.autoRetry &&
             currentDownload.retryCount < currentState.settings.retryAttempts) {
-          
-          _logger.i('DownloadBloc: Auto-retrying download ${event.contentId} (attempt ${currentDownload.retryCount + 1}/${currentState.settings.retryAttempts})');
-          
+          _logger.i(
+              'DownloadBloc: Auto-retrying download ${event.contentId} (attempt ${currentDownload.retryCount + 1}/${currentState.settings.retryAttempts})');
+
           final retryDownload = currentDownload.copyWith(
             retryCount: currentDownload.retryCount + 1,
             state: DownloadState.queued,
             error: _getLocalizedString(
-              (l10n) => l10n.retryingDownload(currentDownload.retryCount + 1, currentState.settings.retryAttempts),
+              (l10n) => l10n.retryingDownload(currentDownload.retryCount + 1,
+                  currentState.settings.retryAttempts),
               'Retrying download (attempt ${currentDownload.retryCount + 1}/${currentState.settings.retryAttempts})',
             ),
             endTime: null, // Reset end time for retry
           );
-          
+
           await _userDataRepository.saveDownloadStatus(retryDownload);
-          
+
           // Update state with retry download
-          final updatedDownloads = currentState.downloads.map((d) => 
-            d.contentId == event.contentId ? retryDownload : d
-          ).toList();
-          
+          final updatedDownloads = currentState.downloads
+              .map((d) => d.contentId == event.contentId ? retryDownload : d)
+              .toList();
+
           emit(currentState.copyWith(
             downloads: updatedDownloads,
             lastUpdated: DateTime.now(),
           ));
-          
+
           // Schedule retry with delay
-          Timer(Duration(milliseconds: currentState.settings.retryDelay.inMilliseconds), () {
-            if (!isClosed) { // Check if bloc is still active
+          Timer(
+              Duration(
+                  milliseconds:
+                      currentState.settings.retryDelay.inMilliseconds), () {
+            if (!isClosed) {
+              // Check if bloc is still active
               add(DownloadStartEvent(event.contentId));
             }
           });
-          
+
           return;
         }
-        
+
         // If no retry or max attempts reached, mark as failed
         final failedDownload = currentDownload.copyWith(
           state: DownloadState.failed,
           error: e.toString(),
           endTime: DateTime.now(),
         );
-        
+
         await _userDataRepository.saveDownloadStatus(failedDownload);
-        
+
         // Show error notification
         if (currentState.settings.enableNotifications) {
           _notificationService.showDownloadError(
             contentId: event.contentId,
-            title: failedDownload.contentId, // Use content ID if we don't have title
+            title: failedDownload
+                .contentId, // Use content ID if we don't have title
             error: e.toString(),
           );
         }
-        
+
         // Update state with failed download
-        final updatedDownloads = currentState.downloads.map((d) => 
-          d.contentId == event.contentId ? failedDownload : d
-        ).toList();
-        
+        final updatedDownloads = currentState.downloads
+            .map((d) => d.contentId == event.contentId ? failedDownload : d)
+            .toList();
+
         emit(currentState.copyWith(
           downloads: updatedDownloads,
           lastUpdated: DateTime.now(),
         ));
-        
+
         // Process queue to start next download
         _processQueue();
       } else {
@@ -681,12 +704,15 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // ✅ NEW: Immediately update notification to show paused status with current progress
       if (currentState.settings.enableNotifications) {
         final progressPercentage = updatedDownload.progressPercentage.round();
-        _notificationService.updateDownloadProgress(
+        _notificationService
+            .updateDownloadProgress(
           contentId: event.contentId,
           progress: progressPercentage,
-          title: updatedDownload.contentId, // Use contentId as fallback for title
+          title:
+              updatedDownload.contentId, // Use contentId as fallback for title
           isPaused: true,
-        ).catchError((e) {
+        )
+            .catchError((e) {
           _logger.w('DownloadBloc: Failed to update pause notification: $e');
         });
       }
@@ -846,12 +872,15 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // ✅ NEW: Update notification to show resumed status with current progress
       if (currentState.settings.enableNotifications) {
         final progressPercentage = updatedDownload.progressPercentage.round();
-        _notificationService.updateDownloadProgress(
+        _notificationService
+            .updateDownloadProgress(
           contentId: event.contentId,
           progress: progressPercentage,
-          title: updatedDownload.contentId, // Use contentId as fallback for title
+          title:
+              updatedDownload.contentId, // Use contentId as fallback for title
           isPaused: false, // Resume means no longer paused
-        ).catchError((e) {
+        )
+            .catchError((e) {
           _logger.w('DownloadBloc: Failed to update resume notification: $e');
         });
       }
@@ -933,13 +962,13 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     Emitter<DownloadBlocState> emit,
   ) async {
     final currentState = state;
-    
+
     try {
       _logger.i('DownloadBloc: Refreshing download list');
 
       // Reload downloads from database
       final downloads = await _userDataRepository.getAllDownloads();
-      
+
       if (currentState is DownloadLoaded) {
         // Update existing state with new downloads
         emit(currentState.copyWith(
@@ -956,13 +985,13 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       }
 
       _logger.i('DownloadBloc: Refreshed with ${downloads.length} downloads');
-      
+
       // Process queue after refresh
       _processQueue();
     } catch (e, stackTrace) {
       _logger.e('DownloadBloc: Error refreshing downloads',
           error: e, stackTrace: stackTrace);
-          
+
       // Only emit error if we don't have a valid state to preserve
       if (currentState is! DownloadLoaded) {
         emit(DownloadError(
@@ -984,11 +1013,11 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     Emitter<DownloadBlocState> emit,
   ) async {
     final currentState = state;
-    
+
     // Handle different state types more flexibly
     List<DownloadStatus> downloads;
     DownloadSettings settings;
-    
+
     if (currentState is DownloadLoaded) {
       downloads = currentState.downloads;
       settings = currentState.settings;
@@ -997,7 +1026,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       settings = currentState.settings;
     } else {
       // If not in a state where we can update progress, try to refresh first
-      _logger.d('DownloadBloc: Not in updatable state, refreshing downloads for progress update');
+      _logger.d(
+          'DownloadBloc: Not in updatable state, refreshing downloads for progress update');
       add(const DownloadRefreshEvent());
       return;
     }
@@ -1009,15 +1039,17 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       );
 
       if (downloadIndex == -1) {
-        _logger.w('DownloadBloc: Download not found for progress update: ${event.contentId}');
+        _logger.w(
+            'DownloadBloc: Download not found for progress update: ${event.contentId}');
         return;
       }
 
       final currentDownload = downloads[downloadIndex];
-      
+
       // Update progress only if download is still in progress
       if (!currentDownload.isInProgress) {
-        _logger.d('DownloadBloc: Ignoring progress update for non-active download: ${event.contentId}');
+        _logger.d(
+            'DownloadBloc: Ignoring progress update for non-active download: ${event.contentId}');
         return;
       }
 
@@ -1029,16 +1061,18 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // ✅ FIXED: Only update if progress actually changed to prevent unnecessary updates
       if (currentDownload.downloadedPages == event.downloadedPages) {
-        _logger.d('DownloadBloc: Ignoring duplicate progress update for ${event.contentId}');
+        _logger.d(
+            'DownloadBloc: Ignoring duplicate progress update for ${event.contentId}');
         return;
       }
 
       // ✅ FIXED: Check if download should be completed (progress = 100%)
       // This helps handle completion status immediately
-      if (event.downloadedPages >= event.totalPages && 
-          event.downloadSpeed == 0.0 && 
+      if (event.downloadedPages >= event.totalPages &&
+          event.downloadSpeed == 0.0 &&
           event.estimatedTimeRemaining == Duration.zero) {
-        _logger.i('DownloadBloc: Download appears completed, refreshing status for ${event.contentId}');
+        _logger.i(
+            'DownloadBloc: Download appears completed, refreshing status for ${event.contentId}');
         add(const DownloadRefreshEvent());
         return;
       }
@@ -1067,19 +1101,24 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       });
 
       // ✅ NEW: Update notification progress through DownloadBloc for synchronization
-      if (currentState.settings.enableNotifications && updatedDownload.isInProgress) {
+      if (currentState.settings.enableNotifications &&
+          updatedDownload.isInProgress) {
         final progressPercentage = updatedDownload.progressPercentage.round();
-        _notificationService.updateDownloadProgress(
+        _notificationService
+            .updateDownloadProgress(
           contentId: event.contentId,
           progress: progressPercentage,
-          title: updatedDownload.contentId, // Use contentId as fallback for title
+          title:
+              updatedDownload.contentId, // Use contentId as fallback for title
           isPaused: false,
-        ).catchError((e) {
+        )
+            .catchError((e) {
           _logger.w('DownloadBloc: Failed to update notification progress: $e');
         });
       }
 
-      _logger.d('DownloadBloc: Updated progress for ${event.contentId}: ${event.downloadedPages}/${event.totalPages}');
+      _logger.d(
+          'DownloadBloc: Updated progress for ${event.contentId}: ${event.downloadedPages}/${event.totalPages}');
     } catch (e, stackTrace) {
       _logger.e('DownloadBloc: Error updating progress',
           error: e, stackTrace: stackTrace);
@@ -1113,7 +1152,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Update state
       emit(currentState.copyWith(settings: _settings));
 
-      _logger.i('DownloadBloc: Updated download settings - concurrent: ${_settings.maxConcurrentDownloads}, quality: ${_settings.imageQuality}, wifiOnly: ${_settings.wifiOnly}, notifications: ${_settings.enableNotifications}');
+      _logger.i(
+          'DownloadBloc: Updated download settings - concurrent: ${_settings.maxConcurrentDownloads}, quality: ${_settings.imageQuality}, wifiOnly: ${_settings.wifiOnly}, notifications: ${_settings.enableNotifications}');
     } catch (e, stackTrace) {
       _logger.e('DownloadBloc: Error updating settings',
           error: e, stackTrace: stackTrace);
@@ -1137,7 +1177,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     if (task != null && !task.isCancelled) {
       task.cancel('Download cancelled by user');
       _activeTasks.remove(contentId);
-      
+
       // Unregister task from DownloadManager
       DownloadManager().unregisterTask(contentId);
       _logger.d('DownloadBloc: Cancelled task for $contentId');
@@ -1183,7 +1223,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
     try {
       _logger.i('DownloadBloc: Pausing all downloads');
-      
+
       emit(DownloadProcessing(
         downloads: currentState.downloads,
         settings: currentState.settings,
@@ -1193,7 +1233,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // Get all active downloads
       final activeDownloads = currentState.activeDownloads;
-      
+
       if (activeDownloads.isEmpty) {
         _logger.i('DownloadBloc: No active downloads to pause');
         emit(currentState.copyWith(lastUpdated: DateTime.now()));
@@ -1203,13 +1243,13 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Cancel all active download tasks
       for (final download in activeDownloads) {
         _cancelDownloadTask(download.contentId);
-        
+
         // Update status to paused
         final updatedDownload = download.copyWith(
           state: DownloadState.paused,
           endTime: DateTime.now(),
         );
-        
+
         await _userDataRepository.saveDownloadStatus(updatedDownload);
       }
 
@@ -1242,7 +1282,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
     try {
       _logger.i('DownloadBloc: Resuming all paused downloads');
-      
+
       emit(DownloadProcessing(
         downloads: currentState.downloads,
         settings: currentState.settings,
@@ -1252,7 +1292,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // Get all paused downloads
       final pausedDownloads = currentState.pausedDownloads;
-      
+
       if (pausedDownloads.isEmpty) {
         _logger.i('DownloadBloc: No paused downloads to resume');
         emit(currentState.copyWith(lastUpdated: DateTime.now()));
@@ -1266,7 +1306,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           startTime: DateTime.now(),
           endTime: null,
         );
-        
+
         await _userDataRepository.saveDownloadStatus(updatedDownload);
       }
 
@@ -1300,7 +1340,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
     try {
       _logger.i('DownloadBloc: Cancelling all downloads');
-      
+
       emit(DownloadProcessing(
         downloads: currentState.downloads,
         settings: currentState.settings,
@@ -1313,7 +1353,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         ...currentState.activeDownloads,
         ...currentState.queuedDownloads
       ];
-      
+
       if (activeDownloads.isEmpty) {
         _logger.i('DownloadBloc: No active or queued downloads to cancel');
         emit(currentState.copyWith(lastUpdated: DateTime.now()));
@@ -1323,13 +1363,13 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Cancel all active download tasks
       for (final download in activeDownloads) {
         _cancelDownloadTask(download.contentId);
-        
+
         // Update status to cancelled
         final updatedDownload = download.copyWith(
           state: DownloadState.cancelled,
           endTime: DateTime.now(),
         );
-        
+
         await _userDataRepository.saveDownloadStatus(updatedDownload);
       }
 
@@ -1351,7 +1391,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       ));
     }
   }
-  
+
   /// Clear completed downloads
   Future<void> _onClearCompleted(
     DownloadClearCompletedEvent event,
@@ -1362,7 +1402,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
     try {
       _logger.i('DownloadBloc: Clearing completed downloads');
-      
+
       emit(DownloadProcessing(
         downloads: currentState.downloads,
         settings: currentState.settings,
@@ -1372,7 +1412,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // Get all completed downloads
       final completedDownloads = currentState.completedDownloads;
-      
+
       if (completedDownloads.isEmpty) {
         _logger.i('DownloadBloc: No completed downloads to clear');
         emit(currentState.copyWith(lastUpdated: DateTime.now()));
@@ -1387,7 +1427,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Refresh downloads
       add(const DownloadRefreshEvent());
 
-      _logger.i('DownloadBloc: Cleared ${completedDownloads.length} completed downloads');
+      _logger.i(
+          'DownloadBloc: Cleared ${completedDownloads.length} completed downloads');
     } catch (e, stackTrace) {
       _logger.e('DownloadBloc: Error clearing completed downloads',
           error: e, stackTrace: stackTrace);
@@ -1418,16 +1459,18 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
     try {
       _logger.i('DownloadBloc: Starting PDF conversion for ${event.contentId}');
-      
+
       // Find the download status for this content
       final download = currentState.downloads.firstWhere(
         (d) => d.contentId == event.contentId,
-        orElse: () => throw Exception('Download not found for content: ${event.contentId}'),
+        orElse: () => throw Exception(
+            'Download not found for content: ${event.contentId}'),
       );
 
       // Check if download is completed
       if (!download.isCompleted) {
-        _logger.w('DownloadBloc: Cannot convert incomplete download to PDF: ${event.contentId}');
+        _logger.w(
+            'DownloadBloc: Cannot convert incomplete download to PDF: ${event.contentId}');
         await _notificationService.showPdfConversionError(
           contentId: event.contentId,
           title: event.contentId,
@@ -1442,11 +1485,12 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Try to get content details from local metadata first
       String contentTitle = event.contentId; // Fallback title
       final localMetadata = await _readLocalMetadata(event.contentId);
-      
+
       if (localMetadata != null) {
         // Use local metadata for offline support
         contentTitle = localMetadata['title'] as String? ?? event.contentId;
-        _logger.i('DownloadBloc: Using local metadata for PDF conversion - Title: $contentTitle');
+        _logger.i(
+            'DownloadBloc: Using local metadata for PDF conversion - Title: $contentTitle');
       } else {
         // Fallback to API if no local metadata (online mode)
         try {
@@ -1454,18 +1498,21 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             GetContentDetailParams.fromString(event.contentId),
           );
           contentTitle = content.title;
-          _logger.i('DownloadBloc: Using API content details for PDF conversion - Title: $contentTitle');
+          _logger.i(
+              'DownloadBloc: Using API content details for PDF conversion - Title: $contentTitle');
         } catch (e) {
-          _logger.w('DownloadBloc: Failed to get content details from API, using contentId as title: $e');
+          _logger.w(
+              'DownloadBloc: Failed to get content details from API, using contentId as title: $e');
           // Keep using contentId as fallback title
         }
       }
 
       // Get downloaded image paths from content repository or download service
       final imagePaths = await _getDownloadedImagePaths(event.contentId);
-      
+
       if (imagePaths.isEmpty) {
-        _logger.w('DownloadBloc: No downloaded images found for PDF conversion: ${event.contentId}');
+        _logger.w(
+            'DownloadBloc: No downloaded images found for PDF conversion: ${event.contentId}');
         await _notificationService.showPdfConversionError(
           contentId: event.contentId,
           title: contentTitle,
@@ -1486,14 +1533,15 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       );
 
       _logger.i('DownloadBloc: PDF conversion started for ${event.contentId}');
-      
+
       // The actual conversion happens in background via PdfConversionService
       // User will be notified via notifications about progress and completion
-      
     } catch (e, stackTrace) {
-      _logger.e('DownloadBloc: Error during PDF conversion for ${event.contentId}', 
-          error: e, stackTrace: stackTrace);
-      
+      _logger.e(
+          'DownloadBloc: Error during PDF conversion for ${event.contentId}',
+          error: e,
+          stackTrace: stackTrace);
+
       // Show error notification to user
       await _notificationService.showPdfConversionError(
         contentId: event.contentId,
@@ -1508,32 +1556,31 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   Future<Map<String, dynamic>?> _readLocalMetadata(String contentId) async {
     try {
       _logger.d('DownloadBloc: Reading local metadata for content: $contentId');
-      
+
       // Use smart Downloads directory detection (same as DownloadService)
       final downloadsPath = await _getDownloadsDirectory();
-      final metadataFile = File(path.join(
-        downloadsPath, 
-        'nhasix', 
-        contentId, 
-        'metadata.json'
-      ));
-      
+      final metadataFile =
+          File(path.join(downloadsPath, 'nhasix', contentId, 'metadata.json'));
+
       // Check if metadata file exists
       if (!await metadataFile.exists()) {
-        _logger.w('DownloadBloc: Metadata file does not exist: ${metadataFile.path}');
+        _logger.w(
+            'DownloadBloc: Metadata file does not exist: ${metadataFile.path}');
         return null;
       }
-      
+
       // Read and parse metadata
       final metadataContent = await metadataFile.readAsString();
       final metadata = jsonDecode(metadataContent) as Map<String, dynamic>;
-      
-      _logger.i('DownloadBloc: Successfully read local metadata for $contentId');
+
+      _logger
+          .i('DownloadBloc: Successfully read local metadata for $contentId');
       _logger.d('DownloadBloc: Metadata title: ${metadata['title']}');
-      
+
       return metadata;
     } catch (e) {
-      _logger.e('DownloadBloc: Error reading local metadata for $contentId: $e');
+      _logger
+          .e('DownloadBloc: Error reading local metadata for $contentId: $e');
       return null;
     }
   }
@@ -1543,46 +1590,47 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   Future<List<String>> _getDownloadedImagePaths(String contentId) async {
     try {
       _logger.d('DownloadBloc: Getting image paths for content: $contentId');
-      
+
       // Use smart Downloads directory detection (same as DownloadService)
       final downloadsPath = await _getDownloadsDirectory();
-      final imagesDir = Directory(path.join(
-        downloadsPath, 
-        'nhasix', 
-        contentId, 
-        'images'
-      ));
-      
+      final imagesDir =
+          Directory(path.join(downloadsPath, 'nhasix', contentId, 'images'));
+
       // Check if directory exists
       if (!await imagesDir.exists()) {
-        _logger.w('DownloadBloc: Images directory does not exist: ${imagesDir.path}');
+        _logger.w(
+            'DownloadBloc: Images directory does not exist: ${imagesDir.path}');
         return <String>[];
       }
-      
+
       // List all files in the images directory
       final files = await imagesDir.list().toList();
-      
+
       // Filter only image files and sort them
       final imagePaths = files
           .whereType<File>()
           .where((file) {
             final extension = path.extension(file.path).toLowerCase();
-            return ['.jpg', '.jpeg', '.png', '.gif', '.webp'].contains(extension);
+            return ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+                .contains(extension);
           })
           .map((file) => file.path)
           .toList();
-      
+
       // Sort by filename to maintain page order
       imagePaths.sort();
-      
-      _logger.i('DownloadBloc: Found ${imagePaths.length} image files for content: $contentId');
-      
+
+      _logger.i(
+          'DownloadBloc: Found ${imagePaths.length} image files for content: $contentId');
+
       if (imagePaths.isEmpty) {
-        _logger.w('DownloadBloc: No downloaded images found for PDF conversion: $contentId, folder download image ada di ${imagesDir.path}');
+        _logger.w(
+            'DownloadBloc: No downloaded images found for PDF conversion: $contentId, folder download image ada di ${imagesDir.path}');
       } else {
-        _logger.d('DownloadBloc: Image files: ${imagePaths.take(5).join(', ')}${imagePaths.length > 5 ? '...' : ''}');
+        _logger.d(
+            'DownloadBloc: Image files: ${imagePaths.take(5).join(', ')}${imagePaths.length > 5 ? '...' : ''}');
       }
-      
+
       return imagePaths;
     } catch (e) {
       _logger.e('DownloadBloc: Error getting downloaded image paths: $e');
@@ -1605,31 +1653,34 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       if (externalDir != null) {
         // Try to find Downloads folder in external storage root
         final externalRoot = externalDir.path.split('/Android')[0];
-        
+
         // Common Downloads folder names (English, Indonesian, Spanish, etc.)
         final downloadsFolderNames = [
-          'Download',     // English (most common)
-          'Downloads',    // English alternative
-          'Unduhan',      // Indonesian
-          'Descargas',    // Spanish
+          'Download', // English (most common)
+          'Downloads', // English alternative
+          'Unduhan', // Indonesian
+          'Descargas', // Spanish
           'Téléchargements', // French
-          'Downloads',    // German uses English
-          'ダウンロード',     // Japanese
+          'Downloads', // German uses English
+          'ダウンロード', // Japanese
         ];
 
         // Try each possible Downloads folder
         for (final folderName in downloadsFolderNames) {
           final downloadsDir = Directory(path.join(externalRoot, folderName));
           if (await downloadsDir.exists()) {
-            _logger.d('DownloadBloc: Found Downloads directory: ${downloadsDir.path}');
+            _logger.d(
+                'DownloadBloc: Found Downloads directory: ${downloadsDir.path}');
             return downloadsDir.path;
           }
         }
 
         // If no Downloads folder found, check for app-specific external storage
-        final appDownloadsDir = Directory(path.join(externalDir.path, 'downloads'));
+        final appDownloadsDir =
+            Directory(path.join(externalDir.path, 'downloads'));
         if (await appDownloadsDir.exists()) {
-          _logger.d('DownloadBloc: Using app-specific downloads directory: ${appDownloadsDir.path}');
+          _logger.d(
+              'DownloadBloc: Using app-specific downloads directory: ${appDownloadsDir.path}');
           return appDownloadsDir.path;
         }
       }
@@ -1646,24 +1697,27 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       for (final commonPath in commonPaths) {
         final dir = Directory(commonPath);
         if (await dir.exists()) {
-          _logger.d('DownloadBloc: Found Downloads directory at common path: $commonPath');
+          _logger.d(
+              'DownloadBloc: Found Downloads directory at common path: $commonPath');
           return commonPath;
         }
       }
 
       // Fallback 2: Use application documents directory
       final documentsDir = await getApplicationDocumentsDirectory();
-      final documentsDownloadsDir = Directory(path.join(documentsDir.path, 'downloads'));
-      _logger.d('DownloadBloc: Using app documents downloads directory: ${documentsDownloadsDir.path}');
+      final documentsDownloadsDir =
+          Directory(path.join(documentsDir.path, 'downloads'));
+      _logger.d(
+          'DownloadBloc: Using app documents downloads directory: ${documentsDownloadsDir.path}');
       return documentsDownloadsDir.path;
-
     } catch (e) {
       _logger.e('DownloadBloc: Error detecting Downloads directory: $e');
-      
+
       // Emergency fallback: use app documents
       final documentsDir = await getApplicationDocumentsDirectory();
       final emergencyDir = Directory(path.join(documentsDir.path, 'downloads'));
-      _logger.w('DownloadBloc: Using emergency fallback directory: ${emergencyDir.path}');
+      _logger.w(
+          'DownloadBloc: Using emergency fallback directory: ${emergencyDir.path}');
       return emergencyDir.path;
     }
   }
@@ -1682,13 +1736,14 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
     try {
       _logger.i('DownloadBloc: Starting storage cleanup');
-      
+
       // Get the downloads directory
       final downloadsPath = await _getDownloadsDirectory();
       final nhasixDir = Directory(path.join(downloadsPath, 'nhasix'));
-      
+
       if (!await nhasixDir.exists()) {
-        _logger.i('DownloadBloc: No nhasix directory found, nothing to cleanup');
+        _logger
+            .i('DownloadBloc: No nhasix directory found, nothing to cleanup');
         return;
       }
 
@@ -1702,31 +1757,33 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           contentDirs.add(entity);
         }
       }
-      
+
       for (final contentDir in contentDirs) {
         final contentId = path.basename(contentDir.path);
-        
+
         // Check if this content is still in downloads list
         final isActiveDownload = currentState.downloads
             .any((download) => download.contentId == contentId);
-        
+
         if (!isActiveDownload) {
           // This is an orphaned download, safe to delete
           _logger.d('DownloadBloc: Cleaning up orphaned download: $contentId');
-          
+
           try {
             // Calculate directory size before deletion
             final dirSize = await _getDirectorySize(contentDir);
-            
+
             // Delete the directory
             await contentDir.delete(recursive: true);
-            
+
             cleanedFiles++;
             freedSpaceBytes += dirSize;
-            
-            _logger.d('DownloadBloc: Cleaned up ${(dirSize / 1024 / 1024).toStringAsFixed(2)} MB from: $contentId');
+
+            _logger.d(
+                'DownloadBloc: Cleaned up ${(dirSize / 1024 / 1024).toStringAsFixed(2)} MB from: $contentId');
           } catch (e) {
-            _logger.w('DownloadBloc: Failed to delete directory: ${contentDir.path}, error: $e');
+            _logger.w(
+                'DownloadBloc: Failed to delete directory: ${contentDir.path}, error: $e');
           }
         } else {
           // For active downloads, clean up temporary files
@@ -1734,15 +1791,17 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         }
       }
 
-      _logger.i('DownloadBloc: Storage cleanup completed. Cleaned $cleanedFiles directories, freed ${(freedSpaceBytes / 1024 / 1024).toStringAsFixed(2)} MB');
-      
+      _logger.i(
+          'DownloadBloc: Storage cleanup completed. Cleaned $cleanedFiles directories, freed ${(freedSpaceBytes / 1024 / 1024).toStringAsFixed(2)} MB');
+
       // Show success notification (could implement showNotification method later)
       // For now just log success
-      _logger.i('Storage Cleanup Complete: Cleaned $cleanedFiles items, freed ${(freedSpaceBytes / 1024 / 1024).toStringAsFixed(2)} MB');
-      
+      _logger.i(
+          'Storage Cleanup Complete: Cleaned $cleanedFiles items, freed ${(freedSpaceBytes / 1024 / 1024).toStringAsFixed(2)} MB');
     } catch (e, stackTrace) {
-      _logger.e('DownloadBloc: Error during storage cleanup', error: e, stackTrace: stackTrace);
-      
+      _logger.e('DownloadBloc: Error during storage cleanup',
+          error: e, stackTrace: stackTrace);
+
       // Show error notification (could implement showNotification method later)
       // For now just log error
       _logger.e('Storage Cleanup Failed: ${e.toString()}');
@@ -1763,51 +1822,54 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
     try {
       _logger.i('DownloadBloc: Starting export operation');
-      
+
       // Create export data
       final exportData = <String, dynamic>{
         'exported_at': DateTime.now().toIso8601String(),
         'app_version': '1.0.0', // You can get this from package_info_plus
         'total_downloads': currentState.downloads.length,
-        'downloads': currentState.downloads.map((download) => {
-          'content_id': download.contentId,
-          'state': download.state.toString(),
-          'progress': download.progress,
-          'downloaded_pages': download.downloadedPages,
-          'total_pages': download.totalPages,
-          'file_size': download.fileSize,
-          'speed': download.speed,
-          'start_time': download.startTime?.toIso8601String(),
-          'end_time': download.endTime?.toIso8601String(),
-          'download_path': download.downloadPath,
-          'error': download.error,
-          'is_completed': download.isCompleted,
-          'is_paused': download.isPaused,
-          'is_cancelled': download.isCancelled,
-          'is_failed': download.isFailed,
-        }).toList(),
+        'downloads': currentState.downloads
+            .map((download) => {
+                  'content_id': download.contentId,
+                  'state': download.state.toString(),
+                  'progress': download.progress,
+                  'downloaded_pages': download.downloadedPages,
+                  'total_pages': download.totalPages,
+                  'file_size': download.fileSize,
+                  'speed': download.speed,
+                  'start_time': download.startTime?.toIso8601String(),
+                  'end_time': download.endTime?.toIso8601String(),
+                  'download_path': download.downloadPath,
+                  'error': download.error,
+                  'is_completed': download.isCompleted,
+                  'is_paused': download.isPaused,
+                  'is_cancelled': download.isCancelled,
+                  'is_failed': download.isFailed,
+                })
+            .toList(),
       };
 
       // Convert to JSON
       final jsonString = const JsonEncoder.withIndent('  ').convert(exportData);
-      
+
       // Get export file path
       final downloadsPath = await _getDownloadsDirectory();
-      final exportFileName = 'nhasix_downloads_export_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.json';
+      final exportFileName =
+          'nhasix_downloads_export_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.json';
       final exportFile = File(path.join(downloadsPath, exportFileName));
-      
+
       // Write to file
       await exportFile.writeAsString(jsonString);
-      
+
       _logger.i('DownloadBloc: Export completed: ${exportFile.path}');
-      
-      // Show success notification (could implement showNotification method later) 
+
+      // Show success notification (could implement showNotification method later)
       // For now just log success
       _logger.i('Export Complete: Downloads exported to $exportFileName');
-      
     } catch (e, stackTrace) {
-      _logger.e('DownloadBloc: Error during export', error: e, stackTrace: stackTrace);
-      
+      _logger.e('DownloadBloc: Error during export',
+          error: e, stackTrace: stackTrace);
+
       // Show error notification (could implement showNotification method later)
       // For now just log error
       _logger.e('Export Failed: ${e.toString()}');
@@ -1836,21 +1898,23 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         if (entity is File) {
           final fileName = path.basename(entity.path);
           // Delete temporary files (those ending with .tmp, .temp, .part, etc.)
-          if (fileName.endsWith('.tmp') || 
-              fileName.endsWith('.temp') || 
+          if (fileName.endsWith('.tmp') ||
+              fileName.endsWith('.temp') ||
               fileName.endsWith('.part') ||
               fileName.startsWith('.')) {
             try {
               await entity.delete();
               _logger.d('DownloadBloc: Deleted temp file: ${entity.path}');
             } catch (e) {
-              _logger.w('DownloadBloc: Failed to delete temp file: ${entity.path}, error: $e');
+              _logger.w(
+                  'DownloadBloc: Failed to delete temp file: ${entity.path}, error: $e');
             }
           }
         }
       }
     } catch (e) {
-      _logger.w('DownloadBloc: Error cleaning temp files in: ${directory.path}, error: $e');
+      _logger.w(
+          'DownloadBloc: Error cleaning temp files in: ${directory.path}, error: $e');
     }
   }
 
@@ -1860,7 +1924,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       final downloads = await _userDataRepository.getAllDownloads();
       final download = downloads.firstWhere(
         (d) => d.contentId == contentId,
-        orElse: () => throw Exception('Download not found for content: $contentId'),
+        orElse: () =>
+            throw Exception('Download not found for content: $contentId'),
       );
 
       if (download.state == DownloadState.completed) {
@@ -1868,7 +1933,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         add(DownloadConvertToPdfEvent(contentId));
         _logger.i('DownloadBloc: PDF retry initiated for $contentId');
       } else {
-        _logger.w('DownloadBloc: Cannot retry PDF - download not completed for $contentId');
+        _logger.w(
+            'DownloadBloc: Cannot retry PDF - download not completed for $contentId');
       }
     } catch (e) {
       _logger.e('DownloadBloc: Error retrying PDF conversion: $e');
@@ -1881,17 +1947,20 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       final downloads = await _userDataRepository.getAllDownloads();
       final download = downloads.firstWhere(
         (d) => d.contentId == contentId,
-        orElse: () => throw Exception('Download not found for content: $contentId'),
+        orElse: () =>
+            throw Exception('Download not found for content: $contentId'),
       );
 
-      if (download.state == DownloadState.completed && download.downloadPath != null) {
+      if (download.state == DownloadState.completed &&
+          download.downloadPath != null) {
         final directory = Directory(download.downloadPath!);
         if (await directory.exists()) {
-          _logger.i('DownloadBloc: Opening download directory: ${download.downloadPath}');
-          
+          _logger.i(
+              'DownloadBloc: Opening download directory: ${download.downloadPath}');
+
           // Try multiple strategies to open the downloaded content on Android
           bool opened = false;
-          
+
           // Strategy 1: Try to open the main download directory
           try {
             final result = await OpenFile.open(download.downloadPath!);
@@ -1899,30 +1968,34 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
               _logger.i('DownloadBloc: Successfully opened download directory');
               opened = true;
             } else {
-              _logger.w('DownloadBloc: Failed to open directory: ${result.message}');
+              _logger.w(
+                  'DownloadBloc: Failed to open directory: ${result.message}');
             }
           } catch (e) {
             _logger.w('DownloadBloc: Error opening directory: $e');
           }
-          
+
           // Strategy 2: If directory opening failed, try opening the images subdirectory
           if (!opened) {
             try {
-              final imagesDir = Directory(path.join(download.downloadPath!, 'images'));
+              final imagesDir =
+                  Directory(path.join(download.downloadPath!, 'images'));
               if (await imagesDir.exists()) {
                 final result = await OpenFile.open(imagesDir.path);
                 if (result.type == ResultType.done) {
-                  _logger.i('DownloadBloc: Successfully opened images directory');
+                  _logger
+                      .i('DownloadBloc: Successfully opened images directory');
                   opened = true;
                 } else {
-                  _logger.w('DownloadBloc: Failed to open images directory: ${result.message}');
+                  _logger.w(
+                      'DownloadBloc: Failed to open images directory: ${result.message}');
                 }
               }
             } catch (e) {
               _logger.w('DownloadBloc: Error opening images directory: $e');
             }
           }
-          
+
           // Strategy 3: If still not opened, try opening the first image file
           if (!opened) {
             try {
@@ -1931,27 +2004,31 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
                 final firstImage = imagePaths.first;
                 final result = await OpenFile.open(firstImage);
                 if (result.type == ResultType.done) {
-                  _logger.i('DownloadBloc: Successfully opened first image: $firstImage');
+                  _logger.i(
+                      'DownloadBloc: Successfully opened first image: $firstImage');
                   opened = true;
                 } else {
-                  _logger.w('DownloadBloc: Failed to open first image: ${result.message}');
+                  _logger.w(
+                      'DownloadBloc: Failed to open first image: ${result.message}');
                 }
               }
             } catch (e) {
               _logger.w('DownloadBloc: Error opening first image: $e');
             }
           }
-          
+
           // If all strategies failed, show error
           if (!opened) {
-            _logger.e('DownloadBloc: All strategies failed to open downloaded content for $contentId');
+            _logger.e(
+                'DownloadBloc: All strategies failed to open downloaded content for $contentId');
           }
-          
         } else {
-          _logger.w('DownloadBloc: Download directory not found: ${download.downloadPath}');
+          _logger.w(
+              'DownloadBloc: Download directory not found: ${download.downloadPath}');
         }
       } else {
-        _logger.w('DownloadBloc: Cannot open - download not completed or path missing for $contentId');
+        _logger.w(
+            'DownloadBloc: Cannot open - download not completed or path missing for $contentId');
       }
     } catch (e) {
       _logger.e('DownloadBloc: Error opening downloaded content: $e');
@@ -1975,7 +2052,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         lastUpdated: DateTime.now(),
       ));
 
-      _logger.i('DownloadBloc: Selection mode toggled to ${!currentState.isSelectionMode}');
+      _logger.i(
+          'DownloadBloc: Selection mode toggled to ${!currentState.isSelectionMode}');
     } catch (e, stackTrace) {
       _logger.e('DownloadBloc: Error toggling selection mode',
           error: e, stackTrace: stackTrace);
@@ -1991,7 +2069,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     if (currentState is! DownloadLoaded) return;
 
     try {
-      _logger.i('DownloadBloc: Selecting item ${event.contentId}: ${event.isSelected}');
+      _logger.i(
+          'DownloadBloc: Selecting item ${event.contentId}: ${event.isSelected}');
 
       final updatedSelectedItems = Set<String>.from(currentState.selectedItems);
       if (event.isSelected) {
@@ -2005,7 +2084,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         lastUpdated: DateTime.now(),
       ));
 
-      _logger.i('DownloadBloc: Selected items count: ${updatedSelectedItems.length}');
+      _logger.i(
+          'DownloadBloc: Selected items count: ${updatedSelectedItems.length}');
     } catch (e, stackTrace) {
       _logger.e('DownloadBloc: Error selecting item',
           error: e, stackTrace: stackTrace);
@@ -2025,7 +2105,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // Get current tab's downloads (this would need to be passed or determined)
       // For now, select all downloads
-      final allContentIds = currentState.downloads.map((d) => d.contentId).toSet();
+      final allContentIds =
+          currentState.downloads.map((d) => d.contentId).toSet();
 
       emit(currentState.copyWith(
         selectedItems: allContentIds,
@@ -2071,7 +2152,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     if (currentState is! DownloadLoaded) return;
 
     try {
-      _logger.i('DownloadBloc: Starting bulk delete of ${event.contentIds.length} items');
+      _logger.i(
+          'DownloadBloc: Starting bulk delete of ${event.contentIds.length} items');
 
       emit(DownloadProcessing(
         downloads: currentState.downloads,
@@ -2138,7 +2220,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         }
       }
 
-      _logger.i('DownloadBloc: Bulk delete completed. Success: $successCount, Failures: $failureCount');
+      _logger.i(
+          'DownloadBloc: Bulk delete completed. Success: $successCount, Failures: $failureCount');
 
       // Optionally trigger refresh for data consistency (but UI is already updated)
       add(const DownloadRefreshEvent());
@@ -2153,15 +2236,15 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           error: e, stackTrace: stackTrace);
 
       // Emit error state
-        emit(DownloadError(
-          message: _getLocalizedString(
-            (l10n) => l10n.failedToRemoveDownload(e.toString()),
-            'Bulk delete failed: ${e.toString()}',
-          ),
-          errorType: _determineErrorType(e),
-          previousState: currentState,
-          stackTrace: stackTrace,
-        ));
+      emit(DownloadError(
+        message: _getLocalizedString(
+          (l10n) => l10n.failedToRemoveDownload(e.toString()),
+          'Bulk delete failed: ${e.toString()}',
+        ),
+        errorType: _determineErrorType(e),
+        previousState: currentState,
+        stackTrace: stackTrace,
+      ));
     }
   }
 

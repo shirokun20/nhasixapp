@@ -60,7 +60,8 @@ class NetworkCubit extends BaseCubit<NetworkState> {
 
       if (isConnected) {
         final connectionType = _getConnectionType(prioritizedResult);
-        logInfo('Network connected: $connectionType (from ${results.length} results)');
+        logInfo(
+            'Network connected: $connectionType (from ${results.length} results)');
         emit(NetworkConnected(connectionType: connectionType));
       } else {
         logInfo('Network disconnected');
@@ -76,7 +77,8 @@ class NetworkCubit extends BaseCubit<NetworkState> {
   }
 
   /// Prioritize connectivity results (wifi > ethernet > mobile > other > none)
-  ConnectivityResult _prioritizeConnectivityResult(List<ConnectivityResult> results) {
+  ConnectivityResult _prioritizeConnectivityResult(
+      List<ConnectivityResult> results) {
     if (results.isEmpty) return ConnectivityResult.none;
 
     // Define priority order

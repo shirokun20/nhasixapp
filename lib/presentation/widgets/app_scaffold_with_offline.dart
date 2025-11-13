@@ -36,9 +36,10 @@ class AppScaffoldWithOffline extends StatelessWidget {
       initialData: AppStateManager().isOfflineMode,
       builder: (context, snapshot) {
         final isOfflineMode = snapshot.data ?? false;
-        
+
         return Scaffold(
-          appBar: appBar ?? _buildAppBarWithOfflineIndicator(context, isOfflineMode),
+          appBar: appBar ??
+              _buildAppBarWithOfflineIndicator(context, isOfflineMode),
           backgroundColor: backgroundColor,
           drawer: drawer,
           floatingActionButton: floatingActionButton,
@@ -58,10 +59,12 @@ class AppScaffoldWithOffline extends StatelessWidget {
 
   /// Build app bar with offline indicator badge
   /// Shows orange badge when offline, normal appearance when online
-  AppBar _buildAppBarWithOfflineIndicator(BuildContext context, bool isOfflineMode) {
+  AppBar _buildAppBarWithOfflineIndicator(
+      BuildContext context, bool isOfflineMode) {
     return AppBar(
       title: Text(title),
-      backgroundColor: isOfflineMode ? Theme.of(context).colorScheme.errorContainer : null,
+      backgroundColor:
+          isOfflineMode ? Theme.of(context).colorScheme.errorContainer : null,
       actions: [
         // Show offline badge in app bar when in offline mode
         if (isOfflineMode) _buildOfflineBadge(context),
@@ -79,7 +82,8 @@ class AppScaffoldWithOffline extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.error, width: 1),
+        border:
+            Border.all(color: Theme.of(context).colorScheme.error, width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -108,10 +112,14 @@ class AppScaffoldWithOffline extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.1),
+        color:
+            Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.1),
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.3),
+            color: Theme.of(context)
+                .colorScheme
+                .errorContainer
+                .withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -129,13 +137,15 @@ class AppScaffoldWithOffline extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  AppLocalizations.of(context)?.youAreOfflineShort ?? 'You are offline',
+                  AppLocalizations.of(context)?.youAreOfflineShort ??
+                      'You are offline',
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.error,
                   ),
                 ),
                 Text(
-                  AppLocalizations.of(context)?.someFeaturesLimited ?? 'Some features are limited. Connect to internet for full access.',
+                  AppLocalizations.of(context)?.someFeaturesLimited ??
+                      'Some features are limited. Connect to internet for full access.',
                   style: TextStyleConst.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.error,
                   ),
@@ -163,7 +173,8 @@ class AppScaffoldWithOffline extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Theme.of(context).colorScheme.outline, width: 1),
+                side: BorderSide(
+                    color: Theme.of(context).colorScheme.outline, width: 1),
               ),
             ),
           ),
@@ -186,7 +197,8 @@ class AppScaffoldWithOffline extends StatelessWidget {
                 height: 16,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.onPrimary),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.onPrimary),
                 ),
               ),
               const SizedBox(width: 12),
@@ -198,36 +210,41 @@ class AppScaffoldWithOffline extends StatelessWidget {
         ),
       );
 
-       // Check actual connectivity
-       final connectivity = Connectivity();
-       final connectivityResult = await connectivity.checkConnectivity();
+      // Check actual connectivity
+      final connectivity = Connectivity();
+      final connectivityResults = await connectivity.checkConnectivity();
+      final connectivityResult = connectivityResults.isNotEmpty
+          ? connectivityResults.first
+          : ConnectivityResult.none;
 
-       if (!context.mounted) return;
+      if (!context.mounted) return;
 
-       if (connectivityResult != ConnectivityResult.none) {
-         // Connection available - switch to online mode
-         AppStateManager().enableOnlineMode();
+      if (connectivityResult != ConnectivityResult.none) {
+        // Connection available - switch to online mode
+        AppStateManager().enableOnlineMode();
 
-         ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(
-             content: Row(
-               children: [
-                 Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onPrimary),
-                 SizedBox(width: 12),
-                 Text(AppLocalizations.of(context)!.backOnline),
-               ],
-             ),
-             duration: Duration(seconds: 3),
-             backgroundColor: Theme.of(context).colorScheme.primary,
-           ),
-         );
-       } else {
-         // Still no connection
-         ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.wifi_off, color: Theme.of(context).colorScheme.onError),
+                Icon(Icons.check_circle,
+                    color: Theme.of(context).colorScheme.onPrimary),
+                SizedBox(width: 12),
+                Text(AppLocalizations.of(context)!.backOnline),
+              ],
+            ),
+            duration: Duration(seconds: 3),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+      } else {
+        // Still no connection
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.wifi_off,
+                    color: Theme.of(context).colorScheme.onError),
                 SizedBox(width: 12),
                 Text(AppLocalizations.of(context)!.stillNoInternet),
               ],
@@ -243,7 +260,8 @@ class AppScaffoldWithOffline extends StatelessWidget {
         SnackBar(
           content: Row(
             children: [
-              Icon(Icons.error_outline, color: Theme.of(context).colorScheme.onError),
+              Icon(Icons.error_outline,
+                  color: Theme.of(context).colorScheme.onError),
               SizedBox(width: 12),
               Text(AppLocalizations.of(context)!.unableToCheck),
             ],
@@ -321,7 +339,8 @@ mixin OfflineAwareMixin<T extends StatefulWidget> on State<T> {
         SnackBar(
           content: Row(
             children: [
-              Icon(Icons.offline_bolt, color: Theme.of(context).colorScheme.onError),
+              Icon(Icons.offline_bolt,
+                  color: Theme.of(context).colorScheme.onError),
               SizedBox(width: 12),
               Expanded(child: Text(message)),
             ],
