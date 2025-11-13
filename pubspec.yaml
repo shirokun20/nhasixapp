@@ -18,7 +18,7 @@ dependencies:
 
   # Core Flutter & State Management
   flutter_bloc: ^9.1.1
-  bloc: ^9.0.0
+  bloc: ^9.1.0
   equatable: ^2.0.7
   get_it: ^8.0.2
 
@@ -27,7 +27,7 @@ dependencies:
   json_annotation: ^4.9.0
 
   # Networking & Web Scraping
-  dio: ^5.7.0
+  dio: ^5.9.0
   html: ^0.15.4
   connectivity_plus: ^5.0.2
 
@@ -60,11 +60,12 @@ dependencies:
   url_launcher: ^6.3.1
 
   # Utilities
-  logger: ^2.5.0
+  logger: ^2.6.2
   permission_handler: ^11.3.1
   intl: ^0.20.2
   device_info_plus: ^10.1.2
   collection: ^1.18.0
+  crypto: ^3.0.3
 
   # PDF Generation
   pdf: ^3.11.1
