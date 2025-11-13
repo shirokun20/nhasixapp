@@ -29,7 +29,7 @@ dependencies:
   # Networking & Web Scraping
   dio: ^5.9.0
   html: ^0.15.4
-  connectivity_plus: ^5.0.2
+  connectivity_plus: ^7.0.0
 
   # Navigation & Routing
   go_router: ^15.1.1
@@ -56,12 +56,12 @@ dependencies:
 
   # File Management & Sharing
   open_file: ^3.5.7
-  share_plus: ^10.0.2
+  share_plus: ^10.1.4
   url_launcher: ^6.3.1
 
   # Utilities
   logger: ^2.6.2
-  permission_handler: ^11.3.1
+  permission_handler: ^11.4.0
   intl: ^0.20.2
   device_info_plus: ^10.1.2
   collection: ^1.18.0

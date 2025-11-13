@@ -19,7 +19,7 @@ class NetworkCubit extends BaseCubit<NetworkState> {
   }
 
   final Connectivity _connectivity;
-  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
   /// Initialize connectivity monitoring
   Future<void> _initializeConnectivity() async {
@@ -27,8 +27,8 @@ class NetworkCubit extends BaseCubit<NetworkState> {
       logInfo('Initializing network connectivity monitoring');
 
       // Check initial connectivity status
-      final connectivityResult = await _connectivity.checkConnectivity();
-      _updateConnectionStatus(connectivityResult);
+      final connectivityResults = await _connectivity.checkConnectivity();
+      _updateConnectionStatus(connectivityResults);
 
       // Listen to connectivity changes
       _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
@@ -50,14 +50,17 @@ class NetworkCubit extends BaseCubit<NetworkState> {
     }
   }
 
-  /// Update connection status based on connectivity result
-  void _updateConnectionStatus(ConnectivityResult result) {
+  /// Update connection status based on connectivity results
+  void _updateConnectionStatus(List<ConnectivityResult> results) {
     try {
-      final isConnected = result != ConnectivityResult.none;
+      // Take the first result or the most reliable connection
+      // Prioritize: wifi > ethernet > mobile > other > none
+      final prioritizedResult = _prioritizeConnectivityResult(results);
+      final isConnected = prioritizedResult != ConnectivityResult.none;
 
       if (isConnected) {
-        final connectionType = _getConnectionType(result);
-        logInfo('Network connected: $connectionType');
+        final connectionType = _getConnectionType(prioritizedResult);
+        logInfo('Network connected: $connectionType (from ${results.length} results)');
         emit(NetworkConnected(connectionType: connectionType));
       } else {
         logInfo('Network disconnected');
@@ -70,6 +73,30 @@ class NetworkCubit extends BaseCubit<NetworkState> {
         errorType: determineErrorType(e),
       ));
     }
+  }
+
+  /// Prioritize connectivity results (wifi > ethernet > mobile > other > none)
+  ConnectivityResult _prioritizeConnectivityResult(List<ConnectivityResult> results) {
+    if (results.isEmpty) return ConnectivityResult.none;
+
+    // Define priority order
+    const priorityOrder = [
+      ConnectivityResult.wifi,
+      ConnectivityResult.ethernet,
+      ConnectivityResult.mobile,
+      ConnectivityResult.other,
+      ConnectivityResult.none,
+    ];
+
+    // Find the highest priority result available
+    for (final priority in priorityOrder) {
+      if (results.contains(priority)) {
+        return priority;
+      }
+    }
+
+    // Fallback to first result if none match (shouldn't happen)
+    return results.first;
   }
 
   /// Get connection type from connectivity result
@@ -92,8 +119,8 @@ class NetworkCubit extends BaseCubit<NetworkState> {
       logInfo('Manually checking connectivity');
       emit(const NetworkChecking());
 
-      final connectivityResult = await _connectivity.checkConnectivity();
-      _updateConnectionStatus(connectivityResult);
+      final connectivityResults = await _connectivity.checkConnectivity();
+      _updateConnectionStatus(connectivityResults);
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'check connectivity');
       emit(NetworkError(
