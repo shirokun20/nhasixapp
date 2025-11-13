@@ -42,7 +42,7 @@ dependencies:
 
   # Image Handling & Caching
   cached_network_image: ^3.3.1
-  photo_view: ^0.14.0
+  photo_view: ^0.15.0
   image: ^4.1.7
   flutter_cache_manager: ^3.4.1
 
@@ -79,7 +79,7 @@ dev_dependencies:
   
   # Code Generation
   freezed: ^2.5.7
-  json_serializable: ^6.8.0
+  json_serializable: ^6.9.5
 
 flutter:
   uses-material-design: true
