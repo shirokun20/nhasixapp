@@ -295,8 +295,9 @@ class ImageCacheService {
         int removedSize = 0;
 
         for (final entry in sortedEntries) {
-          if (totalSize - removedSize <= maxSizeBytes * 0.8)
+          if (totalSize - removedSize <= maxSizeBytes * 0.8) {
             break; // Keep 80% of limit
+          }
 
           final cacheKey = entry.key;
           final cacheFile = File('${cacheDir.path}/$cacheKey');
