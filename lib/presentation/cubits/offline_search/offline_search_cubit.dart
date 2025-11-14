@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:path_provider/path_provider.dart';
+
 import '../../../core/utils/offline_content_manager.dart';
 import '../../../domain/entities/content.dart';
 import '../base/base_cubit.dart';
@@ -16,8 +20,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
   final OfflineContentManager _offlineContentManager;
 
-  /// Search in offline content
-  Future<void> searchOfflineContent(String query) async {
+  /// Search in offline content from metadata.json files
+  Future<void> searchOfflineContent(String query, {String? backupPath}) async {
     try {
       if (query.trim().isEmpty) {
         emit(const OfflineSearchInitial());
@@ -27,22 +31,25 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       logInfo('Searching offline content for: $query');
       emit(const OfflineSearchLoading());
 
-      final matchingIds =
-          await _offlineContentManager.searchOfflineContent(query);
-
-      if (matchingIds.isEmpty) {
-        emit(const OfflineSearchEmpty(query: ''));
-        return;
+      // Get backup path from DirectoryUtils if not provided
+      String? searchPath = backupPath;
+      if (searchPath == null) {
+        // Import DirectoryUtils at the top if not already imported
+        final nhasixPath =
+            await findNhasixBackupFolder(); // You'll need to import this
+        if (nhasixPath == null) {
+          emit(const OfflineSearchEmpty(query: ''));
+          return;
+        }
+        searchPath = nhasixPath;
       }
 
-      // Create content objects for matching IDs
-      final contents = <Content>[];
-      for (final contentId in matchingIds) {
-        final content =
-            await _offlineContentManager.createOfflineContent(contentId);
-        if (content != null) {
-          contents.add(content);
-        }
+      final contents = await _offlineContentManager
+          .searchOfflineContentFromFileSystem(searchPath, query);
+
+      if (contents.isEmpty) {
+        emit(const OfflineSearchEmpty(query: ''));
+        return;
       }
 
       emit(OfflineSearchLoaded(
@@ -61,31 +68,60 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
-  /// Get all offline content
-  Future<void> getAllOfflineContent() async {
+  /// Helper to find nhasix backup folder
+  Future<String?> findNhasixBackupFolder() async {
     try {
-      logInfo('Loading all offline content');
+      final downloadsDir = await getApplicationDocumentsDirectory();
+      // Try external storage path first
+      final externalDir = await getExternalStorageDirectory();
+      if (externalDir != null) {
+        final externalRoot = externalDir.path.split('/Android')[0];
+        final nhasixPath = '$externalRoot/Download/nhasix';
+        final nhasixDir = Directory(nhasixPath);
+        if (await nhasixDir.exists()) {
+          return nhasixPath;
+        }
+      }
+      // Fallback to app documents
+      final appNhasixPath = '${downloadsDir.path}/downloads/nhasix';
+      final appNhasixDir = Directory(appNhasixPath);
+      if (await appNhasixDir.exists()) {
+        return appNhasixPath;
+      }
+      return null;
+    } catch (e) {
+      logInfo('Error finding nhasix backup folder: $e');
+      return null;
+    }
+  }
+
+  /// Get all offline content from file system
+  Future<void> getAllOfflineContent({String? backupPath}) async {
+    try {
+      logInfo('Loading all offline content from file system');
       emit(const OfflineSearchLoading());
 
-      final offlineIds = await _offlineContentManager.getOfflineContentIds();
+      // Get backup path from DirectoryUtils if not provided
+      String? loadPath = backupPath;
+      if (loadPath == null) {
+        final nhasixPath = await findNhasixBackupFolder();
+        if (nhasixPath == null) {
+          emit(const OfflineSearchEmpty(query: ''));
+          return;
+        }
+        loadPath = nhasixPath;
+      }
 
-      if (offlineIds.isEmpty) {
+      final contents = await _offlineContentManager
+          .getAllOfflineContentFromFileSystem(loadPath);
+
+      if (contents.isEmpty) {
         emit(const OfflineSearchEmpty(query: ''));
         return;
       }
 
-      // Create content objects for all offline IDs
-      final contents = <Content>[];
-      for (final contentId in offlineIds) {
-        final content =
-            await _offlineContentManager.createOfflineContent(contentId);
-        if (content != null) {
-          contents.add(content);
-        }
-      }
-
-      // Sort by most recently accessed (from history)
-      contents.sort((a, b) => b.uploadDate.compareTo(a.uploadDate));
+      // Sort by content ID (descending for newest first)
+      contents.sort((a, b) => b.id.compareTo(a.id));
 
       emit(OfflineSearchLoaded(
         query: '',
@@ -93,7 +129,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         totalResults: contents.length,
       ));
 
-      logInfo('Loaded ${contents.length} offline content items');
+      logInfo(
+          'Loaded ${contents.length} offline content items from file system');
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'get all offline content');
       emit(const OfflineSearchError(
@@ -111,6 +148,36 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   /// Get offline storage statistics
   Future<Map<String, dynamic>> getOfflineStats() async {
     try {
+      // If we have backup content loaded (OfflineSearchLoaded with empty query),
+      // calculate stats from the loaded results instead of database
+      if (state is OfflineSearchLoaded &&
+          (state as OfflineSearchLoaded).query.isEmpty) {
+        final loadedState = state as OfflineSearchLoaded;
+        final totalContent = loadedState.totalResults;
+
+        // Calculate storage usage from backup content files
+        int totalSize = 0;
+        for (final content in loadedState.results) {
+          for (final imageUrl in content.imageUrls) {
+            try {
+              final file = File(imageUrl);
+              if (await file.exists()) {
+                totalSize += await file.length();
+              }
+            } catch (e) {
+              // Skip files that can't be accessed
+            }
+          }
+        }
+
+        return {
+          'totalContent': totalContent,
+          'storageUsage': totalSize,
+          'formattedSize': OfflineContentManager.formatStorageSize(totalSize),
+        };
+      }
+
+      // Default: get stats from database
       final offlineIds = await _offlineContentManager.getOfflineContentIds();
       final storageUsage =
           await _offlineContentManager.getOfflineStorageUsage();
@@ -141,6 +208,36 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'cleanup offline files');
       rethrow;
+    }
+  }
+
+  /// Scan backup folder for offline content
+  Future<void> scanBackupContent(String backupPath) async {
+    try {
+      logInfo('Scanning backup folder: $backupPath');
+      emit(const OfflineSearchLoading());
+
+      final backupContents =
+          await _offlineContentManager.scanBackupFolder(backupPath);
+
+      if (backupContents.isEmpty) {
+        emit(const OfflineSearchEmpty(query: ''));
+        return;
+      }
+
+      emit(OfflineSearchLoaded(
+        query: '',
+        results: backupContents,
+        totalResults: backupContents.length,
+      ));
+
+      logInfo('Found ${backupContents.length} backup content items');
+    } catch (e, stackTrace) {
+      handleError(e, stackTrace, 'scan backup content');
+      emit(OfflineSearchError(
+        message: 'Failed to scan backup folder: ${e.toString()}',
+        query: '',
+      ));
     }
   }
 }

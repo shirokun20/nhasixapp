@@ -59,22 +59,6 @@ class OfflineContentShimmer extends StatelessWidget {
                     width: MediaQuery.of(context).size.width * 0.6,
                     color: colorScheme.surfaceContainerHighest,
                   ),
-                  const SizedBox(height: 8),
-                  // Tags placeholder
-                  Row(
-                    children: List.generate(
-                      3,
-                      (index) => Container(
-                        height: 20,
-                        width: 60,
-                        margin: const EdgeInsets.only(right: 8),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),

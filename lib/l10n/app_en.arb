@@ -2121,5 +2121,22 @@
     "placeholders": {
       "error": {"type": "String"}
     }
+  },
+
+  "importBackupFolder": "Import Backup Folder",
+  "importBackupFolderDescription": "Enter the path to your backup folder containing nhasix content folders:",
+  "scanningBackupFolder": "Scanning backup folder...",
+  "backupContentFound": "Found {count} backup items",
+  "@backupContentFound": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "noBackupContentFound": "No valid content found in backup folder",
+  "errorScanningBackup": "Error scanning backup: {error}",
+  "@errorScanningBackup": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
   }
 }

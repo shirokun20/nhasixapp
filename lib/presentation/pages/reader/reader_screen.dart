@@ -538,9 +538,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   Widget _buildImageViewer(String imageUrl, int pageNumber,
       {bool isContinuous = false}) {
-    // Add debug logging to track which image is being displayed
-    debugPrint(
-        '🖼️ Building image viewer for page $pageNumber with URL: $imageUrl');
+    // Debug logging removed to reduce log spam during normal scrolling
+    // Uncomment below for debugging image viewer builds:
+    // debugPrint('🖼️ Building image viewer for page $pageNumber with URL: $imageUrl');
 
     return BlocBuilder<ReaderCubit, ReaderState>(
       builder: (context, state) {

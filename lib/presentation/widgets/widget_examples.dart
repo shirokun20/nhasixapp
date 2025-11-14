@@ -5,6 +5,7 @@ import '../../domain/entities/content.dart';
 import '../../domain/entities/search_filter.dart';
 import '../../domain/entities/tag.dart';
 import 'widgets.dart';
+import 'shimmer_loading_widgets.dart';
 
 /// Example usage of the reusable widgets
 class WidgetExamplesScreen extends StatefulWidget {

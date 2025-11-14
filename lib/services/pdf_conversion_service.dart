@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:logger/logger.dart';
 import 'package:get_it/get_it.dart';
 
+import '../core/utils/directory_utils.dart';
 import 'pdf_service.dart';
 import 'notification_service.dart';
 import '../domain/repositories/repositories.dart';
@@ -33,63 +34,73 @@ class PdfConversionService {
 
   /// Test method untuk verify apakah notification service bisa menampilkan notification
   /// Test method to verify if notification service can display notifications
-  /// 
+  ///
   /// Returns: true jika test notification berhasil ditampilkan
   Future<bool> testPdfNotification({
     String testContentId = 'test-pdf-123',
     String testTitle = 'PDF Notification Test',
   }) async {
     try {
-      debugPrint('PDF_NOTIFICATION: testPdfNotification - STARTING test with contentId=$testContentId');
-      
+      debugPrint(
+          'PDF_NOTIFICATION: testPdfNotification - STARTING test with contentId=$testContentId');
+
       // Test basic notification service first
-      debugPrint('PDF_NOTIFICATION: testPdfNotification - Testing basic notification service');
-      
+      debugPrint(
+          'PDF_NOTIFICATION: testPdfNotification - Testing basic notification service');
+
       try {
         await _notificationService.showTestActionNotification();
-        debugPrint('PDF_NOTIFICATION: testPdfNotification - Basic test notification completed');
+        debugPrint(
+            'PDF_NOTIFICATION: testPdfNotification - Basic test notification completed');
       } catch (basicTestError) {
-        debugPrint('PDF_NOTIFICATION: testPdfNotification - Basic test FAILED: ${basicTestError.toString()}');
+        debugPrint(
+            'PDF_NOTIFICATION: testPdfNotification - Basic test FAILED: ${basicTestError.toString()}');
       }
-      
+
       // Ensure service is ready
       await _ensureNotificationServiceReady();
-      
+
       // Check service state
       final isEnabled = _notificationService.isEnabled;
-      debugPrint('PDF_NOTIFICATION: testPdfNotification - NotificationService.isEnabled = $isEnabled');
-      
+      debugPrint(
+          'PDF_NOTIFICATION: testPdfNotification - NotificationService.isEnabled = $isEnabled');
+
       if (!isEnabled) {
-        debugPrint('PDF_NOTIFICATION: testPdfNotification - FAILED - NotificationService is not enabled');
+        debugPrint(
+            'PDF_NOTIFICATION: testPdfNotification - FAILED - NotificationService is not enabled');
         return false;
       }
-      
+
       // Try to show simple PDF notification
-      debugPrint('PDF_NOTIFICATION: testPdfNotification - Attempting to show test PDF notification');
-      
+      debugPrint(
+          'PDF_NOTIFICATION: testPdfNotification - Attempting to show test PDF notification');
+
       await _notificationService.showPdfConversionStarted(
         contentId: testContentId,
         title: testTitle,
       );
-      
-      debugPrint('PDF_NOTIFICATION: testPdfNotification - Test notification completed successfully');
-      
+
+      debugPrint(
+          'PDF_NOTIFICATION: testPdfNotification - Test notification completed successfully');
+
       // Wait a bit then show completion notification
       await Future.delayed(const Duration(seconds: 2));
-      
+
       await _notificationService.showPdfConversionCompleted(
         contentId: testContentId,
         title: testTitle,
         pdfPaths: ['/test/path/test.pdf'],
         partsCount: 1,
       );
-      
-      debugPrint('PDF_NOTIFICATION: testPdfNotification - Test completion notification sent');
+
+      debugPrint(
+          'PDF_NOTIFICATION: testPdfNotification - Test completion notification sent');
       return true;
-      
     } catch (e, stackTrace) {
-      debugPrint('PDF_NOTIFICATION: testPdfNotification - EXCEPTION: ${e.toString()}');
-      debugPrint('PDF_NOTIFICATION: testPdfNotification - STACKTRACE: ${stackTrace.toString()}');
+      debugPrint(
+          'PDF_NOTIFICATION: testPdfNotification - EXCEPTION: ${e.toString()}');
+      debugPrint(
+          'PDF_NOTIFICATION: testPdfNotification - STACKTRACE: ${stackTrace.toString()}');
       return false;
     }
   }
@@ -98,15 +109,17 @@ class PdfConversionService {
   /// Quick static method for testing from UI or main function
   static Future<void> quickTestPdfNotifications() async {
     try {
-      debugPrint('PDF_NOTIFICATION: quickTestPdfNotifications - Starting quick test');
-      
+      debugPrint(
+          'PDF_NOTIFICATION: quickTestPdfNotifications - Starting quick test');
+
       final service = GetIt.instance<PdfConversionService>();
       final result = await service.testPdfNotification();
-      
-      debugPrint('PDF_NOTIFICATION: quickTestPdfNotifications - Test Result: $result');
-      
+
+      debugPrint(
+          'PDF_NOTIFICATION: quickTestPdfNotifications - Test Result: $result');
     } catch (e) {
-      debugPrint('PDF_NOTIFICATION: quickTestPdfNotifications - Quick test failed: $e');
+      debugPrint(
+          'PDF_NOTIFICATION: quickTestPdfNotifications - Quick test failed: $e');
     }
   }
 
@@ -114,45 +127,55 @@ class PdfConversionService {
   /// This fixes the issue where PDF notifications don't appear in release mode
   Future<void> _ensureNotificationServiceReady() async {
     try {
-      debugPrint('PDF_NOTIFICATION: _ensureNotificationServiceReady - Starting notification service setup');
-      
+      debugPrint(
+          'PDF_NOTIFICATION: _ensureNotificationServiceReady - Starting notification service setup');
+
       // Check initial state
       final initialEnabled = _notificationService.isEnabled;
-      debugPrint('PDF_NOTIFICATION: _ensureNotificationServiceReady - Initial isEnabled = $initialEnabled');
-      
+      debugPrint(
+          'PDF_NOTIFICATION: _ensureNotificationServiceReady - Initial isEnabled = $initialEnabled');
+
       // Re-initialize notification service to ensure it's ready for PDF notifications
       // This is especially important in release mode where the service might not be warm
       await _notificationService.initialize();
-      
-      debugPrint('PDF_NOTIFICATION: _ensureNotificationServiceReady - NotificationService.initialize() completed');
-      
+
+      debugPrint(
+          'PDF_NOTIFICATION: _ensureNotificationServiceReady - NotificationService.initialize() completed');
+
       // Check state after first initialization
       final afterInitEnabled = _notificationService.isEnabled;
-      debugPrint('PDF_NOTIFICATION: _ensureNotificationServiceReady - After init isEnabled = $afterInitEnabled');
-      
+      debugPrint(
+          'PDF_NOTIFICATION: _ensureNotificationServiceReady - After init isEnabled = $afterInitEnabled');
+
       // Additional setup for release mode compatibility
       // Force another initialization to ensure channels are properly registered
       try {
         // Double initialization to ensure proper channel setup
         await _notificationService.initialize();
-        
+
         final finalEnabled = _notificationService.isEnabled;
-        debugPrint('PDF_NOTIFICATION: _ensureNotificationServiceReady - After double init isEnabled = $finalEnabled');
-        
+        debugPrint(
+            'PDF_NOTIFICATION: _ensureNotificationServiceReady - After double init isEnabled = $finalEnabled');
+
         if (!finalEnabled) {
-          debugPrint('PDF_NOTIFICATION: _ensureNotificationServiceReady - WARNING - Service still not enabled after double init!');
+          debugPrint(
+              'PDF_NOTIFICATION: _ensureNotificationServiceReady - WARNING - Service still not enabled after double init!');
         }
-        
       } catch (doubleInitError) {
-        debugPrint('PDF_NOTIFICATION: _ensureNotificationServiceReady - Double init error: ${doubleInitError.toString()}');
+        debugPrint(
+            'PDF_NOTIFICATION: _ensureNotificationServiceReady - Double init error: ${doubleInitError.toString()}');
       }
-      
-      _logger.d('PdfConversionService: Notification service re-initialized for PDF notifications');
-      debugPrint('PDF_NOTIFICATION: _ensureNotificationServiceReady - Setup completed successfully');
-      
+
+      _logger.d(
+          'PdfConversionService: Notification service re-initialized for PDF notifications');
+      debugPrint(
+          'PDF_NOTIFICATION: _ensureNotificationServiceReady - Setup completed successfully');
     } catch (e) {
-      _logger.w('PdfConversionService: Failed to re-initialize notification service', error: e);
-      debugPrint('PDF_NOTIFICATION: _ensureNotificationServiceReady - FAILED: ${e.toString()}');
+      _logger.w(
+          'PdfConversionService: Failed to re-initialize notification service',
+          error: e);
+      debugPrint(
+          'PDF_NOTIFICATION: _ensureNotificationServiceReady - FAILED: ${e.toString()}');
     }
   }
 
@@ -167,7 +190,8 @@ class PdfConversionService {
           totalSize += await file.length();
         }
       } catch (e) {
-        _logger.w('PdfConversionService: Error getting file size for $pdfPath', error: e);
+        _logger.w('PdfConversionService: Error getting file size for $pdfPath',
+            error: e);
       }
     }
     return totalSize;
@@ -175,7 +199,7 @@ class PdfConversionService {
 
   /// Mengkonversi images download menjadi PDF di background dengan splitting otomatis
   /// Converts downloaded images to PDF in background with automatic splitting
-  /// 
+  ///
   /// Parameters:
   /// - contentId: ID konten yang akan dikonversi
   /// - title: Judul konten untuk nama file PDF
@@ -190,56 +214,66 @@ class PdfConversionService {
     int maxPagesPerFile = 50,
   }) async {
     try {
-      debugPrint('PDF_NOTIFICATION: convertToPdfInBackground - STARTED for contentId=$contentId, title=$title, images=${imagePaths.length}');
-      
-      _logger.i('PdfConversionService: Starting background PDF conversion for $contentId');
-      
+      debugPrint(
+          'PDF_NOTIFICATION: convertToPdfInBackground - STARTED for contentId=$contentId, title=$title, images=${imagePaths.length}');
+
+      _logger.i(
+          'PdfConversionService: Starting background PDF conversion for $contentId');
+
       // Validasi input parameters
       if (imagePaths.isEmpty) {
         throw Exception(_getLocalized('pdfNoImagesProvided',
-          fallback: 'No images provided for PDF conversion'));
+            fallback: 'No images provided for PDF conversion'));
       }
 
       // Tampilkan notifikasi bahwa konversi PDF dimulai
       // Show notification that PDF conversion has started
-      _logger.i('PdfConversionService: About to show PDF conversion started notification');
-      debugPrint('PDF_NOTIFICATION: convertToPdfInBackground - About to call showPdfConversionStarted');
-      
+      _logger.i(
+          'PdfConversionService: About to show PDF conversion started notification');
+      debugPrint(
+          'PDF_NOTIFICATION: convertToPdfInBackground - About to call showPdfConversionStarted');
+
       // Ensure notification service is ready (especially important for release mode)
       await _ensureNotificationServiceReady();
-      
-      _notificationService.debugLogState('Before PDF conversion started notification');
-      debugPrint('PDF_NOTIFICATION: convertToPdfInBackground - Calling showPdfConversionStarted now');
-      
+
+      _notificationService
+          .debugLogState('Before PDF conversion started notification');
+      debugPrint(
+          'PDF_NOTIFICATION: convertToPdfInBackground - Calling showPdfConversionStarted now');
+
       await _notificationService.showPdfConversionStarted(
         contentId: contentId,
         title: title,
       );
-      
-      debugPrint('PDF_NOTIFICATION: convertToPdfInBackground - showPdfConversionStarted completed');
+
+      debugPrint(
+          'PDF_NOTIFICATION: convertToPdfInBackground - showPdfConversionStarted completed');
 
       // Buat direktori output untuk PDF
       // Create output directory for PDFs
-      final pdfOutputDir = await _createPdfOutputDirectory(outputDir, contentId);
-      _logger.d('PdfConversionService: Output directory created: ${pdfOutputDir.path}');
+      final pdfOutputDir =
+          await _createPdfOutputDirectory(outputDir, contentId);
+      _logger.d(
+          'PdfConversionService: Output directory created: ${pdfOutputDir.path}');
 
       // Split images jika lebih dari maxPagesPerFile
       // Split images if more than maxPagesPerFile
       final totalPages = imagePaths.length;
       final needsSplitting = totalPages > maxPagesPerFile;
       final pdfPaths = <String>[];
-      
+
       if (needsSplitting) {
         // Proses splitting - buat multiple PDF files
         // Process splitting - create multiple PDF files
         final totalParts = (totalPages / maxPagesPerFile).ceil();
-        _logger.i('PdfConversionService: Splitting into $totalParts parts ($totalPages pages)');
-        
+        _logger.i(
+            'PdfConversionService: Splitting into $totalParts parts ($totalPages pages)');
+
         for (int part = 1; part <= totalParts; part++) {
           final startIndex = (part - 1) * maxPagesPerFile;
           final endIndex = (startIndex + maxPagesPerFile).clamp(0, totalPages);
           final partImages = imagePaths.sublist(startIndex, endIndex);
-          
+
           // Update progress notification hanya di pertengahan proses (tidak setiap part)
           // Update progress notification only in the middle of process (not every part)
           if (part == 1 || part == (totalParts ~/ 2) || part == totalParts) {
@@ -250,11 +284,12 @@ class PdfConversionService {
               title: '$title (Part $part/$totalParts)',
             );
           }
-          
+
           // Konversi part ini ke PDF dengan part number di isolate terpisah
           // Convert this part to PDF with part number in separate isolate
-          _logger.d('PdfConversionService: Processing part $part in isolate...');
-          
+          _logger
+              .d('PdfConversionService: Processing part $part in isolate...');
+
           final result = await _pdfService.convertToPdfInIsolate(
             contentId: contentId,
             title: '$title (Part $part)',
@@ -262,13 +297,13 @@ class PdfConversionService {
             outputDir: pdfOutputDir.path,
             partNumber: part, // Pass part number for unique filename
           );
-          
+
           if (result.success && result.pdfPath != null) {
             pdfPaths.add(result.pdfPath!);
           } else {
             throw Exception(_getLocalized('pdfFailedToCreatePart',
-              args: {'part': part, 'error': result.error ?? 'Unknown error'},
-              fallback: 'Failed to create PDF part $part: ${result.error}'));
+                args: {'part': part, 'error': result.error ?? 'Unknown error'},
+                fallback: 'Failed to create PDF part $part: ${result.error}'));
           }
         }
       } else {
@@ -279,22 +314,22 @@ class PdfConversionService {
           progress: 50,
           title: title,
         );
-        
+
         _logger.d('PdfConversionService: Processing single PDF in isolate...');
-        
+
         final result = await _pdfService.convertToPdfInIsolate(
           contentId: contentId,
           title: title,
           imagePaths: imagePaths,
           outputDir: pdfOutputDir.path,
         );
-        
+
         if (result.success && result.pdfPath != null) {
           pdfPaths.add(result.pdfPath!);
         } else {
           throw Exception(_getLocalized('pdfFailedToCreate',
-            args: {'error': result.error ?? 'Unknown error'},
-            fallback: 'Failed to create PDF: ${result.error}'));
+              args: {'error': result.error ?? 'Unknown error'},
+              fallback: 'Failed to create PDF: ${result.error}'));
         }
       }
 
@@ -314,58 +349,70 @@ class PdfConversionService {
 
       // Tampilkan notifikasi sukses dengan informasi file yang dibuat
       // Show success notification with created file information
-      _logger.i('PdfConversionService: About to show PDF conversion completed notification');
-      debugPrint('PDF_NOTIFICATION: convertToPdfInBackground - About to call showPdfConversionCompleted');
-      
+      _logger.i(
+          'PdfConversionService: About to show PDF conversion completed notification');
+      debugPrint(
+          'PDF_NOTIFICATION: convertToPdfInBackground - About to call showPdfConversionCompleted');
+
       // Ensure notification service is ready (especially important for release mode)
       await _ensureNotificationServiceReady();
-      
-      _notificationService.debugLogState('Before PDF conversion completed notification');
-      debugPrint('PDF_NOTIFICATION: convertToPdfInBackground - Calling showPdfConversionCompleted now');
-      
+
+      _notificationService
+          .debugLogState('Before PDF conversion completed notification');
+      debugPrint(
+          'PDF_NOTIFICATION: convertToPdfInBackground - Calling showPdfConversionCompleted now');
+
       await _notificationService.showPdfConversionCompleted(
         contentId: contentId,
         title: title,
         pdfPaths: conversionResult.pdfPaths,
         partsCount: conversionResult.partsCount,
       );
-      
-      debugPrint('PDF_NOTIFICATION: convertToPdfInBackground - showPdfConversionCompleted completed');
-      
-      _logger.i('PdfConversionService: PDF conversion completed successfully for $contentId');
-      _logger.i('PdfConversionService: Created ${conversionResult.partsCount} PDF file(s) with ${conversionResult.pageCount} total pages');
 
+      debugPrint(
+          'PDF_NOTIFICATION: convertToPdfInBackground - showPdfConversionCompleted completed');
+
+      _logger.i(
+          'PdfConversionService: PDF conversion completed successfully for $contentId');
+      _logger.i(
+          'PdfConversionService: Created ${conversionResult.partsCount} PDF file(s) with ${conversionResult.pageCount} total pages');
     } catch (e, stackTrace) {
       // Handle unexpected errors selama proses konversi
       // Handle unexpected errors during conversion process
-      _logger.e('PdfConversionService: Unexpected error during PDF conversion for $contentId', 
-                error: e, stackTrace: stackTrace);
-      
-      debugPrint('PDF_NOTIFICATION: convertToPdfInBackground - ERROR occurred: ${e.toString()}');
-      
+      _logger.e(
+          'PdfConversionService: Unexpected error during PDF conversion for $contentId',
+          error: e,
+          stackTrace: stackTrace);
+
+      debugPrint(
+          'PDF_NOTIFICATION: convertToPdfInBackground - ERROR occurred: ${e.toString()}');
+
       // Ensure notification service is ready for error notification
       await _ensureNotificationServiceReady();
-      
-      debugPrint('PDF_NOTIFICATION: convertToPdfInBackground - About to call showPdfConversionError');
-      
+
+      debugPrint(
+          'PDF_NOTIFICATION: convertToPdfInBackground - About to call showPdfConversionError');
+
       await _notificationService.showPdfConversionError(
         contentId: contentId,
         title: title,
         error: 'Conversion failed: ${e.toString()}',
       );
-      
-      debugPrint('PDF_NOTIFICATION: convertToPdfInBackground - showPdfConversionError completed');
+
+      debugPrint(
+          'PDF_NOTIFICATION: convertToPdfInBackground - showPdfConversionError completed');
     }
   }
 
   /// Membuat direktori output untuk file PDF
   /// Creates output directory for PDF files
-  /// 
+  ///
   /// Returns: Directory object untuk menyimpan PDF
-  Future<Directory> _createPdfOutputDirectory(String? customOutputDir, [String? contentId]) async {
+  Future<Directory> _createPdfOutputDirectory(String? customOutputDir,
+      [String? contentId]) async {
     try {
       Directory outputDir;
-      
+
       if (customOutputDir != null) {
         // Gunakan direktori custom yang diberikan user
         // Use custom directory provided by user
@@ -373,161 +420,68 @@ class PdfConversionService {
       } else {
         // Gunakan smart Downloads directory detection (sama dengan DownloadService)
         // Use smart Downloads directory detection (same as DownloadService)
-        final downloadsPath = await _getDownloadsDirectory();
-        
+        final downloadsPath = await DirectoryUtils.getDownloadsDirectory();
+
         if (contentId != null) {
           // Simpan PDF di folder konten yang sama dengan images: Downloads/nhasix/[contentId]/pdf/
           // Save PDF in same content folder as images: Downloads/nhasix/[contentId]/pdf/
-          outputDir = Directory(path.join(downloadsPath, 'nhasix', contentId, 'pdf'));
+          outputDir =
+              Directory(path.join(downloadsPath, 'nhasix', contentId, 'pdf'));
         } else {
           // Fallback ke folder umum: Downloads/nhasix-generate/pdf/
           // Fallback to general folder: Downloads/nhasix-generate/pdf/
-          outputDir = Directory(path.join(downloadsPath, 'nhasix-generate', 'pdf'));
+          outputDir =
+              Directory(path.join(downloadsPath, 'nhasix-generate', 'pdf'));
         }
       }
 
       // Buat direktori jika belum ada (recursive: true untuk membuat parent dirs)
       // Create directory if it doesn't exist (recursive: true to create parent dirs)
-        if (!await outputDir.exists()) {
-          await outputDir.create(recursive: true);
-          _logger.i(_getLocalized('pdfOutputDirectoryCreated',
+      if (!await outputDir.exists()) {
+        await outputDir.create(recursive: true);
+        _logger.i(_getLocalized('pdfOutputDirectoryCreated',
             args: {'path': outputDir.path},
-            fallback: 'PdfConversionService: Created PDF output directory: ${outputDir.path}'));
-        }
+            fallback:
+                'PdfConversionService: Created PDF output directory: ${outputDir.path}'));
+      }
 
       return outputDir;
     } catch (e) {
-      _logger.e('PdfConversionService: Failed to create PDF output directory', error: e);
-      
+      _logger.e('PdfConversionService: Failed to create PDF output directory',
+          error: e);
+
       // Fallback ke app documents directory jika gagal akses external storage
       // Fallback to app documents directory if external storage access fails
       final documentsDir = await getApplicationDocumentsDirectory();
       final fallbackDir = Directory(path.join(documentsDir.path, 'nhasix-pdf'));
-      
+
       if (!await fallbackDir.exists()) {
         await fallbackDir.create(recursive: true);
       }
-      
+
       _logger.w(_getLocalized('pdfUsingFallbackDirectory',
-        args: {'path': fallbackDir.path},
-        fallback: 'PdfConversionService: Using fallback directory: ${fallbackDir.path}'));
+          args: {'path': fallbackDir.path},
+          fallback:
+              'PdfConversionService: Using fallback directory: ${fallbackDir.path}'));
       return fallbackDir;
-    }
-  }
-
-  /// Smart Downloads directory detection (same as DownloadService)
-  /// Tries multiple possible Downloads folder names and locations
-  Future<String> _getDownloadsDirectory() async {
-    try {
-      // First, try to get external storage directory
-      Directory? externalDir;
-      try {
-        externalDir = await getExternalStorageDirectory();
-      } catch (e) {
-        _logger.w('PdfConversionService: Could not get external storage directory: $e');
-      }
-
-      if (externalDir != null) {
-        // Try to find Downloads folder in external storage root
-        final externalRoot = externalDir.path.split('/Android')[0];
-        
-        // Common Downloads folder names (English, Indonesian, Spanish, etc.)
-        final downloadsFolderNames = [
-          'Download',     // English (most common)
-          'Downloads',    // English alternative
-          'Unduhan',      // Indonesian
-          'Descargas',    // Spanish
-          'Téléchargements', // French
-          'Downloads',    // German uses English
-          'ダウンロード',     // Japanese
-        ];
-
-        // Try each possible Downloads folder
-        for (final folderName in downloadsFolderNames) {
-          final downloadsDir = Directory(path.join(externalRoot, folderName));
-          if (await downloadsDir.exists()) {
-            _logger.d('PdfConversionService: Found Downloads directory: ${downloadsDir.path}');
-            return downloadsDir.path;
-          }
-        }
-
-        // If no Downloads folder found, create one in external storage root
-        final defaultDownloadsDir = Directory(path.join(externalRoot, 'Download'));
-        try {
-          if (!await defaultDownloadsDir.exists()) {
-            await defaultDownloadsDir.create(recursive: true);
-            _logger.i('PdfConversionService: Created Downloads directory: ${defaultDownloadsDir.path}');
-          }
-          return defaultDownloadsDir.path;
-        } catch (e) {
-          _logger.w('PdfConversionService: Could not create Downloads directory in external storage: $e');
-        }
-      }
-
-      // Fallback 1: Try hardcoded common paths
-      final commonPaths = [
-        '/storage/emulated/0/Download',
-        '/storage/emulated/0/Downloads',
-        '/storage/emulated/0/Unduhan',
-        '/sdcard/Download',
-        '/sdcard/Downloads',
-      ];
-
-      for (final commonPath in commonPaths) {
-        final dir = Directory(commonPath);
-        if (await dir.exists()) {
-          _logger.d('PdfConversionService: Found Downloads directory at common path: $commonPath');
-          return commonPath;
-        }
-      }
-
-      // Fallback 2: Use app-specific external storage
-      if (externalDir != null) {
-        final appDownloadsDir = Directory(path.join(externalDir.path, 'downloads'));
-        if (!await appDownloadsDir.exists()) {
-          await appDownloadsDir.create(recursive: true);
-        }
-        _logger.i('PdfConversionService: Using app-specific downloads directory: ${appDownloadsDir.path}');
-        return appDownloadsDir.path;
-      }
-
-      // Fallback 3: Use application documents directory
-      final documentsDir = await getApplicationDocumentsDirectory();
-      final documentsDownloadsDir = Directory(path.join(documentsDir.path, 'downloads'));
-      if (!await documentsDownloadsDir.exists()) {
-        await documentsDownloadsDir.create(recursive: true);
-      }
-      _logger.i('PdfConversionService: Using app documents downloads directory: ${documentsDownloadsDir.path}');
-      return documentsDownloadsDir.path;
-
-    } catch (e) {
-      _logger.e('PdfConversionService: Error detecting Downloads directory: $e');
-      
-      // Emergency fallback: use app documents
-      final documentsDir = await getApplicationDocumentsDirectory();
-      final emergencyDir = Directory(path.join(documentsDir.path, 'downloads'));
-      if (!await emergencyDir.exists()) {
-        await emergencyDir.create(recursive: true);
-      }
-      _logger.w('PdfConversionService: Using emergency fallback directory: ${emergencyDir.path}');
-      return emergencyDir.path;
     }
   }
 
   /// Simpan informasi hasil konversi PDF ke database untuk tracking
   /// Save PDF conversion result information to database for tracking
-  /// 
+  ///
   /// Parameters:
   /// - contentId: ID konten yang dikonversi
   /// - result: Hasil konversi dari PdfService
-  Future<void> _savePdfConversionInfo(String contentId, PdfConversionResult result) async {
+  Future<void> _savePdfConversionInfo(
+      String contentId, PdfConversionResult result) async {
     try {
       // Implementasi penyimpanan info PDF ke database
       // Ini bisa digunakan untuk:
       // - Track PDF yang sudah dibuat untuk konten tertentu
       // - Menampilkan informasi PDF di UI
       // - Cleanup PDF files yang sudah tidak diperlukan
-      
+
       // Example structure yang bisa disimpan:
       // {
       //   'contentId': contentId,
@@ -537,12 +491,18 @@ class PdfConversionService {
       //   'totalFileSize': result.fileSize,
       //   'createdAt': DateTime.now().toIso8601String(),
       // }
-      
+
       _logger.d(_getLocalized('pdfInfoSaved',
-        args: {'contentId': contentId, 'partsCount': result.partsCount, 'pageCount': result.pageCount},
-        fallback: 'PdfConversionService: PDF info saved for $contentId (${result.partsCount} parts, ${result.pageCount} pages)'));
+          args: {
+            'contentId': contentId,
+            'partsCount': result.partsCount,
+            'pageCount': result.pageCount
+          },
+          fallback:
+              'PdfConversionService: PDF info saved for $contentId (${result.partsCount} parts, ${result.pageCount} pages)'));
     } catch (e) {
-      _logger.w('PdfConversionService: Failed to save PDF conversion info', error: e);
+      _logger.w('PdfConversionService: Failed to save PDF conversion info',
+          error: e);
       // Non-critical error, tidak perlu throw exception
       // Non-critical error, no need to throw exception
     }
@@ -550,79 +510,88 @@ class PdfConversionService {
 
   /// Cek apakah PDF sudah pernah dibuat untuk konten tertentu
   /// Check if PDF has been created for specific content
-  /// 
+  ///
   /// Returns: true jika PDF sudah ada, false jika belum
-  Future<bool> isPdfExistForContent(String contentId, {String? outputDir}) async {
+  Future<bool> isPdfExistForContent(String contentId,
+      {String? outputDir}) async {
     try {
       final pdfDir = await _createPdfOutputDirectory(outputDir, contentId);
-      
+
       // Cek apakah ada file PDF dengan prefix contentId
       // Check if PDF files with contentId prefix exist
       final files = await pdfDir.list().toList();
-      final pdfExists = files.any((file) => 
-        file is File && 
-        path.basename(file.path).startsWith('${contentId}_') &&
-        path.extension(file.path).toLowerCase() == '.pdf'
-      );
-      
+      final pdfExists = files.any((file) =>
+          file is File &&
+          path.basename(file.path).startsWith('${contentId}_') &&
+          path.extension(file.path).toLowerCase() == '.pdf');
+
       _logger.d(_getLocalized('pdfExistsForContent',
-        args: {'contentId': contentId, 'exists': pdfExists.toString()},
-        fallback: 'PdfConversionService: PDF exists for $contentId: $pdfExists'));
+          args: {'contentId': contentId, 'exists': pdfExists.toString()},
+          fallback:
+              'PdfConversionService: PDF exists for $contentId: $pdfExists'));
       return pdfExists;
     } catch (e) {
-      _logger.e('PdfConversionService: Error checking PDF existence for $contentId', error: e);
+      _logger.e(
+          'PdfConversionService: Error checking PDF existence for $contentId',
+          error: e);
       return false;
     }
   }
 
   /// Dapatkan daftar file PDF untuk konten tertentu
   /// Get list of PDF files for specific content
-  /// 
+  ///
   /// Returns: List path file PDF yang ditemukan
-  Future<List<String>> getPdfPathsForContent(String contentId, {String? outputDir}) async {
+  Future<List<String>> getPdfPathsForContent(String contentId,
+      {String? outputDir}) async {
     try {
       final pdfDir = await _createPdfOutputDirectory(outputDir, contentId);
       final pdfPaths = <String>[];
-      
+
       // Scan direktori untuk file PDF dengan prefix contentId
       // Scan directory for PDF files with contentId prefix
       final files = await pdfDir.list().toList();
-      
+
       for (final file in files) {
-        if (file is File && 
+        if (file is File &&
             path.basename(file.path).startsWith('${contentId}_') &&
             path.extension(file.path).toLowerCase() == '.pdf') {
           pdfPaths.add(file.path);
         }
       }
-      
+
       // Sort berdasarkan nama file untuk urutan part yang benar
       // Sort by filename for correct part order
       pdfPaths.sort();
-      
+
       _logger.d(_getLocalized('pdfFoundFiles',
-        args: {'contentId': contentId, 'count': pdfPaths.length},
-        fallback: 'PdfConversionService: Found ${pdfPaths.length} PDF file(s) for $contentId'));
+          args: {'contentId': contentId, 'count': pdfPaths.length},
+          fallback:
+              'PdfConversionService: Found ${pdfPaths.length} PDF file(s) for $contentId'));
       return pdfPaths;
     } catch (e) {
-      _logger.e('PdfConversionService: Error getting PDF paths for $contentId', error: e);
+      _logger.e('PdfConversionService: Error getting PDF paths for $contentId',
+          error: e);
       return [];
     }
   }
 
   /// Hapus semua file PDF untuk konten tertentu
   /// Delete all PDF files for specific content
-  /// 
+  ///
   /// Returns: true jika berhasil dihapus, false jika gagal
-  Future<bool> deletePdfsForContent(String contentId, {String? outputDir}) async {
+  Future<bool> deletePdfsForContent(String contentId,
+      {String? outputDir}) async {
     try {
-      final pdfPaths = await getPdfPathsForContent(contentId, outputDir: outputDir);
-      
+      final pdfPaths =
+          await getPdfPathsForContent(contentId, outputDir: outputDir);
+
       if (pdfPaths.isEmpty) {
-        _logger.d('PdfConversionService: No PDF files to delete for $contentId');
+        _logger
+            .d('PdfConversionService: No PDF files to delete for $contentId');
         return true;
       }
-      
+
       // Hapus semua file PDF yang ditemukan
       // Delete all found PDF files
       for (final pdfPath in pdfPaths) {
@@ -632,26 +601,30 @@ class PdfConversionService {
           _logger.d('PdfConversionService: Deleted PDF file: $pdfPath');
         }
       }
-      
+
       _logger.i(_getLocalized('pdfDeletedFiles',
-        args: {'contentId': contentId, 'count': pdfPaths.length},
-        fallback: 'PdfConversionService: Successfully deleted ${pdfPaths.length} PDF file(s) for $contentId'));
+          args: {'contentId': contentId, 'count': pdfPaths.length},
+          fallback:
+              'PdfConversionService: Successfully deleted ${pdfPaths.length} PDF file(s) for $contentId'));
       return true;
     } catch (e) {
-      _logger.e('PdfConversionService: Error deleting PDF files for $contentId', error: e);
+      _logger.e('PdfConversionService: Error deleting PDF files for $contentId',
+          error: e);
       return false;
     }
   }
 
   /// Dapatkan total ukuran file PDF untuk konten tertentu
   /// Get total file size of PDF files for specific content
-  /// 
+  ///
   /// Returns: Total ukuran dalam bytes
-  Future<int> getTotalPdfSizeForContent(String contentId, {String? outputDir}) async {
+  Future<int> getTotalPdfSizeForContent(String contentId,
+      {String? outputDir}) async {
     try {
-      final pdfPaths = await getPdfPathsForContent(contentId, outputDir: outputDir);
+      final pdfPaths =
+          await getPdfPathsForContent(contentId, outputDir: outputDir);
       int totalSize = 0;
-      
+
       // Hitung total ukuran semua file PDF
       // Calculate total size of all PDF files
       for (final pdfPath in pdfPaths) {
@@ -660,23 +633,26 @@ class PdfConversionService {
           totalSize += await file.length();
         }
       }
-      
+
       _logger.d(_getLocalized('pdfTotalSize',
-        args: {'contentId': contentId, 'sizeBytes': totalSize},
-        fallback: 'PdfConversionService: Total PDF size for $contentId: $totalSize bytes'));
+          args: {'contentId': contentId, 'sizeBytes': totalSize},
+          fallback:
+              'PdfConversionService: Total PDF size for $contentId: $totalSize bytes'));
       return totalSize;
     } catch (e) {
-      _logger.e('PdfConversionService: Error calculating PDF size for $contentId', error: e);
+      _logger.e(
+          'PdfConversionService: Error calculating PDF size for $contentId',
+          error: e);
       return 0;
     }
   }
 
   /// Format ukuran file untuk display ke user
   /// Format file size for user display
-  /// 
+  ///
   /// Parameters:
   /// - bytes: Ukuran dalam bytes
-  /// 
+  ///
   /// Returns: String format yang user-friendly (e.g., "2.5 MB")
   String formatFileSize(int bytes) {
     if (bytes < 1024) {
@@ -692,43 +668,46 @@ class PdfConversionService {
 
   /// Cleanup file PDF lama berdasarkan umur atau kriteria tertentu
   /// Cleanup old PDF files based on age or specific criteria
-  /// 
+  ///
   /// Parameters:
   /// - maxAge: Umur maksimal file dalam hari (default: 30 hari)
   /// - outputDir: Direktori yang akan dibersihkan (optional)
-  /// 
+  ///
   /// Returns: Jumlah file yang berhasil dihapus
   Future<int> cleanupOldPdfs({int maxAge = 30, String? outputDir}) async {
     try {
       final pdfDir = await _createPdfOutputDirectory(outputDir);
       final cutoffDate = DateTime.now().subtract(Duration(days: maxAge));
       int deletedCount = 0;
-      
+
       _logger.i(_getLocalized('pdfCleanupStarted',
-        args: {'maxAge': maxAge},
-        fallback: 'PdfConversionService: Starting PDF cleanup, deleting files older than $maxAge days'));
-      
+          args: {'maxAge': maxAge},
+          fallback:
+              'PdfConversionService: Starting PDF cleanup, deleting files older than $maxAge days'));
+
       // Scan semua file PDF di direktori
       // Scan all PDF files in directory
       final files = await pdfDir.list().toList();
-      
+
       for (final file in files) {
         if (file is File && path.extension(file.path).toLowerCase() == '.pdf') {
           final stat = await file.stat();
-          
+
           // Hapus file jika lebih tua dari cutoff date
           // Delete file if older than cutoff date
           if (stat.modified.isBefore(cutoffDate)) {
             await file.delete();
             deletedCount++;
-            _logger.d('PdfConversionService: Deleted old PDF: ${path.basename(file.path)}');
+            _logger.d(
+                'PdfConversionService: Deleted old PDF: ${path.basename(file.path)}');
           }
         }
       }
-      
+
       _logger.i(_getLocalized('pdfCleanupCompleted',
-        args: {'deletedCount': deletedCount},
-        fallback: 'PdfConversionService: Cleanup completed, deleted $deletedCount old PDF files'));
+          args: {'deletedCount': deletedCount},
+          fallback:
+              'PdfConversionService: Cleanup completed, deleted $deletedCount old PDF files'));
       return deletedCount;
     } catch (e) {
       _logger.e('PdfConversionService: Error during PDF cleanup', error: e);
@@ -738,26 +717,26 @@ class PdfConversionService {
 
   /// Dapatkan statistik PDF di direktori output
   /// Get PDF statistics in output directory
-  /// 
+  ///
   /// Returns: Map dengan informasi statistik
   Future<Map<String, dynamic>> getPdfStatistics({String? outputDir}) async {
     try {
       final pdfDir = await _createPdfOutputDirectory(outputDir);
       final files = await pdfDir.list().toList();
-      
+
       int totalPdfFiles = 0;
       int totalSize = 0;
       final Map<String, int> contentCounts = {};
-      
+
       // Analisis semua file PDF
       // Analyze all PDF files
       for (final file in files) {
         if (file is File && path.extension(file.path).toLowerCase() == '.pdf') {
           totalPdfFiles++;
-          
+
           final fileSize = await file.length();
           totalSize += fileSize;
-          
+
           // Extract content ID dari nama file
           // Extract content ID from filename
           final fileName = path.basenameWithoutExtension(file.path);
@@ -768,18 +747,18 @@ class PdfConversionService {
           }
         }
       }
-      
+
       final statistics = {
         'totalPdfFiles': totalPdfFiles,
         'totalSizeBytes': totalSize,
         'totalSizeFormatted': formatFileSize(totalSize),
         'uniqueContents': contentCounts.length,
-        'averageFilesPerContent': contentCounts.isNotEmpty 
-            ? (totalPdfFiles / contentCounts.length).round() 
+        'averageFilesPerContent': contentCounts.isNotEmpty
+            ? (totalPdfFiles / contentCounts.length).round()
             : 0,
         'directoryPath': pdfDir.path,
       };
-      
+
       _logger.d('PdfConversionService: PDF statistics - $statistics');
       return statistics;
     } catch (e) {
@@ -796,13 +775,15 @@ class PdfConversionService {
   }
 
   /// Set localization callback for getting localized strings
-  void setLocalizationCallback(String Function(String key, {Map<String, dynamic>? args}) localize) {
+  void setLocalizationCallback(
+      String Function(String key, {Map<String, dynamic>? args}) localize) {
     _localize = localize;
     _logger.i('PdfConversionService: Localization callback set');
   }
 
   /// Get localized string with fallback
-  String _getLocalized(String key, {Map<String, dynamic>? args, String? fallback}) {
+  String _getLocalized(String key,
+      {Map<String, dynamic>? args, String? fallback}) {
     try {
       return _localize?.call(key, args: args) ?? fallback ?? key;
     } catch (e) {
@@ -827,31 +808,31 @@ class PdfConversionResult {
   /// Apakah konversi berhasil
   /// Whether conversion was successful
   final bool success;
-  
+
   /// List path file PDF yang dibuat (bisa multiple jika di-split)
   /// List of PDF file paths created (can be multiple if split)
   final List<String> pdfPaths;
-  
+
   /// Total jumlah halaman dari semua PDF
   /// Total number of pages across all PDFs
   final int pageCount;
-  
+
   /// Jumlah file PDF yang dibuat (1 untuk single file, >1 untuk split)
   /// Number of PDF files created (1 for single file, >1 for split)
   final int partsCount;
-  
+
   /// Total ukuran file semua PDF dalam bytes
   /// Total file size of all PDFs in bytes
   final int fileSize;
-  
+
   /// Error message jika konversi gagal
   /// Error message if conversion failed
   final String? error;
-  
+
   /// Convenience getter untuk mendapatkan path PDF pertama
   /// Convenience getter to get first PDF path
   String? get pdfPath => pdfPaths.isNotEmpty ? pdfPaths.first : null;
-  
+
   /// Apakah PDF di-split menjadi multiple files
   /// Whether PDF was split into multiple files
   bool get isSplit => partsCount > 1;

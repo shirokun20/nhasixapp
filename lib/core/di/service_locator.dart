@@ -68,6 +68,9 @@ import 'package:nhasixapp/services/detail_cache_service.dart';
 import 'package:nhasixapp/services/request_deduplication_service.dart';
 import 'package:nhasixapp/services/app_update_service.dart';
 import 'package:nhasixapp/services/image_cache_service.dart';
+import 'package:nhasixapp/services/cache/cache_manager.dart' as multi_cache;
+import 'package:nhasixapp/domain/entities/content.dart';
+import 'package:nhasixapp/domain/entities/tag.dart';
 
 final getIt = GetIt.instance;
 
@@ -174,6 +177,28 @@ void _setupServices() {
 
   // Image Cache Service - Advanced image caching with TTL and size management
   getIt.registerLazySingleton<ImageCacheService>(() => ImageCacheService());
+
+  // Multi-layer Cache Manager for Content - Memory + Disk caching
+  getIt.registerLazySingleton<multi_cache.CacheManager<Content>>(
+    () => multi_cache.CacheManager<Content>.standard(
+      namespace: 'content',
+      memoryMaxEntries: 50,
+      diskMaxSizeMB: 30,
+      memoryTTL: const Duration(hours: 1),
+      diskTTL: const Duration(days: 1),
+    )..initialize(),
+  );
+
+  // Multi-layer Cache Manager for Tag Lists
+  getIt.registerLazySingleton<multi_cache.CacheManager<List<Tag>>>(
+    () => multi_cache.CacheManager<List<Tag>>.standard(
+      namespace: 'tags',
+      memoryMaxEntries: 20,
+      diskMaxSizeMB: 10,
+      memoryTTL: const Duration(hours: 2),
+      diskTTL: const Duration(days: 7),
+    )..initialize(),
+  );
 }
 
 /// Setup data sources (Remote and Local)
@@ -218,11 +243,13 @@ void _setupDataSources() {
 
 /// Setup repository implementations
 void _setupRepositories() {
-  // Content Repository
+  // Content Repository with multi-layer cache integration
   getIt.registerLazySingleton<ContentRepository>(() => ContentRepositoryImpl(
         remoteDataSource: getIt<RemoteDataSource>(),
         detailCacheService: getIt<DetailCacheService>(),
         requestDeduplicationService: getIt<RequestDeduplicationService>(),
+        contentCacheManager: getIt<multi_cache.CacheManager<Content>>(),
+        tagCacheManager: getIt<multi_cache.CacheManager<List<Tag>>>(),
         // localDataSource: getIt<LocalDataSource>(),
         logger: getIt<Logger>(),
       ));

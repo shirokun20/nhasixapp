@@ -2969,4 +2969,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String errorRetryingPdfConversion(String error) {
     return 'Error retrying PDF conversion: $error';
   }
+
+  @override
+  String get importBackupFolder => 'Import Backup Folder';
+
+  @override
+  String get importBackupFolderDescription =>
+      'Enter the path to your backup folder containing nhasix content folders:';
+
+  @override
+  String get scanningBackupFolder => 'Scanning backup folder...';
+
+  @override
+  String backupContentFound(int count) {
+    return 'Found $count backup items';
+  }
+
+  @override
+  String get noBackupContentFound => 'No valid content found in backup folder';
+
+  @override
+  String errorScanningBackup(String error) {
+    return 'Error scanning backup: $error';
+  }
 }

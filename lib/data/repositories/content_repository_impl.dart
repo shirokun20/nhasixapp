@@ -6,6 +6,7 @@ import '../../domain/value_objects/value_objects.dart';
 import '../../domain/usecases/base_usecase.dart';
 // import '../datasources/local/pagination_cache_keys.dart';
 import '../datasources/remote/remote_data_source.dart';
+import '../../services/cache/cache_manager.dart' as multi_cache;
 import '../models/content_model.dart';
 import '../models/tag_model.dart';
 import '../../services/detail_cache_service.dart';
@@ -17,6 +18,8 @@ class ContentRepositoryImpl implements ContentRepository {
     required this.remoteDataSource,
     required this.detailCacheService,
     required this.requestDeduplicationService,
+    required this.contentCacheManager,
+    required this.tagCacheManager,
     // required this.localDataSource,
     Logger? logger,
   }) : _logger = logger ?? Logger();
@@ -24,6 +27,8 @@ class ContentRepositoryImpl implements ContentRepository {
   final RemoteDataSource remoteDataSource;
   final DetailCacheService detailCacheService;
   final RequestDeduplicationService requestDeduplicationService;
+  final multi_cache.CacheManager<Content> contentCacheManager;
+  final multi_cache.CacheManager<List<Tag>> tagCacheManager;
   // final LocalDataSource localDataSource;
   final Logger _logger;
 
@@ -46,15 +51,23 @@ class ContentRepositoryImpl implements ContentRepository {
         final remoteContents = remoteResult['contents'] as List<ContentModel>;
         final paginationInfo =
             remoteResult['pagination'] as Map<String, dynamic>;
-        // Cache both content and pagination info
+
+        // Cache individual content items (not the whole list)
+        final entities =
+            remoteContents.map((model) => model.toEntity()).toList();
+
+        // Cache each content individually for detail page access
+        for (final content in entities) {
+          final cacheKey = 'content_${content.id}';
+          await contentCacheManager.set(cacheKey, content);
+        }
+
         _logger.i(
             'Fetched and cached ${remoteContents.length} contents with pagination from remote');
 
-        final entities =
-            remoteContents.map((model) => model.toEntity()).toList();
         return _buildContentListResultWithPagination(entities, paginationInfo);
       } catch (e) {
-        _logger.w('Failed to fetch from remote, falling back to cache: $e');
+        _logger.w('Failed to fetch from remote: $e');
         rethrow;
       }
     } catch (e, stackTrace) {
@@ -73,25 +86,41 @@ class ContentRepositoryImpl implements ContentRepository {
         try {
           _logger.i('Getting content detail for ID: ${contentId.value}');
 
-          // Try to get from cache first
-          final cachedContent =
-              await detailCacheService.getCachedDetail(contentId.value);
-          if (cachedContent != null) {
+          // 1. Try multi-layer cache first (memory -> disk)
+          final cacheKey = 'content_${contentId.value}';
+          final multiLayerCached = await contentCacheManager.get(cacheKey);
+          if (multiLayerCached != null) {
             _logger.i(
-                'Returning cached content detail for ID: ${contentId.value}');
-            return cachedContent;
+                'Cache HIT (multi-layer) for content detail: ${contentId.value}');
+            return multiLayerCached;
           }
 
-          // If not in cache, fetch from remote
+          // 2. Try old DetailCacheService for backward compatibility
+          final legacyCached =
+              await detailCacheService.getCachedDetail(contentId.value);
+          if (legacyCached != null) {
+            _logger
+                .i('Cache HIT (legacy) for content detail: ${contentId.value}');
+            // Promote to multi-layer cache
+            await contentCacheManager.set(cacheKey, legacyCached);
+            return legacyCached;
+          }
+
+          // 3. Cache MISS - fetch from remote
+          _logger.d('Cache MISS for content detail: ${contentId.value}');
           try {
             final remoteContent =
                 await remoteDataSource.getContentDetail(contentId.value);
+            final entity = remoteContent.toEntity();
 
-            // Cache the content for future use
-            await detailCacheService.cacheDetail(remoteContent.toEntity());
+            // Cache to both systems
+            await Future.wait([
+              contentCacheManager.set(cacheKey, entity),
+              detailCacheService.cacheDetail(entity),
+            ]);
 
             _logger.i('Fetched and cached content detail from remote');
-            return remoteContent.toEntity();
+            return entity;
           } catch (e) {
             _logger.w('Failed to fetch detail from remote: $e');
             throw NetworkException('Failed to fetch content detail: $e');
@@ -266,7 +295,18 @@ class ContentRepositoryImpl implements ContentRepository {
     TagSortOption sortBy = TagSortOption.count,
   }) async {
     try {
-      // Try to fetch fresh tags from remote
+      // Generate cache key based on type and sort
+      final cacheKey = 'tags_${type ?? 'all'}_${sortBy.name}';
+
+      // Try cache first
+      final cached = await tagCacheManager.get(cacheKey);
+      if (cached != null) {
+        _logger.i('Cache HIT for tags: $cacheKey (${cached.length} tags)');
+        return cached;
+      }
+
+      // Cache MISS - fetch from remote
+      _logger.d('Cache MISS for tags: $cacheKey');
       List<TagModel> remoteTags;
       if (type != null) {
         remoteTags = await remoteDataSource.getTagsByType(type);
@@ -274,15 +314,16 @@ class ContentRepositoryImpl implements ContentRepository {
         remoteTags = await remoteDataSource.getAllTags();
       }
 
-      // Cache tags are handled automatically when caching content
-
       final entities = remoteTags.map((model) => model.toEntity()).toList();
       _sortTags(entities, sortBy);
 
-      _logger.i('Fetched ${entities.length} tags from remote');
+      // Cache the sorted result
+      await tagCacheManager.set(cacheKey, entities);
+
+      _logger.i('Fetched and cached ${entities.length} tags from remote');
       return entities;
     } catch (e) {
-      _logger.w('Failed to fetch tags from remote, using cache: $e');
+      _logger.w('Failed to fetch tags from remote: $e');
       rethrow;
     }
   }

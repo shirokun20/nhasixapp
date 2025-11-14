@@ -25,6 +25,7 @@ import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
 import 'package:nhasixapp/presentation/widgets/pagination_widget.dart';
 import 'package:nhasixapp/presentation/widgets/sorting_widget.dart';
 import 'package:nhasixapp/presentation/widgets/offline_indicator_widget.dart';
+import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 
 class MainScreenScrollable extends StatefulWidget {
@@ -151,24 +152,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           if (homeState is HomeLoading) {
             return SimpleOfflineScaffold(
               title: AppLocalizations.of(context)?.appTitle ?? 'NHentai',
-              body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      AppLocalizations.of(context)!.initializing,
-                      style: TextStyleConst.styleMedium(
-                        textColor: Theme.of(context).colorScheme.onSurface,
-                        size: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              body: const ListShimmer(itemCount: 8),
             );
           }
 
@@ -347,30 +331,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
     }
 
     // Full loading for initial load
-    return Container(
-      color: Theme.of(context).colorScheme.surface,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(
-              color: Theme.of(context).colorScheme.primary,
-              strokeWidth: 3,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              state.message.isNotEmpty
-                  ? state.message
-                  : AppLocalizations.of(context)?.loadingContent ??
-                      'Loading content...',
-              style: TextStyleConst.bodyLarge.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return const ListShimmer(itemCount: 8);
   }
 
   /// Build empty state UI

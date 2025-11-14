@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../widgets/shimmer_loading_widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/web.dart';
 
@@ -28,7 +29,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   // Selection mode for batch operations
   bool _isSelectionMode = false;
   final Set<String> _selectedItems = <String>{};
-  
+
   // Cubit instance to avoid context issues
   late FavoriteCubit _favoriteCubit;
 
@@ -111,9 +112,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppLocalizations.of(context)!.removedFavoritesCount(selectedCount),
-              style: TextStyleConst.withColor(
-                  TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onPrimary),
+              AppLocalizations.of(context)!
+                  .removedFavoritesCount(selectedCount),
+              style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                  Theme.of(context).colorScheme.onPrimary),
             ),
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
@@ -125,9 +127,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppLocalizations.of(context)!.failedToRemoveFavorites(e.toString()),
-              style: TextStyleConst.withColor(
-                  TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onError),
+              AppLocalizations.of(context)!
+                  .failedToRemoveFavorites(e.toString()),
+              style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                  Theme.of(context).colorScheme.onError),
             ),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
@@ -143,13 +146,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
             title: Text(
               AppLocalizations.of(context)!.deleteFavorites,
-              style: TextStyleConst.withColor(
-                  TextStyleConst.headingMedium, Theme.of(context).colorScheme.onSurface),
+              style: TextStyleConst.withColor(TextStyleConst.headingMedium,
+                  Theme.of(context).colorScheme.onSurface),
             ),
             content: Text(
-              AppLocalizations.of(context)!.deleteFavoritesConfirmation(count, count > 1 ? 's' : ''),
-              style: TextStyleConst.withColor(
-                  TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onSurfaceVariant),
+              AppLocalizations.of(context)!
+                  .deleteFavoritesConfirmation(count, count > 1 ? 's' : ''),
+              style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                  Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             actions: [
               TextButton(
@@ -164,8 +168,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 onPressed: () => Navigator.of(context).pop(true),
                 child: Text(
                   AppLocalizations.of(context)!.delete,
-                  style: TextStyleConst.withColor(
-                      TextStyleConst.buttonMedium, Theme.of(context).colorScheme.error),
+                  style: TextStyleConst.withColor(TextStyleConst.buttonMedium,
+                      Theme.of(context).colorScheme.error),
                 ),
               ),
             ],
@@ -182,8 +186,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         title: Text(
           AppLocalizations.of(context)!.exportFavorites,
-          style: TextStyleConst.withColor(
-              TextStyleConst.headingMedium, Theme.of(context).colorScheme.onSurface),
+          style: TextStyleConst.withColor(TextStyleConst.headingMedium,
+              Theme.of(context).colorScheme.onSurface),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -194,8 +198,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             const SizedBox(height: 16),
             Text(
               AppLocalizations.of(context)!.exportingFavorites,
-              style: TextStyleConst.withColor(
-                  TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onSurfaceVariant),
+              style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                  Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -215,21 +219,21 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
             title: Text(
               'Export Complete',
-              style: TextStyleConst.withColor(
-                  TextStyleConst.headingMedium, Theme.of(context).colorScheme.onSurface),
+              style: TextStyleConst.withColor(TextStyleConst.headingMedium,
+                  Theme.of(context).colorScheme.onSurface),
             ),
             content: Text(
               'Exported ${exportData['total_count']} favorites successfully.',
-              style: TextStyleConst.withColor(
-                  TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onSurfaceVariant),
+              style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                  Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
                 child: Text(
                   AppLocalizations.of(context)!.ok,
-                  style: TextStyleConst.withColor(
-                      TextStyleConst.buttonMedium, Theme.of(context).colorScheme.primary),
+                  style: TextStyleConst.withColor(TextStyleConst.buttonMedium,
+                      Theme.of(context).colorScheme.primary),
                 ),
               ),
             ],
@@ -244,8 +248,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           SnackBar(
             content: Text(
               AppLocalizations.of(context)!.exportFailed(e.toString()),
-              style: TextStyleConst.withColor(
-                  TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onError),
+              style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                  Theme.of(context).colorScheme.onError),
             ),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
@@ -282,13 +286,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
       elevation: 0,
       title: Text(
-        _isSelectionMode ? AppLocalizations.of(context)!.selectedItemsCount(_selectedItems.length) : AppLocalizations.of(context)!.favorites,
-        style: TextStyleConst.withColor(
-            TextStyleConst.headingMedium, Theme.of(context).colorScheme.onSurface),
+        _isSelectionMode
+            ? AppLocalizations.of(context)!
+                .selectedItemsCount(_selectedItems.length)
+            : AppLocalizations.of(context)!.favorites,
+        style: TextStyleConst.withColor(TextStyleConst.headingMedium,
+            Theme.of(context).colorScheme.onSurface),
       ),
       leading: _isSelectionMode
           ? IconButton(
-              icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface),
+              icon: Icon(Icons.close,
+                  color: Theme.of(context).colorScheme.onSurface),
               onPressed: _toggleSelectionMode,
             )
           : IconButton(
@@ -305,8 +313,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             tooltip: AppLocalizations.of(context)!.selectFavoritesTooltip,
           ),
           PopupMenuButton<String>(
-            icon:
-                Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface),
+            icon: Icon(Icons.more_vert,
+                color: Theme.of(context).colorScheme.onSurface),
             color: Theme.of(context).colorScheme.surfaceContainer,
             onSelected: (value) {
               switch (value) {
@@ -354,7 +362,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ] else ...[
           if (_selectedItems.isNotEmpty)
             IconButton(
-              icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+              icon: Icon(Icons.delete,
+                  color: Theme.of(context).colorScheme.error),
               onPressed: _deleteSelected,
               tooltip: AppLocalizations.of(context)!.deleteSelectedTooltip,
             ),
@@ -373,10 +382,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onSurface),
         decoration: InputDecoration(
           hintText: AppLocalizations.of(context)!.searchFavoritesHint,
-          hintStyle: TextStyleConst.withColor(
-              TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onSurfaceVariant),
-          prefixIcon:
-              Icon(Icons.search, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          hintStyle: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+              Theme.of(context).colorScheme.onSurfaceVariant),
+          prefixIcon: Icon(Icons.search,
+              color: Theme.of(context).colorScheme.onSurfaceVariant),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
                   icon: Icon(Icons.clear,
@@ -413,28 +422,30 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         children: [
           TextButton.icon(
             onPressed: () => _selectAll(state.favorites),
-            icon: Icon(Icons.select_all, color: Theme.of(context).colorScheme.primary),
+            icon: Icon(Icons.select_all,
+                color: Theme.of(context).colorScheme.primary),
             label: Text(
               AppLocalizations.of(context)!.selectAll,
-              style: TextStyleConst.withColor(
-                  TextStyleConst.buttonMedium, Theme.of(context).colorScheme.primary),
+              style: TextStyleConst.withColor(TextStyleConst.buttonMedium,
+                  Theme.of(context).colorScheme.primary),
             ),
           ),
           const SizedBox(width: 16),
           TextButton.icon(
             onPressed: _clearSelection,
-            icon: Icon(Icons.clear, color: Theme.of(context).colorScheme.onSurfaceVariant),
+            icon: Icon(Icons.clear,
+                color: Theme.of(context).colorScheme.onSurfaceVariant),
             label: Text(
               AppLocalizations.of(context)!.clear,
-              style: TextStyleConst.withColor(
-                  TextStyleConst.buttonMedium, Theme.of(context).colorScheme.onSurfaceVariant),
+              style: TextStyleConst.withColor(TextStyleConst.buttonMedium,
+                  Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ),
           const Spacer(),
           Text(
             '${_selectedItems.length} / ${state.favorites.length}',
-            style: TextStyleConst.withColor(
-                TextStyleConst.caption, Theme.of(context).colorScheme.onSurfaceVariant),
+            style: TextStyleConst.withColor(TextStyleConst.caption,
+                Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -443,11 +454,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   Widget _buildContent(FavoriteState state) {
     if (state is FavoriteLoading) {
-      return Center(
-        child: AppProgressIndicator(
-          message: AppLocalizations.of(context)!.loadingFavoritesMessage,
-        ),
-      );
+      return const ListShimmer(itemCount: 8);
     }
 
     if (state is FavoriteError) {
@@ -455,9 +462,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         child: AppErrorWidget(
           title: AppLocalizations.of(context)!.errorLoadingFavoritesTitle,
           message: state.getUserMessage(AppLocalizations.of(context)),
-          onRetry: state.canRetry
-              ? () => _favoriteCubit.retryLoading()
-              : null,
+          onRetry: state.canRetry ? () => _favoriteCubit.retryLoading() : null,
         ),
       );
     }
@@ -488,8 +493,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             const SizedBox(height: 16),
             Text(
               state.getEmptyMessage(AppLocalizations.of(context)),
-              style: TextStyleConst.withColor(
-                  TextStyleConst.headingSmall, Theme.of(context).colorScheme.onSurfaceVariant),
+              style: TextStyleConst.withColor(TextStyleConst.headingSmall,
+                  Theme.of(context).colorScheme.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
             if (state.isSearching) ...[
@@ -542,12 +547,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 );
               }
 
-          final favorite = state.favorites[index];
-          final contentId = favorite['id'].toString();
-          final isSelected = _selectedItems.contains(contentId);
+              final favorite = state.favorites[index];
+              final contentId = favorite['id'].toString();
+              final isSelected = _selectedItems.contains(contentId);
 
-          return _buildFavoriteCard(favorite, isSelected);
-        },
+              return _buildFavoriteCard(favorite, isSelected);
+            },
           );
         },
       ),
@@ -578,7 +583,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           color: Theme.of(context).colorScheme.surfaceContainer,
           borderRadius: BorderRadius.circular(12),
           border: isSelected
-              ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2)
+              ? Border.all(
+                  color: Theme.of(context).colorScheme.primary, width: 2)
               : null,
         ),
         child: Stack(
@@ -603,13 +609,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                       Text(
-                         '${AppLocalizations.of(context)?.idLabel ?? 'ID'}: $contentId',
-                         style: TextStyleConst.withColor(TextStyleConst.caption,
-                             Theme.of(context).colorScheme.onSurfaceVariant),
-                         maxLines: 1,
-                         overflow: TextOverflow.ellipsis,
-                       ),
+                      Text(
+                        '${AppLocalizations.of(context)?.idLabel ?? 'ID'}: $contentId',
+                        style: TextStyleConst.withColor(TextStyleConst.caption,
+                            Theme.of(context).colorScheme.onSurfaceVariant),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         _formatDate(favorite['added_at']),
@@ -629,7 +635,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
+                        : Theme.of(context)
+                            .colorScheme
+                            .surface
+                            .withValues(alpha: 0.8),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -647,11 +656,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 right: 8,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .surface
+                        .withValues(alpha: 0.9),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.3),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .shadow
+                            .withValues(alpha: 0.3),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -665,17 +680,19 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       showDialog(
                         context: context,
                         builder: (context) => AlertDialog(
-                          backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.surfaceContainer,
                           title: Text(
                             AppLocalizations.of(context)!.removeFavorite,
                             style: TextStyleConst.withColor(
-                                TextStyleConst.headingMedium, 
+                                TextStyleConst.headingMedium,
                                 Theme.of(context).colorScheme.onSurface),
                           ),
                           content: Text(
-                            AppLocalizations.of(context)!.removeFavoriteConfirmation,
+                            AppLocalizations.of(context)!
+                                .removeFavoriteConfirmation,
                             style: TextStyleConst.withColor(
-                                TextStyleConst.bodyMedium, 
+                                TextStyleConst.bodyMedium,
                                 Theme.of(context).colorScheme.onSurfaceVariant),
                           ),
                           actions: [
@@ -685,7 +702,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                 AppLocalizations.of(context)!.cancel,
                                 style: TextStyleConst.withColor(
                                     TextStyleConst.buttonMedium,
-                                    Theme.of(context).colorScheme.onSurfaceVariant),
+                                    Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant),
                               ),
                             ),
                             TextButton(
@@ -696,7 +715,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                               child: Text(
                                 AppLocalizations.of(context)!.remove,
                                 style: TextStyleConst.withColor(
-                                    TextStyleConst.buttonMedium, 
+                                    TextStyleConst.buttonMedium,
                                     Theme.of(context).colorScheme.error),
                               ),
                             ),
@@ -719,7 +738,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   String _formatDate(dynamic timestamp) {
-    if (timestamp == null) return AppLocalizations.of(context)?.unknown ?? 'Unknown';
+    if (timestamp == null) {
+      return AppLocalizations.of(context)?.unknown ?? 'Unknown';
+    }
 
     try {
       final date = DateTime.fromMillisecondsSinceEpoch(timestamp as int);
@@ -727,11 +748,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       final difference = now.difference(date);
 
       if (difference.inDays > 0) {
-        return AppLocalizations.of(context)?.daysAgo(difference.inDays, difference.inDays == 1 ? '' : 's') ?? '${difference.inDays}d ago';
+        return AppLocalizations.of(context)?.daysAgo(
+                difference.inDays, difference.inDays == 1 ? '' : 's') ??
+            '${difference.inDays}d ago';
       } else if (difference.inHours > 0) {
-        return AppLocalizations.of(context)?.hoursAgo(difference.inHours, difference.inHours == 1 ? '' : 's') ?? '${difference.inHours}h ago';
+        return AppLocalizations.of(context)?.hoursAgo(
+                difference.inHours, difference.inHours == 1 ? '' : 's') ??
+            '${difference.inHours}h ago';
       } else if (difference.inMinutes > 0) {
-        return AppLocalizations.of(context)?.minutesAgo(difference.inMinutes, difference.inMinutes == 1 ? '' : 's') ?? '${difference.inMinutes}m ago';
+        return AppLocalizations.of(context)?.minutesAgo(
+                difference.inMinutes, difference.inMinutes == 1 ? '' : 's') ??
+            '${difference.inMinutes}m ago';
       } else {
         return AppLocalizations.of(context)?.justNow ?? 'Just now';
       }
@@ -755,13 +782,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               const SizedBox(width: 12),
               Text(
                 AppLocalizations.of(context)!.removingFromFavorites,
-                style: TextStyleConst.withColor(
-                    TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onSurface),
+                style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                    Theme.of(context).colorScheme.onSurface),
               ),
             ],
           ),
           backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-          duration: const Duration(minutes: 1), // Long duration while processing
+          duration:
+              const Duration(minutes: 1), // Long duration while processing
         ),
       );
 
@@ -770,14 +798,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       if (mounted) {
         // Hide loading snackbar
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        
+
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               AppLocalizations.of(context)!.removedFromFavorites,
-              style: TextStyleConst.withColor(
-                  TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onPrimary),
+              style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                  Theme.of(context).colorScheme.onPrimary),
             ),
             backgroundColor: Theme.of(context).colorScheme.primary,
             duration: const Duration(seconds: 2),
@@ -789,14 +817,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       if (mounted) {
         // Hide loading snackbar
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        
+
         // Show detailed error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppLocalizations.of(context)?.failedToRemoveFavorite(e.toString()) ?? 'Failed to remove favorite: ${e.toString()}',
-              style: TextStyleConst.withColor(
-                  TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onError),
+              AppLocalizations.of(context)
+                      ?.failedToRemoveFavorite(e.toString()) ??
+                  'Failed to remove favorite: ${e.toString()}',
+              style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                  Theme.of(context).colorScheme.onError),
             ),
             backgroundColor: Theme.of(context).colorScheme.error,
             duration: const Duration(seconds: 4),
@@ -808,7 +838,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           ),
         );
       }
-      
+
       // Log error for debugging (use logger instead of print in production)
       // print('Error removing favorite $contentId: $e');
     }

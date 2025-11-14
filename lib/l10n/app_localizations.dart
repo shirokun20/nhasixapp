@@ -5115,6 +5115,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error retrying PDF conversion: {error}'**
   String errorRetryingPdfConversion(String error);
+
+  /// No description provided for @importBackupFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Backup Folder'**
+  String get importBackupFolder;
+
+  /// No description provided for @importBackupFolderDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the path to your backup folder containing nhasix content folders:'**
+  String get importBackupFolderDescription;
+
+  /// No description provided for @scanningBackupFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning backup folder...'**
+  String get scanningBackupFolder;
+
+  /// No description provided for @backupContentFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Found {count} backup items'**
+  String backupContentFound(int count);
+
+  /// No description provided for @noBackupContentFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No valid content found in backup folder'**
+  String get noBackupContentFound;
+
+  /// No description provided for @errorScanningBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Error scanning backup: {error}'**
+  String errorScanningBackup(String error);
 }
 
 class _AppLocalizationsDelegate

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
@@ -387,6 +388,317 @@ class OfflineContentManager {
     } catch (e, stackTrace) {
       _logger.e('Error during cleanup of orphaned files',
           error: e, stackTrace: stackTrace);
+    }
+  }
+
+  /// Get all offline content from file system without database
+  Future<List<Content>> getAllOfflineContentFromFileSystem(
+      String backupPath) async {
+    return await scanBackupFolder(backupPath);
+  }
+
+  /// Search offline content from metadata.json files without database
+  Future<List<Content>> searchOfflineContentFromFileSystem(
+      String backupPath, String query) async {
+    try {
+      final backupDir = Directory(backupPath);
+
+      if (!await backupDir.exists()) {
+        _logger.w('Backup folder does not exist: $backupPath');
+        return [];
+      }
+
+      final matchingContents = <Content>[];
+      final queryLower = query.toLowerCase();
+
+      await for (final entity in backupDir.list()) {
+        if (entity is Directory) {
+          final contentId = path.basename(entity.path);
+
+          // Search in content ID
+          final contentIdMatch = contentId.toLowerCase().contains(queryLower);
+
+          // Try to read title from metadata.json
+          String title = contentId;
+          bool titleMatch = false;
+
+          try {
+            final metadataFile = File(path.join(entity.path, 'metadata.json'));
+            if (await metadataFile.exists()) {
+              final metadataContent = await metadataFile.readAsString();
+              final metadata =
+                  json.decode(metadataContent) as Map<String, dynamic>;
+              title = metadata['title'] ?? contentId;
+              titleMatch = title.toLowerCase().contains(queryLower);
+            }
+          } catch (e) {
+            _logger.w('Error reading metadata for search in $contentId: $e');
+          }
+
+          // If matches, load full content data
+          if (contentIdMatch || titleMatch) {
+            final imagesDir = Directory(path.join(entity.path, 'images'));
+
+            if (await imagesDir.exists()) {
+              final imageFiles = await imagesDir
+                  .list(recursive: true)
+                  .where((f) => f is File && _isImageFile(f.path))
+                  .cast<File>()
+                  .toList();
+
+              // Fallback: check contentId directory directly
+              if (imageFiles.isEmpty) {
+                final contentEntities = await entity.list().toList();
+                final directImageFiles = contentEntities
+                    .where((f) =>
+                        f is File &&
+                        _isImageFile(f.path) &&
+                        path.basename(f.path) != 'metadata.json')
+                    .cast<File>()
+                    .toList();
+                if (directImageFiles.isNotEmpty) {
+                  imageFiles.addAll(directImageFiles);
+                }
+              }
+
+              if (imageFiles.isNotEmpty) {
+                // Sort images by page number
+                imageFiles.sort((a, b) => _extractPageNumber(a.path)
+                    .compareTo(_extractPageNumber(b.path)));
+
+                final imageUrls = imageFiles.map((f) => f.path).toList();
+
+                // Create Content object
+                String coverUrl = '';
+                if (imageUrls.isNotEmpty) {
+                  final firstImageFile = File(imageUrls.first);
+                  if (await firstImageFile.exists() &&
+                      await firstImageFile.length() > 0) {
+                    coverUrl = imageUrls.first;
+                  } else if (imageUrls.length > 1) {
+                    final secondImageFile = File(imageUrls[1]);
+                    if (await secondImageFile.exists() &&
+                        await secondImageFile.length() > 0) {
+                      coverUrl = imageUrls[1];
+                    }
+                  }
+                }
+
+                final content = Content(
+                  id: contentId,
+                  title: title,
+                  coverUrl: coverUrl,
+                  tags: [],
+                  artists: [],
+                  characters: [],
+                  parodies: [],
+                  groups: [],
+                  language: '',
+                  pageCount: imageUrls.length,
+                  imageUrls: imageUrls,
+                  uploadDate: DateTime.now(),
+                  favorites: 0,
+                  englishTitle: null,
+                  japaneseTitle: null,
+                );
+
+                matchingContents.add(content);
+                _logger.d(
+                    'Found matching content: $contentId - $title (${imageUrls.length} pages)');
+              }
+            }
+          }
+        }
+      }
+
+      // Sort by content ID
+      matchingContents.sort((a, b) => a.id.compareTo(b.id));
+
+      _logger.i(
+          'Found ${matchingContents.length} matching content items for query: $query');
+      return matchingContents;
+    } catch (e, stackTrace) {
+      _logger.e('Error searching offline content from file system',
+          error: e, stackTrace: stackTrace);
+      return [];
+    }
+  }
+
+  /// Scan backup folder for offline content without database dependency
+  Future<List<Content>> scanBackupFolder(String backupPath) async {
+    try {
+      final backupDir = Directory(backupPath);
+
+      if (!await backupDir.exists()) {
+        _logger.w('Backup folder does not exist: $backupPath');
+        return [];
+      }
+
+      final contents = <Content>[];
+
+      await for (final entity in backupDir.list()) {
+        if (entity is Directory) {
+          final contentId = path.basename(entity.path);
+
+          final imagesDir = Directory(path.join(entity.path, 'images'));
+          // debugPrint(
+          //     'OFFLINE_MANAGER: Looking for images dir: ${imagesDir.path}');
+
+          if (await imagesDir.exists()) {
+            // debugPrint(
+            //     'OFFLINE_MANAGER: Images directory exists for $contentId');
+
+            // Log all entities in images directory for debugging
+            try {
+              await imagesDir.list().toList();
+            } catch (e) {
+              // debugPrint(
+              //     'OFFLINE_MANAGER: Error listing entities in images dir for $contentId: $e');
+            }
+
+            final imageFiles = await imagesDir
+                .list(recursive: true)
+                .where((f) => f is File && _isImageFile(f.path))
+                .cast<File>()
+                .toList();
+
+            // debugPrint(
+            //     'OFFLINE_MANAGER: Found ${imageFiles.length} image files in $contentId');
+
+            // Fallback: if no images found in images/ directory, check contentId directory directly
+            if (imageFiles.isEmpty) {
+              // debugPrint(
+              //     'OFFLINE_MANAGER: No images in images/ subdirectory, checking contentId directory directly for $contentId');
+              try {
+                final contentEntities = await entity.list().toList();
+                final directImageFiles = contentEntities
+                    .where((f) =>
+                        f is File &&
+                        _isImageFile(f.path) &&
+                        path.basename(f.path) != 'metadata.json')
+                    .cast<File>()
+                    .toList();
+                if (directImageFiles.isNotEmpty) {
+                  // debugPrint(
+                  //     'OFFLINE_MANAGER: Found ${directImageFiles.length} image files directly in contentId for $contentId');
+                  imageFiles.addAll(directImageFiles);
+                } else {
+                  // debugPrint(
+                  //     'OFFLINE_MANAGER: No image files found directly in contentId for $contentId');
+                }
+              } catch (e) {
+                // debugPrint(
+                //     'OFFLINE_MANAGER: Error listing contentId directory for $contentId: $e');
+              }
+            }
+
+            if (imageFiles.isNotEmpty) {
+              // Sort images by page number
+              imageFiles.sort((a, b) => _extractPageNumber(a.path)
+                  .compareTo(_extractPageNumber(b.path)));
+
+              final imageUrls = imageFiles.map((f) => f.path).toList();
+              // debugPrint(
+              //     'OFFLINE_MANAGER: Image URLs for $contentId: $imageUrls');
+
+              // Try to read title from metadata.json
+              String title = contentId; // fallback to folder name
+              try {
+                final metadataFile =
+                    File(path.join(entity.path, 'metadata.json'));
+                // debugPrint(
+                //     'OFFLINE_MANAGER: Looking for metadata file: ${metadataFile.path}');
+                if (await metadataFile.exists()) {
+                  final metadataContent = await metadataFile.readAsString();
+                  final metadata =
+                      json.decode(metadataContent) as Map<String, dynamic>;
+                  title = metadata['title'] ?? contentId;
+                  // debugPrint(
+                  //     'OFFLINE_MANAGER: Found title from metadata for $contentId: $title');
+                  _logger.d('Found title from metadata for $contentId: $title');
+                } else {
+                  // debugPrint(
+                  //     'OFFLINE_MANAGER: No metadata.json found for $contentId, using folder name as title');
+                  _logger.d(
+                      'No metadata.json found for $contentId, using folder name as title');
+                }
+              } catch (e) {
+                // debugPrint(
+                //     'OFFLINE_MANAGER: Error reading metadata for $contentId: $e');
+                _logger.w(
+                    'Error reading metadata for $contentId: $e, using folder name');
+              }
+
+              // Create Content object
+              String coverUrl = '';
+              if (imageUrls.isNotEmpty) {
+                final firstImageFile = File(imageUrls.first);
+                if (await firstImageFile.exists() &&
+                    await firstImageFile.length() > 0) {
+                  coverUrl = imageUrls.first;
+                  // debugPrint(
+                  //     'OFFLINE_MANAGER: Using first image as cover for $contentId: $coverUrl');
+                } else if (imageUrls.length > 1) {
+                  final secondImageFile = File(imageUrls[1]);
+                  if (await secondImageFile.exists() &&
+                      await secondImageFile.length() > 0) {
+                    coverUrl = imageUrls[1];
+                    // debugPrint(
+                    //         'OFFLINE_MANAGER: Using second image as cover for $contentId: $coverUrl');
+                  }
+                }
+              }
+
+              final content = Content(
+                id: contentId,
+                title: title,
+                coverUrl: coverUrl,
+                tags: [],
+                artists: [],
+                characters: [],
+                parodies: [],
+                groups: [],
+                language: '',
+                pageCount: imageUrls.length,
+                imageUrls: imageUrls,
+                uploadDate: DateTime.now(),
+                favorites: 0,
+                englishTitle: null,
+                japaneseTitle: null,
+              );
+
+              contents.add(content);
+              // debugPrint(
+              //     'OFFLINE_MANAGER: Added backup content: $contentId - $title (${imageUrls.length} pages)');
+              _logger.d(
+                  'Added backup content: $contentId - $title (${imageUrls.length} pages)');
+            } else {
+              // debugPrint(
+              //     'OFFLINE_MANAGER: No image files found in images directory for $contentId');
+            }
+          } else {
+            // debugPrint(
+            //     'OFFLINE_MANAGER: Images directory does not exist for $contentId');
+          }
+        } else {
+          // debugPrint(
+          //     'OFFLINE_MANAGER: Entity is not a directory: ${entity.path}');
+        }
+      }
+
+      // Sort by content ID (assuming it's numeric)
+      contents.sort((a, b) => a.id.compareTo(b.id));
+
+      // debugPrint(
+      //     'OFFLINE_MANAGER: Found ${contents.length} backup content items total');
+      _logger.i('Found ${contents.length} backup content items');
+      return contents;
+    } catch (e, stackTrace) {
+      // debugPrint(
+      //     'OFFLINE_MANAGER: Error scanning backup folder: $backupPath - $e');
+      _logger.e('Error scanning backup folder: $backupPath',
+          error: e, stackTrace: stackTrace);
+      return [];
     }
   }
 

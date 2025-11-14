@@ -1766,5 +1766,22 @@
      "placeholders": {
        "error": {"type": "String"}
      }
+   },
+
+   "importBackupFolder": "Import Folder Backup",
+   "importBackupFolderDescription": "Masukkan path ke folder backup yang berisi folder konten nhasix:",
+   "scanningBackupFolder": "Memindai folder backup...",
+   "backupContentFound": "Ditemukan {count} item backup",
+   "@backupContentFound": {
+     "placeholders": {
+       "count": {"type": "int"}
+     }
+   },
+   "noBackupContentFound": "Tidak ada konten valid ditemukan di folder backup",
+   "errorScanningBackup": "Error memindai backup: {error}",
+   "@errorScanningBackup": {
+     "placeholders": {
+       "error": {"type": "String"}
+     }
    }
 }
