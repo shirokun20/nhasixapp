@@ -7,7 +7,7 @@ import 'package:logger/logger.dart';
 /// Database helper class for managing SQLite database
 class DatabaseHelper {
   static const String _databaseName = 'nhasix_app.db';
-  static const int _databaseVersion = 5;
+  static const int _databaseVersion = 6;
 
   static Database? _database;
   static final Logger _logger = Logger();
@@ -108,6 +108,7 @@ class DatabaseHelper {
     _createPreferencesTable(batch);
     _createSearchHistoryTable(batch);
     _createSearchFilterStateTable(batch);
+    _createReaderPositionsTable(batch);
 
     // Create indexes
     _createIndexes(batch);
@@ -145,6 +146,33 @@ class DatabaseHelper {
         _logger.i('Added range download columns to downloads table in database upgrade');
       } catch (e) {
         _logger.w('Error adding range download columns (may already exist): $e');
+      }
+    }
+
+    if (oldVersion < 6 && newVersion >= 6) {
+      // Add reader_positions table in version 6
+      try {
+        await db.execute('''
+          CREATE TABLE reader_positions (
+            content_id TEXT PRIMARY KEY,
+            current_page INTEGER NOT NULL,
+            total_pages INTEGER NOT NULL,
+            last_accessed INTEGER NOT NULL,
+            reading_progress REAL DEFAULT 0.0,
+            reading_time_minutes INTEGER DEFAULT 0,
+            title TEXT,
+            cover_url TEXT,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          )
+        ''');
+        
+        // Create index for reader positions
+        await db.execute('CREATE INDEX idx_reader_positions_last_accessed ON reader_positions (last_accessed DESC)');
+        
+        _logger.i('Added reader_positions table in database upgrade');
+      } catch (e) {
+        _logger.w('Error adding reader_positions table (may already exist): $e');
       }
     }
 
@@ -293,6 +321,24 @@ class DatabaseHelper {
     ''');
   }
 
+  /// Create reader positions table
+  void _createReaderPositionsTable(Batch batch) {
+    batch.execute('''
+      CREATE TABLE reader_positions (
+        content_id TEXT PRIMARY KEY,
+        current_page INTEGER NOT NULL,
+        total_pages INTEGER NOT NULL,
+        last_accessed INTEGER NOT NULL,
+        reading_progress REAL DEFAULT 0.0,
+        reading_time_minutes INTEGER DEFAULT 0,
+        title TEXT,
+        cover_url TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      )
+    ''');
+  }
+
   /// Create database indexes for performance
   void _createIndexes(Batch batch) {
     // Favorites indexes
@@ -313,6 +359,10 @@ class DatabaseHelper {
     // Search history indexes
     batch.execute(
         'CREATE INDEX idx_search_history_searched_at ON search_history (searched_at DESC)');
+
+    // Reader positions indexes
+    batch.execute(
+        'CREATE INDEX idx_reader_positions_last_accessed ON reader_positions (last_accessed DESC)');
   }
 
   /// Insert default data

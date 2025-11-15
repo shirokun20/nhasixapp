@@ -138,12 +138,13 @@ class AntiDetection {
     return headers;
   }
 
-    /// Calculate minimum delay based on request frequency
+  /// Calculate minimum delay based on request frequency
   Duration _calculateMinDelay() {
-    // More conservative base delay
-    final baseDelay = 2000; // 2 seconds base (increased from 1 second)
-    final additionalDelay = (_requestCount ~/ 5) * 1000; // +1s per 5 requests (more aggressive)
-    final maxDelay = 8000; // Max 8 seconds (increased from 5 seconds)
+    // Reduced base delay from 2000ms to 1000ms for better performance
+    final baseDelay = 1000; // 1 second base (reduced from 2 seconds)
+    final additionalDelay =
+        (_requestCount ~/ 10) * 500; // +0.5s per 10 requests (less aggressive)
+    final maxDelay = 5000; // Max 5 seconds (reduced from 8 seconds)
 
     return Duration(
       milliseconds: min(baseDelay + additionalDelay, maxDelay),
@@ -166,7 +167,6 @@ class AntiDetection {
         _random.nextInt(_acceptLanguageHeaders.length)];
   }
 
-
   /// Generate Sec-CH-UA header
   String _generateSecChUa() {
     final chromeVersion = 120 - _random.nextInt(3); // Recent Chrome versions
@@ -184,7 +184,8 @@ class AntiDetection {
     // More frequent reading simulation (30% chance instead of 10%)
     if (_random.nextDouble() < 0.3) {
       final readingDelay = Duration(
-        milliseconds: 2000 + _random.nextInt(6000), // 2-8 seconds (reduced from 3-10)
+        milliseconds:
+            2000 + _random.nextInt(6000), // 2-8 seconds (reduced from 3-10)
       );
       _logger.d('Simulating reading behavior: ${readingDelay.inSeconds}s');
       await Future.delayed(readingDelay);
@@ -193,7 +194,8 @@ class AntiDetection {
     // More frequent breaks but shorter (every 15 requests instead of 20)
     if (_requestCount % 15 == 0) {
       final breakDelay = Duration(
-        milliseconds: 5000 + _random.nextInt(10000), // 5-15 seconds (reduced from 10-30)
+        milliseconds:
+            5000 + _random.nextInt(10000), // 5-15 seconds (reduced from 10-30)
       );
       _logger.d('Taking a break: ${breakDelay.inSeconds}s');
       await Future.delayed(breakDelay);
@@ -202,24 +204,25 @@ class AntiDetection {
 
   /// Check if we should throttle requests
   bool shouldThrottleRequests() {
-    // More conservative rate limiting: 15 requests per minute
-    const maxRequestsPerMinute = 15;
+    // Increased rate limiting: 25 requests per minute (from 15)
+    const maxRequestsPerMinute = 25;
     const timeWindow = Duration(minutes: 1);
 
     if (_lastRequestTime != null) {
       final now = DateTime.now();
       final timeSinceStart = now.difference(_lastRequestTime!);
-      
+
       // Reset counter if more than time window has passed
       if (timeSinceStart >= timeWindow) {
         _requestCount = 0;
         _lastRequestTime = now;
         return false;
       }
-      
+
       // Check if we've exceeded the limit
       if (_requestCount >= maxRequestsPerMinute) {
-        _logger.w('Rate limit approached: $_requestCount requests in ${timeSinceStart.inSeconds}s');
+        _logger.w(
+            'Rate limit approached: $_requestCount requests in ${timeSinceStart.inSeconds}s');
         return true;
       }
     }

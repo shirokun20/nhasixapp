@@ -4,11 +4,14 @@ import 'package:logger/logger.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:equatable/equatable.dart';
 import '../../../domain/entities/content.dart';
+import '../../../domain/entities/reader_position.dart';
 import '../../../domain/usecases/content/get_content_detail_usecase.dart';
 import '../../../domain/usecases/history/add_to_history_usecase.dart';
 import '../../../domain/repositories/reader_settings_repository.dart';
+import '../../../domain/repositories/reader_repository.dart';
 import '../../../data/models/reader_settings_model.dart';
 import '../../../core/utils/offline_content_manager.dart';
+import '../../../services/local_image_preloader.dart';
 import '../network/network_cubit.dart';
 
 part 'reader_state.dart';
@@ -19,6 +22,7 @@ class ReaderCubit extends Cubit<ReaderState> {
     required this.getContentDetailUseCase,
     required this.addToHistoryUseCase,
     required this.readerSettingsRepository,
+    required this.readerRepository,
     required this.offlineContentManager,
     required this.networkCubit,
   }) : super(const ReaderInitial());
@@ -26,6 +30,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   final GetContentDetailUseCase getContentDetailUseCase;
   final AddToHistoryUseCase addToHistoryUseCase;
   final ReaderSettingsRepository readerSettingsRepository;
+  final ReaderRepository readerRepository;
   final OfflineContentManager offlineContentManager;
   final NetworkCubit networkCubit;
   final Logger _logger = Logger();
@@ -34,7 +39,10 @@ class ReaderCubit extends Cubit<ReaderState> {
   Timer? _autoHideTimer;
 
   /// Load content for reading with offline support - OPTIMIZED VERSION
-  Future<void> loadContent(String contentId, {int initialPage = 1}) async {
+  Future<void> loadContent(String contentId,
+      {int initialPage = 1,
+      bool forceStartFromBeginning = false,
+      Content? preloadedContent}) async {
     try {
       _stopAutoHideTimer();
       emit(ReaderLoading(state));
@@ -47,11 +55,17 @@ class ReaderCubit extends Cubit<ReaderState> {
         offlineContentManager.isContentAvailableOffline(contentId),
         // Load reader settings (simplified version)
         _loadReaderSettingsOptimized(),
+        // Restore reader position if exists (override initialPage)
+        if (forceStartFromBeginning)
+          Future<int>.value(1)
+        else
+          _restoreReaderPosition(contentId),
         // If connected, start loading online content in parallel
         if (isConnected)
           () async {
             try {
-              return await getContentDetailUseCase(GetContentDetailParams.fromString(contentId));
+              return await getContentDetailUseCase(
+                  GetContentDetailParams.fromString(contentId));
             } catch (e) {
               _logger.w("Online content load failed: $e");
               return null;
@@ -63,13 +77,28 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       final isOfflineAvailable = results[0] as bool;
       final savedSettings = results[1] as ReaderSettings;
-      final onlineContent = results.length > 2 ? results[2] as Content? : null;
+      final restoredPage = results[2] as int;
+      final onlineContent = results.length > 3 ? results[3] as Content? : null;
+
+      // Use initialPage if user explicitly requested a specific page (initialPage > 1)
+      // Otherwise use restored page if available, fallback to initialPage
+      final startPage = initialPage > 1
+          ? initialPage
+          : (restoredPage > 1 ? restoredPage : initialPage);
+
+      _logger.i(
+          '📍 Loading content: $contentId, initialPage: $initialPage, restoredPage: $restoredPage, startPage: $startPage, preloaded: ${preloadedContent != null}');
 
       Content? content;
       bool isOfflineMode = false;
 
-      // 🚀 OPTIMIZATION: Use cached/preloaded content when possible
-      if (isOfflineAvailable && (!isConnected || _shouldPreferOffline())) {
+      // 🚀 OPTIMIZATION: Use preloaded content if available (highest priority)
+      if (preloadedContent != null) {
+        _logger.i("Using preloaded content from navigation: $contentId");
+        content = preloadedContent;
+        isOfflineMode = false; // Preloaded content is from online cache
+      } else if (isOfflineAvailable &&
+          (!isConnected || _shouldPreferOffline())) {
         _logger.i("Loading content from offline storage: $contentId");
         content = await offlineContentManager.createOfflineContent(contentId);
         isOfflineMode = true;
@@ -93,7 +122,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       // 🚀 OPTIMIZATION: Emit loaded state immediately, then handle side effects
       emit(state.copyWith(
         content: content,
-        currentPage: initialPage,
+        currentPage: startPage,
         readingMode: savedSettings.readingMode,
         showUI: savedSettings.showUI,
         keepScreenOn: savedSettings.keepScreenOn,
@@ -101,11 +130,13 @@ class ReaderCubit extends Cubit<ReaderState> {
         isOfflineMode: isOfflineMode,
       ));
 
+      // 🐛 DEBUG: Log all image URLs with their page numbers
+      _logImageUrlMapping(content);
+
       emit(ReaderLoaded(state));
 
       // 🚀 OPTIMIZATION: Handle side effects asynchronously (don't block UI)
       _handlePostLoadSetup(savedSettings);
-
     } catch (e, stackTrace) {
       _logger.e("Reader Cubit: $e, $stackTrace");
       _stopAutoHideTimer();
@@ -155,18 +186,30 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   /// Navigate to next page
   void nextPage() {
-    if (!state.isLastPage && !isClosed) {
-      final newPage = (state.currentPage ?? 1) + 1;
+    if (!state.isLastPage && !isClosed && state.content != null) {
+      final currentPage = state.currentPage ?? 1;
+      final newPage = (currentPage + 1).clamp(1, state.content!.pageCount);
+
+      _logger.d(
+          'Next page: $currentPage -> $newPage (total: ${state.content!.pageCount})');
+
       emit(state.copyWith(currentPage: newPage));
+      _saveReaderPosition();
       _saveToHistory();
     }
   }
 
   /// Navigate to previous page
   void previousPage() {
-    if (!state.isFirstPage && !isClosed) {
-      final newPage = (state.currentPage ?? 1) - 1;
+    if (!state.isFirstPage && !isClosed && state.content != null) {
+      final currentPage = state.currentPage ?? 1;
+      final newPage = (currentPage - 1).clamp(1, state.content!.pageCount);
+
+      _logger.d(
+          'Previous page: $currentPage -> $newPage (total: ${state.content!.pageCount})');
+
       emit(state.copyWith(currentPage: newPage));
+      _saveReaderPosition();
       _saveToHistory();
     }
   }
@@ -178,8 +221,40 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   /// Navigate to specific page
   void goToPage(int page) {
-    if (!isClosed) {
-      emit(state.copyWith(currentPage: page));
+    if (!isClosed && state.content != null) {
+      // Validate page range
+      final totalPages = state.content!.pageCount;
+      final validPage = page.clamp(1, totalPages);
+
+      if (page != validPage) {
+        _logger.w(
+            'Invalid page requested: $page, clamped to: $validPage (total: $totalPages)');
+      }
+
+      _logger.d(
+          'Navigating to page: $validPage (requested: $page, total: $totalPages)');
+
+      emit(state.copyWith(currentPage: validPage));
+      _saveReaderPosition();
+      _saveToHistory();
+    } else {
+      _logger.e(
+          'Cannot navigate to page $page - cubit closed or content not loaded');
+    }
+  }
+
+  /// Update current page from user swipe (without triggering navigation sync)
+  void updateCurrentPageFromSwipe(int page) {
+    if (!isClosed && state.content != null) {
+      // Validate page range
+      final totalPages = state.content!.pageCount;
+      final validPage = page.clamp(1, totalPages);
+
+      _logger.d('Updating page from swipe: $validPage (total: $totalPages)');
+
+      // Only emit state change, don't trigger sync navigation
+      emit(state.copyWith(currentPage: validPage));
+      _saveReaderPosition();
       _saveToHistory();
     }
   }
@@ -191,7 +266,9 @@ class ReaderCubit extends Cubit<ReaderState> {
       emit(state.copyWith(showUI: newShowUI));
 
       // Save to preferences with error handling
-      readerSettingsRepository.saveShowUI(newShowUI).catchError((e, stackTrace) {
+      readerSettingsRepository
+          .saveShowUI(newShowUI)
+          .catchError((e, stackTrace) {
         _logger.e("Failed to save show UI setting: $e",
             error: e, stackTrace: stackTrace);
         // Settings will still apply for current session
@@ -270,6 +347,150 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
+  /// Clear reader position for specific content (useful for debugging)
+  Future<void> clearReaderPosition(String contentId) async {
+    try {
+      await readerRepository.deleteReaderPosition(contentId);
+      _logger.i('🗑️ Cleared reader position for content: $contentId');
+    } catch (e) {
+      _logger.e('Failed to clear reader position: $e');
+    }
+  }
+
+  /// Clear all reader positions (useful for debugging)
+  Future<void> clearAllReaderPositions() async {
+    try {
+      await readerRepository.clearAllReaderPositions();
+      _logger.i('🗑️ Cleared all reader positions');
+    } catch (e) {
+      _logger.e('Failed to clear all reader positions: $e');
+    }
+  }
+
+  /// Clear image cache for specific content (useful for debugging)
+  Future<void> clearImageCache(String contentId) async {
+    try {
+      await LocalImagePreloader.clearContentCache(contentId);
+      _logger.i('🖼️ Cleared image cache for content: $contentId');
+
+      // Note: CachedNetworkImage cache clearing requires DefaultCacheManager
+      // Users can manually clear app data if needed
+      _logger
+          .i('ℹ️ To clear network image cache, clear app data or restart app');
+    } catch (e) {
+      _logger.e('Failed to clear image cache: $e');
+    }
+  }
+
+  /// Debug: Log image URL mapping for current content
+  void _logImageUrlMapping(Content content) {
+    if (content.imageUrls.isEmpty) {
+      _logger.w('⚠️ No image URLs found for content: ${content.id}');
+      return;
+    }
+
+    _logger.i(
+        '🖼️ Image URL Mapping for ${content.id} (${content.imageUrls.length} pages):');
+
+    for (int i = 0; i < content.imageUrls.length && i < 10; i++) {
+      final pageNumber = i + 1;
+      final url = content.imageUrls[i];
+
+      // Extract page number from URL if possible
+      final urlPageNumber = _extractPageNumberFromUrl(url);
+
+      final isMatch = urlPageNumber == pageNumber;
+      final status = isMatch ? '✅' : '❌';
+
+      _logger.i('  Page $pageNumber: $status URL contains page $urlPageNumber');
+      _logger.d('    URL: $url');
+
+      // Additional validation for first few pages
+      if (i < 3) {
+        _validateImageUrl(url, pageNumber, content.id);
+      }
+    }
+
+    if (content.imageUrls.length > 10) {
+      _logger.i('  ... and ${content.imageUrls.length - 10} more pages');
+    }
+
+    // Check for duplicate URLs in first few pages
+    _checkForDuplicateUrls(content);
+  }
+
+  /// Validate individual image URL
+  void _validateImageUrl(String url, int expectedPage, String contentId) {
+    try {
+      // Check if URL is accessible (basic validation)
+      final uri = Uri.parse(url);
+      if (!uri.hasScheme || !uri.hasAuthority) {
+        _logger.w('⚠️ Invalid URL format for page $expectedPage: $url');
+        return;
+      }
+
+      // Extract gallery ID from URL
+      final galleryMatch = RegExp(r'/galleries/(\d+)/').firstMatch(url);
+      if (galleryMatch != null) {
+        final galleryId = galleryMatch.group(1);
+        if (galleryId != contentId) {
+          _logger.w(
+              '⚠️ URL gallery ID mismatch! Expected $contentId, got $galleryId in URL: $url');
+        }
+      }
+
+      _logger.d('✅ URL validation passed for page $expectedPage: $url');
+    } catch (e) {
+      _logger.w('⚠️ URL validation failed for page $expectedPage: $e');
+    }
+  }
+
+  /// Check for duplicate URLs in content
+  void _checkForDuplicateUrls(Content content) {
+    final urlSet = <String>{};
+    final duplicates = <String>[];
+
+    for (final url in content.imageUrls) {
+      if (!urlSet.add(url)) {
+        duplicates.add(url);
+      }
+    }
+
+    if (duplicates.isNotEmpty) {
+      _logger.e('🚨 DUPLICATE URLs FOUND in content ${content.id}:');
+      for (final duplicate in duplicates) {
+        final indices = <int>[];
+        for (int i = 0; i < content.imageUrls.length; i++) {
+          if (content.imageUrls[i] == duplicate) {
+            indices.add(i + 1); // Convert to 1-based page numbers
+          }
+        }
+        _logger.e('  URL: $duplicate appears on pages: ${indices.join(", ")}');
+      }
+    } else {
+      _logger.i('✅ No duplicate URLs found in content ${content.id}');
+    }
+  }
+
+  /// Extract page number from image URL
+  int? _extractPageNumberFromUrl(String url) {
+    // Try to extract page number from patterns like:
+    // https://i.nhentai.net/galleries/123456/1.jpg -> 1
+    // https://i.nhentai.net/galleries/123456/86.jpg -> 86
+    final match = RegExp(r'/galleries/\d+/(\d+)\.[^/]+$').firstMatch(url);
+    if (match != null) {
+      return int.tryParse(match.group(1)!);
+    }
+
+    // Try other patterns if needed
+    final match2 = RegExp(r'/(\d+)\.[^/]*$').firstMatch(url);
+    if (match2 != null) {
+      return int.tryParse(match2.group(1)!);
+    }
+
+    return null;
+  }
+
   /// Reset all reader settings to defaults
   Future<void> resetReaderSettings() async {
     try {
@@ -333,6 +554,46 @@ class ReaderCubit extends Cubit<ReaderState> {
     } catch (e) {
       // Log error but don't emit error state for history saving
     }
+  }
+
+  /// Save reader position for persistence
+  Future<void> _saveReaderPosition() async {
+    if (state.content == null) return;
+
+    try {
+      final position = ReaderPosition.create(
+        contentId: state.content!.id,
+        currentPage: state.currentPage ?? 1,
+        totalPages: state.content!.pageCount,
+        title: state.content!.title,
+        coverUrl: state.content!.coverUrl,
+        readingTimeMinutes: (state.readingTimer?.inMinutes ?? 0),
+      );
+
+      await readerRepository.saveReaderPosition(position);
+      _logger.i(
+          '✅ Saved reader position: ${state.content!.id} at page ${state.currentPage}/${state.content!.pageCount}');
+    } catch (e) {
+      _logger.e('Failed to save reader position: $e');
+      // Don't emit error state for position saving
+    }
+  }
+
+  /// Restore reader position if exists
+  Future<int> _restoreReaderPosition(String contentId) async {
+    try {
+      final position = await readerRepository.getReaderPosition(contentId);
+      if (position != null) {
+        _logger.i(
+            '📖 Restored reader position: $contentId at page ${position.currentPage}/${position.totalPages}');
+        return position.currentPage;
+      }
+    } catch (e) {
+      _logger.e('Failed to restore reader position: $e');
+    }
+
+    // Return first page as default
+    return 1;
   }
 
   /// Start reading timer

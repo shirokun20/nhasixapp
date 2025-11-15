@@ -42,6 +42,7 @@ import 'package:nhasixapp/domain/repositories/repositories.dart';
 import 'package:nhasixapp/data/repositories/content_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/user_data_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/reader_settings_repository_impl.dart';
+import 'package:nhasixapp/data/repositories/reader_repository_impl.dart';
 
 // Use Cases
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
@@ -63,6 +64,13 @@ import 'package:nhasixapp/services/pdf_conversion_service.dart';
 import 'package:nhasixapp/services/history_cleanup_service.dart';
 import 'package:nhasixapp/services/preferences_service.dart';
 import 'package:nhasixapp/services/analytics_service.dart';
+import 'package:nhasixapp/services/detail_cache_service.dart';
+import 'package:nhasixapp/services/request_deduplication_service.dart';
+import 'package:nhasixapp/services/app_update_service.dart';
+import 'package:nhasixapp/services/image_cache_service.dart';
+import 'package:nhasixapp/services/cache/cache_manager.dart' as multi_cache;
+import 'package:nhasixapp/domain/entities/content.dart';
+import 'package:nhasixapp/domain/entities/tag.dart';
 
 final getIt = GetIt.instance;
 
@@ -131,8 +139,7 @@ void _setupServices() {
       () => PdfService(logger: getIt<Logger>()));
 
   // PDF Conversion Service - High-level orchestration service for background PDF processing
-  getIt.registerLazySingleton<PdfConversionService>(
-      () => PdfConversionService(
+  getIt.registerLazySingleton<PdfConversionService>(() => PdfConversionService(
         pdfService: getIt<PdfService>(),
         notificationService: getIt<NotificationService>(),
         userDataRepository: getIt<UserDataRepository>(),
@@ -147,15 +154,51 @@ void _setupServices() {
       ));
 
   // History Cleanup Service
-  getIt.registerLazySingleton<HistoryCleanupService>(() => HistoryCleanupService(
-        preferencesService: getIt<PreferencesService>(),
-        clearHistoryUseCase: getIt<ClearHistoryUseCase>(),
-        getHistoryCountUseCase: getIt<GetHistoryCountUseCase>(),
-        logger: getIt<Logger>(),
-      ));
+  getIt
+      .registerLazySingleton<HistoryCleanupService>(() => HistoryCleanupService(
+            preferencesService: getIt<PreferencesService>(),
+            clearHistoryUseCase: getIt<ClearHistoryUseCase>(),
+            getHistoryCountUseCase: getIt<GetHistoryCountUseCase>(),
+            logger: getIt<Logger>(),
+          ));
 
   // Analytics Service - Privacy-first local analytics tracking
   getIt.registerLazySingleton<AnalyticsService>(() => AnalyticsService());
+
+  // Detail Cache Service - Performance optimization for content details
+  getIt.registerLazySingleton<DetailCacheService>(() => DetailCacheService());
+
+  // Request Deduplication Service - Prevents redundant API calls
+  getIt.registerLazySingleton<RequestDeduplicationService>(
+      () => RequestDeduplicationService());
+
+  // App Update Service - Handles cache clearing on app updates
+  getIt.registerLazySingleton<AppUpdateService>(() => AppUpdateService());
+
+  // Image Cache Service - Advanced image caching with TTL and size management
+  getIt.registerLazySingleton<ImageCacheService>(() => ImageCacheService());
+
+  // Multi-layer Cache Manager for Content - Memory + Disk caching
+  getIt.registerLazySingleton<multi_cache.CacheManager<Content>>(
+    () => multi_cache.CacheManager<Content>.standard(
+      namespace: 'content',
+      memoryMaxEntries: 50,
+      diskMaxSizeMB: 30,
+      memoryTTL: const Duration(hours: 1),
+      diskTTL: const Duration(days: 1),
+    )..initialize(),
+  );
+
+  // Multi-layer Cache Manager for Tag Lists
+  getIt.registerLazySingleton<multi_cache.CacheManager<List<Tag>>>(
+    () => multi_cache.CacheManager<List<Tag>>.standard(
+      namespace: 'tags',
+      memoryMaxEntries: 20,
+      diskMaxSizeMB: 10,
+      memoryTTL: const Duration(hours: 2),
+      diskTTL: const Duration(days: 7),
+    )..initialize(),
+  );
 }
 
 /// Setup data sources (Remote and Local)
@@ -200,9 +243,13 @@ void _setupDataSources() {
 
 /// Setup repository implementations
 void _setupRepositories() {
-  // Content Repository
+  // Content Repository with multi-layer cache integration
   getIt.registerLazySingleton<ContentRepository>(() => ContentRepositoryImpl(
         remoteDataSource: getIt<RemoteDataSource>(),
+        detailCacheService: getIt<DetailCacheService>(),
+        requestDeduplicationService: getIt<RequestDeduplicationService>(),
+        contentCacheManager: getIt<multi_cache.CacheManager<Content>>(),
+        tagCacheManager: getIt<multi_cache.CacheManager<List<Tag>>>(),
         // localDataSource: getIt<LocalDataSource>(),
         logger: getIt<Logger>(),
       ));
@@ -218,6 +265,11 @@ void _setupRepositories() {
       () => ReaderSettingsRepositoryImpl(
             getIt<SharedPreferences>(),
           ));
+
+  // Reader Repository
+  getIt.registerLazySingleton<ReaderRepository>(() => ReaderRepositoryImpl(
+        localDataSource: getIt<LocalDataSource>(),
+      ));
 
   // Settings Repository
   // getIt.registerLazySingleton<SettingsRepository>(() => SettingsRepositoryImpl(
@@ -237,9 +289,9 @@ void _setupRepositories() {
 void _setupUseCases() {
   // Settings Use Cases
   getIt.registerLazySingleton<GetUserPreferencesUseCase>(
-    () => GetUserPreferencesUseCase(getIt<SettingsRepository>()));
+      () => GetUserPreferencesUseCase(getIt<SettingsRepository>()));
   getIt.registerLazySingleton<SaveUserPreferencesUseCase>(
-    () => SaveUserPreferencesUseCase(getIt<SettingsRepository>()));
+      () => SaveUserPreferencesUseCase(getIt<SettingsRepository>()));
   // Content Use Cases
   getIt.registerLazySingleton<GetContentListUseCase>(
       () => GetContentListUseCase(getIt()));
@@ -323,7 +375,8 @@ void _setupBlocs() {
         connectivity: getIt<Connectivity>(),
         notificationService: getIt<NotificationService>(),
         pdfConversionService: getIt<PdfConversionService>(),
-        appLocalizations: null, // Will be provided via context in MultiBlocProviderConfig
+        appLocalizations:
+            null, // Will be provided via context in MultiBlocProviderConfig
       ));
 
   // Register other BLoCs when implemented
@@ -371,6 +424,7 @@ void _setupCubits() {
         getContentDetailUseCase: getIt<GetContentDetailUseCase>(),
         addToHistoryUseCase: getIt<AddToHistoryUseCase>(),
         readerSettingsRepository: getIt<ReaderSettingsRepository>(),
+        readerRepository: getIt<ReaderRepository>(),
         offlineContentManager: getIt<OfflineContentManager>(),
         networkCubit: getIt<NetworkCubit>(),
       ));

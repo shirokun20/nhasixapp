@@ -876,38 +876,46 @@ ThemeData darkTheme = ThemeData(
 
 ## Source-Specific Design Considerations
 
-### e-hentai.org Advanced Features
-- **Filter Integration**: Reuse existing `FilterDataScreen` component with full tabbed interface
-- **Complex Filtering**: Support for include/exclude logic, multiple filter types
-- **Tag Namespaces**: Visual distinction for different tag types (f:, m:, character:, etc.)
-- **Filter State Management**: Persistent filter states with validation
-
-### Other Sources Simplified Design
-- **hitomi.la**: Simple tag selection from dropdown or chips
-- **pixhentai.com**: Category-based filtering with basic tag support
-- **Unified Simple UI**: Use consistent simple filter interface across non-e-hentai sources
+### Unified Simple Design for All Sources
+- **Simple Search Interface**: Use consistent simple search across all sources
+- **Basic Tag/Category Selection**: Dropdown or chips for tag/category filtering
+- **Language Filtering**: Source-specific language selection (English/Javanese for hitomi.la, Indonesian/English for others)
+- **No Advanced Filters**: Keep interface simple and consistent
+- **Unified UI Components**: Same search and filter components for all sources
 
 ### Adaptive UI Components
 ```dart
-class AdaptiveFilterWidget extends StatelessWidget {
+class UnifiedSearchWidget extends StatelessWidget {
   final String selectedSource;
 
   @override
   Widget build(BuildContext context) {
-    if (selectedSource == 'ehentai') {
-      return ElevatedButton(
-        onPressed: () => Navigator.pushNamed(context, '/filter-data'),
-        child: Text('Advanced Filters'),
-      );
-    } else {
-      return SimpleFilterChips(
-        availableTags: getAvailableTagsForSource(selectedSource),
-        onTagSelected: (tag) => applySimpleFilter(tag),
-      );
-    }
+    return Column(
+      children: [
+        SearchInput(),
+        SourceSelectionChips(),
+        LanguageFilter(selectedSource: selectedSource),
+        SimpleTagFilter(selectedSource: selectedSource),
+      ],
+    );
   }
 }
 ```
+
+### Scalability
+- Component library expansion
+- Design system documentation
+- Automated testing for UI consistency
+
+### Extensibility
+- Plugin architecture for new scrapers
+- Theme customization options
+- Third-party integration points
+
+### Maintenance
+- Design debt tracking
+- User feedback integration
+- A/B testing framework
 
 ### Scalability
 - Component library expansion

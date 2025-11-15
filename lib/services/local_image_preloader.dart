@@ -629,6 +629,48 @@ class LocalImagePreloader {
     }
   }
 
+  /// Clear image cache for specific content (useful for debugging)
+  static Future<void> clearContentCache(String contentId) async {
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      
+      // Clear internal cache images
+      final cacheImagesDir = Directory(path.join(appDir.path, 'cache', 'images', contentId));
+      if (await cacheImagesDir.exists()) {
+        await cacheImagesDir.delete(recursive: true);
+        _logger.i('🗑️ Cleared internal cache images for: $contentId');
+      }
+      
+      // Clear internal cache thumbnail
+      final cacheThumbnailPath = path.join(appDir.path, 'cache', 'thumbnails', '$contentId.jpg');
+      final thumbnailFile = File(cacheThumbnailPath);
+      if (await thumbnailFile.exists()) {
+        await thumbnailFile.delete();
+        _logger.i('🗑️ Cleared internal cache thumbnail for: $contentId');
+      }
+      
+    } catch (e) {
+      _logger.e('Error clearing content cache for $contentId: $e');
+    }
+  }
+
+  /// Clear all internal image cache (emergency reset)
+  static Future<void> clearAllImageCache() async {
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      
+      // Clear all cached images
+      final cacheDir = Directory(path.join(appDir.path, 'cache'));
+      if (await cacheDir.exists()) {
+        await cacheDir.delete(recursive: true);
+        _logger.i('🗑️ Cleared all internal image cache');
+      }
+      
+    } catch (e) {
+      _logger.e('Error clearing all image cache: $e');
+    }
+  }
+
   /// Helper method to check if file is an image
   static bool _isImageFile(String filePath) {
     final extension = path.extension(filePath).toLowerCase();

@@ -17,6 +17,7 @@ import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
 import 'package:nhasixapp/presentation/widgets/content_card_widget.dart';
 import 'package:nhasixapp/presentation/widgets/pagination_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
+import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 
 class SearchScreen extends StatefulWidget {
   final String? query;
@@ -47,7 +48,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Timer? _tagSearchTimer;
   Timer? _debounceTimer;
-  final RegExp _contentIdPattern = RegExp(r'^\d{1,6}$'); // Match 1-6 digit numbers
+  final RegExp _contentIdPattern =
+      RegExp(r'^\d{1,6}$'); // Match 1-6 digit numbers
 
   @override
   void initState() {
@@ -112,11 +114,11 @@ class _SearchScreenState extends State<SearchScreen> {
     _searchController.addListener(() {
       // Cancel previous debounce timer
       _debounceTimer?.cancel();
-      
+
       // Start new debounce timer - ONLY for regular search, no direct navigation
       _debounceTimer = Timer(const Duration(milliseconds: 300), () {
         final query = _searchController.text.trim();
-        
+
         // Regular search behavior with debounce (REMOVED numeric direct navigation)
         _currentFilter = _currentFilter.copyWith(
           query: query.isEmpty ? null : query,
@@ -133,7 +135,7 @@ class _SearchScreenState extends State<SearchScreen> {
     try {
       // Clear search field for better UX
       _searchController.clear();
-      
+
       // Navigate directly to detail screen
       if (mounted) {
         AppRouter.goToContentDetail(context, contentId);
@@ -287,10 +289,13 @@ class _SearchScreenState extends State<SearchScreen> {
                           label,
                           style: hasFilters
                               ? TextStyleConst.labelMedium.copyWith(
-                                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimaryContainer,
                                 )
                               : TextStyleConst.bodySmall.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
                                 ),
                         ),
                       ),
@@ -336,7 +341,8 @@ class _SearchScreenState extends State<SearchScreen> {
         context,
         filterType: filterType,
         selectedFilters: selectedFilters,
-        hideOtherTabs: true, // Hide other tabs when navigating from Filter Categories
+        hideOtherTabs:
+            true, // Hide other tabs when navigating from Filter Categories
       );
 
       // Update filter if result is not null (including empty results for clearing filters)
@@ -409,7 +415,8 @@ class _SearchScreenState extends State<SearchScreen> {
       backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
       elevation: 0,
       leading: IconButton(
-        icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+        icon: Icon(Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface),
         onPressed: () => context.pop(),
       ),
       title: Text(
@@ -434,7 +441,8 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
         IconButton(
           tooltip: AppLocalizations.of(context)!.clearAllFiltersTooltip,
-          icon: Icon(Icons.clear_all, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          icon: Icon(Icons.clear_all,
+              color: Theme.of(context).colorScheme.onSurfaceVariant),
           onPressed: _clearAllFilters,
         ),
       ],
@@ -474,7 +482,8 @@ class _SearchScreenState extends State<SearchScreen> {
               suffixIcon: _searchController.text.isNotEmpty
                   ? IconButton(
                       icon: Icon(Icons.clear,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant),
                       onPressed: () {
                         // Enhanced clear method with proper timer cleanup
                         _debounceTimer?.cancel();
@@ -489,16 +498,18 @@ class _SearchScreenState extends State<SearchScreen> {
               fillColor: Theme.of(context).colorScheme.surface,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                borderSide:
+                    BorderSide(color: Theme.of(context).colorScheme.outline),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                borderSide:
+                    BorderSide(color: Theme.of(context).colorScheme.outline),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide:
-                    BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+                borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.primary, width: 2),
               ),
             ),
           ),
@@ -541,21 +552,25 @@ class _SearchScreenState extends State<SearchScreen> {
               _buildFilterNavigationButtons(),
               const SizedBox(height: 16),
 
-               // Single select filters (kept in SearchScreen)
-               _buildSingleSelectFilter(
-                   AppLocalizations.of(context)!.languageLabel, _languages, _currentFilter.language, (value) {
-                 _currentFilter = _currentFilter.copyWith(language: value);
-                 Logger().i(_currentFilter.language);
-                 _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
-                 setState(() {});
-               }),
-               const SizedBox(height: 16),
-               _buildSingleSelectFilter(
-                   AppLocalizations.of(context)!.categoryLabel, _categories, _currentFilter.category, (value) {
-                 _currentFilter = _currentFilter.copyWith(category: value);
-                 _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
-                 setState(() {});
-               }),
+              // Single select filters (kept in SearchScreen)
+              _buildSingleSelectFilter(
+                  AppLocalizations.of(context)!.languageLabel,
+                  _languages,
+                  _currentFilter.language, (value) {
+                _currentFilter = _currentFilter.copyWith(language: value);
+                Logger().i(_currentFilter.language);
+                _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
+                setState(() {});
+              }),
+              const SizedBox(height: 16),
+              _buildSingleSelectFilter(
+                  AppLocalizations.of(context)!.categoryLabel,
+                  _categories,
+                  _currentFilter.category, (value) {
+                _currentFilter = _currentFilter.copyWith(category: value);
+                _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
+                setState(() {});
+              }),
             ],
           ),
         ),
@@ -645,7 +660,8 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.3),
+                color:
+                    Theme.of(context).colorScheme.shadow.withValues(alpha: 0.3),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -658,7 +674,8 @@ class _SearchScreenState extends State<SearchScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton.icon(
-                  onPressed: hasFilters && !isLoading ? _onSearchButtonPressed : null,
+                  onPressed:
+                      hasFilters && !isLoading ? _onSearchButtonPressed : null,
                   icon: isLoading
                       ? SizedBox(
                           width: 24,
@@ -667,7 +684,9 @@ class _SearchScreenState extends State<SearchScreen> {
                             strokeWidth: 2.5,
                             color: hasFilters
                                 ? Theme.of(context).colorScheme.onPrimary
-                                : Theme.of(context).colorScheme.onSurfaceVariant,
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                           ),
                         )
                       : Icon(
@@ -678,7 +697,9 @@ class _SearchScreenState extends State<SearchScreen> {
                               : Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                   label: Text(
-                    isLoading ? AppLocalizations.of(context)!.searchingMessage : AppLocalizations.of(context)!.applySearch,
+                    isLoading
+                        ? AppLocalizations.of(context)!.searchingMessage
+                        : AppLocalizations.of(context)!.applySearch,
                     style: TextStyleConst.labelLarge.copyWith(
                       color: hasFilters
                           ? Theme.of(context).colorScheme.onPrimary
@@ -694,7 +715,10 @@ class _SearchScreenState extends State<SearchScreen> {
                         : Theme.of(context).colorScheme.onSurfaceVariant,
                     elevation: hasFilters ? 4 : 0,
                     shadowColor: hasFilters
-                        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
+                        ? Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.3)
                         : Colors.transparent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -778,11 +802,13 @@ class _SearchScreenState extends State<SearchScreen> {
                     _currentFilter = _currentFilter.copyWith(query: query);
                     _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
                   },
-                  backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+                  backgroundColor:
+                      Theme.of(context).colorScheme.surfaceContainer,
                   labelStyle: TextStyleConst.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
-                  side: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  side:
+                      BorderSide(color: Theme.of(context).colorScheme.outline),
                 );
               }).toList(),
             ),
@@ -912,7 +938,8 @@ class _SearchScreenState extends State<SearchScreen> {
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surfaceContainer,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Theme.of(context).colorScheme.outline),
+                  border:
+                      Border.all(color: Theme.of(context).colorScheme.outline),
                 ),
                 child: Text(
                   state.filterSummary,
@@ -930,23 +957,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildLoadingState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            AppLocalizations.of(context)!.searchingMessage,
-            style: TextStyleConst.bodyMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
+    return const GridShimmer(itemCount: 12);
   }
 
   Widget _buildSearchResultsList(SearchLoaded state) {
@@ -964,7 +975,10 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                AppLocalizations.of(context)!.resultsCountFormat(state.totalCount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')),
+                AppLocalizations.of(context)!.resultsCountFormat(
+                    state.totalCount.toString().replaceAllMapped(
+                        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                        (Match m) => '${m[1]},')),
                 style: TextStyleConst.headingLarge.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
@@ -1126,10 +1140,10 @@ class _SearchScreenState extends State<SearchScreen> {
                 content: content,
                 onTap: () {
                   AppRouter.goToContentDetail(context, content.id);
+                },
+                showUploadDate: false,
+              );
             },
-            showUploadDate: false,
-          );
-        },
           );
         },
       ),
@@ -1141,13 +1155,13 @@ class _SearchScreenState extends State<SearchScreen> {
   /// Handle search button press - check for numeric input first
   void _onSearchButtonPressed() {
     final query = _searchController.text.trim();
-    
+
     // Check if input is numeric content ID (direct navigation without debounce)
     if (_contentIdPattern.hasMatch(query)) {
       _navigateToContentById(query);
       return;
     }
-    
+
     // Regular search behavior for non-numeric input
     _performSearch();
   }
@@ -1184,7 +1198,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void _clearAllFilters() {
     // Cancel any pending debounce
     _debounceTimer?.cancel();
-    
+
     _searchController.clear();
     // Removed complex filter controllers clearing - now handled by FilterDataScreen
 

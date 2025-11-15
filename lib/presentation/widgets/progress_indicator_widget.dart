@@ -3,6 +3,7 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
+import 'shimmer_loading_widgets.dart';
 
 /// Custom progress indicator widgets with theme-aware colors
 class AppProgressIndicator extends StatelessWidget {
@@ -24,7 +25,7 @@ class AppProgressIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -75,7 +76,7 @@ class AppLinearProgressIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,7 +96,8 @@ class AppLinearProgressIndicator extends StatelessWidget {
               child: Container(
                 height: height,
                 decoration: BoxDecoration(
-                  color: backgroundColor ?? colorScheme.outline.withValues(alpha: 0.3),
+                  color: backgroundColor ??
+                      colorScheme.outline.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(borderRadius),
                 ),
                 child: FractionallySizedBox(
@@ -155,122 +157,6 @@ class AppShimmerLoading extends StatelessWidget {
   }
 }
 
-/// Content card shimmer placeholder
-class ContentCardShimmer extends StatelessWidget {
-  const ContentCardShimmer({
-    super.key,
-    this.aspectRatio = 0.7,
-  });
-
-  final double aspectRatio;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    
-    return AppShimmerLoading(
-      child: Card(
-        color: colorScheme.surface,
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: AspectRatio(
-          aspectRatio: aspectRatio,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Image placeholder
-              Expanded(
-                flex: 3,
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-
-              // Content placeholder
-              Expanded(
-                flex: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Title placeholder
-                      Container(
-                        height: 14,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-
-                      const SizedBox(height: 4),
-
-                      Container(
-                        height: 14,
-                        width: 120,
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      // Artist placeholder
-                      Container(
-                        height: 12,
-                        width: 80,
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-
-                      const Spacer(),
-
-                      // Bottom row placeholder
-                      Row(
-                        children: [
-                          Container(
-                            height: 10,
-                            width: 40,
-                            decoration: BoxDecoration(
-                              color: colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                          const Spacer(),
-                          Container(
-                            height: 16,
-                            width: 24,
-                            decoration: BoxDecoration(
-                              color: colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Grid shimmer loading
 class ContentGridShimmer extends StatelessWidget {
   const ContentGridShimmer({
@@ -295,9 +181,7 @@ class ContentGridShimmer extends StatelessWidget {
         mainAxisSpacing: 8,
       ),
       itemCount: itemCount,
-      itemBuilder: (context, index) => ContentCardShimmer(
-        aspectRatio: aspectRatio,
-      ),
+      itemBuilder: (context, index) => const ContentGridCardShimmer(),
     );
   }
 }
@@ -366,7 +250,7 @@ class _PulsingDotIndicatorState extends State<PulsingDotIndicator>
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final dotColor = widget.color ?? colorScheme.primary;
-    
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(widget.dotCount, (index) {
@@ -407,7 +291,7 @@ class TextSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return AppShimmerLoading(
       child: Container(
         width: width,
@@ -439,14 +323,14 @@ class LoadingOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Stack(
       children: [
         child,
         if (isLoading)
           Container(
-            color: (backgroundColor ?? colorScheme.surface)
-                .withValues(alpha: 0.7),
+            color:
+                (backgroundColor ?? colorScheme.surface).withValues(alpha: 0.7),
             child: Center(
               child: Container(
                 padding: const EdgeInsets.symmetric(

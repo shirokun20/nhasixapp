@@ -4,6 +4,7 @@ import 'package:logger/logger.dart';
 
 import '../../models/download_status_model.dart';
 import '../../models/history_model.dart';
+import '../../models/reader_position_model.dart';
 import '../../../domain/entities/user_preferences.dart';
 import '../../../domain/entities/download_status.dart';
 import 'database_helper.dart';
@@ -886,11 +887,136 @@ class LocalDataSource {
       batch.delete('history');
       batch.delete('downloads');
       batch.delete('favorites');
+      batch.delete('reader_positions');
 
       await batch.commit();
       _logger.i('All data cleared from database');
     } catch (e) {
       _logger.e('Error clearing all data: $e');
+    }
+  }
+
+  // ==================== READER POSITION OPERATIONS ====================
+
+  /// Save reader position
+  Future<void> saveReaderPosition(ReaderPositionModel position) async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) {
+        _logger.e('Database not available, cannot save reader position');
+        return;
+      }
+
+      await db.insert(
+        'reader_positions',
+        position.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+
+      _logger.d('Saved reader position for ${position.contentId}');
+    } catch (e) {
+      _logger.e('Error saving reader position: $e');
+      rethrow;
+    }
+  }
+
+  /// Get reader position by content ID
+  Future<ReaderPositionModel?> getReaderPosition(String contentId) async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) {
+        _logger.e('Database not available, cannot get reader position');
+        return null;
+      }
+
+      final result = await db.query(
+        'reader_positions',
+        where: 'content_id = ?',
+        whereArgs: [contentId],
+        limit: 1,
+      );
+
+      if (result.isEmpty) return null;
+      return ReaderPositionModel.fromMap(result.first);
+    } catch (e) {
+      _logger.e('Error getting reader position: $e');
+      return null;
+    }
+  }
+
+  /// Get all reader positions
+  Future<List<ReaderPositionModel>> getAllReaderPositions({
+    int page = 1,
+    int limit = 50,
+  }) async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) {
+        _logger.e('Database not available, returning empty reader positions');
+        return [];
+      }
+
+      final offset = (page - 1) * limit;
+
+      final result = await db.query(
+        'reader_positions',
+        orderBy: 'last_accessed DESC',
+        limit: limit,
+        offset: offset,
+      );
+
+      return result.map((row) => ReaderPositionModel.fromMap(row)).toList();
+    } catch (e) {
+      _logger.e('Error getting all reader positions: $e');
+      return [];
+    }
+  }
+
+  /// Delete reader position
+  Future<void> deleteReaderPosition(String contentId) async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) {
+        _logger.e('Database not available, cannot delete reader position');
+        return;
+      }
+
+      await db.delete(
+        'reader_positions',
+        where: 'content_id = ?',
+        whereArgs: [contentId],
+      );
+
+      _logger.d('Deleted reader position for $contentId');
+    } catch (e) {
+      _logger.e('Error deleting reader position: $e');
+    }
+  }
+
+  /// Clear all reader positions
+  Future<void> clearAllReaderPositions() async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) {
+        _logger.e('Database not available, cannot clear reader positions');
+        return;
+      }
+
+      await db.delete('reader_positions');
+      _logger.d('Cleared all reader positions');
+    } catch (e) {
+      _logger.e('Error clearing reader positions: $e');
+    }
+  }
+
+  /// Add method to remove last search filter (fix for search persistence issue)
+  Future<void> removeLastSearchFilter() async {
+    try {
+      await clearSearchFilter();
+      _logger.d('Removed last search filter');
+    } catch (e) {
+      _logger.e('Error removing last search filter: $e');
+      rethrow;
     }
   }
 }

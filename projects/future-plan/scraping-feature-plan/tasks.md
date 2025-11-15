@@ -10,6 +10,7 @@
   - Document Hitomi.la tag system and pagination
   - Map PixHentai.com WordPress structure
   - Identify stable CSS selectors for content extraction
+  - **Analyze language detection patterns and metadata**
   - Document JavaScript dependencies and dynamic content loading
 - **Deliverables**: HTML structure documentation, selector mappings
 - **Owner**: Developer
@@ -22,6 +23,7 @@
   - Identify any internal APIs or data endpoints
   - Document rate limiting patterns
   - Test anti-scraping measures (Cloudflare, etc.)
+  - **Analyze language metadata in network responses**
   - Analyze response formats and data structures
 - **Deliverables**: Network analysis report, API documentation
 - **Owner**: Developer
@@ -32,6 +34,7 @@
 - **Subtasks**:
   - Review website Terms of Service
   - Consult legal guidelines for web scraping
+  - **Document language content filtering requirements**
   - Document adult content handling requirements
   - Define user consent mechanisms
   - Create disclaimer and warning text
@@ -58,6 +61,7 @@
   - Implement HTML parser utility
   - Create rate limiter service
   - Develop file manager for caching
+  - **Create language detection utility**
   - Set up error handling framework
   - Create logging utilities
 - **Deliverables**: Core utility classes, error handling system
@@ -72,6 +76,7 @@
 - **Subtasks**:
   - Define ScrapedContent entity with validation
   - Create SearchQuery entity with builder pattern
+  - **Add language field to SearchQuery entity**
   - Implement DownloadTask entity
   - Define repository interfaces
   - Create use cases for search and download
@@ -86,6 +91,7 @@
   - Implement search method with pagination
   - Add content detail extraction
   - Handle tag parsing and filtering
+  - **Add language filtering**: Focus on Indonesian and English content
   - Implement error handling and retries
   - Add unit tests for scraper logic
 - **Deliverables**: Working EHentai scraper, unit tests
@@ -101,6 +107,7 @@
   - Add Indonesian content filtering
   - Handle dynamic image URL loading
   - Implement pagination logic
+  - **Add language filtering**: Focus on English and Javanese content only
   - Add comprehensive error handling
   - Create unit tests
 - **Deliverables**: Working Hitomi scraper, unit tests
@@ -116,6 +123,7 @@
   - Handle post content parsing
   - Implement image extraction from posts
   - Add pagination support
+  - **Add language filtering**: Focus on Indonesian and English content
   - Create unit tests
 - **Deliverables**: Working PixHentai scraper, unit tests
 - **Owner**: Developer
@@ -129,6 +137,7 @@
   - Integrate all three scrapers
   - Add source selection logic
   - Implement caching layer
+  - **Add language filtering logic per source**
   - Create error aggregation
   - Add repository unit tests
 - **Deliverables**: Unified repository, integration tests
@@ -142,6 +151,7 @@
   - Create content metadata storage
   - Implement download queue persistence
   - Add search history storage
+  - **Add language preference storage**
   - Create settings persistence
   - Add database migration logic
 - **Deliverables**: Local storage system, database schema
@@ -151,36 +161,43 @@
 ## Phase 3: UI and User Experience (2 weeks)
 
 ### Source-Specific UI Implementation
-#### T-3.0: Adaptive UI Framework
-- **Description**: Create framework for source-specific UI adaptation
+#### T-3.0: Unified UI Framework
+- **Description**: Create unified UI framework for all sources
 - **Subtasks**:
   - Implement source capability detection
-  - Create conditional widget rendering
-  - Add feature toggle management
+  - Create consistent widget rendering
+  - **Add language preference handling per source**
+  - Add simple feature toggle management
   - Handle state transitions between sources
-- **Deliverables**: Adaptive UI framework
+- **Deliverables**: Unified UI framework
 - **Owner**: UI Developer
 - **Estimated Time**: 2 days
 
-#### T-3.1: e-hentai Advanced Filter Integration
-- **Description**: Integrate existing FilterDataScreen for e-hentai advanced filtering
+#### T-3.1: Unified Search Interface
+- **Description**: Create unified simple search interface for all sources
 - **Subtasks**:
-  - Adapt FilterDataScreen for scraping context
-  - Map scraping tags to existing filter types
-  - Handle namespace tag display
-  - Implement filter state synchronization
-- **Deliverables**: Advanced filter system for e-hentai
+  - Implement search input field with suggestions
+  - Create source selection chips
+  - Add simple tag/category filtering for all sources
+  - **Add language filtering based on source**:
+    - hitomi.la: English, Javanese options
+    - Other sources: Indonesian, English options
+  - Implement search history display
+  - Add loading and error states
+  - Create responsive layout
+- **Deliverables**: Unified search screen UI, simple filter components
 - **Owner**: UI Developer
-- **Estimated Time**: 2 days
+- **Estimated Time**: 3 days
 
-#### T-3.2: Simplified Filters for Other Sources
-- **Description**: Basic filtering UI for hitomi and pixhentai
+#### T-3.2: Simple Tag/Category Filters
+- **Description**: Basic filtering UI for all sources
 - **Subtasks**:
   - Create simple tag selection UI
   - Implement category filtering for pixhentai
+  - **Add language filtering UI per source**
   - Add basic search enhancement
   - Ensure consistent UX across sources
-- **Deliverables**: Basic filter UI for non-e-hentai sources
+- **Deliverables**: Simple filter UI for all sources
 - **Owner**: UI Developer
 - **Estimated Time**: 2 days
 #### T-3.3: Search Interface
@@ -188,11 +205,11 @@
 - **Subtasks**:
   - Implement search input field with suggestions
   - Create source selection chips
-  - Add adaptive filter options (advanced for e-hentai, simple for others)
+  - Add simple filter options for all sources
   - Implement search history display
   - Add loading and error states
   - Create responsive layout
-- **Deliverables**: Search screen UI, adaptive filter components
+- **Deliverables**: Search screen UI, simple filter components
 - **Owner**: UI Developer
 - **Estimated Time**: 3 days
 
@@ -245,6 +262,7 @@
   - Create SearchBloc with events and states
   - Implement search logic integration
   - Add pagination handling
+  - **Add language filtering state management**
   - Create error state management
   - Add search history integration
   - Implement bloc tests
@@ -259,6 +277,7 @@
   - Implement progress tracking
   - Add download controls (pause/resume/cancel)
   - Create storage monitoring
+  - **Add language-based content filtering for downloads**
   - Implement background download handling
   - Add bloc tests
 - **Deliverables**: Download bloc, queue management
@@ -273,6 +292,7 @@
   - Integrate with existing navigation drawer
   - Add feature flags for gradual rollout
   - Implement deep linking support
+  - **Add language-based content filtering guards**
   - Add navigation guards for adult content
   - Update main app structure
 - **Deliverables**: Integrated navigation, feature flags
@@ -286,6 +306,7 @@
   - Add source enable/disable toggles
   - Implement rate limit configuration
   - Add storage limit settings
+  - **Add language preference settings per source**
   - Create adult content warnings
   - Integrate with existing settings system
 - **Deliverables**: Settings integration, configuration UI
@@ -301,6 +322,7 @@
   - Test all scraper implementations
   - Test repository layer
   - Test use cases and business logic
+  - **Test language filtering logic per source**
   - Test utility classes
   - Test error handling scenarios
   - Achieve >80% code coverage
@@ -314,6 +336,7 @@
   - Test full search workflows
   - Test download processes
   - Test offline functionality
+  - **Test language filtering across all sources**
   - Test error recovery scenarios
   - Test network failure handling
   - Create automated test scripts
@@ -329,6 +352,7 @@
   - Optimize list virtualization
   - Reduce memory usage in galleries
   - Improve network request efficiency
+  - **Optimize language filtering performance**
   - Add background processing for downloads
   - Profile and optimize critical paths
 - **Deliverables**: Performance optimizations, profiling reports
@@ -342,6 +366,7 @@
   - Add crash reporting integration
   - Create error recovery mechanisms
   - Add performance monitoring
+  - **Add language filtering error handling**
   - Implement user feedback system
   - Create error reporting dashboard
 - **Deliverables**: Error handling system, monitoring setup
@@ -357,6 +382,7 @@
   - Write user documentation
   - Create developer documentation
   - Prepare release notes
+  - **Document language filtering features**
   - Create training materials for support
   - Document maintenance procedures
   - Create troubleshooting guides
@@ -371,6 +397,7 @@
   - Configure feature flags for rollout
   - Prepare app store assets
   - Create rollback procedures
+  - **Configure default language settings per source**
   - Set up monitoring and alerting
   - Perform final security review
 - **Deliverables**: Deployment package, monitoring setup
@@ -385,6 +412,7 @@
 - **Subtasks**:
   - Check for HTML structure changes
   - Update selectors as needed
+  - **Monitor language metadata changes**
   - Test scraper functionality
   - Deploy hotfixes for broken scrapers
 - **Owner**: Developer
@@ -395,6 +423,7 @@
 - **Subtasks**:
   - Review performance metrics
   - Identify bottlenecks
+  - **Monitor language filtering performance**
   - Implement optimizations
   - Update performance benchmarks
 - **Owner**: Developer
@@ -405,6 +434,7 @@
 - **Subtasks**:
   - Analyze user feedback
   - Prioritize feature requests
+  - **Review language filtering effectiveness**
   - Plan improvements
   - Implement high-priority fixes
 - **Owner**: Product Manager
@@ -417,6 +447,7 @@
 - **Subtasks**:
   - Analyze failure patterns
   - Implement workarounds (user agents, delays)
+  - **Update language detection patterns**
   - Consider alternative approaches
   - Update documentation
 - **Owner**: Developer
@@ -427,6 +458,7 @@
 - **Subtasks**:
   - Review updated ToS
   - Consult legal counsel
+  - **Review language content filtering requirements**
   - Update disclaimers
   - Modify implementation if needed
 - **Owner**: Legal/Product Manager
@@ -438,10 +470,12 @@
 - **Download Completion Rate**: >90% successful downloads
 - **App Performance**: <2 second cold start, <500ms image loads
 - **User Retention**: >70% 7-day retention for feature users
+- **Language Filtering Accuracy**: >90% correct language detection
 - **Crash Rate**: <1% crash rate
 
 ### Qualitative Metrics
 - **User Satisfaction**: >4.0/5.0 rating
 - **Feature Adoption**: >20% of users use scraping features
+- **Language Content Satisfaction**: >80% user satisfaction with language filtering
 - **Support Tickets**: <5% of users report issues
 - **Code Quality**: >80% test coverage, <10 critical issues

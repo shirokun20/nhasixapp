@@ -12,6 +12,7 @@ import '../../widgets/filter_item_card_widget.dart';
 import '../../widgets/selected_filters_widget.dart';
 import '../../widgets/filter_type_tab_bar_widget.dart';
 import '../../widgets/app_scaffold_with_offline.dart';
+import '../../widgets/shimmer_loading_widgets.dart';
 
 /// Screen for advanced filter data selection with modern UI
 class FilterDataScreen extends StatefulWidget {
@@ -217,7 +218,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
     if (widget.hideOtherTabs) {
       return const SizedBox.shrink();
     }
-    
+
     return Container(
       color: Theme.of(context).colorScheme.surface,
       child: FilterTypeTabBar(
@@ -238,7 +239,8 @@ class _FilterDataScreenState extends State<FilterDataScreen>
         controller: _searchController,
         focusNode: _searchFocusNode,
         onChanged: _onSearchChanged,
-        hintText: AppLocalizations.of(context)!.searchFilterHint(_getCurrentFilterTypeDisplayName()),
+        hintText: AppLocalizations.of(context)!
+            .searchFilterHint(_getCurrentFilterTypeDisplayName()),
       ),
     );
   }
@@ -267,7 +269,8 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: Text(
-                    AppLocalizations.of(context)!.selectedCountFormat2(state.selectedCount),
+                    AppLocalizations.of(context)!
+                        .selectedCountFormat2(state.selectedCount),
                     style: TextStyleConst.headingSmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
@@ -277,7 +280,8 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                   selectedFilters: state.selectedFilters ?? [],
                   onRemove: _onRemoveSelectedFilter,
                 ),
-                const Divider(height: 1, color: null), // Let divider use theme color
+                const Divider(
+                    height: 1, color: null), // Let divider use theme color
               ],
             ),
           );
@@ -305,11 +309,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
       },
       builder: (context, state) {
         if (state is FilterDataLoading) {
-          return Center(
-            child: CircularProgressIndicator(
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          );
+          return const ListShimmer(itemCount: 10);
         }
 
         if (state is FilterDataError) {
@@ -331,7 +331,9 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  state.message ?? (AppLocalizations.of(context)?.unknownError ?? "Unknown error"),
+                  state.message ??
+                      (AppLocalizations.of(context)?.unknownError ??
+                          "Unknown error"),
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -366,8 +368,10 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                   const SizedBox(height: 16),
                   Text(
                     state.searchQuery?.isEmpty == true
-                        ? AppLocalizations.of(context)!.noFilterTypeAvailable(_getCurrentFilterTypeDisplayName().toLowerCase())
-                        : AppLocalizations.of(context)!.noResultsFoundForQuery(state.searchQuery!),
+                        ? AppLocalizations.of(context)!.noFilterTypeAvailable(
+                            _getCurrentFilterTypeDisplayName().toLowerCase())
+                        : AppLocalizations.of(context)!
+                            .noResultsFoundForQuery(state.searchQuery!),
                     style: TextStyleConst.headingMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
@@ -375,7 +379,8 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                   if (state.searchQuery?.isNotEmpty == true) ...[
                     const SizedBox(height: 8),
                     Text(
-                      AppLocalizations.of(context)?.tryADifferentSearchTerm ?? 'Try a different search term',
+                      AppLocalizations.of(context)?.tryADifferentSearchTerm ??
+                          'Try a different search term',
                       style: TextStyleConst.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -447,7 +452,8 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                   onPressed: _onCancel,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.onSurface,
-                    side: BorderSide(color: Theme.of(context).colorScheme.outline),
+                    side: BorderSide(
+                        color: Theme.of(context).colorScheme.outline),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   child: Text(AppLocalizations.of(context)!.cancel),

@@ -31,12 +31,14 @@ class ContentLoadMoreEvent extends ContentEvent {
 class ContentRefreshEvent extends ContentEvent {
   const ContentRefreshEvent({
     this.sortBy = SortOption.newest,
+    this.currentPage = 1,
   });
 
   final SortOption sortBy;
+  final int currentPage;
 
   @override
-  List<Object?> get props => [sortBy];
+  List<Object?> get props => [sortBy, currentPage];
 }
 
 /// Event to change sort option
@@ -57,6 +59,18 @@ class ContentRetryEvent extends ContentEvent {
 /// Event to clear content list
 class ContentClearEvent extends ContentEvent {
   const ContentClearEvent();
+}
+
+/// Event to clear search results and return to normal content
+class ContentClearSearchEvent extends ContentEvent {
+  const ContentClearSearchEvent({
+    this.sortBy = SortOption.newest,
+  });
+
+  final SortOption sortBy;
+
+  @override
+  List<Object?> get props => [sortBy];
 }
 
 /// Event to search content with filters

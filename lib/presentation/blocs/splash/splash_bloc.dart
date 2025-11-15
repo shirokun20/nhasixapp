@@ -49,9 +49,13 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       await Future.delayed(_initialDelay);
 
       // Check network connectivity first
-      final connectivityResult = await _connectivity.checkConnectivity();
+      final connectivityResults = await _connectivity.checkConnectivity();
+      final connectivityResult = connectivityResults.isNotEmpty
+          ? connectivityResults.first
+          : ConnectivityResult.none;
       if (connectivityResult == ConnectivityResult.none) {
-        _logger.i('SplashBloc: No internet connection, entering enhanced offline mode...');
+        _logger.i(
+            'SplashBloc: No internet connection, entering enhanced offline mode...');
         await _handleOfflineMode(emit);
         return;
       }
@@ -134,12 +138,13 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
         }
       } else {
         _logger.w('SplashBloc: Cloudflare bypass failed');
-        
+
         // Check if we can offer offline mode
         final downloadedContents = await _userDataRepository.getAllDownloads();
-        final completedDownloads = downloadedContents.where((d) => d.isCompleted).toList();
+        final completedDownloads =
+            downloadedContents.where((d) => d.isCompleted).toList();
         final canUseOffline = completedDownloads.isNotEmpty;
-        
+
         emit(SplashError(
           message:
               'Failed to bypass Cloudflare protection. This may be due to:\n'
@@ -173,24 +178,32 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       // Attempt bypass again
 
       // Check connectivity again
-      final connectivityResult = await _connectivity.checkConnectivity();
+      final connectivityResults = await _connectivity.checkConnectivity();
+      final connectivityResult = connectivityResults.isNotEmpty
+          ? connectivityResults.first
+          : ConnectivityResult.none;
       if (connectivityResult == ConnectivityResult.none) {
-        _logger.i('SplashBloc: No internet connection during retry, checking offline content...');
-        
+        _logger.i(
+            'SplashBloc: No internet connection during retry, checking offline content...');
+
         // Check if there are downloaded contents for offline use
         final downloadedContents = await _userDataRepository.getAllDownloads();
-        final completedDownloads = downloadedContents.where((d) => d.isCompleted).toList();
-        
+        final completedDownloads =
+            downloadedContents.where((d) => d.isCompleted).toList();
+
         if (completedDownloads.isNotEmpty) {
-          _logger.i('SplashBloc: Found ${completedDownloads.length} offline contents');
+          _logger.i(
+              'SplashBloc: Found ${completedDownloads.length} offline contents');
           emit(SplashOfflineSuccess(
             downloadCount: completedDownloads.length,
-            message: 'Offline mode: ${completedDownloads.length} downloaded contents available',
+            message:
+                'Offline mode: ${completedDownloads.length} downloaded contents available',
           ));
           return;
         } else {
           emit(SplashError(
-            message: 'No internet connection and no offline content available.\nPlease connect to internet or download content when online.',
+            message:
+                'No internet connection and no offline content available.\nPlease connect to internet or download content when online.',
             canRetry: true,
             canUseOffline: false,
           ));
@@ -205,12 +218,13 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       } else {
         // Check if we can offer offline mode
         final downloadedContents = await _userDataRepository.getAllDownloads();
-        final completedDownloads = downloadedContents.where((d) => d.isCompleted).toList();
+        final completedDownloads =
+            downloadedContents.where((d) => d.isCompleted).toList();
         final canUseOffline = completedDownloads.isNotEmpty;
-        
+
         emit(SplashError(
           message: 'Failed to bypass Cloudflare protection. Please try again.'
-                   '${canUseOffline ? '\n\nOr continue with offline content (${completedDownloads.length} downloads available).' : ''}',
+              '${canUseOffline ? '\n\nOr continue with offline content (${completedDownloads.length} downloads available).' : ''}',
           canRetry: true,
           canUseOffline: canUseOffline,
         ));
@@ -244,17 +258,21 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
 
       // Get all downloaded content
       final downloadedContents = await _userDataRepository.getAllDownloads();
-      final completedDownloads = downloadedContents.where((d) => d.isCompleted).toList();
-      
+      final completedDownloads =
+          downloadedContents.where((d) => d.isCompleted).toList();
+
       if (completedDownloads.isNotEmpty) {
-        _logger.i('SplashBloc: Offline mode activated with ${completedDownloads.length} contents');
+        _logger.i(
+            'SplashBloc: Offline mode activated with ${completedDownloads.length} contents');
         emit(SplashOfflineSuccess(
           downloadCount: completedDownloads.length,
-          message: 'Offline mode: ${completedDownloads.length} downloaded contents available',
+          message:
+              'Offline mode: ${completedDownloads.length} downloaded contents available',
         ));
       } else {
         emit(SplashError(
-          message: 'No offline content available.\nPlease download content when internet is available.',
+          message:
+              'No offline content available.\nPlease download content when internet is available.',
           canRetry: true,
           canUseOffline: false,
         ));
@@ -275,8 +293,9 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
   Future<void> _handleOfflineMode(Emitter<SplashState> emit) async {
     try {
       // First, show that we're checking offline content
-      emit(SplashOfflineDetected(message: 'No internet connection. Checking offline content...'));
-      
+      emit(SplashOfflineDetected(
+          message: 'No internet connection. Checking offline content...'));
+
       // Get offline content via OfflineContentManager if available, otherwise use downloads
       List<String> offlineContentIds = [];
       try {
@@ -287,37 +306,39 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
         offlineContentIds = await offlineManager.getOfflineContentIds();
       } catch (e) {
         // Fallback to checking downloads directly
-        _logger.w('SplashBloc: OfflineContentManager not available, using downloads fallback: $e');
+        _logger.w(
+            'SplashBloc: OfflineContentManager not available, using downloads fallback: $e');
         final downloadedContents = await _userDataRepository.getAllDownloads();
         offlineContentIds = downloadedContents
             .where((d) => d.isCompleted)
             .map((d) => d.contentId)
             .toList();
       }
-      
+
       final hasOfflineContent = offlineContentIds.isNotEmpty;
-      
+
       // Update AppStateManager with offline content info
       AppStateManager().updateOfflineContentInfo(
         hasContent: hasOfflineContent,
         contentCount: offlineContentIds.length,
       );
-      
+
       if (hasOfflineContent) {
         // ✅ Auto-continue to main app with offline mode
-        _logger.i('SplashBloc: Found ${offlineContentIds.length} offline items, auto-continuing');
+        _logger.i(
+            'SplashBloc: Found ${offlineContentIds.length} offline items, auto-continuing');
         emit(SplashOfflineReady(
           offlineContentCount: offlineContentIds.length,
-          message: 'Found ${offlineContentIds.length} offline items. Continuing...',
+          message:
+              'Found ${offlineContentIds.length} offline items. Continuing...',
         ));
-        
+
         // Enable global offline mode
         AppStateManager().enableOfflineMode();
-        
+
         // Auto-navigate to main after brief delay
         await Future.delayed(const Duration(seconds: 1));
         emit(SplashSuccess(message: 'Ready (Offline Mode)'));
-        
       } else {
         // ❌ No offline content - show options
         _logger.i('SplashBloc: No offline content available, showing options');
@@ -325,9 +346,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
           message: 'No internet connection and no offline content available.',
         ));
       }
-      
     } catch (e, stackTrace) {
-      _logger.e('SplashBloc: Error during offline mode handling', 
+      _logger.e('SplashBloc: Error during offline mode handling',
           error: e, stackTrace: stackTrace);
       emit(SplashOfflineEmpty(
         message: 'Unable to check offline content. ${e.toString()}',
@@ -343,25 +363,24 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
   ) async {
     try {
       _logger.i('SplashBloc: Force enabling offline mode without content');
-      
+
       // Enable global offline mode with no content
       AppStateManager().updateOfflineContentInfo(
         hasContent: false,
         contentCount: 0,
       );
       AppStateManager().enableOfflineMode();
-      
+
       emit(SplashOfflineMode(
         message: 'Offline Mode (Limited Features)',
         canRetryOnline: true,
       ));
-      
+
       // Auto-continue to main app
       await Future.delayed(const Duration(seconds: 1));
       emit(SplashSuccess(message: 'Ready (Offline Mode - Limited Features)'));
-      
     } catch (e, stackTrace) {
-      _logger.e('SplashBloc: Error forcing offline mode', 
+      _logger.e('SplashBloc: Error forcing offline mode',
           error: e, stackTrace: stackTrace);
       emit(SplashError(
         message: 'Failed to enable offline mode: ${e.toString()}',
@@ -381,7 +400,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       _logger.i('SplashBloc: Manually checking offline content');
       await _handleOfflineMode(emit);
     } catch (e, stackTrace) {
-      _logger.e('SplashBloc: Error during manual offline content check', 
+      _logger.e('SplashBloc: Error during manual offline content check',
           error: e, stackTrace: stackTrace);
       emit(SplashError(
         message: 'Failed to check offline content: ${e.toString()}',

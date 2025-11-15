@@ -8,16 +8,18 @@ class RequestRateManager {
   final Logger _logger;
   final List<DateTime> _requestHistory = [];
   static const Duration _timeWindow = Duration(minutes: 1);
-  static const int _maxRequestsPerWindow = 12; // Very conservative: 12 requests per minute
-  static const Duration _baseDelay = Duration(milliseconds: 3000); // 3 second base delay
-  
+  static const int _maxRequestsPerWindow =
+      30; // Increased from 12 to 30 requests per minute
+  static const Duration _baseDelay =
+      Duration(milliseconds: 1500); // Reduced from 3000ms to 1500ms
+
   bool _isInCooldown = false;
   DateTime? _cooldownEndTime;
 
   /// Check if a request can be made now
   bool canMakeRequest() {
     _cleanupOldRequests();
-    
+
     // Check if we're in cooldown period
     if (_isInCooldown && _cooldownEndTime != null) {
       if (DateTime.now().isBefore(_cooldownEndTime!)) {
@@ -28,32 +30,34 @@ class RequestRateManager {
         _logger.i('Cooldown period ended, resuming requests');
       }
     }
-    
+
     return _requestHistory.length < _maxRequestsPerWindow;
   }
 
   /// Calculate delay before next request
   Duration calculateDelay() {
     final requestCount = _requestHistory.length;
-    
+
     // Exponential backoff based on recent request count
-    final multiplier = pow(1.5, requestCount ~/ 3).toDouble(); // Increase delay every 3 requests
+    final multiplier = pow(1.5, requestCount ~/ 3)
+        .toDouble(); // Increase delay every 3 requests
     final calculatedDelay = Duration(
       milliseconds: (_baseDelay.inMilliseconds * multiplier).round(),
     );
-    
+
     // Cap at 15 seconds maximum
     final maxDelay = Duration(seconds: 15);
     final finalDelay = Duration(
-      milliseconds: min(calculatedDelay.inMilliseconds, maxDelay.inMilliseconds),
+      milliseconds:
+          min(calculatedDelay.inMilliseconds, maxDelay.inMilliseconds),
     );
-    
+
     // Add random jitter (±20%)
     final jitter = Random().nextDouble() * 0.4 - 0.2; // -20% to +20%
     final jitteredDelay = Duration(
       milliseconds: (finalDelay.inMilliseconds * (1 + jitter)).round(),
     );
-    
+
     return jitteredDelay;
   }
 
@@ -61,24 +65,28 @@ class RequestRateManager {
   void recordRequest() {
     _requestHistory.add(DateTime.now());
     _cleanupOldRequests();
-    
-    _logger.d('Request recorded. Total in window: ${_requestHistory.length}/$_maxRequestsPerWindow');
+
+    _logger.d(
+        'Request recorded. Total in window: ${_requestHistory.length}/$_maxRequestsPerWindow');
   }
 
   /// Trigger cooldown period when rate limit is detected
-  void triggerCooldown({Duration cooldownDuration = const Duration(minutes: 2)}) {
+  void triggerCooldown(
+      {Duration cooldownDuration = const Duration(minutes: 2)}) {
     _isInCooldown = true;
     _cooldownEndTime = DateTime.now().add(cooldownDuration);
-    _logger.w('Rate limit triggered, entering cooldown for ${cooldownDuration.inMinutes} minutes');
-    
+    _logger.w(
+        'Rate limit triggered, entering cooldown for ${cooldownDuration.inMinutes} minutes');
+
     // Clear request history to start fresh after cooldown
     _requestHistory.clear();
   }
 
   /// Check if currently in cooldown
-  bool get isInCooldown => _isInCooldown && 
-    _cooldownEndTime != null && 
-    DateTime.now().isBefore(_cooldownEndTime!);
+  bool get isInCooldown =>
+      _isInCooldown &&
+      _cooldownEndTime != null &&
+      DateTime.now().isBefore(_cooldownEndTime!);
 
   /// Get remaining cooldown time
   Duration? get remainingCooldown {

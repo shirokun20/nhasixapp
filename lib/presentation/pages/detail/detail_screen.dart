@@ -14,6 +14,7 @@ import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/core/utils/app_state_manager.dart';
 import '../../widgets/download_button_widget.dart';
 import '../../widgets/progressive_image_widget.dart';
+import '../../widgets/shimmer_loading_widgets.dart';
 
 class DetailScreen extends StatefulWidget {
   final String contentId;
@@ -30,13 +31,14 @@ class DetailScreen extends StatefulWidget {
 class _DetailScreenState extends State<DetailScreen> {
   late final DetailCubit _detailCubit;
   final ScrollController _scrollController = ScrollController();
-  bool _isNavigating = false; // Add navigation lock to prevent multiple simultaneous navigation
+  bool _isNavigating =
+      false; // Add navigation lock to prevent multiple simultaneous navigation
 
   @override
   void initState() {
     super.initState();
     _detailCubit = getIt<DetailCubit>()..loadContentDetail(widget.contentId);
-    
+
     // Initialize download manager if not already initialized
     final downloadBloc = context.read<DownloadBloc>();
     if (downloadBloc.state is DownloadInitial) {
@@ -55,14 +57,15 @@ class _DetailScreenState extends State<DetailScreen> {
   void _searchByTag(String tagName) async {
     // Prevent multiple simultaneous navigation attempts
     if (_isNavigating) {
-      Logger().w("Navigation already in progress, ignoring tag search: $tagName");
+      Logger()
+          .w("Navigation already in progress, ignoring tag search: $tagName");
       return;
     }
 
     try {
       _isNavigating = true;
       Logger().i("Starting tag browsing navigation for: $tagName");
-      
+
       // Navigate to ContentByTagScreen
       if (mounted) {
         AppRouter.goToContentByTag(context, tagName);
@@ -71,8 +74,9 @@ class _DetailScreenState extends State<DetailScreen> {
         Logger().w("Widget unmounted before navigation for tag: $tagName");
       }
     } catch (e, stackTrace) {
-      Logger().e("Error navigating to tag: $tagName", error: e, stackTrace: stackTrace);
-      
+      Logger().e("Error navigating to tag: $tagName",
+          error: e, stackTrace: stackTrace);
+
       // Handle error gracefully
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -135,7 +139,8 @@ class _DetailScreenState extends State<DetailScreen> {
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          icon: Icon(Icons.arrow_back,
+              color: Theme.of(context).colorScheme.onSurfaceVariant),
           onPressed: () => context.pop(),
         ),
         title: Text(
@@ -145,107 +150,7 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
         ),
       ),
-      body: Container(
-        color: Theme.of(context).colorScheme.surface,
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Enhanced loading indicator with animation
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 100,
-                    height: 100,
-                    child: CircularProgressIndicator(
-                      color: Theme.of(context).colorScheme.primary,
-                      strokeWidth: 5,
-                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    ),
-                  ),
-                  Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                          blurRadius: 8,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.menu_book,
-                      color: Theme.of(context).colorScheme.primary,
-                      size: 32,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 40),
-
-              // Loading text with enhanced styling
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
-                ),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.outline,
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      AppLocalizations.of(context)!.loadingContentDetails,
-                      style: TextStyleConst.headingMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      AppLocalizations.of(context)!.fetchingMetadata,
-                      style: TextStyleConst.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Additional loading info
-              Text(
-                AppLocalizations.of(context)!.thisMayTakeMoments,
-                style: TextStyleConst.bodySmall.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontStyle: FontStyle.italic,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
+      body: const DetailScreenShimmer(),
     );
   }
 
@@ -314,7 +219,8 @@ class _DetailScreenState extends State<DetailScreen> {
                         size: 20,
                       ),
                       onPressed: () => _showGoOnlineDialog(context),
-                      tooltip: AppLocalizations.of(context)!.youAreOfflineTapToGoOnline,
+                      tooltip: AppLocalizations.of(context)!
+                          .youAreOfflineTapToGoOnline,
                     ),
                   ),
                 // Favorite button
@@ -405,7 +311,8 @@ class _DetailScreenState extends State<DetailScreen> {
                           child: Icon(
                             Icons.broken_image,
                             size: 64,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),
@@ -552,25 +459,28 @@ class _DetailScreenState extends State<DetailScreen> {
           const SizedBox(height: 16),
 
           // Metadata rows with enhanced styling
-          _buildMetadataRow(AppLocalizations.of(context)!.idLabel, content.id, Icons.tag),
-          _buildMetadataRow(AppLocalizations.of(context)!.pagesLabel, '${content.pageCount}', Icons.menu_book),
           _buildMetadataRow(
-              AppLocalizations.of(context)!.languageLabel, content.language.toLowerCase(), Icons.language),
+              AppLocalizations.of(context)!.idLabel, content.id, Icons.tag),
+          _buildMetadataRow(AppLocalizations.of(context)!.pagesLabel,
+              '${content.pageCount}', Icons.menu_book),
+          _buildMetadataRow(AppLocalizations.of(context)!.languageLabel,
+              content.language.toLowerCase(), Icons.language),
           if (content.artists.isNotEmpty)
-            _buildMetadataRow(
-                AppLocalizations.of(context)!.artistLabel, content.artists.join(', '), Icons.person),
+            _buildMetadataRow(AppLocalizations.of(context)!.artistLabel,
+                content.artists.join(', '), Icons.person),
           if (content.characters.isNotEmpty)
-            _buildMetadataRow(
-                AppLocalizations.of(context)!.charactersLabel, content.characters.join(', '), Icons.people),
+            _buildMetadataRow(AppLocalizations.of(context)!.charactersLabel,
+                content.characters.join(', '), Icons.people),
           if (content.parodies.isNotEmpty)
-            _buildMetadataRow(
-                AppLocalizations.of(context)!.parodiesLabel, content.parodies.join(', '), Icons.movie),
+            _buildMetadataRow(AppLocalizations.of(context)!.parodiesLabel,
+                content.parodies.join(', '), Icons.movie),
           if (content.groups.isNotEmpty)
-            _buildMetadataRow(AppLocalizations.of(context)!.groupsLabel, content.groups.join(', '), Icons.group),
-          _buildMetadataRow(
-              AppLocalizations.of(context)!.uploadedLabel, _formatDate(content.uploadDate), Icons.schedule),
-          _buildMetadataRow(
-              AppLocalizations.of(context)!.favoritesLabel, _formatNumber(content.favorites), Icons.favorite),
+            _buildMetadataRow(AppLocalizations.of(context)!.groupsLabel,
+                content.groups.join(', '), Icons.group),
+          _buildMetadataRow(AppLocalizations.of(context)!.uploadedLabel,
+              _formatDate(content.uploadDate), Icons.schedule),
+          _buildMetadataRow(AppLocalizations.of(context)!.favoritesLabel,
+              _formatNumber(content.favorites), Icons.favorite),
         ],
       ),
     );
@@ -583,7 +493,9 @@ class _DetailScreenState extends State<DetailScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
+        border: Border.all(
+            color:
+                Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -645,7 +557,8 @@ class _DetailScreenState extends State<DetailScreen> {
                   color: _getTagColor(context, tag.type).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: _getTagColor(context, tag.type).withValues(alpha: 0.5),
+                    color:
+                        _getTagColor(context, tag.type).withValues(alpha: 0.5),
                   ),
                 ),
                 child: Row(
@@ -662,7 +575,8 @@ class _DetailScreenState extends State<DetailScreen> {
                       Text(
                         '${tag.count}',
                         style: TextStyleConst.overline.copyWith(
-                          color: _getTagColor(context, tag.type).withValues(alpha: 0.7),
+                          color: _getTagColor(context, tag.type)
+                              .withValues(alpha: 0.7),
                         ),
                       ),
                     ],
@@ -694,7 +608,8 @@ class _DetailScreenState extends State<DetailScreen> {
             child: SizedBox(
               height: 48,
               child: ElevatedButton.icon(
-                onPressed: () => _readContent(content),
+                onPressed: () =>
+                    _readContent(content, forceStartFromBeginning: true),
                 icon: const Icon(Icons.menu_book, size: 24),
                 label: Text(
                   AppLocalizations.of(context)!.readNow,
@@ -706,7 +621,10 @@ class _DetailScreenState extends State<DetailScreen> {
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   elevation: 4,
-                  shadowColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                  shadowColor: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.3),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -946,7 +864,8 @@ class _DetailScreenState extends State<DetailScreen> {
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          icon: Icon(Icons.arrow_back,
+              color: Theme.of(context).colorScheme.onSurfaceVariant),
           onPressed: () => context.pop(),
         ),
         title: Text(
@@ -972,7 +891,10 @@ class _DetailScreenState extends State<DetailScreen> {
                     color: Theme.of(context).colorScheme.errorContainer,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .error
+                          .withValues(alpha: 0.5),
                       width: 2,
                     ),
                   ),
@@ -1026,8 +948,10 @@ class _DetailScreenState extends State<DetailScreen> {
                         icon: const Icon(Icons.refresh),
                         label: Text(AppLocalizations.of(context)!.retry),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
+                          foregroundColor:
+                              Theme.of(context).colorScheme.onPrimary,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
                             vertical: 12,
@@ -1044,8 +968,10 @@ class _DetailScreenState extends State<DetailScreen> {
                       icon: const Icon(Icons.arrow_back),
                       label: Text(AppLocalizations.of(context)!.goBack),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
-                        side: BorderSide(color: Theme.of(context).colorScheme.outline),
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onSurfaceVariant,
+                        side: BorderSide(
+                            color: Theme.of(context).colorScheme.outline),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
                           vertical: 12,
@@ -1079,7 +1005,8 @@ class _DetailScreenState extends State<DetailScreen> {
     } else if (difference.inDays > 0) {
       return l10n.dayAgo(difference.inDays, difference.inDays > 1 ? 's' : '');
     } else if (difference.inHours > 0) {
-      return l10n.hourAgo(difference.inHours, difference.inHours > 1 ? 's' : '');
+      return l10n.hourAgo(
+          difference.inHours, difference.inHours > 1 ? 's' : '');
     } else {
       return l10n.justNow;
     }
@@ -1098,7 +1025,7 @@ class _DetailScreenState extends State<DetailScreen> {
   /// Get theme-aware tag color based on tag type
   Color _getTagColor(BuildContext context, String tagType) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     switch (tagType.toLowerCase()) {
       case 'artist':
         return colorScheme.primary; // Better contrast than tertiary
@@ -1116,8 +1043,9 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  void _readContent(Content content) {
-    AppRouter.goToReader(context, content.id);
+  void _readContent(Content content, {bool forceStartFromBeginning = false}) {
+    AppRouter.goToReader(context, content.id,
+        forceStartFromBeginning: forceStartFromBeginning, content: content);
   }
 
   void _shareContent(Content content) async {
@@ -1125,13 +1053,13 @@ class _DetailScreenState extends State<DetailScreen> {
       // Create shareable link and message
       final contentUrl = 'https://nhentai.net/g/${content.id}/';
       final shareText = _buildShareMessage(content, contentUrl);
-      
+
       // Share using share_plus package
       await Share.share(
         shareText,
         subject: content.title,
       );
-      
+
       // Show success feedback
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1160,67 +1088,67 @@ class _DetailScreenState extends State<DetailScreen> {
       }
     } catch (e) {
       Logger().e('Error sharing content: $e');
-      
+
       // Fallback: copy to clipboard if sharing fails
-        final contentUrl = 'https://nhentai.net/g/${content.id}/';
-        await Clipboard.setData(ClipboardData(text: contentUrl));
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Icon(
-                    Icons.content_copy,
-                    color: Theme.of(context).colorScheme.onError,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      AppLocalizations.of(context)!.shareFailed,
-                      style: TextStyleConst.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onError,
-                      ),
+      final contentUrl = 'https://nhentai.net/g/${content.id}/';
+      await Clipboard.setData(ClipboardData(text: contentUrl));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  Icons.content_copy,
+                  color: Theme.of(context).colorScheme.onError,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    AppLocalizations.of(context)!.shareFailed,
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onError,
                     ),
                   ),
-                ],
-              ),
-              backgroundColor: Theme.of(context).colorScheme.error,
+                ),
+              ],
             ),
-          );
-        }
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     }
   }
 
   /// Build share message with content details
   String _buildShareMessage(Content content, String url) {
     final List<String> messageParts = [];
-    
+
     // Add title
     messageParts.add(content.title);
-    
+
     // Add metadata if available
     final List<String> metadata = [];
-    
+
     if (content.artists.isNotEmpty) {
       metadata.add('Artist: ${content.artists.first}');
     }
-    
+
     if (content.pageCount > 0) {
       metadata.add('${content.pageCount} pages');
     }
-    
+
     if (content.language.isNotEmpty) {
       metadata.add('Language: ${content.language.toUpperCase()}');
     }
-    
+
     if (metadata.isNotEmpty) {
       messageParts.add(metadata.join(' • '));
     }
-    
+
     // Add URL
     messageParts.add('Check it out: $url');
-    
+
     return messageParts.join('\n\n');
   }
 
@@ -1243,7 +1171,7 @@ class _DetailScreenState extends State<DetailScreen> {
       // Get download bloc and add download queue event
       final downloadBloc = context.read<DownloadBloc>();
       downloadBloc.add(DownloadQueueEvent(content: content));
-      
+
       // Show success feedback
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1257,7 +1185,8 @@ class _DetailScreenState extends State<DetailScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  AppLocalizations.of(context)!.downloadStartedFor(content.title),
+                  AppLocalizations.of(context)!
+                      .downloadStartedFor(content.title),
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSecondary,
                   ),
@@ -1278,7 +1207,7 @@ class _DetailScreenState extends State<DetailScreen> {
       );
     } catch (e) {
       Logger().e('Error starting download: $e');
-      
+
       // Show error feedback
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1292,7 +1221,8 @@ class _DetailScreenState extends State<DetailScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  AppLocalizations.of(context)!.failedToStartDownload('Unknown error'),
+                  AppLocalizations.of(context)!
+                      .failedToStartDownload('Unknown error'),
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onError,
                   ),
@@ -1311,10 +1241,10 @@ class _DetailScreenState extends State<DetailScreen> {
     try {
       // Generate shareable link - using the content ID for deep linking
       final contentLink = 'https://nhentai.net/g/${content.id}/';
-      
+
       // Copy to clipboard
       Clipboard.setData(ClipboardData(text: contentLink));
-      
+
       // Show success feedback
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1349,7 +1279,7 @@ class _DetailScreenState extends State<DetailScreen> {
       );
     } catch (e) {
       Logger().e('Error copying link: $e');
-      
+
       // Show error feedback
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

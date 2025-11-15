@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../widgets/shimmer_loading_widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/di/service_locator.dart';
@@ -32,13 +33,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
     _analyticsService = getIt<AnalyticsService>();
     _historyCubit = HistoryCubitFactory.create();
     _scrollController = ScrollController();
-    
+
     // Setup scroll listener for pagination
     _scrollController.addListener(_onScroll);
-    
+
     // Track screen view
     _trackScreenView();
-    
+
     // Load initial history
     _historyCubit.loadHistory();
   }
@@ -142,14 +143,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildBody(BuildContext context, HistoryState state) {
     if (state is HistoryLoading) {
-      return Center(
-        child: AppProgressIndicator(message: AppLocalizations.of(context)?.loadingHistory ?? 'Loading history...'),
-      );
+      return const ListShimmer(itemCount: 8);
     }
 
     if (state is HistoryClearing) {
       return Center(
-        child: AppProgressIndicator(message: AppLocalizations.of(context)?.clearingHistory ?? 'Clearing history...'),
+        child: AppProgressIndicator(
+            message: AppLocalizations.of(context)?.clearingHistory ??
+                'Clearing history...'),
       );
     }
 
@@ -163,9 +164,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
 
     if (state is HistoryEmpty) {
-      return Center(
-        child: const HistoryEmptyWidget()
-      );
+      return Center(child: const HistoryEmptyWidget());
     }
 
     if (state is HistoryLoaded) {
@@ -185,12 +184,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
           child: Text(
             '${state.history.length} items in history',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey.withValues(alpha: 0.3),
-            ),
+                  color: Colors.grey.withValues(alpha: 0.3),
+                ),
             textAlign: TextAlign.center,
           ),
         ),
-        
+
         // History list
         Expanded(
           child: ListView.builder(
@@ -201,10 +200,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
               // Loading indicator for pagination
               if (index >= state.history.length) {
                 return const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: ListShimmer(itemCount: 2),
                 );
               }
 
@@ -212,7 +209,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
               return HistoryItemWidget(
                 history: historyItem,
                 onTap: () => _navigateToContent(context, historyItem),
-                onRemove: () => _removeHistoryItem(context, historyItem.contentId),
+                onRemove: () =>
+                    _removeHistoryItem(context, historyItem.contentId),
               );
             },
           ),

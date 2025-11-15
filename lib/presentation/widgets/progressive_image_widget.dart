@@ -7,16 +7,18 @@ import 'package:logger/logger.dart';
 
 import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
+import '../../services/image_cache_service.dart';
 import '../../services/local_image_preloader.dart';
 import '../../utils/performance_monitor.dart';
+import '../../core/di/service_locator.dart';
 
 /// Progressive Image Widget with enhanced local file priority
-/// 
+///
 /// Loading priority:
 /// 1. Downloaded content (nhasix/[id]/images/)
 /// 2. Local cache
 /// 3. Network with placeholder/error handling
-/// 
+///
 /// Features:
 /// - Fast local file detection
 /// - Shimmer placeholder
@@ -63,8 +65,9 @@ class ProgressiveImageWidget extends StatefulWidget {
 
 class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
   static final Logger _logger = Logger();
-  static final Map<String, String?> _pathCache = {}; // ✅ Cache for resolved paths
-  
+  static final Map<String, String?> _pathCache =
+      {}; // ✅ Cache for resolved paths
+
   String? _cachedLocalPath;
   bool _isLocalPathResolved = false;
 
@@ -78,7 +81,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
   void didUpdateWidget(ProgressiveImageWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Only re-resolve if content or page changed
-    if (oldWidget.contentId != widget.contentId || 
+    if (oldWidget.contentId != widget.contentId ||
         oldWidget.pageNumber != widget.pageNumber ||
         oldWidget.isThumbnail != widget.isThumbnail) {
       _cachedLocalPath = null;
@@ -98,7 +101,8 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     }
 
     // ✅ Check cache first to avoid repeated calls
-    final cacheKey = '${widget.contentId}_${widget.pageNumber}_${widget.isThumbnail}';
+    final cacheKey =
+        '${widget.contentId}_${widget.pageNumber}_${widget.isThumbnail}';
     if (_pathCache.containsKey(cacheKey)) {
       if (mounted) {
         setState(() {
@@ -110,9 +114,10 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     }
 
     if (kDebugMode) {
-      _logger.d('🔍 Resolving local path for contentId: ${widget.contentId}, pageNumber: ${widget.pageNumber}, isThumbnail: ${widget.isThumbnail}');
+      _logger.d(
+          '🔍 Resolving local path for contentId: ${widget.contentId}, pageNumber: ${widget.pageNumber}, isThumbnail: ${widget.isThumbnail}');
     }
-    
+
     // ✅ Track performance of local path resolution
     final result = await PerformanceMonitor.timeOperation(
       'image_local_path_resolution',
@@ -126,14 +131,14 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
         'is_thumbnail': widget.isThumbnail,
       },
     );
-    
+
     // ✅ Cache the result
     _pathCache[cacheKey] = result;
-    
+
     if (kDebugMode && result != null) {
       _logger.d('✅ Local path resolved: $result');
     }
-    
+
     if (mounted) {
       setState(() {
         _cachedLocalPath = result;
@@ -168,19 +173,22 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     if (widget.contentId == null) return null;
 
     String? localPath;
-    
+
     if (widget.isThumbnail) {
-      localPath = await LocalImagePreloader.getLocalThumbnailPath(widget.contentId!);
+      localPath =
+          await LocalImagePreloader.getLocalThumbnailPath(widget.contentId!);
       if (kDebugMode && localPath != null) {
         _logger.d('🖼️ Thumbnail found for ${widget.contentId}: $localPath');
       }
     } else if (widget.pageNumber != null) {
-      localPath = await LocalImagePreloader.getLocalImagePath(widget.contentId!, widget.pageNumber!);
+      localPath = await LocalImagePreloader.getLocalImagePath(
+          widget.contentId!, widget.pageNumber!);
       if (kDebugMode && localPath != null) {
-        _logger.d('📄 Page image found for ${widget.contentId} page ${widget.pageNumber}: $localPath');
+        _logger.d(
+            '📄 Page image found for ${widget.contentId} page ${widget.pageNumber}: $localPath');
       }
     }
-    
+
     return localPath;
   }
 
@@ -189,7 +197,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     if (kDebugMode) {
       _logger.d('📸 Using local image: $localPath');
     }
-    
+
     Widget imageWidget = Image.file(
       File(localPath),
       width: widget.width,
@@ -226,16 +234,18 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     if (kDebugMode) {
       _logger.d('📡 Loading network image: ${widget.networkUrl}');
     }
-    
+
     Widget imageWidget = CachedNetworkImage(
       imageUrl: widget.networkUrl,
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
       memCacheWidth: widget.memCacheWidth ?? (widget.isThumbnail ? 400 : 800),
-      memCacheHeight: widget.memCacheHeight ?? (widget.isThumbnail ? 600 : 1200),
+      memCacheHeight:
+          widget.memCacheHeight ?? (widget.isThumbnail ? 600 : 1200),
       placeholder: (context, url) => widget.placeholder ?? _buildPlaceholder(),
-      errorWidget: (context, url, error) => widget.errorWidget ?? _buildErrorWidget(),
+      errorWidget: (context, url, error) =>
+          widget.errorWidget ?? _buildErrorWidget(),
       fadeInDuration: widget.fadeInDuration,
       fadeOutDuration: widget.fadeOutDuration,
     );
@@ -255,7 +265,10 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
   Widget _buildPlaceholder() {
     return Shimmer.fromColors(
       baseColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-      highlightColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
+      highlightColor: Theme.of(context)
+          .colorScheme
+          .surfaceContainerHighest
+          .withValues(alpha: 0.8),
       child: Container(
         width: widget.width,
         height: widget.height,
@@ -287,7 +300,8 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
           if (!widget.isThumbnail) ...[
             const SizedBox(height: 4),
             Text(
-              AppLocalizations.of(context)?.imageNotAvailable ?? 'Image not available',
+              AppLocalizations.of(context)?.imageNotAvailable ??
+                  'Image not available',
               style: TextStyleConst.caption.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -321,17 +335,22 @@ class ProgressiveReaderImageWidget extends StatefulWidget {
   final void Function(bool isLoading)? onLoadingStateChange;
 
   @override
-  State<ProgressiveReaderImageWidget> createState() => _ProgressiveReaderImageWidgetState();
+  State<ProgressiveReaderImageWidget> createState() =>
+      _ProgressiveReaderImageWidgetState();
 }
 
-class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWidget> {
+class _ProgressiveReaderImageWidgetState
+    extends State<ProgressiveReaderImageWidget> {
   static final Logger _logger = Logger();
+  late final ImageCacheService _imageCacheService;
   String? _cachedLocalPath;
   bool _isLocalPathResolved = false;
 
   @override
   void initState() {
     super.initState();
+    // Get ImageCacheService from service locator
+    _imageCacheService = getIt<ImageCacheService>();
     _resolveLocalPath();
   }
 
@@ -339,7 +358,7 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
   void didUpdateWidget(ProgressiveReaderImageWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Only re-resolve if content or page changed
-    if (oldWidget.contentId != widget.contentId || 
+    if (oldWidget.contentId != widget.contentId ||
         oldWidget.pageNumber != widget.pageNumber) {
       _cachedLocalPath = null;
       _isLocalPathResolved = false;
@@ -349,23 +368,44 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
 
   Future<void> _resolveLocalPath() async {
     widget.onLoadingStateChange?.call(true);
-    
+
     if (kDebugMode) {
-      _logger.d('Reader: Resolving local path for contentId: ${widget.contentId}, pageNumber: ${widget.pageNumber}');
+      _logger.i(
+          '🖼️ READER IMAGE DEBUG: Resolving contentId: ${widget.contentId}, pageNumber: ${widget.pageNumber}');
+      _logger.d('🌐 Network URL: ${widget.networkUrl}');
     }
-    
-    // First try to get existing local image
+
+    // Priority 1: Check ImageCacheService (memory + disk cache with TTL)
+    final cachedImage =
+        await _imageCacheService.getCachedImage(widget.networkUrl);
+    if (cachedImage != null) {
+      if (kDebugMode) {
+        _logger.d(
+            'Reader: ✅ Found cached image in ImageCacheService: ${cachedImage.path}');
+      }
+
+      if (mounted) {
+        setState(() {
+          _cachedLocalPath = cachedImage.path;
+          _isLocalPathResolved = true;
+        });
+        widget.onLoadingStateChange?.call(false);
+      }
+      return;
+    }
+
+    // Priority 2: Check LocalImagePreloader (downloaded content)
     final localPath = await LocalImagePreloader.getLocalImagePath(
-      widget.contentId, 
+      widget.contentId,
       widget.pageNumber,
     );
-    
+
     if (localPath != null) {
       // Found local image
       if (kDebugMode) {
         _logger.d('Reader: ✅ Found local image at: $localPath');
       }
-      
+
       if (mounted) {
         setState(() {
           _cachedLocalPath = localPath;
@@ -375,23 +415,37 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
       }
       return;
     }
-    
-    // No local image found, try to download and cache
+
+    // Priority 3: Download and cache using LocalImagePreloader
     if (kDebugMode) {
-      _logger.d('Reader: 📥 No local image found, downloading and caching: ${widget.networkUrl}');
+      _logger.d(
+          'Reader: 📥 No local image found, downloading and caching: ${widget.networkUrl}');
     }
-    
+
     final cachedPath = await LocalImagePreloader.downloadAndCacheImage(
       widget.networkUrl,
       widget.contentId,
       widget.pageNumber,
     );
-    
+
     if (cachedPath != null) {
       if (kDebugMode) {
         _logger.d('Reader: ✅ Successfully cached image at: $cachedPath');
       }
-      
+
+      // Also cache in ImageCacheService for future fast access
+      try {
+        final imageBytes = await File(cachedPath).readAsBytes();
+        await _imageCacheService.cacheImage(widget.networkUrl, imageBytes);
+        if (kDebugMode) {
+          _logger.d('Reader: ✅ Also cached in ImageCacheService');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          _logger.w('Reader: ⚠️ Failed to cache in ImageCacheService: $e');
+        }
+      }
+
       if (mounted) {
         setState(() {
           _cachedLocalPath = cachedPath;
@@ -402,9 +456,10 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
     } else {
       // Cache failed, will fallback to network
       if (kDebugMode) {
-        _logger.d('Reader: ❌ Failed to cache image, will use network: ${widget.networkUrl}');
+        _logger.d(
+            'Reader: ❌ Failed to cache image, will use network: ${widget.networkUrl}');
       }
-      
+
       if (mounted) {
         setState(() {
           _cachedLocalPath = null;
@@ -430,7 +485,8 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
         height: widget.height,
         errorBuilder: (context, error, stackTrace) {
           if (kDebugMode) {
-            _logger.e('Reader: ❌ Error loading local image from $_cachedLocalPath: $error');
+            _logger.e(
+                'Reader: ❌ Error loading local image from $_cachedLocalPath: $error');
           }
           // Fallback to network if local file fails
           return _buildNetworkImage(context);
@@ -440,18 +496,26 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
 
     // Fallback to network
     if (kDebugMode) {
-      _logger.d('Reader: 📡 Falling back to network image: ${widget.networkUrl}');
+      _logger
+          .d('Reader: 📡 Falling back to network image: ${widget.networkUrl}');
     }
     return _buildNetworkImage(context);
   }
 
   Widget _buildNetworkImage(BuildContext context) {
     if (kDebugMode) {
-      _logger.d('📡 Loading reader image: ${widget.networkUrl}');
+      _logger.d(
+          '📡 Loading reader image for page ${widget.pageNumber}: ${widget.networkUrl}');
     }
-    
+
+    // Use unique cache key combining contentId and pageNumber to prevent cache collision
+    final uniqueCacheKey =
+        '${widget.contentId}_page_${widget.pageNumber}_${widget.networkUrl.hashCode}';
+
     return CachedNetworkImage(
+      key: ValueKey(uniqueCacheKey),
       imageUrl: widget.networkUrl,
+      cacheKey: uniqueCacheKey, // Force unique cache per page
       fit: widget.fit,
       height: widget.height,
       memCacheWidth: 800,
@@ -459,7 +523,51 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
       placeholder: (context, url) => _buildReaderPlaceholder(context),
       errorWidget: (context, url, error) => _buildReaderErrorWidget(context),
       fadeInDuration: const Duration(milliseconds: 200),
+      // Cache image in ImageCacheService when loaded
+      imageBuilder: (context, imageProvider) {
+        // Cache the image data in ImageCacheService for future use
+        _cacheNetworkImage(widget.networkUrl);
+        return Image(
+          image: imageProvider,
+          fit: widget.fit,
+          height: widget.height,
+        );
+      },
     );
+  }
+
+  /// Cache network image in ImageCacheService for future fast access
+  Future<void> _cacheNetworkImage(String url) async {
+    try {
+      // Only cache if not already cached
+      final isCached = await _imageCacheService.isImageCached(url);
+      if (!isCached) {
+        // Download and cache the image
+        final httpClient = HttpClient();
+        final request = await httpClient.getUrl(Uri.parse(url));
+        request.headers.set('User-Agent', 'AppleWebKit/537.36');
+        request.headers.set('Referer', 'https://nhentai.net/');
+
+        final response = await request.close();
+        if (response.statusCode == 200) {
+          final bytes = <int>[];
+          await for (var chunk in response) {
+            bytes.addAll(chunk);
+          }
+
+          await _imageCacheService.cacheImage(url, bytes);
+          if (kDebugMode) {
+            _logger
+                .d('Reader: ✅ Cached network image in ImageCacheService: $url');
+          }
+        }
+        httpClient.close();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        _logger.w('Reader: ⚠️ Failed to cache network image: $e');
+      }
+    }
   }
 
   Widget _buildReaderPlaceholder(BuildContext context) {
@@ -473,7 +581,8 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
           ),
           const SizedBox(height: 16),
           Text(
-            AppLocalizations.of(context)?.loadingPage(widget.pageNumber) ?? 'Loading page ${widget.pageNumber}...',
+            AppLocalizations.of(context)?.loadingPage(widget.pageNumber) ??
+                'Loading page ${widget.pageNumber}...',
             style: TextStyleConst.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -504,7 +613,8 @@ class _ProgressiveReaderImageWidgetState extends State<ProgressiveReaderImageWid
           ),
           const SizedBox(height: 8),
           Text(
-            AppLocalizations.of(context)?.checkInternetConnection ?? 'Check your internet connection',
+            AppLocalizations.of(context)?.checkInternetConnection ??
+                'Check your internet connection',
             style: TextStyleConst.bodySmall.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -551,7 +661,7 @@ class ProgressiveThumbnailWidget extends StatelessWidget {
             memCacheWidth: 400,
             memCacheHeight: 600,
           ),
-          
+
           // Offline indicator overlay
           if (showOfflineIndicator && contentId != null)
             FutureBuilder<bool>(
@@ -562,13 +672,17 @@ class ProgressiveThumbnailWidget extends StatelessWidget {
                     top: 8,
                     right: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.tertiary,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.3),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .scrim
+                                .withValues(alpha: 0.3),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -584,7 +698,8 @@ class ProgressiveThumbnailWidget extends StatelessWidget {
                           ),
                           const SizedBox(width: 2),
                           Text(
-                            (AppLocalizations.of(context)?.offline ?? 'OFFLINE').toUpperCase(),
+                            (AppLocalizations.of(context)?.offline ?? 'OFFLINE')
+                                .toUpperCase(),
                             style: TextStyleConst.overline.copyWith(
                               color: Theme.of(context).colorScheme.onTertiary,
                             ),

@@ -2981,4 +2981,28 @@ class AppLocalizationsId extends AppLocalizations {
   String errorRetryingPdfConversion(String error) {
     return 'Error mencoba lagi konversi PDF: $error';
   }
+
+  @override
+  String get importBackupFolder => 'Import Folder Backup';
+
+  @override
+  String get importBackupFolderDescription =>
+      'Masukkan path ke folder backup yang berisi folder konten nhasix:';
+
+  @override
+  String get scanningBackupFolder => 'Memindai folder backup...';
+
+  @override
+  String backupContentFound(int count) {
+    return 'Ditemukan $count item backup';
+  }
+
+  @override
+  String get noBackupContentFound =>
+      'Tidak ada konten valid ditemukan di folder backup';
+
+  @override
+  String errorScanningBackup(String error) {
+    return 'Error memindai backup: $error';
+  }
 }

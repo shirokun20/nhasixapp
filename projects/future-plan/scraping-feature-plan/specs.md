@@ -78,6 +78,7 @@ class ScrapedContent {
   final String? uploader;
   final String? description;
   final ContentRating rating;
+  final String? language; // Detected content language
 
   const ScrapedContent({
     required this.id,
@@ -91,6 +92,7 @@ class ScrapedContent {
     this.uploader,
     this.description,
     this.rating = ContentRating.unknown,
+    this.language,
   });
 
   factory ScrapedContent.fromModel(ScrapedContentModel model) {
@@ -124,6 +126,7 @@ class SearchQuery {
   final String keyword;
   final List<String> tags;
   final List<String> sources; // Multiple sources support
+  final List<String> languages; // Language filtering
   final int page;
   final int limit;
   final SortOrder sortOrder;
@@ -134,6 +137,7 @@ class SearchQuery {
     required this.keyword,
     this.tags = const [],
     this.sources = const ['ehentai', 'hitomi', 'pixhentai'],
+    this.languages = const [], // Empty means all supported languages for source
     this.page = 1,
     this.limit = 25,
     this.sortOrder = SortOrder.relevance,
@@ -662,34 +666,40 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
 ## Source-Specific Feature Specifications
 
-### e-hentai.org Advanced Features
-- **Filter Data Integration**: Reuse existing `FilterDataScreen` with tab-based filtering
-- **Tag Namespace Support**: Handle namespaced tags (f:, m:, character:, etc.)
-- **Complex Query Building**: Support for include/exclude filters, multiple tag combinations
-- **Filter Persistence**: Save and restore filter states across sessions
-
-### Other Sources Simplified Features
-- **hitomi.la**: Basic keyword search + tag selection from available tags
-- **pixhentai.com**: Category-based filtering + basic tag support
-- **No Advanced UI**: Use simple dropdown/filter chips instead of complex tabbed interface
+### Unified Simple Features for All Sources
+- **Simple Search**: Basic keyword and tag search across all sources
+- **Tag/Category Filtering**: Dropdown or chips for tag/category selection
+- **Language Filtering**: Source-specific language preferences
+- **No Advanced Filters**: Keep interface simple and consistent
+- **Unified UI**: Same search components for all sources
 
 ### Feature Toggle Logic
 ```dart
 class ScrapingFeatureManager {
   bool isAdvancedFilteringAvailable(String source) {
-    return source == 'ehentai';
+    return false; // No advanced filtering for any source
   }
 
   List<String> getAvailableFilterTypes(String source) {
     switch (source) {
       case 'ehentai':
-        return ['tag', 'artist', 'character', 'parody', 'group'];
       case 'hitomi':
-        return ['tag'];
       case 'pixhentai':
-        return ['category', 'tag'];
+        return ['tag', 'category', 'language'];
       default:
         return [];
+    }
+  }
+
+  List<String> getSupportedLanguages(String source) {
+    switch (source) {
+      case 'hitomi':
+        return ['english', 'javanese'];
+      case 'ehentai':
+      case 'pixhentai':
+        return ['indonesian', 'english'];
+      default:
+        return ['english'];
     }
   }
 }
@@ -760,6 +770,7 @@ CREATE TABLE scraped_content (
   uploader TEXT,
   description TEXT,
   rating TEXT,
+  language TEXT, -- Content language
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
@@ -788,9 +799,11 @@ CREATE TABLE search_history (
 );
 
 -- App settings table
-CREATE TABLE scraping_settings (
-  key TEXT PRIMARY KEY,
-  value TEXT
+CREATE TABLE language_preferences (
+  source TEXT PRIMARY KEY,
+  preferred_languages TEXT, -- JSON array of preferred languages
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -914,6 +927,7 @@ void main() {
 - **Cold Start Time**: < 2 seconds
 - **Search Response Time**: < 3 seconds for first page
 - **Image Load Time**: < 500ms for cached images
+- **Language Detection Time**: < 100ms per content item
 - **Memory Usage**: < 150MB during normal operation
 - **Storage Growth**: < 50MB/hour during active downloading
 
@@ -922,4 +936,5 @@ void main() {
 - HTML parsing performance
 - Database query times
 - UI rendering performance
+- Language detection accuracy
 - Memory leak detection

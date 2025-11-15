@@ -2,10 +2,12 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:logger/logger.dart';
+import 'package:get_it/get_it.dart';
 
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/content/content_usecases.dart';
 import '../../../domain/repositories/repositories.dart';
+import '../../../data/datasources/local/local_data_source.dart';
 
 part 'content_event.dart';
 part 'content_state.dart';
@@ -31,6 +33,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     on<ContentSortChangedEvent>(_onContentSortChanged);
     on<ContentRetryEvent>(_onContentRetry);
     on<ContentClearEvent>(_onContentClear);
+    on<ContentClearSearchEvent>(_onContentClearSearch);
     on<ContentSearchEvent>(_onContentSearch);
     on<ContentLoadPopularEvent>(_onContentLoadPopular);
     on<ContentLoadRandomEvent>(_onContentLoadRandom);
@@ -227,26 +230,27 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
       // Refresh always goes back to page 1 - that's the concept of "refresh"
       if (currentState is ContentLoaded) {
         if (currentState.searchFilter != null) {
-          // Refresh search results from page 1
-          final refreshFilter = currentState.searchFilter!.copyWith(page: 1);
+          // Refresh search results from current page
+          final refreshFilter =
+              currentState.searchFilter!.copyWith(page: event.currentPage);
           result = await _searchContentUseCase(refreshFilter);
         } else if (currentState.tag != null) {
-          // Refresh content by tag from page 1
+          // Refresh content by tag from current page
           result = await _contentRepository.getContentByTag(
             tag: currentState.tag!,
-            page: 1,
+            page: event.currentPage,
             sortBy: currentState.sortBy,
           );
         } else if (currentState.timeframe != null) {
-          // Refresh popular content from page 1
+          // Refresh popular content from current page
           result = await _contentRepository.getPopularContent(
             timeframe: currentState.timeframe!,
-            page: 1,
+            page: event.currentPage,
           );
         } else {
-          // Refresh regular content from page 1
+          // Refresh regular content from current page
           final params = GetContentListParams(
-            page: 1,
+            page: event.currentPage,
             sortBy: event.sortBy,
           );
           result = await _getContentListUseCase(params);
@@ -385,6 +389,81 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     _logger.i('ContentBloc: Clearing content');
 
     emit(const ContentInitial());
+  }
+
+  /// Clear search results and return to normal content
+  Future<void> _onContentClearSearch(
+    ContentClearSearchEvent event,
+    Emitter<ContentState> emit,
+  ) async {
+    try {
+      _logger
+          .i('ContentBloc: Clearing search results and loading normal content');
+
+      // Show loading state with proper message
+      ContentLoaded? previousState;
+      if (state is ContentLoaded) {
+        previousState = state as ContentLoaded;
+      }
+
+      emit(ContentLoading(
+        message: 'Clearing search...',
+        previousContents: previousState?.contents,
+      ));
+
+      // Get LocalDataSource from GetIt
+      final localDataSource = GetIt.instance<LocalDataSource>();
+
+      // Clear saved search filter from local storage
+      await localDataSource.removeLastSearchFilter();
+      _logger.i('ContentBloc: Cleared search filter from local storage');
+
+      // Load normal content with specified sort option
+      final params = GetContentListParams(
+        page: 1,
+        sortBy: event.sortBy,
+      );
+
+      final result = await _getContentListUseCase(params);
+
+      if (result.isEmpty) {
+        emit(const ContentEmpty(
+          message: 'No content available at the moment.',
+        ));
+        return;
+      }
+
+      // Update fetch time when we get data from server
+      _lastFetchTime = DateTime.now();
+      _currentSortBy = event.sortBy;
+
+      emit(ContentLoaded(
+        contents: result.contents,
+        currentPage: result.currentPage,
+        totalPages: result.totalPages,
+        totalCount: result.totalCount,
+        hasNext: result.hasNext,
+        hasPrevious: result.hasPrevious,
+        sortBy: event.sortBy,
+        lastUpdated: _lastFetchTime,
+      ));
+
+      _logger.i(
+          'ContentBloc: Successfully cleared search and loaded ${result.contents.length} normal contents');
+    } catch (e, stackTrace) {
+      _logger.e('ContentBloc: Error clearing search results',
+          error: e, stackTrace: stackTrace);
+
+      final errorType = _determineErrorType(e);
+      emit(ContentError(
+        message: 'Failed to clear search results: ${e.toString()}',
+        canRetry: true,
+        errorType: errorType,
+        stackTrace: stackTrace,
+        previousContents:
+            (state is ContentLoaded) ? (state as ContentLoaded).contents : null,
+      ));
+    }
   }
 
   /// Search content with filters

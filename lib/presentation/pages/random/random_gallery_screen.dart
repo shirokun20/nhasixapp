@@ -11,6 +11,7 @@ import '../../../services/analytics_service.dart';
 import '../../../utils/app_animations.dart';
 import '../../cubits/random_gallery/random_gallery_cubit.dart';
 import '../../widgets/progressive_image_widget.dart';
+import '../../widgets/shimmer_loading_widgets.dart';
 
 /// Random Gallery Screen similar to NClientV2's RandomActivity
 /// Displays random galleries with shuffle functionality and preloading
@@ -78,11 +79,12 @@ class _RandomGalleryView extends StatelessWidget {
       floatingActionButton: BlocBuilder<RandomGalleryCubit, RandomGalleryState>(
         builder: (context, state) {
           final cubit = context.read<RandomGalleryCubit>();
-          
+
           if (state is RandomGalleryLoaded) {
             return FloatingActionButton(
               onPressed: cubit.canShuffle ? () => cubit.shuffleToNext() : null,
-              tooltip: AppLocalizations.of(context)?.shuffleToNextGallery ?? 'Shuffle to next gallery',
+              tooltip: AppLocalizations.of(context)?.shuffleToNextGallery ??
+                  'Shuffle to next gallery',
               child: state.isShuffling
                   ? const SizedBox(
                       width: 20,
@@ -102,26 +104,11 @@ class _RandomGalleryView extends StatelessWidget {
   }
 
   Widget _buildInitialView(BuildContext context) {
-    return const Center(
-      child: CircularProgressIndicator(),
-    );
+    return const DetailScreenShimmer();
   }
 
   Widget _buildLoadingView(BuildContext context, RandomGalleryLoading state) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircularProgressIndicator(),
-          const SizedBox(height: 16),
-          Text(
-            state.message,
-            style: Theme.of(context).textTheme.bodyMedium,
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
+    return const DetailScreenShimmer();
   }
 
   Widget _buildLoadedView(BuildContext context, RandomGalleryLoaded state) {
@@ -135,19 +122,19 @@ class _RandomGalleryView extends StatelessWidget {
           children: [
             // Gallery Cover Image
             _buildGalleryCover(context, gallery, state.hasIgnoredTags),
-            
+
             const SizedBox(height: 24),
-            
+
             // Gallery Information
             _buildGalleryInfo(context, gallery),
-            
+
             const SizedBox(height: 24),
-            
+
             // Action Buttons
             _buildActionButtons(context, gallery, state),
-            
+
             const SizedBox(height: 16),
-            
+
             // Preload Status
             if (state.preloadedCount > 0)
               _buildPreloadStatus(context, state.preloadedCount),
@@ -157,7 +144,8 @@ class _RandomGalleryView extends StatelessWidget {
     );
   }
 
-  Widget _buildGalleryCover(BuildContext context, Content gallery, bool hasIgnoredTags) {
+  Widget _buildGalleryCover(
+      BuildContext context, Content gallery, bool hasIgnoredTags) {
     return Container(
       height: 400,
       decoration: BoxDecoration(
@@ -182,11 +170,10 @@ class _RandomGalleryView extends StatelessWidget {
               isThumbnail: true,
               fit: BoxFit.cover,
             ),
-            
+
             // Censor Overlay
-            if (hasIgnoredTags)
-              _buildCensorOverlay(context),
-            
+            if (hasIgnoredTags) _buildCensorOverlay(context),
+
             // Gradient Overlay for better text readability
             Positioned(
               bottom: 0,
@@ -206,7 +193,7 @@ class _RandomGalleryView extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // Tap to view gesture
             Positioned.fill(
               child: Material(
@@ -239,15 +226,16 @@ class _RandomGalleryView extends StatelessWidget {
             Text(
               AppLocalizations.of(context)?.contentHidden ?? 'Content Hidden',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.8),
-              ),
+                    color: Colors.white.withValues(alpha: 0.8),
+                  ),
             ),
             const SizedBox(height: 4),
             Text(
-              AppLocalizations.of(context)?.tapToViewAnyway ?? 'Tap to view anyway',
+              AppLocalizations.of(context)?.tapToViewAnyway ??
+                  'Tap to view anyway',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.6),
-              ),
+                    color: Colors.white.withValues(alpha: 0.6),
+                  ),
             ),
           ],
         ),
@@ -270,17 +258,17 @@ class _RandomGalleryView extends StatelessWidget {
           maxLines: 3,
           overflow: TextOverflow.ellipsis,
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Metadata Row
         Row(
           children: [
             // Language Flag
             _buildLanguageFlag(context, gallery.language),
-            
+
             const SizedBox(width: 12),
-            
+
             // Page Count
             Icon(
               Icons.photo_library_outlined,
@@ -294,9 +282,9 @@ class _RandomGalleryView extends StatelessWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            
+
             const Spacer(),
-            
+
             // ID
             Text(
               '#${gallery.id}',
@@ -327,7 +315,7 @@ class _RandomGalleryView extends StatelessWidget {
     };
 
     final flag = languageFlags[language.toLowerCase()] ?? '🌐';
-    final languageName = language.isNotEmpty 
+    final languageName = language.isNotEmpty
         ? language[0].toUpperCase() + language.substring(1)
         : 'Unknown';
 
@@ -345,16 +333,17 @@ class _RandomGalleryView extends StatelessWidget {
           Text(
             languageName,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-              fontWeight: FontWeight.w500,
-            ),
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  fontWeight: FontWeight.w500,
+                ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, Content gallery, RandomGalleryLoaded state) {
+  Widget _buildActionButtons(
+      BuildContext context, Content gallery, RandomGalleryLoaded state) {
     return Row(
       children: [
         // Favorite Button
@@ -363,9 +352,10 @@ class _RandomGalleryView extends StatelessWidget {
             builder: (context, state) {
               if (state is RandomGalleryLoaded) {
                 return ElevatedButton.icon(
-                  onPressed: state.isToggling 
-                      ? null 
-                      : () => context.read<RandomGalleryCubit>().toggleFavorite(),
+                  onPressed: state.isToggling
+                      ? null
+                      : () =>
+                          context.read<RandomGalleryCubit>().toggleFavorite(),
                   icon: state.isToggling
                       ? const SizedBox(
                           width: 16,
@@ -373,15 +363,17 @@ class _RandomGalleryView extends StatelessWidget {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : Icon(
-                          state.isFavorite ? Icons.favorite : Icons.favorite_border,
+                          state.isFavorite
+                              ? Icons.favorite
+                              : Icons.favorite_border,
                           color: state.isFavorite ? Colors.red : null,
                         ),
-                  label: Text(state.isFavorite 
-                      ? AppLocalizations.of(context)!.favorited 
+                  label: Text(state.isFavorite
+                      ? AppLocalizations.of(context)!.favorited
                       : AppLocalizations.of(context)!.favorite),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: state.isFavorite 
-                        ? Colors.red.withValues(alpha: 0.1) 
+                    backgroundColor: state.isFavorite
+                        ? Colors.red.withValues(alpha: 0.1)
                         : null,
                   ),
                 );
@@ -390,9 +382,9 @@ class _RandomGalleryView extends StatelessWidget {
             },
           ),
         ),
-        
+
         const SizedBox(width: 12),
-        
+
         // Share Button
         Expanded(
           child: OutlinedButton.icon(
@@ -401,9 +393,9 @@ class _RandomGalleryView extends StatelessWidget {
             label: Text(AppLocalizations.of(context)!.share),
           ),
         ),
-        
+
         const SizedBox(width: 12),
-        
+
         // View Button
         Expanded(
           child: FilledButton.icon(
@@ -420,7 +412,10 @@ class _RandomGalleryView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        color: Theme.of(context)
+            .colorScheme
+            .surfaceContainerHighest
+            .withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -433,10 +428,11 @@ class _RandomGalleryView extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           Text(
-            AppLocalizations.of(context)?.galleriesPreloaded(preloadedCount) ?? '$preloadedCount galleries preloaded',
+            AppLocalizations.of(context)?.galleriesPreloaded(preloadedCount) ??
+                '$preloadedCount galleries preloaded',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
           ),
         ],
       ),
@@ -455,27 +451,22 @@ class _RandomGalleryView extends StatelessWidget {
               size: 64,
               color: Theme.of(context).colorScheme.error,
             ),
-            
             const SizedBox(height: 16),
-            
             Text(
-              AppLocalizations.of(context)?.oopsSomethingWentWrong ?? 'Oops! Something went wrong',
+              AppLocalizations.of(context)?.oopsSomethingWentWrong ??
+                  'Oops! Something went wrong',
               style: Theme.of(context).textTheme.headlineSmall,
               textAlign: TextAlign.center,
             ),
-            
             const SizedBox(height: 8),
-            
             Text(
               state.userMessage,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
               textAlign: TextAlign.center,
             ),
-            
             const SizedBox(height: 24),
-            
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -485,10 +476,8 @@ class _RandomGalleryView extends StatelessWidget {
                     icon: const Icon(Icons.refresh),
                     label: Text(AppLocalizations.of(context)!.retry),
                   ),
-                  
                   const SizedBox(width: 12),
                 ],
-                
                 OutlinedButton.icon(
                   onPressed: () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.arrow_back),
@@ -507,10 +496,12 @@ class _RandomGalleryView extends StatelessWidget {
   }
 
   void _shareGallery(BuildContext context, Content gallery) {
-    final shareText = '${gallery.title}\n\nCheck out this gallery: ${gallery.id}';
+    final shareText =
+        '${gallery.title}\n\nCheck out this gallery: ${gallery.id}';
     Share.share(
       shareText,
-      subject: AppLocalizations.of(context)?.checkOutThisGallery ?? 'Check out this gallery!',
+      subject: AppLocalizations.of(context)?.checkOutThisGallery ??
+          'Check out this gallery!',
     );
   }
 }

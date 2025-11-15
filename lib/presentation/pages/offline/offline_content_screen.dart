@@ -5,14 +5,16 @@ import 'package:logger/logger.dart';
 
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
+import '../../../core/utils/directory_utils.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../utils/permission_helper.dart';
 import '../../../core/utils/responsive_grid_delegate.dart';
 import '../../cubits/offline_search/offline_search_cubit.dart';
 import '../../cubits/settings/settings_cubit.dart';
-import '../../widgets/content_card_widget.dart';
-import '../../widgets/progress_indicator_widget.dart';
-import '../../widgets/error_widget.dart';
 import '../../widgets/app_scaffold_with_offline.dart';
+import '../../widgets/content_card_widget.dart';
+import '../../widgets/error_widget.dart';
+import '../../widgets/offline_content_shimmer.dart';
 
 /// Screen for browsing offline/downloaded content
 class OfflineContentScreen extends StatefulWidget {
@@ -34,6 +36,11 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
 
     // Load all offline content initially
     _offlineSearchCubit.getAllOfflineContent();
+
+    // Auto-scan backup folder setelah delay sebentar
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _autoScanBackupFolder();
+    });
   }
 
   @override
@@ -41,6 +48,116 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  Future<void> _importBackupFolder() async {
+    final pathController = TextEditingController();
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Import Backup Folder'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+                'Enter the path to your backup folder containing nhasix content folders:'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: pathController,
+              decoration: const InputDecoration(
+                hintText: '/path/to/backup/folder',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(pathController.text),
+            child: Text(AppLocalizations.of(context)!.ok),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      await _scanBackupFolder(result);
+    }
+  }
+
+  Future<void> _autoScanBackupFolder() async {
+    // Cari folder backup secara otomatis menggunakan DirectoryUtils
+    debugPrint('OFFLINE_AUTO_SCAN: Starting auto-scan for backup folder...');
+
+    // Check and request storage permission first
+    debugPrint('OFFLINE_AUTO_SCAN: Checking storage permission...');
+    final hasPermission = await PermissionHelper.hasStoragePermission();
+    debugPrint('OFFLINE_AUTO_SCAN: Has storage permission: $hasPermission');
+
+    if (!hasPermission) {
+      debugPrint('OFFLINE_AUTO_SCAN: Requesting storage permission...');
+      final granted = await PermissionHelper.requestStoragePermission(
+          mounted ? context : null);
+      debugPrint('OFFLINE_AUTO_SCAN: Permission request result: $granted');
+
+      if (!granted) {
+        debugPrint(
+            'OFFLINE_AUTO_SCAN: Storage permission denied, cannot scan backup');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content:
+                  Text('Storage permission required to scan backup folders'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    final backupPath = await DirectoryUtils.findNhasixBackupFolder();
+    debugPrint(
+        'OFFLINE_AUTO_SCAN: DirectoryUtils.findNhasixBackupFolder() returned: $backupPath');
+
+    if (backupPath != null) {
+      debugPrint(
+          'OFFLINE_AUTO_SCAN: Found backup path: $backupPath, starting scan...');
+      await _scanBackupFolder(backupPath, showSnackBar: false);
+    } else {
+      debugPrint('OFFLINE_AUTO_SCAN: No backup folder found automatically');
+    }
+  }
+
+  Future<void> _scanBackupFolder(String backupPath,
+      {bool showSnackBar = true}) async {
+    try {
+      if (!mounted) return;
+
+      if (showSnackBar) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text(AppLocalizations.of(context)!.scanningBackupFolder)),
+        );
+      }
+
+      await _offlineSearchCubit.scanBackupContent(backupPath);
+    } catch (e) {
+      if (!mounted) return;
+      if (showSnackBar) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(AppLocalizations.of(context)!
+                  .errorScanningBackup(e.toString()))),
+        );
+      }
+    }
   }
 
   @override
@@ -93,6 +210,36 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
         ],
       ),
       actions: [
+        // Debug: Check permission button
+        IconButton(
+          onPressed: () async {
+            final hasPermission = await PermissionHelper.hasStoragePermission();
+            debugPrint('DEBUG: Has storage permission: $hasPermission');
+            if (!hasPermission) {
+              if (mounted) {
+                final granted =
+                    await PermissionHelper.requestStoragePermission(context);
+                debugPrint('DEBUG: Permission request result: $granted');
+              }
+            }
+            // Retry auto-scan after permission check
+            _autoScanBackupFolder();
+          },
+          icon: Icon(
+            Icons.security,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          tooltip: 'Check Permissions',
+        ),
+        // Import backup button
+        IconButton(
+          onPressed: _importBackupFolder,
+          icon: Icon(
+            Icons.folder_open,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          tooltip: 'Import Backup Folder',
+        ),
         // Storage info
         BlocBuilder<OfflineSearchCubit, OfflineSearchState>(
           builder: (context, state) {
@@ -245,12 +392,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     if (state is OfflineSearchLoading) {
-      return Center(
-        child: AppProgressIndicator(
-          message: AppLocalizations.of(context)?.loadingOfflineContent ??
-              'Loading offline content...',
-        ),
-      );
+      return const OfflineContentGridShimmer();
     }
 
     if (state is OfflineSearchError) {
@@ -356,11 +498,6 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     }
 
     // Initial state
-    return Center(
-      child: AppProgressIndicator(
-        message: AppLocalizations.of(context)?.loadingOfflineContent ??
-            'Loading offline content...',
-      ),
-    );
+    return const OfflineContentGridShimmer();
   }
 }
