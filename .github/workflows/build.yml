@@ -19,13 +19,15 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Setup Flutter
-      uses: subosito/flutter-action@v2
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
       with:
-        flutter-version: '3.x'
+        api-level: 35
+        target: android-35
+        arch: x64
 
-    - name: Get dependencies
-      run: flutter pub get
+    - name: Accept Android licenses
+      run: yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
 
     - name: Make build script executable
       run: chmod +x build_optimized.sh
@@ -39,6 +41,21 @@ jobs:
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       run: |
         for apk in apk-output/*.apk; do
-          echo "Uploading $apk to Telegram..."
-          curl -F chat_id="$TELEGRAM_CHAT_ID" -F document=@"$apk" https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument
+          # Check file size (Telegram limit is ~50MB)
+          size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null)
+          size_mb=$((size / 1024 / 1024))
+          
+          if [ $size_mb -gt 50 ]; then
+            echo "⚠️ Skipping $apk - too large (${size_mb}MB > 50MB limit)"
+            continue
+          fi
+          
+          echo "📤 Uploading $apk (${size_mb}MB) to Telegram..."
+          response=$(curl -s -F chat_id="$TELEGRAM_CHAT_ID" -F document=@"$apk" https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument)
+          
+          if echo "$response" | grep -q '"ok":true'; then
+            echo "✅ Successfully uploaded $apk"
+          else
+            echo "❌ Failed to upload $apk: $response"
+          fi
         done
