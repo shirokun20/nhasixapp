@@ -1,0 +1,44 @@
+name: Build and Upload APK
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.x'
+
+    - name: Get dependencies
+      run: flutter pub get
+
+    - name: Make build script executable
+      run: chmod +x build_optimized.sh
+
+    - name: Build optimized APK
+      run: ./build_optimized.sh release
+
+    - name: Upload to Telegram
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      run: |
+        for apk in apk-output/*.apk; do
+          echo "Uploading $apk to Telegram..."
+          curl -F chat_id="$TELEGRAM_CHAT_ID" -F document=@"$apk" https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument
+        done
