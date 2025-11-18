@@ -19,12 +19,22 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
       with:
-        api-level: 35
-        target: android-35
-        arch: x64
+        flutter-version: '3.x'
+
+    - name: Check Flutter and Android setup
+      run: |
+        echo "Flutter version:"
+        flutter --version
+        echo ""
+        echo "Flutter doctor:"
+        flutter doctor -v
+        echo ""
+        echo "Android SDK location:"
+        echo $ANDROID_HOME
+        ls -la $ANDROID_HOME/ || echo "Android SDK not found"
 
     - name: Make build script executable
       run: chmod +x build_optimized.sh
