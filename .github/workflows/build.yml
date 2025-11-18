@@ -1,5 +1,6 @@
 name: Build and Upload APK
 
+# Trigger on push and pull requests to master branch
 on:
   push:
     branches: [ master ]
@@ -11,116 +12,131 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      # Checkout repository
+      - uses: actions/checkout@v4
 
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
+      # Setup Java environment
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
-    - name: Setup Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '3.x'
+      # Setup Flutter environment
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x'
 
-    - name: Check Flutter and Android setup
-      run: |
-        echo "Flutter version:"
-        flutter --version
-        echo ""
-        echo "Flutter doctor:"
-        flutter doctor -v
-        echo ""
-        echo "Android SDK location:"
-        echo $ANDROID_HOME
-        ls -la $ANDROID_HOME/ || echo "Android SDK not found"
+      # Verify Flutter and Android setup
+      - name: Verify Setup
+        run: |
+          echo "=== Flutter Version ==="
+          flutter --version
+          echo ""
+          echo "=== Flutter Doctor ==="
+          flutter doctor -v
+          echo ""
+          echo "=== Android SDK Location ==="
+          echo "$ANDROID_HOME"
+          ls -la "$ANDROID_HOME" || echo "Android SDK not found"
 
-    - name: Make build script executable
-      run: chmod +x build_optimized.sh
+      # Make build script executable
+      - name: Prepare Build Script
+        run: chmod +x build_optimized.sh
 
-    - name: Build optimized APK
-      run: ./build_optimized.sh release
+      # Build optimized APK
+      - name: Build APK
+        run: ./build_optimized.sh release
 
-    - name: Check build output
-      run: |
-        echo "Checking build outputs..."
-        ls -la build/app/outputs/flutter-apk/ || echo "No flutter-apk directory"
-        ls -la apk-output/ || echo "No apk-output directory"
+      # Verify build outputs
+      - name: Verify Build Outputs
+        run: |
+          echo "=== Checking Flutter APK Directory ==="
+          ls -la build/app/outputs/flutter-apk/ || echo "No flutter-apk directory"
+          echo ""
+          echo "=== Checking APK Output Directory ==="
+          ls -la apk-output/ || echo "No apk-output directory"
 
-    - name: Notify build failure
-      if: failure()
-      env:
-        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      run: |
-        cat <<EOF | curl -s -X POST https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage \
-          -d chat_id="$TELEGRAM_CHAT_ID" \
-          -d parse_mode="Markdown" \
-          -d text=-
-        ❌ Build Failed
-        🔗 Commit: ${GITHUB_SHA::8}
-        🌿 Branch: ${GITHUB_REF_NAME}
-        🔍 Check: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
-        EOF
+      # Notify on build failure
+      - name: Notify Build Failure
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+            -d chat_id="$TELEGRAM_CHAT_ID" \
+            -d parse_mode="Markdown" \
+            -d text="
+          ❌ Build Failed
+          🔗 Commit: ${GITHUB_SHA::8}
+          🌿 Branch: ${GITHUB_REF_NAME}
+          🔍 Check: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+          "
 
-    - name: Notify build success
-      if: success()
-      env:
-        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      run: |
-        # Get APK info
-        APK_INFO=""
-        for apk in apk-output/*.apk; do
-          if [ -f "$apk" ]; then
-            size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null || echo "0")
-            size_mb=$((size / 1024 / 1024))
-            APK_INFO="${APK_INFO}📱 $(basename "$apk") - ${size_mb}MB"
-          fi
-        done
-        
-        cat <<EOF | curl -s -X POST https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage \
-          -d chat_id="$TELEGRAM_CHAT_ID" \
-          -d parse_mode="Markdown" \
-          -d text=-
-        ✅ Build Success
-        🔗 Commit: ${GITHUB_SHA::8}
-        🌿 Branch: ${GITHUB_REF_NAME}
-        🎯 Trigger: ${GITHUB_EVENT_NAME}
-        📦 APK Files:
-        ${APK_INFO}⬆️ Uploading to Telegram...
-        🔍 Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
-        EOF
+      # Notify on build success
+      - name: Notify Build Success
+        if: success()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          # Collect APK information
+          APK_INFO=""
+          for apk in apk-output/*.apk; do
+            if [ -f "$apk" ]; then
+              size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null || echo "0")
+              size_mb=$((size / 1024 / 1024))
+              APK_INFO="${APK_INFO}📱 $(basename "$apk") - ${size_mb}MB\n"
+            fi
+          done
 
-    - name: Upload to Telegram
-      if: success()
-      env:
-        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      run: |
-        if [ ! -d "apk-output" ] || [ -z "$(ls -A apk-output/*.apk 2>/dev/null)" ]; then
-          echo "❌ No APK files found in apk-output/"
-          exit 1
-        fi
-        
-        for apk in apk-output/*.apk; do
-          # Check file size (Telegram limit is ~50MB)
-          size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null || echo "0")
-          size_mb=$((size / 1024 / 1024))
-          
-          if [ $size_mb -gt 50 ]; then
-            echo "⚠️ Skipping $apk - too large (${size_mb}MB > 50MB limit)"
-            continue
-          fi
-          
-          echo "📤 Uploading $apk (${size_mb}MB) to Telegram..."
-          response=$(curl -s -F chat_id="$TELEGRAM_CHAT_ID" -F document=@"$apk" https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument)
-          
-          if echo "$response" | grep -q '"ok":true'; then
-            echo "✅ Successfully uploaded $apk"
-          else
-            echo "❌ Failed to upload $apk: $response"
+          curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+            -d chat_id="$TELEGRAM_CHAT_ID" \
+            -d parse_mode="Markdown" \
+            -d text="
+          ✅ Build Success
+          🔗 Commit: ${GITHUB_SHA::8}
+          🌿 Branch: ${GITHUB_REF_NAME}
+          🎯 Trigger: ${GITHUB_EVENT_NAME}
+          📦 APK Files:
+          ${APK_INFO}⬆️ Uploading to Telegram...
+          🔍 Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+          "
+
+      # Upload APK to Telegram
+      - name: Upload APK to Telegram
+        if: success()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          # Check if APK files exist
+          if [ ! -d "apk-output" ] || [ -z "$(ls -A apk-output/*.apk 2>/dev/null)" ]; then
+            echo "❌ No APK files found in apk-output/"
             exit 1
           fi
-        done
+
+          # Upload each APK file
+          for apk in apk-output/*.apk; do
+            # Check file size (Telegram limit ~50MB)
+            size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null || echo "0")
+            size_mb=$((size / 1024 / 1024))
+
+            if [ $size_mb -gt 50 ]; then
+              echo "⚠️ Skipping $apk - too large (${size_mb}MB > 50MB limit)"
+              continue
+            fi
+
+            echo "📤 Uploading $apk (${size_mb}MB) to Telegram..."
+            response=$(curl -s -F chat_id="$TELEGRAM_CHAT_ID" -F document=@"$apk" \
+              "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
+
+            if echo "$response" | grep -q '"ok":true'; then
+              echo "✅ Successfully uploaded $apk"
+            else
+              echo "❌ Failed to upload $apk: $response"
+              exit 1
+            fi
+          done
