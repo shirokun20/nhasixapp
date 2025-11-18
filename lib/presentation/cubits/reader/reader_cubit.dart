@@ -11,6 +11,8 @@ import '../../../domain/repositories/reader_settings_repository.dart';
 import '../../../domain/repositories/reader_repository.dart';
 import '../../../data/models/reader_settings_model.dart';
 import '../../../core/utils/offline_content_manager.dart';
+import '../../../core/models/image_metadata.dart';
+import '../../../services/image_metadata_service.dart';
 import '../../../services/local_image_preloader.dart';
 import '../network/network_cubit.dart';
 
@@ -25,6 +27,7 @@ class ReaderCubit extends Cubit<ReaderState> {
     required this.readerRepository,
     required this.offlineContentManager,
     required this.networkCubit,
+    required this.imageMetadataService,
   }) : super(const ReaderInitial());
 
   final GetContentDetailUseCase getContentDetailUseCase;
@@ -33,6 +36,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   final ReaderRepository readerRepository;
   final OfflineContentManager offlineContentManager;
   final NetworkCubit networkCubit;
+  final ImageMetadataService imageMetadataService;
   final Logger _logger = Logger();
 
   Timer? _readingTimer;
@@ -42,7 +46,8 @@ class ReaderCubit extends Cubit<ReaderState> {
   Future<void> loadContent(String contentId,
       {int initialPage = 1,
       bool forceStartFromBeginning = false,
-      Content? preloadedContent}) async {
+      Content? preloadedContent,
+      List<ImageMetadata>? imageMetadata}) async {
     try {
       _stopAutoHideTimer();
       emit(ReaderLoading(state));
@@ -128,6 +133,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         keepScreenOn: savedSettings.keepScreenOn,
         readingTimer: Duration.zero,
         isOfflineMode: isOfflineMode,
+        imageMetadata: imageMetadata,
       ));
 
       // 🐛 DEBUG: Log all image URLs with their page numbers

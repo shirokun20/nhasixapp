@@ -68,6 +68,7 @@ import 'package:nhasixapp/services/detail_cache_service.dart';
 import 'package:nhasixapp/services/request_deduplication_service.dart';
 import 'package:nhasixapp/services/app_update_service.dart';
 import 'package:nhasixapp/services/image_cache_service.dart';
+import 'package:nhasixapp/services/image_metadata_service.dart';
 import 'package:nhasixapp/services/cache/cache_manager.dart' as multi_cache;
 import 'package:nhasixapp/domain/entities/content.dart';
 import 'package:nhasixapp/domain/entities/tag.dart';
@@ -177,6 +178,12 @@ void _setupServices() {
 
   // Image Cache Service - Advanced image caching with TTL and size management
   getIt.registerLazySingleton<ImageCacheService>(() => ImageCacheService());
+
+  // Image Metadata Service - Handles image metadata generation and validation
+  getIt.registerLazySingleton<ImageMetadataService>(() => ImageMetadataService(
+        getIt<OfflineContentManager>(),
+        getIt<Logger>(),
+      ));
 
   // Multi-layer Cache Manager for Content - Memory + Disk caching
   getIt.registerLazySingleton<multi_cache.CacheManager<Content>>(
@@ -410,6 +417,7 @@ void _setupCubits() {
         addToFavoritesUseCase: getIt<AddToFavoritesUseCase>(),
         removeFromFavoritesUseCase: getIt<RemoveFromFavoritesUseCase>(),
         userDataRepository: getIt<UserDataRepository>(),
+        imageMetadataService: getIt<ImageMetadataService>(),
         logger: getIt<Logger>(),
       ));
 
@@ -427,6 +435,7 @@ void _setupCubits() {
         readerRepository: getIt<ReaderRepository>(),
         offlineContentManager: getIt<OfflineContentManager>(),
         networkCubit: getIt<NetworkCubit>(),
+        imageMetadataService: getIt<ImageMetadataService>(),
       ));
 
   // OfflineSearchCubit - Offline content search

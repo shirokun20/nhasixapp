@@ -1044,8 +1044,18 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   void _readContent(Content content, {bool forceStartFromBeginning = false}) {
-    AppRouter.goToReader(context, content.id,
-        forceStartFromBeginning: forceStartFromBeginning, content: content);
+    // Get metadata from current state if available
+    final currentState = _detailCubit.state;
+    final imageMetadata =
+        currentState is DetailLoaded ? currentState.imageMetadata : null;
+
+    AppRouter.goToReader(
+      context,
+      content.id,
+      forceStartFromBeginning: forceStartFromBeginning,
+      content: content,
+      imageMetadata: imageMetadata, // Pass metadata to reader
+    );
   }
 
   void _shareContent(Content content) async {

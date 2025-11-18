@@ -43,8 +43,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   // Animation controllers for enhanced UI
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
-  late AnimationController _errorIconController;
-  late Animation<double> _errorIconAnimation;
 
   @override
   void initState() {
@@ -64,23 +62,12 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     _pulseAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-
-    // Initialize error icon animation
-    _errorIconController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-    _errorIconAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _errorIconController, curve: Curves.elasticOut),
-    );
-    _errorIconController.forward();
   }
 
   @override
   void dispose() {
     _zoomController.dispose();
     _pulseController.dispose();
-    _errorIconController.dispose();
     super.dispose();
   }
 
@@ -188,10 +175,21 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     );
   }
 
-  /// Build loading indicator with page number
+  /// Build loading indicator with logo and circular progress
   Widget _buildLoadingIndicator(BuildContext context) {
+    // Responsive sizing based on reading mode
+    final bool isContinuousScroll =
+        widget.readingMode == ReadingMode.continuousScroll;
+    final double cardSize = isContinuousScroll ? 250 : 200;
+    final double logoSize = isContinuousScroll ? 100 : 100;
+    final double progressSize = isContinuousScroll ? 120 : 160;
+    final double strokeWidth = isContinuousScroll ? 6 : 8;
+
     return Container(
       color: Theme.of(context).colorScheme.surface,
+      margin: isContinuousScroll
+          ? const EdgeInsets.symmetric(vertical: 20)
+          : EdgeInsets.zero,
       child: Center(
         child: AnimatedBuilder(
           animation: _pulseAnimation,
@@ -201,47 +199,44 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
               shadowColor:
                   Theme.of(context).colorScheme.shadow.withValues(alpha: 0.3),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(24),
               ),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-                constraints: const BoxConstraints(maxWidth: 280),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                width: cardSize,
+                padding: const EdgeInsets.all(16),
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    // Animated progress indicator with pulse effect
-                    Transform.scale(
-                      scale: _pulseAnimation.value,
-                      child: SizedBox(
-                        width: 48,
-                        height: 48,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 4,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Theme.of(context).colorScheme.primary,
-                          ),
+                    // Circular progress indicator background
+                    SizedBox(
+                      width: progressSize,
+                      height: progressSize,
+                      child: CircularProgressIndicator(
+                        strokeWidth: strokeWidth,
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    // Enhanced text with better typography
-                    Text(
-                      'Loading page ${widget.pageNumber}',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Please wait...',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                      textAlign: TextAlign.center,
+
+                    // Logo in center
+                    Container(
+                      width: logoSize,
+                      height: logoSize,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        image: const DecorationImage(
+                          image: AssetImage('assets/icons/ic_launcher-web.png'),
+                          fit: BoxFit.cover,
+                        ),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.surface,
+                          width: 2,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -253,8 +248,15 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     );
   }
 
-  /// Build error widget with retry option
+  /// Build error widget with logo and retry option
   Widget _buildErrorWidget(BuildContext context, ExtendedImageState state) {
+    // Responsive sizing based on reading mode
+    final bool isContinuousScroll =
+        widget.readingMode == ReadingMode.continuousScroll;
+    final double cardSize = isContinuousScroll ? 250 : 200;
+    final double logoSize = isContinuousScroll ? 100 : 100;
+    final double iconSize = isContinuousScroll ? 24 : 32;
+
     return Container(
       color: Theme.of(context).colorScheme.surface,
       child: Center(
@@ -263,72 +265,92 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
           shadowColor:
               Theme.of(context).colorScheme.shadow.withValues(alpha: 0.3),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(24),
           ),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-            constraints: const BoxConstraints(maxWidth: 320),
+            width: cardSize,
+            padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Animated error icon with bounce effect
-                ScaleTransition(
-                  scale: _errorIconAnimation,
-                  child: Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .errorContainer
-                          .withValues(alpha: 0.1),
+                // Logo with error overlay
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      width: logoSize,
+                      height: logoSize,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        image: const DecorationImage(
+                          image: AssetImage('assets/icons/ic_launcher-web.png'),
+                          fit: BoxFit.cover,
+                        ),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.surface,
+                          width: 2,
+                        ),
+                      ),
                     ),
-                    child: Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: Theme.of(context).colorScheme.error,
+                    // Error icon overlay
+                    Container(
+                      width: logoSize,
+                      height: logoSize,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .error
+                            .withValues(alpha: 0.8),
+                      ),
+                      child: Icon(
+                        Icons.error_outline,
+                        color: Theme.of(context).colorScheme.onError,
+                        size: iconSize,
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                // Enhanced error message
+
+                const SizedBox(height: 12),
+
+                // Error message
                 Text(
-                  'Failed to load page ${widget.pageNumber}',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  'Failed to load',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                       ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
+
+                // Page number
                 Text(
-                  'Please check your connection and try again',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  'Page ${widget.pageNumber}',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 24),
-                // Enhanced retry button
+
+                const SizedBox(height: 12),
+
+                // Retry button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () {
                       state.reLoadImage();
                     },
-                    icon: const Icon(Icons.refresh, size: 20),
-                    label: const Text('Try Again'),
+                    icon: Icon(Icons.refresh, size: 16),
+                    label: const Text('Retry'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       elevation: 2,
-                      shadowColor: Theme.of(context)
-                          .colorScheme
-                          .shadow
-                          .withValues(alpha: 0.3),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 12),
+                          horizontal: 16, vertical: 8),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

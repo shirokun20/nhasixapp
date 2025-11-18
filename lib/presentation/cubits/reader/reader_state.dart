@@ -12,6 +12,7 @@ class ReaderState extends Equatable {
     this.readingTimer,
     this.message,
     this.isOfflineMode,
+    this.imageMetadata,
   });
 
   final Content? content;
@@ -23,6 +24,7 @@ class ReaderState extends Equatable {
   final Duration? readingTimer;
   final String? message;
   final bool? isOfflineMode;
+  final List<ImageMetadata>? imageMetadata;
 
   @override
   List<Object?> get props => [
@@ -35,6 +37,7 @@ class ReaderState extends Equatable {
         readingTimer,
         message,
         isOfflineMode,
+        imageMetadata,
       ];
 
   static const _undefined = Object();
@@ -49,6 +52,7 @@ class ReaderState extends Equatable {
     Duration? readingTimer,
     Object? message = _undefined,
     Object? isOfflineMode = _undefined,
+    List<ImageMetadata>? imageMetadata,
   }) {
     return ReaderState(
       content: content ?? this.content,
@@ -66,6 +70,7 @@ class ReaderState extends Equatable {
       isOfflineMode: isOfflineMode == _undefined
           ? this.isOfflineMode
           : isOfflineMode as bool?,
+      imageMetadata: imageMetadata ?? this.imageMetadata,
     );
   }
 
@@ -116,6 +121,7 @@ class ReaderLoading extends ReaderState {
           readingTimer: prevState.readingTimer,
           message: prevState.message,
           isOfflineMode: prevState.isOfflineMode,
+          imageMetadata: prevState.imageMetadata,
         );
 }
 
@@ -132,6 +138,7 @@ class ReaderLoaded extends ReaderState {
           readingTimer: prevState.readingTimer ?? Duration.zero,
           message: prevState.message,
           isOfflineMode: prevState.isOfflineMode ?? false,
+          imageMetadata: prevState.imageMetadata,
         );
 }
 
@@ -148,5 +155,6 @@ class ReaderError extends ReaderState {
           readingTimer: prevState.readingTimer,
           message: prevState.message,
           isOfflineMode: prevState.isOfflineMode,
+          imageMetadata: prevState.imageMetadata,
         );
 }

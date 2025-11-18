@@ -4,6 +4,7 @@ import '../../../core/di/service_locator.dart';
 import '../../../domain/usecases/content/content_usecases.dart';
 import '../../../domain/usecases/favorites/favorites_usecases.dart';
 import '../../../domain/repositories/repositories.dart';
+import '../../../services/image_metadata_service.dart';
 import 'detail_cubit.dart';
 
 /// Factory class for creating DetailCubit instances
@@ -17,6 +18,7 @@ class DetailCubitFactory {
       addToFavoritesUseCase: getIt<AddToFavoritesUseCase>(),
       removeFromFavoritesUseCase: getIt<RemoveFromFavoritesUseCase>(),
       userDataRepository: getIt<UserDataRepository>(),
+      imageMetadataService: getIt<ImageMetadataService>(),
       logger: getIt<Logger>(),
     );
   }

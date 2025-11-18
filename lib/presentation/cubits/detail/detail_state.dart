@@ -28,12 +28,14 @@ class DetailLoaded extends DetailState {
     required this.isFavorited,
     required this.lastUpdated,
     this.isTogglingFavorite = false,
+    this.imageMetadata,
   });
 
   final Content content;
   final bool isFavorited;
   final bool isTogglingFavorite;
   final DateTime lastUpdated;
+  final List<ImageMetadata>? imageMetadata;
 
   @override
   List<Object?> get props => [
@@ -41,6 +43,7 @@ class DetailLoaded extends DetailState {
         isFavorited,
         isTogglingFavorite,
         lastUpdated,
+        imageMetadata,
       ];
 
   /// Create a copy with updated properties
@@ -49,12 +52,14 @@ class DetailLoaded extends DetailState {
     bool? isFavorited,
     bool? isTogglingFavorite,
     DateTime? lastUpdated,
+    List<ImageMetadata>? imageMetadata,
   }) {
     return DetailLoaded(
       content: content ?? this.content,
       isFavorited: isFavorited ?? this.isFavorited,
       isTogglingFavorite: isTogglingFavorite ?? this.isTogglingFavorite,
       lastUpdated: lastUpdated ?? this.lastUpdated,
+      imageMetadata: imageMetadata ?? this.imageMetadata,
     );
   }
 

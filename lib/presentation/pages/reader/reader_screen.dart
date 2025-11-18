@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
+import '../../../core/models/image_metadata.dart';
 import '../../../core/utils/offline_content_manager.dart';
 import '../../../data/models/reader_settings_model.dart';
 import '../../../domain/entities/content.dart';
@@ -23,12 +24,14 @@ class ReaderScreen extends StatefulWidget {
     this.initialPage = 1,
     this.forceStartFromBeginning = false,
     this.preloadedContent,
+    this.imageMetadata,
   });
 
   final String contentId;
   final int initialPage;
   final bool forceStartFromBeginning;
   final Content? preloadedContent;
+  final List<ImageMetadata>? imageMetadata;
 
   @override
   State<ReaderScreen> createState() => _ReaderScreenState();
@@ -120,7 +123,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
         // Trigger prefetching for continuous scroll mode too
         final imageUrls = state.content?.imageUrls ?? [];
-        _prefetchImages(clampedPage, imageUrls);
+        _prefetchImages(clampedPage, imageUrls, state.imageMetadata);
       }
     }
   }
@@ -153,7 +156,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   /// Prefetch next few images in background for smoother reading experience
-  void _prefetchImages(int currentPage, List<String> imageUrls) {
+  void _prefetchImages(int currentPage, List<String> imageUrls,
+      List<ImageMetadata>? imageMetadata) {
     if (imageUrls.isEmpty) return;
 
     // Prefetch next _prefetchCount pages
@@ -167,28 +171,60 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
         final imageUrl = imageUrls[targetPage - 1]; // Convert to 0-based index
 
-        // 🔍 VALIDATE: Check if URL matches expected page number
-        final urlPageNumber = _extractPageNumberFromUrl(imageUrl);
-        if (urlPageNumber != null && urlPageNumber != targetPage) {
-          debugPrint(
-              '⚠️ IMAGE URL MISMATCH: Expected page $targetPage but URL contains page $urlPageNumber');
-          debugPrint('   URL: $imageUrl');
+        // 🚀 OPTIMIZATION: Use metadata lookup instead of URL validation for performance
+        bool isValid = true;
+        if (imageMetadata != null && imageMetadata.isNotEmpty) {
+          // Find metadata for this page
+          final metadata = imageMetadata.where((m) {
+            return m.pageNumber == targetPage;
+          }).firstOrNull;
+          if (metadata != null) {
+            // Validate using metadata - much faster than URL parsing
+            isValid = metadata.imageUrl == imageUrl;
+            if (!isValid) {
+              debugPrint(
+                  '⚠️ METADATA MISMATCH: Page $targetPage metadata URL != actual URL');
+              debugPrint('   Metadata URL: ${metadata.imageUrl}');
+              debugPrint('   Actual URL: $imageUrl');
+            }
+          } else {
+            // Fallback to URL validation if no metadata found
+            final urlPageNumber = _extractPageNumberFromUrl(imageUrl);
+            isValid = urlPageNumber == null || urlPageNumber == targetPage;
+            if (!isValid) {
+              debugPrint(
+                  '⚠️ URL MISMATCH (fallback): Expected page $targetPage but URL contains page $urlPageNumber');
+              debugPrint('   URL: $imageUrl');
+            }
+          }
+        } else {
+          // Fallback to URL validation if no metadata available
+          final urlPageNumber = _extractPageNumberFromUrl(imageUrl);
+          if (urlPageNumber != null && urlPageNumber != targetPage) {
+            debugPrint(
+                '⚠️ URL MISMATCH: Expected page $targetPage but URL contains page $urlPageNumber');
+            debugPrint('   URL: $imageUrl');
+            isValid = false;
+          }
+        }
+
+        if (!isValid) {
           // Skip prefetch to prevent wrong caching
           _prefetchedPages.remove(targetPage); // Allow retry later
           return;
         }
 
-        // Prefetch in background (non-blocking) - only if URL validates
+        // Prefetch in background (non-blocking) - only if validation passes
         LocalImagePreloader.downloadAndCacheImage(
           imageUrl,
           widget.contentId,
           targetPage,
         ).then((_) {
           if (mounted) {
-            // Log success with URL validation status
-            final status = urlPageNumber == targetPage ? '✅' : '❓';
+            // Log success with validation status
+            final status = isValid ? '✅' : '❓';
             debugPrint(
-                '📥 $status Prefetched page $targetPage (URL page: $urlPageNumber)');
+                '📥 $status Prefetched page $targetPage (metadata validated: $isValid)');
           }
         }).catchError((error) {
           // Remove from prefetched set if failed, so it can be retried
@@ -318,6 +354,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               initialPage: widget.initialPage,
               forceStartFromBeginning: widget.forceStartFromBeginning,
               preloadedContent: widget.preloadedContent,
+              imageMetadata: widget.imageMetadata,
             );
         }
       },
@@ -328,7 +365,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
           // Trigger initial prefetching when content is loaded
           if (state.content != null && state.content!.imageUrls.isNotEmpty) {
             final currentPage = state.currentPage ?? widget.initialPage;
-            _prefetchImages(currentPage, state.content!.imageUrls);
+            _prefetchImages(
+                currentPage, state.content!.imageUrls, state.imageMetadata);
           }
         },
         child: BlocBuilder<ReaderCubit, ReaderState>(
@@ -353,13 +391,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
         initialPage: widget.initialPage,
         forceStartFromBeginning: widget.forceStartFromBeginning,
         preloadedContent: widget.preloadedContent,
+        imageMetadata: widget.imageMetadata,
       );
     } catch (e) {
       // Fallback to normal loading if preload fails
       debugPrint('Preload optimization failed, using normal loading: $e');
       await cubit.loadContent(widget.contentId,
           initialPage: widget.initialPage,
-          forceStartFromBeginning: widget.forceStartFromBeginning);
+          forceStartFromBeginning: widget.forceStartFromBeginning,
+          imageMetadata: widget.imageMetadata);
     }
   }
 
@@ -383,6 +423,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             initialPage: widget.initialPage,
             forceStartFromBeginning: widget.forceStartFromBeginning,
             preloadedContent: widget.preloadedContent,
+            imageMetadata: widget.imageMetadata,
           ),
         ),
       );
@@ -443,7 +484,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           // Only handle UI tasks, no navigation logic
           // This prevents recursive loops with jumpToPage
           final imageUrls = state.content?.imageUrls ?? [];
-          _prefetchImages(newPage, imageUrls);
+          _prefetchImages(newPage, imageUrls, state.imageMetadata);
 
           // Update ReaderCubit state to reflect the current page without triggering navigation
           if (!_isProgrammaticAnimation) {
@@ -501,7 +542,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           // Only handle UI tasks, no navigation logic
           // This prevents recursive loops with jumpToPage
           final imageUrls = state.content?.imageUrls ?? [];
-          _prefetchImages(newPage, imageUrls);
+          _prefetchImages(newPage, imageUrls, state.imageMetadata);
 
           // Update ReaderCubit state to reflect the current page without triggering navigation
           if (!_isProgrammaticAnimation) {

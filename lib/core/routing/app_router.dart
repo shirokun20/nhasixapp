@@ -16,6 +16,7 @@ import 'package:nhasixapp/presentation/pages/offline/offline_content_screen.dart
 import 'package:nhasixapp/presentation/pages/history/history_screen.dart';
 import 'package:nhasixapp/presentation/pages/random/random_gallery_screen.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
+import 'package:nhasixapp/core/models/image_metadata.dart';
 import 'package:nhasixapp/utils/app_animations.dart';
 
 class AppRouter {
@@ -131,12 +132,25 @@ class AppRouter {
               int.tryParse(state.uri.queryParameters['page'] ?? '1') ?? 1;
           final forceStartFromBeginning =
               state.uri.queryParameters['forceStartFromBeginning'] == 'true';
-          final content = state.extra as Content?;
+
+          // Extract content and imageMetadata from extra
+          Content? content;
+          List<ImageMetadata>? imageMetadata;
+          if (state.extra is Map<String, dynamic>) {
+            final extra = state.extra as Map<String, dynamic>;
+            content = extra['content'] as Content?;
+            imageMetadata = extra['imageMetadata'] as List<ImageMetadata>?;
+          } else {
+            // Backward compatibility: if extra is Content directly
+            content = state.extra as Content?;
+          }
+
           return ReaderScreen(
             contentId: contentId,
             initialPage: page,
             forceStartFromBeginning: forceStartFromBeginning,
             preloadedContent: content,
+            imageMetadata: imageMetadata,
           );
         },
       ),
@@ -282,10 +296,13 @@ class AppRouter {
   }
 
   static void goToReader(BuildContext context, String contentId,
-      {int page = 1, bool forceStartFromBeginning = false, Content? content}) {
+      {int page = 1,
+      bool forceStartFromBeginning = false,
+      Content? content,
+      List<ImageMetadata>? imageMetadata}) {
     context.push(
         '/reader/$contentId?page=$page&forceStartFromBeginning=$forceStartFromBeginning',
-        extra: content);
+        extra: {'content': content, 'imageMetadata': imageMetadata});
   }
 
   static void goToFavorites(BuildContext context) {

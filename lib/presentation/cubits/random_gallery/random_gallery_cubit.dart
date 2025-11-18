@@ -1,4 +1,3 @@
-
 import '../../../core/di/service_locator.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/content/get_random_content_usecase.dart';
@@ -11,7 +10,7 @@ import '../base/base_cubit.dart';
 part 'random_gallery_state.dart';
 
 /// Cubit for managing random gallery state
-/// 
+///
 /// This cubit handles loading a single random gallery at a time.
 /// No preloading to avoid rate limiting and keep the app lightweight.
 class RandomGalleryCubit extends BaseCubit<RandomGalleryState> {
@@ -65,7 +64,9 @@ class RandomGalleryCubit extends BaseCubit<RandomGalleryState> {
           'timestamp': DateTime.now().toIso8601String(),
         },
       );
-      emit(currentState.copyWith(isShuffling: true));
+      if (!isClosed) {
+        emit(currentState.copyWith(isShuffling: true));
+      }
       await _loadRandomGallery();
     }
   }
@@ -74,7 +75,9 @@ class RandomGalleryCubit extends BaseCubit<RandomGalleryState> {
   Future<void> toggleFavorite() async {
     final currentState = state;
     if (currentState is RandomGalleryLoaded && !currentState.isToggling) {
-      emit(currentState.copyWith(isToggling: true));
+      if (!isClosed) {
+        emit(currentState.copyWith(isToggling: true));
+      }
 
       try {
         final gallery = currentState.currentGallery;
@@ -106,21 +109,25 @@ class RandomGalleryCubit extends BaseCubit<RandomGalleryState> {
           );
         }
 
-        emit(currentState.copyWith(
-          isFavorite: !isFavorite,
-          isToggling: false,
-        ));
+        if (!isClosed) {
+          emit(currentState.copyWith(
+            isFavorite: !isFavorite,
+            isToggling: false,
+          ));
+        }
       } catch (e, stackTrace) {
         await _analyticsService.trackError(
           'favorite_toggle_error',
           e.toString(),
           stackTrace: stackTrace,
         );
-        emit(RandomGalleryError(
-          error: e.toString(),
-          stackTrace: stackTrace,
-          previousState: currentState.copyWith(isToggling: false),
-        ));
+        if (!isClosed) {
+          emit(RandomGalleryError(
+            error: e.toString(),
+            stackTrace: stackTrace,
+            previousState: currentState.copyWith(isToggling: false),
+          ));
+        }
       }
     }
   }
@@ -128,18 +135,20 @@ class RandomGalleryCubit extends BaseCubit<RandomGalleryState> {
   /// Load a single random gallery
   Future<void> _loadRandomGallery() async {
     try {
-      emit(const RandomGalleryLoading());
+      if (!isClosed) {
+        emit(const RandomGalleryLoading());
+      }
 
       final result = await PerformanceMonitor.timeOperation(
         'random_gallery_load',
         () async {
           // Get random gallery (request 1 item and take the first)
           final galleries = await _getRandomContentUseCase(1);
-          
+
           if (galleries.isEmpty) {
             throw Exception('No random content available');
           }
-          
+
           final gallery = galleries.first;
 
           // Check if it's in favorites
@@ -163,20 +172,24 @@ class RandomGalleryCubit extends BaseCubit<RandomGalleryState> {
       final isFavorite = result['isFavorite'] as bool;
       final hasIgnoredTags = result['hasIgnoredTags'] as bool;
 
-      emit(RandomGalleryLoaded(
-        currentGallery: gallery,
-        isFavorite: isFavorite,
-        hasIgnoredTags: hasIgnoredTags,
-        isShuffling: false,
-        isToggling: false,
-        preloadedCount: 1, // Always 1 since we don't preload
-        lastUpdated: DateTime.now(),
-      ));
+      if (!isClosed) {
+        emit(RandomGalleryLoaded(
+          currentGallery: gallery,
+          isFavorite: isFavorite,
+          hasIgnoredTags: hasIgnoredTags,
+          isShuffling: false,
+          isToggling: false,
+          preloadedCount: 1, // Always 1 since we don't preload
+          lastUpdated: DateTime.now(),
+        ));
+      }
     } catch (e, stackTrace) {
-      emit(RandomGalleryError(
-        error: e.toString(),
-        stackTrace: stackTrace,
-      ));
+      if (!isClosed) {
+        emit(RandomGalleryError(
+          error: e.toString(),
+          stackTrace: stackTrace,
+        ));
+      }
     }
   }
 
@@ -192,7 +205,9 @@ class RandomGalleryCubit extends BaseCubit<RandomGalleryState> {
     final currentState = state;
     if (currentState is RandomGalleryError && currentState.canRetry) {
       if (currentState.previousState != null) {
-        emit(currentState.previousState!);
+        if (!isClosed) {
+          emit(currentState.previousState!);
+        }
       } else {
         await _loadRandomGallery();
       }

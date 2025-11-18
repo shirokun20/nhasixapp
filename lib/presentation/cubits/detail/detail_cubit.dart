@@ -1,9 +1,10 @@
-
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/content/content_usecases.dart';
 import '../../../domain/usecases/content/get_content_detail_usecase.dart';
 import '../../../domain/usecases/favorites/favorites_usecases.dart';
 import '../../../domain/repositories/repositories.dart';
+import '../../../core/models/image_metadata.dart';
+import '../../../services/image_metadata_service.dart';
 import '../base/base_cubit.dart';
 
 part 'detail_state.dart';
@@ -16,11 +17,13 @@ class DetailCubit extends BaseCubit<DetailState> {
     required AddToFavoritesUseCase addToFavoritesUseCase,
     required RemoveFromFavoritesUseCase removeFromFavoritesUseCase,
     required UserDataRepository userDataRepository,
+    required ImageMetadataService imageMetadataService,
     required super.logger,
   })  : _getContentDetailUseCase = getContentDetailUseCase,
         _addToFavoritesUseCase = addToFavoritesUseCase,
         _removeFromFavoritesUseCase = removeFromFavoritesUseCase,
         _userDataRepository = userDataRepository,
+        _imageMetadataService = imageMetadataService,
         super(
           initialState: const DetailInitial(),
         );
@@ -29,6 +32,7 @@ class DetailCubit extends BaseCubit<DetailState> {
   final AddToFavoritesUseCase _addToFavoritesUseCase;
   final RemoveFromFavoritesUseCase _removeFromFavoritesUseCase;
   final UserDataRepository _userDataRepository;
+  final ImageMetadataService _imageMetadataService;
 
   /// Load content detail by ID
   Future<void> loadContentDetail(String contentId) async {
@@ -42,10 +46,15 @@ class DetailCubit extends BaseCubit<DetailState> {
       // Check if content is favorited (placeholder for now)
       final isFavorited = await _checkIfFavorited(contentId);
 
+      // Generate image metadata for performance optimization
+      final imageMetadata =
+          await generateImageMetadata(contentId, content.imageUrls);
+
       emit(DetailLoaded(
         content: content,
         isFavorited: isFavorited,
         lastUpdated: DateTime.now(),
+        imageMetadata: imageMetadata,
       ));
 
       logInfo('Successfully loaded content detail: ${content.title}');
@@ -189,12 +198,36 @@ class DetailCubit extends BaseCubit<DetailState> {
     return false;
   }
 
-  /// Check if currently toggling favorite
-  bool get isTogglingFavorite {
-    final currentState = state;
-    if (currentState is DetailLoaded) {
-      return currentState.isTogglingFavorite;
+  /// Generate image metadata for content
+  /// Returns null if generation fails (with timeout and error handling)
+  Future<List<ImageMetadata>?> generateImageMetadata(
+      String contentId, List<String> imageUrls) async {
+    try {
+      logInfo(
+          'Generating image metadata for content: $contentId (${imageUrls.length} images)');
+
+      // Generate metadata with timeout to prevent blocking UI
+      final metadata = await _imageMetadataService
+          .generateMetadataBatch(
+        imageUrls: imageUrls,
+        contentId: contentId,
+      )
+          .timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          logWarning('Metadata generation timed out for content: $contentId');
+          return [];
+        },
+      );
+
+      logInfo(
+          'Successfully generated ${metadata.length} metadata entries for content: $contentId');
+      return metadata;
+    } catch (e, stackTrace) {
+      handleError(e, stackTrace, 'generate image metadata');
+      logWarning(
+          'Failed to generate metadata for content: $contentId, error: ${e.toString()}');
+      return null; // Return null on error to allow fallback to raw URLs
     }
-    return false;
   }
 }
