@@ -1,0 +1,61 @@
+name: Build and Upload APK
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      with:
+        api-level: 35
+        target: android-35
+        arch: x64
+
+    - name: Accept Android licenses
+      run: yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
+
+    - name: Make build script executable
+      run: chmod +x build_optimized.sh
+
+    - name: Build optimized APK
+      run: ./build_optimized.sh release
+
+    - name: Upload to Telegram
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      run: |
+        for apk in apk-output/*.apk; do
+          # Check file size (Telegram limit is ~50MB)
+          size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null)
+          size_mb=$((size / 1024 / 1024))
+          
+          if [ $size_mb -gt 50 ]; then
+            echo "⚠️ Skipping $apk - too large (${size_mb}MB > 50MB limit)"
+            continue
+          fi
+          
+          echo "📤 Uploading $apk (${size_mb}MB) to Telegram..."
+          response=$(curl -s -F chat_id="$TELEGRAM_CHAT_ID" -F document=@"$apk" https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument)
+          
+          if echo "$response" | grep -q '"ok":true'; then
+            echo "✅ Successfully uploaded $apk"
+          else
+            echo "❌ Failed to upload $apk: $response"
+          fi
+        done
