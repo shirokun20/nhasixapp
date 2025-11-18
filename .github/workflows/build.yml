@@ -37,9 +37,14 @@ jobs:
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       run: |
+        if [ ! -d "apk-output" ] || [ -z "$(ls -A apk-output/*.apk 2>/dev/null)" ]; then
+          echo "❌ No APK files found in apk-output/"
+          exit 1
+        fi
+        
         for apk in apk-output/*.apk; do
           # Check file size (Telegram limit is ~50MB)
-          size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null)
+          size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null || echo "0")
           size_mb=$((size / 1024 / 1024))
           
           if [ $size_mb -gt 50 ]; then
@@ -54,5 +59,6 @@ jobs:
             echo "✅ Successfully uploaded $apk"
           else
             echo "❌ Failed to upload $apk: $response"
+            exit 1
           fi
         done
