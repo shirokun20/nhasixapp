@@ -36,7 +36,7 @@ class DownloadService {
     String imageQuality = 'high', // Default to high quality
     Duration? timeoutDuration, // Optional timeout override
     int? startPage, // NEW: Start page for range download (1-based)
-    int? endPage,   // NEW: End page for range download (1-based)
+    int? endPage, // NEW: End page for range download (1-based)
   }) async {
     try {
       _logger.i('Starting download for content: ${content.id}');
@@ -50,27 +50,38 @@ class DownloadService {
       // Calculate actual page range to download
       final actualStartPage = startPage ?? 1;
       final actualEndPage = endPage ?? content.imageUrls.length;
-      
+
       // Validate range
-        if (actualStartPage < 1 || actualEndPage > content.imageUrls.length || actualStartPage > actualEndPage) {
-          throw ArgumentError(_getLocalized('invalidPageRange',
-            args: {'start': actualStartPage, 'end': actualEndPage, 'total': content.imageUrls.length},
-            fallback: 'Invalid page range: $actualStartPage-$actualEndPage (total: ${content.imageUrls.length})'));
-        }
-      
+      if (actualStartPage < 1 ||
+          actualEndPage > content.imageUrls.length ||
+          actualStartPage > actualEndPage) {
+        throw ArgumentError(_getLocalized('invalidPageRange',
+            args: {
+              'start': actualStartPage,
+              'end': actualEndPage,
+              'total': content.imageUrls.length
+            },
+            fallback:
+                'Invalid page range: $actualStartPage-$actualEndPage (total: ${content.imageUrls.length})'));
+      }
+
       final isRangeDownload = startPage != null || endPage != null;
       final pagesToDownload = actualEndPage - actualStartPage + 1;
-      
-      _logger.i('Download range: pages $actualStartPage-$actualEndPage ($pagesToDownload pages)${isRangeDownload ? ' [RANGE]' : ' [FULL]'}');
+
+      _logger.i(
+          'Download range: pages $actualStartPage-$actualEndPage ($pagesToDownload pages)${isRangeDownload ? ' [RANGE]' : ' [FULL]'}');
 
       // ✅ FIXED: Check existing downloaded files for proper resume
       final existingFiles = await _getExistingDownloadedFiles(downloadDir);
-      final totalImages = isRangeDownload ? pagesToDownload : content.imageUrls.length;
+      final totalImages =
+          isRangeDownload ? pagesToDownload : content.imageUrls.length;
       var downloadedCount = 0; // Reset for range downloads
 
       // For range downloads, count only files in the specified range
       if (isRangeDownload) {
-        for (int pageNum = actualStartPage; pageNum <= actualEndPage; pageNum++) {
+        for (int pageNum = actualStartPage;
+            pageNum <= actualEndPage;
+            pageNum++) {
           final fileName = 'page_${pageNum.toString().padLeft(3, '0')}.jpg';
           final filePath = path.join(downloadDir.path, fileName);
           if (await File(filePath).exists()) {
@@ -78,20 +89,23 @@ class DownloadService {
           }
         }
       } else {
-        downloadedCount = existingFiles.length; // Use existing count for full downloads
+        downloadedCount =
+            existingFiles.length; // Use existing count for full downloads
       }
 
-      _logger.i('Found $downloadedCount existing files in range, continuing download');
+      _logger.i(
+          'Found $downloadedCount existing files in range, continuing download');
 
       // Show start notification with range info
-      final rangeText = isRangeDownload ? ' (Pages $actualStartPage-$actualEndPage)' : '';
+      final rangeText =
+          isRangeDownload ? ' (Pages $actualStartPage-$actualEndPage)' : '';
       await _notificationService.showDownloadStarted(
         contentId: content.id,
         title: '${content.title}$rangeText',
       );
 
       final downloadedFiles = <String>[];
-      
+
       // Add existing files to the list if doing full download
       if (!isRangeDownload) {
         downloadedFiles.addAll(existingFiles);
@@ -100,7 +114,7 @@ class DownloadService {
       // Download each image in the specified range
       for (int pageNum = actualStartPage; pageNum <= actualEndPage; pageNum++) {
         final i = pageNum - 1; // Convert to 0-based index for imageUrls array
-        
+
         // Check for cancellation
         if (cancelToken?.isCancelled == true) {
           throw DioException(
@@ -113,7 +127,7 @@ class DownloadService {
         while (DownloadManager().isPaused(content.id)) {
           await Future.delayed(const Duration(seconds: 1));
           // Check if cancelled while paused
-          if (DownloadManager().isCancelled(content.id) || 
+          if (DownloadManager().isCancelled(content.id) ||
               cancelToken?.isCancelled == true) {
             throw DioException(
               requestOptions: RequestOptions(path: ''),
@@ -123,10 +137,10 @@ class DownloadService {
         }
 
         final imageUrl = content.imageUrls[i];
-        
+
         // Apply image quality setting
         final optimizedImageUrl = _getOptimizedImageUrl(imageUrl, imageQuality);
-        
+
         final fileName = 'page_${pageNum.toString().padLeft(3, '0')}.jpg';
         final filePath = path.join(downloadDir.path, fileName);
 
@@ -165,7 +179,8 @@ class DownloadService {
           // ✅ REMOVED: Direct notification update to prevent race condition
           // Notification will be updated through DownloadBloc for better synchronization
 
-          _logger.d('Downloaded page $pageNum ($downloadedCount/$totalImages): $fileName');
+          _logger.d(
+              'Downloaded page $pageNum ($downloadedCount/$totalImages): $fileName');
         } catch (e, stackTrace) {
           _logger.e('Failed to download page $pageNum: $e and $stackTrace');
           // Continue with next image instead of failing completely
@@ -174,21 +189,24 @@ class DownloadService {
       }
 
       // Save metadata with range information
-      await _saveDownloadMetadata(content, downloadDir, downloadedFiles, actualStartPage, actualEndPage);
+      await _saveDownloadMetadata(content, downloadDir, downloadedFiles,
+          actualStartPage, actualEndPage);
 
       // Show completion notification with range info
-      final completionRangeText = isRangeDownload ? ' (Pages $actualStartPage-$actualEndPage)' : '';
+      final completionRangeText =
+          isRangeDownload ? ' (Pages $actualStartPage-$actualEndPage)' : '';
       await _notificationService.showDownloadCompleted(
         contentId: content.id,
         title: '${content.title}$completionRangeText',
         downloadPath: downloadDir.path,
       );
 
-      _logger.i('Download completed for content: ${content.id}${isRangeDownload ? " (range: $actualStartPage-$actualEndPage)" : ""}');
+      _logger.i(
+          'Download completed for content: ${content.id}${isRangeDownload ? " (range: $actualStartPage-$actualEndPage)" : ""}');
 
       return DownloadResult(
         success: true,
-        downloadPath: downloadDir.path,
+        downloadPath: downloadDir.parent.path,
         downloadedFiles: downloadedFiles,
         totalFiles: downloadedFiles.length,
       );
@@ -220,14 +238,14 @@ class DownloadService {
     Duration? timeoutDuration,
   }) async {
     // Create dio instance with custom timeout if provided
-    final dio = timeoutDuration != null 
-      ? Dio(BaseOptions(
-          connectTimeout: timeoutDuration,
-          receiveTimeout: timeoutDuration,
-          sendTimeout: timeoutDuration,
-        ))
-      : _httpClient;
-    
+    final dio = timeoutDuration != null
+        ? Dio(BaseOptions(
+            connectTimeout: timeoutDuration,
+            receiveTimeout: timeoutDuration,
+            sendTimeout: timeoutDuration,
+          ))
+        : _httpClient;
+
     final response = await dio.get<List<int>>(
       imageUrl,
       options: Options(
@@ -245,13 +263,14 @@ class DownloadService {
       await file.writeAsBytes(response.data!);
     } else {
       throw Exception(_getLocalized('noDataReceived',
-        args: {'url': imageUrl},
-        fallback: 'No data received for image: $imageUrl'));
+          args: {'url': imageUrl},
+          fallback: 'No data received for image: $imageUrl'));
     }
   }
 
   /// ✅ NEW: Get existing downloaded files for proper resume
-  Future<List<String>> _getExistingDownloadedFiles(Directory downloadDir) async {
+  Future<List<String>> _getExistingDownloadedFiles(
+      Directory downloadDir) async {
     try {
       if (!await downloadDir.exists()) {
         return [];
@@ -264,11 +283,12 @@ class DownloadService {
           .toList();
 
       // Sort files by name to maintain page order
-      files.sort((a, b) => path.basename(a.path).compareTo(path.basename(b.path)));
+      files.sort(
+          (a, b) => path.basename(a.path).compareTo(path.basename(b.path)));
 
       final filePaths = files.map((f) => f.path).toList();
       _logger.d('Found ${filePaths.length} existing downloaded files');
-      
+
       return filePaths;
     } catch (e) {
       _logger.w('Error checking existing files: $e');
@@ -300,16 +320,16 @@ class DownloadService {
   Future<void> _createNoMediaFile(Directory directory) async {
     try {
       final nomediaFile = File(path.join(directory.path, '.nomedia'));
-      
+
       if (!await nomediaFile.exists()) {
         await nomediaFile.writeAsString(
-          '# This file prevents Android Media Scanner from indexing this folder\n'
-          '# Images in this folder and subfolders will not appear in Gallery apps\n'
-          '# Created by NhasixApp for privacy protection\n'
-        );
+            '# This file prevents Android Media Scanner from indexing this folder\n'
+            '# Images in this folder and subfolders will not appear in Gallery apps\n'
+            '# Created by NhasixApp for privacy protection\n');
         _logger.i(_getLocalized('createdNoMediaFile',
-          args: {'path': nomediaFile.path},
-          fallback: 'Created .nomedia file for privacy: ${nomediaFile.path}'));
+            args: {'path': nomediaFile.path},
+            fallback:
+                'Created .nomedia file for privacy: ${nomediaFile.path}'));
       }
     } catch (e) {
       _logger.w('Failed to create .nomedia file: $e');
@@ -323,11 +343,11 @@ class DownloadService {
     try {
       final downloadsPath = await _getDownloadsDirectory();
       final nhasixDir = Directory(path.join(downloadsPath, 'nhasix'));
-      
+
       if (await nhasixDir.exists()) {
         await _createNoMediaFile(nhasixDir);
         _logger.i(_getLocalized('privacyProtectionEnsured',
-          fallback: 'Privacy protection ensured for existing downloads'));
+            fallback: 'Privacy protection ensured for existing downloads'));
       }
     } catch (e) {
       _logger.e('Error ensuring privacy protection: $e');
@@ -349,16 +369,16 @@ class DownloadService {
       if (externalDir != null) {
         // Try to find Downloads folder in external storage root
         final externalRoot = externalDir.path.split('/Android')[0];
-        
+
         // Common Downloads folder names (English, Indonesian, Spanish, etc.)
         final downloadsFolderNames = [
-          'Download',     // English (most common)
-          'Downloads',    // English alternative
-          'Unduhan',      // Indonesian
-          'Descargas',    // Spanish
+          'Download', // English (most common)
+          'Downloads', // English alternative
+          'Unduhan', // Indonesian
+          'Descargas', // Spanish
           'Téléchargements', // French
-          'Downloads',    // German uses English
-          'ダウンロード',     // Japanese
+          'Downloads', // German uses English
+          'ダウンロード', // Japanese
         ];
 
         // Try each possible Downloads folder
@@ -371,15 +391,18 @@ class DownloadService {
         }
 
         // If no Downloads folder found, create one in external storage root
-        final defaultDownloadsDir = Directory(path.join(externalRoot, 'Download'));
+        final defaultDownloadsDir =
+            Directory(path.join(externalRoot, 'Download'));
         try {
           if (!await defaultDownloadsDir.exists()) {
             await defaultDownloadsDir.create(recursive: true);
-            _logger.i('Created Downloads directory: ${defaultDownloadsDir.path}');
+            _logger
+                .i('Created Downloads directory: ${defaultDownloadsDir.path}');
           }
           return defaultDownloadsDir.path;
         } catch (e) {
-          _logger.w('Could not create Downloads directory in external storage: $e');
+          _logger.w(
+              'Could not create Downloads directory in external storage: $e');
         }
       }
 
@@ -402,26 +425,29 @@ class DownloadService {
 
       // Fallback 2: Use app-specific external storage
       if (externalDir != null) {
-        final appDownloadsDir = Directory(path.join(externalDir.path, 'downloads'));
+        final appDownloadsDir =
+            Directory(path.join(externalDir.path, 'downloads'));
         if (!await appDownloadsDir.exists()) {
           await appDownloadsDir.create(recursive: true);
         }
-        _logger.i('Using app-specific downloads directory: ${appDownloadsDir.path}');
+        _logger.i(
+            'Using app-specific downloads directory: ${appDownloadsDir.path}');
         return appDownloadsDir.path;
       }
 
       // Fallback 3: Use application documents directory
       final documentsDir = await getApplicationDocumentsDirectory();
-      final documentsDownloadsDir = Directory(path.join(documentsDir.path, 'downloads'));
+      final documentsDownloadsDir =
+          Directory(path.join(documentsDir.path, 'downloads'));
       if (!await documentsDownloadsDir.exists()) {
         await documentsDownloadsDir.create(recursive: true);
       }
-      _logger.i('Using app documents downloads directory: ${documentsDownloadsDir.path}');
+      _logger.i(
+          'Using app documents downloads directory: ${documentsDownloadsDir.path}');
       return documentsDownloadsDir.path;
-
     } catch (e) {
       _logger.e('Error detecting Downloads directory: $e');
-      
+
       // Emergency fallback: use app documents
       final documentsDir = await getApplicationDocumentsDirectory();
       final emergencyDir = Directory(path.join(documentsDir.path, 'downloads'));
@@ -481,7 +507,8 @@ class DownloadService {
       if (!await testDir.exists()) {
         try {
           await testDir.create(recursive: true);
-          _logger.i('Successfully created download directory at: ${testDir.path}');
+          _logger
+              .i('Successfully created download directory at: ${testDir.path}');
         } catch (e) {
           _logger.e('Failed to create download directory: $e');
 
@@ -497,8 +524,9 @@ class DownloadService {
                 final manageResult =
                     await Permission.manageExternalStorage.request();
                 if (!manageResult.isGranted) {
-                   throw Exception(_getLocalized('storagePermissionRequired',
-                     fallback: 'Storage permission is required for downloads. Please grant storage permission in app settings.'));
+                  throw Exception(_getLocalized('storagePermissionRequired',
+                      fallback:
+                          'Storage permission is required for downloads. Please grant storage permission in app settings.'));
                 }
               }
             }
@@ -513,7 +541,7 @@ class DownloadService {
     } catch (e) {
       _logger.e('Permission check failed: $e');
       throw Exception(_getLocalized('storagePermissionRequired',
-        fallback: 'Storage permission is required for downloads. Error: $e'));
+          fallback: 'Storage permission is required for downloads. Error: $e'));
     }
   }
 
@@ -540,8 +568,7 @@ class DownloadService {
     try {
       final downloadPath = await getDownloadPath(contentId);
       if (downloadPath != null) {
-
-        // ini akan muncul path apa? 
+        // ini akan muncul path apa?
         final contentDir = Directory(downloadPath);
         if (await contentDir.exists()) {
           await contentDir.delete(recursive: true);
@@ -589,15 +616,17 @@ class DownloadService {
       return [];
     }
   }
-  
+
   /// Set localization callback for getting localized strings
-  void setLocalizationCallback(String Function(String key, {Map<String, dynamic>? args}) localize) {
+  void setLocalizationCallback(
+      String Function(String key, {Map<String, dynamic>? args}) localize) {
     _localize = localize;
     _logger.i('DownloadService: Localization callback set');
   }
 
   /// Get localized string with fallback
-  String _getLocalized(String key, {Map<String, dynamic>? args, String? fallback}) {
+  String _getLocalized(String key,
+      {Map<String, dynamic>? args, String? fallback}) {
     try {
       return _localize?.call(key, args: args) ?? fallback ?? key;
     } catch (e) {
@@ -641,13 +670,16 @@ class DownloadService {
       final nhasixDir = Directory(path.join(downloadsDir, 'nhasix'));
       final contentDir = Directory(path.join(nhasixDir.path, contentId));
       final imagesDir = Directory(path.join(contentDir.path, 'images'));
-      
+
       _logger.d('Checking directories for content $contentId:');
       _logger.d('Downloads dir: $downloadsDir');
-      _logger.d('Nhasix dir: ${nhasixDir.path} (exists: ${await nhasixDir.exists()})');
-      _logger.d('Content dir: ${contentDir.path} (exists: ${await contentDir.exists()})');
-      _logger.d('Images dir: ${imagesDir.path} (exists: ${await imagesDir.exists()})');
-      
+      _logger.d(
+          'Nhasix dir: ${nhasixDir.path} (exists: ${await nhasixDir.exists()})');
+      _logger.d(
+          'Content dir: ${contentDir.path} (exists: ${await contentDir.exists()})');
+      _logger.d(
+          'Images dir: ${imagesDir.path} (exists: ${await imagesDir.exists()})');
+
       // Use the same logic as _createDownloadDirectory - images dir is primary
       if (!await imagesDir.exists()) {
         _logger.w('Images directory does not exist: ${imagesDir.path}');
@@ -661,15 +693,18 @@ class DownloadService {
         _logger.d('  - ${entity.path} (is File: ${entity is File})');
       }
 
-      final files = await imagesDir.list()
-          .where((entity) => entity is File && 
-                            (entity.path.endsWith('.jpg') || 
-                             entity.path.endsWith('.jpeg') || 
-                             entity.path.endsWith('.png') || 
-                             entity.path.endsWith('.webp')))
+      final files = await imagesDir
+          .list()
+          .where((entity) =>
+              entity is File &&
+              (entity.path.endsWith('.jpg') ||
+                  entity.path.endsWith('.jpeg') ||
+                  entity.path.endsWith('.png') ||
+                  entity.path.endsWith('.webp')))
           .length;
 
-      _logger.i('Found $files downloaded image files for content $contentId in ${imagesDir.path}');
+      _logger.i(
+          'Found $files downloaded image files for content $contentId in ${imagesDir.path}');
       return files;
     } catch (e) {
       _logger.e('Error counting downloaded files for $contentId: $e');
@@ -682,36 +717,39 @@ class DownloadService {
     try {
       final actualCount = await countDownloadedFiles(contentId);
       final downloadsDir = await _getDownloadsDirectory();
-      final contentDir = Directory(path.join(downloadsDir, 'nhasix', contentId));
+      final contentDir =
+          Directory(path.join(downloadsDir, 'nhasix', contentId));
       final metadataPath = path.join(contentDir.path, 'metadata.json');
-      
+
       _logger.d('Verifying download status for $contentId:');
       _logger.d('Actual file count: $actualCount');
       _logger.d('Metadata path: $metadataPath');
-      
+
       if (await File(metadataPath).exists()) {
         final metadataContent = await File(metadataPath).readAsString();
         final metadata = json.decode(metadataContent) as Map<String, dynamic>;
-        
+
         _logger.d('Metadata content: $metadata');
-        
+
         // Get expected count based on range or total
         // Use snake_case keys as saved in _saveDownloadMetadata
         final isRangeDownload = metadata['is_range_download'] == true;
         final int expectedCount;
-        
+
         if (isRangeDownload) {
           final startPage = metadata['start_page'] ?? 1;
           final endPage = metadata['end_page'] ?? metadata['total_pages'];
           expectedCount = endPage - startPage + 1;
-          _logger.d('Range download: $startPage-$endPage, expected: $expectedCount');
+          _logger.d(
+              'Range download: $startPage-$endPage, expected: $expectedCount');
         } else {
           // Use snake_case key as saved in metadata
           final totalPagesFromMeta = metadata['total_pages'] ?? 0;
           expectedCount = totalPagesFromMeta;
-          _logger.d('Full download: total_pages=${metadata['total_pages']}, expected: $expectedCount');
+          _logger.d(
+              'Full download: total_pages=${metadata['total_pages']}, expected: $expectedCount');
         }
-        
+
         final result = {
           'actualCount': actualCount,
           'expectedCount': expectedCount,
@@ -720,11 +758,11 @@ class DownloadService {
           'rangeEnd': metadata['end_page'],
           'totalPages': metadata['total_pages'],
         };
-        
+
         _logger.d('Verification result: $result');
         return result;
       }
-      
+
       _logger.w('Metadata file not found, falling back to database values');
       // For downloads without metadata, return null to indicate fallback needed
       return {

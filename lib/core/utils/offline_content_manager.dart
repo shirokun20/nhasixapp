@@ -89,11 +89,30 @@ class OfflineContentManager {
       final contentDir = Directory(contentPath);
       if (!await contentDir.exists()) return [];
 
-      final files = await contentDir.list().toList();
-      final imageFiles = files
-          .where((file) => file is File && _isImageFile(file.path))
-          .cast<File>()
-          .toList();
+      // First, try to find images in the 'images' subdirectory (new structure)
+      final imagesDir = Directory(path.join(contentPath, 'images'));
+      List<File> imageFiles = [];
+
+      if (await imagesDir.exists()) {
+        // New structure: images are in images/ subdirectory
+        final files = await imagesDir.list().toList();
+        imageFiles = files
+            .where((file) => file is File && _isImageFile(file.path))
+            .cast<File>()
+            .toList();
+      }
+
+      // Fallback: if no images found in images/ directory, check content directory directly
+      if (imageFiles.isEmpty) {
+        final files = await contentDir.list().toList();
+        imageFiles = files
+            .where((file) =>
+                file is File &&
+                _isImageFile(file.path) &&
+                path.basename(file.path) != 'metadata.json')
+            .cast<File>()
+            .toList();
+      }
 
       // Sort by filename to maintain page order
       imageFiles.sort((a, b) =>
@@ -104,6 +123,50 @@ class OfflineContentManager {
       _logger.e('Error getting offline image URLs for $contentId',
           error: e, stackTrace: stackTrace);
       return [];
+    }
+  }
+
+  /// Check if specific image is downloaded
+  Future<bool> isImageDownloaded(String imageUrl) async {
+    try {
+      // If it's already a local file path, check directly
+      if (imageUrl.startsWith('/') || imageUrl.contains('/downloads/')) {
+        final file = File(imageUrl);
+        return await file.exists() && await file.length() > 0;
+      }
+
+      // For online URLs, we need to find the corresponding offline path
+      // Extract content ID from URL pattern (assuming URL contains content ID)
+      final contentId = _extractContentIdFromUrl(imageUrl);
+      if (contentId == null) return false;
+
+      final contentPath = await getOfflineContentPath(contentId);
+      if (contentPath == null) return false;
+
+      // Extract filename from URL
+      final uri = Uri.parse(imageUrl);
+      final filename = path.basename(uri.path);
+
+      // First, try to find the file in the 'images' subdirectory (new structure)
+      final imagesDirPath = path.join(contentPath, 'images');
+      final imagesDir = Directory(imagesDirPath);
+
+      if (await imagesDir.exists()) {
+        final offlineImagePath = path.join(imagesDirPath, filename);
+        final file = File(offlineImagePath);
+        if (await file.exists() && await file.length() > 0) {
+          return true;
+        }
+      }
+
+      // Fallback: check directly in content directory (old structure)
+      final offlineImagePath = path.join(contentPath, filename);
+      final file = File(offlineImagePath);
+      return await file.exists() && await file.length() > 0;
+    } catch (e, stackTrace) {
+      _logger.e('Error checking if image is downloaded: $imageUrl',
+          error: e, stackTrace: stackTrace);
+      return false;
     }
   }
 
@@ -714,6 +777,66 @@ class OfflineContentManager {
     final filename = path.basenameWithoutExtension(filePath);
     final match = RegExp(r'(\d+)').firstMatch(filename);
     return match != null ? int.tryParse(match.group(1)!) ?? 0 : 0;
+  }
+
+  /// Helper method to extract content ID from image URL
+  String? _extractContentIdFromUrl(String imageUrl) {
+    try {
+      // Try different URL patterns to extract content ID
+      final uri = Uri.parse(imageUrl);
+
+      // Special handling for nhentai URLs: https://i.nhentai.net/galleries/[contentId]/[page].jpg
+      if (uri.host == 'i.nhentai.net' && uri.pathSegments.length >= 3) {
+        if (uri.pathSegments[0] == 'galleries' &&
+            uri.pathSegments.length >= 2) {
+          final contentId = uri.pathSegments[1];
+          if (RegExp(r'^\d+$').hasMatch(contentId)) {
+            return contentId;
+          }
+        }
+      }
+
+      // Pattern 1: URL contains content ID in path segments
+      // e.g., https://example.com/content/12345/page/1.jpg
+      final pathSegments = uri.pathSegments;
+      if (pathSegments.length >= 2) {
+        // Look for numeric content ID
+        for (final segment in pathSegments) {
+          if (RegExp(r'^\d+$').hasMatch(segment)) {
+            return segment;
+          }
+        }
+      }
+
+      // Pattern 2: Content ID in query parameters
+      // e.g., https://example.com/image.jpg?contentId=12345
+      final contentIdParam = uri.queryParameters['contentId'];
+      if (contentIdParam != null && contentIdParam.isNotEmpty) {
+        return contentIdParam;
+      }
+
+      // Pattern 3: Content ID in hostname or subdomain
+      // e.g., https://12345.example.com/image.jpg
+      final hostParts = uri.host.split('.');
+      for (final part in hostParts) {
+        if (RegExp(r'^\d+$').hasMatch(part)) {
+          return part;
+        }
+      }
+
+      // Pattern 4: Extract from filename if it contains content ID
+      // e.g., https://example.com/12345_001.jpg
+      final filename = path.basenameWithoutExtension(uri.path);
+      final filenameMatch = RegExp(r'^(\d+)').firstMatch(filename);
+      if (filenameMatch != null) {
+        return filenameMatch.group(1);
+      }
+
+      return null;
+    } catch (e) {
+      _logger.w('Error extracting content ID from URL: $imageUrl, error: $e');
+      return null;
+    }
   }
 
   /// Format storage size for display

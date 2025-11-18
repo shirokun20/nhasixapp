@@ -43,6 +43,7 @@ dependencies:
   # Image Handling & Caching
   cached_network_image: ^3.3.1
   photo_view: ^0.15.0
+  extended_image: ^8.3.0  # Enhanced image viewer with gesture control
   image: ^4.1.7
   flutter_cache_manager: ^3.4.1
 

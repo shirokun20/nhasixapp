@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 // import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
-import 'package:photo_view/photo_view.dart';
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/utils/offline_content_manager.dart';
@@ -14,7 +13,7 @@ import '../../cubits/reader/reader_cubit.dart';
 // import '../../cubits/reader/reader_state.dart';
 import '../../widgets/progress_indicator_widget.dart';
 import '../../widgets/error_widget.dart';
-import '../../widgets/progressive_image_widget.dart';
+import '../../widgets/extended_image_reader_widget.dart';
 
 /// Simple reader screen for reading manga/doujinshi content
 class ReaderScreen extends StatefulWidget {
@@ -544,69 +543,35 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     return BlocBuilder<ReaderCubit, ReaderState>(
       builder: (context, state) {
-        final isOffline = state.isOfflineMode ?? false;
+        final enableZoom = state.enableZoom ?? true;
 
-        if (isContinuous) {
-          // For continuous scroll, use a simple image with InteractiveViewer
-          return Container(
-            margin: const EdgeInsets.only(bottom: 8.0),
-            child: InteractiveViewer(
-              minScale: 0.5,
-              maxScale: 3.0,
-              child: _buildImageWidget(
-                imageUrl,
-                pageNumber,
-                isOffline,
-                fit: BoxFit.fitWidth,
-                height: MediaQuery.of(context).size.height * 0.8,
-              ),
-            ),
-          );
-        } else {
-          // For single/vertical page, use PhotoView with UNIQUE key per page
-          // CRITICAL: Use index-based key to ensure widget uniqueness
-          final uniqueKey = ValueKey(
-              'photoview_${widget.contentId}_page${pageNumber}_${imageUrl.hashCode}');
+        // 🚀 FEATURE FLAG: Toggle between ExtendedImage (new) and PhotoView (legacy)
+        const bool useExtendedImage = true; // Set to false for rollback
 
-          return PhotoView.customChild(
-            key: uniqueKey,
-            backgroundDecoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-            ),
-            minScale: PhotoViewComputedScale.contained,
-            maxScale: PhotoViewComputedScale.covered * 3.0,
-            initialScale: PhotoViewComputedScale.contained,
-            // Use page number in hero tag to prevent collisions
-            heroAttributes: PhotoViewHeroAttributes(
-                tag: '${widget.contentId}_page_$pageNumber'),
-            child: ProgressiveReaderImageWidget(
-              key: ValueKey(
-                  'progressive_image_${widget.contentId}_page${pageNumber}_${imageUrl.hashCode}'),
-              networkUrl: imageUrl,
-              contentId: widget.contentId,
-              pageNumber: pageNumber,
-            ),
-          );
+        if (useExtendedImage) {
+          // ✨ NEW: Use ExtendedImageReaderWidget for all modes
+          return isContinuous
+              ? Container(
+                  margin: const EdgeInsets.only(bottom: 8.0),
+                  child: ExtendedImageReaderWidget(
+                    imageUrl: imageUrl,
+                    contentId: widget.contentId,
+                    pageNumber: pageNumber,
+                    readingMode: ReadingMode.continuousScroll,
+                    enableZoom: enableZoom,
+                  ),
+                )
+              : ExtendedImageReaderWidget(
+                  imageUrl: imageUrl,
+                  contentId: widget.contentId,
+                  pageNumber: pageNumber,
+                  readingMode: state.readingMode ?? ReadingMode.singlePage,
+                  enableZoom: enableZoom,
+                );
         }
-      },
-    );
-  }
 
-  Widget _buildImageWidget(
-    String imageUrl,
-    int pageNumber,
-    bool isOffline, {
-    BoxFit? fit,
-    double? height,
-  }) {
-    // Use ProgressiveReaderImageWidget for enhanced local file support
-    return ProgressiveReaderImageWidget(
-      key: ValueKey('image_${widget.contentId}_$pageNumber'),
-      networkUrl: imageUrl,
-      contentId: widget.contentId,
-      pageNumber: pageNumber,
-      fit: fit ?? BoxFit.contain,
-      height: height,
+        // 📦 LEGACY: PhotoView fallback (for rollback)
+      },
     );
   }
 
@@ -702,43 +667,21 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     ],
                   ],
                 ),
-                Row(
-                  children: [
-                    Text(
-                      AppLocalizations.of(context)?.pageOfPages(
-                              state.currentPage ?? 1,
-                              state.content?.pageCount ?? 1) ??
-                          'Page ${state.currentPage ?? 1} of ${state.content?.pageCount ?? 1}',
-                      style: TextStyleConst.bodySmall.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    // Show progress bar in continuous scroll mode
-                    if (state.readingMode == ReadingMode.continuousScroll) ...[
-                      const SizedBox(width: 8),
+                // Only show page counter in paginated modes (singlePage, verticalPage)
+                // In continuous scroll, page counter is not meaningful as multiple pages are visible
+                if (state.readingMode != ReadingMode.continuousScroll)
+                  Row(
+                    children: [
                       Text(
-                        '(${state.progressPercentage}%)',
+                        AppLocalizations.of(context)?.pageOfPages(
+                                state.currentPage ?? 1,
+                                state.content?.pageCount ?? 1) ??
+                            'Page ${state.currentPage ?? 1} of ${state.content?.pageCount ?? 1}',
                         style: TextStyleConst.bodySmall.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
-                  ],
-                ),
-                // Progress bar for continuous scroll mode
-                if (state.readingMode == ReadingMode.continuousScroll)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: LinearProgressIndicator(
-                      value: state.progress,
-                      backgroundColor: Theme.of(context)
-                          .colorScheme
-                          .outline
-                          .withValues(alpha: 0.3),
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                          Theme.of(context).colorScheme.primary),
-                      minHeight: 2,
-                    ),
                   ),
               ],
             ),

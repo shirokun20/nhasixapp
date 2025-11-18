@@ -345,6 +345,7 @@ class _ProgressiveReaderImageWidgetState
   late final ImageCacheService _imageCacheService;
   String? _cachedLocalPath;
   bool _isLocalPathResolved = false;
+  Size? _imageSize; // Store original image dimensions
 
   @override
   void initState() {
@@ -479,19 +480,7 @@ class _ProgressiveReaderImageWidgetState
 
     // Use cached local path if available
     if (_cachedLocalPath != null) {
-      return Image.file(
-        File(_cachedLocalPath!),
-        fit: widget.fit,
-        height: widget.height,
-        errorBuilder: (context, error, stackTrace) {
-          if (kDebugMode) {
-            _logger.e(
-                'Reader: ❌ Error loading local image from $_cachedLocalPath: $error');
-          }
-          // Fallback to network if local file fails
-          return _buildNetworkImage(context);
-        },
-      );
+      return _buildLocalImageWithDynamicSize(_cachedLocalPath!);
     }
 
     // Fallback to network
@@ -499,13 +488,14 @@ class _ProgressiveReaderImageWidgetState
       _logger
           .d('Reader: 📡 Falling back to network image: ${widget.networkUrl}');
     }
-    return _buildNetworkImage(context);
+    return _buildNetworkImageWithDynamicSize(context);
   }
 
-  Widget _buildNetworkImage(BuildContext context) {
+  /// Build network image with dynamic sizing
+  Widget _buildNetworkImageWithDynamicSize(BuildContext context) {
     if (kDebugMode) {
       _logger.d(
-          '📡 Loading reader image for page ${widget.pageNumber}: ${widget.networkUrl}');
+          '📡 Loading reader image with dynamic sizing for page ${widget.pageNumber}: ${widget.networkUrl}');
     }
 
     // Use unique cache key combining contentId and pageNumber to prevent cache collision
@@ -516,8 +506,9 @@ class _ProgressiveReaderImageWidgetState
       key: ValueKey(uniqueCacheKey),
       imageUrl: widget.networkUrl,
       cacheKey: uniqueCacheKey, // Force unique cache per page
-      fit: widget.fit,
-      height: widget.height,
+      fit: BoxFit.none, // Use BoxFit.none for custom sizing
+      width: _getDisplaySize().width,
+      height: _getDisplaySize().height,
       memCacheWidth: 800,
       memCacheHeight: 1200,
       placeholder: (context, url) => _buildReaderPlaceholder(context),
@@ -525,13 +516,42 @@ class _ProgressiveReaderImageWidgetState
       fadeInDuration: const Duration(milliseconds: 200),
       // Cache image in ImageCacheService when loaded
       imageBuilder: (context, imageProvider) {
+        // Listen to image stream to get dimensions
+        final imageStream = imageProvider.resolve(ImageConfiguration.empty);
+        imageStream.addListener(ImageStreamListener(_calculateImageSize));
+
         // Cache the image data in ImageCacheService for future use
         _cacheNetworkImage(widget.networkUrl);
         return Image(
           image: imageProvider,
-          fit: widget.fit,
-          height: widget.height,
+          fit: BoxFit.fitWidth,
+          width: _getDisplaySize().width,
+          height: _getDisplaySize().height,
         );
+      },
+    );
+  }
+
+  /// Build local image with dynamic sizing
+  Widget _buildLocalImageWithDynamicSize(String localPath) {
+    final imageProvider = FileImage(File(localPath));
+
+    // Listen to image stream to get dimensions
+    final imageStream = imageProvider.resolve(ImageConfiguration.empty);
+    imageStream.addListener(ImageStreamListener(_calculateImageSize));
+
+    return Image(
+      image: imageProvider,
+      fit: BoxFit.fitWidth, // Use BoxFit.none for custom sizing
+      width: _getDisplaySize().width,
+      height: _getDisplaySize().height,
+      errorBuilder: (context, error, stackTrace) {
+        if (kDebugMode) {
+          _logger
+              .e('Reader: ❌ Error loading local image from $localPath: $error');
+        }
+        // Fallback to network if local file fails
+        return _buildNetworkImageWithDynamicSize(context);
       },
     );
   }
@@ -568,6 +588,39 @@ class _ProgressiveReaderImageWidgetState
         _logger.w('Reader: ⚠️ Failed to cache network image: $e');
       }
     }
+  }
+
+  /// Calculate dynamic size for the image based on its dimensions
+  void _calculateImageSize(ImageInfo imageInfo, bool synchronousCall) {
+    final imageSize = Size(
+      imageInfo.image.width.toDouble(),
+      imageInfo.image.height.toDouble(),
+    );
+
+    if (_imageSize != imageSize) {
+      setState(() {
+        _imageSize = imageSize;
+      });
+
+      if (kDebugMode) {
+        _logger.d(
+          'Reader: 📏 Image size: ${imageInfo.image.width}x${imageInfo.image.height}, '
+          'No scaling applied',
+        );
+      }
+    }
+  }
+
+  /// Get the display size for the image
+  Size _getDisplaySize() {
+    if (_imageSize == null) {
+      // Fallback to screen size if dimensions not available
+      final screenSize = MediaQuery.of(context).size;
+      return Size(screenSize.width, screenSize.height * 0.8);
+    }
+
+    return Size(
+        _imageSize!.width, _imageSize!.height); // Original size, no scaling
   }
 
   Widget _buildReaderPlaceholder(BuildContext context) {

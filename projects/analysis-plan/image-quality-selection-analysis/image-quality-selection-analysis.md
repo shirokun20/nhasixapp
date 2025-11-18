@@ -3,18 +3,26 @@
 ## Overview
 
 ### Problem Summary
-Current reader implementation loads full-resolution images directly from nhentai.net servers (e.g., `https://i2.nhentai.net/galleries/3473061/5.webp`), resulting in slow loading times (1-3MB per image) and poor user experience on slower connections.
+Current reader implementation loads full-resolution images directly from nhentai.net servers (e.g., `https://i2.nhentai.net/galleries/3473061/5.webp`), resulting in slow loading times (1-3MB per image) and poor user experience on slower connections. Additionally, **users must manually zoom on every page** due to lack of adaptive image fitting, creating a frustrating reading experience.
 
 ### Proposed Solution
-Implement user-selectable image quality settings allowing users to choose between:
-- **Full Quality**: Original high-resolution images for best reading experience
-- **Thumbnail Quality**: Smaller thumbnail images (50-70% size reduction) for faster loading
+1. **⭐ Phase 7 (NEW - HIGHEST PRIORITY): Reading Comfort Enhancement** - Replace PhotoView with Extended Image, implement adaptive BoxFit per reading mode, add zoom-on-double-tap gesture (Timeline: 3-4 days)
+2. **Phases 1-5: Image Quality Selection** - User-selectable quality settings (full vs thumbnail) for performance optimization (Timeline: 2-3 weeks)
+3. **Phase 6 (Optional): Native Download Enhancement** - Android-specific optimization for faster downloads (Timeline: 3-4 days)
 
 ### Expected Benefits
-- 2-3x faster loading times for thumbnail mode
-- Reduced bandwidth usage for data-conscious users
-- Improved user experience on slow connections
-- Backward compatibility with existing full-quality preference
+- 🎯 **Immediate**: Zero manual zoom needed for normal reading (Phase 7)
+- ⚡ **Performance**: 2-3x faster loading times for thumbnail mode (Phases 1-5)
+- 📱 **UX**: Smooth double-tap zoom gesture with visual indicators
+- 💾 **Bandwidth**: Reduced data usage for data-conscious users
+- 🔄 **Backward Compatible**: All existing functionality preserved
+
+### Implementation Priority
+```
+Week 1:    Phase 7 - Reading Comfort (CRITICAL UX)
+Week 2-4:  Phases 1-5 - Quality Selection (PERFORMANCE)
+Parallel:  Phase 6 - Native Download (OPTIONAL)
+```
 
 ## Problem Statement
 
@@ -328,6 +336,257 @@ Future<String?> loadImageWithFallback(String url, String contentId, int pageNumb
 **Expected Impact**: 20-40% faster loading for full-quality images, reduced memory usage
 
 ## Implementation Plan
+
+### 🎯 Phase 7: Reading Comfort Enhancement (NEW - HIGHEST PRIORITY)
+
+**Timeline**: 3-4 days | **Dependencies**: None | **Impact**: Critical UX improvement
+
+This phase addresses the core reading experience by eliminating the need for manual zoom in normal reading scenarios while providing intuitive zoom-on-demand functionality.
+
+#### Problem Statement
+- Users must manually zoom/pinch on every page to read comfortably
+- PhotoView's free zoom causes accidental zooming during page navigation
+- No adaptive fitting strategy for different reading modes
+- Poor reading experience compared to dedicated manga reader apps
+
+#### Solution Architecture
+Replace PhotoView with Extended Image and implement reading-mode-aware image fitting with gesture-controlled zoom.
+
+#### Technical Implementation
+
+**Step 1: Add Dependency**
+```yaml
+# pubspec.yaml
+dependencies:
+  extended_image: ^8.3.0  # Replace photo_view
+```
+
+**Step 2: Create ExtendedImageReaderWidget**
+```dart
+// lib/presentation/widgets/extended_image_reader_widget.dart
+class ExtendedImageReaderWidget extends StatefulWidget {
+  final String imageUrl;
+  final String contentId;
+  final int pageNumber;
+  final ReadingMode readingMode;
+  final bool enableZoom;
+  
+  @override
+  _ExtendedImageReaderWidgetState createState() => _ExtendedImageReaderWidgetState();
+}
+
+class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget> 
+    with SingleTickerProviderStateMixin {
+  late AnimationController _zoomController;
+  late Animation<double> _zoomAnimation;
+  final GlobalKey<ExtendedImageGestureState> _gestureKey = GlobalKey();
+  
+  // Adaptive BoxFit based on reading mode
+  BoxFit _getAdaptiveBoxFit() {
+    switch (widget.readingMode) {
+      case ReadingMode.singlePage:
+        return BoxFit.fitWidth;  // Fill width, height auto
+      case ReadingMode.verticalPage:
+        return BoxFit.fitHeight; // Fill height, width auto
+      case ReadingMode.continuousScroll:
+        return BoxFit.fitWidth;  // Fill width for vertical scroll
+    }
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return ExtendedImage.network(
+      widget.imageUrl,
+      fit: _getAdaptiveBoxFit(),
+      mode: widget.enableZoom 
+          ? ExtendedImageMode.gesture 
+          : ExtendedImageMode.none,
+      enableMemoryCache: true,
+      clearMemoryCacheWhenDispose: false,
+      initGestureConfigHandler: (state) {
+        return GestureConfig(
+          minScale: 1.0,              // No zoom out - always fit
+          maxScale: 3.0,              // Max 3x zoom for details
+          animationMinScale: 0.9,     // Smooth bounce back
+          animationMaxScale: 3.5,
+          speed: 1.0,
+          inertialSpeed: 100.0,
+          initialScale: 1.0,          // Start at fit scale
+          inPageView: true,           // Optimize for PageView
+          cacheGesture: false,        // Don't cache zoom state
+          initialAlignment: InitialAlignment.center,
+        );
+      },
+      onDoubleTap: (ExtendedImageGestureState state) {
+        // Zoom-on-double-tap: toggle between 1.0x and 2.0x
+        final pointerDownPosition = state.pointerDownPosition;
+        final double begin = state.gestureDetails!.totalScale!;
+        final double end = begin > 1.5 ? 1.0 : 2.0;  // Toggle zoom
+        
+        _zoomAnimation = _zoomController.drive(
+          Tween<double>(begin: begin, end: end),
+        );
+        
+        _zoomAnimation.addListener(() {
+          state.handleDoubleTap(
+            scale: _zoomAnimation.value,
+            doubleTapPosition: pointerDownPosition,
+          );
+        });
+        
+        _zoomController.reset();
+        _zoomController.forward();
+      },
+      loadStateChanged: (ExtendedImageState state) {
+        switch (state.extendedImageLoadState) {
+          case LoadState.loading:
+            return _buildLoadingIndicator();
+          case LoadState.failed:
+            return _buildErrorWidget();
+          case LoadState.completed:
+            return _buildCompletedImage(state);
+        }
+      },
+    );
+  }
+  
+  Widget _buildCompletedImage(ExtendedImageState state) {
+    return Stack(
+      children: [
+        ExtendedRawImage(
+          image: state.extendedImageInfo?.image,
+          fit: _getAdaptiveBoxFit(),
+        ),
+        // Zoom indicator when zoomed
+        if (state.imageGestureState?.totalScale ?? 1.0 > 1.2)
+          Positioned(
+            top: 16,
+            right: 16,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                '${((state.imageGestureState?.totalScale ?? 1.0) * 100).toInt()}%',
+                style: TextStyle(color: Colors.white, fontSize: 12),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+```
+
+**Step 3: Update ReaderScreen Integration**
+```dart
+// Replace _buildImageViewer() in reader_screen.dart
+Widget _buildImageViewer(String imageUrl, int pageNumber, {bool isContinuous = false}) {
+  return BlocBuilder<ReaderCubit, ReaderState>(
+    builder: (context, state) {
+      return ExtendedImageReaderWidget(
+        imageUrl: imageUrl,
+        contentId: widget.contentId,
+        pageNumber: pageNumber,
+        readingMode: state.readingMode ?? ReadingMode.singlePage,
+        enableZoom: state.enableZoom ?? true,  // From settings
+      );
+    },
+  );
+}
+```
+
+**Step 4: Add Zoom Toggle Setting**
+```dart
+// lib/data/models/reader_settings_model.dart
+@freezed
+class ReaderSettingsModel with _$ReaderSettingsModel {
+  factory ReaderSettingsModel({
+    @Default(true) bool enableZoom,        // NEW
+    @Default(ReadingMode.singlePage) ReadingMode readingMode,
+    // ... other settings
+  }) = _ReaderSettingsModel;
+}
+```
+
+#### Implementation Checklist
+
+- [ ] **Day 1: Setup & Widget Creation**
+  - [ ] Add extended_image dependency to pubspec.yaml
+  - [ ] Remove photo_view dependency (after testing)
+  - [ ] Create ExtendedImageReaderWidget class
+  - [ ] Implement adaptive BoxFit logic
+  - [ ] Add zoom animation controller
+
+- [ ] **Day 2: Gesture & Zoom Implementation**
+  - [ ] Implement onDoubleTap zoom gesture
+  - [ ] Add zoom indicator overlay
+  - [ ] Configure GestureConfig for optimal reading
+  - [ ] Test zoom behavior in all reading modes
+
+- [ ] **Day 3: Integration & Settings**
+  - [ ] Update reader_screen.dart to use ExtendedImageReaderWidget
+  - [ ] Add enableZoom toggle to reader settings
+  - [ ] Update ReaderCubit to handle zoom state
+  - [ ] Add zoom instructions in UI (first-time tooltip)
+
+- [ ] **Day 4: Testing & Polish**
+  - [ ] Test all 3 reading modes (horizontal, vertical, continuous)
+  - [ ] Validate no accidental zoom during page swipes
+  - [ ] Performance testing (memory, battery)
+  - [ ] User acceptance testing
+  - [ ] Fix edge cases and polish animations
+
+#### Success Metrics
+
+- ✅ **Zero manual zoom needed** for 90%+ of normal reading scenarios
+- ✅ **<200ms** zoom animation on double-tap
+- ✅ **No accidental zoom** during page navigation
+- ✅ **Smooth gesture response** with no lag or jank
+- ✅ **User satisfaction**: 4.5+/5.0 for reading comfort
+
+#### Migration & Rollback Plan
+
+**Feature Flag Implementation:**
+```dart
+class FeatureFlags {
+  static const bool useExtendedImage = true;  // Toggle for rollback
+}
+
+Widget _buildImageViewer(...) {
+  if (FeatureFlags.useExtendedImage) {
+    return ExtendedImageReaderWidget(...);
+  } else {
+    return PhotoViewWidget(...);  // Fallback
+  }
+}
+```
+
+**Rollback Strategy:**
+- Keep PhotoView code until Extended Image proven stable (1 week production)
+- Monitor crash rates and user feedback
+- A/B test with 20% users before full rollout
+- Easy rollback via feature flag toggle
+
+#### Risk Assessment
+
+| Risk | Probability | Impact | Mitigation |
+|------|-------------|--------|------------|
+| Breaking zoom behavior | Medium | High | Feature flag, A/B testing |
+| Performance regression | Low | Medium | Benchmark before/after |
+| User confusion (new gesture) | Medium | Low | Onboarding tooltip, help section |
+| Memory issues on large images | Low | Medium | Test with high-resolution content |
+
+#### Dependencies & Prerequisites
+
+- ✅ No blocking dependencies
+- ✅ Can be implemented immediately
+- ✅ Independent of Image Quality Selection phases
+- ✅ Foundation for future enhancements
+
+---
 
 ### Phase 1: Core Infrastructure
 - [ ] Add `ImageQuality` enum (`full`, `thumbnail`)

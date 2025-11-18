@@ -40,17 +40,20 @@ class ReaderSettings extends Equatable {
     this.readingMode = ReadingMode.singlePage,
     this.keepScreenOn = false,
     this.showUI = true,
+    this.enableZoom = true,
   });
 
   final ReadingMode readingMode;
   final bool keepScreenOn;
   final bool showUI;
+  final bool enableZoom;
 
   @override
   List<Object?> get props => [
         readingMode,
         keepScreenOn,
         showUI,
+        enableZoom,
       ];
 
   /// Create a copy with updated values
@@ -58,11 +61,13 @@ class ReaderSettings extends Equatable {
     ReadingMode? readingMode,
     bool? keepScreenOn,
     bool? showUI,
+    bool? enableZoom,
   }) {
     return ReaderSettings(
       readingMode: readingMode ?? this.readingMode,
       keepScreenOn: keepScreenOn ?? this.keepScreenOn,
       showUI: showUI ?? this.showUI,
+      enableZoom: enableZoom ?? this.enableZoom,
     );
   }
 
@@ -72,6 +77,7 @@ class ReaderSettings extends Equatable {
       'readingMode': readingMode.name,
       'keepScreenOn': keepScreenOn,
       'showUI': showUI,
+      'enableZoom': enableZoom,
     };
   }
 
@@ -81,6 +87,7 @@ class ReaderSettings extends Equatable {
       readingMode: _parseReadingMode(json['readingMode']),
       keepScreenOn: _parseBool(json['keepScreenOn'], false),
       showUI: _parseBool(json['showUI'], true),
+      enableZoom: _parseBool(json['enableZoom'], true),
     );
   }
 
@@ -167,7 +174,8 @@ class ReaderSettings extends Equatable {
   bool get isDefault {
     return readingMode == ReadingMode.singlePage &&
         keepScreenOn == false &&
-        showUI == true;
+        showUI == true &&
+        enableZoom == true;
   }
 
   /// Get default settings instance
@@ -186,7 +194,8 @@ class ReaderSettings extends Equatable {
     return 'ReaderSettings('
         'readingMode: $readingMode, '
         'keepScreenOn: $keepScreenOn, '
-        'showUI: $showUI'
+        'showUI: $showUI, '
+        'enableZoom: $enableZoom'
         ')';
   }
 }

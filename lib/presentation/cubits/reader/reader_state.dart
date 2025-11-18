@@ -8,6 +8,7 @@ class ReaderState extends Equatable {
     this.readingMode,
     this.showUI,
     this.keepScreenOn,
+    this.enableZoom,
     this.readingTimer,
     this.message,
     this.isOfflineMode,
@@ -18,6 +19,7 @@ class ReaderState extends Equatable {
   final ReadingMode? readingMode;
   final bool? showUI;
   final bool? keepScreenOn;
+  final bool? enableZoom;
   final Duration? readingTimer;
   final String? message;
   final bool? isOfflineMode;
@@ -29,6 +31,7 @@ class ReaderState extends Equatable {
         readingMode,
         showUI,
         keepScreenOn,
+        enableZoom,
         readingTimer,
         message,
         isOfflineMode,
@@ -42,6 +45,7 @@ class ReaderState extends Equatable {
     ReadingMode? readingMode,
     Object? showUI = _undefined,
     Object? keepScreenOn = _undefined,
+    Object? enableZoom = _undefined,
     Duration? readingTimer,
     Object? message = _undefined,
     Object? isOfflineMode = _undefined,
@@ -55,6 +59,8 @@ class ReaderState extends Equatable {
       keepScreenOn: keepScreenOn == _undefined
           ? this.keepScreenOn
           : keepScreenOn as bool?,
+      enableZoom:
+          enableZoom == _undefined ? this.enableZoom : enableZoom as bool?,
       readingTimer: readingTimer ?? this.readingTimer,
       message: message == _undefined ? this.message : message as String?,
       isOfflineMode: isOfflineMode == _undefined
@@ -106,6 +112,7 @@ class ReaderLoading extends ReaderState {
           readingMode: prevState.readingMode,
           showUI: prevState.showUI,
           keepScreenOn: prevState.keepScreenOn,
+          enableZoom: prevState.enableZoom,
           readingTimer: prevState.readingTimer,
           message: prevState.message,
           isOfflineMode: prevState.isOfflineMode,
@@ -121,6 +128,7 @@ class ReaderLoaded extends ReaderState {
           readingMode: prevState.readingMode ?? ReadingMode.singlePage,
           showUI: prevState.showUI ?? true,
           keepScreenOn: prevState.keepScreenOn ?? false,
+          enableZoom: prevState.enableZoom ?? true,
           readingTimer: prevState.readingTimer ?? Duration.zero,
           message: prevState.message,
           isOfflineMode: prevState.isOfflineMode ?? false,
@@ -136,6 +144,7 @@ class ReaderError extends ReaderState {
           readingMode: prevState.readingMode,
           showUI: prevState.showUI,
           keepScreenOn: prevState.keepScreenOn,
+          enableZoom: prevState.enableZoom,
           readingTimer: prevState.readingTimer,
           message: prevState.message,
           isOfflineMode: prevState.isOfflineMode,
