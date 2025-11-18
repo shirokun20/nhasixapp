@@ -99,25 +99,33 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       // 🚀 OPTIMIZATION: Use preloaded content if available (highest priority)
       if (preloadedContent != null) {
-        _logger.i("Using preloaded content from navigation: $contentId");
+        _logger.i("✅ Using preloaded content from navigation: $contentId");
         content = preloadedContent;
-        isOfflineMode = false; // Preloaded content is from online cache
+        // Detect if preloaded content is from offline storage by checking if we're offline
+        isOfflineMode = !isConnected;
       } else if (isOfflineAvailable &&
           (!isConnected || _shouldPreferOffline())) {
-        _logger.i("Loading content from offline storage: $contentId");
+        _logger.i("💾 Loading content from offline storage: $contentId");
         content = await offlineContentManager.createOfflineContent(contentId);
         isOfflineMode = true;
       } else if (onlineContent != null) {
-        _logger.i("Using preloaded online content: $contentId");
+        _logger.i("🌐 Using preloaded online content: $contentId");
         content = onlineContent;
         isOfflineMode = false;
       }
 
-      // Fallback to offline if online failed
-      if (content == null && isOfflineAvailable) {
-        _logger.i("Using offline content as fallback: $contentId");
-        content = await offlineContentManager.createOfflineContent(contentId);
-        isOfflineMode = true;
+      // Fallback to offline if online failed (even if isOfflineAvailable is false)
+      if (content == null) {
+        _logger.w("⚠️ Primary loading failed, attempting offline fallback...");
+        try {
+          content = await offlineContentManager.createOfflineContent(contentId);
+          if (content != null) {
+            _logger.i("✅ Successfully loaded content from offline fallback");
+            isOfflineMode = true;
+          }
+        } catch (e) {
+          _logger.e("❌ Offline fallback also failed: $e");
+        }
       }
 
       if (content == null) {

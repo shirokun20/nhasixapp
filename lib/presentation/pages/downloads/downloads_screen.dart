@@ -8,6 +8,7 @@ import '../../../domain/entities/entities.dart';
 import '../../blocs/download/download_bloc.dart';
 import '../../widgets/widgets.dart';
 import '../../widgets/app_scaffold_with_offline.dart';
+import '../../../core/utils/offline_content_manager.dart';
 
 /// Screen for managing downloads with status tracking and progress indicators
 class DownloadsScreen extends StatefulWidget {
@@ -127,7 +128,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
               foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
               leading: IconButton(
                 icon: const Icon(Icons.close),
-                onPressed: () => context.read<DownloadBloc>().add(const DownloadToggleSelectionModeEvent()),
+                onPressed: () => context
+                    .read<DownloadBloc>()
+                    .add(const DownloadToggleSelectionModeEvent()),
               ),
               title: Text(
                 '${state.selectedItems.length} selected',
@@ -139,12 +142,16 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                 if (state.selectedItems.isNotEmpty) ...[
                   IconButton(
                     icon: const Icon(Icons.select_all),
-                    onPressed: () => context.read<DownloadBloc>().add(const DownloadSelectAllEvent()),
+                    onPressed: () => context
+                        .read<DownloadBloc>()
+                        .add(const DownloadSelectAllEvent()),
                     tooltip: 'Select All',
                   ),
                   IconButton(
                     icon: const Icon(Icons.clear),
-                    onPressed: () => context.read<DownloadBloc>().add(const DownloadClearSelectionEvent()),
+                    onPressed: () => context
+                        .read<DownloadBloc>()
+                        .add(const DownloadClearSelectionEvent()),
                     tooltip: 'Clear Selection',
                   ),
                   IconButton(
@@ -170,7 +177,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             actions: [
               IconButton(
                 icon: const Icon(Icons.checklist),
-                onPressed: () => context.read<DownloadBloc>().add(const DownloadToggleSelectionModeEvent()),
+                onPressed: () => context
+                    .read<DownloadBloc>()
+                    .add(const DownloadToggleSelectionModeEvent()),
                 tooltip: 'Select Mode',
               ),
               PopupMenuButton<String>(
@@ -192,8 +201,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                         const SizedBox(width: 8),
                         Text(AppLocalizations.of(context)!.pauseAll,
                             style: TextStyleConst.bodyMedium.copyWith(
-                              color:
-                                  Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             )),
                       ],
                     ),
@@ -209,8 +219,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                         const SizedBox(width: 8),
                         Text(AppLocalizations.of(context)!.resumeAll,
                             style: TextStyleConst.bodyMedium.copyWith(
-                              color:
-                                  Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             )),
                       ],
                     ),
@@ -240,8 +251,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                         const SizedBox(width: 8),
                         Text(AppLocalizations.of(context)!.clearCompleted,
                             style: TextStyleConst.bodyMedium.copyWith(
-                              color:
-                                  Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             )),
                       ],
                     ),
@@ -255,8 +267,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                         const SizedBox(width: 8),
                         Text(AppLocalizations.of(context)!.cleanupStorage,
                             style: TextStyleConst.bodyMedium.copyWith(
-                              color:
-                                  Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             )),
                       ],
                     ),
@@ -271,8 +284,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                         const SizedBox(width: 8),
                         Text(AppLocalizations.of(context)!.settings,
                             style: TextStyleConst.bodyMedium.copyWith(
-                              color:
-                                  Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             )),
                       ],
                     ),
@@ -286,8 +300,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                         const SizedBox(width: 8),
                         Text(AppLocalizations.of(context)!.exportList,
                             style: TextStyleConst.bodyMedium.copyWith(
-                              color:
-                                  Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             )),
                       ],
                     ),
@@ -298,8 +313,10 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             bottom: TabBar(
               controller: _tabController,
               labelColor: Theme.of(context).colorScheme.primary,
-              unselectedLabelColor:
-                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              unselectedLabelColor: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.6),
               indicatorColor: Theme.of(context).colorScheme.primary,
               tabs: [
                 Tab(text: AppLocalizations.of(context)!.all),
@@ -369,7 +386,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
           );
         }
 
-        final isSelectionMode = state is DownloadLoaded && state.isSelectionMode;
+        final isSelectionMode =
+            state is DownloadLoaded && state.isSelectionMode;
 
         return RefreshIndicator(
           onRefresh: () async {
@@ -380,7 +398,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             itemCount: downloads.length,
             itemBuilder: (context, index) {
               final download = downloads[index];
-              final isSelected = state is DownloadLoaded && state.selectedItems.contains(download.contentId);
+              final isSelected = state is DownloadLoaded &&
+                  state.selectedItems.contains(download.contentId);
 
               return DownloadItemWidget(
                 download: download,
@@ -435,16 +454,39 @@ class _DownloadsScreenState extends State<DownloadsScreen>
 
     if (currentState is DownloadLoaded && currentState.isSelectionMode) {
       // In selection mode, toggle selection
-      final isSelected = currentState.selectedItems.contains(download.contentId);
-      downloadBloc.add(DownloadSelectItemEvent(download.contentId, !isSelected));
+      final isSelected =
+          currentState.selectedItems.contains(download.contentId);
+      downloadBloc
+          .add(DownloadSelectItemEvent(download.contentId, !isSelected));
     } else {
       // Normal mode behavior
       if (download.isCompleted) {
         // Navigate to reader if download is completed
-        context.push('/reader/${download.contentId}');
+        // Create Content object from offline data asynchronously
+        _navigateToReader(download.contentId);
       } else {
         // Show download details
         _showDownloadDetails(download);
+      }
+    }
+  }
+
+  void _navigateToReader(String contentId) async {
+    try {
+      final offlineContentManager = context.read<OfflineContentManager>();
+      final content =
+          await offlineContentManager.createOfflineContent(contentId);
+      if (!mounted) return;
+      if (content != null) {
+        context.push('/reader/$contentId', extra: content);
+      } else {
+        // Fallback to navigation without extra if content creation fails
+        context.push('/reader/$contentId');
+      }
+    } catch (e) {
+      // If content creation fails, navigate without extra
+      if (mounted) {
+        context.push('/reader/$contentId');
       }
     }
   }
@@ -477,7 +519,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         downloadBloc.add(DownloadConvertToPdfEvent(download.contentId));
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!.pdfConversionStarted(download.contentId)),
+            content: Text(AppLocalizations.of(context)!
+                .pdfConversionStarted(download.contentId)),
             duration: Duration(seconds: 2),
           ),
         );
@@ -678,13 +721,14 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel',
-                style: TextStyleConst.labelLarge),
+            child: Text('Cancel', style: TextStyleConst.labelLarge),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              context.read<DownloadBloc>().add(DownloadBulkDeleteEvent(state.selectedItems.toList()));
+              context
+                  .read<DownloadBloc>()
+                  .add(DownloadBulkDeleteEvent(state.selectedItems.toList()));
             },
             child: Text(
               'Delete',

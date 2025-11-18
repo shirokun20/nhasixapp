@@ -66,9 +66,25 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         _currentSortBy = event.sortBy;
       }
 
-      // Show loading state if no previous content
-      if (state is! ContentLoaded || event.forceRefresh) {
-        emit(const ContentLoading());
+      // Preserve previous content for better UX during loading
+      List<Content>? previousContents;
+      if (state is ContentError) {
+        previousContents = (state as ContentError).previousContents;
+      } else if (state is ContentLoaded) {
+        previousContents = (state as ContentLoaded).contents;
+      } else if (state is ContentLoading) {
+        previousContents = (state as ContentLoading).previousContents;
+      }
+
+      // Show loading state if not already loading
+      if (state is! ContentLoading) {
+        if (state is! ContentLoaded || event.forceRefresh) {
+          emit(ContentLoading(
+            message:
+                event.forceRefresh ? 'Refreshing...' : 'Loading content...',
+            previousContents: previousContents,
+          ));
+        }
       }
 
       // Get content list
@@ -89,7 +105,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
       // Update fetch time when we actually get data from server
       _lastFetchTime = DateTime.now();
 
-      emit(ContentLoaded(
+      final loadedState = ContentLoaded(
         contents: result.contents,
         currentPage: result.currentPage,
         totalPages: result.totalPages,
@@ -98,9 +114,13 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         hasPrevious: result.hasPrevious,
         sortBy: event.sortBy,
         lastUpdated: _lastFetchTime,
-      ));
+      );
 
-      _logger.i('ContentBloc: Loaded ${result.contents.length} contents');
+      _logger.i(
+          'ContentBloc: Emitting ContentLoaded with ${result.contents.length} contents');
+      emit(loadedState);
+      _logger.i(
+          'ContentBloc: ContentLoaded emitted successfully, state type: ${state.runtimeType}');
     } catch (e, stackTrace) {
       _logger.e('ContentBloc: Error loading content',
           error: e, stackTrace: stackTrace);
@@ -363,6 +383,23 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
   ) async {
     _logger.i('ContentBloc: Retrying content load');
 
+    // Get previous content if available for better UX
+    List<Content>? previousContents;
+    if (state is ContentError) {
+      previousContents = (state as ContentError).previousContents;
+    } else if (state is ContentLoaded) {
+      previousContents = (state as ContentLoaded).contents;
+    }
+
+    // Emit loading state immediately for instant visual feedback
+    emit(ContentLoading(
+      message: 'Retrying...',
+      previousContents: previousContents,
+    ));
+    _logger.i('ContentBloc: Emitted ContentLoading for retry');
+
+    // Retry by dispatching appropriate event with forceRefresh
+    // The receiving event handler will emit loading state
     final currentState = state;
     if (currentState is ContentLoaded) {
       // Retry with current context
@@ -373,11 +410,11 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
       } else if (currentState.timeframe != null) {
         add(ContentLoadPopularEvent(timeframe: currentState.timeframe!));
       } else {
-        add(ContentLoadEvent(sortBy: currentState.sortBy));
+        add(ContentLoadEvent(sortBy: currentState.sortBy, forceRefresh: true));
       }
     } else {
-      // Default retry
-      add(ContentLoadEvent(sortBy: _currentSortBy));
+      // Default retry - force refresh to ensure loading state is shown
+      add(ContentLoadEvent(sortBy: _currentSortBy, forceRefresh: true));
     }
   }
 

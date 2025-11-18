@@ -68,6 +68,32 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _scrollController = ScrollController();
     _readerCubit = getIt<ReaderCubit>();
 
+    // 🚀 OPTIMIZATION: Initialize route extra synchronously before build
+    _initializeFromRouteExtraSync();
+
+    // Defer GoRouterState access until after widget is mounted (for any additional processing)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Start preloading after route extra is processed
+      _startPreloading();
+    });
+
+    // Add scroll listener for continuous mode
+    _scrollController.addListener(_onScrollChanged);
+
+    // 🚀 OPTIMIZATION: Start preloading content immediately - MOVED TO POST FRAME CALLBACK
+    // _startPreloading();
+  }
+
+  /// Initialize preloaded content from route extra synchronously (before build)
+  void _initializeFromRouteExtraSync() {
+    // This is called in initState, but we can't access context yet
+    // The actual initialization will happen in build() or postFrameCallback
+  }
+
+  /// Initialize preloaded content from route extra (called from build or postFrameCallback)
+  void _initializeFromRouteExtra() {
+    if (_preloadedContent != null) return; // Already initialized
+
     // Get preloaded content and metadata from route extra if available
     final routeExtra = GoRouterState.of(context).extra;
     if (routeExtra is Map<String, dynamic>) {
@@ -83,12 +109,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
       // Fallback for direct Content object (backward compatibility)
       _preloadedContent = routeExtra;
     }
-
-    // Add scroll listener for continuous mode
-    _scrollController.addListener(_onScrollChanged);
-
-    // 🚀 OPTIMIZATION: Start preloading content immediately
-    _startPreloading();
   }
 
   /// 🚀 OPTIMIZATION: Preload content to reduce initial loading time
@@ -354,26 +374,26 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Initialize preloaded content from route extra if not already done
+    _initializeFromRouteExtra();
+
     return BlocProvider<ReaderCubit>(
       create: (context) {
-        // 🚀 OPTIMIZATION: Use preloaded content if available
-        if (_preloadedContent != null) {
-          // Create cubit with preloaded content
-          final cubit = _readerCubit;
-          // Skip full loadContent if we have preloaded content
-          Future.microtask(() => _loadWithPreloadedContent(cubit));
-          return cubit;
-        } else {
-          // Normal loading path
-          return _readerCubit
-            ..loadContent(
-              widget.contentId,
-              initialPage: widget.initialPage,
-              forceStartFromBeginning: widget.forceStartFromBeginning,
-              preloadedContent: _preloadedContent ?? widget.preloadedContent,
-              imageMetadata: _preloadedImageMetadata ?? widget.imageMetadata,
-            );
-        }
+        // 🚀 OPTIMIZATION: Always pass preloaded content (from widget or route extra)
+        final effectivePreloadedContent =
+            _preloadedContent ?? widget.preloadedContent;
+        final effectiveImageMetadata =
+            _preloadedImageMetadata ?? widget.imageMetadata;
+
+        // Always call loadContent with preloaded content if available
+        return _readerCubit
+          ..loadContent(
+            widget.contentId,
+            initialPage: widget.initialPage,
+            forceStartFromBeginning: widget.forceStartFromBeginning,
+            preloadedContent: effectivePreloadedContent,
+            imageMetadata: effectiveImageMetadata,
+          );
       },
       child: BlocListener<ReaderCubit, ReaderState>(
         listener: (context, state) {
@@ -396,28 +416,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ),
       ),
     );
-  }
-
-  /// 🚀 OPTIMIZATION: Load content using preloaded data
-  Future<void> _loadWithPreloadedContent(ReaderCubit cubit) async {
-    try {
-      // Use normal loadContent but with preloaded data hint
-      // The cubit will detect and use the preloaded content
-      await cubit.loadContent(
-        widget.contentId,
-        initialPage: widget.initialPage,
-        forceStartFromBeginning: widget.forceStartFromBeginning,
-        preloadedContent: _preloadedContent ?? widget.preloadedContent,
-        imageMetadata: _preloadedImageMetadata ?? widget.imageMetadata,
-      );
-    } catch (e) {
-      // Fallback to normal loading if preload fails
-      debugPrint('Preload optimization failed, using normal loading: $e');
-      await cubit.loadContent(widget.contentId,
-          initialPage: widget.initialPage,
-          forceStartFromBeginning: widget.forceStartFromBeginning,
-          imageMetadata: widget.imageMetadata);
-    }
   }
 
   Widget _buildBody(ReaderState state) {

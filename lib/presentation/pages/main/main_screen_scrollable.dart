@@ -147,6 +147,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
         BlocProvider.value(value: _searchBloc),
       ],
       child: BlocBuilder<HomeBloc, HomeState>(
+        buildWhen: (previous, current) => true,
         builder: (context, homeState) {
           // Show full screen loading during home initialization
           if (homeState is HomeLoading) {
@@ -182,10 +183,58 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
 
   /// Build the new scrollable body with all components integrated
   Widget _buildScrollableBody() {
+    // Debug: Check bloc instance
+    final bloc = context.read<ContentBloc>();
+    debugPrint(
+        '🔍 _buildScrollableBody: ContentBloc instance hashCode: ${bloc.hashCode}');
+    debugPrint('🔍 Current ContentBloc state: ${bloc.state.runtimeType}');
+
     return Container(
       color: Theme.of(context).colorScheme.surface,
-      child: BlocBuilder<ContentBloc, ContentState>(
+      child: BlocConsumer<ContentBloc, ContentState>(
+        buildWhen: (previous, current) {
+          debugPrint('🔍 BlocConsumer buildWhen called:');
+          debugPrint('  - Previous: ${previous.runtimeType}');
+          debugPrint('  - Current: ${current.runtimeType}');
+          debugPrint('  - Should rebuild: ${previous != current}');
+          return true; // Always rebuild for debugging
+        },
+        listenWhen: (previous, current) {
+          debugPrint('🔍 BlocConsumer listenWhen called:');
+          debugPrint('  - Previous: ${previous.runtimeType}');
+          debugPrint('  - Current: ${current.runtimeType}');
+          return true; // Always listen for debugging
+        },
+        listener: (context, state) {
+          debugPrint(
+              '🎨 MainScreen BlocConsumer LISTENER: state type: ${state.runtimeType}');
+          if (state is ContentError) {
+            debugPrint('🎨 LISTENER: Showing error snackbar');
+            // Show error snackbar
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.userFriendlyMessage),
+                action: state.canRetry
+                    ? SnackBarAction(
+                        label: AppLocalizations.of(context)!.retry,
+                        onPressed: () {
+                          debugPrint('🎨 SNACKBAR: Retry button clicked');
+                          // Use same pattern as error screen retry button
+                          context.read<ContentBloc>().add(ContentLoadEvent(
+                                sortBy: _currentSortOption,
+                                forceRefresh: true,
+                              ));
+                        },
+                      )
+                    : null,
+              ),
+            );
+          }
+        },
         builder: (context, state) {
+          debugPrint(
+              '🎨 MainScreen BlocConsumer BUILDER: Building UI with state type: ${state.runtimeType}');
+
           return Column(
             children: [
               // Offline banner - tetap di atas
@@ -207,57 +256,43 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
 
   /// Build scrollable content with all components integrated
   Widget _buildScrollableContent(ContentState state) {
-    return BlocConsumer<ContentBloc, ContentState>(
-      listener: (context, state) {
-        if (state is ContentError) {
-          // Show error snackbar
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.userFriendlyMessage),
-              action: state.canRetry
-                  ? SnackBarAction(
-                      label: AppLocalizations.of(context)!.retry,
-                      onPressed: () {
-                        context
-                            .read<ContentBloc>()
-                            .add(const ContentRetryEvent());
-                      },
-                    )
-                  : null,
-            ),
-          );
-        }
-      },
-      builder: (context, state) {
-        if (state is ContentInitial) {
-          return Center(
-            child: Text(
-              AppLocalizations.of(context)?.tapToLoadContent ??
-                  'Tap to load content',
-              style: TextStyleConst.placeholderText,
-            ),
-          );
-        }
+    // Use state parameter directly - no nested BlocBuilder/BlocConsumer
+    debugPrint(
+        '🎨 MainScreen _buildScrollableContent: state type: ${state.runtimeType}');
 
-        if (state is ContentLoading) {
-          return _buildLoadingState(state);
-        }
+    if (state is ContentInitial) {
+      return Center(
+        child: Text(
+          AppLocalizations.of(context)?.tapToLoadContent ??
+              'Tap to load content',
+          style: TextStyleConst.placeholderText,
+        ),
+      );
+    }
 
-        if (state is ContentEmpty) {
-          return _buildEmptyState(state);
-        }
+    if (state is ContentLoading) {
+      debugPrint('🎨 MainScreen: Showing loading state');
+      return _buildLoadingState(state);
+    }
 
-        if (state is ContentError) {
-          return _buildErrorState(state);
-        }
+    if (state is ContentEmpty) {
+      debugPrint('🎨 MainScreen: Showing empty state');
+      return _buildEmptyState(state);
+    }
 
-        if (state is ContentLoaded) {
-          return _buildScrollableContentGrid(state);
-        }
+    if (state is ContentError) {
+      debugPrint('🎨 MainScreen: Showing error state');
+      return _buildErrorState(state);
+    }
 
-        return const SizedBox.shrink();
-      },
-    );
+    if (state is ContentLoaded) {
+      debugPrint(
+          '🎨 MainScreen: Showing loaded state with ${state.contents.length} contents');
+      return _buildScrollableContentGrid(state);
+    }
+
+    debugPrint('🎨 MainScreen: Unknown state, showing empty widget');
+    return const SizedBox.shrink();
   }
 
   /// Build loading state UI
@@ -367,8 +402,11 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           if (state.canRetry) ...[
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () {
-                context.read<ContentBloc>().add(const ContentRetryEvent());
+              onPressed: () async {
+                debugPrint('🎨 NO_DATA_STATE: Try Again button clicked');
+                // Use same pattern as search screen - reinitialize content completely
+                await _initializeContent();
+                debugPrint('🎨 NO_DATA_STATE: Content reinitialized');
               },
               child:
                   Text(AppLocalizations.of(context)?.tryAgain ?? 'Try Again'),
@@ -405,8 +443,11 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           if (state.canRetry) ...[
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () {
-                context.read<ContentBloc>().add(const ContentRetryEvent());
+              onPressed: () async {
+                debugPrint('🎨 ERROR SCREEN: Retry button clicked');
+                // Use same pattern as search screen - reinitialize content completely
+                await _initializeContent();
+                debugPrint('🎨 ERROR SCREEN: Content reinitialized');
               },
               child: Text(AppLocalizations.of(context)!.retry),
             ),

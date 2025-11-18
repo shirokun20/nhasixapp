@@ -69,15 +69,72 @@ class OfflineContentManager {
     try {
       final downloadStatus =
           await _userDataRepository.getDownloadStatus(contentId);
-      // _logger.i(_getLocalized('offlineContentPath',
-      //   args: {'contentId': contentId, 'path': downloadStatus?.downloadPath ?? 'null'},
-      //   fallback: "Location: path: ${downloadStatus?.downloadPath}"));
-      return downloadStatus?.downloadPath;
+
+      // First, try to get path from database
+      if (downloadStatus?.downloadPath != null) {
+        return downloadStatus!.downloadPath;
+      }
+
+      // Fallback: try to find the content in multiple possible locations
+      final possiblePaths = await _getPossibleDownloadPaths(contentId);
+      for (final contentPath in possiblePaths) {
+        if (await Directory(contentPath).exists()) {
+          _logger.i('Found offline content path for $contentId: $contentPath');
+          return contentPath;
+        }
+      }
+
+      _logger.w('No offline content path found for $contentId');
+      return null;
     } catch (e, stackTrace) {
       _logger.e('Error getting offline content path for $contentId',
           error: e, stackTrace: stackTrace);
       return null;
     }
+  }
+
+  /// Get all possible download paths for a content ID
+  Future<List<String>> _getPossibleDownloadPaths(String contentId) async {
+    final paths = <String>[];
+
+    try {
+      // Try the smart detection first
+      final downloadsPath = await _getDownloadsDirectory();
+      paths.add(path.join(downloadsPath, 'nhasix', contentId));
+
+      // Try app documents directory
+      final documentsDir = await getApplicationDocumentsDirectory();
+      paths.add(path.join(documentsDir.path, 'downloads', 'nhasix', contentId));
+
+      // Try external storage directory directly
+      try {
+        final externalDir = await getExternalStorageDirectory();
+        if (externalDir != null) {
+          final externalRoot = externalDir.path.split('/Android')[0];
+          // Try common download folder names
+          final folderNames = ['Download', 'Downloads', 'Unduhan', 'Descargas'];
+          for (final folderName in folderNames) {
+            paths.add(path.join(externalRoot, folderName, 'nhasix', contentId));
+          }
+        }
+      } catch (e) {
+        _logger.w('Failed to get external storage paths: $e');
+      }
+
+      // Try hardcoded paths
+      final hardcodedPaths = [
+        '/storage/emulated/0/Download/nhasix/$contentId',
+        '/storage/emulated/0/Downloads/nhasix/$contentId',
+        '/storage/emulated/0/Unduhan/nhasix/$contentId',
+        '/sdcard/Download/nhasix/$contentId',
+        '/sdcard/Downloads/nhasix/$contentId',
+      ];
+      paths.addAll(hardcodedPaths);
+    } catch (e) {
+      _logger.w('Error getting possible download paths: $e');
+    }
+
+    return paths;
   }
 
   /// Get offline image URLs for content
@@ -329,63 +386,6 @@ class OfflineContentManager {
     }
   }
 
-  /// Create offline content object from metadata
-  Future<Content?> createOfflineContent(String contentId) async {
-    try {
-      final metadata = await getOfflineContentMetadata(contentId);
-      if (metadata == null) return null;
-
-      final imageUrls = await getOfflineImageUrls(contentId);
-      _logger.i(_getLocalized('offlineImageUrlsFound',
-          args: {'contentId': contentId, 'count': imageUrls.length},
-          fallback: "apakah ada gambarnya? ${imageUrls.isEmpty}"));
-      if (imageUrls.isEmpty) return null;
-
-      // Ensure first page image exists and is valid
-      String coverUrl = '';
-      if (imageUrls.isNotEmpty) {
-        final firstImagePath = imageUrls.first;
-        final firstImageFile = File(firstImagePath);
-        if (await firstImageFile.exists() &&
-            await firstImageFile.length() > 0) {
-          coverUrl = firstImagePath;
-        } else {
-          // Try second image if first is invalid
-          if (imageUrls.length > 1) {
-            final secondImagePath = imageUrls[1];
-            final secondImageFile = File(secondImagePath);
-            if (await secondImageFile.exists() &&
-                await secondImageFile.length() > 0) {
-              coverUrl = secondImagePath;
-            }
-          }
-        }
-      }
-
-      return Content(
-        id: contentId,
-        title: metadata['title'] as String,
-        coverUrl: coverUrl,
-        tags: [], // No tags available offline
-        artists: [], // No artists available offline
-        characters: [], // No characters available offline
-        parodies: [], // No parodies available offline
-        groups: [], // No groups available offline
-        language: '', // No language info offline
-        pageCount: imageUrls.length,
-        imageUrls: imageUrls,
-        uploadDate: DateTime.now(), // Fallback date
-        favorites: 0, // No favorites count offline
-        englishTitle: null,
-        japaneseTitle: null,
-      );
-    } catch (e, stackTrace) {
-      _logger.e('Error creating offline content for $contentId',
-          error: e, stackTrace: stackTrace);
-      return null;
-    }
-  }
-
   /// Get offline storage usage
   Future<int> getOfflineStorageUsage() async {
     try {
@@ -413,6 +413,12 @@ class OfflineContentManager {
           error: e, stackTrace: stackTrace);
       return 0;
     }
+  }
+
+  /// Get all offline content from file system (used by offline search)
+  Future<List<Content>> getAllOfflineContentFromFileSystem(
+      String loadPath) async {
+    return await scanBackupFolder(loadPath);
   }
 
   /// Clean up orphaned offline files
@@ -454,10 +460,70 @@ class OfflineContentManager {
     }
   }
 
-  /// Get all offline content from file system without database
-  Future<List<Content>> getAllOfflineContentFromFileSystem(
-      String backupPath) async {
-    return await scanBackupFolder(backupPath);
+  /// Create Content object from offline data for a specific content ID
+  Future<Content?> createOfflineContent(String contentId) async {
+    try {
+      final contentPath = await getOfflineContentPath(contentId);
+      if (contentPath == null) return null;
+
+      final contentDir = Directory(contentPath);
+      if (!await contentDir.exists()) return null;
+
+      // Try to read metadata.json first
+      String title = contentId;
+      try {
+        final metadataFile = File(path.join(contentPath, 'metadata.json'));
+        if (await metadataFile.exists()) {
+          final metadataContent = await metadataFile.readAsString();
+          final metadata = json.decode(metadataContent) as Map<String, dynamic>;
+          title = metadata['title'] ?? contentId;
+        }
+      } catch (e) {
+        _logger.w('Error reading metadata for $contentId: $e');
+      }
+
+      // Get image files
+      final imageUrls = await getOfflineImageUrls(contentId);
+      if (imageUrls.isEmpty) return null;
+
+      // Create cover URL from first image
+      String coverUrl = '';
+      if (imageUrls.isNotEmpty) {
+        final firstImageFile = File(imageUrls.first);
+        if (await firstImageFile.exists() &&
+            await firstImageFile.length() > 0) {
+          coverUrl = imageUrls.first;
+        } else if (imageUrls.length > 1) {
+          final secondImageFile = File(imageUrls[1]);
+          if (await secondImageFile.exists() &&
+              await secondImageFile.length() > 0) {
+            coverUrl = imageUrls[1];
+          }
+        }
+      }
+
+      return Content(
+        id: contentId,
+        title: title,
+        coverUrl: coverUrl,
+        tags: [],
+        artists: [],
+        characters: [],
+        parodies: [],
+        groups: [],
+        language: '',
+        pageCount: imageUrls.length,
+        imageUrls: imageUrls,
+        uploadDate: DateTime.now(),
+        favorites: 0,
+        englishTitle: null,
+        japaneseTitle: null,
+      );
+    } catch (e, stackTrace) {
+      _logger.e('Error creating offline content for $contentId',
+          error: e, stackTrace: stackTrace);
+      return null;
+    }
   }
 
   /// Search offline content from metadata.json files without database
@@ -883,6 +949,111 @@ class OfflineContentManager {
     _metadataCache.remove(contentId);
     _metadataCacheTime.remove(contentId);
     _logger.d('Cache cleared for content: $contentId');
+  }
+
+  /// Smart Downloads directory detection
+  /// Tries multiple possible Downloads folder names and locations
+  Future<String> _getDownloadsDirectory() async {
+    try {
+      // First, try to get external storage directory
+      Directory? externalDir;
+      try {
+        externalDir = await getExternalStorageDirectory();
+      } catch (e) {
+        _logger.w('Could not get external storage directory: $e');
+      }
+
+      if (externalDir != null) {
+        // Try to find Downloads folder in external storage root
+        final externalRoot = externalDir.path.split('/Android')[0];
+
+        // Common Downloads folder names (English, Indonesian, Spanish, etc.)
+        final downloadsFolderNames = [
+          'Download', // English (most common)
+          'Downloads', // English alternative
+          'Unduhan', // Indonesian
+          'Descargas', // Spanish
+          'Téléchargements', // French
+          'Downloads', // German uses English
+          'ダウンロード', // Japanese
+        ];
+
+        // Try each possible Downloads folder
+        for (final folderName in downloadsFolderNames) {
+          final downloadsDir = Directory(path.join(externalRoot, folderName));
+          if (await downloadsDir.exists()) {
+            _logger.i('Found Downloads directory: ${downloadsDir.path}');
+            return downloadsDir.path;
+          }
+        }
+
+        // If no Downloads folder found, create one in external storage root
+        final defaultDownloadsDir =
+            Directory(path.join(externalRoot, 'Download'));
+        try {
+          if (!await defaultDownloadsDir.exists()) {
+            await defaultDownloadsDir.create(recursive: true);
+            _logger
+                .i('Created Downloads directory: ${defaultDownloadsDir.path}');
+          }
+          return defaultDownloadsDir.path;
+        } catch (e) {
+          _logger.w(
+              'Could not create Downloads directory in external storage: $e');
+        }
+      }
+
+      // Fallback 1: Try hardcoded common paths
+      final commonPaths = [
+        '/storage/emulated/0/Download',
+        '/storage/emulated/0/Downloads',
+        '/storage/emulated/0/Unduhan',
+        '/sdcard/Download',
+        '/sdcard/Downloads',
+      ];
+
+      for (final commonPath in commonPaths) {
+        final dir = Directory(commonPath);
+        if (await dir.exists()) {
+          _logger.i('Found Downloads directory at common path: $commonPath');
+          return commonPath;
+        }
+      }
+
+      // Fallback 2: Use app-specific external storage
+      if (externalDir != null) {
+        final appDownloadsDir =
+            Directory(path.join(externalDir.path, 'downloads'));
+        if (!await appDownloadsDir.exists()) {
+          await appDownloadsDir.create(recursive: true);
+        }
+        _logger.i(
+            'Using app-specific downloads directory: ${appDownloadsDir.path}');
+        return appDownloadsDir.path;
+      }
+
+      // Fallback 3: Use application documents directory
+      final documentsDir = await getApplicationDocumentsDirectory();
+      final documentsDownloadsDir =
+          Directory(path.join(documentsDir.path, 'downloads'));
+      if (!await documentsDownloadsDir.exists()) {
+        await documentsDownloadsDir.create(recursive: true);
+      }
+      _logger.i(
+          'Using app documents downloads directory: ${documentsDownloadsDir.path}');
+      return documentsDownloadsDir.path;
+    } catch (e) {
+      _logger.e('Error detecting Downloads directory: $e');
+
+      // Emergency fallback: use app documents
+      final documentsDir = await getApplicationDocumentsDirectory();
+      final emergencyDir = Directory(path.join(documentsDir.path, 'downloads'));
+      if (!await emergencyDir.exists()) {
+        await emergencyDir.create(recursive: true);
+      }
+      _logger.w('Using emergency fallback directory: ${emergencyDir.path}');
+      return emergencyDir.path;
+    }
   }
 
   /// Get localized string with fallback
