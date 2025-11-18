@@ -35,10 +35,16 @@ class ExtendedImageReaderWidget extends StatefulWidget {
 }
 
 class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _zoomController;
   late Animation<double> _zoomAnimation;
   final GlobalKey<ExtendedImageGestureState> _gestureKey = GlobalKey();
+
+  // Animation controllers for enhanced UI
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+  late AnimationController _errorIconController;
+  late Animation<double> _errorIconAnimation;
 
   @override
   void initState() {
@@ -49,11 +55,32 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     );
     // Initialize with dummy animation (will be replaced on double-tap)
     _zoomAnimation = _zoomController.drive(Tween<double>(begin: 1.0, end: 1.0));
+
+    // Initialize pulse animation for loading indicator
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    // Initialize error icon animation
+    _errorIconController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _errorIconAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _errorIconController, curve: Curves.elasticOut),
+    );
+    _errorIconController.forward();
   }
 
   @override
   void dispose() {
     _zoomController.dispose();
+    _pulseController.dispose();
+    _errorIconController.dispose();
     super.dispose();
   }
 
@@ -166,20 +193,61 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     return Container(
       color: Theme.of(context).colorScheme.surface,
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Loading page ${widget.pageNumber}...',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-            ),
-          ],
+        child: AnimatedBuilder(
+          animation: _pulseAnimation,
+          builder: (context, child) {
+            return Card(
+              elevation: 8,
+              shadowColor:
+                  Theme.of(context).colorScheme.shadow.withValues(alpha: 0.3),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                constraints: const BoxConstraints(maxWidth: 280),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Animated progress indicator with pulse effect
+                    Transform.scale(
+                      scale: _pulseAnimation.value,
+                      child: SizedBox(
+                        width: 48,
+                        height: 48,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 4,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // Enhanced text with better typography
+                    Text(
+                      'Loading page ${widget.pageNumber}',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Please wait...',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -190,30 +258,86 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     return Container(
       color: Theme.of(context).colorScheme.surface,
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Failed to load page ${widget.pageNumber}',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
+        child: Card(
+          elevation: 8,
+          shadowColor:
+              Theme.of(context).colorScheme.shadow.withValues(alpha: 0.3),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+            constraints: const BoxConstraints(maxWidth: 320),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Animated error icon with bounce effect
+                ScaleTransition(
+                  scale: _errorIconAnimation,
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .errorContainer
+                          .withValues(alpha: 0.1),
+                    ),
+                    child: Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                   ),
+                ),
+                const SizedBox(height: 20),
+                // Enhanced error message
+                Text(
+                  'Failed to load page ${widget.pageNumber}',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Please check your connection and try again',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                // Enhanced retry button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      state.reLoadImage();
+                    },
+                    icon: const Icon(Icons.refresh, size: 20),
+                    label: const Text('Try Again'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      elevation: 2,
+                      shadowColor: Theme.of(context)
+                          .colorScheme
+                          .shadow
+                          .withValues(alpha: 0.3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            TextButton.icon(
-              onPressed: () {
-                state.reLoadImage();
-              },
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
-            ),
-          ],
+          ),
         ),
       ),
     );
