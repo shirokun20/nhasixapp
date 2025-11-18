@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 // import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
@@ -55,6 +56,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   // 🚀 OPTIMIZATION: Preload content before BlocProvider setup
   Content? _preloadedContent;
+  List<ImageMetadata>? _preloadedImageMetadata;
   bool _isPreloading = false;
 
   @override
@@ -66,6 +68,22 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _scrollController = ScrollController();
     _readerCubit = getIt<ReaderCubit>();
 
+    // Get preloaded content and metadata from route extra if available
+    final routeExtra = GoRouterState.of(context).extra;
+    if (routeExtra is Map<String, dynamic>) {
+      if (routeExtra['content'] is Content && widget.preloadedContent == null) {
+        _preloadedContent = routeExtra['content'] as Content;
+      }
+      if (routeExtra['imageMetadata'] is List<ImageMetadata> &&
+          widget.imageMetadata == null) {
+        _preloadedImageMetadata =
+            routeExtra['imageMetadata'] as List<ImageMetadata>;
+      }
+    } else if (routeExtra is Content && widget.preloadedContent == null) {
+      // Fallback for direct Content object (backward compatibility)
+      _preloadedContent = routeExtra;
+    }
+
     // Add scroll listener for continuous mode
     _scrollController.addListener(_onScrollChanged);
 
@@ -75,9 +93,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   /// 🚀 OPTIMIZATION: Preload content to reduce initial loading time
   Future<void> _startPreloading() async {
-    // If we already have preloaded content, use it directly
-    if (widget.preloadedContent != null) {
-      _preloadedContent = widget.preloadedContent;
+    // If we already have preloaded content from route extra, skip preloading
+    if (_preloadedContent != null) {
       return;
     }
 
@@ -353,8 +370,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
               widget.contentId,
               initialPage: widget.initialPage,
               forceStartFromBeginning: widget.forceStartFromBeginning,
-              preloadedContent: widget.preloadedContent,
-              imageMetadata: widget.imageMetadata,
+              preloadedContent: _preloadedContent ?? widget.preloadedContent,
+              imageMetadata: _preloadedImageMetadata ?? widget.imageMetadata,
             );
         }
       },
@@ -390,8 +407,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
         widget.contentId,
         initialPage: widget.initialPage,
         forceStartFromBeginning: widget.forceStartFromBeginning,
-        preloadedContent: widget.preloadedContent,
-        imageMetadata: widget.imageMetadata,
+        preloadedContent: _preloadedContent ?? widget.preloadedContent,
+        imageMetadata: _preloadedImageMetadata ?? widget.imageMetadata,
       );
     } catch (e) {
       // Fallback to normal loading if preload fails

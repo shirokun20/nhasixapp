@@ -50,46 +50,6 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     super.dispose();
   }
 
-  Future<void> _importBackupFolder() async {
-    final pathController = TextEditingController();
-
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Import Backup Folder'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-                'Enter the path to your backup folder containing nhasix content folders:'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: pathController,
-              decoration: const InputDecoration(
-                hintText: '/path/to/backup/folder',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(AppLocalizations.of(context)!.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(pathController.text),
-            child: Text(AppLocalizations.of(context)!.ok),
-          ),
-        ],
-      ),
-    );
-
-    if (result != null && result.isNotEmpty) {
-      await _scanBackupFolder(result);
-    }
-  }
-
   Future<void> _autoScanBackupFolder() async {
     // Cari folder backup secara otomatis menggunakan DirectoryUtils
     debugPrint('OFFLINE_AUTO_SCAN: Starting auto-scan for backup folder...');
@@ -230,15 +190,6 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
             color: Theme.of(context).colorScheme.onSurface,
           ),
           tooltip: 'Check Permissions',
-        ),
-        // Import backup button
-        IconButton(
-          onPressed: _importBackupFolder,
-          icon: Icon(
-            Icons.folder_open,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          tooltip: 'Import Backup Folder',
         ),
         // Storage info
         BlocBuilder<OfflineSearchCubit, OfflineSearchState>(
@@ -484,7 +435,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                     Logger().i(content);
                     return ContentCard(
                       content: content,
-                      onTap: () => context.push('/reader/${content.id}'),
+                      onTap: () =>
+                          context.push('/reader/${content.id}', extra: content),
                       showOfflineIndicator: true,
                       isHighlighted: false,
                     );

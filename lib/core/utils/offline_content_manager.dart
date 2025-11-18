@@ -472,6 +472,7 @@ class OfflineContentManager {
       }
 
       final matchingContents = <Content>[];
+      final matchingWithTimes = <MapEntry<Content, DateTime>>[];
       final queryLower = query.toLowerCase();
 
       await for (final entity in backupDir.list()) {
@@ -565,7 +566,12 @@ class OfflineContentManager {
                   japaneseTitle: null,
                 );
 
-                matchingContents.add(content);
+                // Get folder modification time
+                final folderStat = await entity.stat();
+                final modifiedTime = folderStat.modified;
+
+                matchingWithTimes.add(MapEntry(content, modifiedTime));
+
                 _logger.d(
                     'Found matching content: $contentId - $title (${imageUrls.length} pages)');
               }
@@ -574,8 +580,9 @@ class OfflineContentManager {
         }
       }
 
-      // Sort by content ID
-      matchingContents.sort((a, b) => a.id.compareTo(b.id));
+      // Sort by modification time descending (newest first)
+      matchingWithTimes.sort((a, b) => b.value.compareTo(a.value));
+      matchingContents.addAll(matchingWithTimes.map((e) => e.key));
 
       _logger.i(
           'Found ${matchingContents.length} matching content items for query: $query');
@@ -598,6 +605,7 @@ class OfflineContentManager {
       }
 
       final contents = <Content>[];
+      final contentWithTimes = <MapEntry<Content, DateTime>>[];
 
       await for (final entity in backupDir.list()) {
         if (entity is Directory) {
@@ -730,7 +738,12 @@ class OfflineContentManager {
                 japaneseTitle: null,
               );
 
-              contents.add(content);
+              // Get folder modification time
+              final folderStat = await entity.stat();
+              final modifiedTime = folderStat.modified;
+
+              contentWithTimes.add(MapEntry(content, modifiedTime));
+
               // debugPrint(
               //     'OFFLINE_MANAGER: Added backup content: $contentId - $title (${imageUrls.length} pages)');
               _logger.d(
@@ -749,8 +762,9 @@ class OfflineContentManager {
         }
       }
 
-      // Sort by content ID (assuming it's numeric)
-      contents.sort((a, b) => a.id.compareTo(b.id));
+      // Sort by modification time descending (newest first)
+      contentWithTimes.sort((a, b) => b.value.compareTo(a.value));
+      contents.addAll(contentWithTimes.map((e) => e.key));
 
       // debugPrint(
       //     'OFFLINE_MANAGER: Found ${contents.length} backup content items total');

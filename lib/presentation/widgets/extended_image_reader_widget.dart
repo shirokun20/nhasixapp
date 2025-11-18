@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:extended_image/extended_image.dart';
 import '../../data/models/reader_settings_model.dart';
@@ -133,46 +134,99 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
   @override
   Widget build(BuildContext context) {
-    return ExtendedImage.network(
-      widget.imageUrl,
-      key: ValueKey('extended_image_${widget.contentId}_${widget.pageNumber}'),
-      fit: _getAdaptiveBoxFit(),
-      mode: widget.enableZoom
-          ? ExtendedImageMode.gesture
-          : ExtendedImageMode.none,
-      enableMemoryCache: true,
-      clearMemoryCacheWhenDispose: false,
-      cache: true,
-      enableLoadState: true,
-      extendedImageGestureKey: _gestureKey,
-      initGestureConfigHandler: (state) {
-        return GestureConfig(
-          minScale: 1.0, // No zoom out - always at fit scale
-          maxScale: 3.0, // Max 3x zoom for reading small text
-          animationMinScale: 0.9, // Smooth bounce back animation
-          animationMaxScale: 3.5,
-          speed: 1.0,
-          inertialSpeed: 100.0,
-          initialScale: 1.0, // Start at fit scale (no zoom)
-          inPageView: true, // Optimize for PageView usage
-          cacheGesture: false, // Don't cache zoom state between pages
-          initialAlignment: InitialAlignment.center,
-        );
-      },
-      onDoubleTap: widget.enableZoom
-          ? (ExtendedImageGestureState state) => _handleDoubleTap(state)
-          : null,
-      loadStateChanged: (ExtendedImageState state) {
-        switch (state.extendedImageLoadState) {
-          case LoadState.loading:
-            return _buildLoadingIndicator(context);
-          case LoadState.failed:
-            return _buildErrorWidget(context, state);
-          case LoadState.completed:
-            return _buildCompletedImage(context, state);
-        }
-      },
-    );
+    // Check if imageUrl is a local file path
+    final isLocalFile = widget.imageUrl.startsWith('/') ||
+        widget.imageUrl.startsWith('\\') ||
+        (!widget.imageUrl.startsWith('http://') &&
+            !widget.imageUrl.startsWith('https://') &&
+            !widget.imageUrl.startsWith('file://'));
+
+    if (isLocalFile) {
+      // Use ExtendedImage.file for local files
+      return ExtendedImage.file(
+        File(widget.imageUrl),
+        key:
+            ValueKey('extended_image_${widget.contentId}_${widget.pageNumber}'),
+        fit: _getAdaptiveBoxFit(),
+        mode: widget.enableZoom
+            ? ExtendedImageMode.gesture
+            : ExtendedImageMode.none,
+        enableMemoryCache: true,
+        clearMemoryCacheWhenDispose: false,
+        enableLoadState: true,
+        extendedImageGestureKey: _gestureKey,
+        initGestureConfigHandler: (state) {
+          return GestureConfig(
+            minScale: 1.0, // No zoom out - always at fit scale
+            maxScale: 3.0, // Max 3x zoom for reading small text
+            animationMinScale: 0.9, // Smooth bounce back animation
+            animationMaxScale: 3.5,
+            speed: 1.0,
+            inertialSpeed: 100.0,
+            initialScale: 1.0, // Start at fit scale (no zoom)
+            inPageView: true, // Optimize for PageView usage
+            cacheGesture: false, // Don't cache zoom state between pages
+            initialAlignment: InitialAlignment.center,
+          );
+        },
+        onDoubleTap: widget.enableZoom
+            ? (ExtendedImageGestureState state) => _handleDoubleTap(state)
+            : null,
+        loadStateChanged: (ExtendedImageState state) {
+          switch (state.extendedImageLoadState) {
+            case LoadState.loading:
+              return _buildLoadingIndicator(context);
+            case LoadState.failed:
+              return _buildErrorWidget(context, state);
+            case LoadState.completed:
+              return _buildCompletedImage(context, state);
+          }
+        },
+      );
+    } else {
+      // Use ExtendedImage.network for URLs
+      return ExtendedImage.network(
+        widget.imageUrl,
+        key:
+            ValueKey('extended_image_${widget.contentId}_${widget.pageNumber}'),
+        fit: _getAdaptiveBoxFit(),
+        mode: widget.enableZoom
+            ? ExtendedImageMode.gesture
+            : ExtendedImageMode.none,
+        enableMemoryCache: true,
+        clearMemoryCacheWhenDispose: false,
+        cache: true,
+        enableLoadState: true,
+        extendedImageGestureKey: _gestureKey,
+        initGestureConfigHandler: (state) {
+          return GestureConfig(
+            minScale: 1.0, // No zoom out - always at fit scale
+            maxScale: 3.0, // Max 3x zoom for reading small text
+            animationMinScale: 0.9, // Smooth bounce back animation
+            animationMaxScale: 3.5,
+            speed: 1.0,
+            inertialSpeed: 100.0,
+            initialScale: 1.0, // Start at fit scale (no zoom)
+            inPageView: true, // Optimize for PageView usage
+            cacheGesture: false, // Don't cache zoom state between pages
+            initialAlignment: InitialAlignment.center,
+          );
+        },
+        onDoubleTap: widget.enableZoom
+            ? (ExtendedImageGestureState state) => _handleDoubleTap(state)
+            : null,
+        loadStateChanged: (ExtendedImageState state) {
+          switch (state.extendedImageLoadState) {
+            case LoadState.loading:
+              return _buildLoadingIndicator(context);
+            case LoadState.failed:
+              return _buildErrorWidget(context, state);
+            case LoadState.completed:
+              return _buildCompletedImage(context, state);
+          }
+        },
+      );
+    }
   }
 
   /// Build loading indicator with logo and circular progress

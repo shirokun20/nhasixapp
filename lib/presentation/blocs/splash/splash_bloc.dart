@@ -6,6 +6,7 @@ import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/core/utils/app_state_manager.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
+import 'package:nhasixapp/core/utils/directory_utils.dart';
 
 part 'splash_event.dart';
 part 'splash_state.dart';
@@ -296,41 +297,67 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       emit(SplashOfflineDetected(
           message: 'No internet connection. Checking offline content...'));
 
-      // Get offline content via OfflineContentManager if available, otherwise use downloads
-      List<String> offlineContentIds = [];
+      // Get offline content from multiple sources
+      int totalOfflineContent = 0;
+
+      // 1. Check database downloads first
+      List<String> databaseContentIds = [];
       try {
         final offlineManager = OfflineContentManager(
           userDataRepository: _userDataRepository,
           logger: _logger,
         );
-        offlineContentIds = await offlineManager.getOfflineContentIds();
+        databaseContentIds = await offlineManager.getOfflineContentIds();
+        totalOfflineContent += databaseContentIds.length;
+        _logger.i(
+            'SplashBloc: Found ${databaseContentIds.length} offline items from database');
       } catch (e) {
-        // Fallback to checking downloads directly
-        _logger.w(
-            'SplashBloc: OfflineContentManager not available, using downloads fallback: $e');
-        final downloadedContents = await _userDataRepository.getAllDownloads();
-        offlineContentIds = downloadedContents
-            .where((d) => d.isCompleted)
-            .map((d) => d.contentId)
-            .toList();
+        _logger.w('SplashBloc: Error checking database offline content: $e');
       }
 
-      final hasOfflineContent = offlineContentIds.isNotEmpty;
+      // 2. Check nhasix filesystem folder
+      List<String> filesystemContentIds = [];
+      try {
+        final backupPath = await DirectoryUtils.findNhasixBackupFolder();
+        if (backupPath != null) {
+          final offlineManager = OfflineContentManager(
+            userDataRepository: _userDataRepository,
+            logger: _logger,
+          );
+          final filesystemContents =
+              await offlineManager.scanBackupFolder(backupPath);
+          filesystemContentIds = filesystemContents.map((c) => c.id).toList();
+
+          // Filter out duplicates with database content
+          filesystemContentIds = filesystemContentIds
+              .where((id) => !databaseContentIds.contains(id))
+              .toList();
+          totalOfflineContent += filesystemContentIds.length;
+
+          _logger.i(
+              'SplashBloc: Found ${filesystemContentIds.length} additional offline items from filesystem');
+        } else {
+          _logger.i('SplashBloc: No nhasix backup folder found');
+        }
+      } catch (e) {
+        _logger.w('SplashBloc: Error checking filesystem offline content: $e');
+      }
+
+      final hasOfflineContent = totalOfflineContent > 0;
 
       // Update AppStateManager with offline content info
       AppStateManager().updateOfflineContentInfo(
         hasContent: hasOfflineContent,
-        contentCount: offlineContentIds.length,
+        contentCount: totalOfflineContent,
       );
 
       if (hasOfflineContent) {
         // ✅ Auto-continue to main app with offline mode
         _logger.i(
-            'SplashBloc: Found ${offlineContentIds.length} offline items, auto-continuing');
+            'SplashBloc: Found $totalOfflineContent offline items total (DB: ${databaseContentIds.length}, FS: ${filesystemContentIds.length}), auto-continuing');
         emit(SplashOfflineReady(
-          offlineContentCount: offlineContentIds.length,
-          message:
-              'Found ${offlineContentIds.length} offline items. Continuing...',
+          offlineContentCount: totalOfflineContent,
+          message: 'Found $totalOfflineContent offline items. Continuing...',
         ));
 
         // Enable global offline mode

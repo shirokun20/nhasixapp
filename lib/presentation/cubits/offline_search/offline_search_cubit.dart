@@ -120,9 +120,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         return;
       }
 
-      // Sort by content ID (descending for newest first)
-      contents.sort((a, b) => b.id.compareTo(a.id));
-
       emit(OfflineSearchLoaded(
         query: '',
         results: contents,
