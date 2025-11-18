@@ -216,21 +216,22 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
             _buildInfoRow(
               context,
               AppLocalizations.of(context)!.cleanupInterval,
-              '${status.intervalHours} ${AppLocalizations.of(context)!.hours}',
+              AppLocalizations.of(context)!.hours(status.intervalHours),
               Icons.timer,
             ),
             if (status.maxHistoryDays > 0)
               _buildInfoRow(
                 context,
                 AppLocalizations.of(context)!.maxHistoryDays,
-                '${status.maxHistoryDays} ${AppLocalizations.of(context)!.days}',
+                AppLocalizations.of(context)!.days(status.maxHistoryDays),
                 Icons.calendar_today,
               ),
             if (status.inactivityCleanupEnabled)
               _buildInfoRow(
                 context,
                 AppLocalizations.of(context)!.cleanupOnInactivity,
-                '${status.inactivityThresholdDays} ${AppLocalizations.of(context)!.days}',
+                AppLocalizations.of(context)!
+                    .days(status.inactivityThresholdDays),
                 Icons.schedule_outlined,
               ),
           ],
@@ -353,13 +354,15 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
     final difference = now.difference(dateTime);
 
     final l10n = AppLocalizations.of(context)!;
-    
+
     if (difference.inDays > 0) {
       return l10n.daysAgo(difference.inDays, difference.inDays == 1 ? '' : 's');
     } else if (difference.inHours > 0) {
-      return l10n.hoursAgo(difference.inHours, difference.inHours == 1 ? '' : 's');
+      return l10n.hoursAgo(
+          difference.inHours, difference.inHours == 1 ? '' : 's');
     } else if (difference.inMinutes > 0) {
-      return l10n.minutesAgo(difference.inMinutes, difference.inMinutes == 1 ? '' : 's');
+      return l10n.minutesAgo(
+          difference.inMinutes, difference.inMinutes == 1 ? '' : 's');
     } else {
       return l10n.justNow;
     }
