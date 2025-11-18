@@ -220,10 +220,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
                         onPressed: () {
                           debugPrint('🎨 SNACKBAR: Retry button clicked');
                           // Use same pattern as error screen retry button
-                          context.read<ContentBloc>().add(ContentLoadEvent(
-                                sortBy: _currentSortOption,
-                                forceRefresh: true,
-                              ));
+                          _contentBloc.add(ContentLoadEvent(
+                            sortBy: _currentSortOption,
+                            forceRefresh: true,
+                          ));
                         },
                       )
                     : null,
@@ -403,10 +403,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () async {
-                debugPrint('🎨 NO_DATA_STATE: Try Again button clicked');
-                // Use same pattern as search screen - reinitialize content completely
                 await _initializeContent();
-                debugPrint('🎨 NO_DATA_STATE: Content reinitialized');
               },
               child:
                   Text(AppLocalizations.of(context)?.tryAgain ?? 'Try Again'),
@@ -444,10 +441,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () async {
-                debugPrint('🎨 ERROR SCREEN: Retry button clicked');
-                // Use same pattern as search screen - reinitialize content completely
                 await _initializeContent();
-                debugPrint('🎨 ERROR SCREEN: Content reinitialized');
               },
               child: Text(AppLocalizations.of(context)!.retry),
             ),
