@@ -32,6 +32,12 @@ jobs:
     - name: Build optimized APK
       run: ./build_optimized.sh release
 
+    - name: Check build output
+      run: |
+        echo "Checking build outputs..."
+        ls -la build/app/outputs/flutter-apk/ || echo "No flutter-apk directory"
+        ls -la apk-output/ || echo "No apk-output directory"
+
     - name: Upload to Telegram
       env:
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
