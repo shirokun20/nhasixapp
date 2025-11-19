@@ -95,13 +95,14 @@ jobs:
           curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
             -d chat_id="$TELEGRAM_CHAT_ID" \
             -d parse_mode="Markdown" \
-            -d text="
+            -d text="|
           ✅ Build Success
           🔗 Commit: ${GITHUB_SHA::8}
           🌿 Branch: ${GITHUB_REF_NAME}
           🎯 Trigger: ${GITHUB_EVENT_NAME}
           📦 APK Files:
-          ${APK_INFO}⬆️ Uploading to Telegram...
+          ${APK_INFO}
+          ⬆️ Uploading to Telegram...
           🔍 Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
           "
 

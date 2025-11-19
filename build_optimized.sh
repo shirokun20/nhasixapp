@@ -67,7 +67,7 @@ if [ -f "build/app/outputs/flutter-apk/app-arm64-v8a-${BUILD_TYPE}.apk" ]; then
     size=$(du -h "build/app/outputs/flutter-apk/app-arm64-v8a-${BUILD_TYPE}.apk" | cut -f1)
     version=$(grep 'version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1)
     date=$(date +%Y%m%d)
-    optimized_name="nhasix_${version}_${date}_${BUILD_TYPE}_arm64.apk"
+    optimized_name="nhasix${version}${date}${BUILD_TYPE}arm64.apk"
 
     cp "build/app/outputs/flutter-apk/app-arm64-v8a-${BUILD_TYPE}.apk" "$OUTPUT_DIR/$optimized_name"
     echo "  📱 ARM64 APK: $optimized_name - $size"
@@ -78,7 +78,7 @@ if [ -f "build/app/outputs/flutter-apk/app-armeabi-v7a-${BUILD_TYPE}.apk" ]; the
     size=$(du -h "build/app/outputs/flutter-apk/app-armeabi-v7a-${BUILD_TYPE}.apk" | cut -f1)
     version=$(grep 'version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1)
     date=$(date +%Y%m%d)
-    optimized_name="nhasix_${version}_${date}_${BUILD_TYPE}_arm.apk"
+    optimized_name="nhasix${version}${date}${BUILD_TYPE}arm.apk"
 
     cp "build/app/outputs/flutter-apk/app-armeabi-v7a-${BUILD_TYPE}.apk" "$OUTPUT_DIR/$optimized_name"
     echo "  📱 ARM APK: $optimized_name - $size"
@@ -98,8 +98,8 @@ fi
 echo ""
 echo "📏 SIZE COMPARISON:"
 echo "📦 Original (universal): ~29MB"
-echo "✨ ARM64: $(du -h $OUTPUT_DIR/nhasix_*_${BUILD_TYPE}_arm64.apk 2>/dev/null | cut -f1 || echo 'N/A')"
-echo "✨ ARM: $(du -h $OUTPUT_DIR/nhasix_*_${BUILD_TYPE}_arm.apk 2>/dev/null | cut -f1 || echo 'N/A')"
+echo "✨ ARM64: $(du -h $OUTPUT_DIR/nhasix*${BUILD_TYPE}arm64.apk 2>/dev/null | cut -f1 || echo 'N/A')"
+echo "✨ ARM: $(du -h $OUTPUT_DIR/nhasix*${BUILD_TYPE}arm.apk 2>/dev/null | cut -f1 || echo 'N/A')"
 echo "✨ Universal: DISABLED (too large for CI upload)"
 
 echo ""
