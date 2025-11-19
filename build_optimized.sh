@@ -67,7 +67,7 @@ if [ -f "build/app/outputs/flutter-apk/app-arm64-v8a-${BUILD_TYPE}.apk" ]; then
     size=$(du -h "build/app/outputs/flutter-apk/app-arm64-v8a-${BUILD_TYPE}.apk" | cut -f1)
     version=$(grep 'version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1)
     date=$(date +%Y%m%d)
-    optimized_name="nhasix${version}${date}${BUILD_TYPE}arm64.apk"
+    optimized_name="nhasix-${version}-${date}-${BUILD_TYPE}-arm64.apk"
 
     cp "build/app/outputs/flutter-apk/app-arm64-v8a-${BUILD_TYPE}.apk" "$OUTPUT_DIR/$optimized_name"
     echo "  📱 ARM64 APK: $optimized_name - $size"
@@ -78,7 +78,7 @@ if [ -f "build/app/outputs/flutter-apk/app-armeabi-v7a-${BUILD_TYPE}.apk" ]; the
     size=$(du -h "build/app/outputs/flutter-apk/app-armeabi-v7a-${BUILD_TYPE}.apk" | cut -f1)
     version=$(grep 'version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1)
     date=$(date +%Y%m%d)
-    optimized_name="nhasix${version}${date}${BUILD_TYPE}arm.apk"
+    optimized_name="nhasix-${version}-${date}-${BUILD_TYPE}-arm.apk"
 
     cp "build/app/outputs/flutter-apk/app-armeabi-v7a-${BUILD_TYPE}.apk" "$OUTPUT_DIR/$optimized_name"
     echo "  📱 ARM APK: $optimized_name - $size"
