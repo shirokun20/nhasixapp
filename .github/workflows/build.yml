@@ -102,8 +102,10 @@ jobs:
               
               # Extract ABI from filename (e.g., arm64-v8a, armeabi-v7a, x86_64)
               filename=$(basename "$apk")
+              # Escape underscores for Markdown
+              filename_escaped=$(echo "$filename" | sed 's/_/\\_/g')
               APK_INFO="${APK_INFO}
-              📱 ${filename} (${size_mb}MB)"
+              📱 ${filename_escaped} (${size_mb}MB)"
             fi
           done
 
@@ -154,7 +156,8 @@ jobs:
               fi
 
               echo "📤 Uploading ARM64: $apk (${size_mb}MB)..."
-              response=$(curl -s -F chat_id="$TELEGRAM_CHAT_ID" \
+              response=$(curl -s --max-time 600 --connect-timeout 60 --retry 3 --retry-delay 10 \
+                -F chat_id="$TELEGRAM_CHAT_ID" \
                 -F document=@"$apk" \
                 -F caption="📱 ARM64 APK (Recommended for modern devices)" \
                 "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
@@ -181,7 +184,8 @@ jobs:
               fi
 
               echo "📤 Uploading ARM: $apk (${size_mb}MB)..."
-              response=$(curl -s -F chat_id="$TELEGRAM_CHAT_ID" \
+              response=$(curl -s --max-time 600 --connect-timeout 60 --retry 3 --retry-delay 10 \
+                -F chat_id="$TELEGRAM_CHAT_ID" \
                 -F document=@"$apk" \
                 -F caption="📱 ARM APK (For older devices)" \
                 "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
