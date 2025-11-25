@@ -56,7 +56,14 @@ jobs:
           ls -la build/app/outputs/flutter-apk/ || echo "No flutter-apk directory"
           echo ""
           echo "=== Checking APK Output Directory ==="
-          ls -la apk-output/ || echo "No apk-output directory"
+          ls -lh apk-output/ || echo "No apk-output directory"
+          echo ""
+          echo "=== APK Details ==="
+          for apk in apk-output/*.apk; do
+            if [ -f "$apk" ]; then
+              echo "📱 $(basename "$apk") - $(du -h "$apk" | cut -f1)"
+            fi
+          done
 
       # Notify on build failure
       - name: Notify Build Failure
@@ -84,13 +91,19 @@ jobs:
         run: |
           # Collect APK information
           APK_INFO=""
+          APK_COUNT=0
+          TOTAL_SIZE=0
           for apk in apk-output/*.apk; do
             if [ -f "$apk" ]; then
               size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null || echo "0")
               size_mb=$((size / 1024 / 1024))
+              TOTAL_SIZE=$((TOTAL_SIZE + size_mb))
+              APK_COUNT=$((APK_COUNT + 1))
+              
+              # Extract ABI from filename (e.g., arm64-v8a, armeabi-v7a, x86_64)
+              filename=$(basename "$apk")
               APK_INFO="${APK_INFO}
-              📱 $(basename "$apk") - ${size_mb}MB
-              "
+              📱 ${filename} (${size_mb}MB)"
             fi
           done
 
@@ -102,8 +115,11 @@ jobs:
           🔗 Commit: ${GITHUB_SHA::8}
           🌿 Branch: ${GITHUB_REF_NAME}
           🎯 Trigger: ${GITHUB_EVENT_NAME}
-          📦 APK Files:
+          
+          📦 Generated APKs: ${APK_COUNT}
+          💾 Total Size: ~${TOTAL_SIZE}MB
           ${APK_INFO}
+          
           ⬆️ Uploading to Telegram...
           🔍 Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
           "
@@ -121,25 +137,66 @@ jobs:
             exit 1
           fi
 
-          # Upload each APK file
-          for apk in apk-output/*.apk; do
-            # Check file size (Telegram limit ~50MB)
-            size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null || echo "0")
-            size_mb=$((size / 1024 / 1024))
+          # Priority: ARM64 > ARM > x86_64
+          # Only upload ARM64 and ARM to save bandwidth and telegram storage
+          # x86_64 is mainly for emulators/testing
+          UPLOADED_COUNT=0
+          
+          # Upload ARM64 (highest priority - 95% of users)
+          for apk in apk-output/*arm64-v8a*.apk; do
+            if [ -f "$apk" ]; then
+              size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null || echo "0")
+              size_mb=$((size / 1024 / 1024))
 
-            if [ $size_mb -gt 50 ]; then
-              echo "⚠️ Skipping $apk - too large (${size_mb}MB > 50MB limit)"
-              continue
-            fi
+              if [ $size_mb -gt 50 ]; then
+                echo "⚠️ Skipping $apk - too large (${size_mb}MB > 50MB limit)"
+                continue
+              fi
 
-            echo "📤 Uploading $apk (${size_mb}MB) to Telegram..."
-            response=$(curl -s -F chat_id="$TELEGRAM_CHAT_ID" -F document=@"$apk" \
-              "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
+              echo "📤 Uploading ARM64: $apk (${size_mb}MB)..."
+              response=$(curl -s -F chat_id="$TELEGRAM_CHAT_ID" \
+                -F document=@"$apk" \
+                -F caption="📱 ARM64 APK (Recommended for modern devices)" \
+                "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
 
-            if echo "$response" | grep -q '"ok":true'; then
-              echo "✅ Successfully uploaded $apk"
-            else
-              echo "❌ Failed to upload $apk: $response"
-              exit 1
+              if echo "$response" | grep -q '"ok":true'; then
+                echo "✅ Successfully uploaded ARM64 APK"
+                UPLOADED_COUNT=$((UPLOADED_COUNT + 1))
+              else
+                echo "❌ Failed to upload: $response"
+                exit 1
+              fi
             fi
           done
+
+          # Upload ARM (compatibility for older devices)
+          for apk in apk-output/*armeabi-v7a*.apk; do
+            if [ -f "$apk" ]; then
+              size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null || echo "0")
+              size_mb=$((size / 1024 / 1024))
+
+              if [ $size_mb -gt 50 ]; then
+                echo "⚠️ Skipping $apk - too large (${size_mb}MB > 50MB limit)"
+                continue
+              fi
+
+              echo "📤 Uploading ARM: $apk (${size_mb}MB)..."
+              response=$(curl -s -F chat_id="$TELEGRAM_CHAT_ID" \
+                -F document=@"$apk" \
+                -F caption="📱 ARM APK (For older devices)" \
+                "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
+
+              if echo "$response" | grep -q '"ok":true'; then
+                echo "✅ Successfully uploaded ARM APK"
+                UPLOADED_COUNT=$((UPLOADED_COUNT + 1))
+              else
+                echo "❌ Failed to upload: $response"
+                exit 1
+              fi
+            fi
+          done
+
+          # Note: x86_64 not uploaded to save space (mainly for emulators)
+          echo ""
+          echo "🎉 Upload complete! Total uploaded: $UPLOADED_COUNT APKs"
+          echo "ℹ️ x86_64 APK skipped (emulator/testing only)"

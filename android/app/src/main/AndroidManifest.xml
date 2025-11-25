@@ -41,8 +41,8 @@
         </activity>
 
         <activity-alias
-            android:name="com.example.nhasixapp.CalculatorActivity"
-            android:targetActivity="com.example.nhasixapp.MainActivity"
+            android:name="id.nhasix.app.CalculatorActivity"
+            android:targetActivity="id.nhasix.app.MainActivity"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_calculator"
@@ -54,8 +54,8 @@
         </activity-alias>
 
         <activity-alias
-            android:name="com.example.nhasixapp.NotesActivity"
-            android:targetActivity="com.example.nhasixapp.MainActivity"
+            android:name="id.nhasix.app.NotesActivity"
+            android:targetActivity="id.nhasix.app.MainActivity"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_notes"
@@ -67,8 +67,8 @@
         </activity-alias>
 
         <activity-alias
-            android:name="com.example.nhasixapp.WeatherActivity"
-            android:targetActivity="com.example.nhasixapp.MainActivity"
+            android:name="id.nhasix.app.WeatherActivity"
+            android:targetActivity="id.nhasix.app.MainActivity"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_weather"
