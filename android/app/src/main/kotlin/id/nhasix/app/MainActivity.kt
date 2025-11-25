@@ -1,4 +1,4 @@
-package com.example.nhasixapp
+package id.nhasix.app
 
 import android.content.ComponentName
 import android.content.Intent
@@ -78,7 +78,7 @@ class MainActivity: FlutterActivity() {
             val aliases = listOf("CalculatorActivity", "NotesActivity", "WeatherActivity")
             aliases.forEach { alias ->
                 try {
-                    val componentName = ComponentName(packageName, "com.example.nhasixapp.$alias")
+                    val componentName = ComponentName(packageName, "id.nhasix.app.$alias")
                     val result = packageManager.setComponentEnabledSetting(
                         componentName,
                         PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
@@ -117,7 +117,7 @@ class MainActivity: FlutterActivity() {
 
     private fun disableMainActivity() {
         try {
-            val mainComponent = ComponentName(packageName, "com.example.nhasixapp.MainActivity")
+            val mainComponent = ComponentName(packageName, "id.nhasix.app.MainActivity")
             val result = packageManager.setComponentEnabledSetting(
                 mainComponent,
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
@@ -131,7 +131,7 @@ class MainActivity: FlutterActivity() {
 
     private fun enableMainActivity() {
         try {
-            val mainComponent = ComponentName(packageName, "com.example.nhasixapp.MainActivity")
+            val mainComponent = ComponentName(packageName, "id.nhasix.app.MainActivity")
             val result = packageManager.setComponentEnabledSetting(
                 mainComponent,
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
@@ -157,7 +157,7 @@ class MainActivity: FlutterActivity() {
     
     private fun enableAlias(aliasName: String) {
         try {
-            val componentName = ComponentName(packageName, "com.example.nhasixapp.$aliasName")
+            val componentName = ComponentName(packageName, "id.nhasix.app.$aliasName")
             val result = packageManager.setComponentEnabledSetting(
                 componentName,
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
@@ -178,7 +178,7 @@ class MainActivity: FlutterActivity() {
         val aliases = listOf("CalculatorActivity", "NotesActivity", "WeatherActivity")
         for (alias in aliases) {
             try {
-                val componentName = ComponentName(packageName, "com.example.nhasixapp.$alias")
+                val componentName = ComponentName(packageName, "id.nhasix.app.$alias")
                 val state = packageManager.getComponentEnabledSetting(componentName)
                 Log.d("AppDisguise", "Alias $alias state: $state")
                 if (state == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
@@ -198,7 +198,7 @@ class MainActivity: FlutterActivity() {
 
         // Check main activity
         try {
-            val mainComponent = ComponentName(packageName, "com.example.nhasixapp.MainActivity")
+            val mainComponent = ComponentName(packageName, "id.nhasix.app.MainActivity")
             val mainState = packageManager.getComponentEnabledSetting(mainComponent)
             Log.d("AppDisguise", "Main activity state: $mainState")
             if (mainState == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
