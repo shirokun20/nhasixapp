@@ -37,7 +37,7 @@ class AppMainDrawerWidget extends StatelessWidget {
                 const Image(
                   height: 80,
                   width: 80,
-                  image: AssetImage('assets/icons/ic_launcher-web.png'),
+                  image: AssetImage('assets/icons/logo_app.png'),
                 ),
                 const SizedBox(
                   height: 16,

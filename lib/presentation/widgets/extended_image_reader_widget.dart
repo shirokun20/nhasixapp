@@ -283,7 +283,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         image: const DecorationImage(
-                          image: AssetImage('assets/icons/ic_launcher-web.png'),
+                          image: AssetImage('assets/icons/logo_app.png'),
                           fit: BoxFit.cover,
                         ),
                         border: Border.all(
@@ -338,7 +338,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         image: const DecorationImage(
-                          image: AssetImage('assets/icons/ic_launcher-web.png'),
+                          image: AssetImage('assets/icons/logo_app.png'),
                           fit: BoxFit.cover,
                         ),
                         border: Border.all(
