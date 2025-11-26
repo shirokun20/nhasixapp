@@ -131,9 +131,15 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Theme.of(context).colorScheme.surfaceContainer.withValues(alpha: 0.3),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .surfaceContainer
+                        .withValues(alpha: 0.3),
                     border: Border.all(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.2),
                       width: 2,
                     ),
                   ),
@@ -156,7 +162,8 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  AppLocalizations.of(context)?.appSubtitle ?? 'Enhanced Reading Experience',
+                  AppLocalizations.of(context)?.appSubtitle ??
+                      'Enhanced Reading Experience',
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontStyle: FontStyle.italic,
@@ -185,7 +192,9 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                                 Theme.of(context).colorScheme.primary,
                               ),
                               strokeWidth: 4,
-                              backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+                              backgroundColor: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainer,
                             ),
                           ),
                           Container(
@@ -195,7 +204,9 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                               color: Theme.of(context).colorScheme.surface,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: Theme.of(context).colorScheme.primary
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
                                     .withValues(alpha: 0.3),
                                 width: 1,
                               ),
@@ -219,7 +230,10 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                           vertical: 12,
                         ),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceContainer.withValues(alpha: 0.5),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainer
+                              .withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                             color: Theme.of(context).colorScheme.outline,
@@ -228,7 +242,8 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                         ),
                         child: Text(
                           state is SplashInitializing
-                              ? AppLocalizations.of(context)?.initializingApp ?? 'Initializing Application...'
+                              ? AppLocalizations.of(context)?.initializingApp ??
+                                  'Initializing Application...'
                               : (state as SplashBypassInProgress).message,
                           style: TextStyleConst.headingSmall.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
@@ -241,8 +256,12 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                       // Detailed progress text
                       Text(
                         state is SplashInitializing
-                            ? AppLocalizations.of(context)?.settingUpComponents ?? 'Setting up components and checking connection...'
-                            : AppLocalizations.of(context)?.bypassingProtection ?? 'Bypassing protection and establishing connection...',
+                            ? AppLocalizations.of(context)
+                                    ?.settingUpComponents ??
+                                'Setting up components and checking connection...'
+                            : AppLocalizations.of(context)
+                                    ?.bypassingProtection ??
+                                'Bypassing protection and establishing connection...',
                         style: TextStyleConst.bodyMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -271,7 +290,8 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
-                          AppLocalizations.of(context)?.connectionFailed ?? 'Connection Failed',
+                          AppLocalizations.of(context)?.connectionFailed ??
+                              'Connection Failed',
                           style: TextStyleConst.statusError.copyWith(
                             fontSize: 18,
                           ),
@@ -286,8 +306,10 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                         icon: const Icon(Icons.refresh),
                         label: Text(AppLocalizations.of(context)!.retry),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
+                          foregroundColor:
+                              Theme.of(context).colorScheme.onPrimary,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
                             vertical: 12,
@@ -320,10 +342,16 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.1),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .tertiary
+                        .withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.3),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .tertiary
+                          .withValues(alpha: 0.3),
                       width: 2,
                     ),
                   ),
@@ -357,7 +385,8 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
 
                 // Additional success info
                 Text(
-                  AppLocalizations.of(context)?.launchingApp ?? 'Launching main application...',
+                  AppLocalizations.of(context)?.launchingApp ??
+                      'Launching main application...',
                   style: TextStyleConst.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontStyle: FontStyle.italic,
@@ -407,8 +436,8 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
               height: 8,
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primary.withValues(
-                  alpha: _dotAnimations[index].value,
-                ),
+                      alpha: _dotAnimations[index].value,
+                    ),
                 shape: BoxShape.circle,
               ),
             );
