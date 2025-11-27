@@ -1390,13 +1390,13 @@ static Future<List<Uint8List>> _processImageStatic(
 
 ---
 
-## 📖 Reading Mode - Accurate Scroll Tracking
+## 📖 Reading Mode - Comprehensive Revamp (4 Phases)
 
-### reader_screen.dart
+### Phase 1: Variable Height Support - reader_screen.dart
 
 ```dart
 class _ReaderScreenState extends State<ReaderScreen> {
-  // Cache actual image heights for accurate scroll tracking
+  // ✅ NEW: Cache actual image heights for accurate scroll tracking
   final Map<int, double> _imageHeights = {};
   
   @override
@@ -1405,7 +1405,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _scrollController.addListener(_onScrollChanged);
   }
   
-  /// Called when image is loaded with actual dimensions
+  /// ✅ NEW: Called when image is loaded with actual dimensions
   void _onImageLoaded(int pageIndex, Size imageSize) {
     // Calculate rendered height based on screen width
     final screenWidth = MediaQuery.of(context).size.width;
@@ -1416,9 +1416,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
       _imageHeights[pageIndex] = renderedHeight;
     });
     
-    debugPrint('Reader: Cached height for page $pageIndex: $renderedHeight px');
+    logger.d('Reader: Cached height for page $pageIndex: $renderedHeight px (AR: ${aspectRatio.toStringAsFixed(2)})');
   }
   
+  /// ✅ UPDATED: Accurate scroll tracking using cached heights
   void _onScrollChanged() {
     final state = _readerCubit.state;
     if (state.readingMode == ReadingMode.continuousScroll && 
@@ -1428,17 +1429,17 @@ class _ReaderScreenState extends State<ReaderScreen> {
       int currentPage = 1;
       double accumulatedHeight = 0;
       
-      // Use cached heights for accurate tracking
+      // ✅ Use cached heights for accuracy (not approximation!)
       for (int i = 0; i < state.content!.pageCount; i++) {
         // Get cached height or use screen height as fallback
         final imageHeight = _imageHeights[i] ?? 
             MediaQuery.of(context).size.height;
         
-        // Account for spacing
-        const spacing = 8.0;
+        // Account for spacing between images
+        const spacing = 8.0; // from Container margin
         final totalItemHeight = imageHeight + spacing;
         
-        // Check if scroll position is within this image
+        // Check if scroll position is within this image bounds
         if (scrollPosition >= accumulatedHeight && 
             scrollPosition < accumulatedHeight + totalItemHeight) {
           currentPage = i + 1;
@@ -1448,73 +1449,439 @@ class _ReaderScreenState extends State<ReaderScreen> {
         accumulatedHeight += totalItemHeight;
       }
       
-      // Update only if page changed
+      // Update only if page changed (avoid unnecessary rebuilds)
       if (currentPage != _lastReportedPage) {
-        debugPrint('Reader: Page changed: $_lastReportedPage -> $currentPage');
+        logger.i('Reader: Page changed: $_lastReportedPage → $currentPage');
         _lastReportedPage = currentPage;
         _readerCubit.updateCurrentPage(currentPage);
       }
     }
   }
+  
+  /// ✅ UPDATED: Pass callback to image widget
+  Widget _buildImageViewer(String imageUrl, int pageNumber, {bool isContinuous = false}) {
+    return isContinuous
+      ? Container(
+          margin: const EdgeInsets.only(bottom: 8.0),
+          child: ExtendedImageReaderWidget(
+            imageUrl: imageUrl,
+            contentId: widget.contentId,
+            pageNumber: pageNumber,
+            readingMode: ReadingMode.continuousScroll,
+            enableZoom: enableZoom,
+            onImageLoaded: (Size size) => _onImageLoaded(pageNumber - 1, size), // ✅ NEW
+          ),
+        )
+      : ExtendedImageReaderWidget(...);
+  }
 }
 ```
 
-### extended_image_reader_widget.dart
+### Phase 2: Webtoon Detection - webtoon_detector.dart (NEW FILE)
+
+```dart
+// lib/core/utils/webtoon_detector.dart
+
+/// Utility for detecting webtoon-style (extremely tall) images
+/// 
+/// Based on verified dimensions from actual project images:
+/// - Normal manga: 902×1280px, AR = 1.42
+/// - Webtoon: 1275×16383px, AR = 12.85
+/// - Threshold: 2.5 (safe midpoint)
+class WebtoonDetector {
+  /// Aspect ratio threshold for webtoon detection
+  /// Normal manga: AR ~1.4, Webtoon: AR ~12.8
+  static const double ASPECT_RATIO_THRESHOLD = 2.5;
+  
+  /// Detect if image is webtoon-style (extremely tall)
+  /// 
+  /// Returns true if height/width > 2.5
+  /// 
+  /// Examples:
+  /// - Normal (902×1280): AR=1.42 → false
+  /// - Webtoon (1275×16383): AR=12.85 → true
+  static bool isWebtoon(Size imageSize) {
+    if (imageSize.width == 0) return false; // Avoid division by zero
+    
+    final aspectRatio = imageSize.height / imageSize.width;
+    final result = aspectRatio > ASPECT_RATIO_THRESHOLD;
+    
+    if (result) {
+      logger.d('Webtoon detected: ${imageSize.width.toInt()}×${imageSize.height.toInt()} (AR: ${aspectRatio.toStringAsFixed(2)})');
+    }
+    
+    return result;
+  }
+  
+  /// Get recommended BoxFit for image based on webtoon detection
+  static BoxFit getRecommendedBoxFit(Size? imageSize, ReadingMode mode) {
+    if (imageSize != null && isWebtoon(imageSize)) {
+      return BoxFit.fitWidth; // Always fit width for webtoons
+    }
+    
+    // Default based on reading mode
+    switch (mode) {
+      case ReadingMode.singlePage:
+        return BoxFit.contain;
+      case ReadingMode.verticalPage:
+      case ReadingMode.continuousScroll:
+        return BoxFit.fitWidth;
+    }
+  }
+}
+```
+
+### Phase 2: Webtoon Detection - extended_image_reader_widget.dart
 
 ```dart
 class ExtendedImageReaderWidget extends StatefulWidget {
-  // Add callback for image loaded
+  // ✅ NEW: Callback for image loaded with dimensions
   final Function(Size imageSize)? onImageLoaded;
+  
+  const ExtendedImageReaderWidget({
+    super.key,
+    required this.imageUrl,
+    required this.contentId,
+    required this.pageNumber,
+    required this.readingMode,
+    this.enableZoom = false,
+    this.onImageLoaded, // ✅ NEW parameter
+  });
   
   // ... existing code
 }
 
 class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget> {
+  Size? _imageSize; // ✅ NEW: Store image size for webtoon detection
+  
   @override
   Widget build(BuildContext context) {
     return ExtendedImage(
       image: imageProvider,
-      fit: _getBoxFit(),
+      fit: _getBoxFit(), // ✅ Uses webtoon detection
       mode: ExtendedImageMode.gesture,
       loadStateChanged: (ExtendedImageState state) {
         if (state.extendedImageLoadState == LoadState.completed) {
-          // Notify parent of actual image size
+          // ✅ Notify parent of actual image size
           final imageInfo = state.extendedImageInfo;
-          if (imageInfo != null && widget.onImageLoaded != null) {
-            widget.onImageLoaded!(Size(
+          if (imageInfo != null) {
+            final size = Size(
               imageInfo.image.width.toDouble(),
               imageInfo.image.height.toDouble(),
-            ));
+            );
+            
+            setState(() {
+              _imageSize = size; // ✅ Store for BoxFit calculation
+            });
+            
+            widget.onImageLoaded?.call(size); // ✅ Notify parent
           }
         }
         
-        // ... existing load state handling
+        // ... existing load state handling (loading, failed, etc.)
       },
       // ... other properties
     );
   }
   
+  /// ✅ UPDATED: Auto-detect webtoon and apply fitWidth
   BoxFit _getBoxFit() {
-    // Auto-detect webtoon and use fitWidth
-    if (_imageInfo != null) {
-      final width = _imageInfo!.image.width;
-      final height = _imageInfo!.image.height;
-      
-      if (WebtoonImageProcessor.isWebtoonImage(width, height)) {
-        return BoxFit.fitWidth; // Always fit width for webtoons
-      }
+    // Use WebtoonDetector utility for consistent detection
+    if (_imageSize != null) {
+      return WebtoonDetector.getRecommendedBoxFit(_imageSize, widget.readingMode);
     }
     
-    // Default behavior
+    // Fallback before image loads
     switch (widget.readingMode) {
       case ReadingMode.singlePage:
         return BoxFit.contain;
       case ReadingMode.verticalPage:
-        return BoxFit.fitWidth;
       case ReadingMode.continuousScroll:
-        return BoxFit.fitWidth; // Better for mixed content
+        return BoxFit.fitWidth;
     }
   }
+}
+```
+
+### Phase 2: Optional Webtoon Visual Badge
+
+```dart
+/// Optional: Visual indicator for webtoon images
+Widget _buildWebtoonBadge() {
+  if (_imageSize != null && WebtoonDetector.isWebtoon(_imageSize!)) {
+    return Positioned(
+      top: 8,
+      right: 8,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.purple.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: const Text(
+          'WEBTOON',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+  return const SizedBox.shrink();
+}
+
+// Use in Stack:
+return Stack(
+  children: [
+    ExtendedImage(...),
+    _buildWebtoonBadge(), // ✅ Optional badge
+  ],
+);
+```
+
+### Phase 3: Adaptive Preloading - reader_screen.dart
+
+```dart
+class _ReaderScreenState extends State<ReaderScreen> {
+  // ✅ NEW: Scroll velocity tracking
+  double _lastScrollOffset = 0;
+  DateTime _lastScrollTime = DateTime.now();
+  double _scrollVelocity = 0; // pixels per second
+  
+  final Set<int> _prefetchedPages = {};
+  
+  /// ✅ UPDATED: Track velocity and trigger adaptive prefetch
+  void _onScrollChanged() {
+    // Calculate scroll velocity
+    final now = DateTime.now();
+    final offset = _scrollController.offset;
+    final duration = now.difference(_lastScrollTime).inMilliseconds;
+    
+    if (duration > 0) {
+      _scrollVelocity = (offset - _lastScrollOffset) / (duration / 1000);
+    }
+    
+    _lastScrollOffset = offset;
+    _lastScrollTime = now;
+    
+    // Existing scroll tracking logic...
+    // ... (page calculation code from Phase 1)
+    
+    // ✅ NEW: Adaptive prefetch based on velocity
+    final prefetchCount = _calculatePrefetchCount(_scrollVelocity.abs());
+    _prefetchImages(prefetchCount);
+  }
+  
+  /// ✅ NEW: Calculate prefetch count based on scroll speed
+  int _calculatePrefetchCount(double velocity) {
+    if (velocity < 100) {
+      return 2; // Slow scroll: minimal prefetch
+    } else if (velocity < 500) {
+      return 5; // Normal scroll: moderate prefetch
+    } else {
+      return 8; // Fast scroll: aggressive prefetch
+    }
+  }
+  
+  /// ✅ NEW: Prefetch images ahead
+  Future<void> _prefetchImages(int count) async {
+    final state = _readerCubit.state;
+    if (state.content == null) return;
+    
+    final currentPage = state.currentPage;
+    final totalPages = state.content!.pageCount;
+    
+    // Prefetch ahead
+    for (int i = 1; i <= count; i++) {
+      final targetPage = currentPage + i;
+      if (targetPage > totalPages) break;
+      if (_prefetchedPages.contains(targetPage)) continue;
+      
+      final imageUrl = state.content!.imageUrls[targetPage - 1];
+      await _prefetchImage(imageUrl, targetPage);
+    }
+    
+    // Cleanup old cache
+    _cleanupPrefetchCache(currentPage);
+  }
+  
+  /// ✅ NEW: Prefetch single image
+  Future<void> _prefetchImage(String imageUrl, int page) async {
+    try {
+      final provider = NetworkImage(imageUrl);
+      await precacheImage(provider, context);
+      _prefetchedPages.add(page);
+      logger.d('Reader: Prefetched page $page');
+    } catch (e) {
+      logger.w('Reader: Failed to prefetch page $page: $e');
+    }
+  }
+  
+  /// ✅ NEW: Cleanup distant pages from cache
+  void _cleanupPrefetchCache(int currentPage) {
+    _prefetchedPages.removeWhere((page) => 
+      page < currentPage - 2 || page > currentPage + 10
+    );
+  }
+}
+```
+
+### Phase 4: Performance Optimization - reader_screen.dart
+
+```dart
+class _ReaderScreenState extends State<ReaderScreen> {
+  Timer? _scrollDebounceTimer; // ✅ NEW: For debouncing
+  
+  /// ✅ UPDATED: Debounce scroll events
+  void _onScrollChanged() {
+    _scrollDebounceTimer?.cancel();
+    
+    _scrollDebounceTimer = Timer(const Duration(milliseconds: 100), () {
+      _performScrollTracking(); // ✅ Extract to separate method
+    });
+  }
+  
+  /// ✅ NEW: Actual scroll tracking logic (debounced)
+  void _performScrollTracking() {
+    // Calculate velocity
+    final now = DateTime.now();
+    final offset = _scrollController.offset;
+    final duration = now.difference(_lastScrollTime).inMilliseconds;
+    
+    if (duration > 0) {
+      _scrollVelocity = (offset - _lastScrollOffset) / (duration / 1000);
+    }
+    
+    _lastScrollOffset = offset;
+    _lastScrollTime = now;
+    
+    // Page calculation logic (from Phase 1)
+    final state = _readerCubit.state;
+    if (state.readingMode == ReadingMode.continuousScroll && state.content != null) {
+      // ... (existing page calculation code)
+    }
+    
+    // Adaptive prefetch (from Phase 3)
+    final prefetchCount = _calculatePrefetchCount(_scrollVelocity.abs());
+    _prefetchImages(prefetchCount);
+  }
+  
+  /// ✅ UPDATED: Wrap with RepaintBoundary
+  Widget _buildImageViewer(String imageUrl, int pageNumber, {bool isContinuous = false}) {
+    return RepaintBoundary( // ✅ Isolate repaint
+      child: isContinuous
+        ? Container(
+            margin: const EdgeInsets.only(bottom: 8.0),
+            child: ExtendedImageReaderWidget(
+              imageUrl: imageUrl,
+              contentId: widget.contentId,
+              pageNumber: pageNumber,
+              readingMode: ReadingMode.continuousScroll,
+              enableZoom: enableZoom,
+              onImageLoaded: (Size size) => _onImageLoaded(pageNumber - 1, size),
+            ),
+          )
+        : ExtendedImageReaderWidget(...),
+    );
+  }
+  
+  @override
+  void dispose() {
+    _scrollDebounceTimer?.cancel(); // ✅ Cleanup
+    _scrollController.removeListener(_onScrollChanged);
+    super.dispose();
+  }
+}
+```
+
+### Phase 4: Optional AutomaticKeepAlive for Images
+
+```dart
+/// Optional: Keep recent pages alive in memory
+class ImageViewerWidget extends StatefulWidget {
+  // ... widget code
+}
+
+class _ImageViewerWidgetState extends State<ImageViewerWidget> 
+    with AutomaticKeepAliveClientMixin {
+  
+  @override
+  bool get wantKeepAlive {
+    // Keep alive if within ±3 pages of current
+    final currentPage = widget.currentPage;
+    final thisPage = widget.pageNumber;
+    return (thisPage - currentPage).abs() <= 3;
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // ✅ Must call when using AutomaticKeepAliveClientMixin
+    
+    return ExtendedImage(...);
+  }
+}
+```
+
+### Unit Tests - webtoon_detector_test.dart (NEW FILE)
+
+```dart
+// test/core/utils/webtoon_detector_test.dart
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:nhasixapp/core/utils/webtoon_detector.dart';
+
+void main() {
+  group('WebtoonDetector', () {
+    test('detects normal manga as NOT webtoon', () {
+      // Verified from actual project: 902×1280px, AR=1.42
+      final normalSize = Size(902, 1280);
+      expect(WebtoonDetector.isWebtoon(normalSize), false);
+    });
+    
+    test('detects actual webtoon image', () {
+      // Verified from actual project: 1275×16383px, AR=12.85
+      final webtoonSize = Size(1275, 16383);
+      expect(WebtoonDetector.isWebtoon(webtoonSize), true);
+    });
+    
+    test('handles edge case at threshold', () {
+      // Exactly at threshold: AR = 2.5
+      final edgeSize = Size(1000, 2500);
+      expect(WebtoonDetector.isWebtoon(edgeSize), false); // Should be false (not greater)
+    });
+    
+    test('detects image just above threshold', () {
+      // Just above threshold: AR = 2.6
+      final aboveSize = Size(1000, 2600);
+      expect(WebtoonDetector.isWebtoon(aboveSize), true);
+    });
+    
+    test('handles zero width safely', () {
+      final invalidSize = Size(0, 1000);
+      expect(WebtoonDetector.isWebtoon(invalidSize), false); // No crash
+    });
+    
+    test('recommends fitWidth for webtoon', () {
+      final webtoonSize = Size(1275, 16383);
+      final boxFit = WebtoonDetector.getRecommendedBoxFit(
+        webtoonSize,
+        ReadingMode.continuousScroll,
+      );
+      expect(boxFit, BoxFit.fitWidth);
+    });
+    
+    test('recommends contain for normal in singlePage mode', () {
+      final normalSize = Size(902, 1280);
+      final boxFit = WebtoonDetector.getRecommendedBoxFit(
+        normalSize,
+        ReadingMode.singlePage,
+      );
+      expect(boxFit, BoxFit.contain);
+    });
+  });
 }
 ```
 

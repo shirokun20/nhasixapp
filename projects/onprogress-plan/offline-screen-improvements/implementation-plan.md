@@ -879,120 +879,105 @@ class EnhancedContentCard extends StatelessWidget {
 
 ---
 
-### Task 6: Fix Reading Mode for Webtoon Images
-**Priority:** High  
+### Task 6: Revamp Reading Mode - Comprehensive Improvement
+**Priority:** 🔥 High (User Priority!)  
 **Complexity:** High  
+**Estimated Time:** 2-3 days
+
 **Files to modify:**
 - `lib/presentation/pages/reader/reader_screen.dart`
 - `lib/presentation/widgets/extended_image_reader_widget.dart`
 - `lib/presentation/cubits/reader/reader_cubit.dart`
+- `lib/core/utils/webtoon_detector.dart` (NEW)
 
-#### Todo List:
-- [ ] Analyze flutter_bug_01.png issue
-  - [ ] Document specific bug behavior
-  - [ ] Identify root cause (scroll calculation, image sizing)
-  - [ ] Test with various image aspect ratios
-- [ ] Fix continuous scroll calculation
-  - [ ] Use actual image heights instead of approximation
-  - [ ] Cache image dimensions for accurate scroll tracking
-  - [ ] Handle images with varying heights properly
-- [ ] Improve image widget for tall images
-  - [ ] Add `BoxFit.fitWidth` for webtoon mode
-  - [ ] Detect webtoon images in reader
-  - [ ] Apply different rendering strategy for tall images
-  - [ ] Smooth scroll behavior for continuous reading
-- [ ] Add webtoon reading mode option
-  - [ ] New reading mode: `ReadingMode.webtoon`
-  - [ ] Optimized for vertical scroll
-  - [ ] No page boundaries, pure continuous scroll
-  - [ ] Auto-detect and suggest webtoon mode
-- [ ] Fix scroll tracking
-  - [ ] Accurate page position tracking
-  - [ ] Smooth page indicator updates
-  - [ ] Handle rapid scrolling gracefully
-  - [ ] Save scroll position correctly
-- [ ] Performance optimization for tall images
-  - [ ] Efficient image loading for large heights
-  - [ ] Memory management for tall images
-  - [ ] Smooth rendering without jank
-  - [ ] Progressive loading for very tall images
-- [ ] Test with real webtoon content
-  - [ ] Test with images >10000px height
-  - [ ] Test mixed content (normal + webtoon)
-  - [ ] Test scroll performance
-  - [ ] Test memory usage
+#### 📌 User Feedback
 
-**Technical Approach:**
-```dart
-// reader_screen.dart - Improved scroll calculation
+> "Kayanya reading screen ini perlu di revamp atau di ubah agar jadi lebih nyaman lagi ketika baca. saya sendiri sukanya hanya ada di fitur scroll kebawah ajah seperti pada image `screenshots/flutter_12.png` cuman jadi kendala ketika bertemu dengan image webtoon saja."
 
-// Cache image heights for accurate tracking
-final Map<int, double> _imageHeights = {};
+**Current Issues Identified:**
 
-void _onScrollChanged() {
-  final state = _readerCubit.state;
-  if (state.readingMode == ReadingMode.continuousScroll && 
-      state.content != null) {
-    
-    // Calculate current page based on actual image heights
-    double totalHeight = 0;
-    int currentPage = 1;
-    
-    final scrollPosition = _scrollController.offset;
-    
-    for (int i = 0; i < state.content!.pageCount; i++) {
-      final imageHeight = _imageHeights[i] ?? 
-          MediaQuery.of(context).size.height; // Fallback
-      
-      if (scrollPosition >= totalHeight && 
-          scrollPosition < totalHeight + imageHeight) {
-        currentPage = i + 1;
-        break;
-      }
-      
-      totalHeight += imageHeight;
-    }
-    
-    if (currentPage != _lastReportedPage) {
-      _lastReportedPage = currentPage;
-      _readerCubit.updateCurrentPage(currentPage);
-    }
-  }
-}
+1. **❌ Inaccurate Scroll Tracking** (Line 145-160)
+   - Uses fixed approximation: `screenHeight * 0.9`
+   - Doesn't account for variable image heights
+   - Current page tracking often inaccurate
 
-// Cache image height when loaded
-void _onImageLoaded(int page, Size imageSize) {
-  setState(() {
-    _imageHeights[page] = imageSize.height;
-  });
-}
-```
+2. **❌ Poor Webtoon Image Handling**
+   - Tall images (AR > 2.5) too long in continuous scroll
+   - No special rendering for webtoon
+   - Bad UX for Korean webtoons (1275×16383px)
 
-**Extended Image Widget Improvements:**
-```dart
-// extended_image_reader_widget.dart - Webtoon support
+3. **❌ No Variable Height Support**
+   - Assumes all images same height
+   - No caching of actual rendered heights
+   - Performance issues with mixed content
 
-class ExtendedImageReaderWidget extends StatelessWidget {
-  // ...
-  
-  BoxFit _getBoxFit() {
-    // Detect webtoon image (height > width * 3)
-    final isWebtoon = imageInfo != null && 
-        imageInfo!.image.height > imageInfo!.image.width * 3;
-    
-    switch (widget.readingMode) {
-      case ReadingMode.singlePage:
-        return BoxFit.contain;
-      case ReadingMode.verticalPage:
-        return BoxFit.fitWidth;
-      case ReadingMode.continuousScroll:
-        return isWebtoon ? BoxFit.fitWidth : BoxFit.contain;
-      case ReadingMode.webtoon: // New mode
-        return BoxFit.fitWidth; // Always fit width for webtoon
-    }
-  }
-}
-```
+4. **❌ Limited Preloading Strategy**
+   - Basic prefetch with fixed count
+   - Not adaptive based on scroll velocity
+   - Memory not optimized
+
+#### 🎯 4-Phase Improvement Strategy
+
+**Phase 1: Variable Height Support** (Day 1-2)
+- Add `_imageHeights` Map cache to track actual dimensions
+- Implement `_onImageLoaded(int pageIndex, Size imageSize)` callback
+- Calculate rendered height: `screenWidth * aspectRatio`
+- Update `_onScrollChanged()` to use cached heights instead of approximation
+- Add fallback for uncached heights
+- Test with mixed content (normal + webtoon images)
+
+**Phase 2: Webtoon Detection & Handling** (Day 3-4)
+- Create `lib/core/utils/webtoon_detector.dart` utility
+- Implement `isWebtoon(Size imageSize)` with AR > 2.5 threshold
+- Update `ExtendedImageReaderWidget._getBoxFit()` logic
+- Apply `BoxFit.fitWidth` for detected webtoons automatically
+- Optional: Add visual webtoon badge
+- Test with actual webtoon (1275×16383px verified from project)
+
+**Phase 3: Adaptive Preloading** (Day 5)
+- Track scroll velocity in `_onScrollChanged()`
+- Implement velocity-based prefetch count calculation
+  - Slow scroll (< 100 px/s): prefetch 2 pages
+  - Normal scroll (100-500 px/s): prefetch 5 pages
+  - Fast scroll (> 500 px/s): prefetch 8 pages
+- Add `_cleanupPrefetchCache()` for memory management
+- Smart cleanup: remove pages outside current ±10 range
+
+**Phase 4: Performance Optimization** (Day 6-7)
+- Add `RepaintBoundary` to isolate image repaints
+- Implement scroll event debouncing (100ms)
+- Use `AutomaticKeepAliveClientMixin` for recent pages (optional)
+- Profile with DevTools to measure improvements
+- Target: 60fps sustained, < 200MB for 100 pages
+
+#### 📊 Success Metrics
+
+**Performance Targets:**
+- ✅ Scroll accuracy: 100% (no off-by-one errors)
+- ✅ Frame rate: 60fps sustained during scroll
+- ✅ Jank: < 5 frames dropped per scroll session
+- ✅ Memory: < 200MB peak for 100 pages
+- ✅ Cache hit rate: > 90% for prefetched images
+
+**User Experience Goals:**
+- ✅ Webtoon images fit screen width automatically
+- ✅ No horizontal scrolling needed
+- ✅ Smooth continuous scroll regardless of image sizes
+- ✅ Accurate page tracking at all scroll speeds
+
+#### 🧪 Testing Checklist
+- [ ] Test with normal manga images (AR = 1.42)
+- [ ] Test with actual webtoon (1275×16383px, AR = 12.85)
+- [ ] Test with mixed content (3 normal + 3 webtoon)
+- [ ] Test slow scrolling (page tracking accuracy)
+- [ ] Test fast scrolling (preload effectiveness)
+- [ ] Test memory usage with 100+ pages
+- [ ] Test offline mode functionality
+- [ ] Test on low-end Android devices
+- [ ] Profile with DevTools Performance tab
+- [ ] Profile with DevTools Memory tab
+
+For detailed implementation roadmap, see CHECKLIST.md Task 6.
 
 ---
 

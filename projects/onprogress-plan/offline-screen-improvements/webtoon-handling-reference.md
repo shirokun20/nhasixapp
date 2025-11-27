@@ -28,6 +28,88 @@ Technical guide for handling webtoon-style (extremely tall/vertical) images in P
 const double WEBTOON_THRESHOLD = 2.5; // height/width > 2.5
 ```
 
+## 📱 UX Research: Popular Manga Readers
+
+### 1. MangaDex (Web-based)
+**URL:** https://mangadex.org
+
+**Key Features:**
+- ✅ Smooth continuous scroll dengan lazy loading
+- ✅ Auto-fit images ke screen width
+- ✅ Progressive image loading (blur → full quality)
+- ✅ Infinite scroll dengan preload 3-5 pages ahead
+- ✅ Keyboard shortcuts untuk quick navigation
+- ✅ Reader settings: Fit width, Fit height, Original size
+
+**UX Strengths:**
+- Sangat smooth scrolling bahkan dengan network lambat
+- Progressive loading memberikan instant feedback
+- Automatic preloading membuat reading tanpa interruption
+
+### 2. Tachiyomi (Android App)
+**GitHub:** https://github.com/tachiyomiorg/tachiyomi
+
+**Key Features:**
+- ✅ Multiple reading modes: Continuous vertical, Paged (L-R), Paged (R-L), Webtoon
+- ✅ **Webtoon Mode:** Specialized untuk tall images
+  - Auto-detect berdasarkan aspect ratio
+  - Split tall images jadi chunks
+  - Smooth continuous scroll
+- ✅ Image caching strategy dengan LRU
+- ✅ Adaptive preloading based on reading speed
+- ✅ Zoom controls dengan double-tap
+
+**UX Strengths:**
+- Mode switching smooth tanpa reload
+- Webtoon mode sangat optimal untuk tall images
+- Caching strategy membuat offline reading smooth
+- Adaptive preloading hemat bandwidth
+
+### 3. Webtoon (Official App)
+**Website:** https://www.webtoons.com
+
+**Key Features:**
+- ✅ Pure vertical scroll optimized untuk webtoon
+- ✅ Lazy loading dengan placeholder shimmer
+- ✅ Gesture controls (swipe untuk prev/next chapter)
+- ✅ Auto-save reading position
+- ✅ Smooth transitions between episodes
+
+**UX Strengths:**
+- Specialized untuk vertical content
+- Very smooth scrolling performance
+- Instant page position restore
+- Clean, distraction-free reading
+
+### 4. Best Practices from Research
+
+**Variable Height Support:**
+- Track actual rendered heights
+- Cache height data per image
+- Use for accurate scroll position
+
+**Webtoon Detection:**
+- Aspect Ratio > 2.5 = webtoon
+- Auto-switch rendering strategy
+- fitWidth untuk tall images
+
+**Preloading Strategy:**
+- Adaptive: 3-5 pages ahead based on scroll velocity
+- Prefetch on idle
+- Progressive: placeholder → thumbnail → full quality
+
+**Smooth Scrolling:**
+- Use BouncingScrollPhysics
+- Debounce scroll events
+- Optimize rebuilds dengan RepaintBoundary
+
+**Image Optimization:**
+- Cache decoded images
+- Use appropriate BoxFit per image type
+- Progressive loading untuk better UX
+
+---
+
 ## ⚠️ Problems with Webtoon Images
 
 ### 1. PDF Generation Issues

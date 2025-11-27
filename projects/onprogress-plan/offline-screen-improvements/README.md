@@ -4,6 +4,8 @@
 
 This project focuses on improving the Offline Screen functionality, fixing download notification sounds, enhancing PDF generation for webtoon images, and improving the reading mode for vertical content.
 
+**📖 Reading Screen Revamp:** Detailed planning available in [`reading-screen-revamp/README.md`](./reading-screen-revamp/README.md)
+
 ## 🎯 Main Goals
 
 1. **Move PDF Generation to Offline Screen** - Users can generate PDFs from their offline library
@@ -11,7 +13,7 @@ This project focuses on improving the Offline Screen functionality, fixing downl
 3. **Handle Webtoon Images in PDF** - Smart splitting for extremely tall images
 4. **Fix Notification Sounds** - Sound only on start/completion, not every progress update
 5. **Improve Offline UI** - Modern, polished interface with better UX
-6. **Fix Reading Mode** - Proper handling of webtoon/tall images in reader
+6. **✨ Revamp Reading Mode** - Comprehensive improvement for continuous scroll mode (see dedicated plan)
 
 ## 📋 Task Summary
 
@@ -21,7 +23,7 @@ This project focuses on improving the Offline Screen functionality, fixing downl
 | Add Delete Feature | High | Medium | ⏳ Not Started |
 | Move PDF to Offline | High | Medium | ⏳ Not Started |
 | Webtoon PDF Handling | High | High | ⏳ Not Started |
-| Fix Reading Mode | High | High | ⏳ Not Started |
+| **Revamp Reading Mode** | **🔥 High** | **High** | **📝 Planning Complete** |
 | Improve UI | Medium | Medium | ⏳ Not Started |
 
 **Note:** Notification implementation already uses correct `Importance` levels (Android-only project)
@@ -29,13 +31,17 @@ This project focuses on improving the Offline Screen functionality, fixing downl
 ## 🚀 Recommended Implementation Order
 
 1. **✅ Notification Sounds** - **ALREADY CORRECT!** (No work needed)
-2. **Add Delete Feature** (1-1.5 days)
-3. **Move PDF to Offline Screen** (1 day)
-4. **Webtoon PDF Handling** (1.5-2 days)
-5. **Fix Reading Mode** (1.5-2 days)
+2. **🔥 Revamp Reading Mode** (2-3 days) - **User Priority, Start First!**
+   - See detailed plan: [`reading-screen-revamp/README.md`](./reading-screen-revamp/README.md)
+   - Phase 1: Variable height tracking (1 day)
+   - Phase 2: Webtoon detection & handling (1 day)
+   - Phase 3-4: Adaptive preloading & performance (1 day)
+3. **Add Delete Feature** (1-1.5 days)
+4. **Move PDF to Offline Screen** (1 day)
+5. **Webtoon PDF Handling** (1.5-2 days)
 6. **Improve UI** (1-1.5 days)
 
-**Total Estimated Time:** 5-6 days (reduced from 5-7 since Task 1 is done)
+**Total Estimated Time:** 7-9 days (reading screen added as priority)
 
 ## 📁 Files to Modify
 
