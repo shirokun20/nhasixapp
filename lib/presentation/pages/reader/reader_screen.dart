@@ -144,23 +144,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final state = _readerCubit.state;
     if (state.readingMode == ReadingMode.continuousScroll &&
         state.content != null) {
-      // Calculate current page based on scroll position
+      // 🚀 SIMPLE: Only prefetch images, no page tracking or state updates
+      // Calculate visible page for prefetching only
       final screenHeight = MediaQuery.of(context).size.height;
       final approximateItemHeight =
           screenHeight * 0.9; // Slightly larger for better detection
-      final currentScrollPage =
+      final visiblePage =
           (_scrollController.offset / approximateItemHeight).round() + 1;
-      final clampedPage = currentScrollPage.clamp(1, state.content!.pageCount);
+      final clampedPage = visiblePage.clamp(1, state.content!.pageCount);
 
-      // Only update if page actually changed and different from last reported
-      if (clampedPage != _lastReportedPage &&
-          clampedPage != (state.currentPage ?? 1)) {
+      // Only prefetch when page changes - no state updates, no history saves
+      if (clampedPage != _lastReportedPage) {
         _lastReportedPage = clampedPage;
-        _readerCubit.jumpToPage(clampedPage);
-
-        // Trigger prefetching for continuous scroll mode too
-        final imageUrls = state.content?.imageUrls ?? [];
-        _prefetchImages(clampedPage, imageUrls, state.imageMetadata);
+        _prefetchImages(
+            clampedPage, state.content!.imageUrls, state.imageMetadata);
       }
     }
   }
@@ -273,6 +270,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _syncControllersWithState(ReaderState state) {
+    // 🚀 OPTIMIZATION: Skip sync for continuous scroll - let user scroll freely
+    // Prevents scroll position reset when readingTimer updates state every second
+    if (state.readingMode == ReadingMode.continuousScroll) {
+      return;
+    }
+
     final currentPage = state.currentPage ?? 1;
     final targetPageIndex = currentPage - 1;
 
@@ -575,55 +578,70 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   Widget _buildContinuousReader(ReaderState state) {
-    return GestureDetector(
-      onTapUp: (details) {
-        _readerCubit.toggleUI();
+    // 🐛 BUG FIX: Remove GestureDetector wrapper to prevent scroll gesture conflicts
+    // GestureDetector blocks ListView scroll gestures, causing:
+    // 1. Unable to scroll down
+    // 2. Unable to scroll back to top from bottom
+    // For continuous scroll mode, UI toggle is available via top bar only
+
+    // 🚀 OPTIMIZATION: Get enableZoom once outside itemBuilder to avoid BlocBuilder in ListView
+    final enableZoom = state.enableZoom ?? true;
+
+    return ListView.builder(
+      controller: _scrollController,
+      physics: const BouncingScrollPhysics(), // Smoother scroll
+      itemCount: state.content?.imageUrls.length ?? 0,
+      itemBuilder: (context, index) {
+        final imageUrl = state.content?.imageUrls[index] ?? '';
+        return _buildImageViewer(
+          imageUrl,
+          index + 1,
+          isContinuous: true,
+          enableZoom: enableZoom,
+        );
       },
-      child: ListView.builder(
-        controller: _scrollController,
-        physics: const BouncingScrollPhysics(), // Smoother scroll
-        itemCount: state.content?.imageUrls.length ?? 0,
-        itemBuilder: (context, index) {
-          final imageUrl = state.content?.imageUrls[index] ?? '';
-          return _buildImageViewer(imageUrl, index + 1, isContinuous: true);
-        },
-      ),
     );
   }
 
   Widget _buildImageViewer(String imageUrl, int pageNumber,
-      {bool isContinuous = false}) {
+      {bool isContinuous = false, bool? enableZoom}) {
     // Debug logging removed to reduce log spam during normal scrolling
     // Uncomment below for debugging image viewer builds:
     // debugPrint('🖼️ Building image viewer for page $pageNumber with URL: $imageUrl');
 
+    // 🚀 OPTIMIZATION: For continuous scroll mode, avoid BlocBuilder to prevent re-renders
+    // Pass enableZoom as parameter instead of reading from state
+    if (isContinuous) {
+      final zoom = enableZoom ?? true;
+      return Container(
+        margin: const EdgeInsets.only(bottom: 8.0),
+        child: ExtendedImageReaderWidget(
+          imageUrl: imageUrl,
+          contentId: widget.contentId,
+          pageNumber: pageNumber,
+          readingMode: ReadingMode.continuousScroll,
+          enableZoom: zoom,
+        ),
+      );
+    }
+
+    // For single page and vertical modes, use BlocBuilder for dynamic updates
     return BlocBuilder<ReaderCubit, ReaderState>(
       builder: (context, state) {
-        final enableZoom = state.enableZoom ?? true;
+        final zoom = enableZoom ?? state.enableZoom ?? true;
 
         // 🚀 FEATURE FLAG: Toggle between ExtendedImage (new) and PhotoView (legacy)
         const bool useExtendedImage = true; // Set to false for rollback
 
         if (useExtendedImage) {
           // ✨ NEW: Use ExtendedImageReaderWidget for all modes
-          return isContinuous
-              ? Container(
-                  margin: const EdgeInsets.only(bottom: 8.0),
-                  child: ExtendedImageReaderWidget(
-                    imageUrl: imageUrl,
-                    contentId: widget.contentId,
-                    pageNumber: pageNumber,
-                    readingMode: ReadingMode.continuousScroll,
-                    enableZoom: enableZoom,
-                  ),
-                )
-              : ExtendedImageReaderWidget(
-                  imageUrl: imageUrl,
-                  contentId: widget.contentId,
-                  pageNumber: pageNumber,
-                  readingMode: state.readingMode ?? ReadingMode.singlePage,
-                  enableZoom: enableZoom,
-                );
+          return ExtendedImageReaderWidget(
+            imageUrl: imageUrl,
+            contentId: widget.contentId,
+            pageNumber: pageNumber,
+            readingMode: state.readingMode ?? ReadingMode.singlePage,
+            enableZoom: zoom,
+          );
         }
 
         // 📦 LEGACY: PhotoView fallback (for rollback)
