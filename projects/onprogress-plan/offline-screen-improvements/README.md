@@ -4,7 +4,7 @@
 
 This project focuses on improving the Offline Screen functionality, fixing download notification sounds, enhancing PDF generation for webtoon images, and improving the reading mode for vertical content.
 
-**📖 Reading Screen Revamp:** Detailed planning available in [`reading-screen-revamp/README.md`](./reading-screen-revamp/README.md)
+**📖 Reading Screen Revamp:** See detailed planning in [CHECKLIST.md Task 6](#task-6-revamp-reading-mode), [implementation-plan.md Task 6](./implementation-plan.md#task-6-revamp-reading-mode---comprehensive-improvement), and comprehensive code examples in [code-snippets.md](./code-snippets.md#-reading-mode---comprehensive-revamp-4-phases).
 
 ## 🎯 Main Goals
 
@@ -32,7 +32,9 @@ This project focuses on improving the Offline Screen functionality, fixing downl
 
 1. **✅ Notification Sounds** - **ALREADY CORRECT!** (No work needed)
 2. **🔥 Revamp Reading Mode** (2-3 days) - **User Priority, Start First!**
-   - See detailed plan: [`reading-screen-revamp/README.md`](./reading-screen-revamp/README.md)
+   - See detailed checklist: [CHECKLIST.md Task 6](./CHECKLIST.md#-task-6-revamp-reading-mode---4-phase-implementation)
+   - See implementation guide: [implementation-plan.md Task 6](./implementation-plan.md#task-6-revamp-reading-mode---comprehensive-improvement)
+   - See code examples: [code-snippets.md](./code-snippets.md#-reading-mode---comprehensive-revamp-4-phases)
    - Phase 1: Variable height tracking (1 day)
    - Phase 2: Webtoon detection & handling (1 day)
    - Phase 3-4: Adaptive preloading & performance (1 day)
