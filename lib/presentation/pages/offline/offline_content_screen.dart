@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
@@ -6,7 +9,10 @@ import 'package:logger/logger.dart';
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/utils/directory_utils.dart';
+import '../../../core/utils/offline_content_manager.dart';
+import '../../../domain/entities/content.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../services/pdf_conversion_service.dart';
 import '../../../utils/permission_helper.dart';
 import '../../../core/utils/responsive_grid_delegate.dart';
 import '../../cubits/offline_search/offline_search_cubit.dart';
@@ -358,35 +364,108 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
 
     if (state is OfflineSearchEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.cloud_off,
-              size: 64,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              state.emptyMessage,
-              style: TextStyleConst.bodyLarge.copyWith(
-                color: colorScheme.onSurfaceVariant,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Icon
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.cloud_download_outlined,
+                  size: 64,
+                  color: colorScheme.onPrimaryContainer,
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => context.go('/downloads'),
-              icon: const Icon(Icons.download),
-              label: Text(AppLocalizations.of(context)!.goToDownloads),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                foregroundColor: colorScheme.onPrimary,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              const SizedBox(height: 24),
+
+              // Title
+              Text(
+                'No Offline Content',
+                style: TextStyleConst.headingMedium.copyWith(
+                  color: colorScheme.onSurface,
+                ),
+                textAlign: TextAlign.center,
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+
+              // Message
+              Text(
+                state.emptyMessage,
+                style: TextStyleConst.bodyMedium.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+
+              // Tips
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.lightbulb_outline,
+                          size: 20,
+                          color: colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'How to get started',
+                          style: TextStyleConst.titleSmall.copyWith(
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _buildTipRow(
+                      colorScheme,
+                      '1. Browse comics you like',
+                    ),
+                    const SizedBox(height: 8),
+                    _buildTipRow(
+                      colorScheme,
+                      '2. Tap the download button',
+                    ),
+                    const SizedBox(height: 8),
+                    _buildTipRow(
+                      colorScheme,
+                      '3. Access them here anytime, even offline!',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Action button
+              FilledButton.icon(
+                onPressed: () => context.go('/downloads'),
+                icon: const Icon(Icons.download_rounded),
+                label: const Text('Browse Downloads'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -437,8 +516,10 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                       content: content,
                       onTap: () =>
                           context.push('/reader/${content.id}', extra: content),
+                      onLongPress: () => _showContentActions(context, content),
                       showOfflineIndicator: true,
                       isHighlighted: false,
+                      offlineSize: state.offlineSizes[content.id], // From state
                     );
                   },
                 );
@@ -451,5 +532,470 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
 
     // Initial state
     return const OfflineContentGridShimmer();
+  }
+
+  /// Show bottom sheet with content actions (Read, Convert to PDF, Delete)
+  Future<void> _showContentActions(
+      BuildContext context, Content content) async {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    final offlineManager = getIt<OfflineContentManager>();
+
+    // Calculate content size for delete action
+    final imagePaths = await offlineManager.getOfflineImageUrls(content.id);
+    int totalBytes = 0;
+    for (final imagePath in imagePaths) {
+      final file = File(imagePath);
+      if (await file.exists()) {
+        totalBytes += await file.length();
+      }
+    }
+    final sizeText = OfflineContentManager.formatStorageSize(totalBytes);
+
+    if (!context.mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
+            // Content header with thumbnail and title
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  // Thumbnail
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: Image.network(
+                      content.coverUrl,
+                      width: 50,
+                      height: 70,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        width: 50,
+                        height: 70,
+                        color: colorScheme.surfaceContainerHighest,
+                        child: Icon(
+                          Icons.broken_image,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Title and metadata
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          content.title,
+                          style: TextStyleConst.titleMedium.copyWith(
+                            color: colorScheme.onSurface,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${content.pageCount} pages',
+                          style: TextStyleConst.bodySmall.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const Divider(height: 1),
+
+            // Actions
+            ListTile(
+              leading: Icon(Icons.menu_book, color: colorScheme.primary),
+              title: Text(l10n.readNow),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/reader/${content.id}', extra: content);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.picture_as_pdf, color: colorScheme.tertiary),
+              title: Text(l10n.convertToPdf),
+              subtitle: Text('${content.pageCount} pages'),
+              onTap: () {
+                Navigator.pop(context);
+                _generatePdf(context, content);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.delete, color: colorScheme.error),
+              title: Text(
+                l10n.delete,
+                style: TextStyle(color: colorScheme.error),
+              ),
+              subtitle: Text(
+                sizeText,
+                style: TextStyle(
+                  color: colorScheme.onSurfaceVariant,
+                  fontSize: 12,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _showDeleteConfirmation(context, content);
+              },
+            ),
+
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Generate PDF from offline content
+  Future<void> _generatePdf(BuildContext context, Content content) async {
+    final l10n = AppLocalizations.of(context)!;
+    final offlineManager = getIt<OfflineContentManager>();
+    final pdfService = getIt<PdfConversionService>();
+
+    try {
+      // Show loading indicator
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.convertingToPdf),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      // Get offline image paths
+      final imagePaths = await offlineManager.getOfflineImageUrls(content.id);
+
+      if (imagePaths.isEmpty) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.pdfConversionFailedWithError(
+              content.title,
+              'No images found',
+            )),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+        return;
+      }
+
+      // Start PDF conversion in background
+      await pdfService.convertToPdfInBackground(
+        contentId: content.id,
+        title: content.title,
+        imagePaths: imagePaths,
+        maxPagesPerFile: 50,
+      );
+
+      // Success notification will be shown by the service
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.pdfConversionFailedWithError(
+            content.title,
+            e.toString(),
+          )),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  /// Show delete confirmation dialog
+  Future<void> _showDeleteConfirmation(
+      BuildContext context, Content content) async {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    final offlineManager = getIt<OfflineContentManager>();
+
+    // Check if user enabled 'don't ask again'
+    final prefs = await SharedPreferences.getInstance();
+    final skipConfirmation = prefs.getBool('skip_delete_confirmation') ?? false;
+
+    // Calculate content size
+    final imagePaths = await offlineManager.getOfflineImageUrls(content.id);
+    double totalSize = 0;
+    for (final imagePath in imagePaths) {
+      final file = File(imagePath);
+      if (await file.exists()) {
+        totalSize += await file.length();
+      }
+    }
+
+    final sizeInMB = (totalSize / (1024 * 1024)).toStringAsFixed(2);
+
+    if (!context.mounted) return;
+
+    // Skip confirmation if user enabled 'don't ask again'
+    if (skipConfirmation) {
+      await _deleteContent(context, content, sizeInMB);
+      return;
+    }
+
+    bool dontAskAgain = false;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: colorScheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.warning, color: colorScheme.error),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                l10n.delete,
+                style: TextStyleConst.headingSmall.copyWith(
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Content info
+            Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: Image.network(
+                    content.coverUrl,
+                    width: 50,
+                    height: 70,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      width: 50,
+                      height: 70,
+                      color: colorScheme.surfaceContainerHighest,
+                      child: Icon(
+                        Icons.broken_image,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        content.title,
+                        style: TextStyleConst.titleSmall.copyWith(
+                          color: colorScheme.onSurface,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${content.pageCount} pages',
+                        style: TextStyleConst.bodySmall.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Storage info
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colorScheme.errorContainer.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: colorScheme.error.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.storage, color: colorScheme.error, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Storage to be freed: $sizeInMB MB',
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Warning message
+            Text(
+              l10n.removeDownloadConfirmation,
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Don't ask again checkbox
+            StatefulBuilder(
+              builder: (context, setState) => CheckboxListTile(
+                value: dontAskAgain,
+                onChanged: (value) {
+                  setState(() {
+                    dontAskAgain = value ?? false;
+                  });
+                },
+                title: Text(
+                  "Don't ask again",
+                  style: TextStyleConst.bodySmall.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              l10n.cancel,
+              style: TextStyleConst.labelLarge.copyWith(
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
+            ),
+            child: Text(
+              l10n.delete,
+              style: TextStyleConst.labelLarge,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      // Save 'don't ask again' preference if checkbox was enabled
+      if (dontAskAgain) {
+        await prefs.setBool('skip_delete_confirmation', true);
+      }
+      await _deleteContent(context, content, sizeInMB);
+    }
+  }
+
+  /// Delete offline content
+  Future<void> _deleteContent(
+      BuildContext context, Content content, String sizeInMB) async {
+    final offlineManager = getIt<OfflineContentManager>();
+
+    try {
+      // Show loading
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Deleting ${content.title}...'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+
+      // Delete content
+      final success = await offlineManager.deleteOfflineContent(content.id);
+
+      if (!context.mounted) return;
+
+      if (success) {
+        // Refresh offline content list
+        _offlineSearchCubit.getAllOfflineContent();
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${content.title} deleted. Freed $sizeInMB MB'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete ${content.title}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  /// Build a tip row for empty state
+  Widget _buildTipRow(ColorScheme colorScheme, String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          Icons.check_circle_outline,
+          size: 16,
+          color: colorScheme.primary,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyleConst.bodySmall.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

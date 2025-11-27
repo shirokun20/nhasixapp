@@ -1056,6 +1056,55 @@ class OfflineContentManager {
     }
   }
 
+  /// Delete offline content and free up storage
+  /// Returns true if deletion was successful
+  Future<bool> deleteOfflineContent(String contentId) async {
+    try {
+      _logger.i('Deleting offline content: $contentId');
+
+      // Get content path
+      final contentPath = await getOfflineContentPath(contentId);
+      if (contentPath == null) {
+        _logger.w('Content path not found for $contentId');
+        return false;
+      }
+
+      // Check if directory exists
+      final contentDir = Directory(contentPath);
+      if (!await contentDir.exists()) {
+        _logger.w('Content directory does not exist: $contentPath');
+        return false;
+      }
+
+      // Delete the entire content directory (including images subdirectory)
+      await contentDir.delete(recursive: true);
+      _logger.i('Deleted content directory: $contentPath');
+
+      // Remove from metadata cache
+      _metadataCache.remove(contentId);
+      _metadataCacheTime.remove(contentId);
+
+      // Clear offline IDs cache to force refresh
+      _cachedOfflineIds = null;
+      _offlineIdsCacheTime = null;
+
+      // Update download status to removed
+      try {
+        await _userDataRepository.deleteDownloadStatus(contentId);
+        _logger.i('Removed download status for $contentId');
+      } catch (e) {
+        _logger.w('Failed to remove download status: $e');
+        // Continue even if this fails
+      }
+
+      return true;
+    } catch (e, stackTrace) {
+      _logger.e('Error deleting offline content for $contentId',
+          error: e, stackTrace: stackTrace);
+      return false;
+    }
+  }
+
   /// Get localized string with fallback
   String _getLocalized(String key,
       {Map<String, dynamic>? args, String? fallback}) {

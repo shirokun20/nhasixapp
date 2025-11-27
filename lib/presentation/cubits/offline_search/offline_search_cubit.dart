@@ -20,6 +20,48 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
   final OfflineContentManager _offlineContentManager;
 
+  /// Helper to calculate directory size recursively
+  Future<int> _getDirectorySize(Directory directory) async {
+    int size = 0;
+    try {
+      await for (final entity in directory.list(recursive: true)) {
+        if (entity is File) {
+          size += await entity.length();
+        }
+      }
+    } catch (e) {
+      logInfo('Error calculating directory size: $e');
+    }
+    return size;
+  }
+
+  /// Calculate sizes for all content directories
+  Future<Map<String, String>> _calculateContentSizes(
+      List<Content> contents) async {
+    final sizes = <String, String>{};
+
+    for (final content in contents) {
+      try {
+        // Get the directory path from the first image URL
+        if (content.imageUrls.isNotEmpty) {
+          final firstImagePath = content.imageUrls.first;
+          final file = File(firstImagePath);
+          final dirPath = file.parent.path;
+
+          // Calculate directory size
+          final sizeInBytes = await _getDirectorySize(Directory(dirPath));
+          sizes[content.id] =
+              OfflineContentManager.formatStorageSize(sizeInBytes);
+        }
+      } catch (e) {
+        // Skip if unable to calculate size
+        logInfo('Unable to calculate size for content ${content.id}: $e');
+      }
+    }
+
+    return sizes;
+  }
+
   /// Search in offline content from metadata.json files
   Future<void> searchOfflineContent(String query, {String? backupPath}) async {
     try {
@@ -52,10 +94,14 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         return;
       }
 
+      // Calculate sizes for all content
+      final offlineSizes = await _calculateContentSizes(contents);
+
       emit(OfflineSearchLoaded(
         query: query,
         results: contents,
         totalResults: contents.length,
+        offlineSizes: offlineSizes,
       ));
 
       logInfo('Found ${contents.length} offline content matches for: $query');
@@ -120,10 +166,14 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         return;
       }
 
+      // Calculate sizes for all content
+      final offlineSizes = await _calculateContentSizes(contents);
+
       emit(OfflineSearchLoaded(
         query: '',
         results: contents,
         totalResults: contents.length,
+        offlineSizes: offlineSizes,
       ));
 
       logInfo(
@@ -222,10 +272,14 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         return;
       }
 
+      // Calculate sizes for all content
+      final offlineSizes = await _calculateContentSizes(backupContents);
+
       emit(OfflineSearchLoaded(
         query: '',
         results: backupContents,
         totalResults: backupContents.length,
+        offlineSizes: offlineSizes,
       ));
 
       logInfo('Found ${backupContents.length} backup content items');
