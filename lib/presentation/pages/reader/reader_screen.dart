@@ -590,6 +590,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
     return ListView.builder(
       controller: _scrollController,
       physics: const BouncingScrollPhysics(), // Smoother scroll
+      cacheExtent:
+          1000.0, // 🐛 FIX: Keep 1000px of items in memory to prevent re-loading images
       itemCount: state.content?.imageUrls.length ?? 0,
       itemBuilder: (context, index) {
         final imageUrl = state.content?.imageUrls[index] ?? '';
@@ -614,6 +616,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
     if (isContinuous) {
       final zoom = enableZoom ?? true;
       return Container(
+        key: ValueKey(
+            'image_viewer_$pageNumber'), // 🐛 FIX: Preserve widget identity to prevent re-loading
         margin: const EdgeInsets.only(bottom: 8.0),
         child: ExtendedImageReaderWidget(
           imageUrl: imageUrl,

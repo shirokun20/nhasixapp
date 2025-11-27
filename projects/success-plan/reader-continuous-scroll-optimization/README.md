@@ -174,6 +174,56 @@ void _onScrollChanged() {
 - ❌ No controller sync
 - ❌ No state emissions from scroll events
 
+## Bug Fix - Image Re-loading on Scroll (Nov 27, 2025)
+
+### Problem
+When scrolling down then back up, images that were already loaded show loading indicator again instead of displaying immediately from cache.
+
+### Root Cause
+- ListView.builder disposes widgets that are too far from viewport (default cacheExtent: 250px)
+- When user scrolls back, widget rebuilds from scratch
+- Even though ExtendedImage has cache enabled, widget rebuild triggers loading state
+
+### Solution
+**Two-part fix to prevent widget disposal and preserve state:**
+
+1. **Add ValueKey to Container**:
+```dart
+Widget _buildImageViewer(..., {bool isContinuous = false, ...}) {
+  if (isContinuous) {
+    return Container(
+      key: ValueKey('image_viewer_$pageNumber'), // Preserve widget identity!
+      margin: const EdgeInsets.only(bottom: 8.0),
+      child: ExtendedImageReaderWidget(...),
+    );
+  }
+}
+```
+
+2. **Increase ListView cacheExtent**:
+```dart
+Widget _buildContinuousReader(ReaderState state) {
+  return ListView.builder(
+    controller: _scrollController,
+    physics: const BouncingScrollPhysics(),
+    cacheExtent: 1000.0, // Keep 1000px of items in memory (default: 250px)
+    itemCount: state.content?.imageUrls.length ?? 0,
+    itemBuilder: (context, index) { ... },
+  );
+}
+```
+
+### Why It Works
+- **ValueKey**: Tells Flutter "this is the same widget" → preserves state across rebuilds
+- **cacheExtent: 1000px**: Keeps 1-2 images above/below viewport in memory
+- **ExtendedImage cache**: Already configured with `enableMemoryCache: true` + `clearMemoryCacheWhenDispose: false`
+- **Combined effect**: Widget stays alive + cache preserved = no reload!
+
+### Performance Impact
+- Memory usage: Moderate increase (1000px vs 250px)
+- Balance: Good UX (no reload) vs acceptable memory (1-2 extra images)
+- For high-res images (800-1500px height), this prevents disposal of nearby images
+
 ## Testing Checklist
 - [x] Scroll works smoothly without lag
 - [x] Images don't re-render after loading
@@ -181,6 +231,7 @@ void _onScrollChanged() {
 - [x] No analyzer errors
 - [x] Scroll doesn't reset to initial position
 - [x] Can scroll to next/previous pages freely
+- [ ] Images don't show loading when scrolling back (pending verification)
 - [ ] Manual testing in app (pending user verification)
 
 ## Related Files
