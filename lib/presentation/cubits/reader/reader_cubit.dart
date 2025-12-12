@@ -273,6 +273,48 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
+  /// Update current page for continuous scroll (silent update without state emission)
+  /// This prevents re-rendering all ListView items when page changes
+  void updateCurrentPageSilent(int page) async {
+    if (!isClosed && state.content == null) return;
+
+    final totalPages = state.content!.pageCount;
+    final validPage = page.clamp(1, totalPages);
+
+    _logger.d(
+        '📍 Silent page update for continuous scroll: $validPage (total: $totalPages)');
+
+    // DON'T emit state - this prevents BlocBuilder rebuilds
+    // But still save position and history for persistence
+    try {
+      // Update internal tracking without state emission
+      final position = ReaderPosition.create(
+        contentId: state.content!.id,
+        currentPage: validPage,
+        totalPages: totalPages,
+        title: state.content!.title,
+        coverUrl: state.content!.coverUrl,
+        readingTimeMinutes: (state.readingTimer?.inMinutes ?? 0),
+      );
+
+      await readerRepository.saveReaderPosition(position);
+
+      // Also update history
+      final params = AddToHistoryParams.fromString(
+        state.content!.id,
+        validPage,
+        totalPages,
+        timeSpent: state.readingTimer ?? Duration.zero,
+        title: state.content!.title,
+        coverUrl: state.content!.coverUrl,
+      );
+      await addToHistoryUseCase(params);
+    } catch (e) {
+      _logger.e('Failed to save silent page update: $e');
+      // Don't emit error state
+    }
+  }
+
   /// Toggle UI visibility
   void toggleUI() {
     if (!isClosed) {

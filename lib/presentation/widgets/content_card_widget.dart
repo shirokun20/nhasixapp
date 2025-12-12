@@ -34,6 +34,8 @@ class ContentCard extends StatelessWidget {
     this.isHighlighted = false, // NEW: for highlight matching content
     this.highlightReason, // NEW: reason for highlight
     this.isBlurred = false, // NEW: for blur excluded content
+    this.offlineDownloadDate, // NEW: for offline screen - when content was downloaded
+    this.offlineSize, // NEW: for offline screen - total file size
   });
 
   final Content content;
@@ -54,6 +56,9 @@ class ContentCard extends StatelessWidget {
   final bool isHighlighted; // NEW: for highlight matching content
   final String? highlightReason; // NEW: reason for highlight
   final bool isBlurred; // NEW: for blur excluded content
+  final String?
+      offlineDownloadDate; // NEW: formatted download date (e.g., "Nov 27, 2025")
+  final String? offlineSize; // NEW: formatted file size (e.g., "45.2 MB")
 
   @override
   Widget build(BuildContext context) {
@@ -130,6 +135,34 @@ class ContentCard extends StatelessWidget {
                       _buildTitle(),
 
                       const SizedBox(height: 4),
+
+                      // Offline size (if available) - below title
+                      if (offlineSize != null) ...[
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.storage,
+                              size: 11,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withValues(alpha: 0.7),
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              offlineSize!,
+                              style: TextStyleConst.labelSmall.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withValues(alpha: 0.7),
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                      ],
 
                       // Artist
                       if (content.artists.isNotEmpty) _buildArtist(),
@@ -278,7 +311,8 @@ class ContentCard extends StatelessWidget {
                 aspectRatio: aspectRatio,
                 borderRadius:
                     BorderRadius.zero, // No border radius, handled by parent
-                showOfflineIndicator: false, // Disable to prevent duplicate with ContentCard's own indicator
+                showOfflineIndicator:
+                    false, // Disable to prevent duplicate with ContentCard's own indicator
               )
             : _buildImageError(),
       ),
@@ -561,6 +595,29 @@ class ContentCard extends StatelessWidget {
                   style: TextStyleConst.caption.copyWith(
                     fontSize: 10,
                   ),
+                ),
+              ),
+
+            // Download date for offline content (only show if provided)
+            if (offlineDownloadDate != null)
+              Builder(
+                builder: (context) => Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.download_done,
+                      size: 10,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      offlineDownloadDate!,
+                      style: TextStyleConst.caption.copyWith(
+                        fontSize: 10,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
