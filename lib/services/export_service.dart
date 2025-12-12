@@ -13,7 +13,6 @@ import '../core/utils/offline_content_manager.dart';
 /// Service for exporting and importing offline library
 class ExportService {
   final UserDataRepository _userDataRepository;
-  final OfflineContentManager _offlineContentManager;
   final Logger _logger;
 
   ExportService({
@@ -21,7 +20,6 @@ class ExportService {
     required OfflineContentManager offlineContentManager,
     required Logger logger,
   })  : _userDataRepository = userDataRepository,
-        _offlineContentManager = offlineContentManager,
         _logger = logger;
 
   /// Export library to a folder structure
