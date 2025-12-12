@@ -92,13 +92,13 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
       debugPrint(
           'OFFLINE_AUTO_SCAN: Found backup path: $backupPath, starting scan...');
       await _scanBackupFolder(backupPath, showSnackBar: false);
-      
+
       // Auto-sync backup content to database
       final offlineManager = getIt<OfflineContentManager>();
       final syncResult = await offlineManager.syncBackupToDatabase(backupPath);
       final synced = syncResult['synced'] ?? 0;
       final updated = syncResult['updated'] ?? 0;
-      
+
       if ((synced > 0 || updated > 0) && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -118,7 +118,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     final hasPermission = await PermissionHelper.hasStoragePermission();
     if (!hasPermission) {
       if (mounted) {
-        final granted = await PermissionHelper.requestStoragePermission(context);
+        final granted =
+            await PermissionHelper.requestStoragePermission(context);
         if (!granted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Storage permission required')),
@@ -130,7 +131,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
 
     // Scan and sync backup folder
     await _autoScanBackupFolder();
-    
+
     // Refresh list from database
     _offlineSearchCubit.getAllOfflineContent();
   }
@@ -138,11 +139,11 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
   /// Export library with progress dialog
   Future<void> _exportLibrary() async {
     final exportService = getIt<ExportService>();
-    
+
     // Show progress dialog
     String progressMessage = 'Preparing export...';
     double progressValue = 0.0;
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -162,7 +163,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
         },
       ),
     );
-    
+
     try {
       final exportPath = await exportService.exportLibrary(
         onProgress: (progress, message) {
@@ -172,10 +173,10 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
           // but the dialog will close when export completes
         },
       );
-      
+
       if (!mounted) return;
       Navigator.of(context).pop(); // Close progress dialog
-      
+
       // Show success dialog with share option
       showDialog(
         context: context,
@@ -191,7 +192,10 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                 'Path: $exportPath',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.7),
                 ),
               ),
             ],
@@ -215,7 +219,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     } catch (e) {
       if (!mounted) return;
       Navigator.of(context).pop(); // Close progress dialog
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Export failed: $e'),

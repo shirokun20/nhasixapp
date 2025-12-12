@@ -1114,16 +1114,15 @@ class OfflineContentManager {
   /// Delete offline content and free up storage
   /// [contentPath] - optional direct path to content directory (for backup items)
   /// Returns true if deletion was successful
-  Future<bool> deleteOfflineContent(String contentId, {String? contentPath}) async {
+  Future<bool> deleteOfflineContent(String contentId,
+      {String? contentPath}) async {
     try {
       _logger.i('Deleting offline content: $contentId');
 
       // Use provided path or try to find it
       String? pathToDelete = contentPath;
-      if (pathToDelete == null) {
-        pathToDelete = await getOfflineContentPath(contentId);
-      }
-      
+      pathToDelete ??= await getOfflineContentPath(contentId);
+
       if (pathToDelete == null) {
         _logger.w('Content path not found for $contentId');
         return false;
