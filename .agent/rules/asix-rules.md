@@ -1,3 +1,7 @@
+---
+trigger: always_on
+---
+
 # NhasixApp Agent Rules
 
 ## ⚡ Core Commands

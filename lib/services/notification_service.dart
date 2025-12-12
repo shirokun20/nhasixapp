@@ -1198,8 +1198,9 @@ class NotificationService {
     if (onDownloadRetry != null) this.onDownloadRetry = onDownloadRetry;
     if (onPdfRetry != null) this.onPdfRetry = onPdfRetry;
     if (onOpenDownload != null) this.onOpenDownload = onOpenDownload;
-    if (onNavigateToDownloads != null)
+    if (onNavigateToDownloads != null) {
       this.onNavigateToDownloads = onNavigateToDownloads;
+    }
 
     _logger.i('NotificationService: Callbacks updated');
   }
