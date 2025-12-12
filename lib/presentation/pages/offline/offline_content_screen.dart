@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
+import 'package:path/path.dart' as path;
 
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
@@ -13,6 +14,7 @@ import '../../../core/utils/offline_content_manager.dart';
 import '../../../domain/entities/content.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/pdf_conversion_service.dart';
+import '../../../services/export_service.dart';
 import '../../../utils/permission_helper.dart';
 import '../../../core/utils/responsive_grid_delegate.dart';
 import '../../cubits/offline_search/offline_search_cubit.dart';
@@ -40,13 +42,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     super.initState();
     _offlineSearchCubit = getIt<OfflineSearchCubit>();
 
-    // Load all offline content initially
+    // Load all offline content from database (database-first approach)
     _offlineSearchCubit.getAllOfflineContent();
-
-    // Auto-scan backup folder setelah delay sebentar
-    Future.delayed(const Duration(milliseconds: 500), () {
-      _autoScanBackupFolder();
-    });
   }
 
   @override
@@ -95,8 +92,136 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
       debugPrint(
           'OFFLINE_AUTO_SCAN: Found backup path: $backupPath, starting scan...');
       await _scanBackupFolder(backupPath, showSnackBar: false);
+      
+      // Auto-sync backup content to database
+      final offlineManager = getIt<OfflineContentManager>();
+      final syncResult = await offlineManager.syncBackupToDatabase(backupPath);
+      final synced = syncResult['synced'] ?? 0;
+      final updated = syncResult['updated'] ?? 0;
+      
+      if ((synced > 0 || updated > 0) && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Synced: $synced new, $updated updated'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     } else {
       debugPrint('OFFLINE_AUTO_SCAN: No backup folder found automatically');
+    }
+  }
+
+  /// Import content from backup folder to database
+  Future<void> _importFromBackup() async {
+    // Check permission first
+    final hasPermission = await PermissionHelper.hasStoragePermission();
+    if (!hasPermission) {
+      if (mounted) {
+        final granted = await PermissionHelper.requestStoragePermission(context);
+        if (!granted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Storage permission required')),
+          );
+          return;
+        }
+      }
+    }
+
+    // Scan and sync backup folder
+    await _autoScanBackupFolder();
+    
+    // Refresh list from database
+    _offlineSearchCubit.getAllOfflineContent();
+  }
+
+  /// Export library with progress dialog
+  Future<void> _exportLibrary() async {
+    final exportService = getIt<ExportService>();
+    
+    // Show progress dialog
+    String progressMessage = 'Preparing export...';
+    double progressValue = 0.0;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('Exporting Library'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LinearProgressIndicator(value: progressValue),
+                const SizedBox(height: 16),
+                Text(progressMessage),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+    
+    try {
+      final exportPath = await exportService.exportLibrary(
+        onProgress: (progress, message) {
+          progressValue = progress;
+          progressMessage = message;
+          // Note: We can't update dialog state from here easily,
+          // but the dialog will close when export completes
+        },
+      );
+      
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close progress dialog
+      
+      // Show success dialog with share option
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Export Complete'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Library exported successfully!'),
+              const SizedBox(height: 8),
+              Text(
+                'Path: $exportPath',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+            FilledButton.icon(
+              onPressed: () async {
+                Navigator.pop(context);
+                await exportService.shareExport(exportPath);
+              },
+              icon: const Icon(Icons.share),
+              label: const Text('Share'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close progress dialog
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Export failed: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
     }
   }
 
@@ -176,26 +301,23 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
         ],
       ),
       actions: [
-        // Debug: Check permission button
+        // Import from Backup button
         IconButton(
-          onPressed: () async {
-            final hasPermission = await PermissionHelper.hasStoragePermission();
-            debugPrint('DEBUG: Has storage permission: $hasPermission');
-            if (!hasPermission) {
-              if (mounted) {
-                final granted =
-                    await PermissionHelper.requestStoragePermission(context);
-                debugPrint('DEBUG: Permission request result: $granted');
-              }
-            }
-            // Retry auto-scan after permission check
-            _autoScanBackupFolder();
-          },
+          onPressed: () => _importFromBackup(),
           icon: Icon(
-            Icons.security,
+            Icons.cloud_download,
             color: Theme.of(context).colorScheme.onSurface,
           ),
-          tooltip: 'Check Permissions',
+          tooltip: 'Import from Backup',
+        ),
+        // Export Library button (placeholder for Phase 3)
+        IconButton(
+          onPressed: () => _exportLibrary(),
+          icon: Icon(
+            Icons.file_upload,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          tooltip: 'Export Library',
         ),
         // Storage info
         BlocBuilder<OfflineSearchCubit, OfflineSearchState>(
@@ -931,6 +1053,17 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     final offlineManager = getIt<OfflineContentManager>();
 
     try {
+      // Extract content path from image URLs (for backup items not in database)
+      String? contentPath;
+      if (content.imageUrls.isNotEmpty) {
+        final imagePath = content.imageUrls.first;
+        var parentDir = File(imagePath).parent;
+        // If parent is "images" subfolder, go up one more level
+        contentPath = path.basename(parentDir.path) == 'images'
+            ? parentDir.parent.path
+            : parentDir.path;
+      }
+
       // Show loading
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -940,8 +1073,11 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
         ),
       );
 
-      // Delete content
-      final success = await offlineManager.deleteOfflineContent(content.id);
+      // Delete content with extracted path
+      final success = await offlineManager.deleteOfflineContent(
+        content.id,
+        contentPath: contentPath,
+      );
 
       if (!context.mounted) return;
 

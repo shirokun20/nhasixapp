@@ -1056,29 +1056,89 @@ class OfflineContentManager {
     }
   }
 
+  /// Sync backup folder content to database
+  /// Returns map with 'synced' (new items) and 'updated' (fixed paths) counts
+  Future<Map<String, int>> syncBackupToDatabase(String backupPath) async {
+    final contents = await scanBackupFolder(backupPath);
+    int syncedCount = 0;
+    int updatedCount = 0;
+
+    for (final content in contents) {
+      final existing = await _userDataRepository.getDownloadStatus(content.id);
+
+      // Extract content directory from image URLs
+      String? contentDir;
+      int fileSize = 0;
+      if (content.imageUrls.isNotEmpty) {
+        final imagePath = content.imageUrls.first;
+        var parentDir = File(imagePath).parent;
+        contentDir = path.basename(parentDir.path) == 'images'
+            ? parentDir.parent.path
+            : parentDir.path;
+        for (final imgPath in content.imageUrls) {
+          final file = File(imgPath);
+          if (await file.exists()) fileSize += await file.length();
+        }
+      }
+
+      if (existing == null) {
+        // NEW: ID not in database - create entry
+        final status = DownloadStatus.completed(
+          content.id,
+          content.pageCount,
+          contentDir ?? '',
+          fileSize,
+        );
+        await _userDataRepository.saveDownloadStatus(status);
+        syncedCount++;
+        _logger.i('Synced new content: ${content.id}');
+      } else if (existing.downloadPath != null) {
+        // DUPLICATE: Check if existing path still valid
+        final existingDir = Directory(existing.downloadPath!);
+        if (!await existingDir.exists() && contentDir != null) {
+          // Path broken - update with backup path
+          await _userDataRepository.saveDownloadStatus(
+            existing.copyWith(downloadPath: contentDir),
+          );
+          updatedCount++;
+          _logger.i('Updated broken path for: ${content.id}');
+        }
+        // else: valid existing entry - skip
+      }
+    }
+
+    _logger.i('Sync complete: $syncedCount new, $updatedCount updated');
+    return {'synced': syncedCount, 'updated': updatedCount};
+  }
+
   /// Delete offline content and free up storage
+  /// [contentPath] - optional direct path to content directory (for backup items)
   /// Returns true if deletion was successful
-  Future<bool> deleteOfflineContent(String contentId) async {
+  Future<bool> deleteOfflineContent(String contentId, {String? contentPath}) async {
     try {
       _logger.i('Deleting offline content: $contentId');
 
-      // Get content path
-      final contentPath = await getOfflineContentPath(contentId);
-      if (contentPath == null) {
+      // Use provided path or try to find it
+      String? pathToDelete = contentPath;
+      if (pathToDelete == null) {
+        pathToDelete = await getOfflineContentPath(contentId);
+      }
+      
+      if (pathToDelete == null) {
         _logger.w('Content path not found for $contentId');
         return false;
       }
 
       // Check if directory exists
-      final contentDir = Directory(contentPath);
+      final contentDir = Directory(pathToDelete);
       if (!await contentDir.exists()) {
-        _logger.w('Content directory does not exist: $contentPath');
+        _logger.w('Content directory does not exist: $pathToDelete');
         return false;
       }
 
       // Delete the entire content directory (including images subdirectory)
       await contentDir.delete(recursive: true);
-      _logger.i('Deleted content directory: $contentPath');
+      _logger.i('Deleted content directory: $pathToDelete');
 
       // Remove from metadata cache
       _metadataCache.remove(contentId);

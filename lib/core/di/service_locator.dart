@@ -69,6 +69,7 @@ import 'package:nhasixapp/services/request_deduplication_service.dart';
 import 'package:nhasixapp/services/app_update_service.dart';
 import 'package:nhasixapp/services/image_cache_service.dart';
 import 'package:nhasixapp/services/image_metadata_service.dart';
+import 'package:nhasixapp/services/export_service.dart';
 import 'package:nhasixapp/services/cache/cache_manager.dart' as multi_cache;
 import 'package:nhasixapp/domain/entities/content.dart';
 import 'package:nhasixapp/domain/entities/tag.dart';
@@ -290,6 +291,13 @@ void _setupRepositories() {
             userDataRepository: getIt<UserDataRepository>(),
             logger: getIt<Logger>(),
           ));
+
+  // Export Service (depends on UserDataRepository, OfflineContentManager)
+  getIt.registerLazySingleton<ExportService>(() => ExportService(
+        userDataRepository: getIt<UserDataRepository>(),
+        offlineContentManager: getIt<OfflineContentManager>(),
+        logger: getIt<Logger>(),
+      ));
 }
 
 /// Setup use cases
@@ -441,6 +449,7 @@ void _setupCubits() {
   // OfflineSearchCubit - Offline content search
   getIt.registerFactory<OfflineSearchCubit>(() => OfflineSearchCubit(
         offlineContentManager: getIt<OfflineContentManager>(),
+        userDataRepository: getIt<UserDataRepository>(),
         logger: getIt<Logger>(),
       ));
 
