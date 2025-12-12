@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:extended_image/extended_image.dart';
+import '../../core/utils/webtoon_detector.dart';
 import '../../data/models/reader_settings_model.dart';
 
 /// Enhanced image viewer widget optimized for manga/comic reading
@@ -21,6 +22,7 @@ class ExtendedImageReaderWidget extends StatefulWidget {
     required this.readingMode,
     this.enableZoom = true,
     this.onLoadError,
+    this.onImageLoaded,
   });
 
   final String imageUrl;
@@ -29,6 +31,9 @@ class ExtendedImageReaderWidget extends StatefulWidget {
   final ReadingMode readingMode;
   final bool enableZoom;
   final VoidCallback? onLoadError;
+
+  /// 🎯 PHASE 1: Callback when image loads with actual dimensions
+  final Function(int pageNumber, Size imageSize)? onImageLoaded;
 
   @override
   State<ExtendedImageReaderWidget> createState() =>
@@ -44,6 +49,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   // Animation controllers for enhanced UI
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
+
+  // 🎯 PHASE 2: Cache loaded image size for webtoon detection
+  Size? _loadedImageSize;
 
   @override
   void initState() {
@@ -72,16 +80,30 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     super.dispose();
   }
 
-  /// Adaptive BoxFit based on reading mode for optimal reading comfort
+  /// Adaptive BoxFit based on reading mode and image type for optimal reading comfort.
+  ///
+  /// 🎯 PHASE 2: Automatically detects webtoon images and applies BoxFit.fitWidth
+  /// for better vertical scrolling experience.
   BoxFit _getAdaptiveBoxFit() {
-    // Use BoxFit.contain for all modes to ensure proper centering
+    // Check if image is loaded and detect webtoon
+    if (_loadedImageSize != null) {
+      final isWebtoon = WebtoonDetector.isWebtoon(_loadedImageSize!);
+
+      if (isWebtoon) {
+        // Webtoon images: Use fitWidth to fill screen width
+        // This allows full vertical scrolling without horizontal overflow
+        debugPrint('🎨 Webtoon detected (page ${widget.pageNumber}): '
+            'AR=${WebtoonDetector.getAspectRatio(_loadedImageSize!)?.toStringAsFixed(2)} '
+            '→ Using BoxFit.fitWidth');
+        return BoxFit.fitWidth;
+      }
+    }
+
+    // Normal images: Use BoxFit.contain for proper centering
     // BoxFit.contain will:
     // 1. Fit the entire image within bounds
     // 2. Maintain aspect ratio
     // 3. Auto-center the image (critical for PageView)
-    //
-    // Note: fitWidth/fitHeight don't auto-center in PageView context,
-    // causing images to stick to top-left corner
     return BoxFit.contain;
 
     /* Original adaptive strategy (caused centering issues):
@@ -164,7 +186,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             speed: 1.0,
             inertialSpeed: 100.0,
             initialScale: 1.0, // Start at fit scale (no zoom)
-            inPageView: true, // Optimize for PageView usage
+            // 🐛 BUG FIX: Only use PageView optimization for actual PageView modes
+            // For continuous scroll (ListView), set to false to avoid gesture conflicts
+            inPageView: widget.readingMode != ReadingMode.continuousScroll,
             cacheGesture: false, // Don't cache zoom state between pages
             initialAlignment: InitialAlignment.center,
           );
@@ -179,6 +203,19 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             case LoadState.failed:
               return _buildErrorWidget(context, state);
             case LoadState.completed:
+              // 🎯 PHASE 1: Report image dimensions when loaded
+              if (widget.onImageLoaded != null &&
+                  state.extendedImageInfo?.image != null) {
+                final image = state.extendedImageInfo!.image;
+                final imageSize = Size(
+                  image.width.toDouble(),
+                  image.height.toDouble(),
+                );
+                // Call callback on next frame to avoid calling during build
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  widget.onImageLoaded?.call(widget.pageNumber, imageSize);
+                });
+              }
               return _buildCompletedImage(context, state);
           }
         },
@@ -207,7 +244,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             speed: 1.0,
             inertialSpeed: 100.0,
             initialScale: 1.0, // Start at fit scale (no zoom)
-            inPageView: true, // Optimize for PageView usage
+            // 🐛 BUG FIX: Only use PageView optimization for actual PageView modes
+            // For continuous scroll (ListView), set to false to avoid gesture conflicts
+            inPageView: widget.readingMode != ReadingMode.continuousScroll,
             cacheGesture: false, // Don't cache zoom state between pages
             initialAlignment: InitialAlignment.center,
           );
@@ -222,6 +261,19 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             case LoadState.failed:
               return _buildErrorWidget(context, state);
             case LoadState.completed:
+              // 🎯 PHASE 1: Report image dimensions when loaded
+              if (widget.onImageLoaded != null &&
+                  state.extendedImageInfo?.image != null) {
+                final image = state.extendedImageInfo!.image;
+                final imageSize = Size(
+                  image.width.toDouble(),
+                  image.height.toDouble(),
+                );
+                // Call callback on next frame to avoid calling during build
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  widget.onImageLoaded?.call(widget.pageNumber, imageSize);
+                });
+              }
               return _buildCompletedImage(context, state);
           }
         },

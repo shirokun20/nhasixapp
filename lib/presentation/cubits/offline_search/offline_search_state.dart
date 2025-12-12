@@ -27,14 +27,16 @@ class OfflineSearchLoaded extends OfflineSearchState {
     required this.query,
     required this.results,
     required this.totalResults,
+    this.offlineSizes = const {},
   });
 
   final String query;
   final List<Content> results;
   final int totalResults;
+  final Map<String, String> offlineSizes;
 
   @override
-  List<Object?> get props => [query, results, totalResults];
+  List<Object?> get props => [query, results, totalResults, offlineSizes];
 
   /// Check if this is a search result or all content
   bool get isSearchResult => query.isNotEmpty;

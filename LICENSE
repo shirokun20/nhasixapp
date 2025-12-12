@@ -20,26 +20,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
----
+--------------------------------------------------------------------------------
 
-AGE RESTRICTION AND CONTENT DISCLAIMER:
+AGE RESTRICTION AND CONTENT DISCLAIMER
 
-**AGE RESTRICTION: This software is intended for users 18 years of age and older only.**
+AGE RESTRICTION: This software is intended for users 18 years of age and older only.
 
 By using this software, you acknowledge and agree that:
-1. You are at least 18 years of age
-2. You are legally permitted to access adult content in your jurisdiction
-3. The content accessed through this application may contain mature themes
-4. You will use this software responsibly and in compliance with local laws
+1. You are at least 18 years of age.
+2. You are legally permitted to access adult content in your jurisdiction.
+3. The content accessed through this application may contain mature themes.
+4. You will use this software responsibly and in compliance with local laws.
 
-**MINORS ARE STRICTLY PROHIBITED FROM USING THIS SOFTWARE.**
+MINORS ARE STRICTLY PROHIBITED FROM USING THIS SOFTWARE.
 
----
+--------------------------------------------------------------------------------
 
-EDUCATIONAL USE DISCLAIMER:
+EDUCATIONAL USE DISCLAIMER
 
-This application is created for educational purposes and personal use only. 
-It demonstrates modern Flutter development practices, Clean Architecture 
+This application is created for educational purposes and personal use only.
+It demonstrates modern Flutter development practices, Clean Architecture
 implementation, and advanced mobile app development techniques.
 
 The application serves as a learning resource for:
@@ -50,14 +50,16 @@ The application serves as a learning resource for:
 - Web scraping and data management
 - Performance optimization techniques
 
-Users are responsible for complying with applicable laws and terms of service 
-of any content sources. The developers do not endorse or encourage any 
+Users are responsible for complying with applicable laws and terms of service
+of any content sources. The developers do not endorse or encourage any
 violation of terms of service or copyright laws.
 
-**CONTENT RESPONSIBILITY:**
-- Users must verify their eligibility to access content in their jurisdiction
-- Users are solely responsible for their use of this software
-- Developers assume no liability for misuse or illegal use of this software
-- This software does not host, store, or distribute any content directly
+CONTENT RESPONSIBILITY:
+- Users must verify their eligibility to access content in their jurisdiction.
+- Users are solely responsible for their use of this software.
+- Developers assume no liability for misuse or illegal use of this software.
+- This software does not host, store, or distribute any content directly.
 
 This software is provided for educational and demonstration purposes only.
+
+[For Indonesian Users / Untuk Pengguna Indonesia: See LICENSE_ID.md]

@@ -8,7 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 
 /// Service untuk handle local notifications untuk download
-/// 
+///
 /// Cara penggunaan dengan DownloadBloc:
 /// ```dart
 /// final notificationService = NotificationService.withCallbacks(
@@ -26,7 +26,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 ///
 /// Action IDs yang didukung:
 /// - `pause`: Pause download
-/// - `resume`: Resume download  
+/// - `resume`: Resume download
 /// - `cancel`: Cancel download
 /// - `retry`: Retry failed download
 /// - `open`: Open downloaded content
@@ -49,7 +49,7 @@ class NotificationService {
   final Logger _logger;
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
-  
+
   // Callback functions for handling notification actions
   void Function(String contentId)? onDownloadPause;
   void Function(String contentId)? onDownloadResume;
@@ -61,7 +61,7 @@ class NotificationService {
 
   // Localization callback
   String Function(String key, {Map<String, dynamic>? args})? _localize;
-  
+
   bool _permissionGranted = false;
   bool _initialized = false;
 
@@ -81,14 +81,15 @@ class NotificationService {
         final deviceInfo = DeviceInfoPlugin();
         final androidInfo = await deviceInfo.androidInfo;
         final sdkInt = androidInfo.version.sdkInt;
-        
+
         _logger.i('NotificationService: Android SDK: $sdkInt');
-        
+
         if (sdkInt >= 33) {
           // Android 13+ (API 33+) requires explicit notification permission
-          _logger.i('NotificationService: Requesting notification permission for Android 13+');
+          _logger.i(
+              'NotificationService: Requesting notification permission for Android 13+');
           final status = await Permission.notification.request();
-          
+
           if (status.isGranted) {
             _logger.i('NotificationService: Permission granted (Android 13+)');
             return true;
@@ -96,25 +97,29 @@ class NotificationService {
             _logger.w('NotificationService: Permission denied (Android 13+)');
             return false;
           } else if (status.isPermanentlyDenied) {
-            _logger.w('NotificationService: Permission permanently denied (Android 13+)');
+            _logger.w(
+                'NotificationService: Permission permanently denied (Android 13+)');
             return false;
           } else if (status.isRestricted) {
-            _logger.w('NotificationService: Permission restricted (Android 13+)');
+            _logger
+                .w('NotificationService: Permission restricted (Android 13+)');
             return false;
           }
-          
+
           _logger.w('NotificationService: Unknown permission status: $status');
           return false;
         } else {
           // Android 12 and below - notifications enabled by default
-          _logger.i('NotificationService: Android 12 and below - notifications enabled by default');
+          _logger.i(
+              'NotificationService: Android 12 and below - notifications enabled by default');
           return true;
         }
       } else if (Platform.isIOS) {
         // iOS permission handling
-        _logger.i('NotificationService: Requesting notification permission for iOS');
+        _logger.i(
+            'NotificationService: Requesting notification permission for iOS');
         final status = await Permission.notification.request();
-        
+
         if (status.isGranted) {
           _logger.i('NotificationService: Permission granted (iOS)');
           return true;
@@ -123,15 +128,15 @@ class NotificationService {
           return false;
         }
       }
-      
+
       // Fallback for other platforms
-      _logger.w('NotificationService: Unknown platform, assuming permission granted');
+      _logger.w(
+          'NotificationService: Unknown platform, assuming permission granted');
       return true;
-      
     } catch (e, stackTrace) {
-      _logger.e('NotificationService: Error requesting permission: $e', 
-                error: e, stackTrace: stackTrace);
-      
+      _logger.e('NotificationService: Error requesting permission: $e',
+          error: e, stackTrace: stackTrace);
+
       // In case of error, try fallback approach
       try {
         final status = await Permission.notification.request();
@@ -139,7 +144,8 @@ class NotificationService {
         _logger.w('NotificationService: Fallback permission result: $granted');
         return granted;
       } catch (fallbackError) {
-        _logger.e('NotificationService: Fallback permission also failed: $fallbackError');
+        _logger.e(
+            'NotificationService: Fallback permission also failed: $fallbackError');
         return false;
       }
     }
@@ -151,34 +157,47 @@ class NotificationService {
     required String contentId,
     required String title,
   }) async {
-    debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - ENTER method for contentId=$contentId, title=$title');
-    
-    _logger.i('NotificationService: showPdfConversionStarted called for $contentId (title: $title)');
-    _logger.i('NotificationService: isEnabled = $isEnabled (_permissionGranted: $_permissionGranted, _initialized: $_initialized)');
-    
-    debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - isEnabled=$isEnabled, _permissionGranted=$_permissionGranted, _initialized=$_initialized');
-    
+    debugPrint(
+        'PDF_NOTIFICATION: showPdfConversionStarted - ENTER method for contentId=$contentId, title=$title');
+
+    _logger.i(
+        'NotificationService: showPdfConversionStarted called for $contentId (title: $title)');
+    _logger.i(
+        'NotificationService: isEnabled = $isEnabled (_permissionGranted: $_permissionGranted, _initialized: $_initialized)');
+
+    debugPrint(
+        'PDF_NOTIFICATION: showPdfConversionStarted - isEnabled=$isEnabled, _permissionGranted=$_permissionGranted, _initialized=$_initialized');
+
     if (!isEnabled) {
-      _logger.w('NotificationService: PDF conversion start notification disabled, skipping for $contentId');
-      debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - DISABLED, returning early');
+      _logger.w(
+          'NotificationService: PDF conversion start notification disabled, skipping for $contentId');
+      debugPrint(
+          'PDF_NOTIFICATION: showPdfConversionStarted - DISABLED, returning early');
       return;
     }
 
     try {
-      debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - Starting notification creation');
-      
-      _logger.i('NotificationService: Showing PDF conversion started notification for $contentId');
+      debugPrint(
+          'PDF_NOTIFICATION: showPdfConversionStarted - Starting notification creation');
+
+      _logger.i(
+          'NotificationService: Showing PDF conversion started notification for $contentId');
       final notificationId = _getNotificationId('pdf_$contentId');
-      
-      debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - Generated notificationId=$notificationId');
-      debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - Using channel: $_downloadChannelId');
-      debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - About to call _notificationsPlugin.show()');
-      
-       await _notificationsPlugin.show(
-         notificationId,
-         _getLocalized('convertingToPdf', fallback: 'Converting to PDF'),
-         _getLocalized('convertingToPdfWithTitle', args: {'title': _truncateTitle(title)}, fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
-         NotificationDetails(
+
+      debugPrint(
+          'PDF_NOTIFICATION: showPdfConversionStarted - Generated notificationId=$notificationId');
+      debugPrint(
+          'PDF_NOTIFICATION: showPdfConversionStarted - Using channel: $_downloadChannelId');
+      debugPrint(
+          'PDF_NOTIFICATION: showPdfConversionStarted - About to call _notificationsPlugin.show()');
+
+      await _notificationsPlugin.show(
+        notificationId,
+        _getLocalized('convertingToPdf', fallback: 'Converting to PDF'),
+        _getLocalized('convertingToPdfWithTitle',
+            args: {'title': _truncateTitle(title)},
+            fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
+        NotificationDetails(
           android: AndroidNotificationDetails(
             _downloadChannelId,
             _downloadChannelName,
@@ -201,16 +220,21 @@ class NotificationService {
         payload: contentId,
       );
 
-      debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - _notificationsPlugin.show() completed successfully');
-      _logger.i('PDF conversion started notification shown successfully for: $contentId');
-      
+      debugPrint(
+          'PDF_NOTIFICATION: showPdfConversionStarted - _notificationsPlugin.show() completed successfully');
+      _logger.i(
+          'PDF conversion started notification shown successfully for: $contentId');
     } catch (e, stackTrace) {
-      debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - EXCEPTION caught: ${e.toString()}');
-      debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - STACKTRACE: ${stackTrace.toString()}');
-      _logger.e('Failed to show PDF conversion started notification for $contentId: $e', 
-                error: e, stackTrace: stackTrace);
+      debugPrint(
+          'PDF_NOTIFICATION: showPdfConversionStarted - EXCEPTION caught: ${e.toString()}');
+      debugPrint(
+          'PDF_NOTIFICATION: showPdfConversionStarted - STACKTRACE: ${stackTrace.toString()}');
+      _logger.e(
+          'Failed to show PDF conversion started notification for $contentId: $e',
+          error: e,
+          stackTrace: stackTrace);
     }
-    
+
     debugPrint('PDF_NOTIFICATION: showPdfConversionStarted - EXIT method');
   }
 
@@ -225,11 +249,15 @@ class NotificationService {
 
     try {
       final notificationId = _getNotificationId('pdf_$contentId');
-       await _notificationsPlugin.show(
-         notificationId,
-         _getLocalized('convertingToPdfProgress', args: {'progress': progress}, fallback: 'Converting to PDF ($progress%)'),
-         _getLocalized('convertingToPdfProgressWithTitle', args: {'title': _truncateTitle(title), 'progress': progress}, fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
-         NotificationDetails(
+      await _notificationsPlugin.show(
+        notificationId,
+        _getLocalized('convertingToPdfProgress',
+            args: {'progress': progress},
+            fallback: 'Converting to PDF ($progress%)'),
+        _getLocalized('convertingToPdfProgressWithTitle',
+            args: {'title': _truncateTitle(title), 'progress': progress},
+            fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
+        NotificationDetails(
           android: AndroidNotificationDetails(
             _downloadChannelId,
             _downloadChannelName,
@@ -239,6 +267,7 @@ class NotificationService {
             ongoing: true,
             autoCancel: false,
             showProgress: true,
+            playSound: false,
             maxProgress: 100,
             progress: progress,
             // Remove icon to avoid drawable resource errors
@@ -266,25 +295,35 @@ class NotificationService {
     required List<String> pdfPaths,
     required int partsCount,
   }) async {
-    _logger.i('NotificationService: showPdfConversionCompleted called for $contentId (title: $title, parts: $partsCount)');
-    _logger.i('NotificationService: isEnabled = $isEnabled (_permissionGranted: $_permissionGranted, _initialized: $_initialized)');
-    
+    _logger.i(
+        'NotificationService: showPdfConversionCompleted called for $contentId (title: $title, parts: $partsCount)');
+    _logger.i(
+        'NotificationService: isEnabled = $isEnabled (_permissionGranted: $_permissionGranted, _initialized: $_initialized)');
+
     if (!isEnabled) {
-      _logger.w('NotificationService: PDF conversion completed notification disabled, skipping for $contentId');
+      _logger.w(
+          'NotificationService: PDF conversion completed notification disabled, skipping for $contentId');
       return;
     }
 
     try {
-      _logger.i('NotificationService: Showing PDF conversion completed notification for $contentId');
+      _logger.i(
+          'NotificationService: Showing PDF conversion completed notification for $contentId');
       final notificationId = _getNotificationId('pdf_$contentId');
-       final message = partsCount > 1
-           ? _getLocalized('pdfCreatedWithParts', args: {'title': _truncateTitle(title), 'partsCount': partsCount}, fallback: '${_truncateTitle(title)} converted to $partsCount PDF files')
-           : _getLocalized('convertingToPdfWithTitle', args: {'title': _truncateTitle(title)}, fallback: '${_truncateTitle(title)} converted to PDF');
+      final message = partsCount > 1
+          ? _getLocalized('pdfCreatedWithParts',
+              args: {'title': _truncateTitle(title), 'partsCount': partsCount},
+              fallback:
+                  '${_truncateTitle(title)} converted to $partsCount PDF files')
+          : _getLocalized('convertingToPdfWithTitle',
+              args: {'title': _truncateTitle(title)},
+              fallback: '${_truncateTitle(title)} converted to PDF');
 
-       await _notificationsPlugin.show(
-         notificationId,
-         _getLocalized('pdfCreatedSuccessfully', fallback: 'PDF Created Successfully'),
-         message,
+      await _notificationsPlugin.show(
+        notificationId,
+        _getLocalized('pdfCreatedSuccessfully',
+            fallback: 'PDF Created Successfully'),
+        message,
         NotificationDetails(
           android: AndroidNotificationDetails(
             _downloadChannelId,
@@ -324,11 +363,14 @@ class NotificationService {
       );
 
       _logger.i('PDF conversion completed notification shown for: $contentId');
-      _logger.i('📋 Notification created with actions: [open_pdf, share_pdf] for PDF: ${pdfPaths.isNotEmpty ? pdfPaths.first : "unknown"}');
-      
+      _logger.i(
+          '📋 Notification created with actions: [open_pdf, share_pdf] for PDF: ${pdfPaths.isNotEmpty ? pdfPaths.first : "unknown"}');
+
       // Log the exact actions we're creating for debugging
-      _logger.i('🔧 Action 1: open_pdf - "Open PDF" with icon @drawable/ic_open');
-      _logger.i('🔧 Action 2: share_pdf - "Share" with icon @drawable/ic_share');
+      _logger
+          .i('🔧 Action 1: open_pdf - "Open PDF" with icon @drawable/ic_open');
+      _logger
+          .i('🔧 Action 2: share_pdf - "Share" with icon @drawable/ic_share');
       _logger.i('🔧 Notification ID: ${contentId.hashCode}');
       _logger.i('🔧 Channel: download_channel (Importance.high)');
       _logger.i('🔧 Style: BigTextStyleInformation with summaryText');
@@ -345,21 +387,31 @@ class NotificationService {
     required String title,
     required String error,
   }) async {
-    _logger.i('NotificationService: showPdfConversionError called for $contentId (title: $title, error: $error)');
-    _logger.i('NotificationService: isEnabled = $isEnabled (_permissionGranted: $_permissionGranted, _initialized: $_initialized)');
-    
+    _logger.i(
+        'NotificationService: showPdfConversionError called for $contentId (title: $title, error: $error)');
+    _logger.i(
+        'NotificationService: isEnabled = $isEnabled (_permissionGranted: $_permissionGranted, _initialized: $_initialized)');
+
     if (!isEnabled) {
-      _logger.w('NotificationService: PDF conversion error notification disabled, skipping for $contentId');
+      _logger.w(
+          'NotificationService: PDF conversion error notification disabled, skipping for $contentId');
       return;
     }
 
     try {
-      _logger.i('NotificationService: Showing PDF conversion error notification for $contentId');
+      _logger.i(
+          'NotificationService: Showing PDF conversion error notification for $contentId');
       final notificationId = _getNotificationId('pdf_$contentId');
-       await _notificationsPlugin.show(
-         notificationId,
-         _getLocalized('pdfConversionFailed', fallback: 'PDF Conversion Failed'),
-         _getLocalized('pdfConversionFailedWithError', args: {'title': _truncateTitle(title), 'error': _truncateError(error)}, fallback: 'Failed to convert ${_truncateTitle(title)} to PDF: ${_truncateError(error)}'),
+      await _notificationsPlugin.show(
+        notificationId,
+        _getLocalized('pdfConversionFailed', fallback: 'PDF Conversion Failed'),
+        _getLocalized('pdfConversionFailedWithError',
+            args: {
+              'title': _truncateTitle(title),
+              'error': _truncateError(error)
+            },
+            fallback:
+                'Failed to convert ${_truncateTitle(title)} to PDF: ${_truncateError(error)}'),
         NotificationDetails(
           android: AndroidNotificationDetails(
             _downloadChannelId,
@@ -388,7 +440,8 @@ class NotificationService {
         payload: contentId,
       );
 
-      _logger.e('PDF conversion error notification shown for: $contentId - $error');
+      _logger.e(
+          'PDF conversion error notification shown for: $contentId - $error');
     } catch (e) {
       _logger.e('Failed to show PDF conversion error notification: $e');
     }
@@ -402,7 +455,7 @@ class NotificationService {
     final contextStr = context != null ? ' ($context)' : '';
     _logger.i('NotificationService State$contextStr:');
     _logger.i('  - _permissionGranted: $_permissionGranted');
-    _logger.i('  - _initialized: $_initialized'); 
+    _logger.i('  - _initialized: $_initialized');
     _logger.i('  - isEnabled: $isEnabled');
     _logger.i('  - Platform: ${Platform.operatingSystem}');
   }
@@ -412,22 +465,25 @@ class NotificationService {
   Future<void> initialize() async {
     try {
       _logger.i('NotificationService: Starting initialization...');
-      
+
       // Request notification permission first
       final permissionStatus = await requestNotificationPermission();
-      
+
       if (!permissionStatus) {
-        _logger.w('NotificationService: Permission denied, notifications will be disabled');
+        _logger.w(
+            'NotificationService: Permission denied, notifications will be disabled');
         _permissionGranted = false;
         _initialized = false;
         return;
       }
-      
+
       _permissionGranted = true;
-      _logger.i('NotificationService: Permission granted, proceeding with initialization');
-      
+      _logger.i(
+          'NotificationService: Permission granted, proceeding with initialization');
+
       // Android initialization
-      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const androidSettings =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
 
       // iOS initialization - request permissions during init for iOS
       final DarwinInitializationSettings iosSettings;
@@ -456,7 +512,8 @@ class NotificationService {
       );
 
       if (initResult == null || !initResult) {
-        _logger.w('NotificationService: Plugin initialization returned false or null');
+        _logger.w(
+            'NotificationService: Plugin initialization returned false or null');
       } else {
         _logger.i('NotificationService: Plugin initialization successful');
       }
@@ -465,14 +522,14 @@ class NotificationService {
       await _createNotificationChannel();
 
       _initialized = true;
-      _logger.i('NotificationService initialized successfully (Permission: $_permissionGranted, Initialized: $_initialized)');
-      
+      _logger.i(
+          'NotificationService initialized successfully (Permission: $_permissionGranted, Initialized: $_initialized)');
     } catch (e, stackTrace) {
       _initialized = false;
       _permissionGranted = false;
-      _logger.e('Failed to initialize NotificationService: $e', 
-                error: e, stackTrace: stackTrace);
-      
+      _logger.e('Failed to initialize NotificationService: $e',
+          error: e, stackTrace: stackTrace);
+
       // Try a simplified initialization as fallback
       try {
         _logger.i('NotificationService: Attempting fallback initialization...');
@@ -480,14 +537,14 @@ class NotificationService {
           android: AndroidInitializationSettings('@mipmap/ic_launcher'),
           iOS: DarwinInitializationSettings(),
         );
-        
+
         await _notificationsPlugin.initialize(simpleSettings);
         _initialized = true;
         _permissionGranted = true; // Assume granted for fallback
         _logger.w('NotificationService: Fallback initialization completed');
-        
       } catch (fallbackError) {
-        _logger.e('NotificationService: Fallback initialization also failed: $fallbackError');
+        _logger.e(
+            'NotificationService: Fallback initialization also failed: $fallbackError');
         _initialized = false;
         _permissionGranted = false;
       }
@@ -514,7 +571,8 @@ class NotificationService {
 
   /// Handle notification tap
   void _onNotificationTapped(NotificationResponse response) {
-    _logger.i('🔔 Notification tapped! ActionId: "${response.actionId}", Payload: "${response.payload}"');
+    _logger.i(
+        '🔔 Notification tapped! ActionId: "${response.actionId}", Payload: "${response.payload}"');
 
     // Handle different notification actions
     switch (response.actionId) {
@@ -531,7 +589,7 @@ class NotificationService {
           _logger.w('⚠️ Cannot pause: payload is null or callback not set');
         }
         break;
-        
+
       case 'resume':
         _logger.i('▶️ Resume action tapped for: ${response.payload}');
         if (response.payload != null && onDownloadResume != null) {
@@ -545,7 +603,7 @@ class NotificationService {
           _logger.w('⚠️ Cannot resume: payload is null or callback not set');
         }
         break;
-        
+
       case 'cancel':
         _logger.i('❌ Cancel action tapped for: ${response.payload}');
         if (response.payload != null && onDownloadCancel != null) {
@@ -561,7 +619,7 @@ class NotificationService {
           _logger.w('⚠️ Cannot cancel: payload is null or callback not set');
         }
         break;
-        
+
       case 'retry':
         _logger.i('🔄 Retry download action tapped for: ${response.payload}');
         if (response.payload != null && onDownloadRetry != null) {
@@ -575,9 +633,10 @@ class NotificationService {
           _logger.w('⚠️ Cannot retry: payload is null or callback not set');
         }
         break;
-        
+
       case 'open':
-        _logger.i('📂 Open downloaded content action tapped for: ${response.payload}');
+        _logger.i(
+            '📂 Open downloaded content action tapped for: ${response.payload}');
         if (response.payload != null && onOpenDownload != null) {
           try {
             onOpenDownload!(response.payload!);
@@ -589,19 +648,20 @@ class NotificationService {
           _logger.w('⚠️ Cannot open: payload is null or callback not set');
         }
         break;
-        
+
       case 'open_pdf':
         _logger.i('📂 Open PDF action tapped for: ${response.payload}');
         _openPdfFile(response.payload);
         break;
-        
+
       case 'share_pdf':
         _logger.i('📤 Share PDF action tapped for: ${response.payload}');
         _sharePdfFile(response.payload);
         break;
-        
+
       case 'retry_pdf':
-        _logger.i('🔄 Retry PDF conversion action tapped for: ${response.payload}');
+        _logger.i(
+            '🔄 Retry PDF conversion action tapped for: ${response.payload}');
         if (response.payload != null && onPdfRetry != null) {
           try {
             onPdfRetry!(response.payload!);
@@ -613,16 +673,18 @@ class NotificationService {
           _logger.w('⚠️ Cannot retry PDF: payload is null or callback not set');
         }
         break;
-        
+
       case null:
-        _logger.i('📱 Default notification body tapped for: ${response.payload}');
+        _logger
+            .i('📱 Default notification body tapped for: ${response.payload}');
         // Check if payload is a PDF file path and open it
         if (response.payload != null && response.payload!.endsWith('.pdf')) {
           _logger.i('📂 Opening PDF from default tap: ${response.payload}');
           _openPdfFile(response.payload);
         } else {
           // Navigate to downloads screen
-          _logger.i('📱 Navigating to downloads screen for: ${response.payload}');
+          _logger
+              .i('📱 Navigating to downloads screen for: ${response.payload}');
           if (onNavigateToDownloads != null) {
             try {
               onNavigateToDownloads!(response.payload);
@@ -635,9 +697,10 @@ class NotificationService {
           }
         }
         break;
-        
+
       default:
-        _logger.w('⚠️ Unknown action tapped: "${response.actionId}" for: ${response.payload}');
+        _logger.w(
+            '⚠️ Unknown action tapped: "${response.actionId}" for: ${response.payload}');
         break;
     }
   }
@@ -645,7 +708,7 @@ class NotificationService {
   /// Open PDF file using system default app
   Future<void> _openPdfFile(String? filePath) async {
     _logger.i('🔍 _openPdfFile called with: "$filePath"');
-    
+
     if (filePath == null || filePath.isEmpty) {
       _logger.w('❌ Cannot open PDF: file path is null or empty');
       return;
@@ -654,7 +717,7 @@ class NotificationService {
     try {
       final file = File(filePath);
       _logger.i('📁 Checking if file exists: ${file.path}');
-      
+
       if (!await file.exists()) {
         _logger.w('❌ Cannot open PDF: file does not exist at $filePath');
         return;
@@ -662,7 +725,7 @@ class NotificationService {
 
       _logger.i('✅ File exists, attempting to open: $filePath');
       final result = await OpenFile.open(filePath);
-      
+
       switch (result.type) {
         case ResultType.done:
           _logger.i('✅ PDF opened successfully: $filePath');
@@ -688,7 +751,7 @@ class NotificationService {
   /// Share PDF file using system share sheet
   Future<void> _sharePdfFile(String? filePath) async {
     _logger.i('📤 _sharePdfFile called with: "$filePath"');
-    
+
     if (filePath == null || filePath.isEmpty) {
       _logger.w('❌ Cannot share PDF: file path is null or empty');
       return;
@@ -697,7 +760,7 @@ class NotificationService {
     try {
       final file = File(filePath);
       _logger.i('📁 Checking if file exists: ${file.path}');
-      
+
       if (!await file.exists()) {
         _logger.w('❌ Cannot share PDF: file does not exist at $filePath');
         return;
@@ -710,7 +773,7 @@ class NotificationService {
         text: 'Sharing PDF document',
         subject: 'PDF Document',
       );
-      
+
       _logger.i('✅ PDF shared successfully: $filePath');
     } catch (e) {
       _logger.e('💥 Exception sharing PDF file: $e');
@@ -723,17 +786,20 @@ class NotificationService {
     required String title,
   }) async {
     if (!isEnabled) {
-      _logger.d('NotificationService: Notifications disabled, skipping started notification');
+      _logger.d(
+          'NotificationService: Notifications disabled, skipping started notification');
       return;
     }
-    
+
     try {
       final notificationId = _getNotificationId(contentId);
 
-       await _notificationsPlugin.show(
-         notificationId,
-         _getLocalized('downloadStarted', fallback: 'Download Started'),
-         _getLocalized('downloadingWithTitle', args: {'title': _truncateTitle(title)}, fallback: 'Downloading: ${_truncateTitle(title)}'),
+      await _notificationsPlugin.show(
+        notificationId,
+        _getLocalized('downloadStarted', fallback: 'Download Started'),
+        _getLocalized('downloadingWithTitle',
+            args: {'title': _truncateTitle(title)},
+            fallback: 'Downloading: ${_truncateTitle(title)}'),
         NotificationDetails(
           android: AndroidNotificationDetails(
             _downloadChannelId,
@@ -771,20 +837,23 @@ class NotificationService {
     bool isPaused = false,
   }) async {
     if (!isEnabled) {
-      _logger.d('NotificationService: Notifications disabled, skipping progress update');
+      _logger.d(
+          'NotificationService: Notifications disabled, skipping progress update');
       return;
     }
-    
+
     try {
       final notificationId = _getNotificationId(contentId);
-       final statusText = isPaused
-           ? _getLocalized('downloadPaused', fallback: 'Paused')
-           : _getLocalized('downloadingProgress', args: {'progress': progress}, fallback: 'Downloading ($progress%)');
+      final statusText = isPaused
+          ? _getLocalized('downloadPaused', fallback: 'Paused')
+          : _getLocalized('downloadingProgress',
+              args: {'progress': progress},
+              fallback: 'Downloading ($progress%)');
 
-       await _notificationsPlugin.show(
-         notificationId,
-         statusText,
-         _truncateTitle(title),
+      await _notificationsPlugin.show(
+        notificationId,
+        statusText,
+        _truncateTitle(title),
         NotificationDetails(
           android: AndroidNotificationDetails(
             _downloadChannelId,
@@ -795,33 +864,36 @@ class NotificationService {
             ongoing: !isPaused,
             autoCancel: false,
             showProgress: true,
+            playSound: false,
             maxProgress: 100,
             progress: progress,
-            actions: isPaused ? [
-              // Show resume action when paused
-              AndroidNotificationAction(
-                'resume',
-                'Resume',
-                showsUserInterface: true,
-              ),
-              AndroidNotificationAction(
-                'cancel',
-                'Cancel',
-                showsUserInterface: true,
-              ),
-            ] : [
-              // Show pause action when downloading
-              AndroidNotificationAction(
-                'pause',
-                'Pause',
-                showsUserInterface: true,
-              ),
-              AndroidNotificationAction(
-                'cancel',
-                'Cancel',
-                showsUserInterface: true,
-              ),
-            ],
+            actions: isPaused
+                ? [
+                    // Show resume action when paused
+                    AndroidNotificationAction(
+                      'resume',
+                      'Resume',
+                      showsUserInterface: true,
+                    ),
+                    AndroidNotificationAction(
+                      'cancel',
+                      'Cancel',
+                      showsUserInterface: true,
+                    ),
+                  ]
+                : [
+                    // Show pause action when downloading
+                    AndroidNotificationAction(
+                      'pause',
+                      'Pause',
+                      showsUserInterface: true,
+                    ),
+                    AndroidNotificationAction(
+                      'cancel',
+                      'Cancel',
+                      showsUserInterface: true,
+                    ),
+                  ],
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: false,
@@ -848,17 +920,20 @@ class NotificationService {
     required String downloadPath,
   }) async {
     if (!isEnabled) {
-      _logger.d('NotificationService: Notifications disabled, skipping completed notification');
+      _logger.d(
+          'NotificationService: Notifications disabled, skipping completed notification');
       return;
     }
-    
+
     try {
       final notificationId = _getNotificationId(contentId);
 
-       await _notificationsPlugin.show(
-         notificationId,
-         _getLocalized('downloadComplete', fallback: 'Download Complete'),
-         _getLocalized('downloadedWithTitle', args: {'title': _truncateTitle(title)}, fallback: 'Downloaded: ${_truncateTitle(title)}'),
+      await _notificationsPlugin.show(
+        notificationId,
+        _getLocalized('downloadComplete', fallback: 'Download Complete'),
+        _getLocalized('downloadedWithTitle',
+            args: {'title': _truncateTitle(title)},
+            fallback: 'Downloaded: ${_truncateTitle(title)}'),
         NotificationDetails(
           android: AndroidNotificationDetails(
             _downloadChannelId,
@@ -898,17 +973,20 @@ class NotificationService {
     required String error,
   }) async {
     if (!isEnabled) {
-      _logger.d('NotificationService: Notifications disabled, skipping error notification');
+      _logger.d(
+          'NotificationService: Notifications disabled, skipping error notification');
       return;
     }
-    
+
     try {
       final notificationId = _getNotificationId(contentId);
 
-       await _notificationsPlugin.show(
-         notificationId,
-         _getLocalized('downloadFailed', fallback: 'Download Failed'),
-         _getLocalized('downloadFailedWithTitle', args: {'title': _truncateTitle(title)}, fallback: 'Failed: ${_truncateTitle(title)}'),
+      await _notificationsPlugin.show(
+        notificationId,
+        _getLocalized('downloadFailed', fallback: 'Download Failed'),
+        _getLocalized('downloadFailedWithTitle',
+            args: {'title': _truncateTitle(title)},
+            fallback: 'Failed: ${_truncateTitle(title)}'),
         NotificationDetails(
           android: AndroidNotificationDetails(
             _downloadChannelId,
@@ -1120,19 +1198,23 @@ class NotificationService {
     if (onDownloadRetry != null) this.onDownloadRetry = onDownloadRetry;
     if (onPdfRetry != null) this.onPdfRetry = onPdfRetry;
     if (onOpenDownload != null) this.onOpenDownload = onOpenDownload;
-    if (onNavigateToDownloads != null) this.onNavigateToDownloads = onNavigateToDownloads;
+    if (onNavigateToDownloads != null) {
+      this.onNavigateToDownloads = onNavigateToDownloads;
+    }
 
     _logger.i('NotificationService: Callbacks updated');
   }
 
   /// Set localization callback for getting localized strings
-  void setLocalizationCallback(String Function(String key, {Map<String, dynamic>? args}) localize) {
+  void setLocalizationCallback(
+      String Function(String key, {Map<String, dynamic>? args}) localize) {
     _localize = localize;
     _logger.i('NotificationService: Localization callback set');
   }
 
   /// Get localized string with fallback
-  String _getLocalized(String key, {Map<String, dynamic>? args, String? fallback}) {
+  String _getLocalized(String key,
+      {Map<String, dynamic>? args, String? fallback}) {
     try {
       return _localize?.call(key, args: args) ?? fallback ?? key;
     } catch (e) {

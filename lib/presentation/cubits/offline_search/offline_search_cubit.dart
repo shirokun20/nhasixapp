@@ -4,6 +4,8 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../../core/utils/offline_content_manager.dart';
 import '../../../domain/entities/content.dart';
+import '../../../domain/entities/download_status.dart';
+import '../../../domain/repositories/user_data_repository.dart';
 import '../base/base_cubit.dart';
 
 part 'offline_search_state.dart';
@@ -12,13 +14,58 @@ part 'offline_search_state.dart';
 class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   OfflineSearchCubit({
     required OfflineContentManager offlineContentManager,
+    required UserDataRepository userDataRepository,
     required super.logger,
   })  : _offlineContentManager = offlineContentManager,
+        _userDataRepository = userDataRepository,
         super(
           initialState: const OfflineSearchInitial(),
         );
 
   final OfflineContentManager _offlineContentManager;
+  final UserDataRepository _userDataRepository;
+
+  /// Helper to calculate directory size recursively
+  Future<int> _getDirectorySize(Directory directory) async {
+    int size = 0;
+    try {
+      await for (final entity in directory.list(recursive: true)) {
+        if (entity is File) {
+          size += await entity.length();
+        }
+      }
+    } catch (e) {
+      logInfo('Error calculating directory size: $e');
+    }
+    return size;
+  }
+
+  /// Calculate sizes for all content directories
+  Future<Map<String, String>> _calculateContentSizes(
+      List<Content> contents) async {
+    final sizes = <String, String>{};
+
+    for (final content in contents) {
+      try {
+        // Get the directory path from the first image URL
+        if (content.imageUrls.isNotEmpty) {
+          final firstImagePath = content.imageUrls.first;
+          final file = File(firstImagePath);
+          final dirPath = file.parent.path;
+
+          // Calculate directory size
+          final sizeInBytes = await _getDirectorySize(Directory(dirPath));
+          sizes[content.id] =
+              OfflineContentManager.formatStorageSize(sizeInBytes);
+        }
+      } catch (e) {
+        // Skip if unable to calculate size
+        logInfo('Unable to calculate size for content ${content.id}: $e');
+      }
+    }
+
+    return sizes;
+  }
 
   /// Search in offline content from metadata.json files
   Future<void> searchOfflineContent(String query, {String? backupPath}) async {
@@ -52,10 +99,14 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         return;
       }
 
+      // Calculate sizes for all content
+      final offlineSizes = await _calculateContentSizes(contents);
+
       emit(OfflineSearchLoaded(
         query: query,
         results: contents,
         totalResults: contents.length,
+        offlineSizes: offlineSizes,
       ));
 
       logInfo('Found ${contents.length} offline content matches for: $query');
@@ -95,25 +146,37 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
-  /// Get all offline content from file system
+  /// Get all offline content from DATABASE (primary source)
+  /// Falls back to file scan only if no database entries exist
   Future<void> getAllOfflineContent({String? backupPath}) async {
     try {
-      logInfo('Loading all offline content from file system');
+      logInfo('Loading all offline content from database');
       emit(const OfflineSearchLoading());
 
-      // Get backup path from DirectoryUtils if not provided
-      String? loadPath = backupPath;
-      if (loadPath == null) {
-        final nhasixPath = await findNhasixBackupFolder();
-        if (nhasixPath == null) {
-          emit(const OfflineSearchEmpty(query: ''));
-          return;
-        }
-        loadPath = nhasixPath;
+      // Load completed downloads from database
+      final downloads = await _userDataRepository.getAllDownloads(
+        state: DownloadState.completed,
+        limit: 1000,
+      );
+
+      if (downloads.isEmpty) {
+        // Fallback to file scan if database is empty (first-time setup)
+        logInfo('No downloads in database, falling back to file scan');
+        await _loadFromFileSystem(backupPath);
+        return;
       }
 
-      final contents = await _offlineContentManager
-          .getAllOfflineContentFromFileSystem(loadPath);
+      // Convert DownloadStatus to Content objects
+      final contents = <Content>[];
+      final offlineSizes = <String, String>{};
+
+      for (final download in downloads) {
+        final content = await _offlineContentManager.createOfflineContent(download.contentId);
+        if (content != null) {
+          contents.add(content);
+          offlineSizes[download.contentId] = download.formattedFileSize;
+        }
+      }
 
       if (contents.isEmpty) {
         emit(const OfflineSearchEmpty(query: ''));
@@ -124,10 +187,10 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         query: '',
         results: contents,
         totalResults: contents.length,
+        offlineSizes: offlineSizes,
       ));
 
-      logInfo(
-          'Loaded ${contents.length} offline content items from file system');
+      logInfo('Loaded ${contents.length} offline content items from database');
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'get all offline content');
       emit(const OfflineSearchError(
@@ -135,6 +198,37 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         query: '',
       ));
     }
+  }
+
+  /// Fallback: Load from file system (used for initial setup/import)
+  Future<void> _loadFromFileSystem(String? backupPath) async {
+    String? loadPath = backupPath;
+    if (loadPath == null) {
+      final nhasixPath = await findNhasixBackupFolder();
+      if (nhasixPath == null) {
+        emit(const OfflineSearchEmpty(query: ''));
+        return;
+      }
+      loadPath = nhasixPath;
+    }
+
+    final contents = await _offlineContentManager.getAllOfflineContentFromFileSystem(loadPath);
+
+    if (contents.isEmpty) {
+      emit(const OfflineSearchEmpty(query: ''));
+      return;
+    }
+
+    final offlineSizes = await _calculateContentSizes(contents);
+
+    emit(OfflineSearchLoaded(
+      query: '',
+      results: contents,
+      totalResults: contents.length,
+      offlineSizes: offlineSizes,
+    ));
+
+    logInfo('Loaded ${contents.length} offline content items from file system (fallback)');
   }
 
   /// Clear search results
@@ -222,10 +316,14 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         return;
       }
 
+      // Calculate sizes for all content
+      final offlineSizes = await _calculateContentSizes(backupContents);
+
       emit(OfflineSearchLoaded(
         query: '',
         results: backupContents,
         totalResults: backupContents.length,
+        offlineSizes: offlineSizes,
       ));
 
       logInfo('Found ${backupContents.length} backup content items');
