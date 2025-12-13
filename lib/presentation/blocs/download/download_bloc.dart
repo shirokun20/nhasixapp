@@ -6,10 +6,10 @@ import 'package:equatable/equatable.dart';
 import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../core/constants/app_constants.dart';
 
 import '../../../domain/entities/entities.dart';
 import '../../../domain/entities/download_task.dart';
@@ -19,6 +19,7 @@ import '../../../domain/repositories/repositories.dart';
 import '../../../services/notification_service.dart';
 import '../../../services/download_manager.dart';
 import '../../../services/pdf_conversion_service.dart';
+import '../../../core/utils/download_storage_utils.dart';
 import '../../widgets/content_list_widget.dart';
 
 part 'download_event.dart';
@@ -182,7 +183,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       emit(const DownloadInitializing());
 
       // Load existing downloads
-      final downloads = await _userDataRepository.getAllDownloads(limit: 1000);
+      final downloads = await _userDataRepository.getAllDownloads(
+          limit: AppLimits.maxBatchSize);
 
       // Load settings (use existing settings)
       final userPrefs = await _userDataRepository.getUserPreferences();
@@ -967,7 +969,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _logger.i('DownloadBloc: Refreshing download list');
 
       // Reload downloads from database
-      final downloads = await _userDataRepository.getAllDownloads(limit: 1000);
+      final downloads = await _userDataRepository.getAllDownloads(
+          limit: AppLimits.maxBatchSize);
 
       if (currentState is DownloadLoaded) {
         // Update existing state with new downloads
@@ -1484,7 +1487,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // Try to get content details from local metadata first
       String contentTitle = event.contentId; // Fallback title
-      final localMetadata = await _readLocalMetadata(event.contentId);
+      final localMetadata =
+          await DownloadStorageUtils.readLocalMetadata(event.contentId);
 
       if (localMetadata != null) {
         // Use local metadata for offline support
@@ -1508,7 +1512,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       }
 
       // Get downloaded image paths from content repository or download service
-      final imagePaths = await _getDownloadedImagePaths(event.contentId);
+      final imagePaths =
+          await DownloadStorageUtils.getDownloadedImagePaths(event.contentId);
 
       if (imagePaths.isEmpty) {
         _logger.w(
@@ -1551,177 +1556,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     }
   }
 
-  /// Helper method to read local metadata.json for a content
-  /// Returns metadata map if file exists and is valid, null otherwise
-  Future<Map<String, dynamic>?> _readLocalMetadata(String contentId) async {
-    try {
-      _logger.d('DownloadBloc: Reading local metadata for content: $contentId');
-
-      // Use smart Downloads directory detection (same as DownloadService)
-      final downloadsPath = await _getDownloadsDirectory();
-      final metadataFile =
-          File(path.join(downloadsPath, 'nhasix', contentId, 'metadata.json'));
-
-      // Check if metadata file exists
-      if (!await metadataFile.exists()) {
-        _logger.w(
-            'DownloadBloc: Metadata file does not exist: ${metadataFile.path}');
-        return null;
-      }
-
-      // Read and parse metadata
-      final metadataContent = await metadataFile.readAsString();
-      final metadata = jsonDecode(metadataContent) as Map<String, dynamic>;
-
-      _logger
-          .i('DownloadBloc: Successfully read local metadata for $contentId');
-      _logger.d('DownloadBloc: Metadata title: ${metadata['title']}');
-
-      return metadata;
-    } catch (e) {
-      _logger
-          .e('DownloadBloc: Error reading local metadata for $contentId: $e');
-      return null;
-    }
-  }
-
-  /// Helper method to get downloaded image paths for a content
-  /// This method retrieves all image files from the download directory
-  Future<List<String>> _getDownloadedImagePaths(String contentId) async {
-    try {
-      _logger.d('DownloadBloc: Getting image paths for content: $contentId');
-
-      // Use smart Downloads directory detection (same as DownloadService)
-      final downloadsPath = await _getDownloadsDirectory();
-      final imagesDir =
-          Directory(path.join(downloadsPath, 'nhasix', contentId, 'images'));
-
-      // Check if directory exists
-      if (!await imagesDir.exists()) {
-        _logger.w(
-            'DownloadBloc: Images directory does not exist: ${imagesDir.path}');
-        return <String>[];
-      }
-
-      // List all files in the images directory
-      final files = await imagesDir.list().toList();
-
-      // Filter only image files and sort them
-      final imagePaths = files
-          .whereType<File>()
-          .where((file) {
-            final extension = path.extension(file.path).toLowerCase();
-            return ['.jpg', '.jpeg', '.png', '.gif', '.webp']
-                .contains(extension);
-          })
-          .map((file) => file.path)
-          .toList();
-
-      // Sort by filename to maintain page order
-      imagePaths.sort();
-
-      _logger.i(
-          'DownloadBloc: Found ${imagePaths.length} image files for content: $contentId');
-
-      if (imagePaths.isEmpty) {
-        _logger.w(
-            'DownloadBloc: No downloaded images found for PDF conversion: $contentId, folder download image ada di ${imagesDir.path}');
-      } else {
-        _logger.d(
-            'DownloadBloc: Image files: ${imagePaths.take(5).join(', ')}${imagePaths.length > 5 ? '...' : ''}');
-      }
-
-      return imagePaths;
-    } catch (e) {
-      _logger.e('DownloadBloc: Error getting downloaded image paths: $e');
-      return <String>[];
-    }
-  }
-
-  /// Smart Downloads directory detection (same as DownloadService)
-  /// Tries multiple possible Downloads folder names and locations
-  Future<String> _getDownloadsDirectory() async {
-    try {
-      // First, try to get external storage directory
-      Directory? externalDir;
-      try {
-        externalDir = await getExternalStorageDirectory();
-      } catch (e) {
-        _logger.w('Could not get external storage directory: $e');
-      }
-
-      if (externalDir != null) {
-        // Try to find Downloads folder in external storage root
-        final externalRoot = externalDir.path.split('/Android')[0];
-
-        // Common Downloads folder names (English, Indonesian, Spanish, etc.)
-        final downloadsFolderNames = [
-          'Download', // English (most common)
-          'Downloads', // English alternative
-          'Unduhan', // Indonesian
-          'Descargas', // Spanish
-          'Téléchargements', // French
-          'Downloads', // German uses English
-          'ダウンロード', // Japanese
-        ];
-
-        // Try each possible Downloads folder
-        for (final folderName in downloadsFolderNames) {
-          final downloadsDir = Directory(path.join(externalRoot, folderName));
-          if (await downloadsDir.exists()) {
-            _logger.d(
-                'DownloadBloc: Found Downloads directory: ${downloadsDir.path}');
-            return downloadsDir.path;
-          }
-        }
-
-        // If no Downloads folder found, check for app-specific external storage
-        final appDownloadsDir =
-            Directory(path.join(externalDir.path, 'downloads'));
-        if (await appDownloadsDir.exists()) {
-          _logger.d(
-              'DownloadBloc: Using app-specific downloads directory: ${appDownloadsDir.path}');
-          return appDownloadsDir.path;
-        }
-      }
-
-      // Fallback 1: Try hardcoded common paths
-      final commonPaths = [
-        '/storage/emulated/0/Download',
-        '/storage/emulated/0/Downloads',
-        '/storage/emulated/0/Unduhan',
-        '/sdcard/Download',
-        '/sdcard/Downloads',
-      ];
-
-      for (final commonPath in commonPaths) {
-        final dir = Directory(commonPath);
-        if (await dir.exists()) {
-          _logger.d(
-              'DownloadBloc: Found Downloads directory at common path: $commonPath');
-          return commonPath;
-        }
-      }
-
-      // Fallback 2: Use application documents directory
-      final documentsDir = await getApplicationDocumentsDirectory();
-      final documentsDownloadsDir =
-          Directory(path.join(documentsDir.path, 'downloads'));
-      _logger.d(
-          'DownloadBloc: Using app documents downloads directory: ${documentsDownloadsDir.path}');
-      return documentsDownloadsDir.path;
-    } catch (e) {
-      _logger.e('DownloadBloc: Error detecting Downloads directory: $e');
-
-      // Emergency fallback: use app documents
-      final documentsDir = await getApplicationDocumentsDirectory();
-      final emergencyDir = Directory(path.join(documentsDir.path, 'downloads'));
-      _logger.w(
-          'DownloadBloc: Using emergency fallback directory: ${emergencyDir.path}');
-      return emergencyDir.path;
-    }
-  }
-
   /// Handle cleanup storage event
   /// This will clean up old downloads and temporary files
   Future<void> _onCleanupStorage(
@@ -1738,7 +1572,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _logger.i('DownloadBloc: Starting storage cleanup');
 
       // Get the downloads directory
-      final downloadsPath = await _getDownloadsDirectory();
+      final downloadsPath = await DownloadStorageUtils.getDownloadsDirectory();
       final nhasixDir = Directory(path.join(downloadsPath, 'nhasix'));
 
       if (!await nhasixDir.exists()) {
@@ -1771,7 +1605,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
           try {
             // Calculate directory size before deletion
-            final dirSize = await _getDirectorySize(contentDir);
+            final dirSize =
+                await DownloadStorageUtils.getDirectorySize(contentDir);
 
             // Delete the directory
             await contentDir.delete(recursive: true);
@@ -1787,7 +1622,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           }
         } else {
           // For active downloads, clean up temporary files
-          await _cleanupTempFiles(contentDir);
+          await DownloadStorageUtils.cleanupTempFiles(contentDir);
         }
       }
 
@@ -1853,7 +1688,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       final jsonString = const JsonEncoder.withIndent('  ').convert(exportData);
 
       // Get export file path
-      final downloadsPath = await _getDownloadsDirectory();
+      final downloadsPath = await DownloadStorageUtils.getDownloadsDirectory();
       final exportFileName =
           'nhasix_downloads_export_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.json';
       final exportFile = File(path.join(downloadsPath, exportFileName));
@@ -1876,52 +1711,11 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     }
   }
 
-  /// Helper method to calculate directory size
-  Future<int> _getDirectorySize(Directory directory) async {
-    int size = 0;
-    try {
-      await for (final entity in directory.list(recursive: true)) {
-        if (entity is File) {
-          size += await entity.length();
-        }
-      }
-    } catch (e) {
-      _logger.w('DownloadBloc: Error calculating directory size: $e');
-    }
-    return size;
-  }
-
-  /// Helper method to clean up temporary files in a directory
-  Future<void> _cleanupTempFiles(Directory directory) async {
-    try {
-      await for (final entity in directory.list(recursive: true)) {
-        if (entity is File) {
-          final fileName = path.basename(entity.path);
-          // Delete temporary files (those ending with .tmp, .temp, .part, etc.)
-          if (fileName.endsWith('.tmp') ||
-              fileName.endsWith('.temp') ||
-              fileName.endsWith('.part') ||
-              fileName.startsWith('.')) {
-            try {
-              await entity.delete();
-              _logger.d('DownloadBloc: Deleted temp file: ${entity.path}');
-            } catch (e) {
-              _logger.w(
-                  'DownloadBloc: Failed to delete temp file: ${entity.path}, error: $e');
-            }
-          }
-        }
-      }
-    } catch (e) {
-      _logger.w(
-          'DownloadBloc: Error cleaning temp files in: ${directory.path}, error: $e');
-    }
-  }
-
   /// Helper method untuk retry PDF conversion dari notification action
   Future<void> _retryPdfConversion(String contentId) async {
     try {
-      final downloads = await _userDataRepository.getAllDownloads(limit: 1000);
+      final downloads = await _userDataRepository.getAllDownloads(
+          limit: AppLimits.maxBatchSize);
       final download = downloads.firstWhere(
         (d) => d.contentId == contentId,
         orElse: () =>
@@ -1944,7 +1738,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   /// Helper method untuk open downloaded content dari notification action
   Future<void> _openDownloadedContent(String contentId) async {
     try {
-      final downloads = await _userDataRepository.getAllDownloads(limit: 1000);
+      final downloads = await _userDataRepository.getAllDownloads(
+          limit: AppLimits.maxBatchSize);
       final download = downloads.firstWhere(
         (d) => d.contentId == contentId,
         orElse: () =>
@@ -1999,7 +1794,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           // Strategy 3: If still not opened, try opening the first image file
           if (!opened) {
             try {
-              final imagePaths = await _getDownloadedImagePaths(contentId);
+              final imagePaths =
+                  await DownloadStorageUtils.getDownloadedImagePaths(contentId);
               if (imagePaths.isNotEmpty) {
                 final firstImage = imagePaths.first;
                 final result = await OpenFile.open(firstImage);

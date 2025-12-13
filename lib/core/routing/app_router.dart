@@ -17,7 +17,7 @@ import 'package:nhasixapp/presentation/pages/history/history_screen.dart';
 import 'package:nhasixapp/presentation/pages/random/random_gallery_screen.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/core/models/image_metadata.dart';
-import 'package:nhasixapp/utils/app_animations.dart';
+import 'package:nhasixapp/core/utils/app_animations.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(

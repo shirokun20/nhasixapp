@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:equatable/equatable.dart';
+import 'package:path/path.dart' as path;
 import 'tag.dart';
 
 /// Core content entity representing a manga/doujinshi
@@ -140,5 +142,31 @@ class Content extends Equatable {
   String get category {
     final categoryTags = getTagsByType('category');
     return categoryTags.isNotEmpty ? categoryTags.first.name : 'doujinshi';
+  }
+
+  /// Derive the content directory path from imageUrls
+  ///
+  /// This extracts the local filesystem path to the content directory
+  /// by looking at the first image URL and navigating up to the parent folder.
+  /// If the parent is an "images" subfolder, it goes up one more level.
+  ///
+  /// Returns null if imageUrls is empty or doesn't contain local file paths.
+  String? get derivedContentPath {
+    if (imageUrls.isEmpty) return null;
+
+    final imagePath = imageUrls.first;
+    // Only process local file paths
+    if (imagePath.startsWith('http')) return null;
+
+    try {
+      var parentDir = File(imagePath).parent;
+      // If parent is "images" subfolder, go up one more level to content dir
+      if (path.basename(parentDir.path) == 'images') {
+        return parentDir.parent.path;
+      }
+      return parentDir.path;
+    } catch (e) {
+      return null;
+    }
   }
 }

@@ -8,7 +8,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../core/routing/app_route.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../services/analytics_service.dart';
-import '../../../utils/app_animations.dart';
+import '../../../core/utils/app_animations.dart';
 import '../../cubits/random_gallery/random_gallery_cubit.dart';
 import '../../widgets/progressive_image_widget.dart';
 import '../../widgets/shimmer_loading_widgets.dart';

@@ -6,6 +6,7 @@ import '../../../core/utils/offline_content_manager.dart';
 import '../../../domain/entities/content.dart';
 import '../../../domain/entities/download_status.dart';
 import '../../../domain/repositories/user_data_repository.dart';
+import '../../../core/constants/app_constants.dart';
 import '../base/base_cubit.dart';
 
 part 'offline_search_state.dart';
@@ -156,7 +157,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       // Load completed downloads from database
       final downloads = await _userDataRepository.getAllDownloads(
         state: DownloadState.completed,
-        limit: 1000,
+        limit: AppLimits.maxBatchSize,
       );
 
       if (downloads.isEmpty) {

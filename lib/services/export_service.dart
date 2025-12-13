@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import '../domain/entities/download_status.dart';
 import '../domain/repositories/user_data_repository.dart';
 import '../core/utils/offline_content_manager.dart';
+import '../core/constants/app_constants.dart';
 
 /// Service for exporting and importing offline library
 class ExportService {
@@ -48,7 +49,7 @@ class ExportService {
       onProgress?.call(0.1, 'Loading downloads...');
       final downloads = await _userDataRepository.getAllDownloads(
         state: DownloadState.completed,
-        limit: 1000,
+        limit: AppLimits.maxBatchSize,
       );
 
       if (downloads.isEmpty) {
@@ -161,7 +162,7 @@ class ExportService {
 
     final downloads = await _userDataRepository.getAllDownloads(
       state: DownloadState.completed,
-      limit: 1000,
+      limit: AppLimits.maxBatchSize,
     );
 
     for (final download in downloads) {
@@ -176,14 +177,16 @@ class ExportService {
     // Get downloads
     final downloads = await _userDataRepository.getAllDownloads(
       state: DownloadState.completed,
-      limit: 1000,
+      limit: AppLimits.maxBatchSize,
     );
 
     // Get favorites
-    final favorites = await _userDataRepository.getFavorites(limit: 1000);
+    final favorites =
+        await _userDataRepository.getFavorites(limit: AppLimits.maxBatchSize);
 
     // Get history
-    final history = await _userDataRepository.getHistory(limit: 1000);
+    final history =
+        await _userDataRepository.getHistory(limit: AppLimits.maxBatchSize);
 
     return {
       'downloads': downloads

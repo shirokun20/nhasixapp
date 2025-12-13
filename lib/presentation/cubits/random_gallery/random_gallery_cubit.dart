@@ -4,7 +4,7 @@ import '../../../domain/usecases/content/get_random_content_usecase.dart';
 import '../../../domain/usecases/favorites/favorites_usecases.dart';
 import '../../../domain/repositories/repositories.dart';
 import '../../../services/analytics_service.dart';
-import '../../../utils/performance_monitor.dart';
+import '../../../core/utils/performance_monitor.dart';
 import '../base/base_cubit.dart';
 
 part 'random_gallery_state.dart';

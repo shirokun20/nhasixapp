@@ -7,6 +7,7 @@ import 'package:path/path.dart' as path;
 import '../../domain/entities/content.dart';
 import '../../domain/entities/download_status.dart';
 import '../../domain/repositories/user_data_repository.dart';
+import '../constants/app_constants.dart';
 
 /// Manager for offline content detection and operations
 class OfflineContentManager {
@@ -263,7 +264,7 @@ class OfflineContentManager {
 
       final downloads = await _userDataRepository.getAllDownloads(
         state: DownloadState.completed,
-        limit: 1000, // Get all completed downloads
+        limit: AppLimits.maxBatchSize, // Get all completed downloads
       );
 
       final offlineIds = <String>[];
@@ -295,8 +296,10 @@ class OfflineContentManager {
       final matchingIds = <String>[];
 
       // Get favorites and history for additional metadata
-      final favorites = await _userDataRepository.getFavorites(limit: 1000);
-      final history = await _userDataRepository.getHistory(limit: 1000);
+      final favorites =
+          await _userDataRepository.getFavorites(limit: AppLimits.maxBatchSize);
+      final history =
+          await _userDataRepository.getHistory(limit: AppLimits.maxBatchSize);
 
       final favoriteMap = {for (var fav in favorites) fav['id']: fav};
       final historyMap = {for (var hist in history) hist.contentId: hist};
@@ -353,7 +356,8 @@ class OfflineContentManager {
       }
 
       // Try to get from favorites first
-      final favorites = await _userDataRepository.getFavorites(limit: 1000);
+      final favorites =
+          await _userDataRepository.getFavorites(limit: AppLimits.maxBatchSize);
       final favorite =
           favorites.where((fav) => fav['id'] == contentId).firstOrNull;
       _logger.i(_getLocalized('offlineContentMetadata',
@@ -457,7 +461,7 @@ class OfflineContentManager {
 
       final validDownloads = await _userDataRepository.getAllDownloads(
         state: DownloadState.completed,
-        limit: 1000,
+        limit: AppLimits.maxBatchSize,
       );
 
       final validPaths = validDownloads
@@ -1089,15 +1093,10 @@ class OfflineContentManager {
     for (final content in contents) {
       final existing = await _userDataRepository.getDownloadStatus(content.id);
 
-      // Extract content directory from image URLs
-      String? contentDir;
+      // Use derived content path from entity (replaces duplicated logic)
+      final contentDir = content.derivedContentPath;
       int fileSize = 0;
       if (content.imageUrls.isNotEmpty) {
-        final imagePath = content.imageUrls.first;
-        var parentDir = File(imagePath).parent;
-        contentDir = path.basename(parentDir.path) == 'images'
-            ? parentDir.parent.path
-            : parentDir.path;
         for (final imgPath in content.imageUrls) {
           final file = File(imgPath);
           if (await file.exists()) fileSize += await file.length();

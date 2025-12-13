@@ -7,7 +7,7 @@ import '../../../domain/entities/user_preferences.dart';
 import '../../../services/analytics_service.dart';
 import '../../cubits/settings/settings_cubit.dart';
 import '../../widgets/app_scaffold_with_offline.dart';
-import '../../../utils/app_update_test.dart';
+import '../../../core/utils/app_update_test.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});

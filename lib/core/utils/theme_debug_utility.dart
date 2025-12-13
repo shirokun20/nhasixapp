@@ -3,8 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:logger/logger.dart';
 
-import '../presentation/cubits/settings/settings_cubit.dart';
-import '../presentation/cubits/theme/theme_cubit.dart';
+import '../../presentation/cubits/settings/settings_cubit.dart';
+import '../../presentation/cubits/theme/theme_cubit.dart';
 
 /// Debug utility for theme debugging
 class ThemeDebugUtility {
@@ -15,26 +15,27 @@ class ThemeDebugUtility {
     try {
       final themeCubit = context.read<ThemeCubit>();
       final settingsCubit = context.read<SettingsCubit>();
-      
+
       final themeState = themeCubit.state;
       final settingsState = settingsCubit.state;
-      
+
       _logger.i('=== THEME DEBUG INFO ===');
       _logger.i('ThemeCubit.currentTheme: ${themeState.currentTheme}');
       _logger.i('ThemeCubit.themeMode: ${themeState.themeMode}');
       _logger.i('ThemeCubit.lastUpdated: ${themeState.lastUpdated}');
-      
+
       if (settingsState is SettingsLoaded) {
         _logger.i('Settings.theme: ${settingsState.preferences.theme}');
         _logger.i('Settings.lastUpdated: ${settingsState.lastUpdated}');
       } else {
         _logger.w('Settings state: ${settingsState.runtimeType}');
       }
-      
+
       // Log MaterialApp theme info
       final themeData = Theme.of(context);
       _logger.i('MaterialApp.brightness: ${themeData.brightness}');
-      _logger.i('MaterialApp.scaffoldBackgroundColor: ${themeData.scaffoldBackgroundColor}');
+      _logger.i(
+          'MaterialApp.scaffoldBackgroundColor: ${themeData.scaffoldBackgroundColor}');
       _logger.i('========================');
     } catch (e) {
       _logger.e('Error logging theme debug info: $e');
@@ -42,7 +43,8 @@ class ThemeDebugUtility {
   }
 
   /// Test theme change
-  static Future<void> testThemeChange(BuildContext context, String newTheme) async {
+  static Future<void> testThemeChange(
+      BuildContext context, String newTheme) async {
     try {
       _logger.i('Testing theme change to: $newTheme');
 
@@ -78,7 +80,8 @@ class ThemeDebugUtility {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(AppLocalizations.of(context)!.debugThemeInfo, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(AppLocalizations.of(context)!.debugThemeInfo,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   Text('ThemeCubit.currentTheme: ${themeState.currentTheme}'),
                   Text('ThemeCubit.themeMode: ${themeState.themeMode}'),

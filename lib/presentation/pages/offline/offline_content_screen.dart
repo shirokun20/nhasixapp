@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
-import 'package:path/path.dart' as path;
 
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
@@ -15,7 +14,7 @@ import '../../../domain/entities/content.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/pdf_conversion_service.dart';
 import '../../../services/export_service.dart';
-import '../../../utils/permission_helper.dart';
+import '../../../core/utils/permission_helper.dart';
 import '../../../core/utils/responsive_grid_delegate.dart';
 import '../../cubits/offline_search/offline_search_cubit.dart';
 import '../../cubits/settings/settings_cubit.dart';
@@ -124,6 +123,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
         final granted =
             await PermissionHelper.requestStoragePermission(context);
         if (!granted) {
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Storage permission required')),
           );
@@ -1050,6 +1050,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
       if (dontAskAgain) {
         await prefs.setBool('skip_delete_confirmation', true);
       }
+      if (!context.mounted) return;
       await _deleteContent(context, content, sizeInMB);
     }
   }
@@ -1060,16 +1061,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     final offlineManager = getIt<OfflineContentManager>();
 
     try {
-      // Extract content path from image URLs (for backup items not in database)
-      String? contentPath;
-      if (content.imageUrls.isNotEmpty) {
-        final imagePath = content.imageUrls.first;
-        var parentDir = File(imagePath).parent;
-        // If parent is "images" subfolder, go up one more level
-        contentPath = path.basename(parentDir.path) == 'images'
-            ? parentDir.parent.path
-            : parentDir.path;
-      }
+      // Use derived content path from entity (replaces duplicated logic)
+      final contentPath = content.derivedContentPath;
 
       // Show loading
       if (!context.mounted) return;

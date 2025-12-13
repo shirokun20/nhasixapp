@@ -7,6 +7,7 @@ import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/core/utils/app_state_manager.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/core/utils/directory_utils.dart';
+import 'package:nhasixapp/core/constants/app_constants.dart';
 
 part 'splash_event.dart';
 part 'splash_state.dart';
@@ -141,8 +142,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
         _logger.w('SplashBloc: Cloudflare bypass failed');
 
         // Check if we can offer offline mode
-        final downloadedContents =
-            await _userDataRepository.getAllDownloads(limit: 1000);
+        final downloadedContents = await _userDataRepository.getAllDownloads(
+            limit: AppLimits.maxBatchSize);
         final completedDownloads =
             downloadedContents.where((d) => d.isCompleted).toList();
         final canUseOffline = completedDownloads.isNotEmpty;
@@ -189,8 +190,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
             'SplashBloc: No internet connection during retry, checking offline content...');
 
         // Check if there are downloaded contents for offline use
-        final downloadedContents =
-            await _userDataRepository.getAllDownloads(limit: 1000);
+        final downloadedContents = await _userDataRepository.getAllDownloads(
+            limit: AppLimits.maxBatchSize);
         final completedDownloads =
             downloadedContents.where((d) => d.isCompleted).toList();
 
@@ -220,8 +221,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
         emit(SplashSuccess(message: 'Successfully connected to nhentai.net'));
       } else {
         // Check if we can offer offline mode
-        final downloadedContents =
-            await _userDataRepository.getAllDownloads(limit: 1000);
+        final downloadedContents = await _userDataRepository.getAllDownloads(
+            limit: AppLimits.maxBatchSize);
         final completedDownloads =
             downloadedContents.where((d) => d.isCompleted).toList();
         final canUseOffline = completedDownloads.isNotEmpty;
@@ -261,8 +262,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       emit(SplashInitializing());
 
       // Get all downloaded content
-      final downloadedContents =
-          await _userDataRepository.getAllDownloads(limit: 1000);
+      final downloadedContents = await _userDataRepository.getAllDownloads(
+          limit: AppLimits.maxBatchSize);
       final completedDownloads =
           downloadedContents.where((d) => d.isCompleted).toList();
 

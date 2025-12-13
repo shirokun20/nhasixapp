@@ -11,7 +11,7 @@ import 'package:nhasixapp/presentation/widgets/platform_not_supported_dialog.dar
 import 'package:nhasixapp/services/analytics_service.dart';
 import 'package:nhasixapp/services/history_cleanup_service.dart';
 import 'package:nhasixapp/services/app_update_service.dart';
-import 'package:nhasixapp/utils/performance_monitor.dart';
+import 'package:nhasixapp/core/utils/performance_monitor.dart';
 import 'dart:io';
 
 void main() async {

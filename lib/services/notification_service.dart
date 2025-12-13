@@ -2,10 +2,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:logger/logger.dart';
-import 'package:open_file/open_file.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+
+import 'notifications/notification_action_handler.dart';
 
 /// Service untuk handle local notifications untuk download
 ///
@@ -44,7 +44,19 @@ class NotificationService {
     this.onPdfRetry,
     this.onOpenDownload,
     this.onNavigateToDownloads,
-  }) : _logger = logger ?? Logger();
+  }) : _logger = logger ?? Logger() {
+    // Initialize action handler with callbacks
+    _actionHandler = NotificationActionHandler(
+      logger: _logger,
+      onDownloadPause: onDownloadPause,
+      onDownloadResume: onDownloadResume,
+      onDownloadCancel: onDownloadCancel,
+      onDownloadRetry: onDownloadRetry,
+      onPdfRetry: onPdfRetry,
+      onOpenDownload: onOpenDownload,
+      onNavigateToDownloads: onNavigateToDownloads,
+    );
+  }
 
   final Logger _logger;
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
@@ -64,6 +76,9 @@ class NotificationService {
 
   bool _permissionGranted = false;
   bool _initialized = false;
+
+  // Action handler for notification actions
+  late final NotificationActionHandler _actionHandler;
 
   // Notification channels
   static const String _downloadChannelId = 'download_channel';
@@ -571,213 +586,12 @@ class NotificationService {
 
   /// Handle notification tap
   void _onNotificationTapped(NotificationResponse response) {
-    _logger.i(
-        '🔔 Notification tapped! ActionId: "${response.actionId}", Payload: "${response.payload}"');
-
-    // Handle different notification actions
-    switch (response.actionId) {
-      case 'pause':
-        _logger.i('⏸️ Pause action tapped for: ${response.payload}');
-        if (response.payload != null && onDownloadPause != null) {
-          try {
-            onDownloadPause!(response.payload!);
-            _logger.i('✅ Download pause triggered for: ${response.payload}');
-          } catch (e) {
-            _logger.e('❌ Error pausing download: $e');
-          }
-        } else {
-          _logger.w('⚠️ Cannot pause: payload is null or callback not set');
-        }
-        break;
-
-      case 'resume':
-        _logger.i('▶️ Resume action tapped for: ${response.payload}');
-        if (response.payload != null && onDownloadResume != null) {
-          try {
-            onDownloadResume!(response.payload!);
-            _logger.i('✅ Download resume triggered for: ${response.payload}');
-          } catch (e) {
-            _logger.e('❌ Error resuming download: $e');
-          }
-        } else {
-          _logger.w('⚠️ Cannot resume: payload is null or callback not set');
-        }
-        break;
-
-      case 'cancel':
-        _logger.i('❌ Cancel action tapped for: ${response.payload}');
-        if (response.payload != null && onDownloadCancel != null) {
-          try {
-            onDownloadCancel!(response.payload!);
-            _logger.i('✅ Download cancel triggered for: ${response.payload}');
-            // Also cancel the notification
-            cancelDownloadNotification(response.payload!);
-          } catch (e) {
-            _logger.e('❌ Error cancelling download: $e');
-          }
-        } else {
-          _logger.w('⚠️ Cannot cancel: payload is null or callback not set');
-        }
-        break;
-
-      case 'retry':
-        _logger.i('🔄 Retry download action tapped for: ${response.payload}');
-        if (response.payload != null && onDownloadRetry != null) {
-          try {
-            onDownloadRetry!(response.payload!);
-            _logger.i('✅ Download retry triggered for: ${response.payload}');
-          } catch (e) {
-            _logger.e('❌ Error retrying download: $e');
-          }
-        } else {
-          _logger.w('⚠️ Cannot retry: payload is null or callback not set');
-        }
-        break;
-
-      case 'open':
-        _logger.i(
-            '📂 Open downloaded content action tapped for: ${response.payload}');
-        if (response.payload != null && onOpenDownload != null) {
-          try {
-            onOpenDownload!(response.payload!);
-            _logger.i('✅ Open download triggered for: ${response.payload}');
-          } catch (e) {
-            _logger.e('❌ Error opening download: $e');
-          }
-        } else {
-          _logger.w('⚠️ Cannot open: payload is null or callback not set');
-        }
-        break;
-
-      case 'open_pdf':
-        _logger.i('📂 Open PDF action tapped for: ${response.payload}');
-        _openPdfFile(response.payload);
-        break;
-
-      case 'share_pdf':
-        _logger.i('📤 Share PDF action tapped for: ${response.payload}');
-        _sharePdfFile(response.payload);
-        break;
-
-      case 'retry_pdf':
-        _logger.i(
-            '🔄 Retry PDF conversion action tapped for: ${response.payload}');
-        if (response.payload != null && onPdfRetry != null) {
-          try {
-            onPdfRetry!(response.payload!);
-            _logger.i('✅ PDF retry triggered for: ${response.payload}');
-          } catch (e) {
-            _logger.e('❌ Error retrying PDF conversion: $e');
-          }
-        } else {
-          _logger.w('⚠️ Cannot retry PDF: payload is null or callback not set');
-        }
-        break;
-
-      case null:
-        _logger
-            .i('📱 Default notification body tapped for: ${response.payload}');
-        // Check if payload is a PDF file path and open it
-        if (response.payload != null && response.payload!.endsWith('.pdf')) {
-          _logger.i('📂 Opening PDF from default tap: ${response.payload}');
-          _openPdfFile(response.payload);
-        } else {
-          // Navigate to downloads screen
-          _logger
-              .i('📱 Navigating to downloads screen for: ${response.payload}');
-          if (onNavigateToDownloads != null) {
-            try {
-              onNavigateToDownloads!(response.payload);
-              _logger.i('✅ Navigation to downloads screen triggered');
-            } catch (e) {
-              _logger.e('❌ Error navigating to downloads screen: $e');
-            }
-          } else {
-            _logger.w('⚠️ Cannot navigate: callback not set');
-          }
-        }
-        break;
-
-      default:
-        _logger.w(
-            '⚠️ Unknown action tapped: "${response.actionId}" for: ${response.payload}');
-        break;
-    }
-  }
-
-  /// Open PDF file using system default app
-  Future<void> _openPdfFile(String? filePath) async {
-    _logger.i('🔍 _openPdfFile called with: "$filePath"');
-
-    if (filePath == null || filePath.isEmpty) {
-      _logger.w('❌ Cannot open PDF: file path is null or empty');
-      return;
-    }
-
-    try {
-      final file = File(filePath);
-      _logger.i('📁 Checking if file exists: ${file.path}');
-
-      if (!await file.exists()) {
-        _logger.w('❌ Cannot open PDF: file does not exist at $filePath');
-        return;
-      }
-
-      _logger.i('✅ File exists, attempting to open: $filePath');
-      final result = await OpenFile.open(filePath);
-
-      switch (result.type) {
-        case ResultType.done:
-          _logger.i('✅ PDF opened successfully: $filePath');
-          break;
-        case ResultType.fileNotFound:
-          _logger.w('❌ PDF file not found: $filePath');
-          break;
-        case ResultType.noAppToOpen:
-          _logger.w('❌ No app available to open PDF: $filePath');
-          break;
-        case ResultType.permissionDenied:
-          _logger.w('❌ Permission denied to open PDF: $filePath');
-          break;
-        case ResultType.error:
-          _logger.e('❌ Error opening PDF: ${result.message}');
-          break;
-      }
-    } catch (e) {
-      _logger.e('💥 Exception opening PDF file: $e');
-    }
-  }
-
-  /// Share PDF file using system share sheet
-  Future<void> _sharePdfFile(String? filePath) async {
-    _logger.i('📤 _sharePdfFile called with: "$filePath"');
-
-    if (filePath == null || filePath.isEmpty) {
-      _logger.w('❌ Cannot share PDF: file path is null or empty');
-      return;
-    }
-
-    try {
-      final file = File(filePath);
-      _logger.i('📁 Checking if file exists: ${file.path}');
-
-      if (!await file.exists()) {
-        _logger.w('❌ Cannot share PDF: file does not exist at $filePath');
-        return;
-      }
-
-      _logger.i('✅ File exists, attempting to share: $filePath');
-      final xFile = XFile(filePath);
-      await Share.shareXFiles(
-        [xFile],
-        text: 'Sharing PDF document',
-        subject: 'PDF Document',
-      );
-
-      _logger.i('✅ PDF shared successfully: $filePath');
-    } catch (e) {
-      _logger.e('💥 Exception sharing PDF file: $e');
-    }
+    // Delegate to action handler
+    _actionHandler.handleAction(
+      actionId: response.actionId,
+      payload: response.payload,
+      onCancelNotification: cancelDownloadNotification,
+    );
   }
 
   /// Show download started notification
@@ -1201,6 +1015,17 @@ class NotificationService {
     if (onNavigateToDownloads != null) {
       this.onNavigateToDownloads = onNavigateToDownloads;
     }
+
+    // Also update action handler callbacks
+    _actionHandler.setCallbacks(
+      onDownloadPause: onDownloadPause,
+      onDownloadResume: onDownloadResume,
+      onDownloadCancel: onDownloadCancel,
+      onDownloadRetry: onDownloadRetry,
+      onPdfRetry: onPdfRetry,
+      onOpenDownload: onOpenDownload,
+      onNavigateToDownloads: onNavigateToDownloads,
+    );
 
     _logger.i('NotificationService: Callbacks updated');
   }

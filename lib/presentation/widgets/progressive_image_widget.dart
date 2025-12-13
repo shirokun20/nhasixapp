@@ -9,7 +9,7 @@ import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/image_cache_service.dart';
 import '../../services/local_image_preloader.dart';
-import '../../utils/performance_monitor.dart';
+import '../../core/utils/performance_monitor.dart';
 import '../../core/di/service_locator.dart';
 
 /// Progressive Image Widget with enhanced local file priority
