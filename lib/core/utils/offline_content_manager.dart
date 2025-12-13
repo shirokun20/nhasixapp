@@ -137,6 +137,29 @@ class OfflineContentManager {
     return paths;
   }
 
+  /// Find content directory in filesystem by scanning possible backup paths
+  /// Used as fallback when DB record doesn't exist
+  Future<String?> _findContentInFilesystem(String contentId) async {
+    try {
+      final possiblePaths = await _getPossibleDownloadPaths(contentId);
+
+      for (final contentPath in possiblePaths) {
+        final dir = Directory(contentPath);
+        if (await dir.exists()) {
+          _logger.i('Found content in filesystem: $contentPath');
+          return contentPath;
+        }
+      }
+
+      _logger
+          .w('Content $contentId not found in any known filesystem location');
+      return null;
+    } catch (e) {
+      _logger.e('Error scanning filesystem for $contentId: $e');
+      return null;
+    }
+  }
+
   /// Get offline image URLs for content
   Future<List<String>> getOfflineImageUrls(String contentId) async {
     try {
@@ -1113,7 +1136,7 @@ class OfflineContentManager {
 
   /// Delete offline content and free up storage
   /// [contentPath] - optional direct path to content directory (for backup items)
-  /// Returns true if deletion was successful
+  /// Returns true if deletion was successful (idempotent - returns true if either DB or filesystem deleted)
   Future<bool> deleteOfflineContent(String contentId,
       {String? contentPath}) async {
     try {
@@ -1123,21 +1146,26 @@ class OfflineContentManager {
       String? pathToDelete = contentPath;
       pathToDelete ??= await getOfflineContentPath(contentId);
 
+      // NEW: If path still not found, try filesystem scan as fallback
       if (pathToDelete == null) {
-        _logger.w('Content path not found for $contentId');
-        return false;
+        _logger.i('Path not in DB, scanning filesystem for $contentId');
+        pathToDelete = await _findContentInFilesystem(contentId);
       }
 
-      // Check if directory exists
-      final contentDir = Directory(pathToDelete);
-      if (!await contentDir.exists()) {
-        _logger.w('Content directory does not exist: $pathToDelete');
-        return false;
-      }
+      bool filesystemDeleted = false;
+      bool dbDeleted = false;
 
-      // Delete the entire content directory (including images subdirectory)
-      await contentDir.delete(recursive: true);
-      _logger.i('Deleted content directory: $pathToDelete');
+      // Delete filesystem if path found
+      if (pathToDelete != null) {
+        final contentDir = Directory(pathToDelete);
+        if (await contentDir.exists()) {
+          await contentDir.delete(recursive: true);
+          _logger.i('Deleted content directory: $pathToDelete');
+          filesystemDeleted = true;
+        } else {
+          _logger.w('Content directory does not exist: $pathToDelete');
+        }
+      }
 
       // Remove from metadata cache
       _metadataCache.remove(contentId);
@@ -1151,12 +1179,18 @@ class OfflineContentManager {
       try {
         await _userDataRepository.deleteDownloadStatus(contentId);
         _logger.i('Removed download status for $contentId');
+        dbDeleted = true;
       } catch (e) {
         _logger.w('Failed to remove download status: $e');
-        // Continue even if this fails
       }
 
-      return true;
+      // Return true if at least one operation succeeded (idempotent behavior)
+      final success = filesystemDeleted || dbDeleted;
+      if (!success) {
+        _logger.w(
+            'Delete failed: content $contentId not found in filesystem or DB');
+      }
+      return success;
     } catch (e, stackTrace) {
       _logger.e('Error deleting offline content for $contentId',
           error: e, stackTrace: stackTrace);

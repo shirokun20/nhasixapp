@@ -106,6 +106,9 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
             duration: const Duration(seconds: 2),
           ),
         );
+
+        // Force refresh to reload from database
+        _offlineSearchCubit.forceRefresh();
       }
     } else {
       debugPrint('OFFLINE_AUTO_SCAN: No backup folder found automatically');

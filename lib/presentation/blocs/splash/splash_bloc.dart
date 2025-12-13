@@ -141,7 +141,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
         _logger.w('SplashBloc: Cloudflare bypass failed');
 
         // Check if we can offer offline mode
-        final downloadedContents = await _userDataRepository.getAllDownloads();
+        final downloadedContents =
+            await _userDataRepository.getAllDownloads(limit: 1000);
         final completedDownloads =
             downloadedContents.where((d) => d.isCompleted).toList();
         final canUseOffline = completedDownloads.isNotEmpty;
@@ -188,7 +189,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
             'SplashBloc: No internet connection during retry, checking offline content...');
 
         // Check if there are downloaded contents for offline use
-        final downloadedContents = await _userDataRepository.getAllDownloads();
+        final downloadedContents =
+            await _userDataRepository.getAllDownloads(limit: 1000);
         final completedDownloads =
             downloadedContents.where((d) => d.isCompleted).toList();
 
@@ -218,7 +220,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
         emit(SplashSuccess(message: 'Successfully connected to nhentai.net'));
       } else {
         // Check if we can offer offline mode
-        final downloadedContents = await _userDataRepository.getAllDownloads();
+        final downloadedContents =
+            await _userDataRepository.getAllDownloads(limit: 1000);
         final completedDownloads =
             downloadedContents.where((d) => d.isCompleted).toList();
         final canUseOffline = completedDownloads.isNotEmpty;
@@ -258,7 +261,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       emit(SplashInitializing());
 
       // Get all downloaded content
-      final downloadedContents = await _userDataRepository.getAllDownloads();
+      final downloadedContents =
+          await _userDataRepository.getAllDownloads(limit: 1000);
       final completedDownloads =
           downloadedContents.where((d) => d.isCompleted).toList();
 

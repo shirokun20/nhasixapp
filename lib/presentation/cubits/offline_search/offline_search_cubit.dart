@@ -171,7 +171,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       final offlineSizes = <String, String>{};
 
       for (final download in downloads) {
-        final content = await _offlineContentManager.createOfflineContent(download.contentId);
+        final content = await _offlineContentManager
+            .createOfflineContent(download.contentId);
         if (content != null) {
           contents.add(content);
           offlineSizes[download.contentId] = download.formattedFileSize;
@@ -212,7 +213,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       loadPath = nhasixPath;
     }
 
-    final contents = await _offlineContentManager.getAllOfflineContentFromFileSystem(loadPath);
+    final contents = await _offlineContentManager
+        .getAllOfflineContentFromFileSystem(loadPath);
 
     if (contents.isEmpty) {
       emit(const OfflineSearchEmpty(query: ''));
@@ -228,7 +230,39 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       offlineSizes: offlineSizes,
     ));
 
-    logInfo('Loaded ${contents.length} offline content items from file system (fallback)');
+    logInfo(
+        'Loaded ${contents.length} offline content items from file system (fallback)');
+
+    // NEW: Auto-sync filesystem content to database for persistence
+    // This ensures DB is rebuilt after clear app data
+    try {
+      logInfo(
+          'Auto-syncing ${contents.length} items from filesystem to database...');
+      final syncResult =
+          await _offlineContentManager.syncBackupToDatabase(loadPath);
+      final synced = syncResult['synced'] ?? 0;
+      final updated = syncResult['updated'] ?? 0;
+      logInfo('Auto-sync complete: $synced new, $updated updated');
+    } catch (e) {
+      logInfo('Auto-sync failed (non-blocking): $e');
+      // Don't throw - content is already displayed, sync is best-effort
+    }
+  }
+
+  /// Force reload content from database
+  /// Call this after sync operations to ensure UI is up to date
+  Future<void> forceRefresh({String? backupPath}) async {
+    try {
+      logInfo('Force refreshing offline content from database');
+
+      // Clear any cached data in the manager
+      _offlineContentManager.clearCache();
+
+      // Reload from database
+      await getAllOfflineContent(backupPath: backupPath);
+    } catch (e, stackTrace) {
+      handleError(e, stackTrace, 'force refresh');
+    }
   }
 
   /// Clear search results
