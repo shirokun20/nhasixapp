@@ -2,10 +2,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:logger/logger.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 
 import 'notifications/notification_action_handler.dart';
+import 'notifications/notification_constants.dart';
+import 'notifications/notification_details_builder.dart';
+import 'notifications/notification_permission_handler.dart';
+import 'notifications/notification_id_manager.dart';
 
 /// Service untuk handle local notifications untuk download
 ///
@@ -79,91 +81,16 @@ class NotificationService {
 
   // Action handler for notification actions
   late final NotificationActionHandler _actionHandler;
+  late final NotificationPermissionHandler _permissionHandler;
+  late final NotificationIdManager _idManager;
 
-  // Notification channels
-  static const String _downloadChannelId = 'download_channel';
-  static const String _downloadChannelName = 'Downloads';
-  static const String _downloadChannelDescription =
-      'Download progress notifications';
+  // Channel IDs imported from NotificationChannels in notification_constants.dart
 
   /// Request notification permission from user
   /// Enhanced for Android 13+ and release mode compatibility
+  /// Request notification permission from user
   Future<bool> requestNotificationPermission() async {
-    try {
-      // For Android, handle version-specific permission logic
-      if (Platform.isAndroid) {
-        // Get Android version info for API level checking
-        final deviceInfo = DeviceInfoPlugin();
-        final androidInfo = await deviceInfo.androidInfo;
-        final sdkInt = androidInfo.version.sdkInt;
-
-        _logger.i('NotificationService: Android SDK: $sdkInt');
-
-        if (sdkInt >= 33) {
-          // Android 13+ (API 33+) requires explicit notification permission
-          _logger.i(
-              'NotificationService: Requesting notification permission for Android 13+');
-          final status = await Permission.notification.request();
-
-          if (status.isGranted) {
-            _logger.i('NotificationService: Permission granted (Android 13+)');
-            return true;
-          } else if (status.isDenied) {
-            _logger.w('NotificationService: Permission denied (Android 13+)');
-            return false;
-          } else if (status.isPermanentlyDenied) {
-            _logger.w(
-                'NotificationService: Permission permanently denied (Android 13+)');
-            return false;
-          } else if (status.isRestricted) {
-            _logger
-                .w('NotificationService: Permission restricted (Android 13+)');
-            return false;
-          }
-
-          _logger.w('NotificationService: Unknown permission status: $status');
-          return false;
-        } else {
-          // Android 12 and below - notifications enabled by default
-          _logger.i(
-              'NotificationService: Android 12 and below - notifications enabled by default');
-          return true;
-        }
-      } else if (Platform.isIOS) {
-        // iOS permission handling
-        _logger.i(
-            'NotificationService: Requesting notification permission for iOS');
-        final status = await Permission.notification.request();
-
-        if (status.isGranted) {
-          _logger.i('NotificationService: Permission granted (iOS)');
-          return true;
-        } else {
-          _logger.w('NotificationService: Permission denied (iOS)');
-          return false;
-        }
-      }
-
-      // Fallback for other platforms
-      _logger.w(
-          'NotificationService: Unknown platform, assuming permission granted');
-      return true;
-    } catch (e, stackTrace) {
-      _logger.e('NotificationService: Error requesting permission: $e',
-          error: e, stackTrace: stackTrace);
-
-      // In case of error, try fallback approach
-      try {
-        final status = await Permission.notification.request();
-        final granted = status.isGranted;
-        _logger.w('NotificationService: Fallback permission result: $granted');
-        return granted;
-      } catch (fallbackError) {
-        _logger.e(
-            'NotificationService: Fallback permission also failed: $fallbackError');
-        return false;
-      }
-    }
+    return _permissionHandler.requestPermission();
   }
 
   /// Show PDF conversion started notification
@@ -202,7 +129,7 @@ class NotificationService {
       debugPrint(
           'PDF_NOTIFICATION: showPdfConversionStarted - Generated notificationId=$notificationId');
       debugPrint(
-          'PDF_NOTIFICATION: showPdfConversionStarted - Using channel: $_downloadChannelId');
+          'PDF_NOTIFICATION: showPdfConversionStarted - Using channel: ${NotificationChannels.downloadChannelId}');
       debugPrint(
           'PDF_NOTIFICATION: showPdfConversionStarted - About to call _notificationsPlugin.show()');
 
@@ -212,26 +139,7 @@ class NotificationService {
         _getLocalized('convertingToPdfWithTitle',
             args: {'title': _truncateTitle(title)},
             fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            _downloadChannelId,
-            _downloadChannelName,
-            channelDescription: _downloadChannelDescription,
-            importance: Importance.low,
-            priority: Priority.low,
-            ongoing: true,
-            autoCancel: false,
-            showProgress: true,
-            maxProgress: 100,
-            progress: 0,
-            // Remove icon to avoid drawable resource errors (same as download notifications)
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: false,
-          ),
-        ),
+        NotificationDetailsBuilder.progress(progress: 0),
         payload: contentId,
       );
 
@@ -272,27 +180,7 @@ class NotificationService {
         _getLocalized('convertingToPdfProgressWithTitle',
             args: {'title': _truncateTitle(title), 'progress': progress},
             fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            _downloadChannelId,
-            _downloadChannelName,
-            channelDescription: _downloadChannelDescription,
-            importance: Importance.low,
-            priority: Priority.low,
-            ongoing: true,
-            autoCancel: false,
-            showProgress: true,
-            playSound: false,
-            maxProgress: 100,
-            progress: progress,
-            // Remove icon to avoid drawable resource errors
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: false,
-            presentBadge: true,
-            presentSound: false,
-          ),
-        ),
+        NotificationDetailsBuilder.progress(progress: progress),
         payload: contentId,
       );
 
@@ -339,40 +227,11 @@ class NotificationService {
         _getLocalized('pdfCreatedSuccessfully',
             fallback: 'PDF Created Successfully'),
         message,
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            _downloadChannelId,
-            _downloadChannelName,
-            channelDescription: _downloadChannelDescription,
-            importance: Importance.high,
-            priority: Priority.high,
-            ongoing: false,
-            autoCancel: true,
-            showProgress: false,
-            // Add actions without custom icons (same pattern as download notification)
-            actions: [
-              AndroidNotificationAction(
-                'open_pdf',
-                'Open PDF',
-                showsUserInterface: true,
-              ),
-              AndroidNotificationAction(
-                'share_pdf',
-                'Share',
-                showsUserInterface: true,
-              ),
-            ],
-            styleInformation: BigTextStyleInformation(
-              message,
-              contentTitle: 'PDF Created Successfully',
-              summaryText: 'Tap to open PDF',
-            ),
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
+        NotificationDetailsBuilder.success(
+          bigText: message,
+          contentTitle: 'PDF Created Successfully',
+          summaryText: 'Tap to open PDF',
+          actions: NotificationDetailsBuilder.pdfCompletedActions(),
         ),
         payload: pdfPaths.isNotEmpty ? pdfPaths.first : contentId,
       );
@@ -427,30 +286,8 @@ class NotificationService {
             },
             fallback:
                 'Failed to convert ${_truncateTitle(title)} to PDF: ${_truncateError(error)}'),
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            _downloadChannelId,
-            _downloadChannelName,
-            channelDescription: _downloadChannelDescription,
-            importance: Importance.high,
-            priority: Priority.high,
-            ongoing: false,
-            autoCancel: true,
-            showProgress: false,
-            // Add retry action without custom icon
-            actions: [
-              AndroidNotificationAction(
-                'retry_pdf',
-                'Retry',
-                showsUserInterface: true,
-              ),
-            ],
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
+        NotificationDetailsBuilder.error(
+          actions: NotificationDetailsBuilder.pdfErrorActions(),
         ),
         payload: contentId,
       );
@@ -569,9 +406,9 @@ class NotificationService {
   /// Create notification channel for Android
   Future<void> _createNotificationChannel() async {
     const androidChannel = AndroidNotificationChannel(
-      _downloadChannelId,
-      _downloadChannelName,
-      description: _downloadChannelDescription,
+      NotificationChannels.downloadChannelId,
+      NotificationChannels.downloadChannelName,
+      description: NotificationChannels.downloadChannelDescription,
       importance: Importance.high, // High importance for action buttons to work
       enableVibration: true,
       playSound: true,
@@ -614,26 +451,7 @@ class NotificationService {
         _getLocalized('downloadingWithTitle',
             args: {'title': _truncateTitle(title)},
             fallback: 'Downloading: ${_truncateTitle(title)}'),
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            _downloadChannelId,
-            _downloadChannelName,
-            channelDescription: _downloadChannelDescription,
-            importance: Importance.low,
-            priority: Priority.low,
-            ongoing: true,
-            autoCancel: false,
-            showProgress: true,
-            maxProgress: 100,
-            progress: 0,
-            // Remove actions to avoid drawable resource errors
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: false,
-            presentBadge: false,
-            presentSound: false,
-          ),
-        ),
+        NotificationDetailsBuilder.progress(progress: 0),
         payload: contentId,
       );
 
@@ -670,9 +488,9 @@ class NotificationService {
         _truncateTitle(title),
         NotificationDetails(
           android: AndroidNotificationDetails(
-            _downloadChannelId,
-            _downloadChannelName,
-            channelDescription: _downloadChannelDescription,
+            NotificationChannels.downloadChannelId,
+            NotificationChannels.downloadChannelName,
+            channelDescription: NotificationChannels.downloadChannelDescription,
             importance: Importance.low,
             priority: Priority.low,
             ongoing: !isPaused,
@@ -748,28 +566,8 @@ class NotificationService {
         _getLocalized('downloadedWithTitle',
             args: {'title': _truncateTitle(title)},
             fallback: 'Downloaded: ${_truncateTitle(title)}'),
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            _downloadChannelId,
-            _downloadChannelName,
-            channelDescription: _downloadChannelDescription,
-            importance: Importance.defaultImportance,
-            priority: Priority.defaultPriority,
-            ongoing: false,
-            autoCancel: true,
-            actions: [
-              AndroidNotificationAction(
-                'open',
-                'Open',
-                showsUserInterface: true,
-              ),
-            ],
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
+        NotificationDetailsBuilder.success(
+          actions: NotificationDetailsBuilder.downloadCompletedActions(),
         ),
         payload: contentId,
       );
@@ -801,33 +599,11 @@ class NotificationService {
         _getLocalized('downloadFailedWithTitle',
             args: {'title': _truncateTitle(title)},
             fallback: 'Failed: ${_truncateTitle(title)}'),
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            _downloadChannelId,
-            _downloadChannelName,
-            channelDescription: _downloadChannelDescription,
-            importance: Importance.defaultImportance,
-            priority: Priority.defaultPriority,
-            ongoing: false,
-            autoCancel: true,
-            styleInformation: BigTextStyleInformation(
-              'Download failed: ${_truncateError(error)}',
-              contentTitle: 'Download Failed',
-              summaryText: _truncateTitle(title),
-            ),
-            actions: [
-              AndroidNotificationAction(
-                'retry',
-                'Retry',
-                showsUserInterface: true,
-              ),
-            ],
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
+        NotificationDetailsBuilder.error(
+          bigText: 'Download failed: ${_truncateError(error)}',
+          contentTitle: 'Download Failed',
+          summaryText: _truncateTitle(title),
+          actions: NotificationDetailsBuilder.downloadErrorActions(),
         ),
         payload: contentId,
       );
@@ -875,10 +651,9 @@ class NotificationService {
   }
 
   /// Get notification ID from content ID
+  /// Get notification ID from content ID
   int _getNotificationId(String contentId) {
-    // Convert content ID to integer for notification ID
-    // Use hashCode to ensure consistent ID for same content
-    return contentId.hashCode.abs() % 2147483647; // Max int32 value
+    return _idManager.getNotificationId(contentId);
   }
 
   /// Truncate title for notification display
@@ -941,9 +716,9 @@ class NotificationService {
         'This is a test notification with action buttons',
         NotificationDetails(
           android: AndroidNotificationDetails(
-            _downloadChannelId,
-            _downloadChannelName,
-            channelDescription: _downloadChannelDescription,
+            NotificationChannels.downloadChannelId,
+            NotificationChannels.downloadChannelName,
+            channelDescription: NotificationChannels.downloadChannelDescription,
             importance: Importance.high,
             priority: Priority.high,
             ongoing: false,

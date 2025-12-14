@@ -173,7 +173,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         mode: widget.enableZoom
             ? ExtendedImageMode.gesture
             : ExtendedImageMode.none,
-        enableMemoryCache: true,
         clearMemoryCacheWhenDispose: false,
         enableLoadState: true,
         extendedImageGestureKey: _gestureKey,
@@ -230,7 +229,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         mode: widget.enableZoom
             ? ExtendedImageMode.gesture
             : ExtendedImageMode.none,
-        enableMemoryCache: true,
         clearMemoryCacheWhenDispose: false,
         cache: true,
         enableLoadState: true,

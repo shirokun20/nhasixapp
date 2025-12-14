@@ -1065,9 +1065,11 @@ class _DetailScreenState extends State<DetailScreen> {
       final shareText = _buildShareMessage(content, contentUrl);
 
       // Share using share_plus package
-      await Share.share(
-        shareText,
-        subject: content.title,
+      await SharePlus.instance.share(
+        ShareParams(
+          text: shareText,
+          subject: content.title,
+        ),
       );
 
       // Show success feedback

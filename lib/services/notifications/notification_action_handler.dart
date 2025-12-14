@@ -291,10 +291,12 @@ class NotificationActionHandler {
 
       _logger.i('✅ File exists, attempting to share: $filePath');
       final xFile = XFile(filePath);
-      await Share.shareXFiles(
-        [xFile],
-        text: 'Sharing PDF document',
-        subject: 'PDF Document',
+      await SharePlus.instance.share(
+        ShareParams(
+          text: 'Sharing PDF document',
+          subject: 'PDF Document',
+          files: [xFile],
+        ),
       );
 
       _logger.i('✅ PDF shared successfully: $filePath');

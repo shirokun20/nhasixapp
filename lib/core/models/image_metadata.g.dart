@@ -6,15 +6,15 @@ part of 'image_metadata.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$ImageMetadataImpl _$$ImageMetadataImplFromJson(Map<String, dynamic> json) =>
-    _$ImageMetadataImpl(
+_ImageMetadata _$ImageMetadataFromJson(Map<String, dynamic> json) =>
+    _ImageMetadata(
       imageUrl: json['imageUrl'] as String,
       contentId: json['contentId'] as String,
       pageNumber: (json['pageNumber'] as num).toInt(),
       imageType: $enumDecode(_$ImageTypeEnumMap, json['imageType']),
     );
 
-Map<String, dynamic> _$$ImageMetadataImplToJson(_$ImageMetadataImpl instance) =>
+Map<String, dynamic> _$ImageMetadataToJson(_ImageMetadata instance) =>
     <String, dynamic>{
       'imageUrl': instance.imageUrl,
       'contentId': instance.contentId,

@@ -22,6 +22,10 @@ import '../../../services/pdf_conversion_service.dart';
 import '../../../core/utils/download_storage_utils.dart';
 import '../../widgets/content_list_widget.dart';
 
+import 'package:nhasixapp/services/workers/background_download_utils.dart';
+import 'package:nhasixapp/services/workers/download_worker.dart';
+import 'package:path_provider/path_provider.dart';
+
 part 'download_event.dart';
 part 'download_state.dart';
 
@@ -533,6 +537,23 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         );
       }
 
+      // ✅ Prepare background worker state
+      try {
+        final appDir = await getApplicationDocumentsDirectory();
+        final savePath = path.join(appDir.path, 'Downloads', event.contentId);
+
+        await BackgroundDownloadUtils.saveResumeState(
+          event.contentId,
+          downloadUrl:
+              content.imageUrls.isNotEmpty ? content.imageUrls.first : '',
+          savePath: savePath,
+          title: content.title,
+          totalImages: content.pageCount,
+        );
+      } catch (e) {
+        _logger.w('Failed to save resume state for worker: $e');
+      }
+
       // Start actual download using use case
       final downloadParams = DownloadContentParams.immediate(
         content,
@@ -695,6 +716,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _logger.i('DownloadBloc: Paused task for ${event.contentId}');
       }
 
+      // ✅ Cancel background worker if scheduled
+      await DownloadWorkerManager.cancelDownload(event.contentId);
+
       // Update status to paused
       final updatedDownload = download.copyWith(
         state: DownloadState.paused,
@@ -760,6 +784,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // Cancel the download task
       _cancelDownloadTask(event.contentId);
+
+      // ✅ Cancel background worker if scheduled
+      await DownloadWorkerManager.cancelDownload(event.contentId);
 
       // Update status to cancelled
       final updatedDownload = download.copyWith(
