@@ -6,7 +6,7 @@ part 'image_metadata.g.dart';
 /// Metadata for image handling in reader screen
 /// Eliminates runtime URL validation by pre-computing image information
 @freezed
-class ImageMetadata with _$ImageMetadata {
+abstract class ImageMetadata with _$ImageMetadata {
   const factory ImageMetadata({
     /// Final resolved URL for image loading
     required String imageUrl,

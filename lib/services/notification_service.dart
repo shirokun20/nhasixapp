@@ -2,12 +2,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:logger/logger.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 
 import 'notifications/notification_action_handler.dart';
 import 'notifications/notification_constants.dart';
 import 'notifications/notification_details_builder.dart';
+import 'notifications/notification_permission_handler.dart';
+import 'notifications/notification_id_manager.dart';
 
 /// Service untuk handle local notifications untuk download
 ///
@@ -81,87 +81,16 @@ class NotificationService {
 
   // Action handler for notification actions
   late final NotificationActionHandler _actionHandler;
+  late final NotificationPermissionHandler _permissionHandler;
+  late final NotificationIdManager _idManager;
 
   // Channel IDs imported from NotificationChannels in notification_constants.dart
 
   /// Request notification permission from user
   /// Enhanced for Android 13+ and release mode compatibility
+  /// Request notification permission from user
   Future<bool> requestNotificationPermission() async {
-    try {
-      // For Android, handle version-specific permission logic
-      if (Platform.isAndroid) {
-        // Get Android version info for API level checking
-        final deviceInfo = DeviceInfoPlugin();
-        final androidInfo = await deviceInfo.androidInfo;
-        final sdkInt = androidInfo.version.sdkInt;
-
-        _logger.i('NotificationService: Android SDK: $sdkInt');
-
-        if (sdkInt >= 33) {
-          // Android 13+ (API 33+) requires explicit notification permission
-          _logger.i(
-              'NotificationService: Requesting notification permission for Android 13+');
-          final status = await Permission.notification.request();
-
-          if (status.isGranted) {
-            _logger.i('NotificationService: Permission granted (Android 13+)');
-            return true;
-          } else if (status.isDenied) {
-            _logger.w('NotificationService: Permission denied (Android 13+)');
-            return false;
-          } else if (status.isPermanentlyDenied) {
-            _logger.w(
-                'NotificationService: Permission permanently denied (Android 13+)');
-            return false;
-          } else if (status.isRestricted) {
-            _logger
-                .w('NotificationService: Permission restricted (Android 13+)');
-            return false;
-          }
-
-          _logger.w('NotificationService: Unknown permission status: $status');
-          return false;
-        } else {
-          // Android 12 and below - notifications enabled by default
-          _logger.i(
-              'NotificationService: Android 12 and below - notifications enabled by default');
-          return true;
-        }
-      } else if (Platform.isIOS) {
-        // iOS permission handling
-        _logger.i(
-            'NotificationService: Requesting notification permission for iOS');
-        final status = await Permission.notification.request();
-
-        if (status.isGranted) {
-          _logger.i('NotificationService: Permission granted (iOS)');
-          return true;
-        } else {
-          _logger.w('NotificationService: Permission denied (iOS)');
-          return false;
-        }
-      }
-
-      // Fallback for other platforms
-      _logger.w(
-          'NotificationService: Unknown platform, assuming permission granted');
-      return true;
-    } catch (e, stackTrace) {
-      _logger.e('NotificationService: Error requesting permission: $e',
-          error: e, stackTrace: stackTrace);
-
-      // In case of error, try fallback approach
-      try {
-        final status = await Permission.notification.request();
-        final granted = status.isGranted;
-        _logger.w('NotificationService: Fallback permission result: $granted');
-        return granted;
-      } catch (fallbackError) {
-        _logger.e(
-            'NotificationService: Fallback permission also failed: $fallbackError');
-        return false;
-      }
-    }
+    return _permissionHandler.requestPermission();
   }
 
   /// Show PDF conversion started notification
@@ -722,10 +651,9 @@ class NotificationService {
   }
 
   /// Get notification ID from content ID
+  /// Get notification ID from content ID
   int _getNotificationId(String contentId) {
-    // Convert content ID to integer for notification ID
-    // Use hashCode to ensure consistent ID for same content
-    return contentId.hashCode.abs() % 2147483647; // Max int32 value
+    return _idManager.getNotificationId(contentId);
   }
 
   /// Truncate title for notification display

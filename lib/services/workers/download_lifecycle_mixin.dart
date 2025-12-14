@@ -54,14 +54,21 @@ mixin DownloadLifecycleMixin<T extends StatefulWidget> on State<T> {
   ) async {
     for (final download in activeDownloads) {
       if (download.isInProgress) {
-        await DownloadWorkerManager.scheduleDownload(
-          contentId: download.contentId,
-          downloadUrl: download.downloadUrl,
-          savePath: download.savePath,
-          title: download.title,
-          totalImages: download.totalImages,
-          currentProgress: download.currentProgress,
-        );
+        if (download.downloadUrl != null &&
+            download.savePath != null &&
+            download.title != null) {
+          await DownloadWorkerManager.scheduleDownload(
+            contentId: download.contentId,
+            downloadUrl: download.downloadUrl!,
+            savePath: download.savePath!,
+            title: download.title!,
+            totalImages: download.totalImages,
+            currentProgress: download.currentProgress,
+          );
+        } else {
+          // Use stored resume state
+          await DownloadWorkerManager.scheduleResume(download.contentId);
+        }
       }
     }
   }
@@ -79,20 +86,20 @@ mixin DownloadLifecycleMixin<T extends StatefulWidget> on State<T> {
 /// Information about an active download for background scheduling
 class ActiveDownloadInfo {
   final String contentId;
-  final String downloadUrl;
-  final String savePath;
-  final String title;
+  final String? downloadUrl;
+  final String? savePath;
+  final String? title;
   final int totalImages;
   final int currentProgress;
   final bool isInProgress;
 
   const ActiveDownloadInfo({
     required this.contentId,
-    required this.downloadUrl,
-    required this.savePath,
-    required this.title,
-    required this.totalImages,
-    required this.currentProgress,
+    this.downloadUrl,
+    this.savePath,
+    this.title,
+    this.totalImages = 0,
+    this.currentProgress = 0,
     required this.isInProgress,
   });
 }

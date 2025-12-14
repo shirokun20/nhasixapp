@@ -143,10 +143,12 @@ class ExportService {
         filesToShare.add(XFile(manifestFile.path));
       }
 
-      await Share.shareXFiles(
-        filesToShare,
-        text: 'Nhasix Library Export - ${filesToShare.length} files',
-        subject: 'Nhasix Library Backup',
+      await SharePlus.instance.share(
+        ShareParams(
+          text: 'Nhasix Library Export - ${filesToShare.length} files',
+          subject: 'Nhasix Library Backup',
+          files: filesToShare,
+        ),
       );
 
       _logger.i('Shared export with ${filesToShare.length} files');

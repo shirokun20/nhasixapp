@@ -8,6 +8,7 @@ import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/theme/theme_cubit.dart';
 import 'package:nhasixapp/presentation/widgets/platform_not_supported_dialog.dart';
+import 'package:nhasixapp/presentation/widgets/lifecycle_watcher.dart';
 import 'package:nhasixapp/services/analytics_service.dart';
 import 'package:nhasixapp/services/history_cleanup_service.dart';
 import 'package:nhasixapp/services/app_update_service.dart';
@@ -48,40 +49,43 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: MultiBlocProviderConfig.data,
-      child: BlocBuilder<ThemeCubit, ThemeState>(
-        builder: (context, themeState) {
-          return BlocBuilder<SettingsCubit, SettingsState>(
-            builder: (context, settingsState) {
-              // Get locale from settings
-              final locale = _getLocaleFromSettings(settingsState);
+      child: LifecycleWatcher(
+        child: BlocBuilder<ThemeCubit, ThemeState>(
+          builder: (context, themeState) {
+            return BlocBuilder<SettingsCubit, SettingsState>(
+              builder: (context, settingsState) {
+                // Get locale from settings
+                final locale = _getLocaleFromSettings(settingsState);
 
-              debugPrint(
-                  '🎨 MaterialApp rebuilt with theme: ${themeState.currentTheme}, mode: ${themeState.themeMode}, brightness: ${themeState.themeData.brightness}');
-              debugPrint(
-                  '🌐 MaterialApp rebuilt with locale: ${locale.languageCode}');
+                debugPrint(
+                    '🎨 MaterialApp rebuilt with theme: ${themeState.currentTheme}, mode: ${themeState.themeMode}, brightness: ${themeState.themeData.brightness}');
+                debugPrint(
+                    '🌐 MaterialApp rebuilt with locale: ${locale.languageCode}');
 
-              return MaterialApp.router(
-                title: "Nhentai Flutter App",
-                debugShowCheckedModeBanner: false,
-                routerConfig: AppRouter.router,
-                theme: themeState.themeData,
-                themeMode: themeState.themeMode,
-                locale: locale,
-                localizationsDelegates: AppLocalizations.localizationsDelegates,
-                supportedLocales: AppLocalizations.supportedLocales,
-                builder: (context, child) {
-                  // Show platform warning for non-Android platforms
-                  if (kIsWeb || (!kIsWeb && !Platform.isAndroid)) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      PlatformNotSupportedDialog.show(context);
-                    });
-                  }
-                  return child ?? const SizedBox.shrink();
-                },
-              );
-            },
-          );
-        },
+                return MaterialApp.router(
+                  title: "Nhentai Flutter App",
+                  debugShowCheckedModeBanner: false,
+                  routerConfig: AppRouter.router,
+                  theme: themeState.themeData,
+                  themeMode: themeState.themeMode,
+                  locale: locale,
+                  localizationsDelegates:
+                      AppLocalizations.localizationsDelegates,
+                  supportedLocales: AppLocalizations.supportedLocales,
+                  builder: (context, child) {
+                    // Show platform warning for non-Android platforms
+                    if (kIsWeb || (!kIsWeb && !Platform.isAndroid)) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        PlatformNotSupportedDialog.show(context);
+                      });
+                    }
+                    return child ?? const SizedBox.shrink();
+                  },
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }

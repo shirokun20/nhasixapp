@@ -6,20 +6,19 @@ part of 'search_filter.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$FilterItemImpl _$$FilterItemImplFromJson(Map<String, dynamic> json) =>
-    _$FilterItemImpl(
+_FilterItem _$FilterItemFromJson(Map<String, dynamic> json) => _FilterItem(
       value: json['value'] as String,
       isExcluded: json['isExcluded'] as bool,
     );
 
-Map<String, dynamic> _$$FilterItemImplToJson(_$FilterItemImpl instance) =>
+Map<String, dynamic> _$FilterItemToJson(_FilterItem instance) =>
     <String, dynamic>{
       'value': instance.value,
       'isExcluded': instance.isExcluded,
     };
 
-_$SearchFilterImpl _$$SearchFilterImplFromJson(Map<String, dynamic> json) =>
-    _$SearchFilterImpl(
+_SearchFilter _$SearchFilterFromJson(Map<String, dynamic> json) =>
+    _SearchFilter(
       query: json['query'] as String?,
       tags: (json['tags'] as List<dynamic>?)
               ?.map((e) => FilterItem.fromJson(e as Map<String, dynamic>))
@@ -56,7 +55,7 @@ _$SearchFilterImpl _$$SearchFilterImplFromJson(Map<String, dynamic> json) =>
       highlightQuery: json['highlightQuery'] as String?,
     );
 
-Map<String, dynamic> _$$SearchFilterImplToJson(_$SearchFilterImpl instance) =>
+Map<String, dynamic> _$SearchFilterToJson(_SearchFilter instance) =>
     <String, dynamic>{
       'query': instance.query,
       'tags': instance.tags,
@@ -89,21 +88,19 @@ const _$SearchSourceEnumMap = {
   SearchSource.unknown: 'unknown',
 };
 
-_$IntRangeImpl _$$IntRangeImplFromJson(Map<String, dynamic> json) =>
-    _$IntRangeImpl(
+_IntRange _$IntRangeFromJson(Map<String, dynamic> json) => _IntRange(
       min: (json['min'] as num?)?.toInt(),
       max: (json['max'] as num?)?.toInt(),
     );
 
-Map<String, dynamic> _$$IntRangeImplToJson(_$IntRangeImpl instance) =>
-    <String, dynamic>{
+Map<String, dynamic> _$IntRangeToJson(_IntRange instance) => <String, dynamic>{
       'min': instance.min,
       'max': instance.max,
     };
 
-_$FilterValidationResultImpl _$$FilterValidationResultImplFromJson(
+_FilterValidationResult _$FilterValidationResultFromJson(
         Map<String, dynamic> json) =>
-    _$FilterValidationResultImpl(
+    _FilterValidationResult(
       isValid: json['isValid'] as bool,
       errors:
           (json['errors'] as List<dynamic>).map((e) => e as String).toList(),
@@ -111,8 +108,8 @@ _$FilterValidationResultImpl _$$FilterValidationResultImplFromJson(
           (json['warnings'] as List<dynamic>).map((e) => e as String).toList(),
     );
 
-Map<String, dynamic> _$$FilterValidationResultImplToJson(
-        _$FilterValidationResultImpl instance) =>
+Map<String, dynamic> _$FilterValidationResultToJson(
+        _FilterValidationResult instance) =>
     <String, dynamic>{
       'isValid': instance.isValid,
       'errors': instance.errors,

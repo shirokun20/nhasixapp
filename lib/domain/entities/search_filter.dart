@@ -5,19 +5,22 @@ part 'search_filter.g.dart';
 
 /// Filter item for tagging and categorization
 @freezed
-class FilterItem with _$FilterItem {
+abstract class FilterItem with _$FilterItem {
   const factory FilterItem({
     required String value,
     required bool isExcluded,
   }) = _FilterItem;
 
   /// Create an included filter item
-  factory FilterItem.include(String value) => FilterItem(value: value, isExcluded: false);
-  
-  /// Create an excluded filter item
-  factory FilterItem.exclude(String value) => FilterItem(value: value, isExcluded: true);
+  factory FilterItem.include(String value) =>
+      FilterItem(value: value, isExcluded: false);
 
-  factory FilterItem.fromJson(Map<String, dynamic> json) => _$FilterItemFromJson(json);
+  /// Create an excluded filter item
+  factory FilterItem.exclude(String value) =>
+      FilterItem(value: value, isExcluded: true);
+
+  factory FilterItem.fromJson(Map<String, dynamic> json) =>
+      _$FilterItemFromJson(json);
 }
 
 /// Extension for FilterItem helper methods
@@ -28,7 +31,7 @@ extension FilterItemExtension on FilterItem {
 
 /// Search filter entity for advanced content filtering
 @freezed
-class SearchFilter with _$SearchFilter {
+abstract class SearchFilter with _$SearchFilter {
   const factory SearchFilter({
     String? query,
     @Default([]) List<FilterItem> tags,
@@ -42,12 +45,16 @@ class SearchFilter with _$SearchFilter {
     @Default(SortOption.newest) SortOption sortBy,
     @Default(false) bool popular, // Popular filter
     IntRange? pageCountRange,
-    @Default(SearchSource.unknown) SearchSource source, // Navigation source tracking
-    @Default(false) bool highlightMode, // Enable blur effect for excluded content
-    String? highlightQuery, // Specific query to highlight (can differ from main query)
+    @Default(SearchSource.unknown)
+    SearchSource source, // Navigation source tracking
+    @Default(false)
+    bool highlightMode, // Enable blur effect for excluded content
+    String?
+        highlightQuery, // Specific query to highlight (can differ from main query)
   }) = _SearchFilter;
 
-  factory SearchFilter.fromJson(Map<String, dynamic> json) => _$SearchFilterFromJson(json);
+  factory SearchFilter.fromJson(Map<String, dynamic> json) =>
+      _$SearchFilterFromJson(json);
 }
 
 /// Extension for SearchFilter helper methods
@@ -327,7 +334,6 @@ extension SearchFilterExtension on SearchFilter {
       'highlightQuery': highlightQuery,
     };
   }
-
 }
 
 /// Sort options for content
@@ -406,13 +412,14 @@ extension SortOptionExtension on SortOption {
 
 /// Integer range for filtering
 @freezed
-class IntRange with _$IntRange {
+abstract class IntRange with _$IntRange {
   const factory IntRange({
     int? min,
     int? max,
   }) = _IntRange;
 
-  factory IntRange.fromJson(Map<String, dynamic> json) => _$IntRangeFromJson(json);
+  factory IntRange.fromJson(Map<String, dynamic> json) =>
+      _$IntRangeFromJson(json);
 }
 
 /// Extension for IntRange helper methods
@@ -446,14 +453,15 @@ extension IntRangeExtension on IntRange {
 
 /// Result of filter validation
 @freezed
-class FilterValidationResult with _$FilterValidationResult {
+abstract class FilterValidationResult with _$FilterValidationResult {
   const factory FilterValidationResult({
     required bool isValid,
     required List<String> errors,
     required List<String> warnings,
   }) = _FilterValidationResult;
 
-  factory FilterValidationResult.fromJson(Map<String, dynamic> json) => _$FilterValidationResultFromJson(json);
+  factory FilterValidationResult.fromJson(Map<String, dynamic> json) =>
+      _$FilterValidationResultFromJson(json);
 }
 
 /// Extension for FilterValidationResult helper methods

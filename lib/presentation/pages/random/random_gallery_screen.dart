@@ -498,10 +498,12 @@ class _RandomGalleryView extends StatelessWidget {
   void _shareGallery(BuildContext context, Content gallery) {
     final shareText =
         '${gallery.title}\n\nCheck out this gallery: ${gallery.id}';
-    Share.share(
-      shareText,
-      subject: AppLocalizations.of(context)?.checkOutThisGallery ??
-          'Check out this gallery!',
+    SharePlus.instance.share(
+      ShareParams(
+        text: shareText,
+        subject: AppLocalizations.of(context)?.checkOutThisGallery ??
+            'Check out this gallery',
+      ),
     );
   }
 }

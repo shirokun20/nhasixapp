@@ -2,47 +2,48 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:nhasixapp/main.dart' as app;
-import 'package:nhasixapp/core/di/service_locator.dart';
-import 'package:nhasixapp/presentation/pages/offline/offline_content_screen.dart';
 
-/// Integration tests for offline content functionality
-///
-/// Note: These tests require a running emulator/device.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  // Reset dependencies before tests
-  setUp(() async {
-    await getIt.reset();
-  });
+  testWidgets('Offline content management e2e test',
+      (WidgetTester tester) async {
+    app.main();
+    await tester.pumpAndSettle(const Duration(seconds: 5));
 
-  group('Offline Content', () {
-    testWidgets('should navigate to offline screen', (tester) async {
-      // 1. Start App
-      app.main();
+    // Navigate to Library (typically index 1 or 2 in nav bar)
+    // Assuming Icon(Icons.download) is the library tab
+    await tester.tap(find.byIcon(Icons.download));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Library'), findsOneWidget);
+
+    // Verify segments if present (Downloads / History?)
+    // This depends on implementation, usually TabBar
+
+    // Check if there are any downloaded items
+    final hasDownloads = find.byType(ListTile).evaluate().isNotEmpty ||
+        find.byType(Card).evaluate().isNotEmpty;
+
+    if (hasDownloads) {
+      // Tap on the first item to go to details or reader
+      final firstItem = find.byType(ListTile).first;
+      // If using GridView with Cards
+      // final firstItem = find.byType(Card).first;
+
+      // We assume ListTile here for list view
+      await tester.tap(firstItem);
       await tester.pumpAndSettle();
 
-      // 2. Navigate to Offline tab (Assuming it's 2nd or 3rd tab)
-      // Or find by Icon
-      final offlineIcon =
-          find.byIcon(Icons.download_done); // Or whatever icon used
+      // Verify we are in details/reader
+      // ...
 
-      // If we can find the icon, tap it
-      if (offlineIcon.evaluate().isNotEmpty) {
-        await tester.tap(offlineIcon);
-        await tester.pumpAndSettle();
-
-        // 3. Verify Offline Screen is visible
-        expect(find.byType(OfflineContentScreen), findsOneWidget);
-
-        // 4. Check for empty state or list
-        // expect(find.text('No downloads yet'), findsOneWidget); // Example
-      } else {
-        // Fallback or skip if navigation different
-        debugPrint('Offline tab icon not found, skipping navigation test');
-      }
-
-      expect(true, isTrue);
-    });
+      // Go back
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+    } else {
+      // If empty, verify "Empty" state widget/text
+      // expect(find.text('No downloads'), findsOneWidget);
+    }
   });
 }

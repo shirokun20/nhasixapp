@@ -121,6 +121,46 @@ class DownloadWorkerManager {
   /// - [title]: Title for notification
   /// - [totalImages]: Total number of images to download
   /// - [currentProgress]: Current download progress (0-100)
+  /// Schedule download using saved state (if available)
+  ///
+  /// This is useful when app lifecycle changes and full details
+  /// aren't readily available in the UI state.
+  static Future<void> scheduleResume(String contentId) async {
+    // Try to load state directly
+    final resumeState =
+        await BackgroundDownloadUtils.loadResumeState(contentId);
+
+    if (resumeState != null) {
+      await Workmanager().registerOneOffTask(
+        'download_$contentId',
+        DownloadWorkerTasks.downloadContent,
+        inputData: resumeState,
+        constraints: Constraints(
+          networkType: NetworkType.connected,
+          requiresBatteryNotLow: false,
+          requiresCharging: false,
+          requiresStorageNotLow: true,
+        ),
+        existingWorkPolicy: ExistingWorkPolicy.keep,
+        backoffPolicy: BackoffPolicy.exponential,
+        backoffPolicyDelay: const Duration(seconds: 10),
+      );
+    } else {
+      // Fallback: register task just with ID and hope worker finds state later
+      // But worker logic above relies on inputData OR saved state.
+      // So this is valid.
+      await Workmanager().registerOneOffTask(
+        'download_$contentId',
+        DownloadWorkerTasks.downloadContent,
+        inputData: {DownloadWorkerKeys.contentId: contentId},
+        constraints: Constraints(
+          networkType: NetworkType.connected,
+        ),
+        existingWorkPolicy: ExistingWorkPolicy.keep,
+      );
+    }
+  }
+
   static Future<void> scheduleDownload({
     required String contentId,
     required String downloadUrl,
