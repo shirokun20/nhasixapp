@@ -41,6 +41,19 @@ class AppScaffoldWithOffline extends StatelessWidget {
 
         return LayoutBuilder(
           builder: (context, constraints) {
+            // Early safety check for extremely small windows (popup/floating mode)
+            if (constraints.maxWidth < 100 || constraints.maxHeight < 100) {
+              return Scaffold(
+                backgroundColor: backgroundColor,
+                body: Container(
+                  color: Theme.of(context).colorScheme.surface,
+                  child: const Center(
+                    child: Icon(Icons.fullscreen_exit, size: 24),
+                  ),
+                ),
+              );
+            }
+
             // Adaptive layout for large screens (Tablet/Desktop/DeX)
             // Use persistent sidebar if width > 900dp
             final isLargeScreen = constraints.maxWidth > 900;
@@ -61,10 +74,38 @@ class AppScaffoldWithOffline extends StatelessWidget {
                   Expanded(
                     child: LayoutBuilder(
                       builder: (context, innerConstraints) {
-                        // Safety check for extremely small windows
-                        if (innerConstraints.maxWidth < 50 ||
-                            innerConstraints.maxHeight < 50) {
-                          return const SizedBox.shrink();
+                        // Safety check for extremely small windows - show compact fallback
+                        if (innerConstraints.maxWidth < 80 ||
+                            innerConstraints.maxHeight < 80) {
+                          return Container(
+                            color: Theme.of(context).colorScheme.surface,
+                            child: Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.open_in_full,
+                                    size: 24,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.5),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Resize',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.5),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
                         }
                         return SafeArea(
                           left: false,
