@@ -54,6 +54,7 @@ dependencies:
 
   # Background Tasks & Notifications
   flutter_local_notifications: ^18.0.1
+  workmanager: ^0.5.2
   wakelock_plus: ^1.2.8
 
   # File Management & Sharing
