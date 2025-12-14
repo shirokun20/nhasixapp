@@ -1,53 +1,49 @@
-# 📦 Panduan Rilis Manual (Semi-Otomatis)
+# 📦 Panduan Rilis "Auto-Draft" (Recommended)
 
-Dokumen ini menjelaskan alur kerja rilis aplikasi. Kita menggunakan CI (Continuous Integration) untuk build APK, namun proses rilis di GitHub dilakukan secara manual untuk kontrol penuh.
+Dokumen ini menjelaskan alur kerja rilis yang paling efisien.
+Sistem ini **menggabungkan Build & Upload** dalam satu langkah, tanpa build ganda.
 
 ## 📋 Ringkasan Alur Kerja
 
-1.  **Push ke Branch Release**: GitHub Actions otomatis mem-build APK (`release/*`).
-2.  **Dapatkan APK**: APK dikirim ke Telegram atau tersedia di Artifacts.
-3.  **Buat Rilis GitHub**: Upload APK tersebut secara manual ke halaman Release.
+1.  **Push ke Branch Release**: Anda push kode ke branch `release/*`.
+2.  **Otomatis Build & Upload**: GitHub Actions mem-build APK dan meng-uploadnya ke **Draft Release**.
+3.  **Publish Manual**: Anda mengecek Draft tersebut di GitHub, lalu klik "Publish".
 
 ---
 
 ## 📝 Langkah-Langkah Rilis
 
-### 1. Persiapan & Push Code
+### 1. Persiapan & Push
 1.  **Update Versi** di `pubspec.yaml` (misal: `0.6.2+11`).
-2.  **Update Changelog** di `CHANGELOG.md`.
-3.  **Commit & Push** ke branch release.
+2.  **Update Changelog**.
+3.  **Push ke Branch Release**.
 
 ```bash
 git checkout -b release/0.6.2
-git add .
-git commit -m "chore(release): prepare 0.6.2"
+# ... commit changes ...
 git push origin release/0.6.2
 ```
 
-### 2. Tunggu Build Selesai
-Setelah push, buka tab **[Actions](https://github.com/shirokun20/nhasixapp/actions)**.
-- Workflow **Build and Upload APK** akan berjalan.
-- Tunggu hingga selesai (hijau ✅).
-- **Hasil**:
-    - APK akan terkirim ke **Telegram Bot**.
-    - Atau download dari bagian **Artifacts** di halaman Actions tersebut.
+### 2. Tunggu Notifikasi
+GitHub Action akan berjalan (~5-10 menit).
+Jika sukses, APK akan muncul di Telegram (opsional) dan **Draft Release** di GitHub.
 
-### 3. Buat Release di GitHub
-1.  Buka tab **[Releases](https://github.com/shirokun20/nhasixapp/releases)**.
-2.  Klik **Draft a new release**.
-3.  **Choose a tag**: Buat tag baru (contoh: `v0.6.2`).
-4.  **Target**: Pilih branch `release/0.6.2` (atau master jika sudah merge).
-5.  **Release title**: `v0.6.2` (atau judul lain).
-6.  **Description**: Copy-paste dari `CHANGELOG.md`.
-7.  **Attach binaries**: Drag & Drop file APK yang sudah Anda download tadi.
-8.  Klik **Publish release**.
+### 3. Publish di GitHub
+1.  Buka [Tab Releases](https://github.com/shirokun20/nhasixapp/releases).
+2.  Anda akan melihat rilis baru dengan label **Draft** (misal: `v0.6.2`).
+3.  Klik icon **Edit** (pensil).
+4.  Cek APK yang sudah terlampir di bawah ("Assets").
+5.  (Opsional) Rapikan deskripsi rilis dengan isi dari `CHANGELOG.md`.
+6.  Klik tombol hijau **Publish release**.
+
+Selesai! Tag `v0.6.2` akan otomatis dibuat oleh GitHub saat Anda klik Publish.
 
 ---
 
 ## ❓ FAQ
 
-**Q: Mengapa tidak otomatis upload saat tag?**
-A: Untuk mencegah build ganda (double build) dan memberikan kontrol lebih sebelum rilis dipublikasikan.
+**Q: Apakah saya perlu buat tag manual `v0.6.2` di laptop?**
+A: **JANGAN**. Biarkan GitHub yang membuat tag saat Anda klik "Publish". Jika Anda buat manual, nanti bisa konflik atau jadi double tag.
 
-**Q: Di mana saya dapat APK-nya?**
-A: Cek **Telegram** (jika bot aktif) atau download zip dari **Artifacts** di detail GitHub Action yang sukses.
+**Q: Apa bedanya Draft dengan Release biasa?**
+A: Draft tidak bisa dilihat user lain dan tidak memicu notifikasi sampai Anda Publish.

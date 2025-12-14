@@ -202,3 +202,24 @@ jobs:
           echo ""
           echo "🎉 Upload complete! Total uploaded: $UPLOADED_COUNT APKs"
 
+      # Extract Version from pubspec.yaml
+      - name: Read Version
+        id: version
+        run: |
+          VERSION=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | cut -d '+' -f 1)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Detected version: $VERSION"
+
+      # Create Draft Release & Upload APK
+      - name: Create Draft Release
+        if: startsWith(github.ref, 'refs/heads/release/')
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: v${{ env.VERSION }}
+          draft: true
+          files: apk-output/*.apk
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
