@@ -683,13 +683,18 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
 
     if (!context.mounted) return;
 
+    // Store parent context reference BEFORE showing bottom sheet
+    // This is critical for release mode where bottom sheet context
+    // becomes invalid after Navigator.pop()
+    final parentContext = context;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (context) => SafeArea(
+      builder: (bottomSheetContext) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -758,13 +763,15 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
 
             const Divider(height: 1),
 
-            // Actions
+            // Actions - Use parentContext after pop, not bottomSheetContext
             ListTile(
               leading: Icon(Icons.menu_book, color: colorScheme.primary),
               title: Text(l10n.readNow),
               onTap: () {
-                Navigator.pop(context);
-                context.push('/reader/${content.id}', extra: content);
+                Navigator.pop(bottomSheetContext);
+                if (parentContext.mounted) {
+                  parentContext.push('/reader/${content.id}', extra: content);
+                }
               },
             ),
             ListTile(
@@ -772,8 +779,10 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
               title: Text(l10n.convertToPdf),
               subtitle: Text('${content.pageCount} pages'),
               onTap: () {
-                Navigator.pop(context);
-                _generatePdf(context, content);
+                Navigator.pop(bottomSheetContext);
+                if (parentContext.mounted) {
+                  _generatePdf(parentContext, content);
+                }
               },
             ),
             ListTile(
@@ -790,8 +799,10 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                 ),
               ),
               onTap: () {
-                Navigator.pop(context);
-                _showDeleteConfirmation(context, content);
+                Navigator.pop(bottomSheetContext);
+                if (parentContext.mounted) {
+                  _showDeleteConfirmation(parentContext, content);
+                }
               },
             ),
 
@@ -889,11 +900,12 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
       return;
     }
 
-    bool dontAskAgain = false;
+    // Use ValueNotifier to properly track checkbox state across widget rebuilds
+    final dontAskAgainNotifier = ValueNotifier<bool>(false);
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: colorScheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -998,14 +1010,13 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Don't ask again checkbox
-            StatefulBuilder(
-              builder: (context, setState) => CheckboxListTile(
+            // Don't ask again checkbox - using ValueListenableBuilder for proper state
+            ValueListenableBuilder<bool>(
+              valueListenable: dontAskAgainNotifier,
+              builder: (context, dontAskAgain, child) => CheckboxListTile(
                 value: dontAskAgain,
                 onChanged: (value) {
-                  setState(() {
-                    dontAskAgain = value ?? false;
-                  });
+                  dontAskAgainNotifier.value = value ?? false;
                 },
                 title: Text(
                   "Don't ask again",
@@ -1022,7 +1033,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(
               l10n.cancel,
               style: TextStyleConst.labelLarge.copyWith(
@@ -1031,7 +1042,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
             ),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             style: FilledButton.styleFrom(
               backgroundColor: colorScheme.error,
               foregroundColor: colorScheme.onError,
@@ -1047,11 +1058,14 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
 
     if (confirmed == true && context.mounted) {
       // Save 'don't ask again' preference if checkbox was enabled
-      if (dontAskAgain) {
+      if (dontAskAgainNotifier.value) {
         await prefs.setBool('skip_delete_confirmation', true);
       }
+      dontAskAgainNotifier.dispose();
       if (!context.mounted) return;
       await _deleteContent(context, content, sizeInMB);
+    } else {
+      dontAskAgainNotifier.dispose();
     }
   }
 
