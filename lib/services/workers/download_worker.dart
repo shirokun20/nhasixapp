@@ -5,6 +5,8 @@ import 'package:workmanager/workmanager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'background_download_utils.dart';
+
 /// Download Worker for Background Downloads
 ///
 /// This module handles background download continuation
@@ -202,31 +204,73 @@ Future<bool> _handleDownloadContent(Map<String, dynamic>? inputData) async {
   final contentId = inputData[DownloadWorkerKeys.contentId] as String?;
   final downloadUrl = inputData[DownloadWorkerKeys.downloadUrl] as String?;
   final savePath = inputData[DownloadWorkerKeys.savePath] as String?;
-  // ignore: unused_local_variable
   final title = inputData[DownloadWorkerKeys.title] as String?;
   final totalImages = inputData[DownloadWorkerKeys.totalImages] as int?;
-  final currentProgress =
+  final startProgress =
       inputData[DownloadWorkerKeys.currentProgress] as int? ?? 0;
 
   if (contentId == null ||
       downloadUrl == null ||
       savePath == null ||
-      totalImages == null) {
+      totalImages == null ||
+      title == null) {
     return false;
   }
 
-  // TODO: Implement actual download logic
-  // This should:
-  // 1. Create download directory if not exists
-  // 2. Continue downloading from currentProgress
-  // 3. Save each image to savePath
-  // 4. Update progress in SharedPreferences for UI sync
-  // 5. Show notification on completion
+  try {
+    // Mark as incomplete for resume tracking
+    await BackgroundDownloadUtils.markIncomplete(contentId);
 
-  // Placeholder - actual implementation depends on your download service
-  await _saveDownloadProgress(contentId, currentProgress);
+    // Create download directory
+    final downloadPath =
+        await BackgroundDownloadUtils.createContentDirectory(contentId);
 
-  return true;
+    // Generate image URLs based on downloadUrl pattern
+    // Format: https://i.nhentai.net/galleries/{galleryId}/{page}.jpg
+    final imageUrls = List.generate(
+      totalImages,
+      (index) => '$downloadUrl/${index + 1}.jpg',
+    );
+
+    // Get resume point
+    final existingProgress =
+        await BackgroundDownloadUtils.getProgress(contentId);
+    final startIndex =
+        existingProgress > startProgress ? existingProgress : startProgress;
+
+    // Download images with progress tracking
+    final successCount = await BackgroundDownloadUtils.downloadImages(
+      contentId: contentId,
+      imageUrls: imageUrls,
+      savePath: downloadPath,
+      startIndex: startIndex,
+      onProgress: (current, total) {
+        // Progress is saved periodically inside downloadImages
+      },
+    );
+
+    // Save metadata
+    await BackgroundDownloadUtils.saveMetadata(
+      contentId: contentId,
+      title: title,
+      totalImages: totalImages,
+      savePath: downloadPath,
+      extraData: {
+        'downloadedCount': successCount,
+        'originalUrl': downloadUrl,
+      },
+    );
+
+    // Mark as complete if all images downloaded
+    if (successCount >= totalImages) {
+      await BackgroundDownloadUtils.markComplete(contentId);
+    }
+
+    return true;
+  } catch (e) {
+    await _logWorkerError(DownloadWorkerTasks.downloadContent, e.toString());
+    return false;
+  }
 }
 
 Future<bool> _handleResumeDownload(Map<String, dynamic>? inputData) async {
@@ -299,11 +343,6 @@ Future<bool> _handleCheckIncompleteDownloads() async {
 // ============================================================================
 // Helper Functions
 // ============================================================================
-
-Future<void> _saveDownloadProgress(String contentId, int progress) async {
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setInt('download_progress_$contentId', progress);
-}
 
 Future<void> _logWorkerError(String task, String error) async {
   final prefs = await SharedPreferences.getInstance();
