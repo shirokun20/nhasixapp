@@ -180,13 +180,50 @@ class BackgroundDownloadUtils {
     return prefs.getStringList('incomplete_downloads') ?? [];
   }
 
-  /// Clear download state
+  /// Save download state for resumption
+  static Future<void> saveResumeState(
+    String contentId, {
+    required String downloadUrl,
+    required String savePath,
+    required String title,
+    required int totalImages,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = {
+      'contentId': contentId,
+      'downloadUrl': downloadUrl,
+      'savePath': savePath,
+      'title': title,
+      'totalImages': totalImages,
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+    await prefs.setString('resume_state_$contentId', jsonEncode(data));
+  }
+
+  /// Load download state for resumption
+  static Future<Map<String, dynamic>?> loadResumeState(String contentId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final dataStr = prefs.getString('resume_state_$contentId');
+    if (dataStr != null) {
+      return jsonDecode(dataStr) as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  /// Clear resume state
+  static Future<void> clearResumeState(String contentId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('resume_state_$contentId');
+  }
+
+  /// Clear download state & resume state
   static Future<void> clearState(String contentId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('bg_download_progress_$contentId');
     await prefs.remove('bg_download_total_$contentId');
     await prefs.remove('bg_download_time_$contentId');
     await prefs.remove('bg_download_complete_$contentId');
+    await prefs.remove('resume_state_$contentId');
   }
 
   /// Get app downloads directory path

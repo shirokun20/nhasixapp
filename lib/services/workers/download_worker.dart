@@ -221,6 +221,15 @@ Future<bool> _handleDownloadContent(Map<String, dynamic>? inputData) async {
     // Mark as incomplete for resume tracking
     await BackgroundDownloadUtils.markIncomplete(contentId);
 
+    // Save resume state
+    await BackgroundDownloadUtils.saveResumeState(
+      contentId,
+      downloadUrl: downloadUrl,
+      savePath: savePath,
+      title: title,
+      totalImages: totalImages,
+    );
+
     // Create download directory
     final downloadPath =
         await BackgroundDownloadUtils.createContentDirectory(contentId);
@@ -277,10 +286,35 @@ Future<bool> _handleResumeDownload(Map<String, dynamic>? inputData) async {
   if (inputData == null) return false;
 
   final contentId = inputData[DownloadWorkerKeys.contentId] as String?;
-  if (contentId == null) return false;
 
-  // TODO: Load download state from SharedPreferences and resume
-  return true;
+  if (contentId == null) {
+    return false;
+  }
+
+  try {
+    // Load saved state
+    final resumeState =
+        await BackgroundDownloadUtils.loadResumeState(contentId);
+
+    // If state exists, reuse _handleDownloadContent logic
+    if (resumeState != null) {
+      // Add current progress key if needed, or let handleDownloadContent check storage
+      resumeState[DownloadWorkerKeys.currentProgress] =
+          await BackgroundDownloadUtils.getProgress(contentId);
+
+      return await _handleDownloadContent(resumeState);
+    }
+
+    // If inputData has full info (passed directly), use it
+    if (inputData.containsKey(DownloadWorkerKeys.downloadUrl)) {
+      return await _handleDownloadContent(inputData);
+    }
+
+    return false;
+  } catch (e) {
+    await _logWorkerError(DownloadWorkerTasks.resumeDownload, e.toString());
+    return false;
+  }
 }
 
 Future<bool> _handleCleanupTempFiles() async {
@@ -319,25 +353,38 @@ Future<bool> _handleSyncOfflineContent() async {
 
 Future<bool> _handleCheckIncompleteDownloads() async {
   try {
-    final prefs = await SharedPreferences.getInstance();
-    final incompleteDownloads = prefs.getStringList('incomplete_downloads');
+    final incompleteDownloads =
+        await BackgroundDownloadUtils.getIncompleteDownloads();
 
-    if (incompleteDownloads == null || incompleteDownloads.isEmpty) {
+    if (incompleteDownloads.isEmpty) {
       return true;
     }
 
-    // TODO: For each incomplete download, schedule resume task
-    // for (final contentId in incompleteDownloads) {
-    //   final downloadData = prefs.getString('download_state_$contentId');
-    //   if (downloadData != null) {
-    //     // Parse and schedule resume
-    //   }
-    // }
+    // For each incomplete download, schedule resume check
+    // Note: We don't auto-resume everything to save battery,
+    // just ensure they are tracked or notify user
+    for (final contentId in incompleteDownloads) {
+      // Could verify if actually incomplete or just stuck state
+      final isComplete = await _verifyCompletion(contentId);
+      if (isComplete) {
+        await BackgroundDownloadUtils.markComplete(contentId);
+      }
+    }
 
     return true;
   } catch (e) {
     return false;
   }
+}
+
+Future<bool> _verifyCompletion(String contentId) async {
+  final state = await BackgroundDownloadUtils.loadResumeState(contentId);
+  if (state == null) return false;
+
+  final total = state['totalImages'] as int? ?? 0;
+  final progress = await BackgroundDownloadUtils.getProgress(contentId);
+
+  return progress >= total && total > 0;
 }
 
 // ============================================================================
