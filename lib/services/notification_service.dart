@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 
 import 'notifications/notification_action_handler.dart';
+import 'notifications/notification_constants.dart';
 
 /// Service untuk handle local notifications untuk download
 ///
@@ -80,11 +81,7 @@ class NotificationService {
   // Action handler for notification actions
   late final NotificationActionHandler _actionHandler;
 
-  // Notification channels
-  static const String _downloadChannelId = 'download_channel';
-  static const String _downloadChannelName = 'Downloads';
-  static const String _downloadChannelDescription =
-      'Download progress notifications';
+  // Channel IDs imported from NotificationChannels in notification_constants.dart
 
   /// Request notification permission from user
   /// Enhanced for Android 13+ and release mode compatibility
@@ -202,7 +199,7 @@ class NotificationService {
       debugPrint(
           'PDF_NOTIFICATION: showPdfConversionStarted - Generated notificationId=$notificationId');
       debugPrint(
-          'PDF_NOTIFICATION: showPdfConversionStarted - Using channel: $_downloadChannelId');
+          'PDF_NOTIFICATION: showPdfConversionStarted - Using channel: ${NotificationChannels.downloadChannelId}');
       debugPrint(
           'PDF_NOTIFICATION: showPdfConversionStarted - About to call _notificationsPlugin.show()');
 
@@ -214,9 +211,9 @@ class NotificationService {
             fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
         NotificationDetails(
           android: AndroidNotificationDetails(
-            _downloadChannelId,
-            _downloadChannelName,
-            channelDescription: _downloadChannelDescription,
+            NotificationChannels.downloadChannelId,
+            NotificationChannels.downloadChannelName,
+            channelDescription: NotificationChannels.downloadChannelDescription,
             importance: Importance.low,
             priority: Priority.low,
             ongoing: true,
@@ -274,9 +271,9 @@ class NotificationService {
             fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
         NotificationDetails(
           android: AndroidNotificationDetails(
-            _downloadChannelId,
-            _downloadChannelName,
-            channelDescription: _downloadChannelDescription,
+            NotificationChannels.downloadChannelId,
+            NotificationChannels.downloadChannelName,
+            channelDescription: NotificationChannels.downloadChannelDescription,
             importance: Importance.low,
             priority: Priority.low,
             ongoing: true,
@@ -341,9 +338,9 @@ class NotificationService {
         message,
         NotificationDetails(
           android: AndroidNotificationDetails(
-            _downloadChannelId,
-            _downloadChannelName,
-            channelDescription: _downloadChannelDescription,
+            NotificationChannels.downloadChannelId,
+            NotificationChannels.downloadChannelName,
+            channelDescription: NotificationChannels.downloadChannelDescription,
             importance: Importance.high,
             priority: Priority.high,
             ongoing: false,
@@ -429,9 +426,9 @@ class NotificationService {
                 'Failed to convert ${_truncateTitle(title)} to PDF: ${_truncateError(error)}'),
         NotificationDetails(
           android: AndroidNotificationDetails(
-            _downloadChannelId,
-            _downloadChannelName,
-            channelDescription: _downloadChannelDescription,
+            NotificationChannels.downloadChannelId,
+            NotificationChannels.downloadChannelName,
+            channelDescription: NotificationChannels.downloadChannelDescription,
             importance: Importance.high,
             priority: Priority.high,
             ongoing: false,
@@ -569,9 +566,9 @@ class NotificationService {
   /// Create notification channel for Android
   Future<void> _createNotificationChannel() async {
     const androidChannel = AndroidNotificationChannel(
-      _downloadChannelId,
-      _downloadChannelName,
-      description: _downloadChannelDescription,
+      NotificationChannels.downloadChannelId,
+      NotificationChannels.downloadChannelName,
+      description: NotificationChannels.downloadChannelDescription,
       importance: Importance.high, // High importance for action buttons to work
       enableVibration: true,
       playSound: true,
@@ -616,9 +613,9 @@ class NotificationService {
             fallback: 'Downloading: ${_truncateTitle(title)}'),
         NotificationDetails(
           android: AndroidNotificationDetails(
-            _downloadChannelId,
-            _downloadChannelName,
-            channelDescription: _downloadChannelDescription,
+            NotificationChannels.downloadChannelId,
+            NotificationChannels.downloadChannelName,
+            channelDescription: NotificationChannels.downloadChannelDescription,
             importance: Importance.low,
             priority: Priority.low,
             ongoing: true,
@@ -670,9 +667,9 @@ class NotificationService {
         _truncateTitle(title),
         NotificationDetails(
           android: AndroidNotificationDetails(
-            _downloadChannelId,
-            _downloadChannelName,
-            channelDescription: _downloadChannelDescription,
+            NotificationChannels.downloadChannelId,
+            NotificationChannels.downloadChannelName,
+            channelDescription: NotificationChannels.downloadChannelDescription,
             importance: Importance.low,
             priority: Priority.low,
             ongoing: !isPaused,
@@ -750,9 +747,9 @@ class NotificationService {
             fallback: 'Downloaded: ${_truncateTitle(title)}'),
         NotificationDetails(
           android: AndroidNotificationDetails(
-            _downloadChannelId,
-            _downloadChannelName,
-            channelDescription: _downloadChannelDescription,
+            NotificationChannels.downloadChannelId,
+            NotificationChannels.downloadChannelName,
+            channelDescription: NotificationChannels.downloadChannelDescription,
             importance: Importance.defaultImportance,
             priority: Priority.defaultPriority,
             ongoing: false,
@@ -803,9 +800,9 @@ class NotificationService {
             fallback: 'Failed: ${_truncateTitle(title)}'),
         NotificationDetails(
           android: AndroidNotificationDetails(
-            _downloadChannelId,
-            _downloadChannelName,
-            channelDescription: _downloadChannelDescription,
+            NotificationChannels.downloadChannelId,
+            NotificationChannels.downloadChannelName,
+            channelDescription: NotificationChannels.downloadChannelDescription,
             importance: Importance.defaultImportance,
             priority: Priority.defaultPriority,
             ongoing: false,
@@ -941,9 +938,9 @@ class NotificationService {
         'This is a test notification with action buttons',
         NotificationDetails(
           android: AndroidNotificationDetails(
-            _downloadChannelId,
-            _downloadChannelName,
-            channelDescription: _downloadChannelDescription,
+            NotificationChannels.downloadChannelId,
+            NotificationChannels.downloadChannelName,
+            channelDescription: NotificationChannels.downloadChannelDescription,
             importance: Importance.high,
             priority: Priority.high,
             ongoing: false,

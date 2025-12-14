@@ -272,16 +272,19 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   }
 
   /// Get offline storage statistics
+  ///
+  /// Returns stats based on current state:
+  /// - When OfflineSearchLoaded (any query): calculate from loaded results
+  /// - When Initial/Loading/Empty/Error: get from database
   Future<Map<String, dynamic>> getOfflineStats() async {
     try {
-      // If we have backup content loaded (OfflineSearchLoaded with empty query),
-      // calculate stats from the loaded results instead of database
-      if (state is OfflineSearchLoaded &&
-          (state as OfflineSearchLoaded).query.isEmpty) {
+      // If we have content loaded (whether filtered by search or all content),
+      // calculate stats from the loaded results for consistency
+      if (state is OfflineSearchLoaded) {
         final loadedState = state as OfflineSearchLoaded;
         final totalContent = loadedState.totalResults;
 
-        // Calculate storage usage from backup content files
+        // Calculate storage usage from loaded content files
         int totalSize = 0;
         for (final content in loadedState.results) {
           for (final imageUrl in content.imageUrls) {
@@ -300,10 +303,11 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
           'totalContent': totalContent,
           'storageUsage': totalSize,
           'formattedSize': OfflineContentManager.formatStorageSize(totalSize),
+          'isSearchResult': loadedState.query.isNotEmpty,
         };
       }
 
-      // Default: get stats from database
+      // Default: get stats from database (when no content is loaded yet)
       final offlineIds = await _offlineContentManager.getOfflineContentIds();
       final storageUsage =
           await _offlineContentManager.getOfflineStorageUsage();
@@ -312,6 +316,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         'totalContent': offlineIds.length,
         'storageUsage': storageUsage,
         'formattedSize': OfflineContentManager.formatStorageSize(storageUsage),
+        'isSearchResult': false,
       };
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'get offline stats');
@@ -319,6 +324,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         'totalContent': 0,
         'storageUsage': 0,
         'formattedSize': '0 B',
+        'isSearchResult': false,
       };
     }
   }
