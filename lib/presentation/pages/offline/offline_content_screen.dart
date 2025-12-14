@@ -18,6 +18,7 @@ import '../../../core/utils/permission_helper.dart';
 import '../../../core/utils/responsive_grid_delegate.dart';
 import '../../cubits/offline_search/offline_search_cubit.dart';
 import '../../cubits/settings/settings_cubit.dart';
+import '../../blocs/download/download_bloc.dart';
 import '../../widgets/app_scaffold_with_offline.dart';
 import '../../widgets/content_card_widget.dart';
 import '../../widgets/error_widget.dart';
@@ -1098,6 +1099,11 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
       if (success) {
         // Refresh offline content list
         _offlineSearchCubit.getAllOfflineContent();
+
+        // Refresh downloads list to sync state between screens
+        if (context.mounted) {
+          context.read<DownloadBloc>().add(const DownloadRefreshEvent());
+        }
 
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(

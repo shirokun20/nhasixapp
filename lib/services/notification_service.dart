@@ -58,6 +58,10 @@ class NotificationService {
       onOpenDownload: onOpenDownload,
       onNavigateToDownloads: onNavigateToDownloads,
     );
+
+    // Initialize permission handler and ID manager
+    _permissionHandler = NotificationPermissionHandler(logger: _logger);
+    _idManager = NotificationIdManager();
   }
 
   final Logger _logger;

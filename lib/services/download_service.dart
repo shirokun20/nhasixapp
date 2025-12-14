@@ -192,14 +192,7 @@ class DownloadService {
       await _saveDownloadMetadata(content, downloadDir, downloadedFiles,
           actualStartPage, actualEndPage);
 
-      // Show completion notification with range info
-      final completionRangeText =
-          isRangeDownload ? ' (Pages $actualStartPage-$actualEndPage)' : '';
-      await _notificationService.showDownloadCompleted(
-        contentId: content.id,
-        title: '${content.title}$completionRangeText',
-        downloadPath: downloadDir.path,
-      );
+      // NOTE: Notification is handled by DownloadBloc._onStart() to avoid duplication
 
       _logger.i(
           'Download completed for content: ${content.id}${isRangeDownload ? " (range: $actualStartPage-$actualEndPage)" : ""}');
