@@ -104,7 +104,6 @@ void callbackDispatcher() {
 Future<void> initializeWorkManager({bool isDebugMode = false}) async {
   await Workmanager().initialize(
     callbackDispatcher,
-    isInDebugMode: isDebugMode,
   );
 }
 
@@ -203,7 +202,7 @@ class DownloadWorkerManager {
       constraints: Constraints(
         networkType: NetworkType.connected,
       ),
-      existingWorkPolicy: ExistingWorkPolicy.keep,
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
     );
   }
 
@@ -215,7 +214,7 @@ class DownloadWorkerManager {
       'cleanup_temp_files',
       DownloadWorkerTasks.cleanupTempFiles,
       constraints: Constraints(
-        networkType: NetworkType.not_required,
+        networkType: NetworkType.notRequired,
         requiresBatteryNotLow: true,
         requiresStorageNotLow: false,
       ),
