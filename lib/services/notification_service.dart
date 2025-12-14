@@ -7,6 +7,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 
 import 'notifications/notification_action_handler.dart';
 import 'notifications/notification_constants.dart';
+import 'notifications/notification_details_builder.dart';
 
 /// Service untuk handle local notifications untuk download
 ///
@@ -209,26 +210,7 @@ class NotificationService {
         _getLocalized('convertingToPdfWithTitle',
             args: {'title': _truncateTitle(title)},
             fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            NotificationChannels.downloadChannelId,
-            NotificationChannels.downloadChannelName,
-            channelDescription: NotificationChannels.downloadChannelDescription,
-            importance: Importance.low,
-            priority: Priority.low,
-            ongoing: true,
-            autoCancel: false,
-            showProgress: true,
-            maxProgress: 100,
-            progress: 0,
-            // Remove icon to avoid drawable resource errors (same as download notifications)
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: false,
-          ),
-        ),
+        NotificationDetailsBuilder.progress(progress: 0),
         payload: contentId,
       );
 
@@ -269,27 +251,7 @@ class NotificationService {
         _getLocalized('convertingToPdfProgressWithTitle',
             args: {'title': _truncateTitle(title), 'progress': progress},
             fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            NotificationChannels.downloadChannelId,
-            NotificationChannels.downloadChannelName,
-            channelDescription: NotificationChannels.downloadChannelDescription,
-            importance: Importance.low,
-            priority: Priority.low,
-            ongoing: true,
-            autoCancel: false,
-            showProgress: true,
-            playSound: false,
-            maxProgress: 100,
-            progress: progress,
-            // Remove icon to avoid drawable resource errors
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: false,
-            presentBadge: true,
-            presentSound: false,
-          ),
-        ),
+        NotificationDetailsBuilder.progress(progress: progress),
         payload: contentId,
       );
 
@@ -336,40 +298,11 @@ class NotificationService {
         _getLocalized('pdfCreatedSuccessfully',
             fallback: 'PDF Created Successfully'),
         message,
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            NotificationChannels.downloadChannelId,
-            NotificationChannels.downloadChannelName,
-            channelDescription: NotificationChannels.downloadChannelDescription,
-            importance: Importance.high,
-            priority: Priority.high,
-            ongoing: false,
-            autoCancel: true,
-            showProgress: false,
-            // Add actions without custom icons (same pattern as download notification)
-            actions: [
-              AndroidNotificationAction(
-                'open_pdf',
-                'Open PDF',
-                showsUserInterface: true,
-              ),
-              AndroidNotificationAction(
-                'share_pdf',
-                'Share',
-                showsUserInterface: true,
-              ),
-            ],
-            styleInformation: BigTextStyleInformation(
-              message,
-              contentTitle: 'PDF Created Successfully',
-              summaryText: 'Tap to open PDF',
-            ),
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
+        NotificationDetailsBuilder.success(
+          bigText: message,
+          contentTitle: 'PDF Created Successfully',
+          summaryText: 'Tap to open PDF',
+          actions: NotificationDetailsBuilder.pdfCompletedActions(),
         ),
         payload: pdfPaths.isNotEmpty ? pdfPaths.first : contentId,
       );
@@ -424,30 +357,8 @@ class NotificationService {
             },
             fallback:
                 'Failed to convert ${_truncateTitle(title)} to PDF: ${_truncateError(error)}'),
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            NotificationChannels.downloadChannelId,
-            NotificationChannels.downloadChannelName,
-            channelDescription: NotificationChannels.downloadChannelDescription,
-            importance: Importance.high,
-            priority: Priority.high,
-            ongoing: false,
-            autoCancel: true,
-            showProgress: false,
-            // Add retry action without custom icon
-            actions: [
-              AndroidNotificationAction(
-                'retry_pdf',
-                'Retry',
-                showsUserInterface: true,
-              ),
-            ],
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
+        NotificationDetailsBuilder.error(
+          actions: NotificationDetailsBuilder.pdfErrorActions(),
         ),
         payload: contentId,
       );
@@ -611,26 +522,7 @@ class NotificationService {
         _getLocalized('downloadingWithTitle',
             args: {'title': _truncateTitle(title)},
             fallback: 'Downloading: ${_truncateTitle(title)}'),
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            NotificationChannels.downloadChannelId,
-            NotificationChannels.downloadChannelName,
-            channelDescription: NotificationChannels.downloadChannelDescription,
-            importance: Importance.low,
-            priority: Priority.low,
-            ongoing: true,
-            autoCancel: false,
-            showProgress: true,
-            maxProgress: 100,
-            progress: 0,
-            // Remove actions to avoid drawable resource errors
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: false,
-            presentBadge: false,
-            presentSound: false,
-          ),
-        ),
+        NotificationDetailsBuilder.progress(progress: 0),
         payload: contentId,
       );
 
@@ -745,28 +637,8 @@ class NotificationService {
         _getLocalized('downloadedWithTitle',
             args: {'title': _truncateTitle(title)},
             fallback: 'Downloaded: ${_truncateTitle(title)}'),
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            NotificationChannels.downloadChannelId,
-            NotificationChannels.downloadChannelName,
-            channelDescription: NotificationChannels.downloadChannelDescription,
-            importance: Importance.defaultImportance,
-            priority: Priority.defaultPriority,
-            ongoing: false,
-            autoCancel: true,
-            actions: [
-              AndroidNotificationAction(
-                'open',
-                'Open',
-                showsUserInterface: true,
-              ),
-            ],
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
+        NotificationDetailsBuilder.success(
+          actions: NotificationDetailsBuilder.downloadCompletedActions(),
         ),
         payload: contentId,
       );
@@ -798,33 +670,11 @@ class NotificationService {
         _getLocalized('downloadFailedWithTitle',
             args: {'title': _truncateTitle(title)},
             fallback: 'Failed: ${_truncateTitle(title)}'),
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            NotificationChannels.downloadChannelId,
-            NotificationChannels.downloadChannelName,
-            channelDescription: NotificationChannels.downloadChannelDescription,
-            importance: Importance.defaultImportance,
-            priority: Priority.defaultPriority,
-            ongoing: false,
-            autoCancel: true,
-            styleInformation: BigTextStyleInformation(
-              'Download failed: ${_truncateError(error)}',
-              contentTitle: 'Download Failed',
-              summaryText: _truncateTitle(title),
-            ),
-            actions: [
-              AndroidNotificationAction(
-                'retry',
-                'Retry',
-                showsUserInterface: true,
-              ),
-            ],
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
+        NotificationDetailsBuilder.error(
+          bigText: 'Download failed: ${_truncateError(error)}',
+          contentTitle: 'Download Failed',
+          summaryText: _truncateTitle(title),
+          actions: NotificationDetailsBuilder.downloadErrorActions(),
         ),
         payload: contentId,
       );
