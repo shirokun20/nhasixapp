@@ -4,3 +4,4 @@
 library;
 
 export 'download_worker.dart';
+export 'download_lifecycle_mixin.dart';

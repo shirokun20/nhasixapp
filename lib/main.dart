@@ -11,6 +11,7 @@ import 'package:nhasixapp/presentation/widgets/platform_not_supported_dialog.dar
 import 'package:nhasixapp/services/analytics_service.dart';
 import 'package:nhasixapp/services/history_cleanup_service.dart';
 import 'package:nhasixapp/services/app_update_service.dart';
+import 'package:nhasixapp/services/workers/download_worker.dart';
 import 'package:nhasixapp/core/utils/performance_monitor.dart';
 import 'dart:io';
 
@@ -31,6 +32,9 @@ void main() async {
 
   // Initialize App Update Service (clears cache on app updates)
   await AppUpdateService.initialize();
+
+  // Initialize WorkManager for background downloads
+  await initializeWorkManager(isDebugMode: kDebugMode);
 
   // _setupAllServiceLocalizationCallbacks();
 
