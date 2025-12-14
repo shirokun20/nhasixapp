@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart' as path;
 
 /// Standalone download utilities for background worker
 ///
@@ -287,5 +289,50 @@ class BackgroundDownloadUtils {
       // Ignore errors
     }
     return null;
+  }
+
+  /// Sync database with filesystem (remove entries for missing files)
+  static Future<int> syncDatabaseFilesystem() async {
+    try {
+      final dbPath = await getDatabasesPath();
+      final pathStr = path.join(dbPath, 'nhasix_app.db');
+
+      // Open database directly since we are in background isolate
+      final db = await openDatabase(pathStr, version: 1);
+
+      // Get all completed downloads
+      final List<Map<String, dynamic>> downloads = await db.query(
+        'downloads',
+        columns: ['id', 'download_path'],
+        where: 'state = ?',
+        whereArgs: ['completed'],
+      );
+
+      int removedCount = 0;
+
+      for (final row in downloads) {
+        final id = row['id'] as String;
+        final downloadPath = row['download_path'] as String?;
+
+        if (downloadPath == null || downloadPath.isEmpty) continue;
+
+        final dir = Directory(downloadPath);
+        if (!await dir.exists() || (await dir.list().isEmpty)) {
+          // File missing, remove from DB
+          await db.delete(
+            'downloads',
+            where: 'id = ?',
+            whereArgs: [id],
+          );
+          removedCount++;
+        }
+      }
+
+      await db.close();
+      return removedCount;
+    } catch (e) {
+      // Log error but don't crash
+      return 0;
+    }
   }
 }

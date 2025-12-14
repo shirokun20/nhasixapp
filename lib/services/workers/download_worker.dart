@@ -343,12 +343,16 @@ Future<bool> _handleCleanupTempFiles() async {
 }
 
 Future<bool> _handleSyncOfflineContent() async {
-  // TODO: Implement sync between database and filesystem
-  // This should:
-  // 1. Check if all files in database exist on disk
-  // 2. Remove database entries for missing files
-  // 3. Optionally add orphaned files to database
-  return true;
+  try {
+    final removedCount = await BackgroundDownloadUtils.syncDatabaseFilesystem();
+    if (removedCount > 0) {
+      await _logWorkerError(DownloadWorkerTasks.syncOfflineContent,
+          'Removed $removedCount missing entries');
+    }
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 Future<bool> _handleCheckIncompleteDownloads() async {
