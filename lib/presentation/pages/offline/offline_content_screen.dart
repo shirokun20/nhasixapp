@@ -73,9 +73,9 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
             'OFFLINE_AUTO_SCAN: Storage permission denied, cannot scan backup');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content:
-                  Text('Storage permission required to scan backup folders'),
+                  Text(AppLocalizations.of(context)!.storagePermissionScan),
               duration: Duration(seconds: 3),
             ),
           );
@@ -102,7 +102,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
       if ((synced > 0 || updated > 0) && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Synced: $synced new, $updated updated'),
+            content:
+                Text(AppLocalizations.of(context)!.syncResult(synced, updated)),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -126,7 +127,9 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
         if (!granted) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Storage permission required')),
+            SnackBar(
+                content: Text(
+                    AppLocalizations.of(context)!.storagePermissionRequired)),
           );
           return;
         }
@@ -154,7 +157,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            title: const Text('Exporting Library'),
+            title: Text(AppLocalizations.of(context)!.exportingLibrary),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -185,12 +188,12 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Export Complete'),
+          title: Text(AppLocalizations.of(context)!.exportComplete),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Library exported successfully!'),
+              Text(AppLocalizations.of(context)!.libraryExportSuccess),
               const SizedBox(height: 8),
               Text(
                 'Path: $exportPath',
@@ -207,7 +210,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
+              child: Text(AppLocalizations.of(context)!.close),
             ),
             FilledButton.icon(
               onPressed: () async {
@@ -215,7 +218,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                 await exportService.shareExport(exportPath);
               },
               icon: const Icon(Icons.share),
-              label: const Text('Share'),
+              label: Text(AppLocalizations.of(context)!.share),
             ),
           ],
         ),
@@ -226,7 +229,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Export failed: $e'),
+          content:
+              Text(AppLocalizations.of(context)!.errorGeneric(e.toString())),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -584,7 +588,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
               FilledButton.icon(
                 onPressed: () => context.go('/downloads'),
                 icon: const Icon(Icons.download_rounded),
-                label: const Text('Browse Downloads'),
+                label: Text(AppLocalizations.of(context)!.browseDownloads),
                 style: FilledButton.styleFrom(
                   backgroundColor: colorScheme.primary,
                   foregroundColor: colorScheme.onPrimary,
@@ -1083,7 +1087,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Deleting ${content.title}...'),
+          content: Text(
+              AppLocalizations.of(context)!.deletingContent(content.title)),
           duration: const Duration(seconds: 1),
         ),
       );
@@ -1108,7 +1113,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${content.title} deleted. Freed $sizeInMB MB'),
+            content: Text(AppLocalizations.of(context)!
+                .contentDeletedFreed(content.title, sizeInMB)),
             backgroundColor: Theme.of(context).colorScheme.primary,
             duration: const Duration(seconds: 3),
           ),
@@ -1116,7 +1122,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to delete ${content.title}'),
+            content: Text(AppLocalizations.of(context)!
+                .failedToDeleteContent(content.title)),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -1125,7 +1132,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: ${e.toString()}'),
+          content:
+              Text(AppLocalizations.of(context)!.errorGeneric(e.toString())),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );

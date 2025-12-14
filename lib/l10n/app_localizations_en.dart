@@ -781,9 +781,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportingFavorites => 'Exporting favorites...';
 
   @override
-  String exportComplete(String fileName) {
-    return 'Export Complete: Downloads exported to $fileName';
-  }
+  String get exportComplete => 'Export Complete';
 
   @override
   String exportedFavoritesCount(int count) {
@@ -2096,7 +2094,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationMessages => 'Notification Messages';
 
   @override
-  String get convertingToPdf => 'Converting to PDF';
+  String get convertingToPdf => 'Converting to PDF...';
 
   @override
   String convertingToPdfWithTitle(String title) {
@@ -2128,7 +2126,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String pdfConversionFailedWithError(String title, String error) {
-    return 'Failed to convert $title to PDF: $error';
+    return 'PDF conversion failed for $title: $error';
   }
 
   @override
@@ -2885,6 +2883,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String exportDownloadsComplete(String fileName) {
+    return 'Export Complete: Downloads exported to $fileName';
+  }
+
+  @override
   String failedToDeleteDirectory(String path, String error) {
     return 'Failed to delete directory: $path, error: $error';
   }
@@ -2992,4 +2995,102 @@ class AppLocalizationsEn extends AppLocalizations {
   String errorScanningBackup(String error) {
     return 'Error scanning backup: $error';
   }
+
+  @override
+  String get themeDescription =>
+      'Choose your preferred color theme for the app interface.';
+
+  @override
+  String get imageQualityDescription =>
+      'Choose image quality for downloads. Higher quality uses more storage and data.';
+
+  @override
+  String get gridColumnsDescription =>
+      'Choose how many columns to display content in portrait mode. More columns show more content but smaller items.';
+
+  @override
+  String get gridPreview => 'Grid Preview';
+
+  @override
+  String get autoCleanupDescription =>
+      'Manage automatic cleanup of reading history to free up storage space.';
+
+  @override
+  String get testCacheClearing => 'Test App Update Cache Clearing';
+
+  @override
+  String get testCacheClearingDescription =>
+      'Simulate app update and test cache clearing behavior.';
+
+  @override
+  String get forceClearCache => 'Force Clear All Caches';
+
+  @override
+  String get forceClearCacheDescription => 'Manually clear all image caches.';
+
+  @override
+  String get runTest => 'Run Test';
+
+  @override
+  String get clearCacheButton => 'Clear Cache';
+
+  @override
+  String get disguiseModeDescription =>
+      'Choose how the app appears in your launcher for privacy.';
+
+  @override
+  String get applyingDisguiseMode => 'Applying disguise mode changes...';
+
+  @override
+  String get disguiseDefault => 'Default';
+
+  @override
+  String get disguiseCalculator => 'Calculator';
+
+  @override
+  String get disguiseNotes => 'Notes';
+
+  @override
+  String get disguiseWeather => 'Weather';
+
+  @override
+  String get storagePermissionScan =>
+      'Storage permission required to scan backup folders';
+
+  @override
+  String syncResult(int synced, int updated) {
+    return 'Synced: $synced new, $updated updated';
+  }
+
+  @override
+  String get exportingLibrary => 'Exporting Library';
+
+  @override
+  String get libraryExportSuccess => 'Library exported successfully!';
+
+  @override
+  String get browseDownloads => 'Browse Downloads';
+
+  @override
+  String deletingContent(String title) {
+    return 'Deleting $title...';
+  }
+
+  @override
+  String contentDeletedFreed(String title, String size) {
+    return '$title deleted. Freed $size MB';
+  }
+
+  @override
+  String failedToDeleteContent(String title) {
+    return 'Failed to delete $title';
+  }
+
+  @override
+  String errorGeneric(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get cacheManagementDebug => '🚀 Cache Management (Debug)';
 }

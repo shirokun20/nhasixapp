@@ -783,9 +783,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get exportingFavorites => 'Mengekspor favorit...';
 
   @override
-  String exportComplete(String fileName) {
-    return 'Ekspor Selesai: Unduhan diekspor ke $fileName';
-  }
+  String get exportComplete => 'Ekspor Selesai';
 
   @override
   String exportedFavoritesCount(int count) {
@@ -1820,7 +1818,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get pause => 'Jeda';
 
   @override
-  String get convertToPdf => 'Ubah ke PDF';
+  String get convertToPdf => 'Konversi ke PDF';
 
   @override
   String get details => 'Detail';
@@ -2101,7 +2099,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get notificationMessages => 'Pesan Notifikasi';
 
   @override
-  String get convertingToPdf => 'Mengkonversi ke PDF';
+  String get convertingToPdf => 'Mengonversi ke PDF...';
 
   @override
   String convertingToPdfWithTitle(String title) {
@@ -2133,7 +2131,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String pdfConversionFailedWithError(String title, String error) {
-    return 'Gagal mengkonversi $title ke PDF: $error';
+    return 'Konversi PDF gagal untuk $title: $error';
   }
 
   @override
@@ -2896,6 +2894,11 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String exportDownloadsComplete(String fileName) {
+    return 'Ekspor Selesai: Unduhan diekspor ke $fileName';
+  }
+
+  @override
   String failedToDeleteDirectory(String path, String error) {
     return 'Gagal menghapus direktori: $path, error: $error';
   }
@@ -3005,4 +3008,103 @@ class AppLocalizationsId extends AppLocalizations {
   String errorScanningBackup(String error) {
     return 'Error memindai backup: $error';
   }
+
+  @override
+  String get themeDescription =>
+      'Pilih tema warna yang diinginkan untuk antarmuka aplikasi.';
+
+  @override
+  String get imageQualityDescription =>
+      'Pilih kualitas gambar untuk unduhan. Kualitas lebih tinggi menggunakan lebih banyak penyimpanan dan data.';
+
+  @override
+  String get gridColumnsDescription =>
+      'Pilih berapa banyak kolom untuk menampilkan konten dalam mode potret. Lebih banyak kolom menampilkan lebih banyak item tetapi lebih kecil.';
+
+  @override
+  String get gridPreview => 'Pratinjau Grid';
+
+  @override
+  String get autoCleanupDescription =>
+      'Kelola pembersihan otomatis riwayat baca untuk menghemat ruang penyimpanan.';
+
+  @override
+  String get testCacheClearing => 'Tes Pembersihan Cache Update App';
+
+  @override
+  String get testCacheClearingDescription =>
+      'Simulasikan update aplikasi dan tes perilaku pembersihan cache.';
+
+  @override
+  String get forceClearCache => 'Paksa Bersihkan Semua Cache';
+
+  @override
+  String get forceClearCacheDescription =>
+      'Bersihkan semua cache gambar secara manual.';
+
+  @override
+  String get runTest => 'Jalankan Tes';
+
+  @override
+  String get clearCacheButton => 'Bersihkan Cache';
+
+  @override
+  String get disguiseModeDescription =>
+      'Pilih bagaimana aplikasi muncul di launcher Anda untuk privasi.';
+
+  @override
+  String get applyingDisguiseMode => 'Menerapkan perubahan mode penyamaran...';
+
+  @override
+  String get disguiseDefault => 'Default';
+
+  @override
+  String get disguiseCalculator => 'Kalkulator';
+
+  @override
+  String get disguiseNotes => 'Catatan';
+
+  @override
+  String get disguiseWeather => 'Cuaca';
+
+  @override
+  String get storagePermissionScan =>
+      'Izin penyimpanan diperlukan untuk memindai folder backup';
+
+  @override
+  String syncResult(int synced, int updated) {
+    return 'Disinkronkan: $synced baru, $updated diperbarui';
+  }
+
+  @override
+  String get exportingLibrary => 'Mengekspor Perpustakaan';
+
+  @override
+  String get libraryExportSuccess => 'Perpustakaan berhasil diekspor!';
+
+  @override
+  String get browseDownloads => 'Jelajahi Unduhan';
+
+  @override
+  String deletingContent(String title) {
+    return 'Menghapus $title...';
+  }
+
+  @override
+  String contentDeletedFreed(String title, String size) {
+    return '$title dihapus. Menghemat $size MB';
+  }
+
+  @override
+  String failedToDeleteContent(String title) {
+    return 'Gagal menghapus $title';
+  }
+
+  @override
+  String errorGeneric(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get cacheManagementDebug => '🚀 Manajemen Cache (Debug)';
 }

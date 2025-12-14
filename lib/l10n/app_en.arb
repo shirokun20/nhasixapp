@@ -210,7 +210,12 @@
   "noQueuedDownloads": "No queued downloads",
   "noCompletedDownloads": "No completed downloads",
   "noFailedDownloads": "No failed downloads",
-  "pdfConversionStarted": "PDF conversion started",
+  "pdfConversionStarted": "PDF conversion started for {contentId}",
+  "@pdfConversionStarted": {
+    "placeholders": {
+      "contentId": {"type": "String"}
+    }
+  },
   "cancelAllDownloads": "Cancel All Downloads",
   "cancelAllConfirmation": "Are you sure you want to cancel all active downloads? This action cannot be undone.",
   "cancelDownload": "Cancel Download",
@@ -2003,8 +2008,8 @@
       "error": {"type": "String"}
     }
   },
-  "exportComplete": "Export Complete: Downloads exported to {fileName}",
-  "@exportComplete": {
+  "exportDownloadsComplete": "Export Complete: Downloads exported to {fileName}",
+  "@exportDownloadsComplete": {
     "placeholders": {
       "fileName": {"type": "String"}
     }
@@ -2136,6 +2141,70 @@
   "errorScanningBackup": "Error scanning backup: {error}",
   "@errorScanningBackup": {
     "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+
+  "themeDescription": "Choose your preferred color theme for the app interface.",
+  "imageQualityDescription": "Choose image quality for downloads. Higher quality uses more storage and data.",
+  "gridColumnsDescription": "Choose how many columns to display content in portrait mode. More columns show more content but smaller items.",
+  "gridPreview": "Grid Preview",
+  "autoCleanupDescription": "Manage automatic cleanup of reading history to free up storage space.",
+  "testCacheClearing": "Test App Update Cache Clearing",
+  "testCacheClearingDescription": "Simulate app update and test cache clearing behavior.",
+  "forceClearCache": "Force Clear All Caches",
+  "forceClearCacheDescription": "Manually clear all image caches.",
+  "runTest": "Run Test",
+  "clearCacheButton": "Clear Cache",
+  "disguiseModeDescription": "Choose how the app appears in your launcher for privacy.",
+  "applyingDisguiseMode": "Applying disguise mode changes...",
+  "disguiseDefault": "Default",
+  "disguiseCalculator": "Calculator",
+  "disguiseNotes": "Notes",
+  "disguiseWeather": "Weather",
+  "storagePermissionScan": "Storage permission required to scan backup folders",
+  "syncResult": "Synced: {synced} new, {updated} updated",
+  "@syncResult": {
+    "placeholders": {
+      "synced": {"type": "int"},
+      "updated": {"type": "int"}
+    }
+  },
+  "exportingLibrary": "Exporting Library",
+  "libraryExportSuccess": "Library exported successfully!",
+  "browseDownloads": "Browse Downloads",
+  "deletingContent": "Deleting {title}...",
+  "@deletingContent": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "contentDeletedFreed": "{title} deleted. Freed {size} MB",
+  "@contentDeletedFreed": {
+    "placeholders": {
+      "title": {"type": "String"},
+      "size": {"type": "String"}
+    }
+  },
+  "failedToDeleteContent": "Failed to delete {title}",
+  "@failedToDeleteContent": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "errorGeneric": "Error: {error}",
+  "@errorGeneric": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "cacheManagementDebug": "🚀 Cache Management (Debug)",
+  "convertToPdf": "Convert to PDF",
+  "convertingToPdf": "Converting to PDF...",
+  "pdfConversionFailedWithError": "PDF conversion failed for {title}: {error}",
+  "@pdfConversionFailedWithError": {
+    "placeholders": {
+      "title": {"type": "String"},
       "error": {"type": "String"}
     }
   }

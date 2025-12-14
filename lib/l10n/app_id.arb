@@ -220,7 +220,12 @@
   "noQueuedDownloads": "Tidak ada unduhan antrian",
   "noCompletedDownloads": "Tidak ada unduhan selesai",
   "noFailedDownloads": "Tidak ada unduhan gagal",
-  "pdfConversionStarted": "Konversi PDF dimulai",
+  "pdfConversionStarted": "Konversi PDF dimulai untuk {contentId}",
+  "@pdfConversionStarted": {
+    "placeholders": {
+      "contentId": {"type": "String"}
+    }
+  },
   "cancelAllDownloads": "Batalkan Semua Unduhan",
   "cancelAllConfirmation": "Yakin ingin membatalkan semua unduhan aktif? Tindakan ini tidak bisa dibatalkan.",
   "cancelDownload": "Batalkan Unduhan",
@@ -1648,8 +1653,8 @@
        "error": {"type": "String"}
      }
    },
-   "exportComplete": "Ekspor Selesai: Unduhan diekspor ke {fileName}",
-   "@exportComplete": {
+   "exportDownloadsComplete": "Ekspor Selesai: Unduhan diekspor ke {fileName}",
+   "@exportDownloadsComplete": {
      "placeholders": {
        "fileName": {"type": "String"}
      }
@@ -1783,5 +1788,68 @@
      "placeholders": {
        "error": {"type": "String"}
      }
-   }
-}
+   },
+   "themeDescription": "Pilih tema warna yang diinginkan untuk antarmuka aplikasi.",
+   "imageQualityDescription": "Pilih kualitas gambar untuk unduhan. Kualitas lebih tinggi menggunakan lebih banyak penyimpanan dan data.",
+   "gridColumnsDescription": "Pilih berapa banyak kolom untuk menampilkan konten dalam mode potret. Lebih banyak kolom menampilkan lebih banyak item tetapi lebih kecil.",
+   "gridPreview": "Pratinjau Grid",
+   "autoCleanupDescription": "Kelola pembersihan otomatis riwayat baca untuk menghemat ruang penyimpanan.",
+   "testCacheClearing": "Tes Pembersihan Cache Update App",
+   "testCacheClearingDescription": "Simulasikan update aplikasi dan tes perilaku pembersihan cache.",
+   "forceClearCache": "Paksa Bersihkan Semua Cache",
+   "forceClearCacheDescription": "Bersihkan semua cache gambar secara manual.",
+   "runTest": "Jalankan Tes",
+   "clearCacheButton": "Bersihkan Cache",
+   "disguiseModeDescription": "Pilih bagaimana aplikasi muncul di launcher Anda untuk privasi.",
+   "applyingDisguiseMode": "Menerapkan perubahan mode penyamaran...",
+   "disguiseDefault": "Default",
+   "disguiseCalculator": "Kalkulator",
+   "disguiseNotes": "Catatan",
+   "disguiseWeather": "Cuaca",
+   "storagePermissionScan": "Izin penyimpanan diperlukan untuk memindai folder backup",
+   "syncResult": "Disinkronkan: {synced} baru, {updated} diperbarui",
+   "@syncResult": {
+     "placeholders": {
+       "synced": {"type": "int"},
+       "updated": {"type": "int"}
+     }
+   },
+   "exportingLibrary": "Mengekspor Perpustakaan",
+   "libraryExportSuccess": "Perpustakaan berhasil diekspor!",
+   "browseDownloads": "Jelajahi Unduhan",
+   "deletingContent": "Menghapus {title}...",
+   "@deletingContent": {
+     "placeholders": {
+       "title": {"type": "String"}
+     }
+   },
+   "contentDeletedFreed": "{title} dihapus. Menghemat {size} MB",
+   "@contentDeletedFreed": {
+     "placeholders": {
+       "title": {"type": "String"},
+       "size": {"type": "String"}
+     }
+   },
+   "failedToDeleteContent": "Gagal menghapus {title}",
+   "@failedToDeleteContent": {
+     "placeholders": {
+       "title": {"type": "String"}
+     }
+   },
+   "errorGeneric": "Error: {error}",
+   "@errorGeneric": {
+     "placeholders": {
+       "error": {"type": "String"}
+     }
+   },
+   "cacheManagementDebug": "🚀 Manajemen Cache (Debug)",
+   "convertToPdf": "Konversi ke PDF",
+  "convertingToPdf": "Mengonversi ke PDF...",
+  "pdfConversionFailedWithError": "Konversi PDF gagal untuk {title}: {error}",
+  "@pdfConversionFailedWithError": {
+    "placeholders": {
+      "title": {"type": "String"},
+      "error": {"type": "String"}
+    }
+  }
+ }

@@ -49,7 +49,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: Theme.of(context).colorScheme.onSurface,
                       )),
                   subtitle: Text(
-                    'Choose your preferred color theme for the app interface.',
+                    AppLocalizations.of(context)!.themeDescription,
                     style: TextStyleConst.bodySmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -164,7 +164,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: Theme.of(context).colorScheme.onSurface,
                       )),
                   subtitle: Text(
-                    'Choose image quality for downloads. Higher quality uses more storage and data.',
+                    AppLocalizations.of(context)!.imageQualityDescription,
                     style: TextStyleConst.bodySmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -216,7 +216,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: Theme.of(context).colorScheme.onSurface,
                       )),
                   subtitle: Text(
-                    'Choose how many columns to display content in portrait mode. More columns show more content but smaller items.',
+                    AppLocalizations.of(context)!.gridColumnsDescription,
                     style: TextStyleConst.bodySmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -283,7 +283,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Grid Preview',
+                        AppLocalizations.of(context)!.gridPreview,
                         style: TextStyleConst.bodyMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w600,
@@ -337,7 +337,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
                   child: Row(
                     children: [
-                      Text('🚀 Cache Management (Debug)',
+                      Text(AppLocalizations.of(context)!.cacheManagementDebug,
                           style: TextStyleConst.headingSmall.copyWith(
                             color: Theme.of(context).colorScheme.primary,
                             fontWeight: FontWeight.bold,
@@ -353,31 +353,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 ListTile(
                   tileColor: Theme.of(context).colorScheme.surface,
-                  title: Text('Test App Update Cache Clearing',
+                  title: Text(AppLocalizations.of(context)!.testCacheClearing,
                       style: TextStyleConst.bodyLarge.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                       )),
                   subtitle: Text(
-                    'Simulate app update and test cache clearing behavior.',
+                    AppLocalizations.of(context)!.testCacheClearingDescription,
                     style: TextStyleConst.bodySmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                   trailing: ElevatedButton(
                     onPressed: () => AppUpdateTest.runTests(context),
-                    child: Text('Run Test'),
+                    child: Text(AppLocalizations.of(context)!.runTest),
                   ),
                 ),
                 ListTile(
                   tileColor: Theme.of(context).colorScheme.surface,
-                  title: Text('Force Clear All Caches',
+                  title: Text(AppLocalizations.of(context)!.forceClearCache,
                       style: TextStyleConst.bodyLarge.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                       )),
                   subtitle: Text(
-                    'Manually clear all image caches.',
+                    AppLocalizations.of(context)!.forceClearCacheDescription,
                     style: TextStyleConst.bodySmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -388,7 +388,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       backgroundColor: Theme.of(context).colorScheme.error,
                       foregroundColor: Theme.of(context).colorScheme.onError,
                     ),
-                    child: Text('Clear Cache'),
+                    child: Text(AppLocalizations.of(context)!.clearCacheButton),
                   ),
                 ),
 
@@ -402,7 +402,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: Text(
-                    AppLocalizations.of(context)!.manageAutoCleanupDescription,
+                    AppLocalizations.of(context)!.autoCleanupDescription,
                     style: TextStyleConst.bodySmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -774,8 +774,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           )),
                       subtitle: Text(
                         isLoading
-                            ? 'Applying disguise mode changes...'
-                            : 'Choose how the app appears in your launcher for privacy.',
+                            ? AppLocalizations.of(context)!.applyingDisguiseMode
+                            : AppLocalizations.of(context)!
+                                .disguiseModeDescription,
                         style: TextStyleConst.bodySmall.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -813,7 +814,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           items: [
                             DropdownMenuItem(
                               value: 'default',
-                              child: Text('Default',
+                              child: Text(
+                                  AppLocalizations.of(context)!.disguiseDefault,
                                   style: TextStyleConst.bodyLarge.copyWith(
                                     color:
                                         Theme.of(context).colorScheme.onSurface,
@@ -821,7 +823,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             DropdownMenuItem(
                               value: 'calculator',
-                              child: Text('Calculator',
+                              child: Text(
+                                  AppLocalizations.of(context)!
+                                      .disguiseCalculator,
                                   style: TextStyleConst.bodyLarge.copyWith(
                                     color:
                                         Theme.of(context).colorScheme.onSurface,
@@ -829,7 +833,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             DropdownMenuItem(
                               value: 'notes',
-                              child: Text('Notes',
+                              child: Text(
+                                  AppLocalizations.of(context)!.disguiseNotes,
                                   style: TextStyleConst.bodyLarge.copyWith(
                                     color:
                                         Theme.of(context).colorScheme.onSurface,
@@ -837,7 +842,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             DropdownMenuItem(
                               value: 'weather',
-                              child: Text('Weather',
+                              child: Text(
+                                  AppLocalizations.of(context)!.disguiseWeather,
                                   style: TextStyleConst.bodyLarge.copyWith(
                                     color:
                                         Theme.of(context).colorScheme.onSurface,

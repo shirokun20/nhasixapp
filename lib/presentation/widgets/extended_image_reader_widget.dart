@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:extended_image/extended_image.dart';
 import '../../core/utils/webtoon_detector.dart';
 import '../../data/models/reader_settings_model.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 
 /// Enhanced image viewer widget optimized for manga/comic reading
 /// with adaptive fitting and zoom-on-demand functionality.
@@ -448,7 +449,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                       state.reLoadImage();
                     },
                     icon: Icon(Icons.refresh, size: 16),
-                    label: const Text('Retry'),
+                    label: Text(AppLocalizations.of(context)!.retry),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Theme.of(context).colorScheme.onPrimary,

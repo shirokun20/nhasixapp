@@ -583,7 +583,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(AppLocalizations.of(context)!.no,
+            child: Text(AppLocalizations.of(context)!.cancel,
                 style: TextStyleConst.labelLarge),
           ),
           TextButton(

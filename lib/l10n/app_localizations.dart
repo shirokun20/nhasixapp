@@ -1517,8 +1517,8 @@ abstract class AppLocalizations {
   /// No description provided for @exportComplete.
   ///
   /// In en, this message translates to:
-  /// **'Export Complete: Downloads exported to {fileName}'**
-  String exportComplete(String fileName);
+  /// **'Export Complete'**
+  String get exportComplete;
 
   /// No description provided for @exportedFavoritesCount.
   ///
@@ -3900,7 +3900,7 @@ abstract class AppLocalizations {
   /// No description provided for @convertingToPdf.
   ///
   /// In en, this message translates to:
-  /// **'Converting to PDF'**
+  /// **'Converting to PDF...'**
   String get convertingToPdf;
 
   /// No description provided for @convertingToPdfWithTitle.
@@ -3942,7 +3942,7 @@ abstract class AppLocalizations {
   /// No description provided for @pdfConversionFailedWithError.
   ///
   /// In en, this message translates to:
-  /// **'Failed to convert {title} to PDF: {error}'**
+  /// **'PDF conversion failed for {title}: {error}'**
   String pdfConversionFailedWithError(String title, String error);
 
   /// No description provided for @downloadingWithTitle.
@@ -5008,6 +5008,12 @@ abstract class AppLocalizations {
   /// **'Storage Cleanup Failed: {error}'**
   String storageCleanupFailed(String error);
 
+  /// No description provided for @exportDownloadsComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Complete: Downloads exported to {fileName}'**
+  String exportDownloadsComplete(String fileName);
+
   /// No description provided for @failedToDeleteDirectory.
   ///
   /// In en, this message translates to:
@@ -5151,6 +5157,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error scanning backup: {error}'**
   String errorScanningBackup(String error);
+
+  /// No description provided for @themeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your preferred color theme for the app interface.'**
+  String get themeDescription;
+
+  /// No description provided for @imageQualityDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose image quality for downloads. Higher quality uses more storage and data.'**
+  String get imageQualityDescription;
+
+  /// No description provided for @gridColumnsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how many columns to display content in portrait mode. More columns show more content but smaller items.'**
+  String get gridColumnsDescription;
+
+  /// No description provided for @gridPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Grid Preview'**
+  String get gridPreview;
+
+  /// No description provided for @autoCleanupDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage automatic cleanup of reading history to free up storage space.'**
+  String get autoCleanupDescription;
+
+  /// No description provided for @testCacheClearing.
+  ///
+  /// In en, this message translates to:
+  /// **'Test App Update Cache Clearing'**
+  String get testCacheClearing;
+
+  /// No description provided for @testCacheClearingDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Simulate app update and test cache clearing behavior.'**
+  String get testCacheClearingDescription;
+
+  /// No description provided for @forceClearCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Force Clear All Caches'**
+  String get forceClearCache;
+
+  /// No description provided for @forceClearCacheDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manually clear all image caches.'**
+  String get forceClearCacheDescription;
+
+  /// No description provided for @runTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Run Test'**
+  String get runTest;
+
+  /// No description provided for @clearCacheButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Cache'**
+  String get clearCacheButton;
+
+  /// No description provided for @disguiseModeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how the app appears in your launcher for privacy.'**
+  String get disguiseModeDescription;
+
+  /// No description provided for @applyingDisguiseMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Applying disguise mode changes...'**
+  String get applyingDisguiseMode;
+
+  /// No description provided for @disguiseDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get disguiseDefault;
+
+  /// No description provided for @disguiseCalculator.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculator'**
+  String get disguiseCalculator;
+
+  /// No description provided for @disguiseNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get disguiseNotes;
+
+  /// No description provided for @disguiseWeather.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather'**
+  String get disguiseWeather;
+
+  /// No description provided for @storagePermissionScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage permission required to scan backup folders'**
+  String get storagePermissionScan;
+
+  /// No description provided for @syncResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Synced: {synced} new, {updated} updated'**
+  String syncResult(int synced, int updated);
+
+  /// No description provided for @exportingLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Exporting Library'**
+  String get exportingLibrary;
+
+  /// No description provided for @libraryExportSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Library exported successfully!'**
+  String get libraryExportSuccess;
+
+  /// No description provided for @browseDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse Downloads'**
+  String get browseDownloads;
+
+  /// No description provided for @deletingContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting {title}...'**
+  String deletingContent(String title);
+
+  /// No description provided for @contentDeletedFreed.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} deleted. Freed {size} MB'**
+  String contentDeletedFreed(String title, String size);
+
+  /// No description provided for @failedToDeleteContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete {title}'**
+  String failedToDeleteContent(String title);
+
+  /// No description provided for @errorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {error}'**
+  String errorGeneric(String error);
+
+  /// No description provided for @cacheManagementDebug.
+  ///
+  /// In en, this message translates to:
+  /// **'🚀 Cache Management (Debug)'**
+  String get cacheManagementDebug;
 }
 
 class _AppLocalizationsDelegate
