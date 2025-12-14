@@ -3,7 +3,8 @@ name: Build and Upload APK
 # Trigger only when merged to master branch
 on:
   push:
-    branches: [ master ]
+    branches: [ master, 'release/*' ]
+    tags: [ 'v*' ]
 
 jobs:
   build:
@@ -201,4 +202,12 @@ jobs:
           # Note: x86_64 not uploaded to save space (mainly for emulators)
           echo ""
           echo "🎉 Upload complete! Total uploaded: $UPLOADED_COUNT APKs"
-          echo "ℹ️ x86_64 APK skipped (emulator/testing only)"
+      # Upload to GitHub Release
+      - name: Release to GitHub
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: apk-output/*.apk
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
