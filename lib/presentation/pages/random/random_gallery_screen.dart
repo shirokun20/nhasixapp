@@ -12,6 +12,8 @@ import '../../../core/utils/app_animations.dart';
 import '../../cubits/random_gallery/random_gallery_cubit.dart';
 import '../../widgets/progressive_image_widget.dart';
 import '../../widgets/shimmer_loading_widgets.dart';
+import '../../widgets/app_scaffold_with_offline.dart';
+import '../../widgets/app_main_drawer_widget.dart';
 
 /// Random Gallery Screen similar to NClientV2's RandomActivity
 /// Displays random galleries with shuffle functionality and preloading
@@ -57,13 +59,9 @@ class _RandomGalleryView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.randomGallery),
-        elevation: 0,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
-      ),
+    return AppScaffoldWithOffline(
+      title: AppLocalizations.of(context)!.randomGallery,
+      drawer: AppMainDrawerWidget(context: context),
       body: BlocBuilder<RandomGalleryCubit, RandomGalleryState>(
         builder: (context, state) {
           if (state is RandomGalleryLoading) {

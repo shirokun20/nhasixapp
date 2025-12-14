@@ -13,6 +13,7 @@ import '../../widgets/widgets.dart';
 import '../history/widgets/history_item_widget.dart';
 import '../history/widgets/history_empty_widget.dart';
 import '../history/widgets/history_cleanup_info_widget.dart';
+import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
 
 /// Screen for displaying reading history with auto-cleanup features
 class HistoryScreen extends StatefulWidget {
@@ -77,22 +78,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget build(BuildContext context) {
     return BlocProvider<HistoryCubit>.value(
       value: _historyCubit,
-      child: Scaffold(
+      child: AppScaffoldWithOffline(
+        title: AppLocalizations.of(context)!.readingHistory,
         appBar: _buildAppBar(context),
+        drawer: AppMainDrawerWidget(context: context),
         body: BlocBuilder<HistoryCubit, HistoryState>(
           builder: (context, state) {
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                if (constraints.maxWidth < 50 || constraints.maxHeight < 50) {
-                  return const SizedBox.shrink();
-                }
-                return SafeArea(
-                  child: RefreshIndicator(
-                    onRefresh: () => _historyCubit.refreshHistory(),
-                    child: _buildBody(context, state),
-                  ),
-                );
-              },
+            // LayoutBuilder is already handled by AppScaffoldWithOffline
+            return RefreshIndicator(
+              onRefresh: () => _historyCubit.refreshHistory(),
+              child: _buildBody(context, state),
             );
           },
         ),

@@ -8,6 +8,7 @@ import '../../../services/analytics_service.dart';
 import '../../cubits/settings/settings_cubit.dart';
 import '../../widgets/app_scaffold_with_offline.dart';
 import '../../../core/utils/app_update_test.dart';
+import '../../widgets/app_main_drawer_widget.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -27,6 +28,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return SimpleOfflineScaffold(
       title: AppLocalizations.of(context)?.settings ?? 'Settings',
+      drawer: AppMainDrawerWidget(context: context),
       body: BlocBuilder<SettingsCubit, SettingsState>(
         builder: (context, state) {
           if (state is SettingsLoaded) {

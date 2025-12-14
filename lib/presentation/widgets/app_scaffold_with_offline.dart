@@ -333,11 +333,13 @@ class SimpleOfflineScaffold extends StatelessWidget {
     required this.title,
     required this.body,
     this.floatingActionButton,
+    this.drawer,
   });
 
   final String title;
   final Widget body;
   final Widget? floatingActionButton;
+  final Widget? drawer;
 
   @override
   Widget build(BuildContext context) {
@@ -345,6 +347,7 @@ class SimpleOfflineScaffold extends StatelessWidget {
       title: title,
       body: body,
       floatingActionButton: floatingActionButton,
+      drawer: drawer,
     );
   }
 }

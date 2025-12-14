@@ -10,9 +10,9 @@ trigger: always_on
 - **Release**: `./build_release.sh` (Custom) | `flutter build ipa` (iOS)
 
 ## 🧠 Development Workflow (CRITICAL)
-1. **Analysis**: `projects/analysis-plan/[folder-name]/[file-name].md`. **READ-ONLY**. Document findings.
-2. **Planning**: `projects/future-plan/[folder-name]/[file-name].md`. **Design only**. No code changes.
-3. **Execution**: `projects/onprogress-plan/[folder-name]/[file-name].md`. **Code Allowed**.
+1. **Analysis**: `projects/analysis-plan/[folder-name]/[file-name]-analysis.md`. **READ-ONLY**. Document findings.
+2. **Planning**: `projects/future-plan/[folder-name]/[file-name]-plan.md`. **Design only**. No code changes.
+3. **Execution**: `projects/onprogress-plan/[folder-name]/[file-name]-progress.md`. **Code Allowed**.
    - **MUST** create Todo list first. Update `.md` only for completion `[x]`.
    - Use `MCP Sequential Thinking`, `Context7`, `Docfork` for complex tasks.
 4. **Completion**: Move folder to `projects/success-plan/[folder-name]/`.

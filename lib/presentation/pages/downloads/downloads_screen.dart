@@ -47,6 +47,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     return AppScaffoldWithOffline(
       title: AppLocalizations.of(context)!.downloads,
       backgroundColor: colorScheme.surface,
+      drawer: AppMainDrawerWidget(context: context),
       appBar: _buildAppBar(), // Use custom AppBar with menu actions
       body: BlocConsumer<DownloadBloc, DownloadBlocState>(
         listener: (context, state) {

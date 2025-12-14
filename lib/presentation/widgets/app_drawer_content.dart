@@ -23,6 +23,14 @@ class AppDrawerContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+    final currentRoute = GoRouterState.of(context).uri.toString();
+
+    bool isSelected(String route) {
+      if (route == AppRoute.home) {
+        return currentRoute == AppRoute.home;
+      }
+      return currentRoute.startsWith(route);
+    }
 
     return Container(
       color: theme.scaffoldBackgroundColor,
@@ -70,11 +78,17 @@ class AppDrawerContent extends StatelessWidget {
               color: theme.iconTheme.color,
             ),
             title: Text(
-              l10n.home, // Ensure 'home' exists in l10n or use hardcoded/mainTitle
+              l10n.home,
               style: TextStyleConst.navigationLabel.copyWith(
-                color: theme.textTheme.titleMedium?.color,
+                color: isSelected(AppRoute.home)
+                    ? theme.colorScheme.primary
+                    : theme.textTheme.titleMedium?.color,
+                fontWeight: isSelected(AppRoute.home) ? FontWeight.bold : null,
               ),
             ),
+            selected: isSelected(AppRoute.home),
+            selectedTileColor:
+                theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
             onTap: () => _handleNavigation(context, AppRoute.home),
           ),
           ListTile(
@@ -85,9 +99,16 @@ class AppDrawerContent extends StatelessWidget {
             title: Text(
               l10n.downloadedGalleries,
               style: TextStyleConst.navigationLabel.copyWith(
-                color: theme.textTheme.titleMedium?.color,
+                color: isSelected(AppRoute.downloads)
+                    ? theme.colorScheme.primary
+                    : theme.textTheme.titleMedium?.color,
+                fontWeight:
+                    isSelected(AppRoute.downloads) ? FontWeight.bold : null,
               ),
             ),
+            selected: isSelected(AppRoute.downloads),
+            selectedTileColor:
+                theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
             onTap: () => _handleNavigation(context, AppRoute.downloads),
           ),
           ListTile(
@@ -98,9 +119,16 @@ class AppDrawerContent extends StatelessWidget {
             title: Text(
               l10n.offlineContent,
               style: TextStyleConst.navigationLabel.copyWith(
-                color: theme.textTheme.titleMedium?.color,
+                color: isSelected(AppRoute.offline)
+                    ? theme.colorScheme.primary
+                    : theme.textTheme.titleMedium?.color,
+                fontWeight:
+                    isSelected(AppRoute.offline) ? FontWeight.bold : null,
               ),
             ),
+            selected: isSelected(AppRoute.offline),
+            selectedTileColor:
+                theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
             onTap: () => _handleNavigation(context, AppRoute.offline),
           ),
           ListTile(
@@ -111,9 +139,16 @@ class AppDrawerContent extends StatelessWidget {
             title: Text(
               l10n.randomGallery,
               style: TextStyleConst.navigationLabel.copyWith(
-                color: theme.textTheme.titleMedium?.color,
+                color: isSelected(AppRoute.random)
+                    ? theme.colorScheme.primary
+                    : theme.textTheme.titleMedium?.color,
+                fontWeight:
+                    isSelected(AppRoute.random) ? FontWeight.bold : null,
               ),
             ),
+            selected: isSelected(AppRoute.random),
+            selectedTileColor:
+                theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
             onTap: () => _handleNavigation(context, AppRoute.random),
           ),
           ListTile(
@@ -124,9 +159,16 @@ class AppDrawerContent extends StatelessWidget {
             title: Text(
               l10n.favoriteGalleries,
               style: TextStyleConst.navigationLabel.copyWith(
-                color: theme.textTheme.titleMedium?.color,
+                color: isSelected(AppRoute.favorites)
+                    ? theme.colorScheme.primary
+                    : theme.textTheme.titleMedium?.color,
+                fontWeight:
+                    isSelected(AppRoute.favorites) ? FontWeight.bold : null,
               ),
             ),
+            selected: isSelected(AppRoute.favorites),
+            selectedTileColor:
+                theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
             onTap: () => _handleNavigation(context, AppRoute.favorites),
           ),
           ListTile(
@@ -137,9 +179,16 @@ class AppDrawerContent extends StatelessWidget {
             title: Text(
               l10n.viewHistory,
               style: TextStyleConst.navigationLabel.copyWith(
-                color: theme.textTheme.titleMedium?.color,
+                color: isSelected(AppRoute.history)
+                    ? theme.colorScheme.primary
+                    : theme.textTheme.titleMedium?.color,
+                fontWeight:
+                    isSelected(AppRoute.history) ? FontWeight.bold : null,
               ),
             ),
+            selected: isSelected(AppRoute.history),
+            selectedTileColor:
+                theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
             onTap: () => _handleNavigation(context, AppRoute.history),
           ),
           const Divider(),
@@ -151,9 +200,16 @@ class AppDrawerContent extends StatelessWidget {
             title: Text(
               l10n.settings,
               style: TextStyleConst.navigationLabel.copyWith(
-                color: theme.textTheme.titleMedium?.color,
+                color: isSelected(AppRoute.settings)
+                    ? theme.colorScheme.primary
+                    : theme.textTheme.titleMedium?.color,
+                fontWeight:
+                    isSelected(AppRoute.settings) ? FontWeight.bold : null,
               ),
             ),
+            selected: isSelected(AppRoute.settings),
+            selectedTileColor:
+                theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
             onTap: () => _handleNavigation(context, AppRoute.settings),
           ),
         ],

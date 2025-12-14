@@ -20,6 +20,7 @@ import '../../cubits/offline_search/offline_search_cubit.dart';
 import '../../cubits/settings/settings_cubit.dart';
 import '../../blocs/download/download_bloc.dart';
 import '../../widgets/app_scaffold_with_offline.dart';
+import '../../widgets/app_main_drawer_widget.dart';
 import '../../widgets/content_card_widget.dart';
 import '../../widgets/error_widget.dart';
 import '../../widgets/offline_content_shimmer.dart';
@@ -270,8 +271,9 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     return BlocProvider<OfflineSearchCubit>(
       create: (context) => _offlineSearchCubit,
       child: AppScaffoldWithOffline(
-        title: AppLocalizations.of(context)!.offlineContentTitle,
+        title: AppLocalizations.of(context)!.offlineContent,
         backgroundColor: colorScheme.surface,
+        drawer: AppMainDrawerWidget(context: context),
         appBar: _buildAppBar(),
         body: Column(
           children: [

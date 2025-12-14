@@ -266,6 +266,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         title: AppLocalizations.of(context)!.favorites,
         backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: _buildAppBar(),
+        drawer: AppMainDrawerWidget(context: context),
         body: BlocBuilder<FavoriteCubit, FavoriteState>(
           builder: (context, state) {
             return Column(
@@ -299,11 +300,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   color: Theme.of(context).colorScheme.onSurface),
               onPressed: _toggleSelectionMode,
             )
-          : IconButton(
-              icon: Icon(Icons.arrow_back,
-                  color: Theme.of(context).colorScheme.onSurface),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
+          : null,
       actions: [
         if (!_isSelectionMode) ...[
           IconButton(
