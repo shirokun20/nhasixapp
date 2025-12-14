@@ -1174,13 +1174,15 @@ class OfflineContentManager {
       _cachedOfflineIds = null;
       _offlineIdsCacheTime = null;
 
-      // Update download status to removed
+      // Delete from database - this is critical for sync
       try {
         await _userDataRepository.deleteDownloadStatus(contentId);
-        _logger.i('Removed download status for $contentId');
+        _logger.i('Removed download status from DB for $contentId');
         dbDeleted = true;
       } catch (e) {
-        _logger.w('Failed to remove download status: $e');
+        _logger.e('CRITICAL: Failed to remove download status from DB: $e');
+        // Even if filesystem was deleted, we need DB to be cleaned too
+        // Log but continue - at least filesystem is cleaned
       }
 
       // Return true if at least one operation succeeded (idempotent behavior)
