@@ -23,11 +23,14 @@ class AppDrawerContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
-    final currentRoute = GoRouterState.of(context).uri.toString();
+    final currentRoute = GoRouterState.of(context).uri.path;
 
     bool isSelected(String route) {
+      // For home, check exact match or if currentRoute is the home path
       if (route == AppRoute.home) {
-        return currentRoute == AppRoute.home;
+        return currentRoute == AppRoute.home ||
+            currentRoute == '/' ||
+            currentRoute.isEmpty;
       }
       return currentRoute.startsWith(route);
     }

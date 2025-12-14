@@ -293,11 +293,6 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     return AppBar(
       backgroundColor: Theme.of(context).colorScheme.surface,
       elevation: 0,
-      leading: IconButton(
-        onPressed: () => context.pop(),
-        icon: Icon(Icons.arrow_back,
-            color: Theme.of(context).colorScheme.onSurface),
-      ),
       title: Row(
         children: [
           Icon(
