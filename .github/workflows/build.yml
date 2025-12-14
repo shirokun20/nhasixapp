@@ -39,12 +39,25 @@ jobs:
           echo "$ANDROID_HOME"
           ls -la "$ANDROID_HOME" || echo "Android SDK not found"
 
+      # Decode Keystore from Secrets
+      - name: Decode Keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+          echo "Keystore decoded to android/app/upload-keystore.jks"
+
       # Make build script executable
       - name: Prepare Build Script
         run: chmod +x build_optimized.sh
 
       # Build optimized APK
       - name: Build APK
+        env:
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          ALIAS_NAME: ${{ secrets.ALIAS_NAME }}
+          KEYSTORE_PATH: "upload-keystore.jks" # Relative to android/app/ or resolved by gradle
         run: ./build_optimized.sh release
 
       # Verify build outputs
