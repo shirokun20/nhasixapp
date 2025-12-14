@@ -81,9 +81,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
         appBar: _buildAppBar(context),
         body: BlocBuilder<HistoryCubit, HistoryState>(
           builder: (context, state) {
-            return RefreshIndicator(
-              onRefresh: () => _historyCubit.refreshHistory(),
-              child: _buildBody(context, state),
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth < 50 || constraints.maxHeight < 50) {
+                  return const SizedBox.shrink();
+                }
+                return SafeArea(
+                  child: RefreshIndicator(
+                    onRefresh: () => _historyCubit.refreshHistory(),
+                    child: _buildBody(context, state),
+                  ),
+                );
+              },
             );
           },
         ),

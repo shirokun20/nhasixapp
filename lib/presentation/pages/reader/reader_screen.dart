@@ -413,7 +413,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
           builder: (context, state) {
             return Scaffold(
               backgroundColor: Theme.of(context).colorScheme.surface,
-              body: _buildBody(state),
+              body: LayoutBuilder(
+                builder: (context, constraints) {
+                  if (constraints.maxWidth < 50 || constraints.maxHeight < 50) {
+                    return const SizedBox.shrink();
+                  }
+                  return _buildBody(state);
+                },
+              ),
             );
           },
         ),

@@ -291,40 +291,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       const SizedBox(height: 12),
                       // Preview grid
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: prefs.columnsPortrait,
-                          childAspectRatio: 0.7,
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                        ),
-                        itemCount: prefs.columnsPortrait * 2, // Show 2 rows
-                        itemBuilder: (context, index) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primaryContainer,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .outline
-                                    .withValues(alpha: 0.3),
-                                width: 1,
-                              ),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          if (constraints.maxWidth < 50) {
+                            return const SizedBox.shrink();
+                          }
+
+                          // Adaptive safeguards for preview
+                          const double minItemWidth = 100.0;
+                          final int userColumns = prefs.columnsPortrait;
+                          final int maxColumnsByWidth =
+                              (constraints.maxWidth / minItemWidth).floor();
+                          final int effectiveColumns = maxColumnsByWidth > 0
+                              ? userColumns.clamp(1, maxColumnsByWidth)
+                              : 1;
+
+                          return GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: effectiveColumns,
+                              childAspectRatio: 0.7,
+                              crossAxisSpacing: 8,
+                              mainAxisSpacing: 8,
                             ),
-                            child: Center(
-                              child: Icon(
-                                Icons.image_outlined,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onPrimaryContainer,
-                                size: 24,
-                              ),
-                            ),
+                            itemCount: effectiveColumns * 2, // Show 2 rows
+                            itemBuilder: (context, index) {
+                              return Container(
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primaryContainer,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .outline
+                                        .withValues(alpha: 0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    Icons.image_outlined,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimaryContainer,
+                                    size: 24,
+                                  ),
+                                ),
+                              );
+                            },
                           );
                         },
                       ),

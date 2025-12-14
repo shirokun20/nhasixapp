@@ -6,6 +6,8 @@ import '../../core/utils/app_state_manager.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
 
+import 'package:nhasixapp/presentation/widgets/app_drawer_content.dart';
+
 /// Reusable scaffold widget that shows offline indicators and "Go Online" functionality
 /// This widget wraps around any page content to provide consistent offline mode UI
 class AppScaffoldWithOffline extends StatelessWidget {
@@ -37,21 +39,70 @@ class AppScaffoldWithOffline extends StatelessWidget {
       builder: (context, snapshot) {
         final isOfflineMode = snapshot.data ?? false;
 
-        return Scaffold(
-          appBar: appBar ??
-              _buildAppBarWithOfflineIndicator(context, isOfflineMode),
-          backgroundColor: backgroundColor,
-          drawer: drawer,
-          floatingActionButton: floatingActionButton,
-          bottomNavigationBar: bottomNavigationBar,
-          body: Column(
-            children: [
-              // Show offline banner when in offline mode
-              // This provides clear visual feedback to users about their connection status
-              if (isOfflineMode) _buildOfflineBanner(context),
-              Expanded(child: body),
-            ],
-          ),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            // Adaptive layout for large screens (Tablet/Desktop/DeX)
+            // Use persistent sidebar if width > 900dp
+            final isLargeScreen = constraints.maxWidth > 900;
+
+            final scaffold = Scaffold(
+              appBar: appBar ??
+                  _buildAppBarWithOfflineIndicator(context, isOfflineMode),
+              backgroundColor: backgroundColor,
+              // On large screens, hide the drawer from Scaffold (sidebar is used instead)
+              // On small screens, use the provided drawer
+              drawer: isLargeScreen ? null : drawer,
+              floatingActionButton: floatingActionButton,
+              bottomNavigationBar: bottomNavigationBar,
+              body: Column(
+                children: [
+                  // Show offline banner when in offline mode
+                  if (isOfflineMode) _buildOfflineBanner(context),
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, innerConstraints) {
+                        // Safety check for extremely small windows
+                        if (innerConstraints.maxWidth < 50 ||
+                            innerConstraints.maxHeight < 50) {
+                          return const SizedBox.shrink();
+                        }
+                        return SafeArea(
+                          left: false,
+                          right: false,
+                          top: false,
+                          bottom: true,
+                          child: body,
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+
+            // If large screen, wrap in Row with Sidebar
+            if (isLargeScreen) {
+              return Row(
+                children: [
+                  Container(
+                    width: 280,
+                    decoration: BoxDecoration(
+                      border: Border(
+                        right: BorderSide(
+                          color: Theme.of(context).dividerColor,
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    child: const AppDrawerContent(isDrawer: false),
+                  ),
+                  Expanded(child: scaffold),
+                ],
+              );
+            }
+
+            return scaffold;
+          },
         );
       },
     );

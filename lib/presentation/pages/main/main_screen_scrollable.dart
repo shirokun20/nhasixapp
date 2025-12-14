@@ -488,34 +488,38 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
           // Content grid dengan downloaded highlight effect
           BlocBuilder<SettingsCubit, SettingsState>(
             builder: (context, settingsState) {
-              return SliverPadding(
-                padding: const EdgeInsets.all(16.0),
-                sliver: SliverGrid(
-                  gridDelegate: ResponsiveGridDelegate.createGridDelegate(
-                    context,
-                    context.read<SettingsCubit>(),
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final content = state.contents[index];
+              return SliverSafeArea(
+                top: false, // Handled by layout above
+                bottom: false, // Handled by footer/padding below
+                sliver: SliverPadding(
+                  padding: const EdgeInsets.all(16.0),
+                  sliver: SliverGrid(
+                    gridDelegate: ResponsiveGridDelegate.createGridDelegate(
+                      context,
+                      context.read<SettingsCubit>(),
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final content = state.contents[index];
 
-                      // Use FutureBuilder to check download status for highlight
-                      return FutureBuilder<bool>(
-                        future: ContentDownloadCache.isDownloaded(content.id,
-                            context), // 🐛 FIXED: Pass context for DownloadBloc access
-                        builder: (context, snapshot) {
-                          final isDownloaded = snapshot.data ?? false;
+                        // Use FutureBuilder to check download status for highlight
+                        return FutureBuilder<bool>(
+                          future: ContentDownloadCache.isDownloaded(content.id,
+                              context), // 🐛 FIXED: Pass context for DownloadBloc access
+                          builder: (context, snapshot) {
+                            final isDownloaded = snapshot.data ?? false;
 
-                          return ContentCard(
-                            content: content,
-                            onTap: () => _onContentTap(content),
-                            isHighlighted:
-                                isDownloaded, // Phase 4: Highlight downloaded content
-                          );
-                        },
-                      );
-                    },
-                    childCount: state.contents.length,
+                            return ContentCard(
+                              content: content,
+                              onTap: () => _onContentTap(content),
+                              isHighlighted:
+                                  isDownloaded, // Phase 4: Highlight downloaded content
+                            );
+                          },
+                        );
+                      },
+                      childCount: state.contents.length,
+                    ),
                   ),
                 ),
               );
