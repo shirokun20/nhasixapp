@@ -579,6 +579,11 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         );
       }
 
+      // Explicitly refresh downloads to ensure UI updates to "Completed"
+      if (result.isCompleted) {
+        add(const DownloadRefreshEvent());
+      }
+
       // Invalidate download status cache to ensure UI reflects new download status
       ContentDownloadCache.invalidateCache(event.contentId);
 

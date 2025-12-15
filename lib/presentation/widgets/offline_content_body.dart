@@ -43,6 +43,23 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
     // Ensure content is loaded if not already
     if (_offlineSearchCubit.state is OfflineSearchInitial) {
       _offlineSearchCubit.getAllOfflineContent();
+    } else {
+      // Check for stale data (e.g. downloaded while on another screen)
+      // If the count differs from DownloadBloc, refresh it
+      try {
+        final downloadState = context.read<DownloadBloc>().state;
+        if (downloadState is DownloadLoaded &&
+            _offlineSearchCubit.state is OfflineSearchLoaded) {
+          final offlineCount =
+              (_offlineSearchCubit.state as OfflineSearchLoaded).results.length;
+          final downloadCount = downloadState.completedDownloads.length;
+          if (offlineCount != downloadCount) {
+            _offlineSearchCubit.getAllOfflineContent();
+          }
+        }
+      } catch (e) {
+        debugPrint('Error syncing offline state with downloads: $e');
+      }
     }
   }
 
@@ -650,6 +667,12 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
       await context.read<OfflineSearchCubit>().deleteOfflineContent(content.id);
 
       if (!context.mounted) return;
+      // Add a small delay to ensure DB transaction is committed
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      if (!context.mounted) return;
+      debugPrint(
+          'OfflineContentBody: Triggering download refresh after deletion');
       context.read<DownloadBloc>().add(const DownloadRefreshEvent());
 
       ScaffoldMessenger.of(context).showSnackBar(

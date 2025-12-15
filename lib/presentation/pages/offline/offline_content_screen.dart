@@ -47,6 +47,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen>
               onRefresh: () => _offlineSearchCubit.forceRefresh(),
               onImport: () => importFromBackup(context),
               onExport: () => exportLibrary(context),
+              title: AppLocalizations.of(context)!.offlineContent,
             ),
             backgroundColor: colorScheme.surface,
             drawer: AppMainDrawerWidget(context: context),

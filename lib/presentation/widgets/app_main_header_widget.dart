@@ -11,6 +11,7 @@ class AppMainHeaderWidget extends StatelessWidget
   final VoidCallback? onImport;
   final VoidCallback? onExport;
   final Future<Map<String, dynamic>>? offlineStats;
+  final String? title;
 
   const AppMainHeaderWidget({
     super.key,
@@ -23,6 +24,7 @@ class AppMainHeaderWidget extends StatelessWidget
     this.onImport,
     this.onExport,
     this.offlineStats,
+    this.title,
   });
 
   final BuildContext context;
@@ -176,7 +178,7 @@ class AppMainHeaderWidget extends StatelessWidget
               ),
             ],
       title: Text(
-        l10n.appTitle,
+        title ?? l10n.appTitle,
         style: TextStyleConst.headingMedium.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
         ),
