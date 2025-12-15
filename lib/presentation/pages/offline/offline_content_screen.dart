@@ -43,8 +43,10 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     super.initState();
     _offlineSearchCubit = getIt<OfflineSearchCubit>();
 
-    // Load all offline content from database (database-first approach)
-    _offlineSearchCubit.getAllOfflineContent();
+    // Load all offline content only if not already loaded (Singleton persistence)
+    if (_offlineSearchCubit.state is OfflineSearchInitial) {
+      _offlineSearchCubit.getAllOfflineContent();
+    }
   }
 
   @override
@@ -268,8 +270,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return BlocProvider<OfflineSearchCubit>(
-      create: (context) => _offlineSearchCubit,
+    return BlocProvider<OfflineSearchCubit>.value(
+      value: _offlineSearchCubit,
       child: AppScaffoldWithOffline(
         title: AppLocalizations.of(context)!.offlineContent,
         backgroundColor: colorScheme.surface,
@@ -279,8 +281,20 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
           children: [
             _buildSearchBar(),
             Expanded(
-              child: BlocBuilder<OfflineSearchCubit, OfflineSearchState>(
-                builder: (context, state) => _buildBody(state),
+              child: BlocListener<DownloadBloc, DownloadBlocState>(
+                listener: (context, downloadState) {
+                  // Auto-refresh when a download completes
+                  if (downloadState is DownloadLoaded) {
+                    // Check if any download just completed?
+                    // Or just simply refresh the list if we are not searching
+                    if (_searchController.text.isEmpty) {
+                      _offlineSearchCubit.getAllOfflineContent();
+                    }
+                  }
+                },
+                child: BlocBuilder<OfflineSearchCubit, OfflineSearchState>(
+                  builder: (context, state) => _buildBody(state),
+                ),
               ),
             ),
           ],
@@ -310,11 +324,20 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
         ],
       ),
       actions: [
+        // Refresh/Sync button
+        IconButton(
+          onPressed: () => _offlineSearchCubit.forceRefresh(),
+          icon: Icon(
+            Icons.sync,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          tooltip: 'Sync/Refresh',
+        ),
         // Import from Backup button
         IconButton(
           onPressed: () => _importFromBackup(),
           icon: Icon(
-            Icons.cloud_download,
+            Icons.create_new_folder_outlined, // Changed icon to distinguish
             color: Theme.of(context).colorScheme.onSurface,
           ),
           tooltip: 'Import from Backup',
@@ -432,9 +455,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
               ),
               onChanged: (value) {
                 setState(() {});
-                if (value.trim().isEmpty) {
-                  _offlineSearchCubit.getAllOfflineContent();
-                }
+                // REMOVED: Aggressive reloading on every keystroke/empty
+                // User must clear explicitly or use search button
               },
               onSubmitted: (value) {
                 if (value.trim().isNotEmpty) {

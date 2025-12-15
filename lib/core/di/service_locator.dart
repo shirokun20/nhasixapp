@@ -446,8 +446,8 @@ void _setupCubits() {
         imageMetadataService: getIt<ImageMetadataService>(),
       ));
 
-  // OfflineSearchCubit - Offline content search
-  getIt.registerFactory<OfflineSearchCubit>(() => OfflineSearchCubit(
+  // OfflineSearchCubit - Offline content search (Singleton to persist state)
+  getIt.registerLazySingleton<OfflineSearchCubit>(() => OfflineSearchCubit(
         offlineContentManager: getIt<OfflineContentManager>(),
         userDataRepository: getIt<UserDataRepository>(),
         logger: getIt<Logger>(),
