@@ -382,7 +382,7 @@ void _setupBlocs() {
       ));
 
   // Register DownloadBloc
-  getIt.registerFactory<DownloadBloc>(() => DownloadBloc(
+  getIt.registerLazySingleton<DownloadBloc>(() => DownloadBloc(
         downloadContentUseCase: getIt<DownloadContentUseCase>(),
         getContentDetailUseCase: getIt<GetContentDetailUseCase>(),
         userDataRepository: getIt<UserDataRepository>(),

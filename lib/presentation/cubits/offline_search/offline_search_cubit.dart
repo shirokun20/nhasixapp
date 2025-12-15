@@ -203,9 +203,30 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
             .createOfflineContent(download.contentId);
         if (content != null) {
           contents.add(content);
-          offlineSizes[download.contentId] = download.formattedFileSize;
-          // Accumulate size from download status if available
-          totalStorageUsage += download.fileSize;
+
+          // Use DB size if available, otherwise calculate from file system
+          if (download.fileSize > 0) {
+            offlineSizes[download.contentId] = download.formattedFileSize;
+            totalStorageUsage += download.fileSize;
+          } else {
+            // Fallback: calculate size from directory
+            if (content.imageUrls.isNotEmpty) {
+              try {
+                final firstImagePath = content.imageUrls.first;
+                final file = File(firstImagePath);
+                final dirPath = file.parent.path;
+                final sizeInBytes = await _getDirectorySize(Directory(dirPath));
+                offlineSizes[content.id] =
+                    OfflineContentManager.formatStorageSize(sizeInBytes);
+                totalStorageUsage += sizeInBytes;
+              } catch (e) {
+                // Keep 0 if calculation fails
+                offlineSizes[download.contentId] = download.formattedFileSize;
+              }
+            } else {
+              offlineSizes[download.contentId] = download.formattedFileSize;
+            }
+          }
         }
       }
 

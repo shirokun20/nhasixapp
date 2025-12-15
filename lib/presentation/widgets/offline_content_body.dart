@@ -449,21 +449,39 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(4),
-                      child: Image.network(
-                        content.coverUrl,
-                        width: 50,
-                        height: 70,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          width: 50,
-                          height: 70,
-                          color: colorScheme.surfaceContainerHighest,
-                          child: Icon(
-                            Icons.broken_image,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
+                      child: content.coverUrl.startsWith('http')
+                          ? Image.network(
+                              content.coverUrl,
+                              width: 50,
+                              height: 70,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                width: 50,
+                                height: 70,
+                                color: colorScheme.surfaceContainerHighest,
+                                child: Icon(
+                                  Icons.broken_image,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            )
+                          : Image.file(
+                              File(content.coverUrl),
+                              width: 50,
+                              height: 70,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                width: 50,
+                                height: 70,
+                                color: colorScheme.surfaceContainerHighest,
+                                child: Icon(
+                                  Icons.broken_image,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -666,14 +684,13 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
 
       await context.read<OfflineSearchCubit>().deleteOfflineContent(content.id);
 
-      if (!context.mounted) return;
       // Add a small delay to ensure DB transaction is committed
-      await Future.delayed(const Duration(milliseconds: 300));
+      // Use getIt to access the singleton DownloadBloc, bypassing context entirely
+      Future.delayed(const Duration(milliseconds: 500), () {
+        getIt<DownloadBloc>().add(const DownloadRefreshEvent());
+      });
 
       if (!context.mounted) return;
-      debugPrint(
-          'OfflineContentBody: Triggering download refresh after deletion');
-      context.read<DownloadBloc>().add(const DownloadRefreshEvent());
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

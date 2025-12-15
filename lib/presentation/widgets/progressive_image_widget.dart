@@ -113,6 +113,23 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
       return;
     }
 
+    // ✅ CHECK FOR DIRECT FILE PATH
+    // If the "networkUrl" is actually a local path, use it directly
+    if (!widget.networkUrl.startsWith('http') &&
+        (widget.networkUrl.startsWith('/') ||
+            widget.networkUrl.startsWith('file://'))) {
+      final file = File(widget.networkUrl);
+      if (await file.exists()) {
+        if (mounted) {
+          setState(() {
+            _cachedLocalPath = widget.networkUrl;
+            _isLocalPathResolved = true;
+          });
+        }
+        return;
+      }
+    }
+
     if (kDebugMode) {
       _logger.d(
           '🔍 Resolving local path for contentId: ${widget.contentId}, pageNumber: ${widget.pageNumber}, isThumbnail: ${widget.isThumbnail}');

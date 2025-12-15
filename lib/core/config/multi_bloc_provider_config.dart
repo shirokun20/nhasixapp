@@ -1,20 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:nhasixapp/l10n/app_localizations.dart';
-import 'package:logger/logger.dart';
-
-// Domain layer
-import 'package:nhasixapp/domain/usecases/downloads/downloads_usecases.dart';
-import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
-
-// Data layer
-import 'package:nhasixapp/domain/repositories/repositories.dart';
-
-// Services
-import 'package:nhasixapp/services/notification_service.dart';
-import 'package:nhasixapp/services/pdf_conversion_service.dart';
-
 // BLoCs (Complex State Management)
 import 'package:nhasixapp/presentation/blocs/splash/splash_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/home/home_bloc.dart';
@@ -43,16 +28,7 @@ class MultiBlocProviderConfig {
       create: (context) => getIt<SearchBloc>(),
     ),
     BlocProvider<DownloadBloc>(
-      create: (context) => DownloadBloc(
-        downloadContentUseCase: getIt<DownloadContentUseCase>(),
-        getContentDetailUseCase: getIt<GetContentDetailUseCase>(),
-        userDataRepository: getIt<UserDataRepository>(),
-        logger: getIt<Logger>(),
-        connectivity: getIt<Connectivity>(),
-        notificationService: getIt<NotificationService>(),
-        pdfConversionService: getIt<PdfConversionService>(),
-        appLocalizations: AppLocalizations.of(context),
-      ),
+      create: (context) => getIt<DownloadBloc>(),
     ),
 
     // Simple State Management (Cubits)
