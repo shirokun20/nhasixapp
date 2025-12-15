@@ -120,8 +120,15 @@ class BackgroundDownloadUtils {
       onProgress?.call(i + 1, total);
     }
 
-    // Final progress save
-    await saveProgress(contentId, total, total);
+    // Final progress save - strictly use successCount
+    // This ensures _verifyCompletion logic doesn't get fooled by false 100% progress
+    await saveProgress(contentId, successCount, total);
+
+    // Log result
+    if (successCount < total) {
+      // Background worker logging is limited, but this helps if we can see logs
+      // The worker will see successCount < total and NOT mark complete.
+    }
 
     return successCount;
   }

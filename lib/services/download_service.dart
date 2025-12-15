@@ -175,17 +175,25 @@ class DownloadService {
           );
 
           onProgress(progress);
-
-          // ✅ REMOVED: Direct notification update to prevent race condition
-          // Notification will be updated through DownloadBloc for better synchronization
-
-          _logger.d(
-              'Downloaded page $pageNum ($downloadedCount/$totalImages): $fileName');
         } catch (e, stackTrace) {
           _logger.e('Failed to download page $pageNum: $e and $stackTrace');
-          // Continue with next image instead of failing completely
+          // Continue with next image instead of failing completely,
+          // but we will catch the discrepancy at the end.
           continue;
         }
+      }
+
+      // Verify all files were downloaded
+      // We expect (actualEndPage - actualStartPage + 1) images for this batch
+      final expectedBatchCount = actualEndPage - actualStartPage + 1;
+
+      // Check if we downloaded enough files.
+      // downloadedCount tracks valid files (existing + newly downloaded)
+      if (downloadedCount < expectedBatchCount) {
+        _logger.e(
+            'Download incomplete: $downloadedCount/$expectedBatchCount files verification failed');
+        throw Exception(
+            'Download incomplete: $downloadedCount/$expectedBatchCount files verified');
       }
 
       // Save metadata with range information

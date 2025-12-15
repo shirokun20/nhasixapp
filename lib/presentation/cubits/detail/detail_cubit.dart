@@ -43,12 +43,16 @@ class DetailCubit extends BaseCubit<DetailState> {
       final params = GetContentDetailParams.fromString(contentId);
       final content = await _getContentDetailUseCase(params);
 
+      if (isClosed) return;
+
       // Check if content is favorited (placeholder for now)
       final isFavorited = await _checkIfFavorited(contentId);
 
       // Generate image metadata for performance optimization
       final imageMetadata =
           await generateImageMetadata(contentId, content.imageUrls);
+
+      if (isClosed) return;
 
       emit(DetailLoaded(
         content: content,
@@ -59,6 +63,7 @@ class DetailCubit extends BaseCubit<DetailState> {
 
       logInfo('Successfully loaded content detail: ${content.title}');
     } catch (e, stackTrace) {
+      if (isClosed) return;
       handleError(e, stackTrace, 'load content detail');
 
       final errorType = determineErrorType(e);
@@ -97,6 +102,8 @@ class DetailCubit extends BaseCubit<DetailState> {
         logInfo('Added to favorites: ${currentState.content.title}');
       }
 
+      if (isClosed) return;
+
       // Update state with final result
       emit(currentState.copyWith(
         isFavorited: !currentState.isFavorited,
@@ -104,6 +111,7 @@ class DetailCubit extends BaseCubit<DetailState> {
         lastUpdated: DateTime.now(),
       ));
     } catch (e, stackTrace) {
+      if (isClosed) return;
       handleError(e, stackTrace, 'toggle favorite');
 
       // Revert optimistic update on error

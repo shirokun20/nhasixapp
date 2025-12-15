@@ -74,7 +74,8 @@ class MyApp extends StatelessWidget {
                   supportedLocales: AppLocalizations.supportedLocales,
                   builder: (context, child) {
                     // Show platform warning for non-Android platforms
-                    if (kIsWeb || (!kIsWeb && !Platform.isAndroid)) {
+                    if (kIsWeb ||
+                        (!kIsWeb && !Platform.isAndroid && !Platform.isMacOS)) {
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         PlatformNotSupportedDialog.show(context);
                       });
