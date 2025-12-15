@@ -160,6 +160,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         limit: AppLimits.maxBatchSize,
       );
 
+      if (isClosed) return;
+
       if (downloads.isEmpty) {
         // Fallback to file scan if database is empty (first-time setup)
         logInfo('No downloads in database, falling back to file scan');
@@ -172,6 +174,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       final offlineSizes = <String, String>{};
 
       for (final download in downloads) {
+        if (isClosed) return;
         final content = await _offlineContentManager
             .createOfflineContent(download.contentId);
         if (content != null) {
@@ -179,6 +182,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
           offlineSizes[download.contentId] = download.formattedFileSize;
         }
       }
+
+      if (isClosed) return;
 
       if (contents.isEmpty) {
         emit(const OfflineSearchEmpty(query: ''));
@@ -194,6 +199,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
       logInfo('Loaded ${contents.length} offline content items from database');
     } catch (e, stackTrace) {
+      if (isClosed) return;
       handleError(e, stackTrace, 'get all offline content');
       emit(const OfflineSearchError(
         message: 'Failed to load offline content',
