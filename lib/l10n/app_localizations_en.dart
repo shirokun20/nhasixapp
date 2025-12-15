@@ -3092,5 +3092,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get contentDeleted => 'Content deleted';
+
+  @override
   String get cacheManagementDebug => '🚀 Cache Management (Debug)';
 }

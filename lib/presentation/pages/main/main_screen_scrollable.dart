@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -17,6 +18,9 @@ import 'package:nhasixapp/presentation/blocs/home/home_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
 import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
+import 'package:nhasixapp/presentation/widgets/offline_content_body.dart';
+import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
+import 'package:nhasixapp/presentation/mixins/offline_management_mixin.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_header_widget.dart';
 import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
@@ -35,14 +39,17 @@ class MainScreenScrollable extends StatefulWidget {
   State<MainScreenScrollable> createState() => _MainScreenScrollableState();
 }
 
-class _MainScreenScrollableState extends State<MainScreenScrollable> {
+class _MainScreenScrollableState extends State<MainScreenScrollable>
+    with OfflineManagementMixin<MainScreenScrollable> {
   late final HomeBloc _homeBloc;
   late final ContentBloc _contentBloc;
   late final SearchBloc _searchBloc;
+  late final OfflineSearchCubit _offlineSearchCubit;
 
   bool _isShowingSearchResults = false;
   SearchFilter? _currentSearchFilter;
   SortOption _currentSortOption = SortOption.newest;
+  bool _isOffline = false;
 
   @override
   void initState() {
@@ -55,8 +62,27 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
 
     // Initialize SearchBloc to check for saved search state
     _searchBloc = getIt<SearchBloc>();
+    _offlineSearchCubit = getIt<OfflineSearchCubit>();
+
+    _checkConnectivity();
+    Connectivity().onConnectivityChanged.listen((results) {
+      if (mounted) {
+        setState(() {
+          _isOffline = results.contains(ConnectivityResult.none);
+        });
+      }
+    });
 
     _initializeContent();
+  }
+
+  Future<void> _checkConnectivity() async {
+    final results = await Connectivity().checkConnectivity();
+    if (mounted) {
+      setState(() {
+        _isOffline = results.contains(ConnectivityResult.none);
+      });
+    }
   }
 
   /// Initialize content - check for saved search state first
@@ -140,11 +166,14 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
 
   @override
   Widget build(BuildContext context) {
+    // Offline logic now handled within the scaffold to preserve header consistency
+
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(value: _homeBloc),
         BlocProvider.value(value: _contentBloc),
         BlocProvider.value(value: _searchBloc),
+        BlocProvider.value(value: getIt<OfflineSearchCubit>()),
       ],
       child: BlocBuilder<HomeBloc, HomeState>(
         buildWhen: (previous, current) => true,
@@ -154,27 +183,55 @@ class _MainScreenScrollableState extends State<MainScreenScrollable> {
             return SimpleOfflineScaffold(
               title: AppLocalizations.of(context)?.appTitle ?? 'NHentai',
               body: const ListShimmer(itemCount: 8),
+              drawer: AppMainDrawerWidget(context: context),
             );
           }
 
           // Main screen UI when home is loaded
-          return AppScaffoldWithOffline(
-            title: AppLocalizations.of(context)?.appTitle ?? 'Nhentai',
-            appBar: AppMainHeaderWidget(
-              context: context,
-              onSearchPressed: () async {
-                // Navigate to search and wait for result
-                final result = await context.push(AppRoute.search);
-                if (result == true) {
-                  // Search was performed, refresh content
-                  _initializeContent();
-                }
+          return BlocProvider<OfflineSearchCubit>.value(
+            value: _offlineSearchCubit,
+            child: BlocBuilder<OfflineSearchCubit, OfflineSearchState>(
+              buildWhen: (previous, current) =>
+                  _isOffline, // Only rebuild if offline
+              builder: (context, offlineState) {
+                final l10n = AppLocalizations.of(context)!;
+                return AppScaffoldWithOffline(
+                  title: l10n.appTitle,
+                  appBar: AppMainHeaderWidget(
+                    context: context,
+                    isOffline: _isOffline,
+                    offlineStats: _isOffline
+                        ? context.read<OfflineSearchCubit>().getOfflineStats()
+                        : null,
+                    onRefresh: _isOffline
+                        ? () =>
+                            context.read<OfflineSearchCubit>().forceRefresh()
+                        : null,
+                    onImport:
+                        _isOffline ? () => importFromBackup(context) : null,
+                    onExport: _isOffline ? () => exportLibrary(context) : null,
+                    onSearchPressed: () async {
+                      // Navigate to search and wait for result
+                      final result = await context.push(AppRoute.search);
+                      if (result != null &&
+                          result is String &&
+                          context.mounted) {
+                        // If we get a result string, update search
+                        context
+                            .read<SearchBloc>()
+                            .add(SearchQueryEvent(result));
+                      }
+                    },
+                    onOpenBrowser: () => _openInBrowser(),
+                    onDownloadAll: () => _downloadAllGalleries(),
+                  ),
+                  drawer: AppMainDrawerWidget(context: context),
+                  body: _isOffline
+                      ? const OfflineContentBody()
+                      : _buildScrollableBody(),
+                );
               },
-              onOpenBrowser: () => _openInBrowser(),
-              onDownloadAll: () => _downloadAllGalleries(),
             ),
-            drawer: AppMainDrawerWidget(context: context),
-            body: _buildScrollableBody(),
           );
         },
       ),

@@ -3106,5 +3106,8 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get contentDeleted => 'Konten dihapus';
+
+  @override
   String get cacheManagementDebug => '🚀 Manajemen Cache (Debug)';
 }

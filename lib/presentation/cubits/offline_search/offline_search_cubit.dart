@@ -103,11 +103,34 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       // Calculate sizes for all content
       final offlineSizes = await _calculateContentSizes(contents);
 
+      // Calculate total storage usage
+      int totalStorageUsage = 0;
+      // Note: _calculateContentSizes returns formatted strings, so we can't sum them easily.
+      // We should sum up during _calculateContentSizes or recalculate.
+      // For simplicity/performance in this rare search case, we can try to re-sum if needed,
+      // or modify _calculateContentSizes to return both.
+      // Let's modify logic slightly: iterate content again or sum up approximately?
+      // Better: iterate contents and check file sizes if not available elsewhere.
+
+      // Since this is less frequent (search), we can iterate.
+      for (final content in contents) {
+        if (content.imageUrls.isNotEmpty) {
+          try {
+            final file = File(content.imageUrls.first);
+            final dirPath = file.parent.path;
+            totalStorageUsage += await _getDirectorySize(Directory(dirPath));
+          } catch (_) {}
+        }
+      }
+
       emit(OfflineSearchLoaded(
         query: query,
         results: contents,
         totalResults: contents.length,
         offlineSizes: offlineSizes,
+        storageUsage: totalStorageUsage,
+        formattedStorageUsage:
+            OfflineContentManager.formatStorageSize(totalStorageUsage),
       ));
 
       logInfo('Found ${contents.length} offline content matches for: $query');
@@ -172,6 +195,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       // Convert DownloadStatus to Content objects
       final contents = <Content>[];
       final offlineSizes = <String, String>{};
+      int totalStorageUsage = 0;
 
       for (final download in downloads) {
         if (isClosed) return;
@@ -180,6 +204,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         if (content != null) {
           contents.add(content);
           offlineSizes[download.contentId] = download.formattedFileSize;
+          // Accumulate size from download status if available
+          totalStorageUsage += download.fileSize;
         }
       }
 
@@ -195,6 +221,9 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         results: contents,
         totalResults: contents.length,
         offlineSizes: offlineSizes,
+        storageUsage: totalStorageUsage,
+        formattedStorageUsage:
+            OfflineContentManager.formatStorageSize(totalStorageUsage),
       ));
 
       logInfo('Loaded ${contents.length} offline content items from database');
@@ -230,11 +259,26 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
     final offlineSizes = await _calculateContentSizes(contents);
 
+    // Calculate total storage usage
+    int totalStorageUsage = 0;
+    for (final content in contents) {
+      if (content.imageUrls.isNotEmpty) {
+        try {
+          final file = File(content.imageUrls.first);
+          final dirPath = file.parent.path;
+          totalStorageUsage += await _getDirectorySize(Directory(dirPath));
+        } catch (_) {}
+      }
+    }
+
     emit(OfflineSearchLoaded(
       query: '',
       results: contents,
       totalResults: contents.length,
       offlineSizes: offlineSizes,
+      storageUsage: totalStorageUsage,
+      formattedStorageUsage:
+          OfflineContentManager.formatStorageSize(totalStorageUsage),
     ));
 
     logInfo(
@@ -366,11 +410,26 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       // Calculate sizes for all content
       final offlineSizes = await _calculateContentSizes(backupContents);
 
+      // Calculate total storage usage
+      int totalStorageUsage = 0;
+      for (final content in backupContents) {
+        if (content.imageUrls.isNotEmpty) {
+          try {
+            final file = File(content.imageUrls.first);
+            final dirPath = file.parent.path;
+            totalStorageUsage += await _getDirectorySize(Directory(dirPath));
+          } catch (_) {}
+        }
+      }
+
       emit(OfflineSearchLoaded(
         query: '',
         results: backupContents,
         totalResults: backupContents.length,
         offlineSizes: offlineSizes,
+        storageUsage: totalStorageUsage,
+        formattedStorageUsage:
+            OfflineContentManager.formatStorageSize(totalStorageUsage),
       ));
 
       logInfo('Found ${backupContents.length} backup content items');
@@ -380,6 +439,35 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         message: 'Failed to scan backup folder: ${e.toString()}',
         query: '',
       ));
+    }
+  }
+
+  /// Delete offline content
+  Future<void> deleteOfflineContent(String contentId) async {
+    try {
+      logInfo('Deleting offline content: $contentId');
+
+      await _offlineContentManager.deleteOfflineContent(contentId);
+
+      // Refresh the list
+      // If we are searching, we might want to re-search?
+      // Or just refresh global list if query is empty
+      if (state is OfflineSearchLoaded) {
+        final query = (state as OfflineSearchLoaded).query;
+        if (query.isNotEmpty) {
+          await searchOfflineContent(query);
+        } else {
+          await getAllOfflineContent();
+        }
+      } else {
+        await getAllOfflineContent();
+      }
+
+      logInfo('Deleted content $contentId');
+    } catch (e, stackTrace) {
+      handleError(e, stackTrace, 'delete offline content');
+      // We might want to emit error state? Or just log it.
+      // Keeping current state but maybe showing a snackbar is handled by UI.
     }
   }
 }

@@ -1,10 +1,11 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import '../../core/routing/app_route.dart';
 
-class AppDrawerContent extends StatelessWidget {
+class AppDrawerContent extends StatefulWidget {
   const AppDrawerContent({
     super.key,
     this.isDrawer = true,
@@ -12,8 +13,37 @@ class AppDrawerContent extends StatelessWidget {
 
   final bool isDrawer;
 
+  @override
+  State<AppDrawerContent> createState() => _AppDrawerContentState();
+}
+
+class _AppDrawerContentState extends State<AppDrawerContent> {
+  bool _isOffline = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkConnectivity();
+    Connectivity().onConnectivityChanged.listen((results) {
+      if (mounted) {
+        setState(() {
+          _isOffline = results.contains(ConnectivityResult.none);
+        });
+      }
+    });
+  }
+
+  Future<void> _checkConnectivity() async {
+    final results = await Connectivity().checkConnectivity();
+    if (mounted) {
+      setState(() {
+        _isOffline = results.contains(ConnectivityResult.none);
+      });
+    }
+  }
+
   void _handleNavigation(BuildContext context, String route) {
-    if (isDrawer) {
+    if (widget.isDrawer) {
       Navigator.pop(context); // Close drawer first
     }
     context.go(route);
@@ -49,7 +79,7 @@ class AppDrawerContent extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                if (isDrawer) ...[
+                if (widget.isDrawer) ...[
                   const SizedBox(height: 16), // Extra safe area for drawer
                 ],
                 const SizedBox(height: 16),
@@ -134,66 +164,68 @@ class AppDrawerContent extends StatelessWidget {
                 theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
             onTap: () => _handleNavigation(context, AppRoute.offline),
           ),
-          ListTile(
-            leading: Icon(
-              Icons.shuffle,
-              color: theme.iconTheme.color,
-            ),
-            title: Text(
-              l10n.randomGallery,
-              style: TextStyleConst.navigationLabel.copyWith(
-                color: isSelected(AppRoute.random)
-                    ? theme.colorScheme.primary
-                    : theme.textTheme.titleMedium?.color,
-                fontWeight:
-                    isSelected(AppRoute.random) ? FontWeight.bold : null,
+          if (!_isOffline) ...[
+            ListTile(
+              leading: Icon(
+                Icons.shuffle,
+                color: theme.iconTheme.color,
               ),
-            ),
-            selected: isSelected(AppRoute.random),
-            selectedTileColor:
-                theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
-            onTap: () => _handleNavigation(context, AppRoute.random),
-          ),
-          ListTile(
-            leading: Icon(
-              Icons.favorite,
-              color: theme.iconTheme.color,
-            ),
-            title: Text(
-              l10n.favoriteGalleries,
-              style: TextStyleConst.navigationLabel.copyWith(
-                color: isSelected(AppRoute.favorites)
-                    ? theme.colorScheme.primary
-                    : theme.textTheme.titleMedium?.color,
-                fontWeight:
-                    isSelected(AppRoute.favorites) ? FontWeight.bold : null,
+              title: Text(
+                l10n.randomGallery,
+                style: TextStyleConst.navigationLabel.copyWith(
+                  color: isSelected(AppRoute.random)
+                      ? theme.colorScheme.primary
+                      : theme.textTheme.titleMedium?.color,
+                  fontWeight:
+                      isSelected(AppRoute.random) ? FontWeight.bold : null,
+                ),
               ),
+              selected: isSelected(AppRoute.random),
+              selectedTileColor:
+                  theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
+              onTap: () => _handleNavigation(context, AppRoute.random),
             ),
-            selected: isSelected(AppRoute.favorites),
-            selectedTileColor:
-                theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
-            onTap: () => _handleNavigation(context, AppRoute.favorites),
-          ),
-          ListTile(
-            leading: Icon(
-              Icons.history,
-              color: theme.iconTheme.color,
-            ),
-            title: Text(
-              l10n.viewHistory,
-              style: TextStyleConst.navigationLabel.copyWith(
-                color: isSelected(AppRoute.history)
-                    ? theme.colorScheme.primary
-                    : theme.textTheme.titleMedium?.color,
-                fontWeight:
-                    isSelected(AppRoute.history) ? FontWeight.bold : null,
+            ListTile(
+              leading: Icon(
+                Icons.favorite,
+                color: theme.iconTheme.color,
               ),
+              title: Text(
+                l10n.favoriteGalleries,
+                style: TextStyleConst.navigationLabel.copyWith(
+                  color: isSelected(AppRoute.favorites)
+                      ? theme.colorScheme.primary
+                      : theme.textTheme.titleMedium?.color,
+                  fontWeight:
+                      isSelected(AppRoute.favorites) ? FontWeight.bold : null,
+                ),
+              ),
+              selected: isSelected(AppRoute.favorites),
+              selectedTileColor:
+                  theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
+              onTap: () => _handleNavigation(context, AppRoute.favorites),
             ),
-            selected: isSelected(AppRoute.history),
-            selectedTileColor:
-                theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
-            onTap: () => _handleNavigation(context, AppRoute.history),
-          ),
+            ListTile(
+              leading: Icon(
+                Icons.history,
+                color: theme.iconTheme.color,
+              ),
+              title: Text(
+                l10n.viewHistory,
+                style: TextStyleConst.navigationLabel.copyWith(
+                  color: isSelected(AppRoute.history)
+                      ? theme.colorScheme.primary
+                      : theme.textTheme.titleMedium?.color,
+                  fontWeight:
+                      isSelected(AppRoute.history) ? FontWeight.bold : null,
+                ),
+              ),
+              selected: isSelected(AppRoute.history),
+              selectedTileColor:
+                  theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
+              onTap: () => _handleNavigation(context, AppRoute.history),
+            ),
+          ],
           const Divider(),
           ListTile(
             leading: Icon(

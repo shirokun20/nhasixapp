@@ -5314,6 +5314,12 @@ abstract class AppLocalizations {
   /// **'Error: {error}'**
   String errorGeneric(String error);
 
+  /// No description provided for @contentDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Content deleted'**
+  String get contentDeleted;
+
   /// No description provided for @cacheManagementDebug.
   ///
   /// In en, this message translates to:

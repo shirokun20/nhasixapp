@@ -2198,6 +2198,7 @@
       "error": {"type": "String"}
     }
   },
+  "contentDeleted": "Content deleted",
   "cacheManagementDebug": "🚀 Cache Management (Debug)",
   "convertToPdf": "Convert to PDF",
   "convertingToPdf": "Converting to PDF...",

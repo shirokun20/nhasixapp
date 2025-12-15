@@ -736,6 +736,8 @@
   "searchFilterHint": "Cari {filterType}...",
   "selectedCountFormat2": "Dipilih ({count})",
   "errorLoadingFilterDataTitle": "Kesalahan memuat data filter",
+  "contentDeleted": "Konten dihapus",
+  "browseDownloads": "Lihat Unduhan",
   "noFilterTypeAvailable": "Tidak ada {filterType} tersedia",
   "noResultsFoundForQuery": "Tidak ada hasil untuk \"{query}\"",
   
