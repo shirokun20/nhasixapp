@@ -60,6 +60,15 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
         _buildSearchBar(),
         Expanded(
           child: BlocListener<DownloadBloc, DownloadBlocState>(
+            listenWhen: (previous, current) {
+              // Only trigger if completed downloads count changes (success or delete)
+              // This filters out frequent progress updates
+              if (previous is DownloadLoaded && current is DownloadLoaded) {
+                return previous.completedDownloads.length !=
+                    current.completedDownloads.length;
+              }
+              return true;
+            },
             listener: (context, downloadState) {
               // Auto-refresh when a download completes
               if (downloadState is DownloadLoaded) {
