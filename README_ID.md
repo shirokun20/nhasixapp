@@ -21,7 +21,6 @@
 |:-------|:----:|:---------|:------:|
 | **ARM64** | 24MB | HP Modern (2019+) | ✅ Tersedia |
 | **ARM32** | 22MB | HP Lama (2015-2018) | ✅ Tersedia |
-| **Universal** | 22MB | Semua Perangkat | ✅ Tersedia |
 
 ---
 
