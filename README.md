@@ -21,7 +21,6 @@
 |:-------|:----:|:---------|:------:|
 | **ARM64** | 24MB | Modern Devices (2019+) | ✅ Available |
 | **ARM32** | 22MB | Older Devices (2015-2018) | ✅ Available |
-| **Universal** | 22MB | All Devices | ✅ Available |
 
 ---
 
