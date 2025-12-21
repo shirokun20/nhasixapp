@@ -6,7 +6,6 @@ import '../../../core/di/service_locator.dart';
 import '../../../domain/entities/user_preferences.dart';
 import '../../../services/analytics_service.dart';
 import '../../cubits/settings/settings_cubit.dart';
-import '../../widgets/app_scaffold_with_offline.dart';
 import '../../../core/utils/app_update_test.dart';
 import '../../widgets/app_main_drawer_widget.dart';
 
@@ -26,943 +25,717 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SimpleOfflineScaffold(
-      title: AppLocalizations.of(context)?.settings ?? 'Settings',
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.settings),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+      ),
       drawer: AppMainDrawerWidget(context: context),
-      body: BlocBuilder<SettingsCubit, SettingsState>(
-        builder: (context, state) {
-          if (state is SettingsLoaded) {
-            final prefs = state.preferences;
-            return ListView(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                  child: Text(
-                      AppLocalizations.of(context)?.displaySettings ??
-                          'Tampilan',
-                      style: TextStyleConst.headingSmall.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                      )),
-                ),
-                ListTile(
-                  tileColor: Theme.of(context).colorScheme.surface,
-                  title: Text(AppLocalizations.of(context)?.theme ?? 'Theme',
-                      style: TextStyleConst.bodyLarge.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      )),
-                  subtitle: Text(
-                    AppLocalizations.of(context)!.themeDescription,
-                    style: TextStyleConst.bodySmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  trailing: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                    margin: const EdgeInsets.symmetric(vertical: 7),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainer,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: Theme.of(context).colorScheme.outline,
-                          width: 1.2),
-                    ),
-                    child: DropdownButton<String>(
-                      value: prefs.theme,
-                      underline: const SizedBox(),
-                      icon: Icon(Icons.arrow_drop_down,
-                          color: Theme.of(context).colorScheme.outline),
-                      style: TextStyleConst.bodyLarge.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface),
-                      dropdownColor: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(8),
-                      items: ThemeOption.all.map((theme) {
-                        return DropdownMenuItem<String>(
-                          value: theme,
-                          child: Text(
-                            ThemeOption.getDisplayName(theme),
-                            style: TextStyleConst.bodyLarge.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (theme) {
-                        if (theme != null) {
-                          context.read<SettingsCubit>().updateTheme(theme);
-                        }
-                      },
-                    ),
-                  ),
-                ),
-                ListTile(
-                  tileColor: Theme.of(context).colorScheme.surface,
-                  title: Text(
-                      AppLocalizations.of(context)?.appLanguage ?? 'Language',
-                      style: TextStyleConst.bodyLarge.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      )),
-                  subtitle: Text(
-                    'Select your preferred language for the app interface and content.',
-                    style: TextStyleConst.bodySmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  trailing: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                    margin: const EdgeInsets.symmetric(vertical: 7),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainer,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: Theme.of(context).colorScheme.outline,
-                          width: 1.2),
-                    ),
-                    child: DropdownButton<String>(
-                      value: prefs.defaultLanguage,
-                      underline: const SizedBox(),
-                      icon: Icon(Icons.arrow_drop_down,
-                          color: Theme.of(context).colorScheme.outline),
-                      style: TextStyleConst.bodyLarge.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface),
-                      dropdownColor: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(8),
-                      items: [
-                        DropdownMenuItem(
-                          value: 'english',
-                          child: Text(
-                              AppLocalizations.of(context)?.english ??
-                                  'English',
-                              style: TextStyleConst.bodyLarge.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface,
-                              )),
-                        ),
-                        DropdownMenuItem(
-                          value: 'indonesian',
-                          child: Text(
-                              AppLocalizations.of(context)?.indonesian ??
-                                  'Bahasa Indonesia',
-                              style: TextStyleConst.bodyLarge.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface,
-                              )),
-                        ),
-                      ],
-                      onChanged: (lang) {
-                        if (lang != null) {
-                          context
-                              .read<SettingsCubit>()
-                              .updateDefaultLanguage(lang);
-                        }
-                      },
-                    ),
-                  ),
-                ),
-                ListTile(
-                  tileColor: Theme.of(context).colorScheme.surface,
-                  title: Text(
-                      AppLocalizations.of(context)?.imageQuality ??
-                          'Image Quality',
-                      style: TextStyleConst.bodyLarge.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      )),
-                  subtitle: Text(
-                    AppLocalizations.of(context)!.imageQualityDescription,
-                    style: TextStyleConst.bodySmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  trailing: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                    margin: const EdgeInsets.symmetric(vertical: 7),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainer,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: Theme.of(context).colorScheme.outline,
-                          width: 1.2),
-                    ),
-                    child: DropdownButton<String>(
-                      value: prefs.imageQuality,
-                      underline: const SizedBox(),
-                      icon: Icon(Icons.arrow_drop_down,
-                          color: Theme.of(context).colorScheme.outline),
-                      style: TextStyleConst.bodyLarge.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface),
-                      dropdownColor: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(8),
-                      items: ImageQuality.all.map((q) {
-                        return DropdownMenuItem<String>(
-                          value: q,
-                          child: Text(
-                            ImageQuality.getDisplayName(q),
-                            style: TextStyleConst.bodyLarge.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (q) {
-                        if (q != null) {
-                          context.read<SettingsCubit>().updateImageQuality(q);
-                        }
-                      },
-                    ),
-                  ),
-                ),
-                ListTile(
-                  tileColor: Theme.of(context).colorScheme.surface,
-                  title: Text(
-                      AppLocalizations.of(context)?.gridColumns ??
-                          'Grid Columns (Portrait)',
-                      style: TextStyleConst.bodyLarge.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      )),
-                  subtitle: Text(
-                    AppLocalizations.of(context)!.gridColumnsDescription,
-                    style: TextStyleConst.bodySmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  trailing: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                    margin: const EdgeInsets.symmetric(vertical: 7),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainer,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: Theme.of(context).colorScheme.outline,
-                          width: 1.2),
-                    ),
-                    child: DropdownButton<int>(
-                      value: prefs.columnsPortrait,
-                      underline: const SizedBox(),
-                      icon: Icon(Icons.arrow_drop_down,
-                          color: Theme.of(context).colorScheme.outline),
-                      style: TextStyleConst.bodyLarge.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface),
-                      dropdownColor: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(8),
-                      items: [2, 3].map((count) {
-                        return DropdownMenuItem<int>(
-                          value: count,
-                          child: Text('$count',
-                              style: TextStyleConst.bodyLarge.copyWith(
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface)),
-                        );
-                      }).toList(),
-                      onChanged: (count) {
-                        if (count != null) {
-                          context
-                              .read<SettingsCubit>()
-                              .updateColumnsPortrait(count);
-                        }
-                      },
-                    ),
-                  ),
-                ),
-                // Live preview for grid columns
-                Container(
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surfaceContainerHighest
-                        .withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .outline
-                          .withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        AppLocalizations.of(context)!.gridPreview,
-                        style: TextStyleConst.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      // Preview grid
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          if (constraints.maxWidth < 50) {
-                            return const SizedBox.shrink();
-                          }
+      extendBodyBehindAppBar: true,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              theme.colorScheme.surface,
+              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            ],
+          ),
+        ),
+        child: BlocBuilder<SettingsCubit, SettingsState>(
+          builder: (context, state) {
+            if (state is SettingsLoaded) {
+              return _buildSettingsContent(
+                  context, state.preferences, theme, l10n);
+            } else if (state is SettingsError) {
+              return Center(
+                child: Text(state.getUserFriendlyMessage(l10n)),
+              );
+            } else {
+              return const Center(child: CircularProgressIndicator());
+            }
+          },
+        ),
+      ),
+    );
+  }
 
-                          // Adaptive safeguards for preview
-                          const double minItemWidth = 100.0;
-                          final int userColumns = prefs.columnsPortrait;
-                          final int maxColumnsByWidth =
-                              (constraints.maxWidth / minItemWidth).floor();
-                          final int effectiveColumns = maxColumnsByWidth > 0
-                              ? userColumns.clamp(1, maxColumnsByWidth)
-                              : 1;
+  Widget _buildSettingsContent(
+    BuildContext context,
+    UserPreferences prefs,
+    ThemeData theme,
+    AppLocalizations l10n,
+  ) {
+    return SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          const SizedBox(height: 16),
 
-                          return GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: effectiveColumns,
-                              childAspectRatio: 0.7,
-                              crossAxisSpacing: 8,
-                              mainAxisSpacing: 8,
-                            ),
-                            itemCount: effectiveColumns * 2, // Show 2 rows
-                            itemBuilder: (context, index) {
-                              return Container(
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .primaryContainer,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .outline
-                                        .withValues(alpha: 0.3),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Center(
-                                  child: Icon(
-                                    Icons.image_outlined,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimaryContainer,
-                                    size: 24,
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
+          // Display Settings Card
+          _buildSectionHeader(Icons.palette_outlined, 'DISPLAY', theme),
+          const SizedBox(height: 12),
+          _buildSettingsCard([
+            _buildDropdownTile(
+              context: context,
+              title: l10n.theme,
+              subtitle: l10n.themeDescription,
+              value: prefs.theme,
+              items: ThemeOption.all
+                  .map((t) => DropdownMenuItem(
+                      value: t, child: Text(ThemeOption.getDisplayName(t))))
+                  .toList(),
+              onChanged: (v) => context.read<SettingsCubit>().updateTheme(v!),
+              theme: theme,
+            ),
+            _buildDivider(theme),
+            _buildDropdownTile(
+              context: context,
+              title: l10n.appLanguage,
+              subtitle: 'Select your preferred language',
+              value: prefs.defaultLanguage,
+              items: [
+                DropdownMenuItem(value: 'english', child: Text(l10n.english)),
+                DropdownMenuItem(
+                    value: 'indonesian', child: Text(l10n.indonesian)),
+              ],
+              onChanged: (v) =>
+                  context.read<SettingsCubit>().updateDefaultLanguage(v!),
+              theme: theme,
+            ),
+            _buildDivider(theme),
+            _buildDropdownTile(
+              context: context,
+              title: l10n.imageQuality,
+              subtitle: l10n.imageQualityDescription,
+              value: prefs.imageQuality,
+              items: ImageQuality.all
+                  .map((q) => DropdownMenuItem(
+                      value: q, child: Text(ImageQuality.getDisplayName(q))))
+                  .toList(),
+              onChanged: (v) =>
+                  context.read<SettingsCubit>().updateImageQuality(v!),
+              theme: theme,
+            ),
+            _buildDivider(theme),
+            _buildDropdownTile(
+              context: context,
+              title: l10n.gridColumns,
+              subtitle: l10n.gridColumnsDescription,
+              value: prefs.columnsPortrait,
+              items: [2, 3]
+                  .map((c) => DropdownMenuItem(value: c, child: Text('$c')))
+                  .toList(),
+              onChanged: (v) =>
+                  context.read<SettingsCubit>().updateColumnsPortrait(v!),
+              theme: theme,
+            ),
+          ], theme),
 
-                // 🚀 Cache Management Section (Debug) - MOVED HERE FOR EASY ACCESS
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                  child: Row(
-                    children: [
-                      Text(AppLocalizations.of(context)!.cacheManagementDebug,
-                          style: TextStyleConst.headingSmall.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          )),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.bug_report,
-                        size: 20,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ],
-                  ),
-                ),
-                ListTile(
-                  tileColor: Theme.of(context).colorScheme.surface,
-                  title: Text(AppLocalizations.of(context)!.testCacheClearing,
-                      style: TextStyleConst.bodyLarge.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      )),
-                  subtitle: Text(
-                    AppLocalizations.of(context)!.testCacheClearingDescription,
-                    style: TextStyleConst.bodySmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  trailing: ElevatedButton(
-                    onPressed: () => AppUpdateTest.runTests(context),
-                    child: Text(AppLocalizations.of(context)!.runTest),
-                  ),
-                ),
-                ListTile(
-                  tileColor: Theme.of(context).colorScheme.surface,
-                  title: Text(AppLocalizations.of(context)!.forceClearCache,
-                      style: TextStyleConst.bodyLarge.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      )),
-                  subtitle: Text(
-                    AppLocalizations.of(context)!.forceClearCacheDescription,
-                    style: TextStyleConst.bodySmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  trailing: ElevatedButton(
-                    onPressed: () => AppUpdateTest.forceClearCache(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.error,
-                      foregroundColor: Theme.of(context).colorScheme.onError,
-                    ),
-                    child: Text(AppLocalizations.of(context)!.clearCacheButton),
-                  ),
-                ),
+          // Grid Preview
+          const SizedBox(height: 12),
+          _buildGridPreview(prefs.columnsPortrait, theme, l10n),
 
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                  child: Text(AppLocalizations.of(context)!.reader,
-                      style: TextStyleConst.headingSmall.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                      )),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: Text(
-                    AppLocalizations.of(context)!.autoCleanupDescription,
-                    style: TextStyleConst.bodySmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-                SwitchListTile(
-                  tileColor: Theme.of(context).colorScheme.surface,
-                  activeThumbColor: Theme.of(context).colorScheme.primary,
-                  title: Text(AppLocalizations.of(context)!.autoCleanupHistory,
-                      style: TextStyleConst.bodyLarge.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      )),
-                  subtitle: Text(
-                      AppLocalizations.of(context)!
-                          .automaticallyCleanOldReadingHistory,
-                      style: TextStyleConst.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      )),
-                  value: prefs.autoCleanupHistory,
-                  onChanged: (val) {
-                    context.read<SettingsCubit>().updateAutoCleanupHistory(val);
-                  },
-                ),
-                ListTile(
-                  tileColor: Theme.of(context).colorScheme.surface,
-                  enabled: prefs.autoCleanupHistory,
-                  title: Text(AppLocalizations.of(context)!.cleanupInterval,
-                      style: TextStyleConst.bodyLarge.copyWith(
-                        color: prefs.autoCleanupHistory
-                            ? Theme.of(context).colorScheme.onSurface
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
-                      )),
-                  subtitle: Text(
-                      AppLocalizations.of(context)!.howOftenToCleanupHistory,
-                      style: TextStyleConst.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      )),
-                  trailing: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                    margin: const EdgeInsets.symmetric(vertical: 7),
-                    decoration: BoxDecoration(
-                      color: prefs.autoCleanupHistory
-                          ? Theme.of(context).colorScheme.surfaceContainer
-                          : Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: Theme.of(context).colorScheme.outline,
-                          width: 1.2),
-                    ),
-                    child: DropdownButton<int>(
-                      value: prefs.historyCleanupIntervalHours,
-                      underline: const SizedBox(),
-                      icon: Icon(Icons.arrow_drop_down,
-                          color: Theme.of(context).colorScheme.outline),
-                      style: TextStyleConst.bodyLarge.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface),
-                      dropdownColor: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(8),
-                      items: [6, 12, 24, 48, 168].map((hours) {
-                        String label;
-                        if (hours < 24) {
-                          label = '${hours}h';
-                        } else if (hours == 24) {
-                          label = AppLocalizations.of(context)!.oneDay;
-                        } else if (hours == 48) {
-                          label = AppLocalizations.of(context)!.twoDays;
-                        } else {
-                          label = AppLocalizations.of(context)!.oneWeek;
-                        }
-                        return DropdownMenuItem<int>(
-                          value: hours,
-                          child: Text(label,
-                              style: TextStyleConst.bodyLarge.copyWith(
-                                color: prefs.autoCleanupHistory
-                                    ? Theme.of(context).colorScheme.onSurface
-                                    : Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                              )),
-                        );
-                      }).toList(),
-                      onChanged: prefs.autoCleanupHistory
-                          ? (hours) {
-                              if (hours != null) {
-                                context
-                                    .read<SettingsCubit>()
-                                    .updateHistoryCleanupInterval(hours);
-                              }
-                            }
-                          : null,
-                    ),
-                  ),
-                ),
-                ListTile(
-                  tileColor: Theme.of(context).colorScheme.surface,
-                  enabled: prefs.autoCleanupHistory,
-                  title: Text(AppLocalizations.of(context)!.maxHistoryDays,
-                      style: TextStyleConst.bodyLarge.copyWith(
-                        color: prefs.autoCleanupHistory
-                            ? Theme.of(context).colorScheme.onSurface
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
-                      )),
-                  subtitle: Text(
-                      AppLocalizations.of(context)!.maximumDaysToKeepHistory,
-                      style: TextStyleConst.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      )),
-                  trailing: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                    margin: const EdgeInsets.symmetric(vertical: 7),
-                    decoration: BoxDecoration(
-                      color: prefs.autoCleanupHistory
-                          ? Theme.of(context).colorScheme.surfaceContainer
-                          : Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: Theme.of(context).colorScheme.outline,
-                          width: 1.2),
-                    ),
-                    child: DropdownButton<int>(
-                      value: prefs.maxHistoryDays,
-                      underline: const SizedBox(),
-                      icon: Icon(Icons.arrow_drop_down,
-                          color: Theme.of(context).colorScheme.outline),
-                      style: TextStyleConst.bodyLarge.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface),
-                      dropdownColor: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(8),
-                      items: [0, 7, 14, 30, 60, 90].map((days) {
-                        return DropdownMenuItem<int>(
-                          value: days,
-                          child: Text(
-                            days == 0
-                                ? AppLocalizations.of(context)!.unlimited
-                                : AppLocalizations.of(context)!.daysValue(days),
-                            style: TextStyleConst.bodyLarge.copyWith(
-                              color: prefs.autoCleanupHistory
-                                  ? Theme.of(context).colorScheme.onSurface
-                                  : Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: prefs.autoCleanupHistory
-                          ? (days) {
-                              if (days != null) {
-                                context
-                                    .read<SettingsCubit>()
-                                    .updateMaxHistoryDays(days);
-                              }
-                            }
-                          : null,
-                    ),
-                  ),
-                ),
-                SwitchListTile(
-                  tileColor: Theme.of(context).colorScheme.surface,
-                  activeThumbColor: Theme.of(context).colorScheme.primary,
-                  title: Text(AppLocalizations.of(context)!.cleanupOnInactivity,
-                      style: TextStyleConst.bodyLarge.copyWith(
-                        color: prefs.autoCleanupHistory
-                            ? Theme.of(context).colorScheme.onSurface
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
-                      )),
-                  subtitle: Text(
-                      AppLocalizations.of(context)!.cleanHistoryWhenAppUnused,
-                      style: TextStyleConst.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      )),
-                  value: prefs.cleanupOnInactivity,
-                  onChanged: prefs.autoCleanupHistory
-                      ? (val) {
-                          context
-                              .read<SettingsCubit>()
-                              .updateCleanupOnInactivity(val);
-                        }
-                      : null,
-                ),
-                ListTile(
-                  tileColor: Theme.of(context).colorScheme.surface,
-                  enabled:
-                      prefs.autoCleanupHistory && prefs.cleanupOnInactivity,
-                  title: Text(AppLocalizations.of(context)!.inactivityThreshold,
-                      style: TextStyleConst.bodyLarge.copyWith(
-                        color: (prefs.autoCleanupHistory &&
-                                prefs.cleanupOnInactivity)
-                            ? Theme.of(context).colorScheme.onSurface
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
-                      )),
-                  subtitle: Text(
-                      AppLocalizations.of(context)!
-                          .daysOfInactivityBeforeCleanup,
-                      style: TextStyleConst.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      )),
-                  trailing: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                    margin: const EdgeInsets.symmetric(vertical: 7),
-                    decoration: BoxDecoration(
-                      color: (prefs.autoCleanupHistory &&
-                              prefs.cleanupOnInactivity)
-                          ? Theme.of(context).colorScheme.surfaceContainer
-                          : Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: Theme.of(context).colorScheme.outline,
-                          width: 1.2),
-                    ),
-                    child: DropdownButton<int>(
-                      value: prefs.inactivityCleanupDays,
-                      underline: const SizedBox(),
-                      icon: Icon(Icons.arrow_drop_down,
-                          color: Theme.of(context).colorScheme.outline),
-                      style: TextStyleConst.bodyLarge.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface),
-                      dropdownColor: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(8),
-                      items: [3, 5, 7, 14, 30].map((days) {
-                        return DropdownMenuItem<int>(
-                          value: days,
-                          child: Text(
-                              AppLocalizations.of(context)!.daysValue(days),
-                              style: TextStyleConst.bodyLarge.copyWith(
-                                color: (prefs.autoCleanupHistory &&
-                                        prefs.cleanupOnInactivity)
-                                    ? Theme.of(context).colorScheme.onSurface
-                                    : Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                              )),
-                        );
-                      }).toList(),
-                      onChanged: (prefs.autoCleanupHistory &&
-                              prefs.cleanupOnInactivity)
-                          ? (days) {
-                              if (days != null) {
-                                context
-                                    .read<SettingsCubit>()
-                                    .updateInactivityCleanupDays(days);
-                              }
-                            }
-                          : null,
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                  child: Text(AppLocalizations.of(context)!.other,
-                      style: TextStyleConst.headingSmall.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                      )),
-                ),
-                // Analytics Consent Section
-                ListTile(
-                  tileColor: Theme.of(context).colorScheme.surface,
-                  title: Text(
-                      AppLocalizations.of(context)?.allowAnalytics ??
-                          'Izinkan Analytics',
-                      style: TextStyleConst.bodyLarge.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      )),
-                  subtitle: Text(
-                    AppLocalizations.of(context)!.analyticsSubtitle,
-                    style: TextStyleConst.bodySmall.copyWith(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.7),
-                    ),
-                  ),
-                  trailing: FutureBuilder<bool>(
-                    future: _getAnalyticsStatus(),
-                    builder: (context, snapshot) {
-                      final isEnabled = snapshot.data ?? false;
-                      return Switch(
-                        value: isEnabled,
-                        onChanged: (value) async {
-                          final analytics = getIt<AnalyticsService>();
-                          await analytics.setAnalyticsEnabled(value);
-                          // Force rebuild to show new state
-                          if (context.mounted) {
-                            setState(() {});
-                          }
-                        },
-                      );
-                    },
-                  ),
-                ),
+          const SizedBox(height: 24),
 
-                // Privacy Information
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.privacy_tip_outlined,
-                                color: Theme.of(context).colorScheme.primary,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                AppLocalizations.of(context)
-                                        ?.privacyAnalytics ??
-                                    'Privasi Analytics',
-                                style: TextStyleConst.bodyLarge.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            AppLocalizations.of(context)!.privacyInfoText,
-                            style: TextStyleConst.bodySmall.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.8),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-                // App Disguise Section
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text(
-                      AppLocalizations.of(context)?.appDisguise ??
-                          'App Disguise',
-                      style: TextStyleConst.headingSmall.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                      )),
-                ),
-                BlocBuilder<SettingsCubit, SettingsState>(
-                  builder: (context, settingsState) {
-                    final isLoading = settingsState is SettingsLoaded &&
-                        settingsState.isUpdatingDisguiseMode;
-
-                    return ListTile(
-                      tileColor: Theme.of(context).colorScheme.surface,
-                      title: Text(
-                          AppLocalizations.of(context)?.disguiseMode ??
-                              'Disguise Mode',
-                          style: TextStyleConst.bodyLarge.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
-                          )),
-                      subtitle: Text(
-                        isLoading
-                            ? AppLocalizations.of(context)!.applyingDisguiseMode
-                            : AppLocalizations.of(context)!
-                                .disguiseModeDescription,
-                        style: TextStyleConst.bodySmall.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 2),
-                        margin: const EdgeInsets.symmetric(vertical: 7),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceContainer,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                              color: Theme.of(context).colorScheme.outline,
-                              width: 1.2),
-                        ),
-                        child: DropdownButton<String>(
-                          value: prefs.disguiseMode,
-                          underline: const SizedBox(),
-                          icon: isLoading
-                              ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                  ),
-                                )
-                              : Icon(Icons.arrow_drop_down,
-                                  color: Theme.of(context).colorScheme.outline),
-                          style: TextStyleConst.bodyLarge.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface),
-                          dropdownColor: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(8),
-                          items: [
-                            DropdownMenuItem(
-                              value: 'default',
-                              child: Text(
-                                  AppLocalizations.of(context)!.disguiseDefault,
-                                  style: TextStyleConst.bodyLarge.copyWith(
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  )),
-                            ),
-                            DropdownMenuItem(
-                              value: 'calculator',
-                              child: Text(
-                                  AppLocalizations.of(context)!
-                                      .disguiseCalculator,
-                                  style: TextStyleConst.bodyLarge.copyWith(
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  )),
-                            ),
-                            DropdownMenuItem(
-                              value: 'notes',
-                              child: Text(
-                                  AppLocalizations.of(context)!.disguiseNotes,
-                                  style: TextStyleConst.bodyLarge.copyWith(
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  )),
-                            ),
-                            DropdownMenuItem(
-                              value: 'weather',
-                              child: Text(
-                                  AppLocalizations.of(context)!.disguiseWeather,
-                                  style: TextStyleConst.bodyLarge.copyWith(
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  )),
-                            ),
-                          ],
-                          onChanged: isLoading
-                              ? null
-                              : (mode) {
-                                  if (mode != null) {
-                                    context
-                                        .read<SettingsCubit>()
-                                        .updateDisguiseMode(mode);
-                                  }
-                                },
-                        ),
-                      ),
-                    );
-                  },
-                ),
-
-                // Contoh: Reset ke default
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: ElevatedButton.icon(
-                    icon: Icon(Icons.refresh,
-                        color: Theme.of(context).colorScheme.onError),
-                    label: Text(AppLocalizations.of(context)!.resetToDefault,
-                        style: TextStyleConst.buttonLarge.copyWith(
-                            color: Theme.of(context).colorScheme.onError)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.error,
-                      foregroundColor: Theme.of(context).colorScheme.onError,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      elevation: 0,
-                    ),
-                    onPressed: () async {
-                      final settingsCubit = context.read<SettingsCubit>();
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.surface,
-                          title: Text(
-                              AppLocalizations.of(context)?.resetSettings ??
-                                  'Reset Settings',
-                              style: TextStyleConst.headingSmall.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface,
-                              )),
-                          content: Text(
-                              AppLocalizations.of(context)!
-                                  .confirmResetSettings,
-                              style: TextStyleConst.bodyLarge.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface,
-                              )),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx, false),
-                              child: Text(AppLocalizations.of(context)!.cancel,
-                                  style: TextStyleConst.bodyLarge.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .outline)),
-                            ),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    Theme.of(context).colorScheme.error,
-                                foregroundColor:
-                                    Theme.of(context).colorScheme.onError,
-                              ),
-                              onPressed: () => Navigator.pop(ctx, true),
-                              child: Text(AppLocalizations.of(context)!.reset,
-                                  style: TextStyleConst.bodyLarge.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onError)),
-                            ),
-                          ],
-                        ),
-                      );
-                      if (confirm == true) {
-                        settingsCubit.resetToDefaults();
-                      }
-                    },
-                  ),
+          // Reader Settings Card
+          _buildSectionHeader(Icons.auto_stories_outlined, 'READER', theme),
+          const SizedBox(height: 12),
+          _buildInfoBanner(
+            l10n.autoCleanupDescription,
+            Icons.info_outline,
+            theme,
+          ),
+          const SizedBox(height: 12),
+          _buildSettingsCard([
+            _buildSwitchTile(
+              title: l10n.autoCleanupHistory,
+              subtitle: l10n.automaticallyCleanOldReadingHistory,
+              value: prefs.autoCleanupHistory,
+              onChanged: (v) =>
+                  context.read<SettingsCubit>().updateAutoCleanupHistory(v),
+              theme: theme,
+            ),
+            if (prefs.autoCleanupHistory) ...[
+              _buildDivider(theme),
+              _buildDropdownTile(
+                context: context,
+                title: l10n.cleanupInterval,
+                subtitle: l10n.howOftenToCleanupHistory,
+                value: prefs.historyCleanupIntervalHours,
+                items: [6, 12, 24, 48, 168].map((h) {
+                  String label = h < 24
+                      ? '${h}h'
+                      : h == 24
+                          ? l10n.oneDay
+                          : h == 48
+                              ? l10n.twoDays
+                              : l10n.oneWeek;
+                  return DropdownMenuItem(value: h, child: Text(label));
+                }).toList(),
+                onChanged: (v) => context
+                    .read<SettingsCubit>()
+                    .updateHistoryCleanupInterval(v!),
+                theme: theme,
+              ),
+              _buildDivider(theme),
+              _buildDropdownTile(
+                context: context,
+                title: l10n.maxHistoryDays,
+                subtitle: l10n.maximumDaysToKeepHistory,
+                value: prefs.maxHistoryDays,
+                items: [0, 7, 14, 30, 60, 90]
+                    .map((d) => DropdownMenuItem(
+                        value: d,
+                        child:
+                            Text(d == 0 ? l10n.unlimited : l10n.daysValue(d))))
+                    .toList(),
+                onChanged: (v) =>
+                    context.read<SettingsCubit>().updateMaxHistoryDays(v!),
+                theme: theme,
+              ),
+              _buildDivider(theme),
+              _buildSwitchTile(
+                title: l10n.cleanupOnInactivity,
+                subtitle: l10n.cleanHistoryWhenAppUnused,
+                value: prefs.cleanupOnInactivity,
+                onChanged: (v) =>
+                    context.read<SettingsCubit>().updateCleanupOnInactivity(v),
+                theme: theme,
+              ),
+              if (prefs.cleanupOnInactivity) ...[
+                _buildDivider(theme),
+                _buildDropdownTile(
+                  context: context,
+                  title: l10n.inactivityThreshold,
+                  subtitle: l10n.daysOfInactivityBeforeCleanup,
+                  value: prefs.inactivityCleanupDays,
+                  items: [3, 5, 7, 14, 30]
+                      .map((d) => DropdownMenuItem(
+                          value: d, child: Text(l10n.daysValue(d))))
+                      .toList(),
+                  onChanged: (v) => context
+                      .read<SettingsCubit>()
+                      .updateInactivityCleanupDays(v!),
+                  theme: theme,
                 ),
               ],
-            );
-          } else if (state is SettingsError) {
-            return Center(
-                child: Text(state
-                    .getUserFriendlyMessage(AppLocalizations.of(context))));
-          } else {
-            return const Center(child: CircularProgressIndicator());
-          }
-        },
+            ],
+          ], theme),
+
+          const SizedBox(height: 24),
+
+          // Privacy & Data Card
+          _buildSectionHeader(Icons.shield_outlined, 'PRIVACY & DATA', theme),
+          const SizedBox(height: 12),
+          _buildSettingsCard([
+            _buildAnalyticsTile(theme, l10n),
+          ], theme),
+          const SizedBox(height: 12),
+          _buildPrivacyInfoCard(theme, l10n),
+
+          const SizedBox(height: 24),
+
+          // App Disguise Card
+          _buildSectionHeader(
+              Icons.visibility_off_outlined, 'APP DISGUISE', theme),
+          const SizedBox(height: 12),
+          _buildSettingsCard([
+            _buildDisguiseModeTile(prefs, theme, l10n),
+          ], theme),
+
+          const SizedBox(height: 24),
+
+          // Developer Tools Card
+          _buildSectionHeader(
+              Icons.bug_report_outlined, 'DEVELOPER TOOLS', theme),
+          const SizedBox(height: 12),
+          _buildSettingsCard([
+            _buildActionTile(
+              title: l10n.testCacheClearing,
+              subtitle: l10n.testCacheClearingDescription,
+              actionLabel: l10n.runTest,
+              onTap: () => AppUpdateTest.runTests(context),
+              theme: theme,
+            ),
+            _buildDivider(theme),
+            _buildActionTile(
+              title: l10n.forceClearCache,
+              subtitle: l10n.forceClearCacheDescription,
+              actionLabel: l10n.clearCacheButton,
+              onTap: () => AppUpdateTest.forceClearCache(context),
+              isDestructive: true,
+              theme: theme,
+            ),
+          ], theme),
+
+          const SizedBox(height: 24),
+
+          // Reset Button
+          _buildResetButton(context, theme, l10n),
+
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(IconData icon, String title, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 16, color: theme.colorScheme.primary),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsCard(List<Widget> children, ThemeData theme) {
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainer,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(children: children),
+      ),
+    );
+  }
+
+  Widget _buildDivider(ThemeData theme) {
+    return Divider(
+      height: 1,
+      indent: 16,
+      endIndent: 16,
+      color: theme.dividerColor.withValues(alpha: 0.2),
+    );
+  }
+
+  Widget _buildDropdownTile<T>({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required T value,
+    required List<DropdownMenuItem<T>> items,
+    required Function(T?) onChanged,
+    required ThemeData theme,
+    bool enabled = true,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      title: Text(
+        title,
+        style: TextStyleConst.bodyLarge.copyWith(
+          fontWeight: FontWeight.w600,
+          color: enabled ? theme.colorScheme.onSurface : theme.disabledColor,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyleConst.bodySmall.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      trailing: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: theme.colorScheme.outline.withValues(alpha: 0.3),
+          ),
+        ),
+        child: DropdownButton<T>(
+          value: value,
+          underline: const SizedBox(),
+          icon: Icon(Icons.arrow_drop_down,
+              color: theme.colorScheme.primary, size: 20),
+          style: TextStyleConst.bodyMedium.copyWith(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.w500,
+          ),
+          dropdownColor: theme.colorScheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(12),
+          items: items,
+          onChanged: enabled ? onChanged : null,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSwitchTile({
+    required String title,
+    required String subtitle,
+    required bool value,
+    required Function(bool) onChanged,
+    required ThemeData theme,
+    bool enabled = true,
+  }) {
+    return SwitchListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      title: Text(
+        title,
+        style: TextStyleConst.bodyLarge.copyWith(
+          fontWeight: FontWeight.w600,
+          color: enabled ? theme.colorScheme.onSurface : theme.disabledColor,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyleConst.bodySmall.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      value: value,
+      onChanged: enabled ? onChanged : null,
+      activeThumbColor: theme.colorScheme.primary,
+    );
+  }
+
+  Widget _buildActionTile({
+    required String title,
+    required String subtitle,
+    required String actionLabel,
+    required VoidCallback onTap,
+    required ThemeData theme,
+    bool isDestructive = false,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      title: Text(
+        title,
+        style: TextStyleConst.bodyLarge.copyWith(
+          fontWeight: FontWeight.w600,
+          color: theme.colorScheme.onSurface,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyleConst.bodySmall.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      trailing: FilledButton(
+        onPressed: onTap,
+        style: FilledButton.styleFrom(
+          backgroundColor: isDestructive
+              ? theme.colorScheme.error
+              : theme.colorScheme.primary,
+          foregroundColor: isDestructive
+              ? theme.colorScheme.onError
+              : theme.colorScheme.onPrimary,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        ),
+        child: Text(actionLabel,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+      ),
+    );
+  }
+
+  Widget _buildGridPreview(
+      int columns, ThemeData theme, AppLocalizations l10n) {
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainer.withValues(alpha: 0.5),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.gridPreview,
+              style: TextStyleConst.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 12),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: columns,
+                childAspectRatio: 0.7,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
+              itemCount: columns * 2,
+              itemBuilder: (context, index) {
+                return Container(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer
+                        .withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.image_outlined,
+                      color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                      size: 24,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoBanner(String text, IconData icon, ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.primary.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: theme.colorScheme.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyleConst.bodySmall.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnalyticsTile(ThemeData theme, AppLocalizations l10n) {
+    return FutureBuilder<bool>(
+      future: _getAnalyticsStatus(),
+      builder: (context, snapshot) {
+        final isEnabled = snapshot.data ?? false;
+        return SwitchListTile(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          title: Text(
+            l10n.allowAnalytics,
+            style: TextStyleConst.bodyLarge.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          subtitle: Text(
+            l10n.analyticsSubtitle,
+            style: TextStyleConst.bodySmall.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          value: isEnabled,
+          onChanged: (value) async {
+            final analytics = getIt<AnalyticsService>();
+            await analytics.setAnalyticsEnabled(value);
+            if (context.mounted) setState(() {});
+          },
+          activeThumbColor: theme.colorScheme.primary,
+        );
+      },
+    );
+  }
+
+  Widget _buildPrivacyInfoCard(ThemeData theme, AppLocalizations l10n) {
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainer,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(Icons.privacy_tip_outlined,
+                  size: 20, color: theme.colorScheme.primary),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.privacyAnalytics,
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.privacyInfoText,
+                    style: TextStyleConst.bodySmall.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDisguiseModeTile(
+      UserPreferences prefs, ThemeData theme, AppLocalizations l10n) {
+    return BlocBuilder<SettingsCubit, SettingsState>(
+      builder: (context, state) {
+        final isLoading =
+            state is SettingsLoaded && state.isUpdatingDisguiseMode;
+        return ListTile(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          title: Text(
+            l10n.disguiseMode,
+            style: TextStyleConst.bodyLarge.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          subtitle: Text(
+            isLoading
+                ? l10n.applyingDisguiseMode
+                : l10n.disguiseModeDescription,
+            style: TextStyleConst.bodySmall.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          trailing: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: theme.colorScheme.outline.withValues(alpha: 0.3),
+              ),
+            ),
+            child: DropdownButton<String>(
+              value: prefs.disguiseMode,
+              underline: const SizedBox(),
+              icon: isLoading
+                  ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: theme.colorScheme.primary,
+                      ),
+                    )
+                  : Icon(Icons.arrow_drop_down,
+                      color: theme.colorScheme.primary, size: 20),
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: theme.colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
+              dropdownColor: theme.colorScheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(12),
+              items: [
+                DropdownMenuItem(
+                    value: 'default', child: Text(l10n.disguiseDefault)),
+                DropdownMenuItem(
+                    value: 'calculator', child: Text(l10n.disguiseCalculator)),
+                DropdownMenuItem(
+                    value: 'notes', child: Text(l10n.disguiseNotes)),
+                DropdownMenuItem(
+                    value: 'weather', child: Text(l10n.disguiseWeather)),
+              ],
+              onChanged: isLoading
+                  ? null
+                  : (mode) {
+                      if (mode != null) {
+                        context.read<SettingsCubit>().updateDisguiseMode(mode);
+                      }
+                    },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildResetButton(
+      BuildContext context, ThemeData theme, AppLocalizations l10n) {
+    return FilledButton.icon(
+      onPressed: () async {
+        final settingsCubit = context.read<SettingsCubit>();
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: theme.colorScheme.surface,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text(l10n.resetSettings, style: TextStyleConst.headingSmall),
+            content: Text(l10n.confirmResetSettings,
+                style: TextStyleConst.bodyMedium),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(l10n.cancel),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: theme.colorScheme.error,
+                  foregroundColor: theme.colorScheme.onError,
+                ),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(l10n.reset),
+              ),
+            ],
+          ),
+        );
+        if (confirm == true) {
+          settingsCubit.resetToDefaults();
+        }
+      },
+      icon: const Icon(Icons.refresh),
+      label: Text(l10n.resetToDefault),
+      style: FilledButton.styleFrom(
+        backgroundColor: theme.colorScheme.error,
+        foregroundColor: theme.colorScheme.onError,
+        minimumSize: const Size(double.infinity, 50),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

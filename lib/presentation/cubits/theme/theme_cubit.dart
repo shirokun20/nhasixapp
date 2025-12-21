@@ -19,7 +19,7 @@ class ThemeCubit extends Cubit<ThemeState> {
         super(ThemeState.initial()) {
     // Listen to settings changes
     _settingsSubscription = _settingsCubit.stream.listen(_onSettingsChanged);
-    
+
     // Initialize with current settings
     _updateThemeFromSettings(_settingsCubit.state);
   }
@@ -38,14 +38,14 @@ class ThemeCubit extends Cubit<ThemeState> {
     if (settingsState is SettingsLoaded) {
       final preferences = settingsState.preferences;
       final themeData = _createThemeData(preferences.theme);
-      
+
       emit(ThemeState(
         themeData: themeData,
         themeMode: _getThemeMode(preferences.theme),
         currentTheme: preferences.theme,
         lastUpdated: DateTime.now(),
       ));
-      
+
       _logger.i('Theme updated to: ${preferences.theme}');
     }
   }
@@ -77,32 +77,55 @@ class ThemeCubit extends Cubit<ThemeState> {
     }
   }
 
-  /// Create light theme
+  /// Create light theme with paper-like warm tones
   ThemeData _createLightTheme() {
+    // Paper-like warm color palette
+    const paperBackground = Color(0xFFFAF8F5); // Warm off-white
+    const paperSurface = Color(0xFFF5F2ED); // Cream
+    const paperCard = Color(0xFFFFFFFF); // Pure white for cards (contrast)
+    const paperBorder = Color(0xFFE8E4DC); // Warm grey border
+    const textPrimary = Color(0xFF2D2A26); // Warm dark brown
+    const textSecondary = Color(0xFF6B6560); // Muted brown
+
     return ThemeData(
       brightness: Brightness.light,
       primaryColor: ColorsConst.primaryColor,
-      scaffoldBackgroundColor: Colors.white,
+      scaffoldBackgroundColor: paperBackground,
       appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 1,
+        backgroundColor: paperBackground,
+        foregroundColor: textPrimary,
+        elevation: 0,
         centerTitle: false,
+        surfaceTintColor: Colors.transparent,
       ),
       cardTheme: CardThemeData(
-        color: Colors.grey[50],
-        elevation: 2,
+        color: paperCard,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(
+            color: paperBorder,
+            width: 1,
+          ),
         ),
       ),
       listTileTheme: const ListTileThemeData(
-        tileColor: Colors.white,
-        textColor: Colors.black,
+        tileColor: paperSurface,
+        textColor: textPrimary,
       ),
+      dividerColor: paperBorder,
       colorScheme: ColorScheme.fromSeed(
         seedColor: ColorsConst.primaryColor,
         brightness: Brightness.light,
+        surface: paperSurface,
+        onSurface: textPrimary,
+        onSurfaceVariant: textSecondary,
+        surfaceContainer: paperCard,
+        surfaceContainerLow:
+            const Color(0xFFFCFAF7), // Slightly warmer than white
+        surfaceContainerHigh: const Color(0xFFF5F2ED), // Cream
+        surfaceContainerHighest: const Color(0xFFF0EDE6), // Deeper cream
+        outline: paperBorder,
       ),
       useMaterial3: true,
     );

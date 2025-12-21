@@ -18,15 +18,29 @@ class AppDrawerContent extends StatefulWidget {
   State<AppDrawerContent> createState() => _AppDrawerContentState();
 }
 
-class _AppDrawerContentState extends State<AppDrawerContent> {
+class _AppDrawerContentState extends State<AppDrawerContent>
+    with SingleTickerProviderStateMixin {
   bool _isOffline = false;
   String _appVersion = '';
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
     super.initState();
     _checkConnectivity();
     _loadAppVersion();
+
+    // Setup pulse animation for logo
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.08).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
     Connectivity().onConnectivityChanged.listen((results) {
       if (mounted) {
         setState(() {
@@ -34,6 +48,12 @@ class _AppDrawerContentState extends State<AppDrawerContent> {
         });
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
   }
 
   Future<void> _checkConnectivity() async {
@@ -68,30 +88,36 @@ class _AppDrawerContentState extends State<AppDrawerContent> {
     final currentRoute = GoRouterState.of(context).uri.path;
 
     bool isSelected(String route) {
-      // For home, check exact match or if currentRoute is the home path
       if (route == AppRoute.home) {
         return currentRoute == AppRoute.home ||
+            currentRoute == AppRoute.main ||
             currentRoute == '/' ||
             currentRoute.isEmpty;
       }
       return currentRoute.startsWith(route);
     }
 
-    // Glassmorphism Drawer Design
     return Drawer(
-      backgroundColor: Colors.transparent, // Important for glass effect
+      backgroundColor: Colors.transparent,
       width: 300,
       elevation: 0,
       child: Container(
         decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor.withValues(alpha: 0.8),
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              theme.colorScheme.surface,
+              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            ],
+          ),
           borderRadius: const BorderRadius.only(
             topRight: Radius.circular(24),
             bottomRight: Radius.circular(24),
           ),
           border: Border(
             right: BorderSide(
-              color: theme.dividerColor.withValues(alpha: 0.1),
+              color: theme.colorScheme.outline.withValues(alpha: 0.1),
               width: 1,
             ),
           ),
@@ -103,15 +129,17 @@ class _AppDrawerContentState extends State<AppDrawerContent> {
           ),
           child: Column(
             children: [
-              // 1. Premium Header
+              // 1. Premium Animated Header
               _buildDrawerHeader(theme, l10n),
 
               // 2. Scrollable Navigation Items
               Expanded(
                 child: ListView(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   children: [
+                    _buildSectionLabel(l10n.home.toUpperCase(), theme),
+                    const SizedBox(height: 8),
                     _buildNavItem(
                       context,
                       icon: Icons.home_rounded,
@@ -137,11 +165,9 @@ class _AppDrawerContentState extends State<AppDrawerContent> {
                       theme: theme,
                     ),
                     if (!_isOffline) ...[
-                      const Padding(
-                        padding:
-                            EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                        child: Divider(height: 1),
-                      ),
+                      const SizedBox(height: 16),
+                      _buildSectionLabel('EXPLORE', theme),
+                      const SizedBox(height: 8),
                       _buildNavItem(
                         context,
                         icon: Icons.shuffle_rounded,
@@ -167,11 +193,9 @@ class _AppDrawerContentState extends State<AppDrawerContent> {
                         theme: theme,
                       ),
                     ],
-                    const Padding(
-                      padding:
-                          EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                      child: Divider(height: 1),
-                    ),
+                    const SizedBox(height: 16),
+                    _buildSectionLabel('MORE', theme),
+                    const SizedBox(height: 8),
                     _buildNavItem(
                       context,
                       icon: Icons.settings_rounded,
@@ -192,10 +216,25 @@ class _AppDrawerContentState extends State<AppDrawerContent> {
                 ),
               ),
 
-              // 3. Footer (Version Info)
-              _buildDrawerFooter(theme),
+              // 3. Footer Card
+              _buildDrawerFooter(theme, l10n),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionLabel(String label, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 12, bottom: 4),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.2,
+          color: theme.colorScheme.primary.withValues(alpha: 0.8),
         ),
       ),
     );
@@ -205,65 +244,98 @@ class _AppDrawerContentState extends State<AppDrawerContent> {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 32,
-        bottom: 24,
-        left: 24,
-        right: 24,
+        top: MediaQuery.of(context).padding.top + 24,
+        bottom: 20,
+        left: 20,
+        right: 20,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.colorScheme.primary.withValues(alpha: 0.1),
+            theme.colorScheme.secondary.withValues(alpha: 0.05),
+          ],
+        ),
       ),
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [
-                  theme.colorScheme.primary,
-                  theme.colorScheme.secondary,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+          // Animated Logo
+          AnimatedBuilder(
+            animation: _pulseAnimation,
+            builder: (context, child) {
+              return Transform.scale(
+                scale: _pulseAnimation.value,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        theme.colorScheme.primary,
+                        theme.colorScheme.secondary,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.4),
+                        blurRadius: 20,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: CircleAvatar(
+                    radius: 42,
+                    backgroundColor: theme.colorScheme.surface,
+                    child: const CircleAvatar(
+                      radius: 38,
+                      backgroundImage: AssetImage('assets/icons/logo_app.png'),
+                    ),
+                  ),
                 ),
-              ],
-            ),
-            child: const CircleAvatar(
-              radius: 40,
-              backgroundColor: Colors.black, // Fallback/Border inside
-              child: CircleAvatar(
-                radius: 38,
-                backgroundImage: AssetImage('assets/icons/logo_app.png'),
-              ),
-            ),
+              );
+            },
           ),
           const SizedBox(height: 16),
-          Text(
-            l10n.appTitle,
-            style: TextStyleConst.headingSmall.copyWith(
-              fontWeight: FontWeight.w800,
-              fontSize: 26,
-              letterSpacing: -0.5,
-              color: theme.colorScheme.onSurface,
+
+          // App Name with gradient text effect
+          ShaderMask(
+            shaderCallback: (bounds) => LinearGradient(
+              colors: [
+                theme.colorScheme.primary,
+                theme.colorScheme.secondary,
+              ],
+            ).createShader(bounds),
+            child: Text(
+              l10n.appTitle,
+              style: TextStyleConst.headingMedium.copyWith(
+                fontWeight: FontWeight.w900,
+                fontSize: 28,
+                letterSpacing: -0.5,
+                color: Colors.white,
+              ),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
+
+          // Subtitle badge
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest
-                  .withValues(alpha: 0.5),
+              color: theme.colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: theme.colorScheme.outline.withValues(alpha: 0.2),
+              ),
             ),
             child: Text(
               l10n.appSubtitleDescription,
               style: TextStyleConst.bodySmall.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -284,52 +356,79 @@ class _AppDrawerContentState extends State<AppDrawerContent> {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 4),
+      margin: const EdgeInsets.only(bottom: 6),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () => _handleNavigation(context, route),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             decoration: BoxDecoration(
               color: isSelected
                   ? colorScheme.primaryContainer
                   : Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
+              border: isSelected
+                  ? Border.all(
+                      color: colorScheme.primary.withValues(alpha: 0.3),
+                      width: 1,
+                    )
+                  : null,
             ),
             child: Row(
               children: [
-                Icon(
-                  icon,
-                  size: 22,
-                  color: isSelected
-                      ? colorScheme.primary
-                      : theme.iconTheme.color?.withValues(alpha: 0.7),
+                // Icon with background
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? colorScheme.primary.withValues(alpha: 0.2)
+                        : colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 20,
+                    color: isSelected
+                        ? colorScheme.primary
+                        : colorScheme.onSurfaceVariant,
+                  ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Text(
                     label,
                     style: TextStyleConst.bodyMedium.copyWith(
                       fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.w500,
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
                       color: isSelected
                           ? colorScheme.primary
-                          : theme.textTheme.bodyMedium?.color
-                              ?.withValues(alpha: 0.8),
+                          : colorScheme.onSurface.withValues(alpha: 0.85),
                     ),
                   ),
                 ),
                 if (isSelected)
                   Container(
-                    width: 6,
-                    height: 6,
+                    width: 8,
+                    height: 8,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: colorScheme.primary,
+                      boxShadow: [
+                        BoxShadow(
+                          color: colorScheme.primary.withValues(alpha: 0.5),
+                          blurRadius: 6,
+                        ),
+                      ],
                     ),
+                  )
+                else
+                  Icon(
+                    Icons.chevron_right,
+                    size: 18,
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                   ),
               ],
             ),
@@ -339,15 +438,54 @@ class _AppDrawerContentState extends State<AppDrawerContent> {
     );
   }
 
-  Widget _buildDrawerFooter(ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Text(
-        _appVersion,
-        style: TextStyleConst.caption.copyWith(
-          color: theme.disabledColor,
+  Widget _buildDrawerFooter(ThemeData theme, AppLocalizations l10n) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
         ),
-        textAlign: TextAlign.center,
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.verified,
+              size: 20,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n.appTitle,
+                  style: TextStyleConst.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                Text(
+                  _appVersion,
+                  style: TextStyleConst.caption.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

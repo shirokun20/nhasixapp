@@ -1,204 +1,101 @@
 import 'package:flutter/material.dart';
-import 'package:nhasixapp/core/constants/colors_const.dart';
 
 /// Text style constants for consistent typography throughout the app
-/// Updated to use new ColorsConst and provide semantic text styles
+/// NOTE: Text colors are intentionally NOT specified here - they should be
+/// provided via .copyWith(color: ...) or inherited from the Theme.
+/// This ensures proper light/dark theme support.
 class TextStyleConst {
-  // ===== WEIGHT-BASED STYLES (Existing - maintained for compatibility) =====
+  // ===== WEIGHT-BASED STYLES =====
 
-  static TextStyle styleLight({
-    Color textColor = ColorsConst.darkTextPrimary,
-    double size = 14,
-  }) {
+  static TextStyle styleLight({double size = 14}) {
     return TextStyle(
       fontSize: size,
-      color: textColor,
       fontWeight: FontWeight.w300,
-      height: 1.4, // Better line height for readability
+      height: 1.4,
     );
   }
 
-  static TextStyle styleRegular({
-    Color textColor = ColorsConst.darkTextPrimary,
-    double size = 14,
-  }) {
+  static TextStyle styleRegular({double size = 14}) {
     return TextStyle(
       fontSize: size,
-      color: textColor,
       fontWeight: FontWeight.normal,
       height: 1.4,
     );
   }
 
-  static TextStyle styleMedium({
-    Color textColor = ColorsConst.darkTextPrimary,
-    double size = 14,
-  }) {
+  static TextStyle styleMedium({double size = 14}) {
     return TextStyle(
       fontSize: size,
-      color: textColor,
       fontWeight: FontWeight.w500,
       height: 1.4,
     );
   }
 
-  static TextStyle styleSemiBold({
-    Color textColor = ColorsConst.darkTextPrimary,
-    double size = 14,
-  }) {
+  static TextStyle styleSemiBold({double size = 14}) {
     return TextStyle(
       fontSize: size,
-      color: textColor,
       fontWeight: FontWeight.w600,
       height: 1.4,
     );
   }
 
-  static TextStyle styleBold({
-    Color textColor = ColorsConst.darkTextPrimary,
-    double size = 14,
-  }) {
+  static TextStyle styleBold({double size = 14}) {
     return TextStyle(
       fontSize: size,
-      color: textColor,
       fontWeight: FontWeight.w700,
       height: 1.4,
     );
   }
 
-  static TextStyle styleExtraBold({
-    Color textColor = ColorsConst.darkTextPrimary,
-    double size = 14,
-  }) {
+  static TextStyle styleExtraBold({double size = 14}) {
     return TextStyle(
       fontSize: size,
-      color: textColor,
       fontWeight: FontWeight.w800,
       height: 1.4,
     );
   }
 
-  // ===== SEMANTIC STYLES (New - for specific UI components) =====
+  // ===== SEMANTIC STYLES (inherit color from theme) =====
 
   /// Heading styles for titles and headers
-  static TextStyle get headingLarge => styleBold(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 24,
-      );
-
-  static TextStyle get headingMedium => styleSemiBold(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 20,
-      );
-
-  static TextStyle get headingSmall => styleMedium(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 18,
-      );
+  static TextStyle get headingLarge => styleBold(size: 24);
+  static TextStyle get headingMedium => styleSemiBold(size: 20);
+  static TextStyle get headingSmall => styleMedium(size: 18);
 
   /// Body text styles for content
-  static TextStyle get bodyLarge => styleRegular(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 16,
-      );
-
-  static TextStyle get bodyMedium => styleRegular(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 14,
-      );
-
-  static TextStyle get bodySmall => styleRegular(
-        textColor: ColorsConst.darkTextSecondary,
-        size: 12,
-      );
+  static TextStyle get bodyLarge => styleRegular(size: 16);
+  static TextStyle get bodyMedium => styleRegular(size: 14);
+  static TextStyle get bodySmall => styleRegular(size: 12);
 
   /// Caption and label styles
-  static TextStyle get caption => styleLight(
-        textColor: ColorsConst.darkTextSecondary,
-        size: 12,
-      );
-
-  static TextStyle get label => styleMedium(
-        textColor: ColorsConst.darkTextSecondary,
-        size: 12,
-      );
-
-  static TextStyle get overline => styleRegular(
-        textColor: ColorsConst.darkTextTertiary,
-        size: 10,
-      );
+  static TextStyle get caption => styleLight(size: 12);
+  static TextStyle get label => styleMedium(size: 12);
+  static TextStyle get overline => styleRegular(size: 10);
 
   // ===== COMPONENT-SPECIFIC STYLES =====
 
   /// Content card styles
-  static TextStyle get contentTitle => styleSemiBold(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 16,
-      );
-
-  static TextStyle get contentSubtitle => styleLight(
-        textColor: ColorsConst.darkTextSecondary,
-        size: 12,
-      );
-
-  static TextStyle get contentTag => styleRegular(
-        textColor: ColorsConst.darkTextSecondary,
-        size: 11,
-      );
+  static TextStyle get contentTitle => styleSemiBold(size: 16);
+  static TextStyle get contentSubtitle => styleLight(size: 12);
+  static TextStyle get contentTag => styleRegular(size: 11);
 
   /// Button styles
-  static TextStyle get buttonLarge => styleMedium(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 16,
-      );
-
-  static TextStyle get buttonMedium => styleMedium(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 14,
-      );
-
-  static TextStyle get buttonSmall => styleMedium(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 12,
-      );
+  static TextStyle get buttonLarge => styleMedium(size: 16);
+  static TextStyle get buttonMedium => styleMedium(size: 14);
+  static TextStyle get buttonSmall => styleMedium(size: 12);
 
   /// Navigation styles
-  static TextStyle get navigationLabel => styleMedium(
-        textColor: ColorsConst.darkTextSecondary,
-        size: 14,
-      );
-
-  static TextStyle get navigationActive => styleSemiBold(
-        textColor: ColorsConst.accentBlue,
-        size: 14,
-      );
-
-  /// Status and feedback styles
-  static TextStyle get statusSuccess => styleMedium(
-        textColor: ColorsConst.accentGreen,
-        size: 14,
-      );
-
-  static TextStyle get statusWarning => styleMedium(
-        textColor: ColorsConst.accentOrange,
-        size: 14,
-      );
-
-  static TextStyle get statusError => styleMedium(
-        textColor: ColorsConst.accentRed,
-        size: 14,
-      );
+  static TextStyle get navigationLabel => styleMedium(size: 14);
+  static TextStyle get navigationActive => styleSemiBold(size: 14);
 
   /// Loading and placeholder styles
-  static TextStyle get loadingText => styleRegular(
-        textColor: ColorsConst.darkTextSecondary,
-        size: 14,
-      );
+  static TextStyle get loadingText => styleRegular(size: 14);
+  static TextStyle get placeholderText => styleLight(size: 14);
 
-  static TextStyle get placeholderText => styleLight(
-        textColor: ColorsConst.darkTextTertiary,
-        size: 14,
-      );
+  /// Status styles (use with appropriate theme colors)
+  static TextStyle get statusSuccess => styleMedium(size: 14);
+  static TextStyle get statusWarning => styleMedium(size: 14);
+  static TextStyle get statusError => styleMedium(size: 14);
 
   // ===== UTILITY METHODS =====
 
@@ -218,123 +115,25 @@ class TextStyleConst {
         color: baseStyle.color?.withValues(alpha: opacity));
   }
 
-  /// Get appropriate text style based on context
-  static TextStyle getContextualStyle({
-    required String context,
-    Color? customColor,
-    double? customSize,
-  }) {
-    TextStyle baseStyle;
-
-    switch (context.toLowerCase()) {
-      case 'title':
-      case 'heading':
-        baseStyle = headingMedium;
-        break;
-      case 'subtitle':
-        baseStyle = bodyMedium;
-        break;
-      case 'body':
-      case 'content':
-        baseStyle = bodyLarge;
-        break;
-      case 'caption':
-      case 'meta':
-        baseStyle = caption;
-        break;
-      case 'button':
-        baseStyle = buttonMedium;
-        break;
-      case 'tag':
-        baseStyle = contentTag;
-        break;
-      case 'error':
-        baseStyle = statusError;
-        break;
-      case 'success':
-        baseStyle = statusSuccess;
-        break;
-      case 'warning':
-        baseStyle = statusWarning;
-        break;
-      default:
-        baseStyle = bodyMedium;
-    }
-
-    // Apply custom modifications if provided
-    if (customColor != null) {
-      baseStyle = withColor(baseStyle, customColor);
-    }
-    if (customSize != null) {
-      baseStyle = withSize(baseStyle, customSize);
-    }
-
-    return baseStyle;
-  }
-
   // ===== MATERIAL DESIGN 3 TEXT STYLES =====
 
   /// Display text styles (largest)
-  static TextStyle get displayLarge => styleBold(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 57,
-      );
-
-  static TextStyle get displayMedium => styleBold(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 45,
-      );
-
-  static TextStyle get displaySmall => styleBold(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 36,
-      );
+  static TextStyle get displayLarge => styleBold(size: 57);
+  static TextStyle get displayMedium => styleBold(size: 45);
+  static TextStyle get displaySmall => styleBold(size: 36);
 
   /// Headline text styles
-  static TextStyle get headlineLarge => styleBold(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 32,
-      );
-
-  static TextStyle get headlineMedium => styleSemiBold(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 28,
-      );
-
-  static TextStyle get headlineSmall => styleSemiBold(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 24,
-      );
+  static TextStyle get headlineLarge => styleBold(size: 32);
+  static TextStyle get headlineMedium => styleSemiBold(size: 28);
+  static TextStyle get headlineSmall => styleSemiBold(size: 24);
 
   /// Title text styles
-  static TextStyle get titleLarge => styleSemiBold(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 22,
-      );
-
-  static TextStyle get titleMedium => styleMedium(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 16,
-      );
-
-  static TextStyle get titleSmall => styleMedium(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 14,
-      );
+  static TextStyle get titleLarge => styleSemiBold(size: 22);
+  static TextStyle get titleMedium => styleMedium(size: 16);
+  static TextStyle get titleSmall => styleMedium(size: 14);
 
   /// Label text styles
-  static TextStyle get labelLarge => styleMedium(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 14,
-      );
-
-  static TextStyle get labelMedium => styleMedium(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 12,
-      );
-
-  static TextStyle get labelSmall => styleMedium(
-        textColor: ColorsConst.darkTextPrimary,
-        size: 11,
-      );
+  static TextStyle get labelLarge => styleMedium(size: 14);
+  static TextStyle get labelMedium => styleMedium(size: 12);
+  static TextStyle get labelSmall => styleMedium(size: 11);
 }

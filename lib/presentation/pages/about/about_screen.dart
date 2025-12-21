@@ -388,11 +388,15 @@ class _AboutContentState extends State<_AboutContent>
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyleConst.bodySmall.copyWith(color: Colors.grey),
+        style: TextStyleConst.bodySmall.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       ),
       trailing: isExternal
-          ? const Icon(Icons.open_in_new, size: 16, color: Colors.grey)
-          : const Icon(Icons.chevron_right, color: Colors.grey),
+          ? Icon(Icons.open_in_new,
+              size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant)
+          : Icon(Icons.chevron_right,
+              color: Theme.of(context).colorScheme.onSurfaceVariant),
     );
   }
 

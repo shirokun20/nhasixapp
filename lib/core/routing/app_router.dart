@@ -36,9 +36,12 @@ class AppRouter {
       GoRoute(
         path: AppRoute.home,
         name: AppRoute.homeName,
-        builder: (context, state) {
-          return const MainScreenScrollable(); // Phase 5: Testing scrollable architecture
-        },
+        pageBuilder: (context, state) => AppAnimations.animatedPageBuilder(
+          context,
+          state,
+          const MainScreenScrollable(),
+          type: RouteTransitionType.fade,
+        ),
       ),
 
       // Search Screen
@@ -160,21 +163,36 @@ class AppRouter {
       GoRoute(
         path: AppRoute.favorites,
         name: AppRoute.favoritesName,
-        builder: (context, state) => const FavoritesScreen(),
+        pageBuilder: (context, state) => AppAnimations.animatedPageBuilder(
+          context,
+          state,
+          const FavoritesScreen(),
+          type: RouteTransitionType.fade,
+        ),
       ),
 
       // Downloads Screen
       GoRoute(
         path: AppRoute.downloads,
         name: AppRoute.downloadsName,
-        builder: (context, state) => const DownloadsScreen(),
+        pageBuilder: (context, state) => AppAnimations.animatedPageBuilder(
+          context,
+          state,
+          const DownloadsScreen(),
+          type: RouteTransitionType.fade,
+        ),
       ),
 
       // Offline Content Screen
       GoRoute(
         path: AppRoute.offline,
         name: AppRoute.offlineName,
-        builder: (context, state) => const OfflineContentScreen(),
+        pageBuilder: (context, state) => AppAnimations.animatedPageBuilder(
+          context,
+          state,
+          const OfflineContentScreen(),
+          type: RouteTransitionType.fade,
+        ),
       ),
 
       // History Screen
@@ -185,7 +203,7 @@ class AppRouter {
           context,
           state,
           const HistoryScreen(),
-          type: RouteTransitionType.slideUp,
+          type: RouteTransitionType.fade,
         ),
       ),
 
@@ -261,7 +279,12 @@ class AppRouter {
       GoRoute(
         path: AppRoute.main,
         name: AppRoute.mainName,
-        builder: (context, state) => const MainScreenScrollable(),
+        pageBuilder: (context, state) => AppAnimations.animatedPageBuilder(
+          context,
+          state,
+          const MainScreenScrollable(),
+          type: RouteTransitionType.fade,
+        ),
       ),
     ],
 
