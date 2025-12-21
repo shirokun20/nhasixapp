@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.7.0] - 2025-12-21
+
+### 🌟 Rebranding & UI Overhaul
+- **Rebranded to "Kuron"**: New name, identity, and premium feel.
+- **Premium UI Redesign**:
+  - **Glassmorphism App Drawer**: Animated logo, gradients, and modern navigation.
+  - **Paper-Like Light Theme**: Completely revamped light mode with warm, comfortable tones.
+  - **Refined Settings**: Card-based layouts, better controls, and cleaner typography.
+- **New About Screen**: Interactive branding, changelog summary, and direct links.
+
+### Added
+- **In-App Update Checker**: Automatically checks GitHub releases for updates.
+- **Animated Logos**: Pulsing animations in Drawer and About screen.
+- **Sort By UI**: Improved sorting chips and dropdowns styling.
+
+### Fixed
+- **Localization Bug**: Fixed app name reverting to old name in some locales.
+- **Text Visibility**: Fixed invisible text in light theme hardcoded colors.
+- **Navigation Transitions**: Unified smooth fade transitions across all screens.
+
 ## [0.6.2] - 2025-12-21
 
 ### Fixed
