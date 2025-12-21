@@ -75,7 +75,6 @@ class _SearchScreenState extends State<SearchScreen> {
         if (savedFilter.hasFilters) {
           _currentFilter = savedFilter;
           _searchController.text = savedFilter.query ?? '';
-          Logger().i('SearchScreen: Loaded saved search filter');
         }
       }
 
@@ -371,9 +370,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
         // Update UI
         setState(() {});
-
-        Logger().i(
-            'SearchScreen: Updated $filterType filters with ${result.length} items');
       }
     } catch (e) {
       Logger().e('SearchScreen: Error navigating to filter data: $e');
@@ -558,7 +554,6 @@ class _SearchScreenState extends State<SearchScreen> {
                   _languages,
                   _currentFilter.language, (value) {
                 _currentFilter = _currentFilter.copyWith(language: value);
-                Logger().i(_currentFilter.language);
                 _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
                 setState(() {});
               }),
@@ -1170,7 +1165,6 @@ class _SearchScreenState extends State<SearchScreen> {
     try {
       // Save search filter to local storage for persistence
       await getIt<LocalDataSource>().saveSearchFilter(_currentFilter.toJson());
-      Logger().i('SearchScreen: Saved search filter to local storage');
 
       // Add to search history if there's a query
       if (_currentFilter.query != null && _currentFilter.query!.isNotEmpty) {

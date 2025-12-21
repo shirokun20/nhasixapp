@@ -64,12 +64,10 @@ class _DetailScreenState extends State<DetailScreen> {
 
     try {
       _isNavigating = true;
-      Logger().i("Starting tag browsing navigation for: $tagName");
 
       // Navigate to ContentByTagScreen
       if (mounted) {
         AppRouter.goToContentByTag(context, tagName);
-        Logger().i("Navigation completed successfully for tag: $tagName");
       } else {
         Logger().w("Widget unmounted before navigation for tag: $tagName");
       }

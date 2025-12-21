@@ -133,36 +133,28 @@ class _FilterDataScreenState extends State<FilterDataScreen>
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _filterDataCubit,
-      child: BlocListener<FilterDataCubit, FilterDataState>(
-        listener: (context, state) {
-          debugPrint('FilterDataScreen: State changed to ${state.runtimeType}');
-          if (state is FilterDataLoaded) {
-            debugPrint("FilterDataScreen: lastUpdated: ${state.lastUpdated}");
-          }
-        },
-        child: AppScaffoldWithOffline(
-          title: AppLocalizations.of(context)!.filterDataTitle,
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          appBar: _buildAppBar(),
-          body: Column(
-            children: [
-              // Filter type tab bar
-              _buildFilterTypeTabBar(),
+      child: AppScaffoldWithOffline(
+        title: AppLocalizations.of(context)!.filterDataTitle,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        appBar: _buildAppBar(),
+        body: Column(
+          children: [
+            // Filter type tab bar
+            _buildFilterTypeTabBar(),
 
-              // Search bar
-              _buildSearchBar(),
+            // Search bar
+            _buildSearchBar(),
 
-              // Selected filters (horizontal scrollable)
-              _buildSelectedFiltersSection(),
+            // Selected filters (horizontal scrollable)
+            _buildSelectedFiltersSection(),
 
-              // Filter results
-              Expanded(
-                child: _buildFilterResults(),
-              ),
-            ],
-          ),
-          bottomNavigationBar: _buildBottomActions(),
+            // Filter results
+            Expanded(
+              child: _buildFilterResults(),
+            ),
+          ],
         ),
+        bottomNavigationBar: _buildBottomActions(),
       ),
     );
   }
@@ -186,8 +178,6 @@ class _FilterDataScreenState extends State<FilterDataScreen>
           buildWhen: (previous, current) {
             // Always rebuild when state changes
             if (previous != current) {
-              debugPrint(
-                  'FilterDataScreen: AppBar Clear All button rebuilding - ${current.runtimeType}');
               if (current is FilterDataLoaded && previous is FilterDataLoaded) {
                 return current.lastUpdated != previous.lastUpdated;
               }
@@ -249,14 +239,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
     return BlocBuilder<FilterDataCubit, FilterDataState>(
       buildWhen: (previous, current) {
         // Always rebuild when state changes
-        if (previous != current) {
-          debugPrint(
-              'FilterDataScreen: Selected filters section rebuilding - ${current.runtimeType}');
-          if (current is FilterDataLoaded) {
-            debugPrint(
-                'FilterDataScreen: Selected filters count: ${current.selectedFilters?.length ?? 0}');
-          }
-        }
+        // Always rebuild when state changes
         return true;
       },
       builder: (context, state) {
@@ -295,16 +278,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
     return BlocBuilder<FilterDataCubit, FilterDataState>(
       buildWhen: (previous, current) {
         // Always rebuild when state changes
-        if (previous != current) {
-          debugPrint(
-              'FilterDataScreen: Filter results rebuilding - ${current.runtimeType}');
-          if (current is FilterDataLoaded) {
-            debugPrint(
-                'FilterDataScreen: Search results count: ${current.searchResults?.length ?? 0}');
-            debugPrint(
-                'FilterDataScreen: Selected filters count: ${current.selectedFilters?.length ?? 0}');
-          }
-        }
+        // Always rebuild when state changes
         return true;
       },
       builder: (context, state) {
@@ -399,9 +373,6 @@ class _FilterDataScreenState extends State<FilterDataScreen>
               final isIncluded = state.isIncluded(tag.name);
               final isExcluded = state.isExcluded(tag.name);
 
-              debugPrint(
-                  'FilterDataScreen: Building FilterItemCard for ${tag.name} - included: $isIncluded, excluded: $isExcluded');
-
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: FilterItemCard(
@@ -427,10 +398,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
     return BlocBuilder<FilterDataCubit, FilterDataState>(
       buildWhen: (previous, current) {
         // Always rebuild when state changes
-        if (previous != current) {
-          debugPrint(
-              'FilterDataScreen: Bottom actions rebuilding - ${current.runtimeType}');
-        }
+        // Always rebuild when state changes
         return true;
       },
       builder: (context, state) {

@@ -15,7 +15,7 @@ import 'package:nhasixapp/presentation/widgets/progress_indicator_widget.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 
 /// Screen for browsing content by specific tag
-/// 
+///
 /// URL format: /search?q=[tag-name]
 /// Simple UI: Back button + Title + Filter + Content List + Pagination
 /// No database save, no highlight effects
@@ -50,7 +50,6 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
       final userDataRepository = getIt<UserDataRepository>();
       _currentSortOption = await userDataRepository.getSortingPreference();
 
-
       // Create search filter for the tag
       final searchFilter = SearchFilter(
         query: widget.tagQuery,
@@ -60,8 +59,7 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
 
       _currentSearchFilter = searchFilter;
       _contentBloc.add(ContentSearchEvent(searchFilter));
-      
-      Logger().i('ContentByTagScreen: Loading content for tag: ${widget.tagQuery}');
+
       setState(() {});
     } catch (e) {
       Logger().e('ContentByTagScreen: Error initializing content: $e');
@@ -187,8 +185,6 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
         _currentSearchFilter = newFilter;
         _contentBloc.add(ContentSearchEvent(newFilter));
       }
-      
-      Logger().i('ContentByTagScreen: Applied sorting $newSort');
     } catch (e) {
       Logger().e('ContentByTagScreen: Error changing sorting: $e');
       // Revert sort option on error
@@ -214,44 +210,49 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
   /// Determine if content should be blurred (excluded content)
   bool _shouldBlurContent(Content content) {
     if (_currentSearchFilter == null) return false;
-    
+
     final filter = _currentSearchFilter!;
-    
+
     // Check excluded tags
     for (final tagFilter in filter.tags.where((t) => t.isExcluded)) {
-      if (content.tags.any((tag) => tag.name.toLowerCase() == tagFilter.value.toLowerCase())) {
+      if (content.tags.any(
+          (tag) => tag.name.toLowerCase() == tagFilter.value.toLowerCase())) {
         return true;
       }
     }
-    
+
     // Check excluded groups
     for (final groupFilter in filter.groups.where((g) => g.isExcluded)) {
-      if (content.groups.any((group) => group.toLowerCase() == groupFilter.value.toLowerCase())) {
+      if (content.groups.any(
+          (group) => group.toLowerCase() == groupFilter.value.toLowerCase())) {
         return true;
       }
     }
-    
+
     // Check excluded characters
     for (final charFilter in filter.characters.where((c) => c.isExcluded)) {
-      if (content.characters.any((char) => char.toLowerCase() == charFilter.value.toLowerCase())) {
+      if (content.characters.any(
+          (char) => char.toLowerCase() == charFilter.value.toLowerCase())) {
         return true;
       }
     }
-    
+
     // Check excluded parodies
     for (final parodFilter in filter.parodies.where((p) => p.isExcluded)) {
-      if (content.parodies.any((parod) => parod.toLowerCase() == parodFilter.value.toLowerCase())) {
+      if (content.parodies.any(
+          (parod) => parod.toLowerCase() == parodFilter.value.toLowerCase())) {
         return true;
       }
     }
-    
+
     // Check excluded artists
     for (final artistFilter in filter.artists.where((a) => a.isExcluded)) {
-      if (content.artists.any((artist) => artist.toLowerCase() == artistFilter.value.toLowerCase())) {
+      if (content.artists.any((artist) =>
+          artist.toLowerCase() == artistFilter.value.toLowerCase())) {
         return true;
       }
     }
-    
+
     return false;
   }
 

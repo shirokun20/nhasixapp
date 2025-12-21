@@ -108,15 +108,11 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                 savedFilter.copyWith(sortBy: _currentSortOption);
             _isShowingSearchResults = true;
             _contentBloc.add(ContentSearchEvent(_currentSearchFilter!));
-            Logger().i(
-                'MainScreen: Loading saved search results with sort: $_currentSortOption');
           } else {
             // Invalid or empty filter, clear it and load normal content
             await getIt<LocalDataSource>().removeLastSearchFilter();
             _isShowingSearchResults = false;
             _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
-            Logger().i(
-                'MainScreen: Cleared invalid search filter, loading normal content with sort: $_currentSortOption');
           }
         } catch (filterError) {
           // Error parsing filter data, clear it and load normal content
@@ -130,8 +126,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         // No saved filter, load normal content list with saved sort option
         _isShowingSearchResults = false;
         _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
-        Logger().i(
-            'MainScreen: No saved search filter, loading normal content with sort: $_currentSortOption');
       }
 
       setState(() {});
@@ -170,8 +164,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
               savedFilter.copyWith(sortBy: _currentSortOption);
           _isShowingSearchResults = true;
           _contentBloc.add(ContentSearchEvent(_currentSearchFilter!));
-          Logger().i(
-              'MainScreen: Reloaded search filter: ${_currentSearchFilter?.buildQueryString()}');
+
           setState(() {});
           return;
         }
@@ -265,33 +258,17 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
   /// Build the new scrollable body with all components integrated
   Widget _buildScrollableBody() {
-    // Debug: Check bloc instance
-    final bloc = context.read<ContentBloc>();
-    debugPrint(
-        '🔍 _buildScrollableBody: ContentBloc instance hashCode: ${bloc.hashCode}');
-    debugPrint('🔍 Current ContentBloc state: ${bloc.state.runtimeType}');
-
     return Container(
       color: Theme.of(context).colorScheme.surface,
       child: BlocConsumer<ContentBloc, ContentState>(
         buildWhen: (previous, current) {
-          debugPrint('🔍 BlocConsumer buildWhen called:');
-          debugPrint('  - Previous: ${previous.runtimeType}');
-          debugPrint('  - Current: ${current.runtimeType}');
-          debugPrint('  - Should rebuild: ${previous != current}');
-          return true; // Always rebuild for debugging
+          return previous != current;
         },
         listenWhen: (previous, current) {
-          debugPrint('🔍 BlocConsumer listenWhen called:');
-          debugPrint('  - Previous: ${previous.runtimeType}');
-          debugPrint('  - Current: ${current.runtimeType}');
-          return true; // Always listen for debugging
+          return previous != current;
         },
         listener: (context, state) {
-          debugPrint(
-              '🎨 MainScreen BlocConsumer LISTENER: state type: ${state.runtimeType}');
           if (state is ContentError) {
-            debugPrint('🎨 LISTENER: Showing error snackbar');
             // Show error snackbar
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -300,7 +277,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                     ? SnackBarAction(
                         label: AppLocalizations.of(context)!.retry,
                         onPressed: () {
-                          debugPrint('🎨 SNACKBAR: Retry button clicked');
                           // Use same pattern as error screen retry button
                           _contentBloc.add(ContentLoadEvent(
                             sortBy: _currentSortOption,
@@ -314,9 +290,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           }
         },
         builder: (context, state) {
-          debugPrint(
-              '🎨 MainScreen BlocConsumer BUILDER: Building UI with state type: ${state.runtimeType}');
-
           return Column(
             children: [
               // Offline banner - tetap di atas
@@ -339,8 +312,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   /// Build scrollable content with all components integrated
   Widget _buildScrollableContent(ContentState state) {
     // Use state parameter directly - no nested BlocBuilder/BlocConsumer
-    debugPrint(
-        '🎨 MainScreen _buildScrollableContent: state type: ${state.runtimeType}');
 
     if (state is ContentInitial) {
       return Center(
@@ -353,27 +324,21 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     }
 
     if (state is ContentLoading) {
-      debugPrint('🎨 MainScreen: Showing loading state');
       return _buildLoadingState(state);
     }
 
     if (state is ContentEmpty) {
-      debugPrint('🎨 MainScreen: Showing empty state');
       return _buildEmptyState(state);
     }
 
     if (state is ContentError) {
-      debugPrint('🎨 MainScreen: Showing error state');
       return _buildErrorState(state);
     }
 
     if (state is ContentLoaded) {
-      debugPrint(
-          '🎨 MainScreen: Showing loaded state with ${state.contents.length} contents');
       return _buildScrollableContentGrid(state);
     }
 
-    debugPrint('🎨 MainScreen: Unknown state, showing empty widget');
     return const SizedBox.shrink();
   }
 
@@ -635,7 +600,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
       // Trigger search with the filter
       _contentBloc.add(ContentSearchEvent(searchFilter));
-      Logger().i('MainScreen: Loading search results from tag tap');
     }
   }
 
@@ -654,7 +618,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
       // Apply sorting using ContentBloc event
       _contentBloc.add(ContentSortChangedEvent(newSort));
-      Logger().i('MainScreen: Applied sorting $newSort');
 
       // Update current search filter if showing search results
       if (_isShowingSearchResults && _currentSearchFilter != null) {
@@ -675,8 +638,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   /// Handle refresh indicator pull-to-refresh
   Future<void> _handleRefresh() async {
     try {
-      Logger().i('MainScreen: Refresh triggered by user pull-to-refresh');
-
       // Show refresh feedback
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -710,9 +671,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       // Trigger ContentRefreshEvent with current sort option and current page
       _contentBloc.add(ContentRefreshEvent(
           sortBy: _currentSortOption, currentPage: currentPage));
-
-      Logger().i(
-          'MainScreen: Refresh event sent with sort: $_currentSortOption, page: $currentPage');
     } catch (e) {
       Logger().e('MainScreen: Error during refresh: $e');
       // Error handling is managed by ContentBloc state changes
@@ -958,9 +916,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     // 3. Load normal content with current sort option
     // 4. Show success/error states properly
     _contentBloc.add(ContentClearSearchEvent(sortBy: _currentSortOption));
-
-    Logger().i(
-        'MainScreen: Triggered clear search event with sort: $_currentSortOption');
   }
 
   /// Build content footer with pagination
@@ -1052,18 +1007,12 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       // Clean up URL (remove trailing ? or & and empty parameters)
       url = _cleanUrl(url);
 
-      Logger().i('Built URL for browser: $url');
-
       // Validate URL format
       if (url.isEmpty) {
         throw 'Generated URL is empty';
       }
 
       final uri = Uri.parse(url);
-      Logger().i('Parsed URI: $uri');
-      Logger()
-          .i('URI scheme: ${uri.scheme}, host: ${uri.host}, path: ${uri.path}');
-      Logger().i('URI query: ${uri.query}');
 
       // Additional validation
       if (uri.scheme.isEmpty || uri.host.isEmpty) {
@@ -1079,7 +1028,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
           launched = true;
-          Logger().i('Successfully opened in browser via canLaunchUrl: $url');
         } else {
           Logger().w('canLaunchUrl returned false for: $url');
           lastError = 'canLaunchUrl returned false';
@@ -1091,12 +1039,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
       // Fallback: try launching directly for https URLs
       if (!launched && uri.scheme == 'https') {
-        try {
-          Logger().i('Attempting direct launch for https URL: $url');
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-          launched = true;
-          Logger().i('Successfully opened in browser via direct launch: $url');
-        } catch (e) {
+        try {} catch (e) {
           Logger().e('Direct launch failed: $e');
           lastError = 'Direct launch failed: $e';
         }
@@ -1202,9 +1145,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           queryParameters: cleanParams.isEmpty ? null : cleanParams);
       String cleanedUrl = cleanUri.toString();
 
-      Logger().i('URL cleaned from: $url');
-      Logger().i('URL cleaned to: $cleanedUrl');
-
       return cleanedUrl;
     } catch (e) {
       Logger().e('Error cleaning URL: $e');
@@ -1288,7 +1228,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
               content.id, mounted ? context : null);
           if (isDownloaded) {
             alreadyDownloadedCount++;
-            Logger().i('Skipping already downloaded gallery: ${content.title}');
           } else {
             galleriesNeedDownload.add(content);
           }
@@ -1379,7 +1318,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         try {
           downloadBloc.add(DownloadQueueEvent(content: content));
           queuedCount++;
-          Logger().i('Queued download for: ${content.title}');
         } catch (e) {
           Logger().e('Failed to queue download for ${content.id}: $e');
         }
@@ -1423,9 +1361,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           ),
         );
       }
-
-      Logger().i(
-          'Bulk download completed: $queuedCount/${galleriesNeedDownload.length} queued successfully, $alreadyDownloadedCount skipped');
     } catch (e) {
       Logger().e('Error in bulk download: $e');
       if (mounted) {
