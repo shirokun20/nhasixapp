@@ -8,7 +8,6 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/domain/repositories/content_repository.dart';
@@ -33,6 +32,8 @@ import 'package:nhasixapp/presentation/widgets/pagination_widget.dart';
 import 'package:nhasixapp/presentation/widgets/sorting_widget.dart';
 import 'package:nhasixapp/presentation/widgets/offline_indicator_widget.dart';
 import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
+import 'package:nhasixapp/presentation/pages/main/widgets/main_grid_card.dart';
+import 'package:nhasixapp/presentation/pages/main/widgets/main_featured_card.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 
 class MainScreenScrollable extends StatefulWidget {
@@ -607,12 +608,16 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     while (currentIndex < contents.length) {
       // Check if current position should be featured
       if (featuredPositions.contains(currentIndex)) {
+        final featuredContent =
+            contents[currentIndex]; // Capture content before closure
         children.add(
           Padding(
             padding:
                 const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-            child: _buildFullWidthFeaturedCard(
-                contents[currentIndex], currentIndex),
+            child: MainFeaturedCard(
+              content: featuredContent,
+              onTap: () => _onContentTap(featuredContent),
+            ),
           ),
         );
         currentIndex++;
@@ -639,6 +644,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
           if (!hasSecond) {
             // Last item alone - make it a smaller card (not full width, but centered)
+            final singleContent = batchContents[i]; // Capture before closure
             children.add(
               Padding(
                 padding:
@@ -646,7 +652,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                 child: Row(
                   children: [
                     Expanded(
-                      child: _buildGridCard(batchContents[i], currentIndex + i),
+                      child: MainGridCard(
+                        content: singleContent,
+                        onTap: () => _onContentTap(singleContent),
+                      ),
                     ),
                     const SizedBox(width: 10),
                     const Expanded(
@@ -657,6 +666,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             );
           } else {
             // Normal pair of items
+            final leftContent = batchContents[i]; // Capture before closure
+            final rightContent = batchContents[i + 1];
             children.add(
               Padding(
                 padding:
@@ -665,12 +676,17 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: _buildGridCard(batchContents[i], currentIndex + i),
+                      child: MainGridCard(
+                        content: leftContent,
+                        onTap: () => _onContentTap(leftContent),
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _buildGridCard(
-                          batchContents[i + 1], currentIndex + i + 1),
+                      child: MainGridCard(
+                        content: rightContent,
+                        onTap: () => _onContentTap(rightContent),
+                      ),
                     ),
                   ],
                 ),
@@ -687,456 +703,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         (context, index) => children[index],
         childCount: children.length,
       ),
-    );
-  }
-
-  /// Sanitize cover URL - removes double extensions like cover.jpg.webp → cover.webp
-  String _sanitizeCoverUrl(String url) {
-    if (url.isEmpty) return url;
-
-    // Remove double extensions (e.g., cover.jpg.webp → cover.webp)
-    // We assume the LAST extension is the correct one (the actual file format)
-    final doubleExtPattern = RegExp(
-        r'\.(jpg|jpeg|png|gif|webp)\.(jpg|jpeg|png|gif|webp)$',
-        caseSensitive: false);
-    return url.replaceAllMapped(
-        doubleExtPattern, (match) => '.${match.group(2)}');
-  }
-
-  /// Build image with fallback to page 1 if cover fails to load
-  /// Generates fallback URL from cover URL pattern:
-  /// Cover: t.nhentai.net/galleries/{media_id}/cover.jpg
-  /// Page1: i.nhentai.net/galleries/{media_id}/1.jpg
-  Widget _buildImageWithFallback({
-    required BuildContext context,
-    required String coverUrl,
-    String? fallbackUrl,
-  }) {
-    // Sanitize cover URL - fix double extensions like cover.jpg.webp
-    final sanitizedCoverUrl = _sanitizeCoverUrl(coverUrl);
-
-    // Generate page 1 fallback from cover URL
-    String? generatedFallback = fallbackUrl;
-    if ((generatedFallback == null || generatedFallback.isEmpty) &&
-        sanitizedCoverUrl.contains('galleries/')) {
-      // Extract media_id and file extension from cover URL
-      // Pattern: https://t.nhentai.net/galleries/{media_id}/cover.{ext}
-      final regex = RegExp(r'galleries/(\d+)/cover\.(\w+)');
-      final match = regex.firstMatch(sanitizedCoverUrl);
-      if (match != null) {
-        final mediaId = match.group(1);
-        final ext = match.group(2);
-        // Generate page 1 URL: https://i.nhentai.net/galleries/{media_id}/1.{ext}
-        generatedFallback = 'https://i.nhentai.net/galleries/$mediaId/1.$ext';
-      }
-    }
-
-    return CachedNetworkImage(
-      imageUrl:
-          sanitizedCoverUrl, // Use sanitized URL without double extensions
-      fit: BoxFit.cover,
-      placeholder: (context, url) => Container(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        child: Center(
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-      ),
-      errorWidget: (context, url, error) {
-        // Try fallback URL (page 1 image) if available
-        if (generatedFallback != null &&
-            generatedFallback.isNotEmpty &&
-            generatedFallback != sanitizedCoverUrl) {
-          return CachedNetworkImage(
-            imageUrl: generatedFallback,
-            fit: BoxFit.cover,
-            placeholder: (context, url) => Container(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: Center(
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ),
-            errorWidget: (context, url, error) => Container(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: Icon(
-                Icons.broken_image,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          );
-        }
-        // No fallback available, show broken image
-        return Container(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: Icon(
-            Icons.broken_image,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        );
-      },
-    );
-  }
-
-  /// Build a grid card with proper aspect ratio for 2-column layout
-  Widget _buildGridCard(Content content, int index) {
-    return FutureBuilder<bool>(
-      future: ContentDownloadCache.isDownloaded(content.id, context),
-      builder: (context, snapshot) {
-        final isDownloaded = snapshot.data ?? false;
-
-        return GestureDetector(
-          onTap: () => _onContentTap(content),
-          child: AspectRatio(
-            aspectRatio: 0.7,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                // Neon green border for downloaded items
-                border: isDownloaded
-                    ? Border.all(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? const Color(
-                                0xFF00FF88) // Neon green for dark mode
-                            : const Color(
-                                0xFF2E7D32), // Dark green for light mode
-                        width: 2.5,
-                      )
-                    : null,
-                boxShadow: [
-                  BoxShadow(
-                    color: isDownloaded
-                        ? (Theme.of(context).brightness == Brightness.dark
-                            ? const Color(0xFF00FF88).withValues(alpha: 0.4)
-                            : const Color(0xFF2E7D32).withValues(alpha: 0.4))
-                        : Theme.of(context)
-                            .colorScheme
-                            .shadow
-                            .withValues(alpha: 0.1),
-                    blurRadius: isDownloaded ? 12 : 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // Cover image with fallback to page 1
-                    _buildImageWithFallback(
-                      context: context,
-                      coverUrl: content.coverUrl,
-                      fallbackUrl: content.imageUrls.isNotEmpty
-                          ? content.imageUrls.first
-                          : null,
-                    ),
-
-                    // Gradient overlay
-                    Positioned.fill(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withValues(alpha: 0.75),
-                            ],
-                            stops: const [0.5, 1.0],
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // Content info at bottom
-                    Positioned(
-                      left: 8,
-                      right: 8,
-                      bottom: 8,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            content.getDisplayTitle(),
-                            style: TextStyleConst.bodySmall.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.menu_book,
-                                size: 12,
-                                color: Colors.white.withValues(alpha: 0.8),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${content.pageCount}',
-                                style: TextStyleConst.overline.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.8),
-                                ),
-                              ),
-                              if (content.language.isNotEmpty) ...[
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    content.language.toUpperCase(),
-                                    style: TextStyleConst.overline.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onPrimary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // OFFLINE badge for downloaded items
-                    if (isDownloaded)
-                      Positioned(
-                        top: 8,
-                        left: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .tertiary
-                                .withValues(alpha: 0.9),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.offline_bolt,
-                                size: 12,
-                                color: Theme.of(context).colorScheme.onTertiary,
-                              ),
-                              const SizedBox(width: 3),
-                              Text(
-                                'OFFLINE',
-                                style: TextStyleConst.overline.copyWith(
-                                  color:
-                                      Theme.of(context).colorScheme.onTertiary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 9,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  /// Build full-width featured card for Pinterest-style emphasis
-  Widget _buildFullWidthFeaturedCard(Content content, int index) {
-    return FutureBuilder<bool>(
-      future: ContentDownloadCache.isDownloaded(content.id, context),
-      builder: (context, snapshot) {
-        final isDownloaded = snapshot.data ?? false;
-
-        return GestureDetector(
-          onTap: () => _onContentTap(content),
-          child: Container(
-            height: 200,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .shadow
-                      .withValues(alpha: 0.15),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Full-width cover image with fallback
-                  _buildImageWithFallback(
-                    context: context,
-                    coverUrl: content.coverUrl,
-                    fallbackUrl: content.imageUrls.isNotEmpty
-                        ? content.imageUrls.first
-                        : null,
-                  ),
-
-                  // Gradient overlay for text readability
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.8),
-                          ],
-                          stops: const [0.4, 1.0],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Featured badge
-                  Positioned(
-                    top: 12,
-                    left: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.star,
-                            size: 14,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Featured',
-                            style: TextStyleConst.overline.copyWith(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Downloaded indicator
-                  if (isDownloaded)
-                    Positioned(
-                      top: 12,
-                      right: 12,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.tertiary,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.download_done,
-                          size: 18,
-                          color: Theme.of(context).colorScheme.onTertiary,
-                        ),
-                      ),
-                    ),
-
-                  // Content info at bottom
-                  Positioned(
-                    left: 12,
-                    right: 12,
-                    bottom: 12,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          content.getDisplayTitle(),
-                          style: TextStyleConst.bodyMedium.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.menu_book,
-                              size: 14,
-                              color: Colors.white.withValues(alpha: 0.9),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${content.pageCount} pages',
-                              style: TextStyleConst.bodySmall.copyWith(
-                                color: Colors.white.withValues(alpha: 0.9),
-                              ),
-                            ),
-                            if (content.language.isNotEmpty) ...[
-                              const SizedBox(width: 12),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color:
-                                      Theme.of(context).colorScheme.secondary,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  content.language.toUpperCase(),
-                                  style: TextStyleConst.overline.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSecondary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 
