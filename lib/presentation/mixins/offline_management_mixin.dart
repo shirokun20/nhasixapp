@@ -7,6 +7,7 @@ import 'package:nhasixapp/core/utils/permission_helper.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
 import 'package:nhasixapp/services/export_service.dart';
+import 'package:nhasixapp/services/notification_service.dart';
 
 /// Mixin providing common offline content management functionality
 /// Used by screens that need to import/export/refresh offline content
@@ -160,9 +161,17 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
 
       // Auto-sync backup content to database
       final offlineManager = getIt<OfflineContentManager>();
+
+      // SHOW SYNC NOTIFICATION
+      final notificationService = getIt<NotificationService>();
+      await notificationService.showSyncStarted();
+
       final syncResult = await offlineManager.syncBackupToDatabase(backupPath);
       final synced = syncResult['synced'] ?? 0;
       final updated = syncResult['updated'] ?? 0;
+
+      // SYNC COMPLETED
+      await notificationService.showSyncCompleted(itemCount: synced + updated);
 
       if (!context.mounted) return;
 

@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.7.1] - 2025-12-21
+
+### 🛠 Fixes & Improvements
+- **Detail Screen Image**:
+  - Replaced unreliable cover image source with **Page 1 Full Image** (guaranteed high definition & availability).
+  - Fixed logic so Detail cover works **Offline** by checking downloaded pages.
+- **Sync Notification Context**:
+  - Notification `System Sync` now only appears during explicit storage scans (Import/Auto Scan).
+  - Silenced notifications for internal DB refreshes and App Startup.
+- **Image Fallback**:
+  - Implemented robust fallback to Page 1 Thumbnail (`1t`) for list items if main cover fails.
+
 ## [0.7.0] - 2025-12-21
 
 ### 🌟 Rebranding & UI Overhaul

@@ -463,7 +463,6 @@ void _setupCubits() {
   getIt.registerLazySingleton<OfflineSearchCubit>(() => OfflineSearchCubit(
         offlineContentManager: getIt<OfflineContentManager>(),
         userDataRepository: getIt<UserDataRepository>(),
-        notificationService: getIt<NotificationService>(),
         logger: getIt<Logger>(),
       ));
 
