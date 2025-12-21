@@ -19,6 +19,7 @@ class DetailCubitFactory {
       removeFromFavoritesUseCase: getIt<RemoveFromFavoritesUseCase>(),
       userDataRepository: getIt<UserDataRepository>(),
       imageMetadataService: getIt<ImageMetadataService>(),
+      contentRepository: getIt<ContentRepository>(),
       logger: getIt<Logger>(),
     );
   }

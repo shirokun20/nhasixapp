@@ -37,12 +37,26 @@ class _DetailScreenState extends State<DetailScreen> {
   @override
   void initState() {
     super.initState();
-    _detailCubit = getIt<DetailCubit>()..loadContentDetail(widget.contentId);
+    _detailCubit = getIt<DetailCubit>();
+
+    // Load content detail first, then load related content separately
+    _loadContentAndRelated();
 
     // Initialize download manager if not already initialized
     final downloadBloc = context.read<DownloadBloc>();
     if (downloadBloc.state is DownloadInitial) {
       downloadBloc.add(const DownloadInitializeEvent());
+    }
+  }
+
+  /// Load content detail and related content as separate API calls
+  Future<void> _loadContentAndRelated() async {
+    // First call: Load main content detail
+    await _detailCubit.loadContentDetail(widget.contentId);
+
+    // Second call: Load related content independently
+    if (mounted && _detailCubit.state is DetailLoaded) {
+      _detailCubit.loadRelatedContent();
     }
   }
 
@@ -287,8 +301,11 @@ class _DetailScreenState extends State<DetailScreen> {
                   children: [
                     // Cover image with progressive loading
                     ProgressiveImageWidget(
-                      networkUrl: content.coverUrl,
+                      networkUrl: content.imageUrls.isNotEmpty
+                          ? content.imageUrls.first
+                          : content.coverUrl,
                       contentId: content.id,
+                      pageNumber: content.imageUrls.isNotEmpty ? 1 : null,
                       isThumbnail: false,
                       width: double.infinity,
                       height: double.infinity,
@@ -1023,21 +1040,27 @@ class _DetailScreenState extends State<DetailScreen> {
   /// Get theme-aware tag color based on tag type
   Color _getTagColor(BuildContext context, String tagType) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     switch (tagType.toLowerCase()) {
       case 'artist':
-        return colorScheme.primary; // Better contrast than tertiary
+        return colorScheme.primary;
       case 'character':
         return colorScheme.secondary;
       case 'parody':
-        return colorScheme.tertiary; // Move tertiary to parody
+        return colorScheme.tertiary;
       case 'group':
-        return colorScheme.error; // Use error for better visibility
+        return colorScheme.error;
       case 'language':
-        return colorScheme.onSurfaceVariant; // Better contrast for language
+        // Use primary for language in light mode since onSurfaceVariant is too light
+        return isDarkMode ? colorScheme.onSurfaceVariant : colorScheme.primary;
       case 'tag':
       default:
-        return colorScheme.outline; // Use outline for default tags
+        // Use onSurface for default tags in light mode for better visibility
+        // In dark mode, outline works fine
+        return isDarkMode
+            ? colorScheme.outline
+            : colorScheme.onSurface.withValues(alpha: 0.8);
     }
   }
 

@@ -92,6 +92,7 @@ class ContentRepositoryImpl implements ContentRepository {
 
           // Only return cached content if it is complete (has images)
           // Search results cached in getContentList often lack imageUrls
+          // Note: relatedContent is loaded separately via loadRelatedContent()
           if (multiLayerCached != null) {
             if (multiLayerCached.imageUrls.isNotEmpty) {
               _logger.i(

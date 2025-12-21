@@ -46,6 +46,7 @@ dependencies:
   extended_image: ^10.0.1  # Enhanced image viewer with gesture control
   image: ^4.5.4
   flutter_cache_manager: ^3.4.1
+  waterfall_flow: ^3.1.1  # Pinterest-style masonry grid layout
 
   # UI Components & Shimmer
   pull_to_refresh: ^2.0.0

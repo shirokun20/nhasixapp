@@ -5,15 +5,36 @@
 library;
 
 /// Image type extension mapping from API response
-/// 'j' = jpg, 'p' = png, 'g' = gif, 'w' = webp
+/// Handles:
+/// - Single letter codes: 'j' = jpg, 'p' = png, 'g' = gif, 'w' = webp
+/// - Full extensions: 'jpg', 'jpeg', 'png', 'gif', 'webp'
+/// - Mixed cases: 'JPG', 'Webp', etc.
 String getImageExtension(String type) {
-  return switch (type) {
+  // Normalize to lowercase and trim
+  final normalized = type.toLowerCase().trim();
+
+  return switch (normalized) {
+    // Single letter codes (official nhentai API format)
     'j' => 'jpg',
     'p' => 'png',
     'g' => 'gif',
     'w' => 'webp',
-    _ => 'jpg', // Default fallback
+    // Full extensions (sometimes returned by API)
+    'jpg' || 'jpeg' => 'jpg',
+    'png' => 'png',
+    'gif' => 'gif',
+    'webp' => 'webp',
+    // Default fallback
+    _ => 'jpg',
   };
+}
+
+/// Helper to safely parse int from dynamic (handles String or int)
+int? _parseInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is String) return int.tryParse(value);
+  return null;
 }
 
 /// nhentai Gallery Title
@@ -63,8 +84,8 @@ class NhentaiImageInfo {
   factory NhentaiImageInfo.fromJson(Map<String, dynamic> json) {
     return NhentaiImageInfo(
       type: json['t'] as String? ?? 'j',
-      width: json['w'] as int?,
-      height: json['h'] as int?,
+      width: _parseInt(json['w']),
+      height: _parseInt(json['h']),
     );
   }
 
@@ -125,11 +146,11 @@ class NhentaiTagInfo {
 
   factory NhentaiTagInfo.fromJson(Map<String, dynamic> json) {
     return NhentaiTagInfo(
-      id: json['id'] as int? ?? 0,
+      id: _parseInt(json['id']) ?? 0,
       type: json['type'] as String? ?? 'tag',
       name: json['name'] as String? ?? '',
       url: json['url'] as String?,
-      count: json['count'] as int?,
+      count: _parseInt(json['count']),
     );
   }
 
@@ -168,20 +189,20 @@ class NhentaiGalleryResponse {
 
   factory NhentaiGalleryResponse.fromJson(Map<String, dynamic> json) {
     return NhentaiGalleryResponse(
-      id: json['id'] as int? ?? 0,
+      id: _parseInt(json['id']) ?? 0,
       mediaId: json['media_id'] as String? ?? '',
       title:
           NhentaiTitle.fromJson(json['title'] as Map<String, dynamic>? ?? {}),
       images:
           NhentaiImages.fromJson(json['images'] as Map<String, dynamic>? ?? {}),
       scanlator: json['scanlator'] as String?,
-      uploadDate: json['upload_date'] as int?,
+      uploadDate: _parseInt(json['upload_date']),
       tags: (json['tags'] as List<dynamic>?)
               ?.map((e) => NhentaiTagInfo.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
-      numPages: json['num_pages'] as int?,
-      numFavorites: json['num_favorites'] as int?,
+      numPages: _parseInt(json['num_pages']),
+      numFavorites: _parseInt(json['num_favorites']),
     );
   }
 
@@ -217,8 +238,8 @@ class NhentaiListResponse {
                   NhentaiGalleryResponse.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
-      numPages: json['num_pages'] as int?,
-      perPage: json['per_page'] as int?,
+      numPages: _parseInt(json['num_pages']),
+      perPage: _parseInt(json['per_page']),
     );
   }
 

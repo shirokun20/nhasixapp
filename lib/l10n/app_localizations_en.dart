@@ -391,6 +391,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readNow => 'Read Now';
 
   @override
+  String get featured => 'Featured';
+
+  @override
   String get confirmDownload => 'Confirm Download';
 
   @override

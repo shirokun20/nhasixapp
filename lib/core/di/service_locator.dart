@@ -438,6 +438,7 @@ void _setupCubits() {
         removeFromFavoritesUseCase: getIt<RemoveFromFavoritesUseCase>(),
         userDataRepository: getIt<UserDataRepository>(),
         imageMetadataService: getIt<ImageMetadataService>(),
+        contentRepository: getIt<ContentRepository>(),
         logger: getIt<Logger>(),
       ));
 
@@ -462,6 +463,7 @@ void _setupCubits() {
   getIt.registerLazySingleton<OfflineSearchCubit>(() => OfflineSearchCubit(
         offlineContentManager: getIt<OfflineContentManager>(),
         userDataRepository: getIt<UserDataRepository>(),
+        notificationService: getIt<NotificationService>(),
         logger: getIt<Logger>(),
       ));
 

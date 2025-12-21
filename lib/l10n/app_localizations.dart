@@ -806,6 +806,12 @@ abstract class AppLocalizations {
   /// **'Read Now'**
   String get readNow;
 
+  /// No description provided for @featured.
+  ///
+  /// In en, this message translates to:
+  /// **'Featured'**
+  String get featured;
+
   /// No description provided for @confirmDownload.
   ///
   /// In en, this message translates to:

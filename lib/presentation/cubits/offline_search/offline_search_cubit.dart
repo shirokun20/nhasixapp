@@ -7,6 +7,7 @@ import '../../../domain/entities/content.dart';
 import '../../../domain/entities/download_status.dart';
 import '../../../domain/repositories/user_data_repository.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../services/notification_service.dart';
 import '../base/base_cubit.dart';
 
 part 'offline_search_state.dart';
@@ -16,15 +17,18 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   OfflineSearchCubit({
     required OfflineContentManager offlineContentManager,
     required UserDataRepository userDataRepository,
+    NotificationService? notificationService,
     required super.logger,
   })  : _offlineContentManager = offlineContentManager,
         _userDataRepository = userDataRepository,
+        _notificationService = notificationService,
         super(
           initialState: const OfflineSearchInitial(),
         );
 
   final OfflineContentManager _offlineContentManager;
   final UserDataRepository _userDataRepository;
+  final NotificationService? _notificationService;
 
   /// Helper to calculate directory size recursively
   Future<int> _getDirectorySize(Directory directory) async {
@@ -177,6 +181,9 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       logInfo('Loading all offline content from database');
       emit(const OfflineSearchLoading());
 
+      // Show sync notification
+      await _notificationService?.showSyncStarted();
+
       // Load completed downloads from database
       final downloads = await _userDataRepository.getAllDownloads(
         state: DownloadState.completed,
@@ -248,6 +255,9 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       ));
 
       logInfo('Loaded ${contents.length} offline content items from database');
+
+      // Show sync completed notification
+      await _notificationService?.showSyncCompleted(itemCount: contents.length);
     } catch (e, stackTrace) {
       if (isClosed) return;
       handleError(e, stackTrace, 'get all offline content');

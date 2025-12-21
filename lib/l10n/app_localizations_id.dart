@@ -390,6 +390,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get readNow => 'Baca Sekarang';
 
   @override
+  String get featured => 'Unggulan';
+
+  @override
   String get confirmDownload => 'Konfirmasi Download';
 
   @override

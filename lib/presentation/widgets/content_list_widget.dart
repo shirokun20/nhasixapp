@@ -11,6 +11,7 @@ import '../blocs/content/content_bloc.dart';
 import '../blocs/download/download_bloc.dart'; // 🐛 FIXED: Added import for DownloadBloc
 import '../cubits/settings/settings_cubit.dart';
 import 'content_card_widget.dart';
+import 'featured_content_card.dart';
 
 extension StringCapitalize on String {
   String get capitalize {
@@ -54,7 +55,8 @@ class ContentDownloadCache {
         }
       } catch (e) {
         // DownloadBloc not available or context invalid, fallback to filesystem check
-        Logger().w('Failed to read DownloadBloc state, falling back to filesystem check: $e');
+        Logger().w(
+            'Failed to read DownloadBloc state, falling back to filesystem check: $e');
       }
     }
 
@@ -304,15 +306,15 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
-                         Text(
-                           '${state.totalCount} ${AppLocalizations.of(context)?.content ?? 'items'} • ${AppLocalizations.of(context)?.pageOf ?? 'Page'} ${state.currentPage} ${AppLocalizations.of(context)?.ofWord ?? 'of'} ${state.totalPages}',
-                           style: TextStyleConst.bodySmall.copyWith(
-                             color: Theme.of(context)
-                                 .colorScheme
-                                 .onSurface
-                                 .withValues(alpha: 0.7),
-                           ),
-                         ),
+                        Text(
+                          '${state.totalCount} ${AppLocalizations.of(context)?.content ?? 'items'} • ${AppLocalizations.of(context)?.pageOf ?? 'Page'} ${state.currentPage} ${AppLocalizations.of(context)?.ofWord ?? 'of'} ${state.totalPages}',
+                          style: TextStyleConst.bodySmall.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.7),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -331,7 +333,16 @@ class _ContentListWidgetState extends State<ContentListWidget> {
             ),
           ),
 
-        // Content grid
+        // Featured content card (first item displayed as full-width)
+        if (state.contents.isNotEmpty && state.currentPage == 1)
+          SliverToBoxAdapter(
+            child: FeaturedContentCard(
+              content: state.contents.first,
+              onTap: () => widget.onContentTap?.call(state.contents.first),
+            ),
+          ),
+
+        // Content grid (skip first item if on page 1 since it's featured)
         SliverPadding(
           padding: EdgeInsets.all(widget.showHeader ? 8.0 : 16.0),
           sliver: SliverGrid(
@@ -341,7 +352,13 @@ class _ContentListWidgetState extends State<ContentListWidget> {
             ),
             delegate: SliverChildBuilderDelegate(
               (context, index) {
-                final content = state.contents[index];
+                // Skip index 0 on page 1 (already shown as featured)
+                final adjustedIndex =
+                    state.currentPage == 1 ? index + 1 : index;
+                if (adjustedIndex >= state.contents.length) {
+                  return const SizedBox.shrink();
+                }
+                final content = state.contents[adjustedIndex];
 
                 // Use FutureBuilder to check download status for highlight
                 return FutureBuilder<bool>(
@@ -366,7 +383,10 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                   },
                 );
               },
-              childCount: state.contents.length,
+              // Reduce child count by 1 on first page (featured card is separate)
+              childCount: state.currentPage == 1
+                  ? (state.contents.length > 1 ? state.contents.length - 1 : 0)
+                  : state.contents.length,
             ),
           ),
         ),
@@ -386,11 +406,14 @@ class _ContentListWidgetState extends State<ContentListWidget> {
     if (difference.inMinutes < 1) {
       return AppLocalizations.of(context)!.justNow;
     } else if (difference.inHours < 1) {
-      return AppLocalizations.of(context)!.minutesAgo(difference.inMinutes, difference.inMinutes == 1 ? '' : 's');
+      return AppLocalizations.of(context)!.minutesAgo(
+          difference.inMinutes, difference.inMinutes == 1 ? '' : 's');
     } else if (difference.inDays < 1) {
-      return AppLocalizations.of(context)!.hoursAgo(difference.inHours, difference.inHours == 1 ? '' : 's');
+      return AppLocalizations.of(context)!
+          .hoursAgo(difference.inHours, difference.inHours == 1 ? '' : 's');
     } else {
-      return AppLocalizations.of(context)!.daysAgo(difference.inDays, difference.inDays == 1 ? '' : 's');
+      return AppLocalizations.of(context)!
+          .daysAgo(difference.inDays, difference.inDays == 1 ? '' : 's');
     }
   }
 }

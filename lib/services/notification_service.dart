@@ -826,4 +826,91 @@ class NotificationService {
       return fallback ?? key;
     }
   }
+
+  // ============================================================
+  // SYNC NOTIFICATIONS
+  // ============================================================
+
+  /// Fixed notification ID for sync operations
+  static const int _syncNotificationId = 888888;
+
+  /// Show sync started notification
+  Future<void> showSyncStarted({String? message}) async {
+    if (!isEnabled) return;
+
+    try {
+      await _notificationsPlugin.show(
+        _syncNotificationId,
+        _getLocalized('syncInProgress', fallback: 'Syncing Data'),
+        message ??
+            _getLocalized('syncingOfflineContent',
+                fallback: 'Loading offline content...'),
+        NotificationDetailsBuilder.progress(progress: 0),
+        payload: 'sync',
+      );
+
+      _logger.d('Sync started notification shown');
+    } catch (e) {
+      _logger.e('Failed to show sync started notification: $e');
+    }
+  }
+
+  /// Update sync progress notification
+  Future<void> updateSyncProgress({
+    required int progress,
+    required String message,
+  }) async {
+    if (!isEnabled) return;
+
+    try {
+      await _notificationsPlugin.show(
+        _syncNotificationId,
+        _getLocalized('syncingProgress',
+            args: {'progress': progress}, fallback: 'Syncing ($progress%)'),
+        message,
+        NotificationDetailsBuilder.progress(progress: progress),
+        payload: 'sync',
+      );
+
+      _logger.d('Sync progress updated: $progress%');
+    } catch (e) {
+      _logger.e('Failed to update sync progress notification: $e');
+    }
+  }
+
+  /// Show sync completed notification
+  Future<void> showSyncCompleted({required int itemCount}) async {
+    if (!isEnabled) return;
+
+    try {
+      await _notificationsPlugin.show(
+        _syncNotificationId,
+        _getLocalized('syncComplete', fallback: 'Sync Complete'),
+        _getLocalized('syncCompletedWithCount',
+            args: {'count': itemCount},
+            fallback: 'Found $itemCount offline content'),
+        NotificationDetailsBuilder.success(),
+        payload: 'sync',
+      );
+
+      _logger.i('Sync completed notification shown: $itemCount items');
+
+      // Auto-dismiss after 3 seconds
+      Future.delayed(const Duration(seconds: 3), () {
+        cancelSyncNotification();
+      });
+    } catch (e) {
+      _logger.e('Failed to show sync completed notification: $e');
+    }
+  }
+
+  /// Cancel sync notification
+  Future<void> cancelSyncNotification() async {
+    try {
+      await _notificationsPlugin.cancel(_syncNotificationId);
+      _logger.d('Sync notification cancelled');
+    } catch (e) {
+      _logger.e('Failed to cancel sync notification: $e');
+    }
+  }
 }

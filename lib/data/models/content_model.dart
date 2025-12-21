@@ -94,11 +94,17 @@ class ContentModel extends Content {
           const NhentaiTagInfo(id: 0, type: 'language', name: 'unknown'),
     );
 
-    // Build cover URL
-    final coverUrl = NhentaiImageUrlBuilder.buildCoverUrl(
-      response.mediaId,
-      response.images.cover.type,
-    );
+    // Build cover URL (Using Page 1 Thumbnail for reliability)
+    final coverUrl = response.images.pages.isNotEmpty
+        ? NhentaiImageUrlBuilder.buildPageThumbnailUrl(
+            response.mediaId,
+            1, // Page 1
+            response.images.pages.first.type,
+          )
+        : NhentaiImageUrlBuilder.buildCoverUrl(
+            response.mediaId,
+            response.images.cover.type,
+          );
 
     // Build all page URLs
     final imageUrls = NhentaiImageUrlBuilder.buildAllPageUrls(
@@ -177,11 +183,17 @@ class ContentModel extends Content {
           const NhentaiTagInfo(id: 0, type: 'language', name: 'unknown'),
     );
 
-    // Build cover URL
-    final coverUrl = NhentaiImageUrlBuilder.buildCoverUrl(
-      response.mediaId,
-      response.images.cover.type,
-    );
+    // Build cover URL (Using Page 1 Thumbnail for reliability)
+    final coverUrl = response.images.pages.isNotEmpty
+        ? NhentaiImageUrlBuilder.buildPageThumbnailUrl(
+            response.mediaId,
+            1, // Page 1
+            response.images.pages.first.type,
+          )
+        : NhentaiImageUrlBuilder.buildCoverUrl(
+            response.mediaId,
+            response.images.cover.type,
+          );
 
     // Determine best title
     final title = response.title.pretty ??
@@ -202,7 +214,10 @@ class ContentModel extends Content {
       groups: groups,
       language: languageTag.name,
       pageCount: response.numPages ?? response.images.pages.length,
-      imageUrls: [], // Empty for preview, will be loaded on detail
+      imageUrls: NhentaiImageUrlBuilder.buildAllPageUrls(
+        response.mediaId,
+        response.images.pages,
+      ),
       uploadDate: response.uploadDate != null
           ? DateTime.fromMillisecondsSinceEpoch(response.uploadDate! * 1000)
           : DateTime.now(),

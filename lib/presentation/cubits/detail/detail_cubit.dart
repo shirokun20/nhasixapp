@@ -1,4 +1,5 @@
 import '../../../domain/entities/entities.dart';
+import '../../../domain/value_objects/value_objects.dart';
 import '../../../domain/usecases/content/content_usecases.dart';
 import '../../../domain/usecases/content/get_content_detail_usecase.dart';
 import '../../../domain/usecases/favorites/favorites_usecases.dart';
@@ -18,12 +19,14 @@ class DetailCubit extends BaseCubit<DetailState> {
     required RemoveFromFavoritesUseCase removeFromFavoritesUseCase,
     required UserDataRepository userDataRepository,
     required ImageMetadataService imageMetadataService,
+    required ContentRepository contentRepository,
     required super.logger,
   })  : _getContentDetailUseCase = getContentDetailUseCase,
         _addToFavoritesUseCase = addToFavoritesUseCase,
         _removeFromFavoritesUseCase = removeFromFavoritesUseCase,
         _userDataRepository = userDataRepository,
         _imageMetadataService = imageMetadataService,
+        _contentRepository = contentRepository,
         super(
           initialState: const DetailInitial(),
         );
@@ -33,6 +36,7 @@ class DetailCubit extends BaseCubit<DetailState> {
   final RemoveFromFavoritesUseCase _removeFromFavoritesUseCase;
   final UserDataRepository _userDataRepository;
   final ImageMetadataService _imageMetadataService;
+  final ContentRepository _contentRepository;
 
   /// Load content detail by ID
   Future<void> loadContentDetail(String contentId) async {
@@ -73,6 +77,64 @@ class DetailCubit extends BaseCubit<DetailState> {
         canRetry: isRetryableError(errorType),
         contentId: contentId,
       ));
+    }
+  }
+
+  /// Load related content separately (independent API call)
+  /// Should be called after loadContentDetail completes successfully
+  Future<void> loadRelatedContent() async {
+    final currentState = state;
+    if (currentState is! DetailLoaded) {
+      logWarning('Cannot load related content: content not loaded');
+      return;
+    }
+
+    try {
+      logInfo('Loading related content for ID: ${currentState.content.id}');
+
+      final contentId = ContentId(currentState.content.id);
+      final relatedContents = await _contentRepository.getRelatedContent(
+        contentId: contentId,
+        limit: 10,
+      );
+
+      if (isClosed) return;
+
+      if (relatedContents.isNotEmpty) {
+        // Create updated content with related items
+        final updatedContent = Content(
+          id: currentState.content.id,
+          title: currentState.content.title,
+          coverUrl: currentState.content.coverUrl,
+          tags: currentState.content.tags,
+          artists: currentState.content.artists,
+          characters: currentState.content.characters,
+          parodies: currentState.content.parodies,
+          groups: currentState.content.groups,
+          language: currentState.content.language,
+          pageCount: currentState.content.pageCount,
+          imageUrls: currentState.content.imageUrls,
+          uploadDate: currentState.content.uploadDate,
+          favorites: currentState.content.favorites,
+          englishTitle: currentState.content.englishTitle,
+          japaneseTitle: currentState.content.japaneseTitle,
+          relatedContent: relatedContents,
+        );
+
+        emit(currentState.copyWith(
+          content: updatedContent,
+          lastUpdated: DateTime.now(),
+        ));
+
+        logInfo(
+            'Successfully loaded ${relatedContents.length} related content items');
+      } else {
+        logInfo('No related content found');
+      }
+    } catch (e, stackTrace) {
+      // Don't fail the whole page, just log the error
+      handleError(e, stackTrace, 'load related content');
+      logWarning('Failed to load related content: ${e.toString()}');
     }
   }
 

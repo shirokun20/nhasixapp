@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -38,6 +40,59 @@ void main() async {
   await initializeWorkManager(isDebugMode: kDebugMode);
 
   // _setupAllServiceLocalizationCallbacks();
+
+  // Setup error handlers to prevent app crashes (especially Impeller/Vulkan issues)
+  FlutterError.onError = (FlutterErrorDetails details) {
+    // Log the error instead of crashing
+    debugPrint('🔥 Flutter Error: ${details.exception}');
+    debugPrint('Stack: ${details.stack}');
+  };
+
+  // Catch errors from platform (including Impeller/Vulkan)
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('🔥 Platform Error: $error');
+    debugPrint('Stack: $stack');
+    return true; // Prevent crash
+  };
+
+  // Custom error widget instead of red screen
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return Material(
+      color: Colors.black,
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                color: Colors.red,
+                size: 48,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Rendering Error',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                kDebugMode
+                    ? details.exception.toString()
+                    : 'Please restart the app',
+                style: const TextStyle(color: Colors.white70),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  };
 
   runApp(const MyApp());
 }
