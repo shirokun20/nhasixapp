@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.6.2] - 2025-12-21
+
+### Fixed
+- Fixed API sorting issue where "Popular" filters were ignored and defaulted to "Newest"
+- Fixed content reader attempting to load items with 0 images (now forces fresh fetch)
+- Improved cache validation to prevent using incomplete content data from search results
+
 ## [0.6.1] - 2025-12-14
 
 ### Fixed
