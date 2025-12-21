@@ -57,8 +57,10 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
           : ConnectivityResult.none;
       if (connectivityResult == ConnectivityResult.none) {
         _logger.i(
-            'SplashBloc: No internet connection, entering enhanced offline mode...');
-        await _handleOfflineMode(emit);
+            'SplashBloc: No internet connection, skipping check and entering offline mode...');
+        // Simplified: Directly enable offline mode and continue
+        AppStateManager().enableOfflineMode();
+        emit(SplashSuccess(message: 'Offline Mode'));
         return;
       }
 
@@ -139,26 +141,11 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
           ));
         }
       } else {
-        _logger.w('SplashBloc: Cloudflare bypass failed');
+        _logger.w('SplashBloc: Cloudflare bypass failed, forcing offline mode');
 
-        // Check if we can offer offline mode
-        final downloadedContents = await _userDataRepository.getAllDownloads(
-            limit: AppLimits.maxBatchSize);
-        final completedDownloads =
-            downloadedContents.where((d) => d.isCompleted).toList();
-        final canUseOffline = completedDownloads.isNotEmpty;
-
-        emit(SplashError(
-          message:
-              'Failed to bypass Cloudflare protection. This may be due to:\n'
-              '• Strong Cloudflare protection\n'
-              '• Network restrictions\n'
-              '• Server maintenance\n\n'
-              'Try using a VPN or different DNS server.'
-              '${canUseOffline ? '\n\nOr continue with offline content (${completedDownloads.length} downloads available).' : ''}',
-          canRetry: true,
-          canUseOffline: canUseOffline,
-        ));
+        // Force continue with offline mode
+        AppStateManager().enableOfflineMode();
+        emit(SplashSuccess(message: 'Offline Mode (Bypass Failed)'));
       }
     } catch (e, stackTrace) {
       _logger.e('SplashBloc: Error processing bypass result',
@@ -220,19 +207,9 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       if (result) {
         emit(SplashSuccess(message: 'Successfully connected to nhentai.net'));
       } else {
-        // Check if we can offer offline mode
-        final downloadedContents = await _userDataRepository.getAllDownloads(
-            limit: AppLimits.maxBatchSize);
-        final completedDownloads =
-            downloadedContents.where((d) => d.isCompleted).toList();
-        final canUseOffline = completedDownloads.isNotEmpty;
-
-        emit(SplashError(
-          message: 'Failed to bypass Cloudflare protection. Please try again.'
-              '${canUseOffline ? '\n\nOr continue with offline content (${completedDownloads.length} downloads available).' : ''}',
-          canRetry: true,
-          canUseOffline: canUseOffline,
-        ));
+        _logger.w('SplashBloc: Retry failed, forcing offline mode');
+        AppStateManager().enableOfflineMode();
+        emit(SplashSuccess(message: 'Offline Mode (Retry Failed)'));
       }
       // Restart the bypass process
       // add(SplashInitializeBypassEvent());
