@@ -65,7 +65,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
 
     // Initialize success animation controller
     _successAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 400), // Optimized from 800ms
       vsync: this,
     );
 
@@ -110,7 +110,8 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
             _dotsAnimationController.stop();
             _successAnimationController.forward().then((_) {
               // Navigate after success animation completes
-              Timer(const Duration(milliseconds: 1200), () {
+              Timer(const Duration(milliseconds: 200), () {
+                // Optimized from 1200ms
                 if (mounted) {
                   context.go(AppRoute.main);
                 }

@@ -37,7 +37,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
   final Logger _logger;
   final Connectivity _connectivity;
 
-  static const Duration _initialDelay = Duration(seconds: 1);
+  // static const Duration _initialDelay = Duration(seconds: 1); // Removed for optimization
 
   Future<void> _onSplashStarted(
     SplashStartedEvent event,
@@ -48,7 +48,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       _logger.i('SplashBloc: Starting initialization...');
 
       // Add initial delay for splash screen visibility
-      await Future.delayed(_initialDelay);
+      // await Future.delayed(_initialDelay); // Removed for optimization
 
       // Check network connectivity first
       final connectivityResults = await _connectivity.checkConnectivity();
@@ -91,7 +91,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       emit(SplashBypassInProgress(message: 'Initializing bypass system...'));
 
       // Initialize the remote data source (includes anti-detection)
-      await Future.delayed(Duration(seconds: 1));
+      // await Future.delayed(Duration(seconds: 1)); // Removed for optimization
       emit(SplashBypassInProgress(message: 'Connecting to nhentai.net...'));
       final success = await _remoteDataSource.initialize();
 
