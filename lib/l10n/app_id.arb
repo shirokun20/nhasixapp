@@ -1,6 +1,6 @@
 {
   "@@locale": "id",
-  "appTitle": "NhasixApp",
+  "appTitle": "Kuron",
   "appSubtitle": "NHentai",
   
   "home": "Beranda",
@@ -14,6 +14,7 @@
   "appDisguise": "Penyamaran Aplikasi",
   "disguiseMode": "Mode Penyamaran",
   "offline": "Offline",
+  "about": "Tentang",
   
   "searchHint": "Cari konten...",
   "searchPlaceholder": "Masukkan kata kunci pencarian",
@@ -924,7 +925,7 @@
   "filtersActiveLabel": "aktif",
   "clearAllFilters": "Hapus Semua",
   
-  "appTitle": "NhentaiApp",
+
   "appSubtitle": "Pengalaman Membaca yang Ditingkatkan",
   "initializingApp": "Menginisialisasi Aplikasi...",
   "settingUpComponents": "Menyiapkan komponen dan memeriksa koneksi...",

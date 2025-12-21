@@ -17,6 +17,9 @@ import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/home/home_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
 import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/update/update_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/update/update_state.dart';
+import 'package:nhasixapp/presentation/widgets/update_available_sheet.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/widgets/offline_content_body.dart';
 import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
@@ -45,6 +48,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   late final ContentBloc _contentBloc;
   late final SearchBloc _searchBloc;
   late final OfflineSearchCubit _offlineSearchCubit;
+  late final UpdateCubit _updateCubit;
 
   bool _isShowingSearchResults = false;
   SearchFilter? _currentSearchFilter;
@@ -63,6 +67,9 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     // Initialize SearchBloc to check for saved search state
     _searchBloc = getIt<SearchBloc>();
     _offlineSearchCubit = getIt<OfflineSearchCubit>();
+
+    // Initialize UpdateCubit and check for updates
+    _updateCubit = getIt<UpdateCubit>()..checkForUpdate();
 
     _checkConnectivity();
     Connectivity().onConnectivityChanged.listen((results) {
@@ -183,6 +190,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     _homeBloc.close();
     _contentBloc.close();
     _searchBloc.close();
+    _updateCubit.close();
     super.dispose();
   }
 
@@ -196,62 +204,77 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         BlocProvider.value(value: _contentBloc),
         BlocProvider.value(value: _searchBloc),
         BlocProvider.value(value: getIt<OfflineSearchCubit>()),
+        BlocProvider.value(value: _updateCubit),
       ],
-      child: BlocBuilder<HomeBloc, HomeState>(
-        buildWhen: (previous, current) => true,
-        builder: (context, homeState) {
-          // Show full screen loading during home initialization
-          if (homeState is HomeLoading) {
-            return SimpleOfflineScaffold(
-              title: AppLocalizations.of(context)?.appTitle ?? 'NHentai',
-              body: const ListShimmer(itemCount: 8),
-              drawer: AppMainDrawerWidget(context: context),
+      child: BlocListener<UpdateCubit, UpdateState>(
+        listener: (context, state) {
+          if (state is UpdateAvailable) {
+            showModalBottomSheet(
+              context: context,
+              backgroundColor: Colors.transparent,
+              isScrollControlled: true,
+              builder: (context) =>
+                  UpdateAvailableSheet(updateInfo: state.updateInfo),
             );
           }
-
-          // Main screen UI when home is loaded
-          return BlocProvider<OfflineSearchCubit>.value(
-            value: _offlineSearchCubit,
-            child: BlocBuilder<OfflineSearchCubit, OfflineSearchState>(
-              buildWhen: (previous, current) =>
-                  _isOffline, // Only rebuild if offline
-              builder: (context, offlineState) {
-                final l10n = AppLocalizations.of(context)!;
-                return AppScaffoldWithOffline(
-                  title: l10n.appTitle,
-                  appBar: AppMainHeaderWidget(
-                    context: context,
-                    isOffline: _isOffline,
-                    offlineStats: _isOffline
-                        ? context.read<OfflineSearchCubit>().getOfflineStats()
-                        : null,
-                    onRefresh: _isOffline
-                        ? () =>
-                            context.read<OfflineSearchCubit>().forceRefresh()
-                        : null,
-                    onImport:
-                        _isOffline ? () => importFromBackup(context) : null,
-                    onExport: _isOffline ? () => exportLibrary(context) : null,
-                    onSearchPressed: () async {
-                      // Navigate to search and wait for result
-                      final result = await context.push(AppRoute.search);
-                      if (result == true && context.mounted) {
-                        // Search was performed, reload saved filter
-                        await _reloadSearchFilter();
-                      }
-                    },
-                    onOpenBrowser: () => _openInBrowser(),
-                    onDownloadAll: () => _downloadAllGalleries(),
-                  ),
-                  drawer: AppMainDrawerWidget(context: context),
-                  body: _isOffline
-                      ? const OfflineContentBody()
-                      : _buildScrollableBody(),
-                );
-              },
-            ),
-          );
         },
+        child: BlocBuilder<HomeBloc, HomeState>(
+          buildWhen: (previous, current) => true,
+          builder: (context, homeState) {
+            // Show full screen loading during home initialization
+            if (homeState is HomeLoading) {
+              return SimpleOfflineScaffold(
+                title: AppLocalizations.of(context)?.appTitle ?? 'NHentai',
+                body: const ListShimmer(itemCount: 8),
+                drawer: AppMainDrawerWidget(context: context),
+              );
+            }
+
+            // Main screen UI when home is loaded
+            return BlocProvider<OfflineSearchCubit>.value(
+              value: _offlineSearchCubit,
+              child: BlocBuilder<OfflineSearchCubit, OfflineSearchState>(
+                buildWhen: (previous, current) =>
+                    _isOffline, // Only rebuild if offline
+                builder: (context, offlineState) {
+                  final l10n = AppLocalizations.of(context)!;
+                  return AppScaffoldWithOffline(
+                    title: l10n.appTitle,
+                    appBar: AppMainHeaderWidget(
+                      context: context,
+                      isOffline: _isOffline,
+                      offlineStats: _isOffline
+                          ? context.read<OfflineSearchCubit>().getOfflineStats()
+                          : null,
+                      onRefresh: _isOffline
+                          ? () =>
+                              context.read<OfflineSearchCubit>().forceRefresh()
+                          : null,
+                      onImport:
+                          _isOffline ? () => importFromBackup(context) : null,
+                      onExport:
+                          _isOffline ? () => exportLibrary(context) : null,
+                      onSearchPressed: () async {
+                        // Navigate to search and wait for result
+                        final result = await context.push(AppRoute.search);
+                        if (result == true && context.mounted) {
+                          // Search was performed, reload saved filter
+                          await _reloadSearchFilter();
+                        }
+                      },
+                      onOpenBrowser: () => _openInBrowser(),
+                      onDownloadAll: () => _downloadAllGalleries(),
+                    ),
+                    drawer: AppMainDrawerWidget(context: context),
+                    body: _isOffline
+                        ? const OfflineContentBody()
+                        : _buildScrollableBody(),
+                  );
+                },
+              ),
+            );
+          },
+        ),
       ),
     );
   }

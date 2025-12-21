@@ -9,7 +9,7 @@ class AppLocalizationsId extends AppLocalizations {
   AppLocalizationsId([String locale = 'id']) : super(locale);
 
   @override
-  String get appTitle => 'NhentaiApp';
+  String get appTitle => 'Kuron';
 
   @override
   String get appSubtitle => 'Pengalaman Membaca yang Ditingkatkan';
@@ -46,6 +46,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get offline => 'Offline';
+
+  @override
+  String get about => 'Tentang';
 
   @override
   String get searchHint => 'Cari konten...';

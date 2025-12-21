@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'NhentaiApp';
+  String get appTitle => 'Kuron';
 
   @override
   String get appSubtitle => 'Enhanced Reading Experience';
@@ -46,6 +46,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offline => 'Offline';
+
+  @override
+  String get about => 'About';
 
   @override
   String get searchHint => 'Search content...';

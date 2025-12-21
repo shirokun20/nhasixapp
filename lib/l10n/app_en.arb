@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appTitle": "NhasixApp",
+  "appTitle": "Kuron",
   "appSubtitle": "NHentai",
   
   "home": "Home",
@@ -14,6 +14,7 @@
   "appDisguise": "App Disguise",
   "disguiseMode": "Disguise Mode",
   "offline": "Offline",
+  "about": "About",
   
   "searchHint": "Search content...",
   "searchPlaceholder": "Enter search keywords",
@@ -1027,7 +1028,7 @@
   "filtersActiveLabel": "active",
   "clearAllFilters": "Clear All",
   
-  "appTitle": "NhentaiApp",
+
   "appSubtitle": "Enhanced Reading Experience",
   "initializingApp": "Initializing Application...",
   "settingUpComponents": "Setting up components and checking connection...",

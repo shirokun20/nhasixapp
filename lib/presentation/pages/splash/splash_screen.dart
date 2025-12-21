@@ -155,7 +155,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
 
                 // App title
                 Text(
-                  AppLocalizations.of(context)?.appTitle ?? 'NhentaiApp',
+                  AppLocalizations.of(context)?.appTitle ?? 'Kuron',
                   style: TextStyleConst.headingLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                     letterSpacing: 1.2,

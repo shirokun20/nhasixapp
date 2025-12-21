@@ -37,6 +37,7 @@ import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/presentation/cubits/cubits.dart';
 import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/theme/theme_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/update/update_cubit.dart';
 
 // Repositories
 import 'package:nhasixapp/domain/repositories/repositories.dart';
@@ -59,6 +60,7 @@ import 'package:nhasixapp/domain/usecases/settings/save_user_preferences_usecase
 
 // Services
 import 'package:nhasixapp/services/download_service.dart';
+import 'package:nhasixapp/core/services/update_service.dart';
 import 'package:nhasixapp/services/notification_service.dart';
 import 'package:nhasixapp/services/pdf_service.dart';
 import 'package:nhasixapp/services/pdf_conversion_service.dart';
@@ -180,6 +182,11 @@ void _setupServices() {
 
   // Image Cache Service - Advanced image caching with TTL and size management
   getIt.registerLazySingleton<ImageCacheService>(() => ImageCacheService());
+
+  // Github Update Service
+  getIt.registerLazySingleton<UpdateService>(() => UpdateService(
+        logger: getIt<Logger>(),
+      ));
 
   // Image Metadata Service - Handles image metadata generation and validation
   getIt.registerLazySingleton<ImageMetadataService>(() => ImageMetadataService(
@@ -478,6 +485,12 @@ void _setupCubits() {
 
   // HistoryCubit - History management (using static factory)
   getIt.registerFactory<HistoryCubit>(() => HistoryCubitFactory.create());
+
+  // UpdateCubit - App update checking
+  getIt.registerFactory<UpdateCubit>(() => UpdateCubit(
+        updateService: getIt<UpdateService>(),
+        logger: getIt<Logger>(),
+      ));
 }
 
 /// Clean up all registered dependencies

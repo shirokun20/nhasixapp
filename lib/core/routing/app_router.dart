@@ -15,6 +15,7 @@ import 'package:nhasixapp/presentation/pages/downloads/downloads_screen.dart';
 import 'package:nhasixapp/presentation/pages/offline/offline_content_screen.dart';
 import 'package:nhasixapp/presentation/pages/history/history_screen.dart';
 import 'package:nhasixapp/presentation/pages/random/random_gallery_screen.dart';
+import 'package:nhasixapp/presentation/pages/about/about_screen.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/core/models/image_metadata.dart';
 import 'package:nhasixapp/core/utils/app_animations.dart';
@@ -244,6 +245,18 @@ class AppRouter {
         ),
       ),
 
+      // About Screen
+      GoRoute(
+        path: AppRoute.about,
+        name: AppRoute.aboutName,
+        pageBuilder: (context, state) => AppAnimations.animatedPageBuilder(
+          context,
+          state,
+          const AboutScreen(),
+          type: RouteTransitionType.fadeSlide,
+        ),
+      ),
+
       // Legacy Main Screen route for backward compatibility
       GoRoute(
         path: AppRoute.main,
@@ -339,6 +352,10 @@ class AppRouter {
 
   static void goToStatus(BuildContext context) {
     context.go(AppRoute.status);
+  }
+
+  static void goToAbout(BuildContext context) {
+    context.go(AppRoute.about);
   }
 
   static Future<List<FilterItem>?> goToFilterData(

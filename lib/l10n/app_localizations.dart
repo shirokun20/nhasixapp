@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'NhentaiApp'**
+  /// **'Kuron'**
   String get appTitle;
 
   /// No description provided for @appSubtitle.
@@ -175,6 +175,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Offline'**
   String get offline;
+
+  /// No description provided for @about.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get about;
 
   /// No description provided for @searchHint.
   ///

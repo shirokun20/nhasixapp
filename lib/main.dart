@@ -63,7 +63,7 @@ class MyApp extends StatelessWidget {
                     '🌐 MaterialApp rebuilt with locale: ${locale.languageCode}');
 
                 return MaterialApp.router(
-                  title: "Nhentai Flutter App",
+                  title: "Kuron",
                   debugShowCheckedModeBanner: false,
                   routerConfig: AppRouter.router,
                   theme: themeState.themeData,
