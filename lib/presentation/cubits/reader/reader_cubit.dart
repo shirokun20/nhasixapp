@@ -97,8 +97,8 @@ class ReaderCubit extends Cubit<ReaderState> {
       Content? content;
       bool isOfflineMode = false;
 
-      // 🚀 OPTIMIZATION: Use preloaded content if available (highest priority)
-      if (preloadedContent != null) {
+      // 🚀 OPTIMIZATION: Use preloaded content if available and valid (highest priority)
+      if (preloadedContent != null && preloadedContent.imageUrls.isNotEmpty) {
         _logger.i("✅ Using preloaded content from navigation: $contentId");
         content = preloadedContent;
         // Detect if preloaded content is from offline storage by checking if we're offline
@@ -112,6 +112,12 @@ class ReaderCubit extends Cubit<ReaderState> {
         _logger.i("🌐 Using preloaded online content: $contentId");
         content = onlineContent;
         isOfflineMode = false;
+      } else if (preloadedContent != null) {
+        // Fallback: If we have preloaded content but no online content and not offline capable,
+        // use what we have (even if partial) to avoid total failure
+        _logger.w("⚠️ Using partial preloaded content as fallback: $contentId");
+        content = preloadedContent;
+        isOfflineMode = !isConnected;
       }
 
       // Fallback to offline if online failed (even if isOfflineAvailable is false)

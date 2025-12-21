@@ -23,6 +23,7 @@ import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/anti_detection.dart';
 import 'package:nhasixapp/data/datasources/remote/nhentai_scraper.dart';
+import 'package:nhasixapp/data/datasources/remote/api/nhentai_api_client.dart';
 import 'package:nhasixapp/data/datasources/local/tag_data_source.dart';
 
 // BLoCs
@@ -228,12 +229,16 @@ void _setupDataSources() {
         logger: getIt<Logger>(),
       ));
 
-  // Remote Data Source
+  // nhentai API Client (for API-first approach)
+  getIt.registerLazySingleton<NhentaiApiClient>(() => NhentaiApiClient());
+
+  // Remote Data Source (with API client for fallback support)
   getIt.registerLazySingleton<RemoteDataSource>(() => RemoteDataSource(
         httpClient: getIt<Dio>(),
         scraper: getIt<NhentaiScraper>(),
         cloudflareBypass: getIt<CloudflareBypassNoWebView>(),
         antiDetection: getIt<AntiDetection>(),
+        apiClient: getIt<NhentaiApiClient>(),
         logger: getIt<Logger>(),
       ));
 

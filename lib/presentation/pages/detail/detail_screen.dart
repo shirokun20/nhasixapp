@@ -1049,11 +1049,21 @@ class _DetailScreenState extends State<DetailScreen> {
     final imageMetadata =
         currentState is DetailLoaded ? currentState.imageMetadata : null;
 
+    // Validate content before passing to reader
+    // If content has no images, pass null to force reader to fetch fresh content
+    final contentToPass = content.imageUrls.isNotEmpty ? content : null;
+    Logger().w('Content to pass: $contentToPass');
+
+    if (contentToPass == null) {
+      Logger().w(
+          '⚠️ Content passed from DetailScreen has no images, forcing reader to fetch fresh data: ${content.id}');
+    }
+
     AppRouter.goToReader(
       context,
       content.id,
       forceStartFromBeginning: forceStartFromBeginning,
-      content: content,
+      content: contentToPass,
       imageMetadata: imageMetadata, // Pass metadata to reader
     );
   }
@@ -1284,7 +1294,9 @@ class _DetailScreenState extends State<DetailScreen> {
             textColor: Theme.of(context).colorScheme.onSecondary,
             onPressed: () {
               // Show copied link in a dialog for verification
-              _showCopiedLinkDialog(contentLink);
+              if (mounted) {
+                _showCopiedLinkDialog(contentLink);
+              }
             },
           ),
         ),

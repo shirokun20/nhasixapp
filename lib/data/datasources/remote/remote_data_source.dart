@@ -6,28 +6,37 @@ import 'dart:math';
 import '../../models/content_model.dart';
 import '../../models/tag_model.dart';
 import '../../../domain/entities/search_filter.dart';
+import '../../../../core/config/api_config.dart';
+import 'api/nhentai_api_client.dart';
+import 'api/nhentai_api_models.dart';
 import 'nhentai_scraper.dart';
 import 'anti_detection.dart';
 import 'request_rate_manager.dart';
 import 'exceptions.dart';
 
-/// Remote data source for web scraping nhentai.net
+/// Remote data source for nhentai.net
+/// Supports both API and HTML scraping with automatic fallback
 class RemoteDataSource {
   RemoteDataSource({
     required this.httpClient,
     required this.scraper,
     required this.cloudflareBypass,
     required this.antiDetection,
+    this.apiClient,
     Logger? logger,
-  }) : _logger = logger ?? Logger(),
-       _rateManager = RequestRateManager(logger: logger);
+  })  : _logger = logger ?? Logger(),
+        _rateManager = RequestRateManager(logger: logger);
 
   final Dio httpClient;
   final NhentaiScraper scraper;
   final CloudflareBypassNoWebView cloudflareBypass;
   final AntiDetection antiDetection;
+  final NhentaiApiClient? apiClient;
   final Logger _logger;
   final RequestRateManager _rateManager;
+
+  /// Whether to prefer API over scraping
+  bool _useApi = true;
 
   static const String baseUrl = 'https://nhentai.net';
   static const Duration requestTimeout = Duration(seconds: 30);
@@ -281,11 +290,13 @@ class RemoteDataSource {
       final contentId = scraper.extractContentIdFromPage(html);
       if (contentId == null) {
         _logger.e('Failed to extract content ID from random page');
-        _logger.d('HTML content preview: ${html.length > 500 ? html.substring(0, 500) : html}...');
+        _logger.d(
+            'HTML content preview: ${html.length > 500 ? html.substring(0, 500) : html}...');
         throw Exception('Failed to extract content ID from random page');
       }
 
-      _logger.i('Successfully extracted content ID: $contentId from random page');
+      _logger
+          .i('Successfully extracted content ID: $contentId from random page');
       return await getContentDetail(contentId);
     } catch (e, stackTrace) {
       _logger.e('Failed to get random content',
@@ -449,7 +460,8 @@ class RemoteDataSource {
         if (!_rateManager.canMakeRequest()) {
           if (_rateManager.isInCooldown) {
             final remainingTime = _rateManager.remainingCooldown;
-            _logger.w('In cooldown, ${remainingTime?.inSeconds ?? 0}s remaining');
+            _logger
+                .w('In cooldown, ${remainingTime?.inSeconds ?? 0}s remaining');
             throw RateLimitException('In cooldown period', '429');
           } else {
             _logger.w('Rate limit protection triggered');
@@ -468,7 +480,8 @@ class RemoteDataSource {
           _logger.w('Rate limit protection triggered, waiting 30 seconds...');
           await Future.delayed(const Duration(seconds: 30));
           antiDetection.resetCounters(); // Reset counters after cooldown
-          throw const RateLimitException('Request rate limit exceeded - cooldown applied');
+          throw const RateLimitException(
+              'Request rate limit exceeded - cooldown applied');
         }
 
         // Apply anti-detection measures
@@ -513,7 +526,8 @@ class RemoteDataSource {
               'Content not found: $url', response.statusCode.toString());
         } else if (response.statusCode == 429) {
           // Server returned rate limit, trigger our cooldown
-          _rateManager.triggerCooldown(cooldownDuration: const Duration(minutes: 5));
+          _rateManager.triggerCooldown(
+              cooldownDuration: const Duration(minutes: 5));
           throw RateLimitException(
               'Rate limit exceeded: $url', response.statusCode.toString());
         } else if (response.statusCode! >= 500) {
@@ -718,4 +732,306 @@ class RemoteDataSource {
   ///
   /// This method is intentionally removed to prevent accidental disposal
   /// If cleanup is needed, it should be handled at the application level
+
+  // ============ API Methods with Fallback ============
+
+  /// Toggle API mode on/off
+  void setApiMode(bool enabled) {
+    _useApi = enabled && apiClient != null;
+    _logger.i('API mode ${_useApi ? 'enabled' : 'disabled'}');
+  }
+
+  /// Check if API client is available and healthy
+  Future<bool> isApiAvailable() async {
+    if (apiClient == null) return false;
+    try {
+      return await apiClient!.checkHealth();
+    } catch (e) {
+      _logger.w('API health check failed: $e');
+      return false;
+    }
+  }
+
+  /// Get content list via API with fallback to scraping
+  Future<List<ContentModel>> getContentListViaApi({
+    int page = 1,
+    SortOption sortBy = SortOption.newest,
+  }) async {
+    if (_useApi && apiClient != null && ApiConfig.enableApiFallback) {
+      try {
+        _logger.i(
+            '🚀 [API MODE] Fetching content list for page $page with sort $sortBy');
+
+        NhentaiListResponse response;
+
+        if (sortBy == SortOption.newest) {
+          response = await apiClient!.getAllGalleries(page: page);
+        } else {
+          // Map SortOption to popular period
+          String period = 'all';
+          if (sortBy == SortOption.popularWeek) period = 'week';
+          if (sortBy == SortOption.popularToday) period = 'today';
+
+          response = await apiClient!.getPopular(period: period, page: page);
+        }
+
+        final contents = response.result
+            .map((g) => ContentModel.fromNhentaiApiPreview(g))
+            .toList();
+        _logger.i(
+            '✅ [API SUCCESS] Fetched ${contents.length} contents from page $page');
+        return contents;
+      } catch (e) {
+        _logger.w('⚠️ [API FAILED] Falling back to HTML scraping: $e');
+        // Fall through to scraping
+      }
+    } else {
+      _logger.d('📄 [SCRAPER MODE] API disabled or unavailable');
+    }
+
+    // Fallback to HTML scraping
+    if (sortBy == SortOption.newest) {
+      _logger.i('📄 [SCRAPER MODE] Fetching content list for page $page');
+      return getContentList(page: page);
+    } else {
+      _logger.i('📄 [SCRAPER MODE] Fetching popular content for page $page');
+      // Map to existing scraper method for popular
+      String period = 'all';
+      if (sortBy == SortOption.popularWeek) period = 'week';
+      if (sortBy == SortOption.popularToday) period = 'today';
+      return getPopularContent(period: period, page: page);
+    }
+  }
+
+  /// Get content list with pagination via API with fallback
+  Future<Map<String, dynamic>> getContentListWithPaginationViaApi({
+    int page = 1,
+    SortOption sortBy = SortOption.newest,
+  }) async {
+    if (_useApi && apiClient != null && ApiConfig.enableApiFallback) {
+      try {
+        _logger.i(
+            '🚀 [API MODE] Fetching content list with pagination for page $page with sort $sortBy');
+
+        NhentaiListResponse response;
+
+        if (sortBy == SortOption.newest) {
+          response = await apiClient!.getAllGalleries(page: page);
+        } else {
+          // Map SortOption to popular period
+          String period = 'all';
+          if (sortBy == SortOption.popularWeek) period = 'week';
+          if (sortBy == SortOption.popularToday) period = 'today';
+
+          response = await apiClient!.getPopular(period: period, page: page);
+        }
+
+        final contents = response.result
+            .map((g) => ContentModel.fromNhentaiApiPreview(g))
+            .toList();
+        // Workaround: nhentai API sometimes doesn't return num_pages
+        // If null, assume there's always a next page if we got results
+        // nhentai typically returns 25 items per page
+        final totalPages = response.numPages ?? 9999; // Large number if unknown
+        final hasNext = response.numPages != null
+            ? page < totalPages
+            : contents.isNotEmpty; // Assume more if we got results
+
+        _logger.i(
+            '✅ [API SUCCESS] Fetched ${contents.length} contents | Page: $page/${response.numPages ?? "???"} | HasNext: $hasNext');
+
+        return {
+          'contents': contents,
+          'pagination': {
+            'currentPage': page,
+            'totalPages': totalPages,
+            'totalCount': 0, // Not provided by API explicitly usually
+            'hasNext': hasNext,
+            'hasPrevious': page > 1,
+          }
+        };
+      } catch (e) {
+        _logger.w('⚠️ [API FAILED] Falling back to HTML scraping: $e');
+        // Fall through to scraping
+      }
+    } else {
+      _logger.d('📄 [SCRAPER MODE] API disabled or unavailable');
+    }
+
+    // Fallback to HTML scraping
+    if (sortBy == SortOption.newest) {
+      _logger.i(
+          '📄 [SCRAPER MODE] Fetching content list with pagination for page $page');
+      return getContentListWithPagination(page: page);
+    } else {
+      _logger.i(
+          '📄 [SCRAPER MODE] Fetching popular content with pagination for page $page');
+      // Map to existing scraper method for popular
+      String period = 'all';
+      if (sortBy == SortOption.popularWeek) period = 'week';
+      if (sortBy == SortOption.popularToday) period = 'today';
+      return getPopularContentWithPagination(period: period, page: page);
+    }
+  }
+
+  /// Get content detail via API with fallback
+  Future<ContentModel> getContentDetailViaApi(String contentId) async {
+    if (_useApi && apiClient != null && ApiConfig.enableApiFallback) {
+      try {
+        _logger.i('🚀 [API MODE] Fetching content detail for ID: $contentId');
+        final response = await apiClient!.getGallery(contentId);
+        final content = ContentModel.fromNhentaiApi(response);
+        _logger.i('✅ [API SUCCESS] Fetched content detail for ID: $contentId');
+        return content;
+      } catch (e) {
+        _logger.w('⚠️ [API FAILED] Falling back to HTML scraping: $e');
+        // Fall through to scraping
+      }
+    } else {
+      _logger.d('📄 [SCRAPER MODE] API disabled or unavailable');
+    }
+
+    // Fallback to HTML scraping
+    _logger.i('📄 [SCRAPER MODE] Fetching content detail for ID: $contentId');
+    return getContentDetail(contentId);
+  }
+
+  /// Search content via API with fallback
+  Future<List<ContentModel>> searchContentViaApi(SearchFilter filter) async {
+    if (_useApi && apiClient != null && ApiConfig.enableApiFallback) {
+      try {
+        // Build full query string including tags, artists, language, etc.
+        final fullQuery = filter.buildQueryString();
+        _logger.i('🔍 [API SEARCH] Query: "$fullQuery"');
+
+        // Build API-compatible sort
+        final sort = ApiConfig.mapSortOption(filter.sortBy.name);
+
+        final response = await apiClient!.search(
+          fullQuery,
+          sort: sort,
+          page: filter.page,
+        );
+
+        final contents = response.result
+            .map((g) => ContentModel.fromNhentaiApiPreview(g))
+            .toList();
+
+        _logger.i('✅ [API SEARCH SUCCESS] Returned ${contents.length} results');
+        return contents;
+      } catch (e) {
+        _logger.w('⚠️ [API SEARCH FAILED] Falling back to scraping: $e');
+        // Fall through to scraping
+      }
+    }
+
+    // Fallback to HTML scraping
+    _logger.i('📄 [SCRAPER SEARCH] Using HTML scraping for search');
+    return searchContent(filter);
+  }
+
+  /// Search content with pagination via API with fallback
+  Future<Map<String, dynamic>> searchContentWithPaginationViaApi(
+      SearchFilter filter) async {
+    if (_useApi && apiClient != null && ApiConfig.enableApiFallback) {
+      try {
+        // Build full query string including tags, artists, language, etc.
+        final fullQuery = filter.buildQueryString();
+        _logger.i('🔍 [API SEARCH] Query: "$fullQuery" | Page: ${filter.page}');
+
+        final sort = ApiConfig.mapSortOption(filter.sortBy.name);
+
+        final response = await apiClient!.search(
+          fullQuery,
+          sort: sort,
+          page: filter.page,
+        );
+
+        final contents = response.result
+            .map((g) => ContentModel.fromNhentaiApiPreview(g))
+            .toList();
+
+        // Workaround for null numPages
+        final totalPages = response.numPages ?? 9999;
+        final hasNext = response.numPages != null
+            ? filter.page < totalPages
+            : contents.isNotEmpty;
+
+        _logger.i(
+            '✅ [API SEARCH SUCCESS] ${contents.length} results | Page: ${filter.page}/${response.numPages ?? "???"} | HasNext: $hasNext');
+
+        return {
+          'contents': contents,
+          'pagination': {
+            'currentPage': filter.page,
+            'totalPages': totalPages,
+            'hasNext': hasNext,
+            'hasPrevious': filter.page > 1,
+          },
+          'totalData': response.numPages != null
+              ? (response.numPages! * 25)
+              : contents.length,
+        };
+      } catch (e) {
+        _logger.w('⚠️ [API SEARCH FAILED] Falling back to scraping: $e');
+        // Fall through to scraping
+      }
+    }
+
+    // Fallback to HTML scraping
+    _logger.i('📄 [SCRAPER SEARCH] Using HTML scraping for search');
+    return searchContentWithPagination(filter);
+  }
+
+  /// Get popular content via API with fallback
+  Future<List<ContentModel>> getPopularContentViaApi({
+    String period = 'all',
+    int page = 1,
+  }) async {
+    if (_useApi && apiClient != null && ApiConfig.enableApiFallback) {
+      try {
+        _logger
+            .i('Fetching popular content via API: period=$period, page=$page');
+        final response =
+            await apiClient!.getPopular(period: period, page: page);
+
+        final contents = response.result
+            .map((g) => ContentModel.fromNhentaiApiPreview(g))
+            .toList();
+
+        _logger
+            .i('API: Successfully fetched ${contents.length} popular contents');
+        return contents;
+      } catch (e) {
+        _logger.w('API failed, falling back to scraping: $e');
+        // Fall through to scraping
+      }
+    }
+
+    // Fallback to HTML scraping
+    return getPopularContent(period: period, page: page);
+  }
+
+  /// Get related content via API (API only, no scraping equivalent)
+  Future<List<ContentModel>> getRelatedContentViaApi(String contentId) async {
+    if (apiClient == null) {
+      _logger.w('API client not available for related content');
+      return [];
+    }
+
+    try {
+      _logger.i('Fetching related content via API for ID: $contentId');
+      final response = await apiClient!.getRelated(contentId);
+
+      final contents = response.result
+          .map((g) => ContentModel.fromNhentaiApiPreview(g))
+          .toList();
+
+      _logger.i('API: Found ${contents.length} related contents');
+      return contents;
+    } catch (e) {
+      _logger.e('Failed to get related content: $e');
+      return [];
+    }
+  }
 }

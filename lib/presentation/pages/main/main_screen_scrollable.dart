@@ -156,6 +156,35 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         filter.category != null;
   }
 
+  /// Reload search filter from storage and apply to content bloc
+  Future<void> _reloadSearchFilter() async {
+    try {
+      final savedFilterData =
+          await getIt<LocalDataSource>().getLastSearchFilter();
+
+      if (savedFilterData != null) {
+        final savedFilter = SearchFilter.fromJson(savedFilterData);
+
+        if (savedFilter.hasFilters && _isValidSearchFilter(savedFilter)) {
+          _currentSearchFilter =
+              savedFilter.copyWith(sortBy: _currentSortOption);
+          _isShowingSearchResults = true;
+          _contentBloc.add(ContentSearchEvent(_currentSearchFilter!));
+          Logger().i(
+              'MainScreen: Reloaded search filter: ${_currentSearchFilter?.buildQueryString()}');
+          setState(() {});
+          return;
+        }
+      }
+
+      // No valid filter, clear search state
+      _isShowingSearchResults = false;
+      setState(() {});
+    } catch (e) {
+      Logger().e('MainScreen: Error reloading search filter: $e');
+    }
+  }
+
   @override
   void dispose() {
     _homeBloc.close();
@@ -213,13 +242,9 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                     onSearchPressed: () async {
                       // Navigate to search and wait for result
                       final result = await context.push(AppRoute.search);
-                      if (result != null &&
-                          result is String &&
-                          context.mounted) {
-                        // If we get a result string, update search
-                        context
-                            .read<SearchBloc>()
-                            .add(SearchQueryEvent(result));
+                      if (result == true && context.mounted) {
+                        // Search was performed, reload saved filter
+                        await _reloadSearchFilter();
                       }
                     },
                     onOpenBrowser: () => _openInBrowser(),

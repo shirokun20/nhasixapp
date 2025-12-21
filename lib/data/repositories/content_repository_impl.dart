@@ -44,9 +44,9 @@ class ContentRepositoryImpl implements ContentRepository {
       _logger.i('Getting content list - page: $page, sort: $sortBy');
 
       try {
-        // Try to fetch from remote with pagination info
-        final remoteResult =
-            await remoteDataSource.getContentListWithPagination(page: page);
+        // Try to fetch from remote via API (with automatic fallback to scraping)
+        final remoteResult = await remoteDataSource
+            .getContentListWithPaginationViaApi(page: page, sortBy: sortBy);
 
         final remoteContents = remoteResult['contents'] as List<ContentModel>;
         final paginationInfo =
@@ -89,28 +89,41 @@ class ContentRepositoryImpl implements ContentRepository {
           // 1. Try multi-layer cache first (memory -> disk)
           final cacheKey = 'content_${contentId.value}';
           final multiLayerCached = await contentCacheManager.get(cacheKey);
+
+          // Only return cached content if it is complete (has images)
+          // Search results cached in getContentList often lack imageUrls
           if (multiLayerCached != null) {
-            _logger.i(
-                'Cache HIT (multi-layer) for content detail: ${contentId.value}');
-            return multiLayerCached;
+            if (multiLayerCached.imageUrls.isNotEmpty) {
+              _logger.i(
+                  'Cache HIT (multi-layer) for content detail: ${contentId.value}');
+              return multiLayerCached;
+            } else {
+              _logger.i(
+                  'Cache HIT (partial) for content detail: ${contentId.value} - missing images, fetching fresh data');
+            }
           }
 
           // 2. Try old DetailCacheService for backward compatibility
           final legacyCached =
               await detailCacheService.getCachedDetail(contentId.value);
           if (legacyCached != null) {
-            _logger
-                .i('Cache HIT (legacy) for content detail: ${contentId.value}');
-            // Promote to multi-layer cache
-            await contentCacheManager.set(cacheKey, legacyCached);
-            return legacyCached;
+            if (legacyCached.imageUrls.isNotEmpty) {
+              _logger.i(
+                  'Cache HIT (legacy) for content detail: ${contentId.value}');
+              // Promote to multi-layer cache
+              await contentCacheManager.set(cacheKey, legacyCached);
+              return legacyCached;
+            } else {
+              _logger.i(
+                  'Cache HIT (legacy-partial) for content detail: ${contentId.value} - missing images, ignoring');
+            }
           }
 
-          // 3. Cache MISS - fetch from remote
+          // 3. Cache MISS - fetch from remote via API (with fallback)
           _logger.d('Cache MISS for content detail: ${contentId.value}');
           try {
             final remoteContent =
-                await remoteDataSource.getContentDetail(contentId.value);
+                await remoteDataSource.getContentDetailViaApi(contentId.value);
             final entity = remoteContent.toEntity();
 
             // Cache to both systems
@@ -138,14 +151,15 @@ class ContentRepositoryImpl implements ContentRepository {
   Future<ContentListResult> searchContent(SearchFilter filter) async {
     try {
       _logger.i('Searching content with filter: ${filter.query}');
-      // For search, try remote first for fresh results
+      // For search, try remote API first for fresh results (with fallback)
       try {
         final remoteResult =
-            await remoteDataSource.searchContentWithPagination(filter);
+            await remoteDataSource.searchContentWithPaginationViaApi(filter);
 
         final remoteResults = remoteResult['contents'] as List<ContentModel>;
         var paginationInfo = remoteResult['pagination'] as Map<String, dynamic>;
-        paginationInfo['totalCount'] = remoteResult['totalData'] as int;
+        paginationInfo['totalCount'] =
+            remoteResult['totalData'] as int? ?? remoteResults.length;
         _logger.i('Found ${remoteResults.length} search results from remote');
 
         final entities =
@@ -263,7 +277,19 @@ class ContentRepositoryImpl implements ContentRepository {
     try {
       _logger.i('Getting related content for: ${contentId.value}');
 
-      // Get the reference content to find related tags
+      // Try API-based related content first (new feature!)
+      try {
+        final relatedContents =
+            await remoteDataSource.getRelatedContentViaApi(contentId.value);
+        if (relatedContents.isNotEmpty) {
+          _logger.i('Found ${relatedContents.length} related contents via API');
+          return relatedContents.take(limit).map((m) => m.toEntity()).toList();
+        }
+      } catch (e) {
+        _logger.w('API related content failed: $e');
+      }
+
+      // Fallback: Get the reference content to find related tags
       final referenceContent = await getContentDetail(contentId);
 
       if (referenceContent.tags.isEmpty) {
