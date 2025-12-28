@@ -103,6 +103,7 @@ class DetailCubit extends BaseCubit<DetailState> {
       if (relatedContents.isNotEmpty) {
         // Create updated content with related items
         final updatedContent = Content(
+          sourceId: currentState.content.sourceId,
           id: currentState.content.id,
           title: currentState.content.title,
           coverUrl: currentState.content.coverUrl,

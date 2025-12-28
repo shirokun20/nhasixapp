@@ -35,6 +35,8 @@ import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:nhasixapp/presentation/pages/main/widgets/main_grid_card.dart';
 import 'package:nhasixapp/presentation/pages/main/widgets/main_featured_card.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
+import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/source/source_state.dart';
 
 class MainScreenScrollable extends StatefulWidget {
   const MainScreenScrollable({super.key});
@@ -207,19 +209,47 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         BlocProvider.value(value: getIt<OfflineSearchCubit>()),
         BlocProvider.value(value: _updateCubit),
       ],
-      child: BlocListener<UpdateCubit, UpdateState>(
-        listener: (context, state) {
-          if (state is UpdateAvailable) {
-            showModalBottomSheet(
-              context: context,
-              backgroundColor: Colors.transparent,
-              isScrollControlled: true,
-              builder: (context) =>
-                  UpdateAvailableSheet(updateInfo: state.updateInfo),
-            );
-          }
-        },
+      child: MultiBlocListener(
+        listeners: [
+          BlocListener<UpdateCubit, UpdateState>(
+            listener: (context, state) {
+              if (state is UpdateAvailable) {
+                showModalBottomSheet(
+                  context: context,
+                  backgroundColor: Colors.transparent,
+                  isScrollControlled: true,
+                  builder: (context) =>
+                      UpdateAvailableSheet(updateInfo: state.updateInfo),
+                );
+              }
+            },
+          ),
+          BlocListener<SourceCubit, SourceState>(
+            listenWhen: (previous, current) =>
+                previous.activeSource?.id != current.activeSource?.id,
+            listener: (context, state) async {
+              // Reload content when source changes
+              if (mounted) {
+                // Clear saved search filter to prevent cross-source tag issues
+                await getIt<LocalDataSource>().removeLastSearchFilter();
+
+                // Reset search state
+                setState(() {
+                  _isShowingSearchResults = false;
+                  _currentSearchFilter = null;
+                });
+
+                _contentBloc.add(ContentLoadEvent(
+                  sortBy: _currentSortOption,
+                  forceRefresh: true,
+                ));
+              }
+            },
+          ),
+        ],
         child: BlocBuilder<HomeBloc, HomeState>(
+          // ... rest of child
+
           buildWhen: (previous, current) => true,
           builder: (context, homeState) {
             // Show full screen loading during home initialization

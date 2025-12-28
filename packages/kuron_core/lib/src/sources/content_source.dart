@@ -49,6 +49,9 @@ abstract class ContentSource {
   /// Get random content
   Future<List<Content>> getRandom({int count = 1});
 
+  /// Get related content for a specific content ID
+  Future<List<Content>> getRelated(String contentId);
+
   /// Build full image URL for this source
   String buildImageUrl({
     required String contentId,

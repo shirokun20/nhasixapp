@@ -43,6 +43,10 @@ class MultiBlocProviderConfig {
       create: (context) => getIt<ThemeCubit>(),
     ), // ThemeCubit for reactive theme management
 
+    BlocProvider<SourceCubit>(
+      create: (context) => getIt<SourceCubit>(),
+    ), // SourceCubit for multi-source management
+
     BlocProvider<DetailCubit>(
       create: (context) => getIt<DetailCubit>(),
     ),

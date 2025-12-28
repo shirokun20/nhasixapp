@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nhasixapp/domain/entities/content.dart';
-import 'package:nhasixapp/domain/entities/tag.dart';
+import 'package:kuron_core/kuron_core.dart';
+import 'package:nhasixapp/domain/extensions/content_extensions.dart';
 
 void main() {
   group('Content Entity', () {
@@ -8,6 +8,7 @@ void main() {
 
     setUp(() {
       sampleContent = Content(
+        sourceId: 'nhentai',
         id: '12345',
         title: 'Sample Title',
         coverUrl: 'https://example.com/cover.jpg',
@@ -59,6 +60,7 @@ void main() {
 
       test('returns japaneseTitle when englishTitle is empty', () {
         final content = Content(
+          sourceId: 'nhentai',
           id: '12345',
           title: 'Sample Title',
           coverUrl: 'https://example.com/cover.jpg',
@@ -80,6 +82,7 @@ void main() {
       test('returns title when both englishTitle and japaneseTitle are missing',
           () {
         final content = Content(
+          sourceId: 'nhentai',
           id: '12345',
           title: 'Sample Title',
           coverUrl: 'https://example.com/cover.jpg',
@@ -196,6 +199,7 @@ void main() {
     group('equatable', () {
       test('two contents with same data are equal', () {
         final content1 = Content(
+          sourceId: 'nhentai',
           id: '1',
           title: 'Same',
           coverUrl: 'url',
@@ -211,6 +215,7 @@ void main() {
         );
 
         final content2 = Content(
+          sourceId: 'nhentai',
           id: '1',
           title: 'Same',
           coverUrl: 'url',

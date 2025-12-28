@@ -3,37 +3,44 @@ import 'package:logger/logger.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/content_repository.dart';
 import '../../domain/value_objects/value_objects.dart';
-import '../../domain/usecases/base_usecase.dart';
-// import '../datasources/local/pagination_cache_keys.dart';
 import '../datasources/remote/remote_data_source.dart';
 import '../../services/cache/cache_manager.dart' as multi_cache;
-import '../models/content_model.dart';
 import '../models/tag_model.dart';
 import '../../services/detail_cache_service.dart';
+import '../datasources/remote/exceptions.dart';
 import '../../services/request_deduplication_service.dart';
+import 'package:kuron_core/kuron_core.dart' as core;
 
 /// Implementation of ContentRepository with caching strategy and offline-first architecture
 class ContentRepositoryImpl implements ContentRepository {
   ContentRepositoryImpl({
-    required this.remoteDataSource,
+    required this.contentSourceRegistry,
+    required this.remoteDataSource, // Keep for legacy tag ops for now
     required this.detailCacheService,
     required this.requestDeduplicationService,
     required this.contentCacheManager,
     required this.tagCacheManager,
-    // required this.localDataSource,
     Logger? logger,
   }) : _logger = logger ?? Logger();
 
+  final core.ContentSourceRegistry contentSourceRegistry;
   final RemoteDataSource remoteDataSource;
   final DetailCacheService detailCacheService;
   final RequestDeduplicationService requestDeduplicationService;
   final multi_cache.CacheManager<Content> contentCacheManager;
   final multi_cache.CacheManager<List<Tag>> tagCacheManager;
-  // final LocalDataSource localDataSource;
   final Logger _logger;
 
   static const Duration cacheExpiration = Duration(hours: 6);
   static const int defaultPageSize = 20;
+
+  core.ContentSource get _activeSource {
+    final source = contentSourceRegistry.currentSource;
+    if (source == null) {
+      throw Exception('No active content source found');
+    }
+    return source;
+  }
 
   @override
   Future<ContentListResult> getContentList({
@@ -44,30 +51,33 @@ class ContentRepositoryImpl implements ContentRepository {
       _logger.i('Getting content list - page: $page, sort: $sortBy');
 
       try {
-        // Try to fetch from remote via API (with automatic fallback to scraping)
-        final remoteResult = await remoteDataSource
-            .getContentListWithPaginationViaApi(page: page, sortBy: sortBy);
+        // Map SortOption
+        core.SortOption coreSort = core.SortOption.newest;
+        if (sortBy == SortOption.popular) coreSort = core.SortOption.popular;
+        if (sortBy == SortOption.popularWeek) {
+          coreSort = core.SortOption.popularWeek;
+        }
+        if (sortBy == SortOption.popularToday) {
+          coreSort = core.SortOption.popularToday;
+        }
 
-        final remoteContents = remoteResult['contents'] as List<ContentModel>;
-        final paginationInfo =
-            remoteResult['pagination'] as Map<String, dynamic>;
+        final coreResult =
+            await _activeSource.getList(page: page, sort: coreSort);
 
-        // Cache individual content items (not the whole list)
-        final entities =
-            remoteContents.map((model) => model.toEntity()).toList();
+        // Cache individual content items
+        final entities = coreResult.contents.map(_mapToAppContent).toList();
 
-        // Cache each content individually for detail page access
         for (final content in entities) {
           final cacheKey = 'content_${content.id}';
           await contentCacheManager.set(cacheKey, content);
         }
 
         _logger.i(
-            'Fetched and cached ${remoteContents.length} contents with pagination from remote');
+            'Fetched and cached ${entities.length} contents from ${_activeSource.id}');
 
-        return _buildContentListResultWithPagination(entities, paginationInfo);
+        return _mapToAppContentListResult(coreResult);
       } catch (e) {
-        _logger.w('Failed to fetch from remote: $e');
+        _logger.w('Failed to fetch from source: $e');
         rethrow;
       }
     } catch (e, stackTrace) {
@@ -86,57 +96,37 @@ class ContentRepositoryImpl implements ContentRepository {
         try {
           _logger.i('Getting content detail for ID: ${contentId.value}');
 
-          // 1. Try multi-layer cache first (memory -> disk)
           final cacheKey = 'content_${contentId.value}';
           final multiLayerCached = await contentCacheManager.get(cacheKey);
 
-          // Only return cached content if it is complete (has images)
-          // Search results cached in getContentList often lack imageUrls
-          // Note: relatedContent is loaded separately via loadRelatedContent()
           if (multiLayerCached != null) {
             if (multiLayerCached.imageUrls.isNotEmpty) {
-              _logger.i(
-                  'Cache HIT (multi-layer) for content detail: ${contentId.value}');
               return multiLayerCached;
-            } else {
-              _logger.i(
-                  'Cache HIT (partial) for content detail: ${contentId.value} - missing images, fetching fresh data');
             }
           }
 
-          // 2. Try old DetailCacheService for backward compatibility
           final legacyCached =
               await detailCacheService.getCachedDetail(contentId.value);
           if (legacyCached != null) {
             if (legacyCached.imageUrls.isNotEmpty) {
-              _logger.i(
-                  'Cache HIT (legacy) for content detail: ${contentId.value}');
-              // Promote to multi-layer cache
               await contentCacheManager.set(cacheKey, legacyCached);
               return legacyCached;
-            } else {
-              _logger.i(
-                  'Cache HIT (legacy-partial) for content detail: ${contentId.value} - missing images, ignoring');
             }
           }
 
-          // 3. Cache MISS - fetch from remote via API (with fallback)
           _logger.d('Cache MISS for content detail: ${contentId.value}');
           try {
-            final remoteContent =
-                await remoteDataSource.getContentDetailViaApi(contentId.value);
-            final entity = remoteContent.toEntity();
+            final coreContent = await _activeSource.getDetail(contentId.value);
+            final entity = _mapToAppContent(coreContent);
 
-            // Cache to both systems
             await Future.wait([
               contentCacheManager.set(cacheKey, entity),
               detailCacheService.cacheDetail(entity),
             ]);
 
-            _logger.i('Fetched and cached content detail from remote');
             return entity;
           } catch (e) {
-            _logger.w('Failed to fetch detail from remote: $e');
+            _logger.w('Failed to fetch detail from source: $e');
             throw NetworkException('Failed to fetch content detail: $e');
           }
         } catch (e, stackTrace) {
@@ -152,22 +142,13 @@ class ContentRepositoryImpl implements ContentRepository {
   Future<ContentListResult> searchContent(SearchFilter filter) async {
     try {
       _logger.i('Searching content with filter: ${filter.query}');
-      // For search, try remote API first for fresh results (with fallback)
       try {
-        final remoteResult =
-            await remoteDataSource.searchContentWithPaginationViaApi(filter);
+        final coreFilter = _mapToCoreSearchFilter(filter);
+        final coreResult = await _activeSource.search(coreFilter);
 
-        final remoteResults = remoteResult['contents'] as List<ContentModel>;
-        var paginationInfo = remoteResult['pagination'] as Map<String, dynamic>;
-        paginationInfo['totalCount'] =
-            remoteResult['totalData'] as int? ?? remoteResults.length;
-        _logger.i('Found ${remoteResults.length} search results from remote');
-
-        final entities =
-            remoteResults.map((model) => model.toEntity()).toList();
-        return _buildContentListResultWithPagination(entities, paginationInfo);
+        return _mapToAppContentListResult(coreResult);
       } catch (e) {
-        _logger.w('Remote search failed, trying cached search: $e');
+        _logger.w('Search failed: $e');
         rethrow;
       }
     } catch (e, stackTrace) {
@@ -180,40 +161,8 @@ class ContentRepositoryImpl implements ContentRepository {
   Future<List<Content>> getRandomContent({int count = 1}) async {
     try {
       _logger.i('Getting $count random content(s)');
-
-      final randomContents = <Content>[];
-
-      for (int i = 0; i < count; i++) {
-        try {
-          // Add progressive delay between requests to avoid rate limiting
-          if (i > 0) {
-            final delay = Duration(
-                milliseconds:
-                    2000 + (i * 500)); // Progressive delay: 2s, 2.5s, 3s, etc.
-            await Future.delayed(delay);
-          }
-
-          final remoteContent = await remoteDataSource.getRandomContent();
-          randomContents.add(remoteContent.toEntity());
-
-          _logger.d('Successfully got random content ${i + 1}/$count');
-        } catch (e) {
-          _logger.w('Failed to get random content ${i + 1}/$count: $e');
-          // Continue with other random content, but add exponential backoff on error
-          if (e.toString().toLowerCase().contains('rate limit')) {
-            _logger.w('Rate limit detected, applying exponential backoff');
-            final backoffDelay =
-                Duration(seconds: 10 + (i * 5)); // 10s, 15s, 20s, etc.
-            await Future.delayed(backoffDelay);
-          } else {
-            // Regular error, add shorter delay
-            await Future.delayed(const Duration(seconds: 3));
-          }
-        }
-      }
-
-      _logger.i('Returning ${randomContents.length} random content(s)');
-      return randomContents;
+      final coreContents = await _activeSource.getRandom(count: count);
+      return coreContents.map(_mapToAppContent).toList();
     } catch (e, stackTrace) {
       _logger.e('Failed to get random content',
           error: e, stackTrace: stackTrace);
@@ -227,21 +176,22 @@ class ContentRepositoryImpl implements ContentRepository {
     int page = 1,
   }) async {
     try {
-      final remoteResult =
-          await remoteDataSource.getPopularContentWithPagination(
-        period: timeframe.apiValue,
+      core.PopularTimeframe coreTimeframe = core.PopularTimeframe.allTime;
+      if (timeframe == PopularTimeframe.today) {
+        coreTimeframe = core.PopularTimeframe.today;
+      }
+      if (timeframe == PopularTimeframe.week) {
+        coreTimeframe = core.PopularTimeframe.week;
+      }
+
+      final coreResult = await _activeSource.getPopular(
+        timeframe: coreTimeframe,
         page: page,
       );
 
-      final remoteContents = remoteResult['contents'] as List<ContentModel>;
-      final paginationInfo = remoteResult['pagination'] as Map<String, dynamic>;
-
-      _logger.i('Fetched ${remoteContents.length} popular contents');
-
-      final entities = remoteContents.map((model) => model.toEntity()).toList();
-      return _buildContentListResultWithPagination(entities, paginationInfo);
+      return _mapToAppContentListResult(coreResult);
     } catch (e) {
-      _logger.w('Failed to fetch popular content from remote: $e');
+      _logger.w('Failed to fetch popular content from source: $e');
       rethrow;
     }
   }
@@ -277,37 +227,15 @@ class ContentRepositoryImpl implements ContentRepository {
   }) async {
     try {
       _logger.i('Getting related content for: ${contentId.value}');
-
-      // Try API-based related content first (new feature!)
+      // Use active source logic
       try {
-        final relatedContents =
-            await remoteDataSource.getRelatedContentViaApi(contentId.value);
-        if (relatedContents.isNotEmpty) {
-          _logger.i('Found ${relatedContents.length} related contents via API');
-          return relatedContents.take(limit).map((m) => m.toEntity()).toList();
+        final coreRelated = await _activeSource.getRelated(contentId.value);
+        if (coreRelated.isNotEmpty) {
+          return coreRelated.take(limit).map(_mapToAppContent).toList();
         }
       } catch (e) {
-        _logger.w('API related content failed: $e');
+        _logger.w('Related content failed: $e');
       }
-
-      // Fallback: Get the reference content to find related tags
-      final referenceContent = await getContentDetail(contentId);
-
-      if (referenceContent.tags.isEmpty) {
-        return [];
-      }
-
-      // Use the most common tags to find related content
-      final commonTags = referenceContent.tags
-          .where((tag) => tag.type == 'tag' || tag.type == 'artist')
-          .take(3)
-          .map((tag) => tag.name)
-          .toList();
-
-      if (commonTags.isEmpty) {
-        return [];
-      }
-
       return [];
     } catch (e, stackTrace) {
       _logger.e('Failed to get related content',
@@ -366,32 +294,6 @@ class ContentRepositoryImpl implements ContentRepository {
     }
   }
 
-  /// Build ContentListResult with real pagination data from scraper
-  ContentListResult _buildContentListResultWithPagination(
-      List<Content> contents, Map<String, dynamic> paginationInfo) {
-    final currentPage = paginationInfo['currentPage'] as int? ?? 1;
-    final totalPages = paginationInfo['totalPages'] as int? ?? 1;
-    final hasNext = paginationInfo['hasNext'] as bool? ?? false;
-    final hasPrevious = paginationInfo['hasPrevious'] as bool? ?? false;
-
-    // Calculate approximate total count based on pages and content per page
-    final totalCount = paginationInfo['totalCount'] as int? ?? 0;
-
-    _logger.d('Built ContentListResult with real pagination: '
-        'currentPage=$currentPage, totalPages=$totalPages, '
-        'hasNext=$hasNext, hasPrevious=$hasPrevious, '
-        'totalCount=$totalCount');
-
-    return ContentListResult(
-      contents: contents,
-      currentPage: currentPage,
-      totalPages: totalPages,
-      totalCount: totalCount,
-      hasNext: hasNext,
-      hasPrevious: hasPrevious,
-    );
-  }
-
   /// Sort tags based on sort option
   void _sortTags(List<Tag> tags, TagSortOption sortBy) {
     switch (sortBy) {
@@ -402,10 +304,75 @@ class ContentRepositoryImpl implements ContentRepository {
         tags.sort((a, b) => a.name.compareTo(b.name));
         break;
       case TagSortOption.recent:
-        // For recent, we'd need a timestamp in the tag model
-        // For now, sort by count as fallback
         tags.sort((a, b) => b.count.compareTo(a.count));
         break;
     }
+  }
+
+  /// --- Mappers ---
+
+  ContentListResult _mapToAppContentListResult(
+      core.ContentListResult coreResult) {
+    return ContentListResult(
+      contents: coreResult.contents,
+      currentPage: coreResult.currentPage,
+      totalPages: coreResult.totalPages,
+      totalCount: coreResult.totalCount,
+      hasNext: coreResult.hasNext,
+      hasPrevious: coreResult.hasPrevious,
+    );
+  }
+
+  /// Return core Content directly (no mapping needed since types are unified)
+  Content _mapToAppContent(core.Content coreContent) => coreContent;
+
+  core.SearchFilter _mapToCoreSearchFilter(SearchFilter appFilter) {
+    // Map SortOption
+    core.SortOption coreSort = core.SortOption.newest;
+    if (appFilter.sortBy == SortOption.popular) {
+      coreSort = core.SortOption.popular;
+    }
+    if (appFilter.sortBy == SortOption.popularWeek) {
+      coreSort = core.SortOption.popularWeek;
+    }
+    if (appFilter.sortBy == SortOption.popularToday) {
+      coreSort = core.SortOption.popularToday;
+    }
+
+    // Convert FilterItems to core.FilterItem
+    final includeTags = <core.FilterItem>[];
+    final excludeTags = <core.FilterItem>[];
+
+    void process(List<FilterItem> items, String type) {
+      for (final item in items) {
+        final coreItem = core.FilterItem(
+          id: 0, // App doesn't store ID for filter items
+          name: item.value,
+          type: type,
+          isExcluded: item.isExcluded,
+        );
+        if (item.isExcluded) {
+          excludeTags.add(coreItem);
+        } else {
+          includeTags.add(coreItem);
+        }
+      }
+    }
+
+    process(appFilter.tags, 'tag');
+    process(appFilter.artists, 'artist');
+    process(appFilter.characters, 'character');
+    process(appFilter.parodies, 'parody');
+    process(appFilter.groups, 'group');
+
+    return core.SearchFilter(
+      query: appFilter.query ?? '',
+      page: appFilter.page,
+      sort: coreSort,
+      includeTags: includeTags,
+      excludeTags: excludeTags,
+      language: appFilter.language,
+      category: appFilter.category,
+    );
   }
 }

@@ -4,7 +4,8 @@ import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
-import '../../domain/entities/content.dart';
+import 'package:kuron_core/kuron_core.dart';
+import 'package:nhasixapp/domain/extensions/content_extensions.dart';
 import '../../domain/entities/download_status.dart';
 import '../../domain/repositories/user_data_repository.dart';
 import '../constants/app_constants.dart';
@@ -553,6 +554,7 @@ class OfflineContentManager {
       }
 
       return Content(
+        sourceId: 'nhentai',
         id: contentId,
         title: title,
         coverUrl: coverUrl,
@@ -665,6 +667,7 @@ class OfflineContentManager {
                 }
 
                 final content = Content(
+                  sourceId: 'nhentai',
                   id: contentId,
                   title: title,
                   coverUrl: coverUrl,
@@ -894,6 +897,7 @@ class OfflineContentManager {
       }
 
       final content = Content(
+        sourceId: 'nhentai',
         id: contentId,
         title: title,
         coverUrl: coverUrl,

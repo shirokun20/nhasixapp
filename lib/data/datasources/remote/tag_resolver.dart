@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 
-import '../../../domain/entities/tag.dart';
+import 'package:kuron_core/kuron_core.dart';
 
 /// Simple tag resolver that uses local assets only
 /// Loads tag mapping from assets/json/tags.json

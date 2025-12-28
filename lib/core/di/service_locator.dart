@@ -12,7 +12,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart'
     hide ImageCacheManager;
 
-import 'package:kuron_core/kuron_core.dart' hide Content, Tag;
+import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_nhentai/kuron_nhentai.dart';
 import 'package:nhasixapp/core/adapters/nhentai_scraper_adapter_impl.dart';
 
@@ -79,8 +79,6 @@ import 'package:nhasixapp/services/image_metadata_service.dart';
 import 'package:nhasixapp/services/export_service.dart';
 import 'package:nhasixapp/services/legal_content_service.dart';
 import 'package:nhasixapp/services/cache/cache_manager.dart' as multi_cache;
-import 'package:nhasixapp/domain/entities/content.dart';
-import 'package:nhasixapp/domain/entities/tag.dart';
 
 final getIt = GetIt.instance;
 
@@ -292,6 +290,7 @@ void _setupDataSources() {
 void _setupRepositories() {
   // Content Repository with multi-layer cache integration
   getIt.registerLazySingleton<ContentRepository>(() => ContentRepositoryImpl(
+        contentSourceRegistry: getIt<ContentSourceRegistry>(),
         remoteDataSource: getIt<RemoteDataSource>(),
         detailCacheService: getIt<DetailCacheService>(),
         requestDeduplicationService: getIt<RequestDeduplicationService>(),

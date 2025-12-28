@@ -5,7 +5,6 @@ import 'package:nhasixapp/domain/entities/entities.dart';
 
 import '../../models/content_model.dart';
 import '../../models/tag_model.dart';
-import '../../../domain/entities/tag.dart';
 import 'tag_resolver.dart';
 
 /// HTML scraper for nhentai.net with CSS selectors

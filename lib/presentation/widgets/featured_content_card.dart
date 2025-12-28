@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../core/constants/text_style_const.dart';
-import '../../domain/entities/content.dart';
+import 'package:kuron_core/kuron_core.dart';
 import '../../l10n/app_localizations.dart';
 import 'progressive_image_widget.dart';
 

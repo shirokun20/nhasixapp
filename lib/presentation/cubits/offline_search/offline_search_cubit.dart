@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
 import '../../../core/utils/offline_content_manager.dart';
-import '../../../domain/entities/content.dart';
+import 'package:kuron_core/kuron_core.dart';
 import '../../../domain/entities/download_status.dart';
 import '../../../domain/repositories/user_data_repository.dart';
 import '../../../core/constants/app_constants.dart';

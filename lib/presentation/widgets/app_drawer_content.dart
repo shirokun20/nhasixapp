@@ -5,6 +5,7 @@ import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../core/routing/app_route.dart';
+import 'common/source_selector.dart';
 
 class AppDrawerContent extends StatefulWidget {
   const AppDrawerContent({
@@ -138,6 +139,8 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   children: [
+                    const SourceSelector(),
+                    const SizedBox(height: 8),
                     _buildSectionLabel(l10n.home.toUpperCase(), theme),
                     const SizedBox(height: 8),
                     _buildNavItem(

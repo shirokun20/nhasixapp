@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 
-import '../../../domain/entities/tag.dart';
+import 'package:kuron_core/kuron_core.dart';
 
 /// Local data source for tag data from assets/json/tags.json
 class TagDataSource {

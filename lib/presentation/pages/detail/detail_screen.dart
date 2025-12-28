@@ -474,6 +474,7 @@ class _DetailScreenState extends State<DetailScreen> {
           const SizedBox(height: 16),
 
           // Metadata rows with enhanced styling
+          _buildMetadataRow('Source', content.source, Icons.dns_rounded),
           _buildMetadataRow(
               AppLocalizations.of(context)!.idLabel, content.id, Icons.tag),
           _buildMetadataRow(AppLocalizations.of(context)!.pagesLabel,

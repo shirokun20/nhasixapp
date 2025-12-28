@@ -3,7 +3,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../core/constants/text_style_const.dart';
-import '../../domain/entities/content.dart';
+import 'package:kuron_core/kuron_core.dart';
 import '../../l10n/app_localizations.dart';
 import 'progressive_image_widget.dart';
 
