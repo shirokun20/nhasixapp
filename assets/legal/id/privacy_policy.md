@@ -86,4 +86,4 @@ Untuk kekhawatiran atau pertanyaan privasi, silakan kunjungi repositori GitHub k
 
 ---
 
-*Privasi Anda penting bagi kami. NhasixApp dirancang untuk menjadi aplikasi yang menghormati privasi.*
+*Privasi Anda penting bagi kami. Kuron dirancang untuk menjadi aplikasi yang menghormati privasi.*

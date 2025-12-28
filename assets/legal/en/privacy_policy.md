@@ -86,4 +86,4 @@ For privacy concerns or questions, please visit our GitHub repository.
 
 ---
 
-*Your privacy is important to us. NhasixApp is designed to be a privacy-respecting application.*
+*Your privacy is important to us. Kuron is designed to be a privacy-respecting application.*
