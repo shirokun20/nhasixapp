@@ -18,6 +18,7 @@ class Content extends Equatable {
     required this.pageCount,
     required this.imageUrls,
     required this.uploadDate,
+    this.source = 'nhentai',
     this.favorites = 0,
     this.englishTitle,
     this.japaneseTitle,
@@ -36,6 +37,7 @@ class Content extends Equatable {
   final int pageCount;
   final List<String> imageUrls;
   final DateTime uploadDate;
+  final String source;
   final int favorites; // Popularity count
   final String? englishTitle;
   final String? japaneseTitle;
@@ -55,6 +57,7 @@ class Content extends Equatable {
         pageCount,
         imageUrls,
         uploadDate,
+        source,
         favorites,
         englishTitle,
         japaneseTitle,
@@ -74,6 +77,7 @@ class Content extends Equatable {
     int? pageCount,
     List<String>? imageUrls,
     DateTime? uploadDate,
+    String? source,
     int? favorites,
     String? englishTitle,
     String? japaneseTitle,
@@ -92,6 +96,7 @@ class Content extends Equatable {
       pageCount: pageCount ?? this.pageCount,
       imageUrls: imageUrls ?? this.imageUrls,
       uploadDate: uploadDate ?? this.uploadDate,
+      source: source ?? this.source,
       favorites: favorites ?? this.favorites,
       englishTitle: englishTitle ?? this.englishTitle,
       japaneseTitle: japaneseTitle ?? this.japaneseTitle,

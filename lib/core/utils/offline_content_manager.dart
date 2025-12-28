@@ -773,8 +773,51 @@ class OfflineContentManager {
 
     await for (final entity in folderDir.list()) {
       if (entity is Directory) {
-        final contentResult =
-            await _tryParseContentFolder(entity, path.basename(entity.path));
+        final contentId = path.basename(entity.path);
+
+        // Check for v1 metadata in v2 structure and fix it
+        try {
+          final metadataFile = File(path.join(entity.path, 'metadata.json'));
+          if (await metadataFile.exists()) {
+            final content = await metadataFile.readAsString();
+            if (!content.contains('schemaVersion')) {
+              // Found v1 metadata in source folder - UPGRADE IT
+              final jsonMap = jsonDecode(content) as Map<String, dynamic>;
+              final sourceName = path.basename(folderPath); // e.g., 'nhentai'
+
+              // Use proper migration constructor from ContentMetadata
+              // Note: We need a temporary import or just manual map manipulation here
+              // Since we can't easily import ContentMetadata here without circular deps if not already imported
+              // We'll do manual map manipulation for safety
+
+              final newMetadata = Map<String, dynamic>.from(jsonMap);
+              newMetadata['schemaVersion'] = '2.0';
+              newMetadata['source'] = sourceName;
+
+              // Handle tags string to map conversion if needed
+              if (newMetadata['tags'] is List &&
+                  newMetadata['tags'].isNotEmpty &&
+                  newMetadata['tags'][0] is String) {
+                newMetadata['tags'] = (newMetadata['tags'] as List)
+                    .map((t) => {
+                          'name': t.toString(),
+                          'type': 'tag',
+                          'count': 0,
+                          'url': ''
+                        })
+                    .toList();
+              }
+
+              await metadataFile.writeAsString(jsonEncode(newMetadata));
+              _logger.i(
+                  'Auto-upgraded metadata for $contentId to v2 in $sourceName folder');
+            }
+          }
+        } catch (e) {
+          _logger.w('Failed to check/upgrade metadata for $contentId: $e');
+        }
+
+        final contentResult = await _tryParseContentFolder(entity, contentId);
         if (contentResult != null) {
           results.add(contentResult);
         }

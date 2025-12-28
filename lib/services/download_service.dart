@@ -45,7 +45,8 @@ class DownloadService {
       await _checkPermissions();
 
       // Create download directory
-      final downloadDir = await _createDownloadDirectory(content.id);
+      final downloadDir =
+          await _createDownloadDirectory(content.id, content.source);
 
       // Calculate actual page range to download
       final actualStartPage = startPage ?? 1;
@@ -251,10 +252,7 @@ class DownloadService {
       imageUrl,
       options: Options(
         responseType: ResponseType.bytes,
-        headers: {
-          'User-Agent': 'AppleWebKit/537.36',
-          'Referer': 'https://nhentai.net/',
-        },
+        headers: _getHeadersForSource(imageUrl),
       ),
       cancelToken: cancelToken,
     );
@@ -267,6 +265,20 @@ class DownloadService {
           args: {'url': imageUrl},
           fallback: 'No data received for image: $imageUrl'));
     }
+  }
+
+  /// Get headers for source based on URL
+  Map<String, dynamic> _getHeadersForSource(String imageUrl) {
+    if (imageUrl.contains('nhentai')) {
+      return {
+        'User-Agent': 'AppleWebKit/537.36',
+        'Referer': 'https://nhentai.net/',
+      };
+    }
+    // Fallback for generic sources or other known sources
+    return {
+      'User-Agent': 'AppleWebKit/537.36',
+    };
   }
 
   /// ✅ NEW: Get existing downloaded files for proper resume
@@ -298,11 +310,16 @@ class DownloadService {
   }
 
   /// Create download directory structure
-  Future<Directory> _createDownloadDirectory(String contentId) async {
+  Future<Directory> _createDownloadDirectory(
+      String contentId, String sourceId) async {
     // Use smart Downloads directory detection
     final downloadsPath = await _getDownloadsDirectory();
     final nhasixDir = Directory(path.join(downloadsPath, 'nhasix'));
-    final contentDir = Directory(path.join(nhasixDir.path, contentId));
+
+    // Use source-based path
+    final sourceDir = Directory(path.join(nhasixDir.path, sourceId));
+
+    final contentDir = Directory(path.join(sourceDir.path, contentId));
     final imagesDir = Directory(path.join(contentDir.path, 'images'));
 
     // Create directories if they don't exist
@@ -310,7 +327,7 @@ class DownloadService {
       await imagesDir.create(recursive: true);
     }
 
-    // 🔒 PRIVACY: Create .nomedia file to prevent images from appearing in gallery
+    // 🔒 PRIVACY: Create .nomedia file
     await _createNoMediaFile(nhasixDir);
 
     return imagesDir;
@@ -470,17 +487,29 @@ class DownloadService {
   ) async {
     final isRangeDownload = startPage > 1 || endPage < content.pageCount;
     final metadata = {
+      'schemaVersion': '2.0', // V2 Schema
+      'source': content.source,
       'content_id': content.id,
       'title': content.title,
       'download_date': DateTime.now().toIso8601String(),
       'total_pages': content.pageCount,
       'downloaded_files': downloadedFiles.length,
       'files': downloadedFiles.map((f) => path.basename(f)).toList(),
-      'tags': content.tags.map((t) => t.name).toList(),
+      // Use map for tags to support restoration
+      'tags': content.tags
+          .map((t) => {
+                'id': t.id,
+                'name': t.name,
+                'type': t.type,
+                'count': t.count,
+                'url': t.url
+              })
+          .toList(),
+      // Keep legacy string list for backward compatibility if needed, though V2 mainly uses 'tags'
       'artists': content.artists,
       'language': content.language,
       'cover_url': content.coverUrl,
-      // NEW: Range download information
+      // Range download information
       'is_range_download': isRangeDownload,
       'start_page': startPage,
       'end_page': endPage,
@@ -550,13 +579,31 @@ class DownloadService {
   Future<String?> getDownloadPath(String contentId) async {
     try {
       final downloadsPath = await _getDownloadsDirectory();
-      final contentDir = Directory(
-        path.join(downloadsPath, 'nhasix', contentId),
-      );
+      final nhasixDir = Directory(path.join(downloadsPath, 'nhasix'));
 
-      if (await contentDir.exists()) {
-        return contentDir.path;
+      if (!await nhasixDir.exists()) return null;
+
+      // 1. Check legacy path first (nhasix/{id})
+      final legacyDir = Directory(path.join(nhasixDir.path, contentId));
+      if (await legacyDir.exists()) {
+        return legacyDir.path;
       }
+
+      // 2. Scan all subdirectories (sources) for the contentId
+      try {
+        await for (final entity in nhasixDir.list()) {
+          if (entity is Directory) {
+            // Check if this source directory contains the contentId
+            final contentDir = Directory(path.join(entity.path, contentId));
+            if (await contentDir.exists()) {
+              return contentDir.path;
+            }
+          }
+        }
+      } catch (e) {
+        _logger.w('Error scanning source directories: $e');
+      }
+
       return null;
     } catch (e) {
       _logger.e('Error getting download path: $e');
@@ -667,17 +714,13 @@ class DownloadService {
   /// Count actual downloaded files in the folder
   Future<int> countDownloadedFiles(String contentId) async {
     try {
-      final downloadsDir = await _getDownloadsDirectory();
-      final nhasixDir = Directory(path.join(downloadsDir, 'nhasix'));
-      final contentDir = Directory(path.join(nhasixDir.path, contentId));
-      final imagesDir = Directory(path.join(contentDir.path, 'images'));
+      final downloadPath = await getDownloadPath(contentId);
+      if (downloadPath == null) return 0;
+
+      final imagesDir = Directory(path.join(downloadPath, 'images'));
 
       _logger.d('Checking directories for content $contentId:');
-      _logger.d('Downloads dir: $downloadsDir');
-      _logger.d(
-          'Nhasix dir: ${nhasixDir.path} (exists: ${await nhasixDir.exists()})');
-      _logger.d(
-          'Content dir: ${contentDir.path} (exists: ${await contentDir.exists()})');
+      _logger.d('Content dir: $downloadPath');
       _logger.d(
           'Images dir: ${imagesDir.path} (exists: ${await imagesDir.exists()})');
 
@@ -717,10 +760,18 @@ class DownloadService {
   Future<Map<String, dynamic>> verifyDownloadStatus(String contentId) async {
     try {
       final actualCount = await countDownloadedFiles(contentId);
-      final downloadsDir = await _getDownloadsDirectory();
-      final contentDir =
-          Directory(path.join(downloadsDir, 'nhasix', contentId));
-      final metadataPath = path.join(contentDir.path, 'metadata.json');
+      final downloadPath = await getDownloadPath(contentId);
+
+      // If path not found but count > 0 (should not happen normally) or just return empty
+      if (downloadPath == null) {
+        return {
+          'actualCount': actualCount,
+          'expectedCount': null,
+          'isRangeDownload': false,
+        };
+      }
+
+      final metadataPath = path.join(downloadPath, 'metadata.json');
 
       _logger.d('Verifying download status for $contentId:');
       _logger.d('Actual file count: $actualCount');

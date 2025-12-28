@@ -19,6 +19,7 @@ class ContentModel extends Content {
     required super.pageCount,
     required super.imageUrls,
     required super.uploadDate,
+    super.source = 'nhentai',
     super.favorites = 0,
     super.englishTitle,
     super.japaneseTitle,
@@ -43,6 +44,7 @@ class ContentModel extends Content {
       pageCount: content.pageCount,
       imageUrls: content.imageUrls,
       uploadDate: content.uploadDate,
+      source: content.source,
       favorites: content.favorites,
       englishTitle: content.englishTitle,
       japaneseTitle: content.japaneseTitle,
@@ -135,6 +137,7 @@ class ContentModel extends Content {
       uploadDate: response.uploadDate != null
           ? DateTime.fromMillisecondsSinceEpoch(response.uploadDate! * 1000)
           : DateTime.now(),
+      source: 'nhentai',
       favorites: response.numFavorites ?? 0,
       cachedAt: DateTime.now(),
     );
@@ -221,6 +224,7 @@ class ContentModel extends Content {
       uploadDate: response.uploadDate != null
           ? DateTime.fromMillisecondsSinceEpoch(response.uploadDate! * 1000)
           : DateTime.now(),
+      source: 'nhentai',
       favorites: response.numFavorites ?? 0,
       cachedAt: DateTime.now(),
     );
@@ -241,6 +245,7 @@ class ContentModel extends Content {
       pageCount: pageCount,
       imageUrls: imageUrls,
       uploadDate: uploadDate,
+      source: source,
       favorites: favorites,
       englishTitle: englishTitle,
       japaneseTitle: japaneseTitle,
@@ -264,6 +269,7 @@ class ContentModel extends Content {
       pageCount: map['page_count'],
       imageUrls: _decodeStringList(map['image_urls']),
       uploadDate: DateTime.fromMillisecondsSinceEpoch(map['upload_date']),
+      source: map['source_id'] ?? 'nhentai',
       favorites: map['favorites'] ?? 0,
       tags: tags,
       cachedAt: map['cached_at'] != null
@@ -288,6 +294,7 @@ class ContentModel extends Content {
       'page_count': pageCount,
       'image_urls': _encodeStringList(imageUrls),
       'upload_date': uploadDate.millisecondsSinceEpoch,
+      'source_id': source,
       'favorites': favorites,
       'cached_at': cachedAt?.millisecondsSinceEpoch ??
           DateTime.now().millisecondsSinceEpoch,
@@ -309,6 +316,7 @@ class ContentModel extends Content {
       pageCount: pageCount,
       imageUrls: imageUrls,
       uploadDate: uploadDate,
+      source: source,
       favorites: favorites,
       englishTitle: englishTitle,
       japaneseTitle: japaneseTitle,

@@ -123,9 +123,12 @@ class ContentMetadata {
               ?.map((e) => e.toString())
               .toList() ??
           [],
-      tags: (json['tags'] as List<dynamic>?)
-              ?.map((e) => e as Map<String, dynamic>)
-              .toList() ??
+      tags: (json['tags'] as List<dynamic>?)?.map((e) {
+            if (e is String) {
+              return {'name': e, 'type': 'tag', 'count': 0, 'url': ''};
+            }
+            return e as Map<String, dynamic>;
+          }).toList() ??
           [],
       artists: (json['artists'] as List<dynamic>?)
               ?.map((e) => e.toString())

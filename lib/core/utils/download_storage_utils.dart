@@ -390,8 +390,11 @@ class DownloadStorageUtils {
           // This automatically handles v1 -> v2 migration (adds source='nhentai', schemaVersion='2.0')
           final metadata = ContentMetadata.fromJson(jsonMap);
 
-          // Force source to be the target sourceId of migration
-          final updatedMetadata = metadata.copyWith(source: sourceId);
+          // Force source to be the target sourceId of migration and upgrade schema version
+          final updatedMetadata = metadata.copyWith(
+            source: sourceId,
+            schemaVersion: MetadataVersion.v2,
+          );
 
           // Write back updated metadata
           await metadataFile
