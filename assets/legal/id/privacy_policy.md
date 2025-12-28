@@ -1,6 +1,6 @@
 # Kebijakan Privasi
 
-**Terakhir Diperbarui: Desember 2024**
+**Terakhir Diperbarui: Desember 2025**
 
 ## Ringkasan
 

@@ -1,6 +1,6 @@
 # Terms and Conditions
 
-**Last Updated: December 2024**
+**Last Updated: December 2025**
 
 ## 1. Acceptance of Terms
 

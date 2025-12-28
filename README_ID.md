@@ -47,6 +47,9 @@
 
 ## 📱 **Tangkapan Layar**
 
+<details>
+<summary>🖼️ Klik untuk melihat tangkapan layar (peringatan konten 18+)</summary>
+
 <table>
   <tr>
     <td align="center"><b>Beranda & Feed</b></td>
@@ -69,6 +72,8 @@
     <td><img src="screenshots/flutter_11.png" width="250" alt="Download"/></td>
   </tr>
 </table>
+
+</details>
 
 ---
 

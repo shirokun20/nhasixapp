@@ -47,6 +47,9 @@
 
 ## 📱 **Screenshots**
 
+<details>
+<summary>🖼️ Click to view screenshots (18+ content warning)</summary>
+
 <table>
   <tr>
     <td align="center"><b>Home & Feed</b></td>
@@ -69,6 +72,8 @@
     <td><img src="screenshots/flutter_11.png" width="250" alt="Downloads"/></td>
   </tr>
 </table>
+
+</details>
 
 ---
 
