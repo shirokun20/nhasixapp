@@ -8,6 +8,8 @@ import 'package:nhasixapp/presentation/cubits/update/update_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/update/update_state.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
 import 'package:nhasixapp/presentation/widgets/update_available_sheet.dart';
+import 'package:nhasixapp/presentation/widgets/legal_content_sheet.dart';
+import 'package:nhasixapp/services/legal_content_service.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -210,6 +212,42 @@ class _AboutContentState extends State<_AboutContent>
                         height: 48,
                         width: 48,
                       ),
+                    ),
+                  ),
+                  _buildDivider(),
+                  _buildMenuItem(
+                    context,
+                    icon: Icons.gavel_outlined,
+                    title: l10n.termsAndConditions,
+                    subtitle: l10n.termsAndConditionsSubtitle,
+                    onTap: () => LegalContentSheet.show(
+                      context,
+                      contentType: LegalContentType.termsAndConditions,
+                      locale: Localizations.localeOf(context).languageCode,
+                    ),
+                  ),
+                  _buildDivider(),
+                  _buildMenuItem(
+                    context,
+                    icon: Icons.privacy_tip_outlined,
+                    title: l10n.privacyPolicy,
+                    subtitle: l10n.privacyPolicySubtitle,
+                    onTap: () => LegalContentSheet.show(
+                      context,
+                      contentType: LegalContentType.privacyPolicy,
+                      locale: Localizations.localeOf(context).languageCode,
+                    ),
+                  ),
+                  _buildDivider(),
+                  _buildMenuItem(
+                    context,
+                    icon: Icons.help_outline,
+                    title: l10n.faq,
+                    subtitle: l10n.faqSubtitle,
+                    onTap: () => LegalContentSheet.show(
+                      context,
+                      contentType: LegalContentType.faq,
+                      locale: Localizations.localeOf(context).languageCode,
                     ),
                   ),
                 ], theme),

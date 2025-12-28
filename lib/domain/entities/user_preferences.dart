@@ -8,7 +8,7 @@ class UserPreferences extends Equatable {
     this.imageQuality = 'high',
     this.autoDownload = false,
     this.showTitles = true,
-    this.blurThumbnails = false,
+    this.blurThumbnails = true,
     this.usePagination = true,
     this.columnsPortrait = 2,
     this.columnsLandscape = 3,
@@ -70,7 +70,7 @@ class UserPreferences extends Equatable {
   final int readerAutoHideDelay; // in seconds
   final bool readerHideOnTap;
   final bool readerHideOnSwipe;
-  
+
   // History cleanup settings
   final bool autoCleanupHistory;
   final int historyCleanupIntervalHours; // 6, 12, 24, 48, 168 (week)
@@ -79,7 +79,8 @@ class UserPreferences extends Equatable {
   final int inactivityCleanupDays; // Days of inactivity before cleanup
   final DateTime? lastAppAccess; // Track last app access
   final DateTime? lastHistoryCleanup; // Track last cleanup
-  final String disguiseMode; // App disguise mode: default, calculator, notes, weather
+  final String
+      disguiseMode; // App disguise mode: default, calculator, notes, weather
 
   @override
   List<Object?> get props => [
@@ -191,10 +192,12 @@ class UserPreferences extends Equatable {
       readerHideOnSwipe: readerHideOnSwipe ?? this.readerHideOnSwipe,
       // History cleanup settings
       autoCleanupHistory: autoCleanupHistory ?? this.autoCleanupHistory,
-      historyCleanupIntervalHours: historyCleanupIntervalHours ?? this.historyCleanupIntervalHours,
+      historyCleanupIntervalHours:
+          historyCleanupIntervalHours ?? this.historyCleanupIntervalHours,
       maxHistoryDays: maxHistoryDays ?? this.maxHistoryDays,
       cleanupOnInactivity: cleanupOnInactivity ?? this.cleanupOnInactivity,
-      inactivityCleanupDays: inactivityCleanupDays ?? this.inactivityCleanupDays,
+      inactivityCleanupDays:
+          inactivityCleanupDays ?? this.inactivityCleanupDays,
       lastAppAccess: lastAppAccess ?? this.lastAppAccess,
       lastHistoryCleanup: lastHistoryCleanup ?? this.lastHistoryCleanup,
       disguiseMode: disguiseMode ?? this.disguiseMode,
@@ -316,7 +319,7 @@ class UserPreferences extends Equatable {
       imageQuality: json['imageQuality'] ?? 'high',
       autoDownload: _safeParseBool(json['autoDownload'], false),
       showTitles: _safeParseBool(json['showTitles'], true),
-      blurThumbnails: _safeParseBool(json['blurThumbnails'], false),
+      blurThumbnails: _safeParseBool(json['blurThumbnails'], true),
       usePagination: _safeParseBool(json['usePagination'], true),
       columnsPortrait: json['columnsPortrait'] ?? 2,
       columnsLandscape: json['columnsLandscape'] ?? 3,
@@ -335,20 +338,29 @@ class UserPreferences extends Equatable {
       favoriteCategories: List<String>.from(json['favoriteCategories'] ?? []),
       readerBrightness: (json['readerBrightness'] ?? 1.0).toDouble(),
       readerInvertColors: _safeParseBool(json['readerInvertColors'], false),
-      readerShowPageNumbers: _safeParseBool(json['readerShowPageNumbers'], true),
-      readerShowProgressBar: _safeParseBool(json['readerShowProgressBar'], true),
+      readerShowPageNumbers:
+          _safeParseBool(json['readerShowPageNumbers'], true),
+      readerShowProgressBar:
+          _safeParseBool(json['readerShowProgressBar'], true),
       readerAutoHideUI: _safeParseBool(json['readerAutoHideUI'], true),
       readerAutoHideDelay: _safeParseInt(json['readerAutoHideDelay'], 3),
       readerHideOnTap: _safeParseBool(json['readerHideOnTap'], true),
       readerHideOnSwipe: _safeParseBool(json['readerHideOnSwipe'], true),
       // History cleanup settings
       autoCleanupHistory: _safeParseBool(json['autoCleanupHistory'], false),
-      historyCleanupIntervalHours: _safeParseInt(json['historyCleanupIntervalHours'], 24),
+      historyCleanupIntervalHours:
+          _safeParseInt(json['historyCleanupIntervalHours'], 24),
       maxHistoryDays: _safeParseInt(json['maxHistoryDays'], 30),
       cleanupOnInactivity: _safeParseBool(json['cleanupOnInactivity'], true),
       inactivityCleanupDays: _safeParseInt(json['inactivityCleanupDays'], 7),
-      lastAppAccess: json['lastAppAccess'] != null ? DateTime.fromMillisecondsSinceEpoch(_safeParseInt(json['lastAppAccess'], 0)) : null,
-      lastHistoryCleanup: json['lastHistoryCleanup'] != null ? DateTime.fromMillisecondsSinceEpoch(_safeParseInt(json['lastHistoryCleanup'], 0)) : null,
+      lastAppAccess: json['lastAppAccess'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(
+              _safeParseInt(json['lastAppAccess'], 0))
+          : null,
+      lastHistoryCleanup: json['lastHistoryCleanup'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(
+              _safeParseInt(json['lastHistoryCleanup'], 0))
+          : null,
       disguiseMode: json['disguiseMode'] ?? 'default',
     );
   }
@@ -356,23 +368,23 @@ class UserPreferences extends Equatable {
   /// Safely parse boolean value from JSON, handling various data types
   static bool _safeParseBool(dynamic value, bool defaultValue) {
     if (value == null) return defaultValue;
-    
+
     if (value is bool) return value;
-    
+
     if (value is String) {
       final lowerValue = value.toLowerCase().trim();
       if (lowerValue == 'true' || lowerValue == '1') return true;
       if (lowerValue == 'false' || lowerValue == '0') return false;
     }
-    
+
     if (value is int) {
       return value != 0;
     }
-    
+
     if (value is double) {
       return value != 0.0;
     }
-    
+
     // If we can't parse it, return the default value
     return defaultValue;
   }
@@ -380,22 +392,22 @@ class UserPreferences extends Equatable {
   /// Safely parse integer value from JSON, handling various data types
   static int _safeParseInt(dynamic value, int defaultValue) {
     if (value == null) return defaultValue;
-    
+
     if (value is int) return value;
-    
+
     if (value is String) {
       final parsed = int.tryParse(value.trim());
       if (parsed != null) return parsed;
     }
-    
+
     if (value is double) {
       return value.round();
     }
-    
+
     if (value is bool) {
       return value ? 1 : 0;
     }
-    
+
     return defaultValue;
   }
 }

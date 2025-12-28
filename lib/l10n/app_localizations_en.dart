@@ -856,6 +856,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get imageQuality => 'Image Quality';
 
   @override
+  String get blurThumbnails => 'Blur Thumbnails';
+
+  @override
+  String get blurThumbnailsDescription =>
+      'Apply blur effect on card images for privacy';
+
+  @override
   String get gridColumns => 'Grid Columns (Portrait)';
 
   @override
@@ -930,6 +937,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyAnalytics => 'Privacy Analytics';
+
+  @override
+  String get termsAndConditions => 'Terms and Conditions';
+
+  @override
+  String get termsAndConditionsSubtitle => 'User agreement and disclaimers';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get privacyPolicySubtitle => 'How we handle your data';
+
+  @override
+  String get faq => 'FAQ';
+
+  @override
+  String get faqSubtitle => 'Frequently asked questions';
 
   @override
   String get resetSettings => 'Reset Settings';

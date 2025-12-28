@@ -136,6 +136,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   context.read<SettingsCubit>().updateColumnsPortrait(v!),
               theme: theme,
             ),
+            _buildDivider(theme),
+            _buildSwitchTile(
+              title: l10n.blurThumbnails,
+              subtitle: l10n.blurThumbnailsDescription,
+              value: prefs.blurThumbnails,
+              onChanged: (v) =>
+                  context.read<SettingsCubit>().updateBlurThumbnails(v),
+              theme: theme,
+            ),
           ], theme),
 
           // Grid Preview

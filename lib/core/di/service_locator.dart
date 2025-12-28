@@ -73,6 +73,7 @@ import 'package:nhasixapp/services/app_update_service.dart';
 import 'package:nhasixapp/services/image_cache_service.dart';
 import 'package:nhasixapp/services/image_metadata_service.dart';
 import 'package:nhasixapp/services/export_service.dart';
+import 'package:nhasixapp/services/legal_content_service.dart';
 import 'package:nhasixapp/services/cache/cache_manager.dart' as multi_cache;
 import 'package:nhasixapp/domain/entities/content.dart';
 import 'package:nhasixapp/domain/entities/tag.dart';
@@ -215,6 +216,12 @@ void _setupServices() {
       diskTTL: const Duration(days: 7),
     )..initialize(),
   );
+
+  // Legal Content Service - Fetch legal docs from GitHub with local fallback
+  getIt.registerLazySingleton<LegalContentService>(() => LegalContentService(
+        dio: getIt<Dio>(),
+        prefs: getIt<SharedPreferences>(),
+      ));
 }
 
 /// Setup data sources (Remote and Local)

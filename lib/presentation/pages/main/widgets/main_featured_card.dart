@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
@@ -10,10 +12,12 @@ class MainFeaturedCard extends StatelessWidget {
     super.key,
     required this.content,
     required this.onTap,
+    this.blurThumbnails = false,
   });
 
   final Content content;
   final VoidCallback onTap;
+  final bool blurThumbnails;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +66,7 @@ class MainFeaturedCard extends StatelessWidget {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          _buildImageWithFallback(
+                          _buildImageWithBlur(
                             context: context,
                             coverUrl: content.coverUrl,
                             fallbackUrl: content.imageUrls.isNotEmpty
@@ -309,8 +313,33 @@ class MainFeaturedCard extends StatelessWidget {
     );
   }
 
-  /// Build image with fallback to first page if cover fails
-  Widget _buildImageWithFallback({
+  /// Build image with optional blur effect
+  Widget _buildImageWithBlur({
+    required BuildContext context,
+    required String coverUrl,
+    String? fallbackUrl,
+  }) {
+    final image = _buildCachedImage(
+      context: context,
+      coverUrl: coverUrl,
+      fallbackUrl: fallbackUrl,
+    );
+
+    if (blurThumbnails) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: ImageFiltered(
+          imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: image,
+        ),
+      );
+    }
+
+    return image;
+  }
+
+  /// Build cached image with fallback to first page if cover fails
+  Widget _buildCachedImage({
     required BuildContext context,
     required String coverUrl,
     String? fallbackUrl,

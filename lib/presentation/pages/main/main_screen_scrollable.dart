@@ -560,7 +560,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           // Combines full-width featured cards with 2-column masonry
           BlocBuilder<SettingsCubit, SettingsState>(
             builder: (context, settingsState) {
-              return _buildHybridMasonryGrid(state.contents);
+              final blurThumbnails = settingsState is SettingsLoaded
+                  ? settingsState.preferences.blurThumbnails
+                  : false;
+              return _buildHybridMasonryGrid(state.contents, blurThumbnails);
             },
           ),
 
@@ -580,7 +583,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
   /// Build hybrid masonry grid with full-width featured cards at dynamic intervals
   /// For 25 items per page: Featured at positions 0, 8, 17 (3 featured per page)
-  Widget _buildHybridMasonryGrid(List<Content> contents) {
+  Widget _buildHybridMasonryGrid(List<Content> contents, bool blurThumbnails) {
     if (contents.isEmpty) {
       return const SliverToBoxAdapter(child: SizedBox.shrink());
     }
@@ -617,6 +620,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             child: MainFeaturedCard(
               content: featuredContent,
               onTap: () => _onContentTap(featuredContent),
+              blurThumbnails: blurThumbnails,
             ),
           ),
         );
@@ -655,6 +659,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                       child: MainGridCard(
                         content: singleContent,
                         onTap: () => _onContentTap(singleContent),
+                        blurThumbnails: blurThumbnails,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -679,6 +684,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                       child: MainGridCard(
                         content: leftContent,
                         onTap: () => _onContentTap(leftContent),
+                        blurThumbnails: blurThumbnails,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -686,6 +692,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                       child: MainGridCard(
                         content: rightContent,
                         onTap: () => _onContentTap(rightContent),
+                        blurThumbnails: blurThumbnails,
                       ),
                     ),
                   ],

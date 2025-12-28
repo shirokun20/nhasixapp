@@ -27,18 +27,22 @@ class SettingsCubit extends BaseCubit<SettingsState> {
   Future<void> _loadSettings() async {
     try {
       logInfo('Loading user preferences');
-      
+
       final preferences = await _preferencesService.getUserPreferences();
 
       // Check current disguise mode from Android
       try {
-        final currentAndroidMode = await AppDisguiseService.getCurrentDisguiseMode();
-        logInfo('Current Android disguise mode: $currentAndroidMode, saved mode: ${preferences.disguiseMode}');
+        final currentAndroidMode =
+            await AppDisguiseService.getCurrentDisguiseMode();
+        logInfo(
+            'Current Android disguise mode: $currentAndroidMode, saved mode: ${preferences.disguiseMode}');
 
         // If Android mode differs from saved preferences, update preferences
         if (currentAndroidMode != preferences.disguiseMode) {
-          logInfo('Updating preferences to match Android mode: $currentAndroidMode');
-          final updatedPreferences = preferences.copyWith(disguiseMode: currentAndroidMode);
+          logInfo(
+              'Updating preferences to match Android mode: $currentAndroidMode');
+          final updatedPreferences =
+              preferences.copyWith(disguiseMode: currentAndroidMode);
           await _preferencesService.saveUserPreferences(updatedPreferences);
 
           emit(SettingsLoaded(
@@ -93,8 +97,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
 
   /// Update show titles setting
   Future<void> updateShowTitles(bool showTitles) async {
-    await _updateSetting(
-        (prefs) => prefs.copyWith(showTitles: showTitles));
+    await _updateSetting((prefs) => prefs.copyWith(showTitles: showTitles));
   }
 
   /// Update blur thumbnails setting
@@ -115,8 +118,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
       logWarning('Invalid columns portrait value: $columns');
       return;
     }
-    await _updateSetting(
-        (prefs) => prefs.copyWith(columnsPortrait: columns));
+    await _updateSetting((prefs) => prefs.copyWith(columnsPortrait: columns));
   }
 
   /// Update columns landscape setting
@@ -125,8 +127,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
       logWarning('Invalid columns landscape value: $columns');
       return;
     }
-    await _updateSetting(
-        (prefs) => prefs.copyWith(columnsLandscape: columns));
+    await _updateSetting((prefs) => prefs.copyWith(columnsLandscape: columns));
   }
 
   /// Update use volume keys setting
@@ -143,14 +144,12 @@ class SettingsCubit extends BaseCubit<SettingsState> {
 
   /// Update keep screen on setting
   Future<void> updateKeepScreenOn(bool keepScreenOn) async {
-    await _updateSetting(
-        (prefs) => prefs.copyWith(keepScreenOn: keepScreenOn));
+    await _updateSetting((prefs) => prefs.copyWith(keepScreenOn: keepScreenOn));
   }
 
   /// Update show system UI setting
   Future<void> updateShowSystemUI(bool showSystemUI) async {
-    await _updateSetting(
-        (prefs) => prefs.copyWith(showSystemUI: showSystemUI));
+    await _updateSetting((prefs) => prefs.copyWith(showSystemUI: showSystemUI));
   }
 
   /// Update auto cleanup history setting
@@ -167,8 +166,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
 
   /// Update max history days setting
   Future<void> updateMaxHistoryDays(int maxDays) async {
-    await _updateSetting(
-        (prefs) => prefs.copyWith(maxHistoryDays: maxDays));
+    await _updateSetting((prefs) => prefs.copyWith(maxHistoryDays: maxDays));
   }
 
   /// Update cleanup on inactivity setting
@@ -195,7 +193,8 @@ class SettingsCubit extends BaseCubit<SettingsState> {
       // Update preferences directly (without calling _updateSetting to avoid double emit)
       final currentState2 = state;
       if (currentState2 is SettingsLoaded) {
-        final updatedPreferences = currentState2.preferences.copyWith(disguiseMode: disguiseMode);
+        final updatedPreferences =
+            currentState2.preferences.copyWith(disguiseMode: disguiseMode);
         await _preferencesService.saveUserPreferences(updatedPreferences);
 
         emit(currentState2.copyWith(
@@ -210,7 +209,6 @@ class SettingsCubit extends BaseCubit<SettingsState> {
 
       // Small delay for UI feedback
       await Future.delayed(const Duration(milliseconds: 800));
-
     } catch (e) {
       logWarning('Failed to update disguise mode: $e');
     } finally {
@@ -232,12 +230,12 @@ class SettingsCubit extends BaseCubit<SettingsState> {
 
       // Update preferences
       final updatedPreferences = updateFunction(currentState.preferences);
-      
+
       logInfo('Updating settings via PreferencesService');
 
       // Save to SharedPreferences via PreferencesService
       await _preferencesService.saveUserPreferences(updatedPreferences);
-      
+
       emit(currentState.copyWith(
         preferences: updatedPreferences,
         lastUpdated: DateTime.now(),
@@ -248,7 +246,8 @@ class SettingsCubit extends BaseCubit<SettingsState> {
       handleError(e, stackTrace, 'update setting');
 
       emit(SettingsError(
-        message: localizations?.failedToUpdateSetting(e.toString()) ?? 'Failed to update setting: ${e.toString()}',
+        message: localizations?.failedToUpdateSetting(e.toString()) ??
+            'Failed to update setting: ${e.toString()}',
         errorType: determineErrorType(e),
       ));
     }
@@ -270,7 +269,8 @@ class SettingsCubit extends BaseCubit<SettingsState> {
       handleError(e, stackTrace, 'reset settings');
 
       emit(SettingsError(
-        message: localizations?.failedToResetSettings(e.toString()) ?? 'Failed to reset settings: ${e.toString()}',
+        message: localizations?.failedToResetSettings(e.toString()) ??
+            'Failed to reset settings: ${e.toString()}',
         errorType: determineErrorType(e),
       ));
     }
@@ -281,7 +281,8 @@ class SettingsCubit extends BaseCubit<SettingsState> {
     try {
       final currentState = state;
       if (currentState is! SettingsLoaded) {
-        throw Exception(localizations?.settingsNotLoaded ?? 'Settings not loaded');
+        throw Exception(
+            localizations?.settingsNotLoaded ?? 'Settings not loaded');
       }
 
       logInfo('Exporting settings');
@@ -311,7 +312,8 @@ class SettingsCubit extends BaseCubit<SettingsState> {
       return jsonString;
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'export settings');
-      throw Exception(localizations?.failedToExportSettings(e.toString()) ?? 'Failed to export settings: ${e.toString()}');
+      throw Exception(localizations?.failedToExportSettings(e.toString()) ??
+          'Failed to export settings: ${e.toString()}');
     }
   }
 
@@ -329,7 +331,8 @@ class SettingsCubit extends BaseCubit<SettingsState> {
       handleError(e, stackTrace, 'import settings');
 
       emit(SettingsError(
-        message: localizations?.failedToImportSettings(e.toString()) ?? 'Failed to import settings: ${e.toString()}',
+        message: localizations?.failedToImportSettings(e.toString()) ??
+            'Failed to import settings: ${e.toString()}',
         errorType: determineErrorType(e),
       ));
     }
@@ -343,7 +346,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
       imageQuality: 'high',
       autoDownload: false,
       showTitles: true,
-      blurThumbnails: false,
+      blurThumbnails: true,
       usePagination: true,
       columnsPortrait: 2,
       columnsLandscape: 3,

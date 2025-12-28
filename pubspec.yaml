@@ -74,6 +74,7 @@ dependencies:
   # PDF Generation
   pdf: ^3.11.1
   package_info_plus: ^9.0.0
+  markdown_widget: ^2.3.2+8
 
 dev_dependencies:
   flutter_test:
@@ -99,6 +100,8 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/json/
+    - assets/legal/en/
+    - assets/legal/id/
     # Note: tags.json.gz (compressed) is 1.1MB vs tags.json (5MB)
 
 # Flutter Launcher Icons Configuration

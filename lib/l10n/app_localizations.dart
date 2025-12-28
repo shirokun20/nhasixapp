@@ -1640,6 +1640,18 @@ abstract class AppLocalizations {
   /// **'Image Quality'**
   String get imageQuality;
 
+  /// No description provided for @blurThumbnails.
+  ///
+  /// In en, this message translates to:
+  /// **'Blur Thumbnails'**
+  String get blurThumbnails;
+
+  /// No description provided for @blurThumbnailsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply blur effect on card images for privacy'**
+  String get blurThumbnailsDescription;
+
   /// No description provided for @gridColumns.
   ///
   /// In en, this message translates to:
@@ -1783,6 +1795,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Privacy Analytics'**
   String get privacyAnalytics;
+
+  /// No description provided for @termsAndConditions.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms and Conditions'**
+  String get termsAndConditions;
+
+  /// No description provided for @termsAndConditionsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'User agreement and disclaimers'**
+  String get termsAndConditionsSubtitle;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @privacyPolicySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How we handle your data'**
+  String get privacyPolicySubtitle;
+
+  /// No description provided for @faq.
+  ///
+  /// In en, this message translates to:
+  /// **'FAQ'**
+  String get faq;
+
+  /// No description provided for @faqSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequently asked questions'**
+  String get faqSubtitle;
 
   /// No description provided for @resetSettings.
   ///

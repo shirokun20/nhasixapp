@@ -858,6 +858,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get imageQuality => 'Kualitas Gambar';
 
   @override
+  String get blurThumbnails => 'Blur Thumbnail';
+
+  @override
+  String get blurThumbnailsDescription =>
+      'Terapkan efek blur pada gambar kartu untuk privasi';
+
+  @override
   String get gridColumns => 'Kolom Grid (Portrait)';
 
   @override
@@ -932,6 +939,24 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get privacyAnalytics => 'Privasi Analytics';
+
+  @override
+  String get termsAndConditions => 'Syarat dan Ketentuan';
+
+  @override
+  String get termsAndConditionsSubtitle => 'Perjanjian pengguna dan disclaimer';
+
+  @override
+  String get privacyPolicy => 'Kebijakan Privasi';
+
+  @override
+  String get privacyPolicySubtitle => 'Bagaimana kami menangani data Anda';
+
+  @override
+  String get faq => 'FAQ';
+
+  @override
+  String get faqSubtitle => 'Pertanyaan yang sering diajukan';
 
   @override
   String get resetSettings => 'Reset Pengaturan';
