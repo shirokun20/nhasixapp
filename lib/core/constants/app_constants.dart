@@ -71,6 +71,9 @@ class AppStorage {
   /// Default source ID for backward compatibility with existing downloads
   static const String defaultSourceId = 'nhentai';
 
+  /// Known content sources for validation
+  static const List<String> knownSources = ['nhentai', 'crotpedia'];
+
   /// Metadata file name
   static const String metadataFileName = 'metadata.json';
 

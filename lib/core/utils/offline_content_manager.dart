@@ -311,6 +311,39 @@ class OfflineContentManager {
     }
   }
 
+  /// Extract sourceId from folder path.
+  /// Path pattern: .../nhasix/{sourceId}/{contentId}/...
+  /// Returns extracted sourceId or defaultSourceId as fallback.
+  String _extractSourceIdFromPath(String contentPath) {
+    try {
+      final segments = contentPath.split(path.separator);
+      final nhasixIndex = segments.indexOf('nhasix');
+      if (nhasixIndex != -1 && nhasixIndex + 1 < segments.length) {
+        final potentialSource = segments[nhasixIndex + 1];
+        // Only return if it's a known source (not a content ID)
+        if (AppStorage.knownSources.contains(potentialSource)) {
+          return potentialSource;
+        }
+      }
+    } catch (e) {
+      _logger.w('Error extracting sourceId from path: $e');
+    }
+    return AppStorage.defaultSourceId;
+  }
+
+  /// Extract sourceId from metadata or fall back to path extraction.
+  String _extractSourceIdFromMetadataOrPath(
+    Map<String, dynamic>? metadata,
+    String contentPath,
+  ) {
+    // Try metadata first (v2 format has 'source' field)
+    if (metadata != null && metadata['source'] != null) {
+      return metadata['source'] as String;
+    }
+    // Fallback to path extraction
+    return _extractSourceIdFromPath(contentPath);
+  }
+
   /// Search in offline content
   Future<List<String>> searchOfflineContent(String query) async {
     try {
@@ -522,16 +555,21 @@ class OfflineContentManager {
 
       // Try to read metadata.json first
       String title = contentId;
+      Map<String, dynamic>? metadata;
       try {
         final metadataFile = File(path.join(contentPath, 'metadata.json'));
         if (await metadataFile.exists()) {
           final metadataContent = await metadataFile.readAsString();
-          final metadata = json.decode(metadataContent) as Map<String, dynamic>;
+          metadata = json.decode(metadataContent) as Map<String, dynamic>;
           title = metadata['title'] ?? contentId;
         }
       } catch (e) {
         _logger.w('Error reading metadata for $contentId: $e');
       }
+
+      // Extract sourceId from metadata or path
+      final sourceId =
+          _extractSourceIdFromMetadataOrPath(metadata, contentPath);
 
       // Get image files
       final imageUrls = await getOfflineImageUrls(contentId);
@@ -554,7 +592,7 @@ class OfflineContentManager {
       }
 
       return Content(
-        sourceId: 'nhentai',
+        sourceId: sourceId,
         id: contentId,
         title: title,
         coverUrl: coverUrl,
@@ -603,16 +641,20 @@ class OfflineContentManager {
           // Try to read title from metadata.json
           String title = contentId;
           bool titleMatch = false;
+          String sourceId = 'offline'; // Default sourceId
 
           try {
             final metadataFile = File(path.join(entity.path, 'metadata.json'));
+            Map<String, dynamic>? metadata;
             if (await metadataFile.exists()) {
               final metadataContent = await metadataFile.readAsString();
-              final metadata =
-                  json.decode(metadataContent) as Map<String, dynamic>;
+              metadata = json.decode(metadataContent) as Map<String, dynamic>;
               title = metadata['title'] ?? contentId;
               titleMatch = title.toLowerCase().contains(queryLower);
             }
+            // Store metadata for later use
+            sourceId =
+                _extractSourceIdFromMetadataOrPath(metadata, entity.path);
           } catch (e) {
             _logger.w('Error reading metadata for search in $contentId: $e');
           }
@@ -667,7 +709,7 @@ class OfflineContentManager {
                 }
 
                 final content = Content(
-                  sourceId: 'nhentai',
+                  sourceId: sourceId,
                   id: contentId,
                   title: title,
                   coverUrl: coverUrl,
@@ -879,16 +921,21 @@ class OfflineContentManager {
 
       // Try to read title from metadata.json
       String title = contentId;
+      Map<String, dynamic>? metadata;
       try {
         final metadataFile = File(path.join(entity.path, 'metadata.json'));
         if (await metadataFile.exists()) {
           final metadataContent = await metadataFile.readAsString();
-          final metadata = json.decode(metadataContent) as Map<String, dynamic>;
+          metadata = json.decode(metadataContent) as Map<String, dynamic>;
           title = metadata['title'] ?? contentId;
         }
       } catch (e) {
         _logger.w('Error reading metadata for $contentId: $e');
       }
+
+      // Extract sourceId from metadata or path
+      final sourceId =
+          _extractSourceIdFromMetadataOrPath(metadata, entity.path);
 
       // Create Content object
       String coverUrl = '';
@@ -897,7 +944,7 @@ class OfflineContentManager {
       }
 
       final content = Content(
-        sourceId: 'nhentai',
+        sourceId: sourceId,
         id: contentId,
         title: title,
         coverUrl: coverUrl,
@@ -1143,16 +1190,16 @@ class OfflineContentManager {
     try {
       final backupDir = Directory(backupPath);
       if (await backupDir.exists()) {
-        const knownSources = ['nhentai', 'crotpedia'];
         await for (final entity in backupDir.list()) {
           if (entity is Directory) {
             final folderName = path.basename(entity.path);
-            if (!knownSources.contains(folderName)) {
+            if (!AppStorage.knownSources.contains(folderName)) {
               // Potential legacy content - attempt migration
               // This moves nhasix/{id} -> nhasix/nhentai/{id}
               final migrated = await DownloadStorageUtils.migrateToSourceFolder(
                 folderName,
-                sourceId: 'nhentai', // Default to nhentai for legacy content
+                sourceId:
+                    AppStorage.defaultSourceId, // Default for legacy content
               );
               if (migrated) {
                 _logger.i(
