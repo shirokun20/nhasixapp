@@ -22,6 +22,12 @@ dependencies:
   equatable: ^2.0.7
   get_it: ^9.2.0
 
+  # Local Packages
+  kuron_core:
+    path: ./packages/kuron_core
+  kuron_nhentai:
+    path: ./packages/kuron_nhentai
+
   # Code Generation & Immutability
   freezed_annotation: ^3.0.0
   json_annotation: ^4.9.0

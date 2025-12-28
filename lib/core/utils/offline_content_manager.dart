@@ -8,6 +8,7 @@ import '../../domain/entities/content.dart';
 import '../../domain/entities/download_status.dart';
 import '../../domain/repositories/user_data_repository.dart';
 import '../constants/app_constants.dart';
+import 'download_storage_utils.dart';
 
 /// Manager for offline content detection and operations
 class OfflineContentManager {
@@ -95,16 +96,27 @@ class OfflineContentManager {
   }
 
   /// Get all possible download paths for a content ID
-  Future<List<String>> _getPossibleDownloadPaths(String contentId) async {
+  /// Includes both new source-based paths and legacy paths for backward compatibility
+  Future<List<String>> _getPossibleDownloadPaths(String contentId,
+      {String? sourceId}) async {
     final paths = <String>[];
+    final effectiveSourceId = sourceId ?? AppStorage.defaultSourceId;
 
     try {
       // Try the smart detection first
       final downloadsPath = await _getDownloadsDirectory();
+
+      // NEW: Source-based paths (nhasix/{source}/{contentId}/)
+      paths.add(
+          path.join(downloadsPath, 'nhasix', effectiveSourceId, contentId));
+
+      // LEGACY: Direct paths (nhasix/{contentId}/)
       paths.add(path.join(downloadsPath, 'nhasix', contentId));
 
       // Try app documents directory
       final documentsDir = await getApplicationDocumentsDirectory();
+      paths.add(path.join(documentsDir.path, 'downloads', 'nhasix',
+          effectiveSourceId, contentId));
       paths.add(path.join(documentsDir.path, 'downloads', 'nhasix', contentId));
 
       // Try external storage directory directly
@@ -115,6 +127,10 @@ class OfflineContentManager {
           // Try common download folder names
           final folderNames = ['Download', 'Downloads', 'Unduhan', 'Descargas'];
           for (final folderName in folderNames) {
+            // NEW: Source-based paths
+            paths.add(path.join(externalRoot, folderName, 'nhasix',
+                effectiveSourceId, contentId));
+            // LEGACY: Direct paths
             paths.add(path.join(externalRoot, folderName, 'nhasix', contentId));
           }
         }
@@ -124,6 +140,13 @@ class OfflineContentManager {
 
       // Try hardcoded paths
       final hardcodedPaths = [
+        // NEW: Source-based paths
+        '/storage/emulated/0/Download/nhasix/$effectiveSourceId/$contentId',
+        '/storage/emulated/0/Downloads/nhasix/$effectiveSourceId/$contentId',
+        '/storage/emulated/0/Unduhan/nhasix/$effectiveSourceId/$contentId',
+        '/sdcard/Download/nhasix/$effectiveSourceId/$contentId',
+        '/sdcard/Downloads/nhasix/$effectiveSourceId/$contentId',
+        // LEGACY: Direct paths
         '/storage/emulated/0/Download/nhasix/$contentId',
         '/storage/emulated/0/Downloads/nhasix/$contentId',
         '/storage/emulated/0/Unduhan/nhasix/$contentId',
@@ -688,6 +711,9 @@ class OfflineContentManager {
   }
 
   /// Scan backup folder for offline content without database dependency
+  /// Supports both:
+  /// - NEW: Source-based folders (nhasix/nhentai/{contentId}/, nhasix/crotpedia/{contentId}/)
+  /// - LEGACY: Direct folders (nhasix/{contentId}/)
   Future<List<Content>> scanBackupFolder(String backupPath) async {
     try {
       final backupDir = Directory(backupPath);
@@ -700,158 +726,27 @@ class OfflineContentManager {
       final contents = <Content>[];
       final contentWithTimes = <MapEntry<Content, DateTime>>[];
 
+      // Known source identifiers to check for nested structure
+      const knownSources = ['nhentai', 'crotpedia'];
+
       await for (final entity in backupDir.list()) {
         if (entity is Directory) {
-          final contentId = path.basename(entity.path);
+          final folderName = path.basename(entity.path);
 
-          final imagesDir = Directory(path.join(entity.path, 'images'));
-          // debugPrint(
-          //     'OFFLINE_MANAGER: Looking for images dir: ${imagesDir.path}');
-
-          if (await imagesDir.exists()) {
-            // debugPrint(
-            //     'OFFLINE_MANAGER: Images directory exists for $contentId');
-
-            // Log all entities in images directory for debugging
-            try {
-              await imagesDir.list().toList();
-            } catch (e) {
-              // debugPrint(
-              //     'OFFLINE_MANAGER: Error listing entities in images dir for $contentId: $e');
-            }
-
-            final imageFiles = await imagesDir
-                .list(recursive: true)
-                .where((f) => f is File && _isImageFile(f.path))
-                .cast<File>()
-                .toList();
-
-            // debugPrint(
-            //     'OFFLINE_MANAGER: Found ${imageFiles.length} image files in $contentId');
-
-            // Fallback: if no images found in images/ directory, check contentId directory directly
-            if (imageFiles.isEmpty) {
-              // debugPrint(
-              //     'OFFLINE_MANAGER: No images in images/ subdirectory, checking contentId directory directly for $contentId');
-              try {
-                final contentEntities = await entity.list().toList();
-                final directImageFiles = contentEntities
-                    .where((f) =>
-                        f is File &&
-                        _isImageFile(f.path) &&
-                        path.basename(f.path) != 'metadata.json')
-                    .cast<File>()
-                    .toList();
-                if (directImageFiles.isNotEmpty) {
-                  // debugPrint(
-                  //     'OFFLINE_MANAGER: Found ${directImageFiles.length} image files directly in contentId for $contentId');
-                  imageFiles.addAll(directImageFiles);
-                } else {
-                  // debugPrint(
-                  //     'OFFLINE_MANAGER: No image files found directly in contentId for $contentId');
-                }
-              } catch (e) {
-                // debugPrint(
-                //     'OFFLINE_MANAGER: Error listing contentId directory for $contentId: $e');
-              }
-            }
-
-            if (imageFiles.isNotEmpty) {
-              // Sort images by page number
-              imageFiles.sort((a, b) => _extractPageNumber(a.path)
-                  .compareTo(_extractPageNumber(b.path)));
-
-              final imageUrls = imageFiles.map((f) => f.path).toList();
-              // debugPrint(
-              //     'OFFLINE_MANAGER: Image URLs for $contentId: $imageUrls');
-
-              // Try to read title from metadata.json
-              String title = contentId; // fallback to folder name
-              try {
-                final metadataFile =
-                    File(path.join(entity.path, 'metadata.json'));
-                // debugPrint(
-                //     'OFFLINE_MANAGER: Looking for metadata file: ${metadataFile.path}');
-                if (await metadataFile.exists()) {
-                  final metadataContent = await metadataFile.readAsString();
-                  final metadata =
-                      json.decode(metadataContent) as Map<String, dynamic>;
-                  title = metadata['title'] ?? contentId;
-                  // debugPrint(
-                  //     'OFFLINE_MANAGER: Found title from metadata for $contentId: $title');
-                  _logger.d('Found title from metadata for $contentId: $title');
-                } else {
-                  // debugPrint(
-                  //     'OFFLINE_MANAGER: No metadata.json found for $contentId, using folder name as title');
-                  _logger.d(
-                      'No metadata.json found for $contentId, using folder name as title');
-                }
-              } catch (e) {
-                // debugPrint(
-                //     'OFFLINE_MANAGER: Error reading metadata for $contentId: $e');
-                _logger.w(
-                    'Error reading metadata for $contentId: $e, using folder name');
-              }
-
-              // Create Content object
-              String coverUrl = '';
-              if (imageUrls.isNotEmpty) {
-                final firstImageFile = File(imageUrls.first);
-                if (await firstImageFile.exists() &&
-                    await firstImageFile.length() > 0) {
-                  coverUrl = imageUrls.first;
-                  // debugPrint(
-                  //     'OFFLINE_MANAGER: Using first image as cover for $contentId: $coverUrl');
-                } else if (imageUrls.length > 1) {
-                  final secondImageFile = File(imageUrls[1]);
-                  if (await secondImageFile.exists() &&
-                      await secondImageFile.length() > 0) {
-                    coverUrl = imageUrls[1];
-                    // debugPrint(
-                    //         'OFFLINE_MANAGER: Using second image as cover for $contentId: $coverUrl');
-                  }
-                }
-              }
-
-              final content = Content(
-                id: contentId,
-                title: title,
-                coverUrl: coverUrl,
-                tags: [],
-                artists: [],
-                characters: [],
-                parodies: [],
-                groups: [],
-                language: '',
-                pageCount: imageUrls.length,
-                imageUrls: imageUrls,
-                uploadDate: DateTime.now(),
-                favorites: 0,
-                englishTitle: null,
-                japaneseTitle: null,
-              );
-
-              // Get folder modification time
-              final folderStat = await entity.stat();
-              final modifiedTime = folderStat.modified;
-
-              contentWithTimes.add(MapEntry(content, modifiedTime));
-
-              // debugPrint(
-              //     'OFFLINE_MANAGER: Added backup content: $contentId - $title (${imageUrls.length} pages)');
-              _logger.d(
-                  'Added backup content: $contentId - $title (${imageUrls.length} pages)');
-            } else {
-              // debugPrint(
-              //     'OFFLINE_MANAGER: No image files found in images directory for $contentId');
-            }
+          // Check if this is a source folder (e.g., nhentai/, crotpedia/)
+          if (knownSources.contains(folderName)) {
+            // Scan content inside source folder
+            _logger.d('Scanning source folder: $folderName');
+            final sourceContents = await _scanContentFolder(entity.path);
+            contentWithTimes.addAll(sourceContents);
           } else {
-            // debugPrint(
-            //     'OFFLINE_MANAGER: Images directory does not exist for $contentId');
+            // Could be legacy content folder, try to scan it directly
+            final contentResult =
+                await _tryParseContentFolder(entity, folderName);
+            if (contentResult != null) {
+              contentWithTimes.add(contentResult);
+            }
           }
-        } else {
-          // debugPrint(
-          //     'OFFLINE_MANAGER: Entity is not a directory: ${entity.path}');
         }
       }
 
@@ -859,16 +754,127 @@ class OfflineContentManager {
       contentWithTimes.sort((a, b) => b.value.compareTo(a.value));
       contents.addAll(contentWithTimes.map((e) => e.key));
 
-      // debugPrint(
-      //     'OFFLINE_MANAGER: Found ${contents.length} backup content items total');
       _logger.i('Found ${contents.length} backup content items');
       return contents;
     } catch (e, stackTrace) {
-      // debugPrint(
-      //     'OFFLINE_MANAGER: Error scanning backup folder: $backupPath - $e');
       _logger.e('Error scanning backup folder: $backupPath',
           error: e, stackTrace: stackTrace);
       return [];
+    }
+  }
+
+  /// Helper to scan a specific source folder (e.g. nhentai/) for content
+  Future<List<MapEntry<Content, DateTime>>> _scanContentFolder(
+      String folderPath) async {
+    final folderDir = Directory(folderPath);
+    final results = <MapEntry<Content, DateTime>>[];
+
+    if (!await folderDir.exists()) return results;
+
+    await for (final entity in folderDir.list()) {
+      if (entity is Directory) {
+        final contentResult =
+            await _tryParseContentFolder(entity, path.basename(entity.path));
+        if (contentResult != null) {
+          results.add(contentResult);
+        }
+      }
+    }
+    return results;
+  }
+
+  /// Helper to try parse a directory as a content folder
+  Future<MapEntry<Content, DateTime>?> _tryParseContentFolder(
+      FileSystemEntity entity, String contentId) async {
+    try {
+      final imagesDir = Directory(path.join(entity.path, 'images'));
+      List<File> imageFiles = [];
+
+      if (await imagesDir.exists()) {
+        try {
+          final files = await imagesDir.list(recursive: true).toList();
+          imageFiles = files
+              .where((f) => f is File && _isImageFile(f.path))
+              .cast<File>()
+              .toList();
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      // Fallback: check contentId directory directly
+      if (imageFiles.isEmpty) {
+        try {
+          final contentDir = Directory(entity.path);
+          final contentEntities = await contentDir.list().toList();
+          final directImageFiles = contentEntities
+              .where((f) =>
+                  f is File &&
+                  _isImageFile(f.path) &&
+                  path.basename(f.path) != 'metadata.json')
+              .cast<File>()
+              .toList();
+
+          if (directImageFiles.isNotEmpty) {
+            imageFiles.addAll(directImageFiles);
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      if (imageFiles.isEmpty) return null;
+
+      // Sort images by page number
+      imageFiles.sort((a, b) =>
+          _extractPageNumber(a.path).compareTo(_extractPageNumber(b.path)));
+
+      final imageUrls = imageFiles.map((f) => f.path).toList();
+
+      // Try to read title from metadata.json
+      String title = contentId;
+      try {
+        final metadataFile = File(path.join(entity.path, 'metadata.json'));
+        if (await metadataFile.exists()) {
+          final metadataContent = await metadataFile.readAsString();
+          final metadata = json.decode(metadataContent) as Map<String, dynamic>;
+          title = metadata['title'] ?? contentId;
+        }
+      } catch (e) {
+        _logger.w('Error reading metadata for $contentId: $e');
+      }
+
+      // Create Content object
+      String coverUrl = '';
+      if (imageUrls.isNotEmpty) {
+        coverUrl = imageUrls.first;
+      }
+
+      final content = Content(
+        id: contentId,
+        title: title,
+        coverUrl: coverUrl,
+        tags: [],
+        artists: [],
+        characters: [],
+        parodies: [],
+        groups: [],
+        language: '',
+        pageCount: imageUrls.length,
+        imageUrls: imageUrls,
+        uploadDate: DateTime.now(),
+        favorites: 0,
+        englishTitle: null,
+        japaneseTitle: null,
+      );
+
+      // Get folder modification time
+      final folderStat = await entity.stat();
+      final modifiedTime = folderStat.modified;
+
+      return MapEntry(content, modifiedTime);
+    } catch (e) {
+      return null;
     }
   }
 
@@ -1086,6 +1092,33 @@ class OfflineContentManager {
   /// Sync backup folder content to database
   /// Returns map with 'synced' (new items) and 'updated' (fixed paths) counts
   Future<Map<String, int>> syncBackupToDatabase(String backupPath) async {
+    // NEW: Auto-migrate legacy content before scanning
+    try {
+      final backupDir = Directory(backupPath);
+      if (await backupDir.exists()) {
+        const knownSources = ['nhentai', 'crotpedia'];
+        await for (final entity in backupDir.list()) {
+          if (entity is Directory) {
+            final folderName = path.basename(entity.path);
+            if (!knownSources.contains(folderName)) {
+              // Potential legacy content - attempt migration
+              // This moves nhasix/{id} -> nhasix/nhentai/{id}
+              final migrated = await DownloadStorageUtils.migrateToSourceFolder(
+                folderName,
+                sourceId: 'nhentai', // Default to nhentai for legacy content
+              );
+              if (migrated) {
+                _logger.i(
+                    'Auto-migrated legacy content $folderName to nhentai source');
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      _logger.w('Auto-migration check failed: $e');
+    }
+
     final contents = await scanBackupFolder(backupPath);
     int syncedCount = 0;
     int updatedCount = 0;

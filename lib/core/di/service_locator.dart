@@ -12,6 +12,10 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart'
     hide ImageCacheManager;
 
+import 'package:kuron_core/kuron_core.dart' hide Content, Tag;
+import 'package:kuron_nhentai/kuron_nhentai.dart';
+import 'package:nhasixapp/core/adapters/nhentai_scraper_adapter_impl.dart';
+
 // Core Network
 import 'package:nhasixapp/core/network/http_client_manager.dart';
 
@@ -256,6 +260,22 @@ void _setupDataSources() {
         logger: getIt<Logger>(),
       ));
 
+  // Nhentai Scraper Adapter
+  getIt.registerLazySingleton<NhentaiScraperAdapter>(
+      () => NhentaiScraperAdapterImpl(getIt<RemoteDataSource>()));
+
+  // Nhentai Source
+  getIt.registerLazySingleton<NhentaiSource>(() => NhentaiSource(
+        scraper: getIt<NhentaiScraperAdapter>(),
+      ));
+
+  // Content Source Registry
+  getIt.registerLazySingleton<ContentSourceRegistry>(() {
+    final registry = ContentSourceRegistry();
+    registry.register(getIt<NhentaiSource>());
+    return registry;
+  });
+
   // Database Helper
   getIt.registerLazySingleton<DatabaseHelper>(() => DatabaseHelper.instance);
 
@@ -423,6 +443,12 @@ void _setupCubits() {
   // NetworkCubit - App-wide connectivity monitoring
   getIt.registerLazySingleton<NetworkCubit>(() => NetworkCubit(
         connectivity: getIt<Connectivity>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // SourceCubit - Content Source Management
+  getIt.registerFactory<SourceCubit>(() => SourceCubit(
+        registry: getIt<ContentSourceRegistry>(),
         logger: getIt<Logger>(),
       ));
 

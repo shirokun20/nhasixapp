@@ -68,6 +68,9 @@ class AppStorage {
   /// Backup folder name
   static const String backupFolderName = 'nhasix';
 
+  /// Default source ID for backward compatibility with existing downloads
+  static const String defaultSourceId = 'nhentai';
+
   /// Metadata file name
   static const String metadataFileName = 'metadata.json';
 
