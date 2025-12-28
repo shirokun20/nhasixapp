@@ -4,7 +4,7 @@
 [![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
 [![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com)
 [![18+](https://img.shields.io/badge/Age_Restriction-18%2B-red?style=for-the-badge&logo=warning&logoColor=white)](#)
-[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.7.1-green?style=for-the-badge&logo=android&logoColor=white)](#)
+[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.7.2-green?style=for-the-badge&logo=android&logoColor=white)](#)
 
 > [!TIP]  
 > **[🇮🇩 Baca dalam Bahasa Indonesia](README_ID.md)**
@@ -15,7 +15,7 @@
 
 ## 📥 **Download Latest Release**
 
-[📦 **Get v0.7.1**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.7.1)
+[📦 **Get v0.7.2**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.7.2)
 
 | Variant | Size | Best For | Status |
 |:-------|:----:|:---------|:------:|
@@ -36,6 +36,7 @@
 - **Private Downloads**: Content is hidden from the system gallery (`.nomedia`).
 - **Offline First**: Full offline capability with background downloading and bulk management.
 - **Export Library**: Backup your entire library with database and files to share or restore.
+- **Blur Thumbnails**: Privacy-focused blur on thumbnails, enabled by default.
 
 ### 🎨 **Performance & UX**
 - **Fast Loading**: Smart image preloading makes reading 70% faster.

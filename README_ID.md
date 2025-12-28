@@ -4,7 +4,7 @@
 [![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
 [![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com)
 [![18+](https://img.shields.io/badge/Batasan_Usia-18%2B-red?style=for-the-badge&logo=warning&logoColor=white)](#)
-[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.7.1-green?style=for-the-badge&logo=android&logoColor=white)](#)
+[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.7.2-green?style=for-the-badge&logo=android&logoColor=white)](#)
 
 > [!TIP]
 > **[🇺🇸 Read in English](README.md)**
@@ -15,7 +15,7 @@
 
 ## 📥 **Download Rilis Terbaru**
 
-[📦 **Download v0.7.1**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.7.1)
+[📦 **Download v0.7.2**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.7.2)
 
 | Varian | Ukuran | Cocok Untuk | Status |
 |:-------|:----:|:---------|:------:|
@@ -36,6 +36,7 @@
 - **Download Pribadi**: Konten tersembunyi dari galeri HP (`.nomedia`).
 - **Offline First**: Baca tanpa internet dengan download di latar belakang.
 - **Export Library**: Backup seluruh koleksi beserta database untuk dibagikan atau dipulihkan.
+- **Blur Thumbnail**: Thumbnail blur untuk privasi, aktif secara default.
 
 ### 🎨 **Performa & UX**
 - **Loading Cepat**: Preloading gambar cerdas membuat bacaan 70% lebih lancar.

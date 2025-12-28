@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.7.2] - 2025-12-28
+
+### 🔒 Privacy & Safety
+- **Blur Thumbnails by Default**: Thumbnail blur enabled by default for child safety protection.
+- **Blur Toggle Setting**: New setting in Display section to enable/disable blur effect.
+
+### 📋 Legal & Info
+- **Terms and Conditions**: New menu in About screen with user agreement.
+- **Privacy Policy**: New menu explaining data handling practices.
+- **FAQ**: Frequently asked questions with helpful information.
+- **Hybrid Loading**: Legal docs fetched from GitHub with local fallback for offline access.
+- **2-Language Support**: All legal content available in English and Indonesian.
+
+### Added
+- `markdown_widget` package for rendering markdown content in bottom sheets.
+- `LegalContentService` with GitHub fetch, caching, and local fallback.
+- `LegalContentSheet` bottom sheet widget with loading/error states.
+
+---
+
 ## [0.7.1] - 2025-12-21
 
 ### 🛠 Fixes & Improvements
