@@ -144,25 +144,51 @@ class NhentaiScraperAdapterImpl implements NhentaiScraperAdapter {
 
     // Convert core.FilterItem to app FilterItem
     final tags = <app_filter.FilterItem>[];
-    final excludeTags = <app_filter.FilterItem>[];
+    final artists = <app_filter.FilterItem>[];
+    final characters = <app_filter.FilterItem>[];
+    final parodies = <app_filter.FilterItem>[];
+    final groups = <app_filter.FilterItem>[];
 
-    for (final item in filter.includeTags) {
-      tags.add(app_filter.FilterItem(value: item.name, isExcluded: false));
+    // Helper to process items
+    void processItems(List<core.FilterItem> items, bool isExcluded) {
+      for (final item in items) {
+        final appItem =
+            app_filter.FilterItem(value: item.name, isExcluded: isExcluded);
+
+        switch (item.type.toLowerCase()) {
+          case 'artist':
+            artists.add(appItem);
+            break;
+          case 'character':
+            characters.add(appItem);
+            break;
+          case 'parody':
+            parodies.add(appItem);
+            break;
+          case 'group':
+            groups.add(appItem);
+            break;
+          case 'tag':
+          default:
+            tags.add(appItem);
+            break;
+        }
+      }
     }
-    for (final item in filter.excludeTags) {
-      excludeTags
-          .add(app_filter.FilterItem(value: item.name, isExcluded: true));
-    }
+
+    // Process both include and exclude lists
+    processItems(filter.includeTags, false);
+    processItems(filter.excludeTags, true);
 
     return app_filter.SearchFilter(
       query: filter.query,
       page: filter.page,
       sortBy: appSort,
       tags: tags,
-      artists: const [], // Map from filter if needed
-      characters: const [],
-      parodies: const [],
-      groups: const [],
+      artists: artists,
+      characters: characters,
+      parodies: parodies,
+      groups: groups,
       language: filter.language,
       category: filter.category,
     );
