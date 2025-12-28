@@ -72,6 +72,11 @@ class NhentaiSource implements ContentSource {
   }
 
   @override
+  Future<List<Content>> getRelated(String contentId) async {
+    return _scraper.getRelated(contentId);
+  }
+
+  @override
   String buildImageUrl({
     required String contentId,
     required String mediaId,
@@ -122,4 +127,5 @@ abstract class NhentaiScraperAdapter {
   Future<ContentListResult> getList({int page = 1, SortOption sort});
   Future<ContentListResult> getPopular({PopularTimeframe timeframe, int page});
   Future<List<Content>> getRandom({int count = 1});
+  Future<List<Content>> getRelated(String contentId);
 }
