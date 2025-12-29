@@ -265,13 +265,16 @@ class DownloadStatus extends Equatable {
     );
   }
 
-  /// Create completed download status
+  /// Create completed download status with metadata
   factory DownloadStatus.completed(
     String contentId,
     int totalPages,
     String downloadPath,
-    int fileSize,
-  ) {
+    int fileSize, {
+    String? title,
+    String? sourceId,
+    String? coverUrl,
+  }) {
     return DownloadStatus(
       contentId: contentId,
       state: DownloadState.completed,
@@ -280,6 +283,9 @@ class DownloadStatus extends Equatable {
       downloadPath: downloadPath,
       fileSize: fileSize,
       endTime: DateTime.now(),
+      title: title,
+      sourceId: sourceId,
+      coverUrl: coverUrl,
     );
   }
 

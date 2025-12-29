@@ -1320,22 +1320,53 @@ class OfflineContentManager {
           content.pageCount,
           contentDir ?? '',
           fileSize,
+          title: content.title,
+          sourceId: content.sourceId,
+          coverUrl: content.coverUrl,
         );
         await _userDataRepository.saveDownloadStatus(status);
         syncedCount++;
         _logger.i('Synced new content: ${content.id}');
       } else if (existing.downloadPath != null) {
-        // DUPLICATE: Check if existing path still valid
+        // DUPLICATE/EXISTING: Check for updates or path fixes
         final existingDir = Directory(existing.downloadPath!);
+        bool needsUpdate = false;
+        var updatedStatus = existing;
+
+        // Check 1: Path broken?
         if (!await existingDir.exists() && contentDir != null) {
-          // Path broken - update with backup path
-          await _userDataRepository.saveDownloadStatus(
-            existing.copyWith(downloadPath: contentDir),
-          );
-          updatedCount++;
+          updatedStatus = updatedStatus.copyWith(downloadPath: contentDir);
+          needsUpdate = true;
           _logger.i('Updated broken path for: ${content.id}');
         }
-        // else: valid existing entry - skip
+
+        // Check 2: Missing Metadata? (Title/SourceId/CoverUrl)
+        if ((existing.title == null || existing.title!.isEmpty) &&
+            content.title.isNotEmpty) {
+          updatedStatus = updatedStatus.copyWith(title: content.title);
+          needsUpdate = true;
+        }
+
+        if ((existing.sourceId == null ||
+                existing.sourceId!.isEmpty ||
+                existing.sourceId == 'nhentai') &&
+            content.sourceId.isNotEmpty &&
+            content.sourceId != 'nhentai') {
+          updatedStatus = updatedStatus.copyWith(sourceId: content.sourceId);
+          needsUpdate = true;
+        }
+
+        if ((existing.coverUrl == null || existing.coverUrl!.isEmpty) &&
+            content.coverUrl.isNotEmpty) {
+          updatedStatus = updatedStatus.copyWith(coverUrl: content.coverUrl);
+          needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+          await _userDataRepository.saveDownloadStatus(updatedStatus);
+          updatedCount++;
+          _logger.i('Updated existing entry metadata/path for: ${content.id}');
+        }
       }
     }
 
