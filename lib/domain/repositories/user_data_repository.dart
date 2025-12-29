@@ -4,13 +4,17 @@ import '../entities/entities.dart';
 abstract class UserDataRepository {
   // ==================== FAVORITES ====================
 
-  /// Add content to favorites (simplified - only id and cover_url)
+  /// Add content to favorites with full metadata
   ///
   /// [id] - Content ID to add to favorites
+  /// [sourceId] - Source identifier (nhentai, crotpedia, etc.)
   /// [coverUrl] - Content cover URL
+  /// [title] - Content title (optional)
   Future<void> addToFavorites({
     required String id,
+    required String sourceId,
     required String coverUrl,
+    String? title,
   });
 
   /// Remove content from favorites
@@ -74,6 +78,17 @@ abstract class UserDataRepository {
   /// [state] - Filter by download state (all states if null)
   /// Returns total number of downloads
   Future<int> getDownloadsCount({DownloadState? state});
+
+  /// Search downloads by query
+  ///
+  /// [query] - Search query to match against content ID, title, or source ID
+  /// [state] - Filter by download state (completed by default for offline search)
+  /// Returns list of matching download records as maps with id, title, source_id, etc.
+  Future<List<Map<String, dynamic>>> searchDownloads({
+    required String query,
+    DownloadState? state,
+    int limit = 100,
+  });
 
   // ==================== HISTORY ====================
 

@@ -16,18 +16,17 @@ class DownloadStatusModel extends DownloadStatus {
     super.retryCount = 0,
     super.startPage,
     super.endPage,
-    this.title,
-    this.coverUrl,
+    super.title,
+    super.coverUrl,
+    super.sourceId,
   });
-
-  final String? title;
-  final String? coverUrl;
 
   /// Create DownloadStatusModel from DownloadStatus entity
   factory DownloadStatusModel.fromEntity(
     DownloadStatus status, {
     String? title,
     String? coverUrl,
+    String? sourceId,
   }) {
     return DownloadStatusModel(
       contentId: status.contentId,
@@ -43,8 +42,9 @@ class DownloadStatusModel extends DownloadStatus {
       retryCount: status.retryCount,
       startPage: status.startPage,
       endPage: status.endPage,
-      title: title,
-      coverUrl: coverUrl,
+      title: title ?? status.title,
+      coverUrl: coverUrl ?? status.coverUrl,
+      sourceId: sourceId ?? status.sourceId,
     );
   }
 
@@ -64,6 +64,9 @@ class DownloadStatusModel extends DownloadStatus {
       retryCount: retryCount,
       startPage: startPage,
       endPage: endPage,
+      title: title,
+      sourceId: sourceId,
+      coverUrl: coverUrl,
     );
   }
 
@@ -91,6 +94,7 @@ class DownloadStatusModel extends DownloadStatus {
       endPage: map['end_page'],
       title: map['title'],
       coverUrl: map['cover_url'],
+      sourceId: map['source_id'] ?? 'nhentai',
     );
   }
 
@@ -98,6 +102,7 @@ class DownloadStatusModel extends DownloadStatus {
   Map<String, dynamic> toMap() {
     return {
       'id': contentId, // Changed from content_id to id
+      'source_id': sourceId ?? 'nhentai',
       'title': title,
       'cover_url': coverUrl,
       'state': state.name,

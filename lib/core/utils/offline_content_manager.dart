@@ -452,10 +452,40 @@ class OfflineContentManager {
         return metadata;
       }
 
-      // Fallback to basic info
+      // Fallback: Try reading from metadata.json file
+      final contentPath = await getOfflineContentPath(contentId);
+      if (contentPath != null) {
+        final metadataFile = File(path.join(contentPath, 'metadata.json'));
+        if (await metadataFile.exists()) {
+          try {
+            final metadataContent = await metadataFile.readAsString();
+            final fileMetadata =
+                json.decode(metadataContent) as Map<String, dynamic>;
+            final metadata = {
+              'id': contentId,
+              'title': fileMetadata['title'] ?? contentId,
+              'coverUrl':
+                  fileMetadata['coverUrl'] ?? fileMetadata['cover_url'] ?? '',
+              'source': 'metadata_file',
+              'sourceId': fileMetadata['sourceId'] ??
+                  fileMetadata['source_id'] ??
+                  'nhentai',
+            };
+            // Cache the result
+            _metadataCache[contentId] = metadata;
+            _metadataCacheTime[contentId] = DateTime.now();
+            _logger.d('Got metadata from file for $contentId');
+            return metadata;
+          } catch (e) {
+            _logger.w('Error reading metadata.json for $contentId: $e');
+          }
+        }
+      }
+
+      // Final fallback to basic info
       final metadata = {
         'id': contentId,
-        'title': 'Offline Content $contentId',
+        'title': contentId,
         'coverUrl': '',
         'source': 'offline',
       };
@@ -617,6 +647,9 @@ class OfflineContentManager {
   }
 
   /// Search offline content from metadata.json files without database
+  /// Supports both:
+  /// - NEW: Source-based folders (nhasix/nhentai/{contentId}/, nhasix/crotpedia/{contentId}/)
+  /// - LEGACY: Direct folders (nhasix/{contentId}/)
   Future<List<Content>> searchOfflineContentFromFileSystem(
       String backupPath, String query) async {
     try {
@@ -627,115 +660,29 @@ class OfflineContentManager {
         return [];
       }
 
-      final matchingContents = <Content>[];
       final matchingWithTimes = <MapEntry<Content, DateTime>>[];
       final queryLower = query.toLowerCase();
 
+      // Known source identifiers to check for nested structure
+      const knownSources = ['nhentai', 'crotpedia'];
+
       await for (final entity in backupDir.list()) {
         if (entity is Directory) {
-          final contentId = path.basename(entity.path);
+          final folderName = path.basename(entity.path);
 
-          // Search in content ID
-          final contentIdMatch = contentId.toLowerCase().contains(queryLower);
-
-          // Try to read title from metadata.json
-          String title = contentId;
-          bool titleMatch = false;
-          String sourceId = 'offline'; // Default sourceId
-
-          try {
-            final metadataFile = File(path.join(entity.path, 'metadata.json'));
-            Map<String, dynamic>? metadata;
-            if (await metadataFile.exists()) {
-              final metadataContent = await metadataFile.readAsString();
-              metadata = json.decode(metadataContent) as Map<String, dynamic>;
-              title = metadata['title'] ?? contentId;
-              titleMatch = title.toLowerCase().contains(queryLower);
-            }
-            // Store metadata for later use
-            sourceId =
-                _extractSourceIdFromMetadataOrPath(metadata, entity.path);
-          } catch (e) {
-            _logger.w('Error reading metadata for search in $contentId: $e');
-          }
-
-          // If matches, load full content data
-          if (contentIdMatch || titleMatch) {
-            final imagesDir = Directory(path.join(entity.path, 'images'));
-
-            if (await imagesDir.exists()) {
-              final imageFiles = await imagesDir
-                  .list(recursive: true)
-                  .where((f) => f is File && _isImageFile(f.path))
-                  .cast<File>()
-                  .toList();
-
-              // Fallback: check contentId directory directly
-              if (imageFiles.isEmpty) {
-                final contentEntities = await entity.list().toList();
-                final directImageFiles = contentEntities
-                    .where((f) =>
-                        f is File &&
-                        _isImageFile(f.path) &&
-                        path.basename(f.path) != 'metadata.json')
-                    .cast<File>()
-                    .toList();
-                if (directImageFiles.isNotEmpty) {
-                  imageFiles.addAll(directImageFiles);
-                }
-              }
-
-              if (imageFiles.isNotEmpty) {
-                // Sort images by page number
-                imageFiles.sort((a, b) => _extractPageNumber(a.path)
-                    .compareTo(_extractPageNumber(b.path)));
-
-                final imageUrls = imageFiles.map((f) => f.path).toList();
-
-                // Create Content object
-                String coverUrl = '';
-                if (imageUrls.isNotEmpty) {
-                  final firstImageFile = File(imageUrls.first);
-                  if (await firstImageFile.exists() &&
-                      await firstImageFile.length() > 0) {
-                    coverUrl = imageUrls.first;
-                  } else if (imageUrls.length > 1) {
-                    final secondImageFile = File(imageUrls[1]);
-                    if (await secondImageFile.exists() &&
-                        await secondImageFile.length() > 0) {
-                      coverUrl = imageUrls[1];
-                    }
-                  }
-                }
-
-                final content = Content(
-                  sourceId: sourceId,
-                  id: contentId,
-                  title: title,
-                  coverUrl: coverUrl,
-                  tags: [],
-                  artists: [],
-                  characters: [],
-                  parodies: [],
-                  groups: [],
-                  language: '',
-                  pageCount: imageUrls.length,
-                  imageUrls: imageUrls,
-                  uploadDate: DateTime.now(),
-                  favorites: 0,
-                  englishTitle: null,
-                  japaneseTitle: null,
-                );
-
-                // Get folder modification time
-                final folderStat = await entity.stat();
-                final modifiedTime = folderStat.modified;
-
-                matchingWithTimes.add(MapEntry(content, modifiedTime));
-
-                _logger.d(
-                    'Found matching content: $contentId - $title (${imageUrls.length} pages)');
-              }
+          // Check if this is a source folder (e.g., nhentai/, crotpedia/)
+          if (knownSources.contains(folderName)) {
+            // Search inside source folder
+            _logger.d('Searching in source folder: $folderName');
+            final sourceResults =
+                await _searchInFolder(entity.path, queryLower);
+            matchingWithTimes.addAll(sourceResults);
+          } else {
+            // Legacy: Could be a content folder directly
+            final result =
+                await _searchContentFolder(entity, folderName, queryLower);
+            if (result != null) {
+              matchingWithTimes.add(result);
             }
           }
         }
@@ -743,7 +690,7 @@ class OfflineContentManager {
 
       // Sort by modification time descending (newest first)
       matchingWithTimes.sort((a, b) => b.value.compareTo(a.value));
-      matchingContents.addAll(matchingWithTimes.map((e) => e.key));
+      final matchingContents = matchingWithTimes.map((e) => e.key).toList();
 
       _logger.i(
           'Found ${matchingContents.length} matching content items for query: $query');
@@ -752,6 +699,142 @@ class OfflineContentManager {
       _logger.e('Error searching offline content from file system',
           error: e, stackTrace: stackTrace);
       return [];
+    }
+  }
+
+  /// Helper to search within a source folder (e.g., nhentai/)
+  Future<List<MapEntry<Content, DateTime>>> _searchInFolder(
+      String folderPath, String queryLower) async {
+    final results = <MapEntry<Content, DateTime>>[];
+    final folderDir = Directory(folderPath);
+
+    if (!await folderDir.exists()) return results;
+
+    await for (final entity in folderDir.list()) {
+      if (entity is Directory) {
+        final contentId = path.basename(entity.path);
+        final result =
+            await _searchContentFolder(entity, contentId, queryLower);
+        if (result != null) {
+          results.add(result);
+        }
+      }
+    }
+
+    return results;
+  }
+
+  /// Helper to search a single content folder and return if it matches query
+  Future<MapEntry<Content, DateTime>?> _searchContentFolder(
+      FileSystemEntity entity, String contentId, String queryLower) async {
+    try {
+      // Search in content ID
+      final contentIdMatch = contentId.toLowerCase().contains(queryLower);
+
+      // Try to read title from metadata.json
+      String title = contentId;
+      bool titleMatch = false;
+      String sourceId = 'offline'; // Default sourceId
+
+      try {
+        final metadataFile = File(path.join(entity.path, 'metadata.json'));
+        Map<String, dynamic>? metadata;
+        if (await metadataFile.exists()) {
+          final metadataContent = await metadataFile.readAsString();
+          metadata = json.decode(metadataContent) as Map<String, dynamic>;
+          title = metadata['title'] ?? contentId;
+          titleMatch = title.toLowerCase().contains(queryLower);
+        }
+        // Store metadata for later use
+        sourceId = _extractSourceIdFromMetadataOrPath(metadata, entity.path);
+      } catch (e) {
+        _logger.w('Error reading metadata for search in $contentId: $e');
+      }
+
+      // If matches, load full content data
+      if (!contentIdMatch && !titleMatch) {
+        return null;
+      }
+
+      final imagesDir = Directory(path.join(entity.path, 'images'));
+      List<File> imageFiles = [];
+
+      if (await imagesDir.exists()) {
+        imageFiles = await imagesDir
+            .list(recursive: true)
+            .where((f) => f is File && _isImageFile(f.path))
+            .cast<File>()
+            .toList();
+      }
+
+      // Fallback: check contentId directory directly
+      if (imageFiles.isEmpty) {
+        final contentEntities = await Directory(entity.path).list().toList();
+        final directImageFiles = contentEntities
+            .where((f) =>
+                f is File &&
+                _isImageFile(f.path) &&
+                path.basename(f.path) != 'metadata.json')
+            .cast<File>()
+            .toList();
+        if (directImageFiles.isNotEmpty) {
+          imageFiles.addAll(directImageFiles);
+        }
+      }
+
+      if (imageFiles.isEmpty) return null;
+
+      // Sort images by page number
+      imageFiles.sort((a, b) =>
+          _extractPageNumber(a.path).compareTo(_extractPageNumber(b.path)));
+
+      final imageUrls = imageFiles.map((f) => f.path).toList();
+
+      // Create Content object
+      String coverUrl = '';
+      if (imageUrls.isNotEmpty) {
+        final firstImageFile = File(imageUrls.first);
+        if (await firstImageFile.exists() &&
+            await firstImageFile.length() > 0) {
+          coverUrl = imageUrls.first;
+        } else if (imageUrls.length > 1) {
+          final secondImageFile = File(imageUrls[1]);
+          if (await secondImageFile.exists() &&
+              await secondImageFile.length() > 0) {
+            coverUrl = imageUrls[1];
+          }
+        }
+      }
+
+      final content = Content(
+        sourceId: sourceId,
+        id: contentId,
+        title: title,
+        coverUrl: coverUrl,
+        tags: [],
+        artists: [],
+        characters: [],
+        parodies: [],
+        groups: [],
+        language: '',
+        pageCount: imageUrls.length,
+        imageUrls: imageUrls,
+        uploadDate: DateTime.now(),
+        favorites: 0,
+        englishTitle: null,
+        japaneseTitle: null,
+      );
+
+      // Get folder modification time
+      final folderStat = await entity.stat();
+      final modifiedTime = folderStat.modified;
+
+      _logger.d(
+          'Found matching content: $contentId - $title (${imageUrls.length} pages)');
+
+      return MapEntry(content, modifiedTime);
+    } catch (e) {
+      return null;
     }
   }
 

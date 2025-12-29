@@ -68,7 +68,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     return sizes;
   }
 
-  /// Search in offline content from metadata.json files
+  /// Search in offline content - uses DATABASE first, filesystem as fallback
   Future<void> searchOfflineContent(String query, {String? backupPath}) async {
     try {
       if (query.trim().isEmpty) {
@@ -79,14 +79,81 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       logInfo('Searching offline content for: $query');
       emit(const OfflineSearchLoading());
 
-      // Get backup path from DirectoryUtils if not provided
+      // PRIMARY: Search from database (fast, synced data)
+      final dbResults = await _userDataRepository.searchDownloads(
+        query: query,
+        state: DownloadState.completed,
+      );
+
+      if (dbResults.isNotEmpty) {
+        logInfo('Found ${dbResults.length} results from database');
+
+        // Convert database results to Content objects
+        final contents = <Content>[];
+        final offlineSizes = <String, String>{};
+        int totalStorageUsage = 0;
+
+        for (final row in dbResults) {
+          final contentId = row['id'] as String;
+          final sourceId = row['source_id'] as String? ?? 'nhentai';
+          final title = row['title'] as String? ?? contentId;
+          final coverUrl = row['cover_url'] as String? ?? '';
+          final fileSize = row['file_size'] as int? ?? 0;
+          final totalPages = row['total_pages'] as int? ?? 0;
+
+          // Get offline image URLs from OfflineContentManager
+          final imageUrls =
+              await _offlineContentManager.getOfflineImageUrls(contentId);
+
+          if (imageUrls.isEmpty) continue; // Skip if no images found
+
+          contents.add(Content(
+            sourceId: sourceId,
+            id: contentId,
+            title: title,
+            coverUrl: imageUrls.isNotEmpty ? imageUrls.first : coverUrl,
+            tags: [],
+            artists: [],
+            characters: [],
+            parodies: [],
+            groups: [],
+            language: '',
+            pageCount: totalPages > 0 ? totalPages : imageUrls.length,
+            imageUrls: imageUrls,
+            uploadDate: DateTime.now(),
+            favorites: 0,
+            englishTitle: null,
+            japaneseTitle: null,
+          ));
+
+          offlineSizes[contentId] =
+              OfflineContentManager.formatStorageSize(fileSize);
+          totalStorageUsage += fileSize;
+        }
+
+        if (contents.isNotEmpty) {
+          emit(OfflineSearchLoaded(
+            query: query,
+            results: contents,
+            totalResults: contents.length,
+            offlineSizes: offlineSizes,
+            storageUsage: totalStorageUsage,
+            formattedStorageUsage:
+                OfflineContentManager.formatStorageSize(totalStorageUsage),
+          ));
+          logInfo(
+              'Loaded ${contents.length} offline content from database search');
+          return;
+        }
+      }
+
+      // FALLBACK: Search from filesystem (for unsynced content)
+      logInfo('Database search empty, falling back to filesystem');
       String? searchPath = backupPath;
       if (searchPath == null) {
-        // Import DirectoryUtils at the top if not already imported
-        final nhasixPath =
-            await findNhasixBackupFolder(); // You'll need to import this
+        final nhasixPath = await findNhasixBackupFolder();
         if (nhasixPath == null) {
-          emit(const OfflineSearchEmpty(query: ''));
+          emit(OfflineSearchEmpty(query: query));
           return;
         }
         searchPath = nhasixPath;
@@ -96,23 +163,13 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
           .searchOfflineContentFromFileSystem(searchPath, query);
 
       if (contents.isEmpty) {
-        emit(const OfflineSearchEmpty(query: ''));
+        emit(OfflineSearchEmpty(query: query));
         return;
       }
 
-      // Calculate sizes for all content
+      // Calculate sizes for filesystem results
       final offlineSizes = await _calculateContentSizes(contents);
-
-      // Calculate total storage usage
       int totalStorageUsage = 0;
-      // Note: _calculateContentSizes returns formatted strings, so we can't sum them easily.
-      // We should sum up during _calculateContentSizes or recalculate.
-      // For simplicity/performance in this rare search case, we can try to re-sum if needed,
-      // or modify _calculateContentSizes to return both.
-      // Let's modify logic slightly: iterate content again or sum up approximately?
-      // Better: iterate contents and check file sizes if not available elsewhere.
-
-      // Since this is less frequent (search), we can iterate.
       for (final content in contents) {
         if (content.imageUrls.isNotEmpty) {
           try {
@@ -133,7 +190,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
             OfflineContentManager.formatStorageSize(totalStorageUsage),
       ));
 
-      logInfo('Found ${contents.length} offline content matches for: $query');
+      logInfo(
+          'Found ${contents.length} offline content matches from filesystem');
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'search offline content');
       emit(OfflineSearchError(
