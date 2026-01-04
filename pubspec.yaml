@@ -27,6 +27,8 @@ dependencies:
     path: ./packages/kuron_core
   kuron_nhentai:
     path: ./packages/kuron_nhentai
+  kuron_crotpedia:
+    path: ./packages/kuron_crotpedia
 
   # Code Generation & Immutability
   freezed_annotation: ^3.0.0
@@ -68,6 +70,7 @@ dependencies:
   open_file: ^3.5.7
   share_plus: ^12.0.1
   url_launcher: ^6.3.1
+  flutter_secure_storage: ^9.2.2
 
   # Utilities
   logger: ^2.6.2

@@ -14,6 +14,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart'
 
 import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_nhentai/kuron_nhentai.dart';
+import 'package:kuron_crotpedia/kuron_crotpedia.dart';
 import 'package:nhasixapp/core/adapters/nhentai_scraper_adapter_impl.dart';
 
 // Core Network
@@ -267,10 +268,32 @@ void _setupDataSources() {
         scraper: getIt<NhentaiScraperAdapter>(),
       ));
 
+  // Crotpedia Cookie Store
+  getIt.registerLazySingleton<CrotpediaCookieStore>(
+      () => CrotpediaCookieStore());
+
+  // Crotpedia Auth Manager
+  getIt.registerLazySingleton<CrotpediaAuthManager>(() => CrotpediaAuthManager(
+        dio: getIt<Dio>(),
+        cookieStore: getIt<CrotpediaCookieStore>(),
+      ));
+
+  // Crotpedia Scraper
+  getIt.registerLazySingleton<CrotpediaScraper>(() => CrotpediaScraper());
+
+  // Crotpedia Source
+  getIt.registerLazySingleton<CrotpediaSource>(() => CrotpediaSource(
+        scraper: getIt<CrotpediaScraper>(),
+        authManager: getIt<CrotpediaAuthManager>(),
+        dio: getIt<Dio>(),
+        logger: getIt<Logger>(),
+      ));
+
   // Content Source Registry
   getIt.registerLazySingleton<ContentSourceRegistry>(() {
     final registry = ContentSourceRegistry();
     registry.register(getIt<NhentaiSource>());
+    registry.register(getIt<CrotpediaSource>());
     return registry;
   });
 
