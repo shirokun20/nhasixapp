@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'tag.dart';
+import 'chapter.dart';
 
 /// Core content entity representing a manga/doujinshi.
 ///
@@ -25,6 +26,7 @@ class Content extends Equatable {
     this.japaneseTitle,
     this.mediaId,
     this.relatedContent = const [],
+    this.chapters,
   });
 
   /// Content ID (format varies by source)
@@ -81,6 +83,9 @@ class Content extends Equatable {
   /// Related content
   final List<Content> relatedContent;
 
+  /// List of chapters (for multi-chapter content like manga/webtoon)
+  final List<Chapter>? chapters;
+
   @override
   List<Object?> get props => [
         id,
@@ -101,6 +106,7 @@ class Content extends Equatable {
         japaneseTitle,
         mediaId,
         relatedContent,
+        chapters,
       ];
 
   Content copyWith({
@@ -122,6 +128,7 @@ class Content extends Equatable {
     String? japaneseTitle,
     String? mediaId,
     List<Content>? relatedContent,
+    List<Chapter>? chapters,
   }) {
     return Content(
       id: id ?? this.id,
@@ -142,6 +149,7 @@ class Content extends Equatable {
       japaneseTitle: japaneseTitle ?? this.japaneseTitle,
       mediaId: mediaId ?? this.mediaId,
       relatedContent: relatedContent ?? this.relatedContent,
+      chapters: chapters ?? this.chapters,
     );
   }
 
