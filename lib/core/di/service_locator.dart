@@ -494,6 +494,13 @@ void _setupCubits() {
         userDataRepository: getIt<UserDataRepository>(),
         imageMetadataService: getIt<ImageMetadataService>(),
         contentRepository: getIt<ContentRepository>(),
+        contentSourceRegistry: getIt<ContentSourceRegistry>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // CrotpediaAuthCubit - Crotpedia login management
+  getIt.registerFactory<CrotpediaAuthCubit>(() => CrotpediaAuthCubit(
+        authManager: getIt<CrotpediaAuthManager>(),
         logger: getIt<Logger>(),
       ));
 

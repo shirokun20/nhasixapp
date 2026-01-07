@@ -13,3 +13,5 @@ export 'source/source_state.dart';
 
 // Note: ReaderCubit and FavoriteCubit will be added in future tasks
 // as they are screen-specific and provided locally rather than app-wide
+
+export 'crotpedia_auth/crotpedia_auth_cubit.dart';

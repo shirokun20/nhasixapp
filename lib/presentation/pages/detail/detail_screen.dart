@@ -124,18 +124,45 @@ class _DetailScreenState extends State<DetailScreen> {
             builder: (context, offlineSnapshot) {
               final isOfflineMode = offlineSnapshot.data ?? false;
 
-              return BlocBuilder<DetailCubit, DetailState>(
-                builder: (context, state) {
-                  if (state is DetailLoading) {
-                    return _buildLoadingState(context);
-                  } else if (state is DetailLoaded) {
-                    return _buildDetailContent(state, isOfflineMode);
-                  } else if (state is DetailError) {
-                    return _buildErrorState(state);
+              return BlocListener<DetailCubit, DetailState>(
+                listener: (context, state) {
+                  if (state is DetailReaderReady) {
+                    _readContent(state.chapterContent,
+                        forceStartFromBeginning: true);
+                    context.read<DetailCubit>().resetToLoaded();
                   }
-
-                  return const SizedBox.shrink();
+                  if (state is DetailLoaded &&
+                      state.content.sourceId == 'crotpedia' &&
+                      state.isFavorited &&
+                      !state.isTogglingFavorite) {
+                    // This is where we might check if user was prompted to login
+                    // and came back? Not strictly needed if Cubit handles it.
+                  }
                 },
+                child: BlocBuilder<DetailCubit, DetailState>(
+                  builder: (context, state) {
+                    if (state is DetailLoading) {
+                      return _buildLoadingState(context);
+                    } else if (state is DetailLoaded) {
+                      return Stack(
+                        children: [
+                          _buildDetailContent(state, isOfflineMode),
+                          if (state is DetailOpeningChapter)
+                            Container(
+                              color: Colors.black.withValues(alpha: 0.5),
+                              child: const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                        ],
+                      );
+                    } else if (state is DetailError) {
+                      return _buildErrorState(state);
+                    }
+
+                    return const SizedBox.shrink();
+                  },
+                ),
               );
             },
           ),
@@ -607,6 +634,11 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Widget _buildActionButtons(Content content) {
+    // If content has chapters, show chapter list instead of Read/Download buttons
+    if (content.chapters != null && content.chapters!.isNotEmpty) {
+      return _buildChapterList(content);
+    }
+
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -660,6 +692,91 @@ class _DetailScreenState extends State<DetailScreen> {
                 showProgress: true,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChapterList(Content content) {
+    final chapters = content.chapters!;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.list, color: Theme.of(context).colorScheme.onSurface),
+              const SizedBox(width: 8),
+              Text(
+                'Chapters (${chapters.length})',
+                style: TextStyleConst.headingMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: chapters.length,
+            separatorBuilder: (context, index) => Divider(
+              color:
+                  Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+              height: 1,
+            ),
+            itemBuilder: (context, index) {
+              final chapter = chapters[index];
+              return InkWell(
+                onTap: () {
+                  context.read<DetailCubit>().openChapter(chapter);
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              chapter.title,
+                              style: TextStyleConst.bodyLarge.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            if (chapter.uploadDate != null)
+                              Text(
+                                _formatDate(chapter.uploadDate!),
+                                style: TextStyleConst.bodySmall.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),

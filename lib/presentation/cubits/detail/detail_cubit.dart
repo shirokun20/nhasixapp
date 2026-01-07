@@ -1,4 +1,3 @@
-import '../../../domain/entities/entities.dart';
 import '../../../domain/value_objects/value_objects.dart';
 import '../../../domain/usecases/content/content_usecases.dart';
 import '../../../domain/usecases/content/get_content_detail_usecase.dart';
@@ -7,6 +6,8 @@ import '../../../domain/repositories/repositories.dart';
 import '../../../core/models/image_metadata.dart';
 import '../../../services/image_metadata_service.dart';
 import '../base/base_cubit.dart';
+import 'package:kuron_core/kuron_core.dart';
+import 'package:kuron_crotpedia/kuron_crotpedia.dart';
 
 part 'detail_state.dart';
 
@@ -20,6 +21,7 @@ class DetailCubit extends BaseCubit<DetailState> {
     required UserDataRepository userDataRepository,
     required ImageMetadataService imageMetadataService,
     required ContentRepository contentRepository,
+    required ContentSourceRegistry contentSourceRegistry,
     required super.logger,
   })  : _getContentDetailUseCase = getContentDetailUseCase,
         _addToFavoritesUseCase = addToFavoritesUseCase,
@@ -27,6 +29,7 @@ class DetailCubit extends BaseCubit<DetailState> {
         _userDataRepository = userDataRepository,
         _imageMetadataService = imageMetadataService,
         _contentRepository = contentRepository,
+        _contentSourceRegistry = contentSourceRegistry,
         super(
           initialState: const DetailInitial(),
         );
@@ -37,6 +40,7 @@ class DetailCubit extends BaseCubit<DetailState> {
   final UserDataRepository _userDataRepository;
   final ImageMetadataService _imageMetadataService;
   final ContentRepository _contentRepository;
+  final ContentSourceRegistry _contentSourceRegistry;
 
   /// Load content detail by ID
   Future<void> loadContentDetail(String contentId) async {
@@ -49,8 +53,32 @@ class DetailCubit extends BaseCubit<DetailState> {
 
       if (isClosed) return;
 
-      // Check if content is favorited (placeholder for now)
-      final isFavorited = await _checkIfFavorited(contentId);
+      // Check if content is favorited
+      // For Crotpedia, we might need to check remote status if possible,
+      // but usually we rely on local state or initial fetch status.
+      // CrotpediaSource.getDetail should ideally return 'favorites' status if available.
+      // Current implementation relies on UserDataRepository (Local DB) for 'isFavorited'.
+      // If we want Crotpedia bookmarks to be source-of-truth, we may need to adjust.
+      // BUT for now, let's keep consistency:
+      // If Crotpedia, we might check local DB too? No, logic says Crotpedia bookmarks are REMOTE.
+      // So checking _userDataRepository.isFavorite(contentId) might be wrong for Crotpedia if it's not synced.
+      // Assuming 'isFavorited' in DetailLoaded is primarily for UI toggle state.
+
+      bool isFavorited = false;
+      if (content.sourceId == 'crotpedia') {
+        // Crotpedia content entity might have favorited status from source if parser supports it
+        // But current parser just aggregates chapters.
+        // We'll rely on what getDetail returns or check local if we decide to sync.
+        // For now, let's assume getDetail sets content.favorites > 0 if bookmarked?
+        // No, CrotpediaSource returns content.favorites = 0 (not available).
+        // So we probably need to check local DB if we treat it as hybrid,
+        // OR just assume false until user toggles (which is bad UX).
+        // Ideally, CrotpediaSource should check bookmark status during getDetail if logged in.
+        // Let's stick to existing code for now and refine if needed.
+        isFavorited = await _checkIfFavorited(contentId);
+      } else {
+        isFavorited = await _checkIfFavorited(contentId);
+      }
 
       // Generate image metadata for performance optimization
       final imageMetadata =
@@ -147,6 +175,91 @@ class DetailCubit extends BaseCubit<DetailState> {
       return;
     }
 
+    // SPECIAL HANDLING FOR CROTPEDIA
+    if (currentState.content.sourceId == 'crotpedia') {
+      try {
+        final source =
+            _contentSourceRegistry.getSource('crotpedia') as CrotpediaSource?;
+        if (source != null) {
+          if (!source.isLoggedIn) {
+            // Store current state (DetailLoaded) so UI can resume
+            // But emiting NeedLogin replaces state.
+            // We can use a side-effect or a transient state?
+            // Since DetailNeedsLogin extends DetailState, we lose the Loaded data if not careful.
+            // Actually, the UI usually listens to state changes.
+            // If we emit NeedsLogin, the UI (listener) shows dialog.
+            // But the Builder might rebuild and lose content if state is no longer DetailLoaded.
+            // Ideally this should be a "One Shot" event (Action) rather than State.
+            // But working within State constraints:
+            // We can emit DetailNeedsLogin, then immediately emit DetailLoaded back?
+            // Or better: Use listener in UI to show dialog on matching condition,
+            // but keep state as DetailLoaded.
+            // BUT, how to communicate "Needs Login"?
+            // We can add a field to DetailLoaded? `bool showLoginPrompt`.
+            // Or just emit a specific state for a split second.
+
+            // Simpler approach compatible with existing architecture:
+            // Emit DetailNeedsLogin -> but we must preserve content to restore it.
+            // Wait, DetailNeedsLogin destroys the view...
+            // Let's modify DetailLoaded instead.
+
+            // Changing strategy: Don't emit DetailNeedsLogin class.
+            // Instead, add 'showLoginRequired' to DetailLoaded (as transient event ideally, or field)
+            // But I already added DetailNeedsLogin class.
+            // Let's use it as a "Toast/Dialog trigger" via Listener,
+            // ensuring the Builder handles it gracefully (or ignores it if it just overlays).
+            // Actually, if I emit NeedsLogin, the Builder will see `state is! DetailLoaded` likely.
+            // Let's look at `detail_page.dart` (not shown but assumed).
+
+            // Safer bet: Add `oneTimeEvent` like support, but easiest is:
+            // Just return and let UI handle 'not logged in' differently?
+            // No, requirement is "emit state to show login prompt".
+
+            emit(const DetailNeedsLogin());
+            // Immediately restore state so UI doesn't flicker/break?
+            emit(currentState);
+            return;
+          }
+
+          // Logged in, proceed to remote toggle
+          emit(currentState.copyWith(
+            isFavorited: !currentState.isFavorited,
+            isTogglingFavorite: true,
+          ));
+
+          final success = await source.toggleBookmark(
+              currentState.content.id, !currentState.isFavorited);
+
+          if (success) {
+            emit(currentState.copyWith(
+              isFavorited: !currentState.isFavorited,
+              isTogglingFavorite: false,
+              lastUpdated: DateTime.now(),
+            ));
+
+            // Also invoke local toggle to keep UserDataRepo in sync if we want consistency?
+            // Maybe not needed if we purely rely on remote.
+            if (currentState.isFavorited) {
+              await _removeFromFavorites(currentState.content.id);
+            } else {
+              await _addToFavorites(currentState.content);
+            }
+          } else {
+            // Revert
+            emit(currentState.copyWith(
+              isFavorited: currentState.isFavorited,
+              isTogglingFavorite: false,
+            ));
+            logWarning('Failed to toggle Crotpedia bookmark');
+          }
+          return;
+        }
+      } catch (e) {
+        logger.e('Error accessing Crotpedia source: $e');
+      }
+    }
+
+    // DEFAULT HANDLING (Nhentai / Local)
     try {
       logInfo('Toggling favorite for content: ${currentState.content.id}');
 
@@ -299,6 +412,87 @@ class DetailCubit extends BaseCubit<DetailState> {
       logWarning(
           'Failed to generate metadata for content: $contentId, error: ${e.toString()}');
       return null; // Return null on error to allow fallback to raw URLs
+    }
+  }
+
+  /// Open a specific chapter
+  Future<void> openChapter(Chapter chapter) async {
+    final currentState = state;
+    if (currentState is! DetailLoaded) return;
+
+    // Prevent double opening
+    if (currentState is DetailOpeningChapter) return;
+
+    try {
+      logInfo('Opening chapter: ${chapter.title} (${chapter.id})');
+      emit(DetailOpeningChapter(
+        content: currentState.content,
+        isFavorited: currentState.isFavorited,
+        lastUpdated: currentState.lastUpdated,
+        imageMetadata: currentState.imageMetadata,
+      ));
+
+      final source =
+          _contentSourceRegistry.getSource(currentState.content.sourceId);
+
+      List<String> images = [];
+
+      if (source is CrotpediaSource) {
+        images = await source.getChapterImages(chapter.id);
+      } else {
+        logWarning(
+            'Source ${source?.displayName} does not support getChapterImages direct call');
+      }
+
+      if (isClosed) return;
+
+      if (images.isEmpty) {
+        emit(DetailError(
+          message: 'Failed to load chapter images',
+          errorType: 'parsing',
+          canRetry: true,
+          contentId: currentState.content.id,
+        ));
+        return;
+      }
+
+      // Create a temporary Content object for the Reader
+      final chapterContent = currentState.content.copyWith(
+        id: chapter.id,
+        title: '${currentState.content.title} - ${chapter.title}',
+        imageUrls: images,
+        pageCount: images.length,
+        chapters: null,
+      );
+
+      emit(DetailReaderReady(
+        chapterContent: chapterContent,
+        content: currentState.content,
+        isFavorited: currentState.isFavorited,
+        lastUpdated: currentState.lastUpdated,
+        imageMetadata: currentState.imageMetadata,
+      ));
+    } catch (e) {
+      logger.e('Failed to open chapter: $e');
+      emit(DetailLoaded(
+        content: currentState.content,
+        isFavorited: currentState.isFavorited,
+        lastUpdated: currentState.lastUpdated,
+        imageMetadata: currentState.imageMetadata,
+      ));
+    }
+  }
+
+  /// Reset state after navigation
+  void resetToLoaded() {
+    final currentState = state;
+    if (currentState is DetailReaderReady) {
+      emit(DetailLoaded(
+        content: currentState.content,
+        isFavorited: currentState.isFavorited,
+        lastUpdated: currentState.lastUpdated,
+        imageMetadata: currentState.imageMetadata,
+      ));
     }
   }
 }

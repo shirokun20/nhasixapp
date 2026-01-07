@@ -15,6 +15,7 @@ export 'src/entities/search_filter.dart';
 export 'src/entities/content_list_result.dart';
 export 'src/entities/filter_item.dart';
 export 'src/entities/content_metadata.dart';
+export 'src/entities/chapter.dart';
 
 // Value Objects
 export 'src/value_objects/sort_option.dart';
