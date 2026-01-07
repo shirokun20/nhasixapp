@@ -163,12 +163,18 @@ class CrotpediaSource implements ContentSource {
 
       final seriesDetail = _scraper.parseSeriesDetail(response.data);
 
-      // Aggregate all chapter images
-      final allImages = <String>[];
-      for (final chapter in seriesDetail.chapters) {
-        final chapterImages = await getChapterImages(chapter.slug);
-        allImages.addAll(chapterImages);
-      }
+      // Map chapters
+      final chapters = seriesDetail.chapters
+          .map((c) => Chapter(
+                id: c.slug,
+                title: c.title,
+                url: CrotpediaUrlBuilder.chapterReader(c.slug),
+                uploadDate: c.publishedDate,
+              ))
+          .toList();
+
+      // For Crotpedia (Manga/Manhwa), we don't load all images at once anymore.
+      // We provide the chapter list, and the UI should handle fetching chapter images.
 
       // Map to Content entity
       return Content(
@@ -176,8 +182,9 @@ class CrotpediaSource implements ContentSource {
         sourceId: id,
         title: seriesDetail.title,
         coverUrl: seriesDetail.coverUrl,
-        pageCount: allImages.length,
-        imageUrls: allImages,
+        pageCount: 0, // Dynamic per chapter
+        imageUrls: const [], // Empty initially
+        chapters: chapters, // New field!
         tags: seriesDetail.genres
             .asMap()
             .entries
