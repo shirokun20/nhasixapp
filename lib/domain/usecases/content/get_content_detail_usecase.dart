@@ -12,11 +12,7 @@ class GetContentDetailUseCase extends UseCase<Content, GetContentDetailParams> {
   @override
   Future<Content> call(GetContentDetailParams params) async {
     try {
-      // Validate parameters
-      if (!params.contentId.isValid) {
-        throw ValidationException(
-            'Invalid content ID: ${params.contentId.value}');
-      }
+      // No validation needed for ContentId anymore to support unusual formats
 
       // Check if content exists first (optional optimization)
       if (params.verifyExists) {
