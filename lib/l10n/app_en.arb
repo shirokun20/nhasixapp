@@ -798,6 +798,8 @@
     }
   },
   "failedToLoad": "Failed to load",
+  "loginRequiredForAction": "Login required for this action",
+  "login": "Login",
   "offlineContentTitle": "Offline Content",
   "offlineContentError": "Offline Content Error",
   "favorited": "Favorited",

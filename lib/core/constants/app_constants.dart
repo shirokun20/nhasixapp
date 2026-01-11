@@ -5,6 +5,7 @@
 library;
 
 import 'dart:core';
+import 'package:kuron_core/kuron_core.dart';
 
 /// Pagination and data fetching limits
 class AppLimits {
@@ -69,10 +70,14 @@ class AppStorage {
   static const String backupFolderName = 'nhasix';
 
   /// Default source ID for backward compatibility with existing downloads
-  static const String defaultSourceId = 'nhentai';
+  /// Default source ID for backward compatibility with existing downloads
+  static final String defaultSourceId = SourceType.nhentai.id;
 
   /// Known content sources for validation
-  static const List<String> knownSources = ['nhentai', 'crotpedia'];
+  static final List<String> knownSources = [
+    SourceType.nhentai.id,
+    SourceType.crotpedia.id,
+  ];
 
   /// Metadata file name
   static const String metadataFileName = 'metadata.json';

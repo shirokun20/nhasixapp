@@ -37,6 +37,7 @@ import 'package:nhasixapp/presentation/pages/main/widgets/main_featured_card.dar
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_state.dart';
+import 'package:kuron_core/kuron_core.dart' hide SearchFilter, SortOption;
 
 class MainScreenScrollable extends StatefulWidget {
   const MainScreenScrollable({super.key});
@@ -745,7 +746,11 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
   /// Handle content tap to navigate to detail screen
   void _onContentTap(Content content) async {
-    final searchFilter = await AppRouter.goToContentDetail(context, content.id);
+    final searchFilter = await AppRouter.goToContentDetail(
+      context,
+      content.id,
+      sourceId: content.sourceId,
+    );
 
     // If user searched by tag from detail screen, trigger search
     if (searchFilter != null && mounted) {
@@ -1080,8 +1085,13 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       return const SizedBox.shrink();
     }
 
-    // Don't show pagination if there's only one page
-    if (state.totalPages <= 1) {
+    // Show pagination if:
+    // 1. Has totalPages > 1 (nhentai with known total)
+    // 2. OR has next/previous navigation (crotpedia with unknown total)
+    final shouldShowPagination =
+        state.totalPages > 1 || state.hasNext || state.hasPrevious;
+
+    if (!shouldShowPagination) {
       return const SizedBox.shrink();
     }
 
@@ -1112,7 +1122,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         },
         showProgressBar: false, // Simplify for Phase 5
         showPercentage: false, // Simplify for Phase 5
-        showPageInput: true, // Keep tap-to-jump functionality
+        showPageInput: state.totalPages > 0, // Only show input if total known
       ),
     );
   }
@@ -1152,7 +1162,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             // Fallback to main page if query params are empty
             url = _buildMainPageUrl(contentState.currentPage);
           } else {
-            url = 'https://nhentai.net/search/?$queryParams';
+            final baseUrl = _getSourceBaseUrl();
+            url = '$baseUrl/search/?$queryParams';
           }
         }
       } else {
@@ -1195,7 +1206,11 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
       // Fallback: try launching directly for https URLs
       if (!launched && uri.scheme == 'https') {
-        try {} catch (e) {
+        try {
+          Logger().i('Attempting direct launch for: $url');
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          launched = true;
+        } catch (e) {
           Logger().e('Direct launch failed: $e');
           lastError = 'Direct launch failed: $e';
         }
@@ -1250,13 +1265,15 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
   /// Build URL for content state context (non-search)
   String _buildContentStateUrl(ContentLoaded contentState) {
+    final baseUrl = _getSourceBaseUrl();
+
     if (contentState.tag != null) {
       // Tag browsing page
       final tagName = Uri.encodeComponent(contentState.tag!.name);
       final pageParam = contentState.currentPage > 1
           ? '?page=${contentState.currentPage}'
           : '';
-      return 'https://nhentai.net/tag/$tagName/$pageParam';
+      return '$baseUrl/tag/$tagName/$pageParam';
     } else if (contentState.timeframe != null) {
       // Popular content page
       final timeframe = contentState.timeframe!;
@@ -1265,7 +1282,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       final pageParam = contentState.currentPage > 1
           ? '?page=${contentState.currentPage}'
           : '';
-      return 'https://nhentai.net/popular$timeframeSuffix/$pageParam';
+      return '$baseUrl/popular$timeframeSuffix/$pageParam';
     } else {
       // Main page with sort options
       return _buildMainPageUrl(contentState.currentPage, contentState.sortBy);
@@ -1274,12 +1291,13 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
   /// Build main page URL with optional sort and page parameters
   String _buildMainPageUrl(int currentPage, [SortOption? sortBy]) {
+    final baseUrl = _getSourceBaseUrl();
     final sort = sortBy ?? SortOption.newest;
     final sortParam = sort == SortOption.newest ? '' : '?sort=${sort.apiValue}';
     final pageParam = currentPage > 1
         ? (sortParam.isEmpty ? '?page=$currentPage' : '&page=$currentPage')
         : '';
-    return 'https://nhentai.net/$sortParam$pageParam';
+    return '$baseUrl/$sortParam$pageParam';
   }
 
   /// Clean URL by removing trailing ? or & characters and empty parameters
@@ -1319,6 +1337,23 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       });
       return cleaned;
     }
+  }
+
+  /// Get current active source
+  ContentSource? _getActiveSource() {
+    try {
+      final sourceCubit = context.read<SourceCubit>();
+      return sourceCubit.state.activeSource;
+    } catch (e) {
+      Logger().e('Failed to get active source: $e');
+      return null;
+    }
+  }
+
+  /// Get base URL for current source (fallback to nhentai)
+  String _getSourceBaseUrl() {
+    final source = _getActiveSource();
+    return source?.baseUrl ?? 'https://nhentai.net';
   }
 
   /// Download all galleries in current page

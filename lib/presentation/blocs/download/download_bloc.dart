@@ -285,6 +285,37 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     try {
       _logger.i('DownloadBloc: Queuing download for ${event.content.id}');
 
+      // Check if this is chapter-based content (Crotpedia manga)
+      // Chapter-based content has imageUrls.isEmpty and chapters != null
+      if (event.content.imageUrls.isEmpty &&
+          event.content.chapters != null &&
+          event.content.chapters!.isNotEmpty) {
+        _logger.w(
+            'DownloadBloc: Cannot download chapter-based content ${event.content.id}');
+
+        // Show informative error
+        emit(DownloadError(
+          message: 'This is a manga series with chapters. '
+              'Please navigate to the detail page and read chapters individually. '
+              'Bulk chapter downloads will be supported in a future update.',
+          errorType: DownloadErrorType.unknown,
+          previousState: currentState,
+        ));
+        return;
+      }
+
+      // Validate that content has downloadable images
+      if (event.content.imageUrls.isEmpty && event.content.pageCount == 0) {
+        _logger.w(
+            'DownloadBloc: Content ${event.content.id} has no downloadable images');
+
+        emit(DownloadError(
+          message: 'This content has no downloadable images.',
+          errorType: DownloadErrorType.unknown,
+          previousState: currentState,
+        ));
+        return;
+      }
       // Check if already exists
       final existingDownload = currentState.downloads
           .where((d) => d.contentId == event.content.id)

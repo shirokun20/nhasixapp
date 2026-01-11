@@ -24,9 +24,14 @@ class CrotpediaUrlBuilder {
 
   // ============ Search URLs ============
 
-  /// Simple search
-  static String simpleSearch(String query) {
-    return '$baseUrl/?s=${Uri.encodeComponent(query)}';
+  /// Simple search with pagination support
+  /// URL format: /?s=query for page 1, /page/X/?s=query for page 2+
+  static String simpleSearch(String query, {int page = 1}) {
+    final encodedQuery = Uri.encodeComponent(query);
+    if (page > 1) {
+      return '$baseUrl/page/$page/?s=$encodedQuery';
+    }
+    return '$baseUrl/?s=$encodedQuery';
   }
 
   /// Advanced search - ALL params required (even if empty)

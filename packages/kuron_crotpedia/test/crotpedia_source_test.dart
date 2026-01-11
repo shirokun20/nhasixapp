@@ -39,13 +39,17 @@ void main() {
     );
 
     // Default behavior for parsePagination
-    when(mockScraper.parsePagination(any))
-        .thenReturn((currentPage: 1, hasNext: false));
+    when(mockScraper.parsePagination(any)).thenReturn((
+      currentPage: 1,
+      totalPages: 1,
+      hasNext: false,
+      hasPrevious: false,
+    ));
   });
 
   group('CrotpediaSource Metadata', () {
     test('has correct id', () {
-      expect(source.id, equals('crotpedia'));
+      expect(source.id, equals(SourceType.crotpedia.id));
     });
 
     test('has correct displayName', () {
@@ -80,14 +84,14 @@ void main() {
           title: 'Test Series 1',
           slug: 'test-series-1',
           coverUrl: 'https://example.com/cover1.jpg',
-          genres: ['Action', 'Drama'],
+          genres: {'action': 'Action', 'drama': 'Drama'},
           artist: 'Artist 1',
         ),
         CrotpediaSeries(
           title: 'Test Series 2',
           slug: 'test-series-2',
           coverUrl: 'https://example.com/cover2.jpg',
-          genres: ['Comedy'],
+          genres: {'comedy': 'Comedy'},
         ),
       ];
 
@@ -99,8 +103,12 @@ void main() {
 
       when(mockDio.get(any)).thenAnswer((_) async => response);
       when(mockScraper.parseLatestSeries(any)).thenReturn(mockSeriesList);
-      when(mockScraper.parsePagination(any))
-          .thenReturn((currentPage: 1, hasNext: true));
+      when(mockScraper.parsePagination(any)).thenReturn((
+        currentPage: 1,
+        totalPages: 10,
+        hasNext: true,
+        hasPrevious: false,
+      ));
 
       final result = await source.getList(page: 1);
 
@@ -121,7 +129,7 @@ void main() {
           title: 'Test Series 3',
           slug: 'test-series-3',
           coverUrl: 'https://example.com/cover3.jpg',
-          genres: ['Action'],
+          genres: {'action': 'Action'},
         ),
       ];
 
@@ -133,8 +141,12 @@ void main() {
 
       when(mockDio.get(any)).thenAnswer((_) async => response);
       when(mockScraper.parseLatestSeries(any)).thenReturn(mockSeriesList);
-      when(mockScraper.parsePagination(any))
-          .thenReturn((currentPage: 2, hasNext: false));
+      when(mockScraper.parsePagination(any)).thenReturn((
+        currentPage: 2,
+        totalPages: 5,
+        hasNext: false,
+        hasPrevious: true,
+      ));
 
       final result = await source.getList(page: 2);
 
@@ -165,7 +177,7 @@ void main() {
           title: 'Popular Series',
           slug: 'popular-series',
           coverUrl: 'https://example.com/popular.jpg',
-          genres: ['Romance'],
+          genres: {'romance': 'Romance'},
         ),
       ];
 
@@ -202,7 +214,7 @@ void main() {
           title: 'Search Result',
           slug: 'search-result',
           coverUrl: 'https://example.com/search.jpg',
-          genres: ['Action'],
+          genres: {'action': 'Action'},
         ),
       ];
 
@@ -233,7 +245,7 @@ void main() {
           title: 'Advanced Search Result',
           slug: 'advanced-search',
           coverUrl: 'https://example.com/advanced.jpg',
-          genres: ['Drama', 'Romance'],
+          genres: {'drama': 'Drama', 'romance': 'Romance'},
         ),
       ];
 
@@ -272,12 +284,13 @@ void main() {
   });
 
   group('getDetail', () {
-    test('fetches series detail and aggregates chapters', () async {
+    test('fetches series detail and returns chapter list without images',
+        () async {
       final mockSeriesDetail = CrotpediaSeriesDetail(
         slug: 'test-slug',
         title: 'Detailed Series',
         coverUrl: 'https://example.com/detail.jpg',
-        genres: ['Action', 'Adventure'],
+        genres: {'action': 'Action', 'adventure': 'Adventure'},
         artist: 'Artist',
         status: 'Ongoing',
         synopsis: 'Description',
@@ -303,33 +316,27 @@ void main() {
         statusCode: 200,
       );
 
-      final chapterResponse = Response(
-        requestOptions: RequestOptions(path: '/baca/chapter-1/'),
-        data: '<html>chapter html</html>',
-        statusCode: 200,
-      );
-
       when(mockDio.get(argThat(contains('/baca/series/'))))
           .thenAnswer((_) async => detailResponse);
-      when(mockDio.get(argThat(contains('/baca/chapter-'))))
-          .thenAnswer((_) async => chapterResponse);
       when(mockScraper.parseSeriesDetail(any)).thenReturn(mockSeriesDetail);
-      when(mockScraper.parseChapterImages(any)).thenReturn([
-        'https://example.com/img1.jpg',
-        'https://example.com/img2.jpg',
-      ]);
 
       final result = await source.getDetail('test-slug');
 
       expect(result.id, equals('test-slug'));
       expect(result.title, equals('Detailed Series'));
-      expect(result.pageCount, equals(4)); // 2 chapters × 2 images
-      expect(result.imageUrls.length, equals(4));
+      // New implementation: pageCount and imageUrls are 0/empty
+      // Images are loaded per-chapter separately via getChapterImages()
+      expect(result.pageCount, equals(0));
+      expect(result.imageUrls.length, equals(0));
+      expect(result.chapters!.length, equals(2));
+      expect(result.chapters![0].id, equals('chapter-1'));
+      expect(result.chapters![1].id, equals('chapter-2'));
       expect(result.tags.length, equals(2));
       expect(result.artists, equals(['Artist']));
 
       verify(mockScraper.parseSeriesDetail(any)).called(1);
-      verify(mockScraper.parseChapterImages(any)).called(2);
+      // parseChapterImages is NOT called during getDetail anymore
+      verifyNever(mockScraper.parseChapterImages(any));
     });
 
     test('throws on detail fetch error', () async {
@@ -357,7 +364,7 @@ void main() {
         slug: 'original',
         title: 'Original Series',
         coverUrl: 'https://example.com/original.jpg',
-        genres: ['Action', 'Drama'],
+        genres: {'action': 'Action', 'drama': 'Drama'},
         chapters: [],
       );
 
@@ -373,19 +380,19 @@ void main() {
           title: 'Related Series 1',
           slug: 'related-1',
           coverUrl: 'https://example.com/related1.jpg',
-          genres: ['Action'],
+          genres: {'action': 'Action'},
         ),
         CrotpediaSeries(
           title: 'Related Series 2',
           slug: 'related-2',
           coverUrl: 'https://example.com/related2.jpg',
-          genres: ['Action'],
+          genres: {'action': 'Action'},
         ),
         CrotpediaSeries(
           title: 'Original Series',
           slug: 'original',
           coverUrl: 'https://example.com/original.jpg',
-          genres: ['Action'],
+          genres: {'action': 'Action'},
         ),
       ];
 
@@ -416,7 +423,7 @@ void main() {
         slug: 'notags',
         title: 'Series without tags',
         coverUrl: 'https://example.com/notags.jpg',
-        genres: [],
+        genres: {},
         chapters: [],
       );
 

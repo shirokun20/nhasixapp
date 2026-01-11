@@ -4,6 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
+import 'package:kuron_core/kuron_core.dart';
+import 'package:nhasixapp/presentation/cubits/crotpedia_auth/crotpedia_auth_cubit.dart';
 import '../../core/routing/app_route.dart';
 import 'common/source_selector.dart';
 
@@ -79,7 +83,12 @@ class _AppDrawerContentState extends State<AppDrawerContent>
     if (widget.isDrawer) {
       Navigator.pop(context); // Close drawer first
     }
-    context.go(route);
+
+    if (route == AppRoute.crotpediaLogin) {
+      context.push(route);
+    } else {
+      context.go(route);
+    }
   }
 
   @override
@@ -141,6 +150,39 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                   children: [
                     const SourceSelector(),
                     const SizedBox(height: 8),
+
+                    // Crotpedia specific actions
+                    if (context.watch<SourceCubit>().state.activeSource?.id ==
+                        SourceType.crotpedia.id) ...[
+                      BlocBuilder<CrotpediaAuthCubit, CrotpediaAuthState>(
+                        builder: (context, authState) {
+                          final isLoggedIn = authState is CrotpediaAuthSuccess;
+                          final label = isLoggedIn
+                              ? 'Account (${authState.username})'
+                              : 'Login / Account';
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSectionLabel('ACCOUNT', theme),
+                              const SizedBox(height: 8),
+                              _buildNavItem(
+                                context,
+                                icon: isLoggedIn
+                                    ? Icons.verified_user_rounded
+                                    : Icons.account_circle_rounded,
+                                label: label,
+                                route: AppRoute.crotpediaLogin,
+                                isSelected: isSelected(AppRoute.crotpediaLogin),
+                                theme: theme,
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
+
                     _buildSectionLabel(l10n.home.toUpperCase(), theme),
                     const SizedBox(height: 8),
                     _buildNavItem(

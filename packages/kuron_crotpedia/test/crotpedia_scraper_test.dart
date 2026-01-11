@@ -84,6 +84,66 @@ void main() {
         expect(detail.chapters.first.title, isNotEmpty);
       });
 
+      test('parses chapters with and without download links', () {
+        const html = '''
+          <html>
+            <ul class="series-chapterlist">
+              <!-- Chapter WITH download link -->
+              <li>
+                <div class="flexch">
+                  <div class="flexch-book"> <i class="fa-solid fa-book-open"></i> </div>
+                  <div class="flexch-infoz"> 
+                    <a href="/baca/alien-vs-joshidaisei-chapter-1/"
+                       title="Alien vs Joshidaisei Chapter 1 Bahasa Indonesia">
+                       <span>Chapter 1</span>
+                       <span class="date">Maret 11, 2021</span>
+                    </a> 
+                  </div> 
+                  <a href="http://crotpedia.net/go/32191e9e">
+                    <div class="flexch-dllink"><i class="fa-solid fa-circle-down"></i></div>
+                  </a>
+                </div>
+              </li>
+              
+              <!-- Chapter WITHOUT download link (BUG CASE) -->
+              <li>
+                <div class="flexch">
+                  <div class="flexch-book"> <i class="fa-solid fa-book-open"></i> </div>
+                  <div class="flexch-infoz"> 
+                    <a href="/baca/when-the-shepherds-purse-blooms-chapter-1-bahasa-indonesia/"
+                       title="When the Shepherd's Purse Blooms Chapter 1 Bahasa Indonesia">
+                       <span>Chapter 1</span>
+                       <span class="date">Juni 22, 2021</span>
+                    </a> 
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </html>
+        ''';
+
+        final detail = scraper.parseSeriesDetail(html);
+
+        // CRITICAL: Both chapters should parse successfully
+        expect(detail.chapters.length, equals(2),
+            reason:
+                'Should parse both chapters regardless of download link presence');
+
+        // Chapter 1 (with download link)
+        expect(
+            detail.chapters[0].slug, equals('alien-vs-joshidaisei-chapter-1'));
+        expect(detail.chapters[0].title, contains('Chapter 1'));
+
+        // Chapter 2 (WITHOUT download link) - THIS IS THE BUG CASE
+        expect(
+            detail.chapters[1].slug,
+            equals(
+                'when-the-shepherds-purse-blooms-chapter-1-bahasa-indonesia'),
+            reason:
+                'Chapter without download link should still have valid slug');
+        expect(detail.chapters[1].title, contains('Chapter 1'));
+      });
+
       test('handles missing metadata gracefully', () {
         const html = '''
           <html>

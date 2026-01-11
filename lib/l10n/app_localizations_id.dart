@@ -1617,6 +1617,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get failedToLoad => 'Gagal memuat';
 
   @override
+  String get loginRequiredForAction => 'Login diperlukan untuk tindakan ini';
+
+  @override
+  String get login => 'Login';
+
+  @override
   String get offlineContentTitle => 'Konten Offline';
 
   @override

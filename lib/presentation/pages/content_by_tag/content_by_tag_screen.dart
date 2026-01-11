@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/blocs/content/content_bloc.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
@@ -164,7 +165,11 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
 
   /// Handle content tap to navigate to detail screen
   void _onContentTap(Content content) {
-    context.push('/content/${content.id}');
+    AppRouter.goToContentDetail(
+      context,
+      content.id,
+      sourceId: content.sourceId,
+    );
   }
 
   /// Handle sorting option change

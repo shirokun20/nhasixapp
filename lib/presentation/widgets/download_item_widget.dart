@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:kuron_core/kuron_core.dart';
 
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/entities.dart';
@@ -66,12 +67,13 @@ class DownloadItemWidget extends StatelessWidget {
                                   horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
                                 color: _getSourceColor(
-                                    download.sourceId ?? 'nhentai',
+                                    download.sourceId ?? SourceType.nhentai.id,
                                     colorScheme),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                (download.sourceId ?? 'nhentai').toUpperCase(),
+                                (download.sourceId ?? SourceType.nhentai.id)
+                                    .toUpperCase(),
                                 style: TextStyleConst.caption.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -491,13 +493,12 @@ class DownloadItemWidget extends StatelessWidget {
   }
 
   Color _getSourceColor(String sourceId, ColorScheme colorScheme) {
-    switch (sourceId.toLowerCase()) {
-      case 'nhentai':
-        return const Color(0xFFEC2854); // nhentai red
-      case 'crotpedia':
-        return const Color(0xFF1E88E5); // crotpedia blue
-      default:
-        return colorScheme.secondary;
+    if (sourceId.toLowerCase() == SourceType.nhentai.id) {
+      return const Color(0xFFEC2854); // nhentai red
+    } else if (sourceId.toLowerCase() == SourceType.crotpedia.id) {
+      return const Color(0xFF1E88E5); // crotpedia blue
+    } else {
+      return colorScheme.secondary;
     }
   }
 

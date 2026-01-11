@@ -65,7 +65,7 @@ class DetailCubit extends BaseCubit<DetailState> {
       // Assuming 'isFavorited' in DetailLoaded is primarily for UI toggle state.
 
       bool isFavorited = false;
-      if (content.sourceId == 'crotpedia') {
+      if (content.sourceId == SourceType.crotpedia.id) {
         // Crotpedia content entity might have favorited status from source if parser supports it
         // But current parser just aggregates chapters.
         // We'll rely on what getDetail returns or check local if we decide to sync.
@@ -117,6 +117,15 @@ class DetailCubit extends BaseCubit<DetailState> {
       return;
     }
 
+    // Only load related content for Nhentai
+    // Crotpedia's implementation is inefficient (calls getDetail again)
+    // and can cause state issues
+    if (currentState.content.sourceId != SourceType.nhentai.id) {
+      logInfo(
+          'Skipping related content for source: ${currentState.content.sourceId}');
+      return;
+    }
+
     try {
       logInfo('Loading related content for ID: ${currentState.content.id}');
 
@@ -148,6 +157,9 @@ class DetailCubit extends BaseCubit<DetailState> {
           englishTitle: currentState.content.englishTitle,
           japaneseTitle: currentState.content.japaneseTitle,
           relatedContent: relatedContents,
+          // CRITICAL FIX: Preserve chapters field to prevent UI from switching
+          // from chapter list to "Read Now" button
+          chapters: currentState.content.chapters,
         );
 
         emit(currentState.copyWith(
@@ -173,90 +185,6 @@ class DetailCubit extends BaseCubit<DetailState> {
     if (currentState is! DetailLoaded) {
       logWarning('Cannot toggle favorite: content not loaded');
       return;
-    }
-
-    // SPECIAL HANDLING FOR CROTPEDIA
-    if (currentState.content.sourceId == 'crotpedia') {
-      try {
-        final source =
-            _contentSourceRegistry.getSource('crotpedia') as CrotpediaSource?;
-        if (source != null) {
-          if (!source.isLoggedIn) {
-            // Store current state (DetailLoaded) so UI can resume
-            // But emiting NeedLogin replaces state.
-            // We can use a side-effect or a transient state?
-            // Since DetailNeedsLogin extends DetailState, we lose the Loaded data if not careful.
-            // Actually, the UI usually listens to state changes.
-            // If we emit NeedsLogin, the UI (listener) shows dialog.
-            // But the Builder might rebuild and lose content if state is no longer DetailLoaded.
-            // Ideally this should be a "One Shot" event (Action) rather than State.
-            // But working within State constraints:
-            // We can emit DetailNeedsLogin, then immediately emit DetailLoaded back?
-            // Or better: Use listener in UI to show dialog on matching condition,
-            // but keep state as DetailLoaded.
-            // BUT, how to communicate "Needs Login"?
-            // We can add a field to DetailLoaded? `bool showLoginPrompt`.
-            // Or just emit a specific state for a split second.
-
-            // Simpler approach compatible with existing architecture:
-            // Emit DetailNeedsLogin -> but we must preserve content to restore it.
-            // Wait, DetailNeedsLogin destroys the view...
-            // Let's modify DetailLoaded instead.
-
-            // Changing strategy: Don't emit DetailNeedsLogin class.
-            // Instead, add 'showLoginRequired' to DetailLoaded (as transient event ideally, or field)
-            // But I already added DetailNeedsLogin class.
-            // Let's use it as a "Toast/Dialog trigger" via Listener,
-            // ensuring the Builder handles it gracefully (or ignores it if it just overlays).
-            // Actually, if I emit NeedsLogin, the Builder will see `state is! DetailLoaded` likely.
-            // Let's look at `detail_page.dart` (not shown but assumed).
-
-            // Safer bet: Add `oneTimeEvent` like support, but easiest is:
-            // Just return and let UI handle 'not logged in' differently?
-            // No, requirement is "emit state to show login prompt".
-
-            emit(const DetailNeedsLogin());
-            // Immediately restore state so UI doesn't flicker/break?
-            emit(currentState);
-            return;
-          }
-
-          // Logged in, proceed to remote toggle
-          emit(currentState.copyWith(
-            isFavorited: !currentState.isFavorited,
-            isTogglingFavorite: true,
-          ));
-
-          final success = await source.toggleBookmark(
-              currentState.content.id, !currentState.isFavorited);
-
-          if (success) {
-            emit(currentState.copyWith(
-              isFavorited: !currentState.isFavorited,
-              isTogglingFavorite: false,
-              lastUpdated: DateTime.now(),
-            ));
-
-            // Also invoke local toggle to keep UserDataRepo in sync if we want consistency?
-            // Maybe not needed if we purely rely on remote.
-            if (currentState.isFavorited) {
-              await _removeFromFavorites(currentState.content.id);
-            } else {
-              await _addToFavorites(currentState.content);
-            }
-          } else {
-            // Revert
-            emit(currentState.copyWith(
-              isFavorited: currentState.isFavorited,
-              isTogglingFavorite: false,
-            ));
-            logWarning('Failed to toggle Crotpedia bookmark');
-          }
-          return;
-        }
-      } catch (e) {
-        logger.e('Error accessing Crotpedia source: $e');
-      }
     }
 
     // DEFAULT HANDLING (Nhentai / Local)
@@ -447,12 +375,27 @@ class DetailCubit extends BaseCubit<DetailState> {
       if (isClosed) return;
 
       if (images.isEmpty) {
-        emit(DetailError(
-          message: 'Failed to load chapter images',
-          errorType: 'parsing',
-          canRetry: true,
-          contentId: currentState.content.id,
+        // Use ActionFailure to preserve UI instead of replacing with Error screen
+        String message = 'Failed to load chapter images';
+        bool needsLogin = false;
+
+        // Crotpedia specific heuristic
+        if (source is CrotpediaSource) {
+          message = 'This chapter requires login or is unavailable.';
+          needsLogin = true;
+        }
+
+        emit(DetailActionFailure(
+          message: message,
+          content: currentState.content,
+          isFavorited: currentState.isFavorited,
+          lastUpdated: currentState.lastUpdated,
+          imageMetadata: currentState.imageMetadata,
+          needsLogin: needsLogin,
         ));
+
+        // Return to clean state so subsequent clicks work even if error repeats
+        emit(currentState);
         return;
       }
 
@@ -474,7 +417,8 @@ class DetailCubit extends BaseCubit<DetailState> {
       ));
     } catch (e) {
       logger.e('Failed to open chapter: $e');
-      emit(DetailLoaded(
+      emit(DetailActionFailure(
+        message: 'Failed to open chapter: ${e.toString()}',
         content: currentState.content,
         isFavorited: currentState.isFavorited,
         lastUpdated: currentState.lastUpdated,
@@ -487,6 +431,13 @@ class DetailCubit extends BaseCubit<DetailState> {
   void resetToLoaded() {
     final currentState = state;
     if (currentState is DetailReaderReady) {
+      emit(DetailLoaded(
+        content: currentState.content,
+        isFavorited: currentState.isFavorited,
+        lastUpdated: currentState.lastUpdated,
+        imageMetadata: currentState.imageMetadata,
+      ));
+    } else if (currentState is DetailActionFailure) {
       emit(DetailLoaded(
         content: currentState.content,
         isFavorited: currentState.isFavorited,

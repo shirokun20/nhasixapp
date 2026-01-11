@@ -1614,6 +1614,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get failedToLoad => 'Failed to load';
 
   @override
+  String get loginRequiredForAction => 'Login required for this action';
+
+  @override
+  String get login => 'Login';
+
+  @override
   String get offlineContentTitle => 'Offline Content';
 
   @override

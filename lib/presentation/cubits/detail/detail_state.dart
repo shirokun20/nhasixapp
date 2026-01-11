@@ -214,3 +214,21 @@ class DetailNeedsLogin extends DetailState {
   @override
   List<Object?> get props => [];
 }
+
+/// State when an action fails but content is still loaded
+class DetailActionFailure extends DetailLoaded {
+  const DetailActionFailure({
+    required this.message,
+    required super.content,
+    required super.isFavorited,
+    required super.lastUpdated,
+    super.imageMetadata,
+    this.needsLogin = false,
+  });
+
+  final String message;
+  final bool needsLogin;
+
+  @override
+  List<Object?> get props => [...super.props, message, needsLogin];
+}

@@ -14,7 +14,9 @@ class CrotpediaAuthCubit extends Cubit<CrotpediaAuthState> {
     required Logger logger,
   })  : _authManager = authManager,
         _logger = logger,
-        super(CrotpediaAuthInitial());
+        super(CrotpediaAuthInitial()) {
+    checkLoginStatus();
+  }
 
   Future<void> checkLoginStatus() async {
     try {

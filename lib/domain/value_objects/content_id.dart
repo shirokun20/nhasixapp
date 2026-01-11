@@ -13,14 +13,43 @@ class ContentId extends Equatable {
   String toString() => value;
 
   /// Validate content ID format
+  /// Supports:
+  /// - Numeric IDs (nhentai): "123456"
+  /// - Slug IDs (crotpedia): "my-manga-title", "the-hatsunetsu"
   bool get isValid {
-    // Content ID should be numeric for nhentai
-    return RegExp(r'^\d+$').hasMatch(value);
+    if (value.isEmpty) return false;
+
+    // Accept numeric IDs (nhentai format)
+    if (isNumeric) return true;
+
+    // Accept slug IDs (crotpedia format)
+    // Valid slug: lowercase, alphanumeric, hyphens, underscores
+    // Must start with alphanumeric, no consecutive hyphens
+    if (isSlug) return true;
+
+    // Reject invalid formats
+    return false;
   }
 
-  /// Get content ID as integer
+  /// Check if this is a numeric ID (nhentai-style)
+  bool get isNumeric => RegExp(r'^\d+$').hasMatch(value);
+
+  /// Check if this is a slug ID (crotpedia-style)
+  /// Valid patterns: "manga-title", "the-hatsunetsu", "series-name-2024"
+  /// Also accepts URL-encoded characters: "secret-%e2%99%a5" (emoji support)
+  bool get isSlug => RegExp(r'^[a-z0-9%]+(?:[-_][a-z0-9%]+)*$').hasMatch(value);
+
+  /// Get content ID as integer (only for numeric IDs)
   int get asInt {
-    if (!isValid) throw FormatException('Invalid content ID: $value');
+    if (!isValid) {
+      throw FormatException('Invalid content ID: $value');
+    }
+    if (!isNumeric) {
+      throw FormatException(
+          'Cannot convert non-numeric content ID to int: $value. '
+          'This ID appears to be a slug-based ID (e.g., from crotpedia). '
+          'Use .value to get the string representation.');
+    }
     return int.parse(value);
   }
 
@@ -33,7 +62,8 @@ class ContentId extends Equatable {
   factory ContentId.fromString(String id) {
     final contentId = ContentId(id);
     if (!contentId.isValid) {
-      throw FormatException('Invalid content ID format: $id');
+      throw FormatException('Invalid content ID format: $id. '
+          'Expected either a numeric ID (e.g., "123456") or a slug ID (e.g., "manga-title").');
     }
     return contentId;
   }

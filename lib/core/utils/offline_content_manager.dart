@@ -469,7 +469,7 @@ class OfflineContentManager {
               'source': 'metadata_file',
               'sourceId': fileMetadata['sourceId'] ??
                   fileMetadata['source_id'] ??
-                  'nhentai',
+                  SourceType.nhentai.id,
             };
             // Cache the result
             _metadataCache[contentId] = metadata;
@@ -664,7 +664,7 @@ class OfflineContentManager {
       final queryLower = query.toLowerCase();
 
       // Known source identifiers to check for nested structure
-      const knownSources = ['nhentai', 'crotpedia'];
+      final knownSources = [SourceType.nhentai.id, SourceType.crotpedia.id];
 
       await for (final entity in backupDir.list()) {
         if (entity is Directory) {

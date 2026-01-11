@@ -3032,6 +3032,18 @@ abstract class AppLocalizations {
   /// **'Failed to load'**
   String get failedToLoad;
 
+  /// No description provided for @loginRequiredForAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Login required for this action'**
+  String get loginRequiredForAction;
+
+  /// No description provided for @login.
+  ///
+  /// In en, this message translates to:
+  /// **'Login'**
+  String get login;
+
   /// No description provided for @offlineContentTitle.
   ///
   /// In en, this message translates to:

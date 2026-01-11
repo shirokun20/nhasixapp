@@ -81,10 +81,12 @@ class _CrotpediaLoginViewState extends State<_CrotpediaLoginView> {
       body: BlocConsumer<CrotpediaAuthCubit, CrotpediaAuthState>(
         listener: (context, state) {
           if (state is CrotpediaAuthSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Welcome back, ${state.username}!')),
-            );
-            context.pop(true); // Return true to indicate success
+            // Only show snackbar, don't auto-pop anymore so user can see their account status
+            // check if widget is mounted
+            if (context.mounted) {
+              // Optional: Only show welcome if it was a fresh login?
+              // For now, simple is fine.
+            }
           } else if (state is CrotpediaAuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -95,6 +97,10 @@ class _CrotpediaLoginViewState extends State<_CrotpediaLoginView> {
           }
         },
         builder: (context, state) {
+          if (state is CrotpediaAuthSuccess) {
+            return _buildLoggedInView(context, state.username, colorScheme);
+          }
+
           final isLoading = state is CrotpediaAuthLoading;
 
           return SingleChildScrollView(
@@ -248,6 +254,68 @@ class _CrotpediaLoginViewState extends State<_CrotpediaLoginView> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildLoggedInView(
+      BuildContext context, String username, ColorScheme colorScheme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: colorScheme.secondaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.verified_user,
+                size: 50,
+                color: colorScheme.onSecondaryContainer,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Logged in as',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              username,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 48),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () {
+                  context.read<CrotpediaAuthCubit>().logout();
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: colorScheme.error,
+                  foregroundColor: colorScheme.onError,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                icon: const Icon(Icons.logout),
+                label: const Text('LOGOUT'),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => context.pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
       ),
     );
   }

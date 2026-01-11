@@ -7,7 +7,7 @@ abstract class UserDataRepository {
   /// Add content to favorites with full metadata
   ///
   /// [id] - Content ID to add to favorites
-  /// [sourceId] - Source identifier (nhentai, crotpedia, etc.)
+  /// [sourceId] - Source identifier (from SourceType enum)
   /// [coverUrl] - Content cover URL
   /// [title] - Content title (optional)
   Future<void> addToFavorites({

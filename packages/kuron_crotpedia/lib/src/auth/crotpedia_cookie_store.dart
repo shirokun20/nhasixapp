@@ -19,7 +19,8 @@ class CrotpediaCookieStore implements Storage {
 
   @override
   Future<void> write(String key, String value) async {
-    final file = File('$_storagePath/$_cookieFileName');
+    final path = await _getStoragePath();
+    final file = File('$path/$_cookieFileName');
 
     Map<String, dynamic> data = {};
     if (await file.exists()) {
@@ -39,18 +40,23 @@ class CrotpediaCookieStore implements Storage {
 
   @override
   Future<String?> read(String key) async {
-    final file = File('$_storagePath/$_cookieFileName');
+    try {
+      final path = await _getStoragePath();
+      final file = File('$path/$_cookieFileName');
 
-    if (await file.exists()) {
-      final content = await file.readAsString();
-      if (content.isNotEmpty) {
-        try {
-          final data = json.decode(content);
-          return data[key];
-        } catch (_) {
-          return null;
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        if (content.isNotEmpty) {
+          try {
+            final data = json.decode(content);
+            return data[key];
+          } catch (_) {
+            return null;
+          }
         }
       }
+    } catch (_) {
+      // Ignore errors
     }
 
     return null;
@@ -58,39 +64,49 @@ class CrotpediaCookieStore implements Storage {
 
   @override
   Future<void> delete(String key) async {
-    final file = File('$_storagePath/$_cookieFileName');
+    try {
+      final path = await _getStoragePath();
+      final file = File('$path/$_cookieFileName');
 
-    if (await file.exists()) {
-      final content = await file.readAsString();
-      if (content.isNotEmpty) {
-        try {
-          final data = json.decode(content);
-          data.remove(key);
-          await file.writeAsString(json.encode(data));
-        } catch (_) {
-          // Ignore errors
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        if (content.isNotEmpty) {
+          try {
+            final data = json.decode(content);
+            data.remove(key);
+            await file.writeAsString(json.encode(data));
+          } catch (_) {
+            // Ignore errors
+          }
         }
       }
+    } catch (_) {
+      // Ignore errors
     }
   }
 
   @override
   Future<void> deleteAll(List<String> keys) async {
-    final file = File('$_storagePath/$_cookieFileName');
+    try {
+      final path = await _getStoragePath();
+      final file = File('$path/$_cookieFileName');
 
-    if (await file.exists()) {
-      final content = await file.readAsString();
-      if (content.isNotEmpty) {
-        try {
-          final data = json.decode(content);
-          for (final key in keys) {
-            data.remove(key);
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        if (content.isNotEmpty) {
+          try {
+            final data = json.decode(content);
+            for (final key in keys) {
+              data.remove(key);
+            }
+            await file.writeAsString(json.encode(data));
+          } catch (_) {
+            // Ignore errors
           }
-          await file.writeAsString(json.encode(data));
-        } catch (_) {
-          // Ignore errors
         }
       }
+    } catch (_) {
+      // Ignore errors
     }
   }
 

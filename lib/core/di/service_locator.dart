@@ -471,6 +471,7 @@ void _setupCubits() {
   // SourceCubit - Content Source Management
   getIt.registerFactory<SourceCubit>(() => SourceCubit(
         registry: getIt<ContentSourceRegistry>(),
+        prefs: getIt<SharedPreferences>(),
         logger: getIt<Logger>(),
       ));
 

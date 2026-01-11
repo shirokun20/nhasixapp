@@ -63,6 +63,10 @@ class MultiBlocProviderConfig {
       create: (context) => getIt<RandomGalleryCubit>(),
     ),
 
+    BlocProvider<CrotpediaAuthCubit>(
+      create: (context) => getIt<CrotpediaAuthCubit>(),
+    ),
+
     // Note: DetailCubit, ReaderCubit, FavoriteCubit akan di-provide secara lokal
     // di screen masing-masing karena mereka screen-specific, bukan app-wide
   ];

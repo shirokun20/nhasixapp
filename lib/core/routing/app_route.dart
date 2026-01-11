@@ -25,6 +25,7 @@ class AppRoute {
   static const String random = '/random';
   static const String status = '/status';
   static const String about = '/about';
+  static const String crotpediaLogin = '/crotpedia-login';
 
   // Legacy route for backward compatibility
   static const String main = '/main';

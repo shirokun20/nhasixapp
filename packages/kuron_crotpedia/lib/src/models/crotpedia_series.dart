@@ -9,7 +9,7 @@ class CrotpediaSeries {
   final String? author;
   final String? artist;
   final int? year;
-  final List<String> genres;
+  final Map<String, String> genres; // slug -> name
   final String? synopsis;
 
   const CrotpediaSeries({
@@ -20,7 +20,7 @@ class CrotpediaSeries {
     this.author,
     this.artist,
     this.year,
-    this.genres = const [],
+    this.genres = const {},
     this.synopsis,
   });
 

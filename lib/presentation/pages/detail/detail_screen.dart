@@ -12,16 +12,20 @@ import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/core/utils/app_state_manager.dart';
+import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
+import 'package:kuron_core/kuron_core.dart';
 import '../../widgets/download_button_widget.dart';
 import '../../widgets/progressive_image_widget.dart';
 import '../../widgets/shimmer_loading_widgets.dart';
 
 class DetailScreen extends StatefulWidget {
   final String contentId;
+  final String? sourceId;
 
   const DetailScreen({
     super.key,
     required this.contentId,
+    this.sourceId,
   });
 
   @override
@@ -38,6 +42,21 @@ class _DetailScreenState extends State<DetailScreen> {
   void initState() {
     super.initState();
     _detailCubit = getIt<DetailCubit>();
+
+    // Check if we need to switch source first
+    if (widget.sourceId != null) {
+      final sourceCubit = context.read<SourceCubit>();
+      final currentSourceId = sourceCubit.state.activeSource?.id;
+
+      if (currentSourceId != null &&
+          currentSourceId != widget.sourceId &&
+          // Don't switch if IDs are same (redundant check but safe)
+          currentSourceId != widget.sourceId) {
+        Logger().i(
+            'DetailScreen: Switching source from $currentSourceId to ${widget.sourceId}');
+        sourceCubit.switchSource(widget.sourceId!);
+      }
+    }
 
     // Load content detail first, then load related content separately
     _loadContentAndRelated();
@@ -68,7 +87,8 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   /// Navigate to tag browsing mode (SIMPLIFIED routing)
-  void _searchByTag(String tagName) async {
+  /// Navigate to tag browsing mode (SIMPLIFIED routing)
+  void _searchByTag(String tagName, {String? tagId}) async {
     // Prevent multiple simultaneous navigation attempts
     if (_isNavigating) {
       Logger()
@@ -79,9 +99,25 @@ class _DetailScreenState extends State<DetailScreen> {
     try {
       _isNavigating = true;
 
+      String query = tagName;
+
+      // SPECIAL HANDLING FOR CROTPEDIA GENRES
+      // Crotpedia supports specific genre browsing via /baca/genre/slug/
+      // We pass 'genre:slug' as query, which CrotpediaSource intercepts.
+      if (widget.contentId.contains(SourceType.crotpedia.id) ||
+          (context.read<DetailCubit>().state is DetailLoaded &&
+              (context.read<DetailCubit>().state as DetailLoaded)
+                      .content
+                      .sourceId ==
+                  SourceType.crotpedia.id)) {
+        // Use tagId (slug) if available, otherwise fallback to name
+        final slug = tagId ?? tagName.toLowerCase().replaceAll(' ', '-');
+        query = 'genre:$slug';
+      }
+
       // Navigate to ContentByTagScreen
       if (mounted) {
-        AppRouter.goToContentByTag(context, tagName);
+        AppRouter.goToContentByTag(context, query);
       } else {
         Logger().w("Widget unmounted before navigation for tag: $tagName");
       }
@@ -130,9 +166,48 @@ class _DetailScreenState extends State<DetailScreen> {
                     _readContent(state.chapterContent,
                         forceStartFromBeginning: true);
                     context.read<DetailCubit>().resetToLoaded();
+                  } else if (state is DetailActionFailure) {
+                    if (state.needsLogin) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(AppLocalizations.of(context)!
+                              .loginRequiredForAction),
+                          behavior: SnackBarBehavior.floating,
+                          action: SnackBarAction(
+                            label: AppLocalizations.of(context)!.login,
+                            onPressed: () {
+                              context.push('/crotpedia-login');
+                            },
+                          ),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(state.message),
+                          backgroundColor: Theme.of(context).colorScheme.error,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                    context.read<DetailCubit>().resetToLoaded();
+                  } else if (state is DetailNeedsLogin) {
+                    // Legacy support or fallback
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Login required for this action'),
+                        action: SnackBarAction(
+                          label: 'Login',
+                          onPressed: () {
+                            context.push('/crotpedia-login');
+                          },
+                        ),
+                      ),
+                    );
                   }
+
                   if (state is DetailLoaded &&
-                      state.content.sourceId == 'crotpedia' &&
+                      state.content.sourceId == SourceType.crotpedia.id &&
                       state.isFavorited &&
                       !state.isTogglingFavorite) {
                     // This is where we might check if user was prompted to login
@@ -592,7 +667,8 @@ class _DetailScreenState extends State<DetailScreen> {
           runSpacing: 8,
           children: content.tags.map((tag) {
             return GestureDetector(
-              onTap: () => _searchByTag(tag.name),
+              onTap: () =>
+                  _searchByTag(tag.name, tagId: tag.slug ?? tag.id.toString()),
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -1207,10 +1283,36 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
+  /// Get active content source from SourceCubit
+  String _getActiveSourceId() {
+    final sourceState = context.read<SourceCubit>().state;
+    return sourceState.activeSource?.id ?? 'nhentai';
+  }
+
+  /// Get base URL for active source
+  String _getSourceBaseUrl() {
+    final sourceState = context.read<SourceCubit>().state;
+    return sourceState.activeSource?.baseUrl ?? 'https://nhentai.net';
+  }
+
+  /// Build source-aware content URL
+  String _buildContentUrl(String contentId) {
+    final baseUrl = _getSourceBaseUrl();
+    final sourceId = _getActiveSourceId();
+
+    if (sourceId == SourceType.crotpedia.id) {
+      // Crotpedia uses slug-based URLs: /baca/series/{slug}/
+      return '$baseUrl/baca/series/$contentId/';
+    } else {
+      // nhentai uses numeric IDs: /g/{id}/
+      return '$baseUrl/g/$contentId/';
+    }
+  }
+
   void _shareContent(Content content) async {
     try {
-      // Create shareable link and message
-      final contentUrl = 'https://nhentai.net/g/${content.id}/';
+      // Create shareable link and message (source-aware)
+      final contentUrl = _buildContentUrl(content.id);
       final shareText = _buildShareMessage(content, contentUrl);
 
       // Share using share_plus package
@@ -1251,7 +1353,7 @@ class _DetailScreenState extends State<DetailScreen> {
       Logger().e('Error sharing content: $e');
 
       // Fallback: copy to clipboard if sharing fails
-      final contentUrl = 'https://nhentai.net/g/${content.id}/';
+      final contentUrl = _buildContentUrl(content.id);
       await Clipboard.setData(ClipboardData(text: contentUrl));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1400,8 +1502,8 @@ class _DetailScreenState extends State<DetailScreen> {
   /// Copy content link to clipboard
   void _copyContentLink(Content content) {
     try {
-      // Generate shareable link - using the content ID for deep linking
-      final contentLink = 'https://nhentai.net/g/${content.id}/';
+      // Generate shareable link - source-aware URL
+      final contentLink = _buildContentUrl(content.id);
 
       // Copy to clipboard
       Clipboard.setData(ClipboardData(text: contentLink));

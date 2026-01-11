@@ -12,7 +12,7 @@ import 'models/crotpedia_series.dart';
 /// Provides content operations for Crotpedia source with optional authentication.
 /// Login is required only for bookmark features.
 class CrotpediaSource implements ContentSource {
-  static const String sourceIdValue = 'crotpedia';
+  static final String sourceIdValue = SourceType.crotpedia.id;
   static const String displayNameValue = 'Crotpedia';
   static const String baseUrlValue = 'https://crotpedia.net';
 
@@ -64,7 +64,10 @@ class CrotpediaSource implements ContentSource {
           ? CrotpediaUrlBuilder.home()
           : CrotpediaUrlBuilder.page(page);
 
-      final response = await _dio.get(url);
+      final response = await _dio.get(
+        url,
+        options: Options(headers: {'Referer': '$baseUrlValue/'}),
+      );
       final seriesList = _scraper.parseLatestSeries(response.data);
       final pagination = _scraper.parsePagination(response.data);
 
@@ -73,9 +76,10 @@ class CrotpediaSource implements ContentSource {
       return ContentListResult(
         contents: contents,
         currentPage: pagination.currentPage,
-        totalPages: 0,
+        totalPages: pagination.totalPages,
         totalCount: contents.length,
         hasNext: pagination.hasNext,
+        hasPrevious: pagination.hasPrevious,
       );
     } catch (e) {
       _logger?.e('Failed to get list: $e');
@@ -99,7 +103,10 @@ class CrotpediaSource implements ContentSource {
         order: 'popular',
       );
 
-      final response = await _dio.get(url);
+      final response = await _dio.get(
+        url,
+        options: Options(headers: {'Referer': '$baseUrlValue/'}),
+      );
       final seriesList = _scraper.parseSearchResults(response.data);
       final pagination = _scraper.parsePagination(response.data);
 
@@ -108,9 +115,10 @@ class CrotpediaSource implements ContentSource {
       return ContentListResult(
         contents: contents,
         currentPage: pagination.currentPage,
-        totalPages: 0,
+        totalPages: pagination.totalPages,
         totalCount: contents.length,
         hasNext: pagination.hasNext,
+        hasPrevious: pagination.hasPrevious,
       );
     } catch (e) {
       _logger?.e('Failed to get popular: $e');
@@ -129,7 +137,10 @@ class CrotpediaSource implements ContentSource {
     try {
       final url = _buildSearchUrl(filter);
 
-      final response = await _dio.get(url);
+      final response = await _dio.get(
+        url,
+        options: Options(headers: {'Referer': '$baseUrlValue/'}),
+      );
       final seriesList = _scraper.parseSearchResults(response.data);
       final pagination = _scraper.parsePagination(response.data);
 
@@ -138,9 +149,10 @@ class CrotpediaSource implements ContentSource {
       return ContentListResult(
         contents: contents,
         currentPage: pagination.currentPage,
-        totalPages: 0,
+        totalPages: pagination.totalPages,
         totalCount: contents.length,
         hasNext: pagination.hasNext,
+        hasPrevious: pagination.hasPrevious,
       );
     } catch (e) {
       _logger?.e('Failed to search: $e');
@@ -159,7 +171,10 @@ class CrotpediaSource implements ContentSource {
     try {
       // Fetch series detail
       final seriesUrl = CrotpediaUrlBuilder.seriesDetail(contentId);
-      final response = await _dio.get(seriesUrl);
+      final response = await _dio.get(
+        seriesUrl,
+        options: Options(headers: {'Referer': '$baseUrlValue/'}),
+      );
 
       final seriesDetail = _scraper.parseSeriesDetail(response.data);
 
@@ -185,14 +200,13 @@ class CrotpediaSource implements ContentSource {
         pageCount: 0, // Dynamic per chapter
         imageUrls: const [], // Empty initially
         chapters: chapters, // New field!
-        tags: seriesDetail.genres
-            .asMap()
-            .entries
+        tags: seriesDetail.genres.entries
             .map((e) => Tag(
-                  id: e.key,
+                  id: e.key.hashCode,
                   name: e.value,
                   type: TagType.tag,
                   count: 0,
+                  slug: e.key,
                 ))
             .toList(),
         artists: seriesDetail.artist != null ? [seriesDetail.artist!] : [],
@@ -282,7 +296,10 @@ class CrotpediaSource implements ContentSource {
   Future<List<String>> getChapterImages(String chapterSlug) async {
     try {
       final url = CrotpediaUrlBuilder.chapterReader(chapterSlug);
-      final response = await _dio.get(url);
+      final response = await _dio.get(
+        url,
+        options: Options(headers: {'Referer': '$baseUrlValue/'}),
+      );
       return _scraper.parseChapterImages(response.data);
     } catch (e) {
       _logger?.e('Failed to get chapter images: $e');
@@ -341,9 +358,16 @@ class CrotpediaSource implements ContentSource {
 
   String _buildSearchUrl(SearchFilter filter) {
     if (filter.query.isNotEmpty) {
+      // Check for genre navigation
+      if (filter.query.startsWith('genre:')) {
+        final genreSlug = filter.query.substring(6); // Remove 'genre:'
+        return CrotpediaUrlBuilder.genre(genreSlug);
+      }
+
       // Simple search if just query
       if (filter.includeTags.isEmpty && filter.excludeTags.isEmpty) {
-        return CrotpediaUrlBuilder.simpleSearch(filter.query);
+        return CrotpediaUrlBuilder.simpleSearch(filter.query,
+            page: filter.page);
       }
     }
 
@@ -376,14 +400,13 @@ class CrotpediaSource implements ContentSource {
       coverUrl: series.coverUrl,
       pageCount: 0, // Will be filled in detail view
       imageUrls: const [],
-      tags: series.genres
-          .asMap()
-          .entries
+      tags: series.genres.entries
           .map((e) => Tag(
-                id: e.key,
+                id: e.key.hashCode, // Use hash for int ID
                 name: e.value,
                 type: TagType.tag,
                 count: 0,
+                slug: e.key, // Store actual slug here
               ))
           .toList(),
       artists: series.artist != null ? [series.artist!] : [],

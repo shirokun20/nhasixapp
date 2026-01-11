@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../widgets/shimmer_loading_widgets.dart';
-import 'package:go_router/go_router.dart';
+
+import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/web.dart';
 
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
+import '../../../core/routing/app_router.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/responsive_grid_delegate.dart';
 import '../../cubits/favorite/favorite_cubit.dart';
@@ -566,7 +568,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           _toggleItemSelection(contentId);
         } else {
           // Navigate to content detail
-          context.push('/content/$contentId');
+          final sourceId = favorite['source_id']?.toString();
+          AppRouter.goToContentDetail(context, contentId, sourceId: sourceId);
         }
       },
       onLongPress: () {
@@ -616,11 +619,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                             decoration: BoxDecoration(
                               color: _getSourceColor(
                                   favorite['source_id']?.toString() ??
-                                      'nhentai'),
+                                      SourceType.nhentai.id),
                               borderRadius: BorderRadius.circular(3),
                             ),
                             child: Text(
-                              (favorite['source_id']?.toString() ?? 'nhentai')
+                              (favorite['source_id']?.toString() ??
+                                      SourceType.nhentai.id)
                                   .toUpperCase(),
                               style: TextStyleConst.caption.copyWith(
                                 color: Colors.white,
@@ -786,13 +790,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   Color _getSourceColor(String sourceId) {
-    switch (sourceId.toLowerCase()) {
-      case 'nhentai':
-        return const Color(0xFFEC2854); // nhentai red
-      case 'crotpedia':
-        return const Color(0xFF1E88E5); // crotpedia blue
-      default:
-        return Theme.of(context).colorScheme.secondary;
+    if (sourceId.toLowerCase() == SourceType.nhentai.id) {
+      return const Color(0xFFEC2854); // nhentai red
+    } else if (sourceId.toLowerCase() == SourceType.crotpedia.id) {
+      return const Color(0xFF1E88E5); // crotpedia blue
+    } else {
+      return Theme.of(context).colorScheme.secondary;
     }
   }
 

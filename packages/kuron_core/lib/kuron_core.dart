@@ -20,3 +20,6 @@ export 'src/entities/chapter.dart';
 // Value Objects
 export 'src/value_objects/sort_option.dart';
 export 'src/value_objects/popular_timeframe.dart';
+
+// Enums
+export 'src/enums/source_type.dart';
