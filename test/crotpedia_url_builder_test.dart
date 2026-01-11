@@ -58,6 +58,21 @@ void main() {
         expect(url, contains('query'));
       });
 
+      test('simpleSearch() with page 1 returns base search URL', () {
+        final url = CrotpediaUrlBuilder.simpleSearch('maid', page: 1);
+        expect(url, equals('https://crotpedia.net/?s=maid'));
+      });
+
+      test('simpleSearch() with page 2 includes page in path', () {
+        final url = CrotpediaUrlBuilder.simpleSearch('maid', page: 2);
+        expect(url, equals('https://crotpedia.net/page/2/?s=maid'));
+      });
+
+      test('simpleSearch() with page 4', () {
+        final url = CrotpediaUrlBuilder.simpleSearch('maid', page: 4);
+        expect(url, equals('https://crotpedia.net/page/4/?s=maid'));
+      });
+
       test('advancedSearch() with all parameters', () {
         final url = CrotpediaUrlBuilder.advancedSearch(
           title: 'neko',
