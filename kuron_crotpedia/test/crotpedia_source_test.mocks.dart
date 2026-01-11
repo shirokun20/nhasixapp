@@ -150,15 +150,29 @@ class MockCrotpediaScraper extends _i1.Mock implements _i5.CrotpediaScraper {
       ) as List<_i2.CrotpediaSeries>);
 
   @override
-  ({int currentPage, bool hasNext}) parsePagination(String? htmlContent) =>
-      (super.noSuchMethod(
+  ({
+    int currentPage,
+    bool hasNext,
+    bool hasPrevious,
+    int totalPages
+  }) parsePagination(String? htmlContent) => (super.noSuchMethod(
         Invocation.method(
           #parsePagination,
           [htmlContent],
         ),
-        returnValue: (currentPage: 0, hasNext: false),
-        returnValueForMissingStub: (currentPage: 0, hasNext: false),
-      ) as ({int currentPage, bool hasNext}));
+        returnValue: (
+          currentPage: 0,
+          hasNext: false,
+          hasPrevious: false,
+          totalPages: 0
+        ),
+        returnValueForMissingStub: (
+          currentPage: 0,
+          hasNext: false,
+          hasPrevious: false,
+          totalPages: 0
+        ),
+      ) as ({int currentPage, bool hasNext, bool hasPrevious, int totalPages}));
 
   @override
   _i2.CrotpediaSeriesDetail parseSeriesDetail(String? htmlContent) =>

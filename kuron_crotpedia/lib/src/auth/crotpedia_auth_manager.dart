@@ -89,6 +89,8 @@ class CrotpediaAuthManager {
       // Step 1: GET login page to extract nonce
       final loginPageResponse = await _dio.get(
         CrotpediaUrlBuilder.login(),
+        options:
+            Options(headers: {'Referer': '${CrotpediaUrlBuilder.baseUrl}/'}),
       );
 
       final nonce = _extractNonce(loginPageResponse.data);
@@ -109,11 +111,22 @@ class CrotpediaAuthManager {
           contentType: Headers.formUrlEncodedContentType,
           followRedirects: false,
           validateStatus: (status) => status! < 400 || status == 302,
+          headers: {
+            'Referer': '${CrotpediaUrlBuilder.baseUrl}/',
+          },
         ),
       );
 
       // Step 3: Check if login successful
       if (response.statusCode == 302 || response.statusCode == 200) {
+        // Check for specific error message in response body
+        final responseBody = response.data.toString();
+        if (responseBody.contains('Incorrect password') ||
+            responseBody.contains('class="alert"')) {
+          _state = CrotpediaAuthState.error;
+          return CrotpediaAuthResult.failure('Email atau password salah');
+        }
+
         // Verify by checking if we can access a protected page
         final verified = await _verifyLogin();
 
@@ -145,7 +158,10 @@ class CrotpediaAuthManager {
     try {
       final response = await _dio.get(
         CrotpediaUrlBuilder.bookmark(),
-        options: Options(followRedirects: false),
+        options: Options(
+          followRedirects: false,
+          headers: {'Referer': '${CrotpediaUrlBuilder.baseUrl}/'},
+        ),
       );
       // If redirected to login, not authenticated
       return response.statusCode == 200;
@@ -209,6 +225,8 @@ class CrotpediaAuthManager {
           'siteid': '1',
           'status': setActive ? 'active' : 'inactive',
         }),
+        options:
+            Options(headers: {'Referer': '${CrotpediaUrlBuilder.baseUrl}/'}),
       );
 
       return response.statusCode == 200;

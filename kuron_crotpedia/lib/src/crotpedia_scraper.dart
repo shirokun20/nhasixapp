@@ -68,8 +68,9 @@ class CrotpediaScraper {
   }
 
   /// Parse pagination info from any page list
-  /// Output: Tuple of (currentPage, hasNext)
-  ({int currentPage, bool hasNext}) parsePagination(String htmlContent) {
+  /// Output: Tuple of (currentPage, totalPages, hasNext, hasPrevious)
+  ({int currentPage, int totalPages, bool hasNext, bool hasPrevious})
+      parsePagination(String htmlContent) {
     final document = html_parser.parse(htmlContent);
 
     // Current page from .pagination .page-numbers.current
@@ -77,12 +78,44 @@ class CrotpediaScraper {
         document.querySelector('.pagination .page-numbers.current');
     final currentPage = int.tryParse(currentEl?.text.trim() ?? '1') ?? 1;
 
-    // Check for "Next" link
-    // Real HTML uses a.next.page-numbers
+    // Check for "Next" and "Previous" links
+    // Real HTML uses a.next.page-numbers and a.prev.page-numbers
     final nextEl = document.querySelector('.pagination .next.page-numbers');
     final hasNext = nextEl != null;
 
-    return (currentPage: currentPage, hasNext: hasNext);
+    final prevEl = document.querySelector('.pagination .prev.page-numbers');
+    final hasPrevious = prevEl != null;
+
+    // Extract total pages from the last numbered page link
+    // HTML structure: <a class="page-numbers" href=".../page/136/">136</a>
+    // Get all numbered page links (excluding current, dots, and next/prev)
+    final pageLinks = document
+        .querySelectorAll('.pagination a.page-numbers:not(.next):not(.prev)');
+
+    int totalPages = 0;
+    if (pageLinks.isNotEmpty) {
+      // Find the highest page number from all page links
+      for (final link in pageLinks) {
+        final pageText = link.text.trim();
+        final pageNum = int.tryParse(pageText);
+        if (pageNum != null && pageNum > totalPages) {
+          totalPages = pageNum;
+        }
+      }
+    }
+
+    // Ensure totalPages takes into account the current page
+    // This handles the case where the current page (last page) is not an 'a' link but a 'span'
+    if (currentPage > totalPages) {
+      totalPages = currentPage;
+    }
+
+    return (
+      currentPage: currentPage,
+      totalPages: totalPages,
+      hasNext: hasNext,
+      hasPrevious: hasPrevious
+    );
   }
 
   // ============ Series Detail Parsing ============
@@ -157,7 +190,20 @@ class CrotpediaScraper {
     if (url == null) return '';
     // Extract slug from URL like /baca/series/slug-name/ or /baca/slug-name/
     final regex = RegExp(r'/baca/(?:series/)?([^/]+)/?$');
-    return regex.firstMatch(url)?.group(1) ?? '';
+    final slug = regex.firstMatch(url)?.group(1) ?? '';
+
+    // HTML parser decodes URL-encoded characters (e.g., %e2%99%a5 → ❤️)
+    // We need to re-encode them for ContentId validation
+    // Use Uri.encodeComponent but preserve existing hyphens and underscores
+    if (slug.isEmpty) return '';
+
+    // Check if slug contains non-ASCII characters (emoji, special chars)
+    if (slug.codeUnits.any((unit) => unit > 127)) {
+      // URL-encode the entire slug
+      return Uri.encodeComponent(slug);
+    }
+
+    return slug;
   }
 
   String _parseTitle(Document doc) {
@@ -192,13 +238,32 @@ class CrotpediaScraper {
     return int.tryParse(yearText);
   }
 
-  List<String> _parseGenres(Document doc) {
-    // Real HTML: <div class="series-genres"><a ...>Genre</a></div>
-    return doc
-        .querySelectorAll('.series-genres a')
-        .map((e) => e.text.trim())
-        .where((text) => text.isNotEmpty)
-        .toList();
+  Map<String, String> _parseGenres(Document doc) {
+    // Real HTML: <div class="series-genres"><a href="https://crotpedia.net/baca/genre/comedy/">Comedy</a></div>
+    final genreLinks = doc.querySelectorAll('.series-genres a');
+    final Map<String, String> genres = {};
+
+    for (final link in genreLinks) {
+      final name = link.text.trim();
+      final href = link.attributes['href'];
+      if (name.isNotEmpty && href != null) {
+        // Extract slug from /baca/genre/slug/
+        // Assuming href is typical: https://crotpedia.net/baca/genre/comedy/
+        // or just /baca/genre/comedy/
+        final uri = Uri.tryParse(href);
+        if (uri != null) {
+          final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+          // Segments might be ['baca', 'genre', 'comedy']
+          if (segments.length >= 3 && segments[1] == 'genre') {
+            genres[segments[2]] = name;
+          } else {
+            // Fallback if structure is weird, use name as slug
+            genres[name.toLowerCase().replaceAll(' ', '-')] = name;
+          }
+        }
+      }
+    }
+    return genres;
   }
 
   /// Helper to extract value from info list based on label
