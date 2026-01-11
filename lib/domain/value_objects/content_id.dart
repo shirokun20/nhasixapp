@@ -48,14 +48,9 @@ class ContentId extends Equatable {
     return ContentId(id.toString());
   }
 
-  /// Create from string with validation
+  /// Create from string without strict validation
   factory ContentId.fromString(String id) {
-    final contentId = ContentId(id);
-    if (!contentId.isValid) {
-      throw FormatException('Invalid content ID format: $id. '
-          'Expected either a numeric ID (e.g., "123456") or a slug ID (e.g., "manga-title").');
-    }
-    return contentId;
+    return ContentId(id);
   }
 
   /// Try to create from string, return null if invalid
