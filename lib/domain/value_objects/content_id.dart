@@ -19,25 +19,15 @@ class ContentId extends Equatable {
   bool get isValid {
     if (value.isEmpty) return false;
 
-    // Accept numeric IDs (nhentai format)
-    if (isNumeric) return true;
-
-    // Accept slug IDs (crotpedia format)
-    // Valid slug: lowercase, alphanumeric, hyphens, underscores
-    // Must start with alphanumeric, no consecutive hyphens
-    if (isSlug) return true;
-
-    // Reject invalid formats
-    return false;
+    // Any non-empty string is considered a valid ID.
+    // We differentiate between numeric (nhentai) and non-numeric (slug-based like crotpedia).
+    return true;
   }
 
   /// Check if this is a numeric ID (nhentai-style)
   bool get isNumeric => RegExp(r'^\d+$').hasMatch(value);
 
-  /// Check if this is a slug ID (crotpedia-style)
-  /// Valid patterns: "manga-title", "the-hatsunetsu", "series-name-2024"
-  /// Also accepts URL-encoded characters: "secret-%e2%99%a5" (emoji support)
-  bool get isSlug => RegExp(r'^[a-z0-9%]+(?:[-_][a-z0-9%]+)*$').hasMatch(value);
+  bool get isSlug => !isNumeric;
 
   /// Get content ID as integer (only for numeric IDs)
   int get asInt {
