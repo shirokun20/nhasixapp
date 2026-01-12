@@ -3,7 +3,7 @@ description: Create implementation plan from analysis - Phase 2 of workflow
 subtask: true
 return:
   - Validate the plan against the codebase. Check if the proposed architecture is correct.
-  - If plan is solid, ask user if ready to start implementation with /start-feature
+  - If plan is solid, ask user if ready to start implementation with /asix-start-feature
 ---
 # Feature Planning
 

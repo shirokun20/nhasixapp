@@ -3,7 +3,7 @@ description: Start new feature workflow - creates analysis doc and guides throug
 subtask: true
 return:
   - Review the analysis document created. Is there anything missing? Ask clarifying questions if needed.
-  - Once analysis is complete, run /plan-feature to create the implementation plan.
+  - Once analysis is complete, run /asix-plan-feature to create the implementation plan.
 ---
 # New Feature Analysis
 

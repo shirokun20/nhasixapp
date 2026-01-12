@@ -4,7 +4,7 @@ subtask: true
 return:
   - Check the progress. Update the progress document with completed tasks.
   - Continue with the next task until all tasks are complete.
-  - When done, run /complete-feature to finalize.
+  - When done, run /asix-complete-feature to finalize.
 ---
 # Start Feature Implementation
 

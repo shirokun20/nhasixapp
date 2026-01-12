@@ -2,12 +2,12 @@
 description: Full development workflow - analysis, plan, implement, complete
 subtask: true
 parallel:
-  - command: new-feature
+  - command: asix-new-feature
     arguments: $ARGUMENTS
 return:
-  - /plan-feature $ARGUMENTS
-  - /start-feature $ARGUMENTS
-  - /complete-feature $ARGUMENTS
+  - /asix-plan-feature $ARGUMENTS
+  - /asix-start-feature $ARGUMENTS
+  - /asix-complete-feature $ARGUMENTS
 ---
 # Full Feature Development
 

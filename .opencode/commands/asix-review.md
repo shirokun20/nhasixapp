@@ -2,8 +2,8 @@
 description: Full code review with multi-model validation
 subtask: true
 parallel:
-  - /review-arch
-  - /review-style
+  - /asix-review-arch
+  - /asix-review-style
 return:
   - Synthesize all review findings. Create a prioritized action list.
   - If critical issues found, help fix them. Otherwise, approve the code.
