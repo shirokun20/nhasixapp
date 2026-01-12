@@ -500,7 +500,7 @@ void _setupCubits() {
       ));
 
   // CrotpediaAuthCubit - Crotpedia login management
-  getIt.registerFactory<CrotpediaAuthCubit>(() => CrotpediaAuthCubit(
+  getIt.registerLazySingleton<CrotpediaAuthCubit>(() => CrotpediaAuthCubit(
         authManager: getIt<CrotpediaAuthManager>(),
         logger: getIt<Logger>(),
       ));

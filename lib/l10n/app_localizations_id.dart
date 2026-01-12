@@ -1126,6 +1126,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get cancel => 'Batalkan';
 
   @override
+  String get exitApp => 'Keluar Aplikasi';
+
+  @override
+  String get areYouSureExit => 'Apakah Anda yakin ingin keluar dari aplikasi?';
+
+  @override
+  String get exit => 'Keluar';
+
+  @override
   String get delete => 'Hapus';
 
   @override

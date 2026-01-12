@@ -321,9 +321,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   void _navigateToContent(BuildContext context, dynamic historyItem) {
-    // Navigate to content detail/reader
-    // This would typically use your app's navigation system
-    context.push('/content/${historyItem.contentId}');
+    // Navigate to content detail/reader with sourceId to ensure correct source is used
+    // This fixes the issue where clicking Crotpedia items caused errors due to missing source context
+    context.push(
+      '/content/${historyItem.contentId}?sourceId=${historyItem.sourceId}',
+    );
   }
 
   void _navigateToCleanupSettings(BuildContext context) {

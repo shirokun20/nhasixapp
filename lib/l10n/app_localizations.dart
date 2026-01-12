@@ -2156,6 +2156,24 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get cancel;
 
+  /// No description provided for @exitApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit App'**
+  String get exitApp;
+
+  /// No description provided for @areYouSureExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to exit the app?'**
+  String get areYouSureExit;
+
+  /// No description provided for @exit.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit'**
+  String get exit;
+
   /// No description provided for @delete.
   ///
   /// In en, this message translates to:

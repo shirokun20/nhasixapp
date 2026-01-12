@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 import '../../core/utils/app_state_manager.dart';
@@ -10,7 +11,7 @@ import 'package:nhasixapp/presentation/widgets/app_drawer_content.dart';
 
 /// Reusable scaffold widget that shows offline indicators and "Go Online" functionality
 /// This widget wraps around any page content to provide consistent offline mode UI
-class AppScaffoldWithOffline extends StatelessWidget {
+class AppScaffoldWithOffline extends StatefulWidget {
   const AppScaffoldWithOffline({
     super.key,
     required this.body,
@@ -31,122 +32,176 @@ class AppScaffoldWithOffline extends StatelessWidget {
   final Color? backgroundColor;
 
   @override
+  State<AppScaffoldWithOffline> createState() => _AppScaffoldWithOfflineState();
+}
+
+class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
   Widget build(BuildContext context) {
-    return StreamBuilder<bool>(
-      // Listen to offline mode changes from AppStateManager
-      stream: AppStateManager().offlineModeStream,
-      initialData: AppStateManager().isOfflineMode,
-      builder: (context, snapshot) {
-        final isOfflineMode = snapshot.data ?? false;
+    return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
 
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            // Early safety check for extremely small windows (popup/floating mode)
-            if (constraints.maxWidth < 100 || constraints.maxHeight < 100) {
-              return Scaffold(
-                backgroundColor: backgroundColor,
-                body: Container(
-                  color: Theme.of(context).colorScheme.surface,
-                  child: const Center(
-                    child: Icon(Icons.fullscreen_exit, size: 24),
-                  ),
+          // Check if drawer is open using the GlobalKey
+          if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+            _scaffoldKey.currentState?.closeDrawer();
+            return;
+          }
+
+          // If we are at the root/home, show exit confirmation
+          // Check if we can pop the navigator
+          final navigator = Navigator.of(context);
+          if (navigator.canPop()) {
+            navigator.pop();
+            return;
+          }
+
+          // Show exit confirmation dialog
+          final shouldExit = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text(AppLocalizations.of(context)?.exitApp ?? 'Exit App'),
+              content: Text(AppLocalizations.of(context)?.areYouSureExit ??
+                  'Are you sure you want to exit?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
                 ),
-              );
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: Text(AppLocalizations.of(context)?.exit ?? 'Exit'),
+                ),
+              ],
+            ),
+          );
+
+          if (shouldExit == true) {
+            if (context.mounted) {
+              // Actually exit the app using SystemNavigator
+              SystemNavigator.pop();
             }
+          }
+        },
+        child: StreamBuilder<bool>(
+          // Listen to offline mode changes from AppStateManager
+          stream: AppStateManager().offlineModeStream,
+          initialData: AppStateManager().isOfflineMode,
+          builder: (context, snapshot) {
+            final isOfflineMode = snapshot.data ?? false;
 
-            // Adaptive layout for large screens (Tablet/Desktop/DeX)
-            // Use persistent sidebar if width > 900dp
-            final isLargeScreen = constraints.maxWidth > 900;
-
-            final scaffold = Scaffold(
-              appBar: appBar ??
-                  _buildAppBarWithOfflineIndicator(context, isOfflineMode),
-              backgroundColor: backgroundColor,
-              // On large screens, hide the drawer from Scaffold (sidebar is used instead)
-              // On small screens, use the provided drawer
-              drawer: isLargeScreen ? null : drawer,
-              floatingActionButton: floatingActionButton,
-              bottomNavigationBar: bottomNavigationBar,
-              body: Column(
-                children: [
-                  // Show offline banner when in offline mode
-                  if (isOfflineMode) _buildOfflineBanner(context),
-                  Expanded(
-                    child: LayoutBuilder(
-                      builder: (context, innerConstraints) {
-                        // Safety check for extremely small windows - show compact fallback
-                        if (innerConstraints.maxWidth < 80 ||
-                            innerConstraints.maxHeight < 80) {
-                          return Container(
-                            color: Theme.of(context).colorScheme.surface,
-                            child: Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.open_in_full,
-                                    size: 24,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.5),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Resize',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withValues(alpha: 0.5),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }
-                        return SafeArea(
-                          left: false,
-                          right: false,
-                          top: false,
-                          bottom: true,
-                          child: body,
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            );
-
-            // If large screen, wrap in Row with Sidebar
-            if (isLargeScreen) {
-              return Row(
-                children: [
-                  Container(
-                    width: 280,
-                    decoration: BoxDecoration(
-                      border: Border(
-                        right: BorderSide(
-                          color: Theme.of(context).dividerColor,
-                          width: 1,
-                        ),
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                // Early safety check for extremely small windows (popup/floating mode)
+                if (constraints.maxWidth < 100 || constraints.maxHeight < 100) {
+                  return Scaffold(
+                    key: _scaffoldKey,
+                    backgroundColor: widget.backgroundColor,
+                    body: Container(
+                      color: Theme.of(context).colorScheme.surface,
+                      child: const Center(
+                        child: Icon(Icons.fullscreen_exit, size: 24),
                       ),
                     ),
-                    child: const AppDrawerContent(isDrawer: false),
-                  ),
-                  Expanded(child: scaffold),
-                ],
-              );
-            }
+                  );
+                }
 
-            return scaffold;
+                // Adaptive layout for large screens (Tablet/Desktop/DeX)
+                // Use persistent sidebar if width > 900dp
+                final isLargeScreen = constraints.maxWidth > 900;
+
+                final scaffold = Scaffold(
+                  key: _scaffoldKey,
+                  appBar: widget.appBar ??
+                      _buildAppBarWithOfflineIndicator(context, isOfflineMode),
+                  backgroundColor: widget.backgroundColor,
+                  // On large screens, hide the drawer from Scaffold (sidebar is used instead)
+                  // On small screens, use the provided drawer
+                  drawer: isLargeScreen ? null : widget.drawer,
+                  floatingActionButton: widget.floatingActionButton,
+                  bottomNavigationBar: widget.bottomNavigationBar,
+                  body: Column(
+                    children: [
+                      // Show offline banner when in offline mode
+                      if (isOfflineMode) _buildOfflineBanner(context),
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, innerConstraints) {
+                            // Safety check for extremely small windows - show compact fallback
+                            if (innerConstraints.maxWidth < 80 ||
+                                innerConstraints.maxHeight < 80) {
+                              return Container(
+                                color: Theme.of(context).colorScheme.surface,
+                                child: Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.open_in_full,
+                                        size: 24,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.5),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Resize',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withValues(alpha: 0.5),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
+                            return SafeArea(
+                              left: false,
+                              right: false,
+                              top: false,
+                              bottom: true,
+                              child: widget.body,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+
+                // If large screen, wrap in Row with Sidebar
+                if (isLargeScreen) {
+                  return Row(
+                    children: [
+                      Container(
+                        width: 280,
+                        decoration: BoxDecoration(
+                          border: Border(
+                            right: BorderSide(
+                              color: Theme.of(context).dividerColor,
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        child: const AppDrawerContent(isDrawer: false),
+                      ),
+                      Expanded(child: scaffold),
+                    ],
+                  );
+                }
+                return scaffold;
+              },
+            );
           },
-        );
-      },
-    );
+        ));
   }
 
   /// Build app bar with offline indicator badge
@@ -154,7 +209,7 @@ class AppScaffoldWithOffline extends StatelessWidget {
   AppBar _buildAppBarWithOfflineIndicator(
       BuildContext context, bool isOfflineMode) {
     return AppBar(
-      title: Text(title),
+      title: Text(widget.title),
       backgroundColor:
           isOfflineMode ? Theme.of(context).colorScheme.errorContainer : null,
       actions: [

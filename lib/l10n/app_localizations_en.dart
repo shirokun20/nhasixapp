@@ -1125,6 +1125,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancel => 'Cancel';
 
   @override
+  String get exitApp => 'Exit App';
+
+  @override
+  String get areYouSureExit => 'Are you sure you want to exit the app?';
+
+  @override
+  String get exit => 'Exit';
+
+  @override
   String get delete => 'Delete';
 
   @override

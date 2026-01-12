@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kuron_crotpedia/kuron_crotpedia.dart' hide CrotpediaAuthState;
-import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/presentation/cubits/crotpedia_auth/crotpedia_auth_cubit.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -11,10 +10,7 @@ class CrotpediaLoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => getIt<CrotpediaAuthCubit>(),
-      child: const _CrotpediaLoginView(),
-    );
+    return const _CrotpediaLoginView();
   }
 }
 

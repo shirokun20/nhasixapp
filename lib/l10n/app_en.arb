@@ -534,6 +534,9 @@
   
   "ok": "OK",
   "cancel": "Cancel",
+  "exitApp": "Exit App",
+  "areYouSureExit": "Are you sure you want to exit the app?",
+  "exit": "Exit",
   "delete": "Delete",
   "confirm": "Confirm",
   "loading": "Loading...",
