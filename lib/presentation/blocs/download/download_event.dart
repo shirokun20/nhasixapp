@@ -24,8 +24,8 @@ class DownloadQueueEvent extends DownloadEvent {
 
   final Content content;
   final int priority;
-  final int? startPage;  // NEW: Start page for range download
-  final int? endPage;    // NEW: End page for range download
+  final int? startPage; // NEW: Start page for range download
+  final int? endPage; // NEW: End page for range download
 
   /// Check if this is a range download
   bool get isRangeDownload => startPage != null && endPage != null;
@@ -61,7 +61,8 @@ class DownloadRangeEvent extends DownloadEvent {
   int get pagesToDownload => endPage - startPage + 1;
 
   /// Validate range
-  bool get isValidRange => startPage >= 1 && endPage <= content.pageCount && startPage <= endPage;
+  bool get isValidRange =>
+      startPage >= 1 && endPage <= content.pageCount && startPage <= endPage;
 
   @override
   List<Object?> get props => [content, startPage, endPage, priority];
@@ -148,7 +149,7 @@ class DownloadProgressUpdateEvent extends DownloadEvent {
   final double? downloadSpeed; // bytes per second
   final Duration? estimatedTimeRemaining;
 
-  double get progressPercentage => 
+  double get progressPercentage =>
       totalPages > 0 ? (downloadedPages / totalPages) * 100 : 0;
 
   @override
@@ -229,12 +230,13 @@ class DownloadExportEvent extends DownloadEvent {
 /// Event to convert completed download to PDF
 /// This triggers background PDF conversion with notifications
 class DownloadConvertToPdfEvent extends DownloadEvent {
-  const DownloadConvertToPdfEvent(this.contentId);
+  const DownloadConvertToPdfEvent(this.contentId, {this.sourceId});
 
   final String contentId;
+  final String? sourceId;
 
   @override
-  List<Object?> get props => [contentId];
+  List<Object?> get props => [contentId, sourceId];
 }
 
 /// Event to toggle selection mode for bulk operations

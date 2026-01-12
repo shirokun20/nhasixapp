@@ -53,6 +53,7 @@ import 'package:nhasixapp/data/repositories/reader_repository_impl.dart';
 
 // Use Cases
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
+import 'package:nhasixapp/domain/usecases/content/get_chapter_images_usecase.dart';
 import 'package:nhasixapp/domain/usecases/favorites/favorites_usecases.dart';
 import 'package:nhasixapp/domain/usecases/downloads/downloads_usecases.dart';
 import 'package:nhasixapp/domain/usecases/history/add_to_history_usecase.dart';
@@ -377,6 +378,8 @@ void _setupUseCases() {
       () => SearchContentUseCase(getIt()));
   getIt.registerLazySingleton<GetRandomContentUseCase>(
       () => GetRandomContentUseCase(getIt()));
+  getIt.registerLazySingleton<GetChapterImagesUseCase>(
+      () => GetChapterImagesUseCase(getIt()));
 
   // Favorites Use Cases
   getIt.registerLazySingleton<AddToFavoritesUseCase>(
@@ -446,6 +449,7 @@ void _setupBlocs() {
   getIt.registerLazySingleton<DownloadBloc>(() => DownloadBloc(
         downloadContentUseCase: getIt<DownloadContentUseCase>(),
         getContentDetailUseCase: getIt<GetContentDetailUseCase>(),
+        getChapterImagesUseCase: getIt<GetChapterImagesUseCase>(),
         userDataRepository: getIt<UserDataRepository>(),
         logger: getIt<Logger>(),
         connectivity: getIt<Connectivity>(),

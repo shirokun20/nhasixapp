@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -58,6 +59,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   SearchFilter? _currentSearchFilter;
   SortOption _currentSortOption = SortOption.newest;
   bool _isOffline = false;
+  DateTime? _lastBackPressTime;
 
   @override
   void initState() {
@@ -202,110 +204,137 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   Widget build(BuildContext context) {
     // Offline logic now handled within the scaffold to preserve header consistency
 
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider.value(value: _homeBloc),
-        BlocProvider.value(value: _contentBloc),
-        BlocProvider.value(value: _searchBloc),
-        BlocProvider.value(value: getIt<OfflineSearchCubit>()),
-        BlocProvider.value(value: _updateCubit),
-      ],
-      child: MultiBlocListener(
-        listeners: [
-          BlocListener<UpdateCubit, UpdateState>(
-            listener: (context, state) {
-              if (state is UpdateAvailable) {
-                showModalBottomSheet(
-                  context: context,
-                  backgroundColor: Colors.transparent,
-                  isScrollControlled: true,
-                  builder: (context) =>
-                      UpdateAvailableSheet(updateInfo: state.updateInfo),
+    // Offline logic now handled within the scaffold to preserve header consistency
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final now = DateTime.now();
+        if (_lastBackPressTime == null ||
+            now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+          _lastBackPressTime = now;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Press back again to exit'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          return;
+        }
+
+        // Exit the app
+        await SystemNavigator.pop();
+      },
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: _homeBloc),
+          BlocProvider.value(value: _contentBloc),
+          BlocProvider.value(value: _searchBloc),
+          BlocProvider.value(value: getIt<OfflineSearchCubit>()),
+          BlocProvider.value(value: _updateCubit),
+        ],
+        child: MultiBlocListener(
+          listeners: [
+            BlocListener<UpdateCubit, UpdateState>(
+              listener: (context, state) {
+                if (state is UpdateAvailable) {
+                  showModalBottomSheet(
+                    context: context,
+                    backgroundColor: Colors.transparent,
+                    isScrollControlled: true,
+                    builder: (context) =>
+                        UpdateAvailableSheet(updateInfo: state.updateInfo),
+                  );
+                }
+              },
+            ),
+            BlocListener<SourceCubit, SourceState>(
+              listenWhen: (previous, current) =>
+                  previous.activeSource?.id != current.activeSource?.id,
+              listener: (context, state) async {
+                // Reload content when source changes
+                if (mounted) {
+                  // Clear saved search filter to prevent cross-source tag issues
+                  await getIt<LocalDataSource>().removeLastSearchFilter();
+
+                  // Reset search state
+                  setState(() {
+                    _isShowingSearchResults = false;
+                    _currentSearchFilter = null;
+                  });
+
+                  _contentBloc.add(ContentLoadEvent(
+                    sortBy: _currentSortOption,
+                    forceRefresh: true,
+                  ));
+                }
+              },
+            ),
+          ],
+          child: BlocBuilder<HomeBloc, HomeState>(
+            // ... rest of child
+
+            buildWhen: (previous, current) => true,
+            builder: (context, homeState) {
+              // Show full screen loading during home initialization
+              if (homeState is HomeLoading) {
+                return SimpleOfflineScaffold(
+                  title: AppLocalizations.of(context)?.appTitle ?? 'NHentai',
+                  body: const ListShimmer(itemCount: 8),
+                  drawer: AppMainDrawerWidget(context: context),
                 );
               }
-            },
-          ),
-          BlocListener<SourceCubit, SourceState>(
-            listenWhen: (previous, current) =>
-                previous.activeSource?.id != current.activeSource?.id,
-            listener: (context, state) async {
-              // Reload content when source changes
-              if (mounted) {
-                // Clear saved search filter to prevent cross-source tag issues
-                await getIt<LocalDataSource>().removeLastSearchFilter();
 
-                // Reset search state
-                setState(() {
-                  _isShowingSearchResults = false;
-                  _currentSearchFilter = null;
-                });
-
-                _contentBloc.add(ContentLoadEvent(
-                  sortBy: _currentSortOption,
-                  forceRefresh: true,
-                ));
-              }
-            },
-          ),
-        ],
-        child: BlocBuilder<HomeBloc, HomeState>(
-          // ... rest of child
-
-          buildWhen: (previous, current) => true,
-          builder: (context, homeState) {
-            // Show full screen loading during home initialization
-            if (homeState is HomeLoading) {
-              return SimpleOfflineScaffold(
-                title: AppLocalizations.of(context)?.appTitle ?? 'NHentai',
-                body: const ListShimmer(itemCount: 8),
-                drawer: AppMainDrawerWidget(context: context),
+              // Main screen UI when home is loaded
+              return BlocProvider<OfflineSearchCubit>.value(
+                value: _offlineSearchCubit,
+                child: BlocBuilder<OfflineSearchCubit, OfflineSearchState>(
+                  buildWhen: (previous, current) =>
+                      _isOffline, // Only rebuild if offline
+                  builder: (context, offlineState) {
+                    final l10n = AppLocalizations.of(context)!;
+                    return AppScaffoldWithOffline(
+                      title: l10n.appTitle,
+                      appBar: AppMainHeaderWidget(
+                        context: context,
+                        isOffline: _isOffline,
+                        offlineStats: _isOffline
+                            ? context
+                                .read<OfflineSearchCubit>()
+                                .getOfflineStats()
+                            : null,
+                        onRefresh: _isOffline
+                            ? () => context
+                                .read<OfflineSearchCubit>()
+                                .forceRefresh()
+                            : null,
+                        onImport:
+                            _isOffline ? () => importFromBackup(context) : null,
+                        onExport:
+                            _isOffline ? () => exportLibrary(context) : null,
+                        onSearchPressed: () async {
+                          // Navigate to search and wait for result
+                          final result = await context.push(AppRoute.search);
+                          if (result == true && context.mounted) {
+                            // Search was performed, reload saved filter
+                            await _reloadSearchFilter();
+                          }
+                        },
+                        onOpenBrowser: () => _openInBrowser(),
+                        onDownloadAll: () => _downloadAllGalleries(),
+                      ),
+                      drawer: AppMainDrawerWidget(context: context),
+                      body: _isOffline
+                          ? const OfflineContentBody()
+                          : _buildScrollableBody(),
+                    );
+                  },
+                ),
               );
-            }
-
-            // Main screen UI when home is loaded
-            return BlocProvider<OfflineSearchCubit>.value(
-              value: _offlineSearchCubit,
-              child: BlocBuilder<OfflineSearchCubit, OfflineSearchState>(
-                buildWhen: (previous, current) =>
-                    _isOffline, // Only rebuild if offline
-                builder: (context, offlineState) {
-                  final l10n = AppLocalizations.of(context)!;
-                  return AppScaffoldWithOffline(
-                    title: l10n.appTitle,
-                    appBar: AppMainHeaderWidget(
-                      context: context,
-                      isOffline: _isOffline,
-                      offlineStats: _isOffline
-                          ? context.read<OfflineSearchCubit>().getOfflineStats()
-                          : null,
-                      onRefresh: _isOffline
-                          ? () =>
-                              context.read<OfflineSearchCubit>().forceRefresh()
-                          : null,
-                      onImport:
-                          _isOffline ? () => importFromBackup(context) : null,
-                      onExport:
-                          _isOffline ? () => exportLibrary(context) : null,
-                      onSearchPressed: () async {
-                        // Navigate to search and wait for result
-                        final result = await context.push(AppRoute.search);
-                        if (result == true && context.mounted) {
-                          // Search was performed, reload saved filter
-                          await _reloadSearchFilter();
-                        }
-                      },
-                      onOpenBrowser: () => _openInBrowser(),
-                      onDownloadAll: () => _downloadAllGalleries(),
-                    ),
-                    drawer: AppMainDrawerWidget(context: context),
-                    body: _isOffline
-                        ? const OfflineContentBody()
-                        : _buildScrollableBody(),
-                  );
-                },
-              ),
-            );
-          },
+            },
+          ),
         ),
       ),
     );

@@ -14,6 +14,7 @@ import '../history/widgets/history_item_widget.dart';
 import '../history/widgets/history_empty_widget.dart';
 import '../history/widgets/history_cleanup_info_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
+import '../../../domain/entities/history.dart';
 
 /// Screen for displaying reading history with auto-cleanup features
 class HistoryScreen extends StatefulWidget {
@@ -320,7 +321,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  void _navigateToContent(BuildContext context, dynamic historyItem) {
+  void _navigateToContent(BuildContext context, History historyItem) {
     // Navigate to content detail/reader with sourceId to ensure correct source is used
     // This fixes the issue where clicking Crotpedia items caused errors due to missing source context
     context.push(

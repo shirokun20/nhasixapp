@@ -10,6 +10,7 @@ import '../../services/detail_cache_service.dart';
 import '../datasources/remote/exceptions.dart';
 import '../../services/request_deduplication_service.dart';
 import 'package:kuron_core/kuron_core.dart' as core;
+import 'package:kuron_crotpedia/kuron_crotpedia.dart' as crotpedia;
 
 /// Implementation of ContentRepository with caching strategy and offline-first architecture
 class ContentRepositoryImpl implements ContentRepository {
@@ -87,7 +88,8 @@ class ContentRepositoryImpl implements ContentRepository {
   }
 
   @override
-  Future<Content> getContentDetail(ContentId contentId) async {
+  Future<Content> getContentDetail(ContentId contentId,
+      {String? sourceId}) async {
     final requestKey = 'content_detail_${contentId.value}';
 
     return requestDeduplicationService.deduplicate(
@@ -116,7 +118,15 @@ class ContentRepositoryImpl implements ContentRepository {
 
           _logger.d('Cache MISS for content detail: ${contentId.value}');
           try {
-            final coreContent = await _activeSource.getDetail(contentId.value);
+            final source = sourceId != null
+                ? contentSourceRegistry.getSource(sourceId)
+                : _activeSource;
+
+            if (source == null) {
+              throw Exception('Source not found for ID: $sourceId');
+            }
+
+            final coreContent = await source.getDetail(contentId.value);
             final entity = _mapToAppContent(coreContent);
 
             await Future.wait([
@@ -291,6 +301,40 @@ class ContentRepositoryImpl implements ContentRepository {
     } catch (e) {
       _logger.d('Content verification failed: $e');
       return false;
+    }
+  }
+
+  @override
+  Future<List<String>> getChapterImages(ContentId chapterId,
+      {String? sourceId}) async {
+    try {
+      _logger.d(
+          'Getting chapter images for: ${chapterId.value}, source: $sourceId');
+      final source = sourceId != null
+          ? contentSourceRegistry.getSource(sourceId)
+          : _activeSource;
+
+      if (source == null) {
+        throw Exception('Source not found for ID: $sourceId');
+      }
+
+      // Check if source supports getChapterImages
+      // Note: core.ContentSource might not have getChapterImages exposed directly
+      // if it's not in the base interface.
+      // We might need to cast to CrotpediaSource or specific interface if not standard.
+      // However, assuming standard interface upgrade or dynamic check.
+      // Since `getChapterImages` is likely specific to Crotpedia/Manga sources:
+      if (source is crotpedia.CrotpediaSource) {
+        return await source.getChapterImages(chapterId.value);
+      }
+
+      // If source doesn't support it or is standard source without chapters
+      // We could try getDetail as fallback? No, chapter images are specific.
+      _logger.w('Source ${source.displayName} is not a CrotpediaSource');
+      return [];
+    } catch (e) {
+      _logger.e('Failed to get chapter images: $e');
+      return [];
     }
   }
 

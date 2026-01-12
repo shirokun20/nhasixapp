@@ -799,58 +799,73 @@ class _DetailScreenState extends State<DetailScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: chapters.length,
-            separatorBuilder: (context, index) => Divider(
-              color:
-                  Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-              height: 1,
-            ),
+            separatorBuilder: (context, index) =>
+                const Divider(height: 1, indent: 16, endIndent: 16),
             itemBuilder: (context, index) {
               final chapter = chapters[index];
-              return InkWell(
-                onTap: () {
-                  context.read<DetailCubit>().openChapter(chapter);
-                },
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              chapter.title,
-                              style: TextStyleConst.bodyLarge.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            if (chapter.uploadDate != null)
-                              Text(
-                                _formatDate(chapter.uploadDate!),
-                                style: TextStyleConst.bodySmall.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      Icon(
-                        Icons.chevron_right,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ],
+
+              // Create a Content object for the chapter to use with DownloadButtonWidget
+              final chapterContent = Content(
+                id: chapter.id,
+                title: '${content.title} - ${chapter.title}',
+                coverUrl: content.coverUrl,
+                uploadDate: chapter.uploadDate ?? DateTime.now(),
+                language: content.language,
+                pageCount: 0,
+                imageUrls: const [],
+                sourceId: content.sourceId,
+                relatedContent: const [],
+                tags: content.tags,
+                artists: content.artists,
+                groups: content.groups,
+                characters: content.characters,
+                parodies: content.parodies,
+                favorites: 0,
+              );
+
+              return ListTile(
+                title: Text(
+                  chapter.title,
+                  style: TextStyleConst.bodyLarge.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
+                subtitle: chapter.uploadDate != null
+                    ? Text(
+                        _formatDate(chapter.uploadDate!),
+                        style: TextStyleConst.bodySmall.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      )
+                    : null,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: DownloadButtonWidget(
+                        content: chapterContent,
+                        size: DownloadButtonSize.small,
+                        showText: false,
+                        showProgress: true,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.chevron_right,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+                onTap: () => _detailCubit.openChapter(chapter),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               );
             },
           ),

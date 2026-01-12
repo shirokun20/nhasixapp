@@ -43,12 +43,15 @@ class DetailCubit extends BaseCubit<DetailState> {
   final ContentSourceRegistry _contentSourceRegistry;
 
   /// Load content detail by ID
-  Future<void> loadContentDetail(String contentId) async {
+  Future<void> loadContentDetail(String contentId, {String? sourceId}) async {
     try {
       logInfo('Loading content detail for ID: $contentId');
       emit(const DetailLoading());
 
-      final params = GetContentDetailParams.fromString(contentId);
+      final params = GetContentDetailParams.fromString(
+        contentId,
+        sourceId: sourceId,
+      );
       final content = await _getContentDetailUseCase(params);
 
       if (isClosed) return;

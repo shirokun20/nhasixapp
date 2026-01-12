@@ -313,6 +313,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         timeSpent: state.readingTimer ?? Duration.zero,
         title: state.content!.title,
         coverUrl: state.content!.coverUrl,
+        sourceId: state.content!.sourceId,
       );
       await addToHistoryUseCase(params);
     } catch (e) {
@@ -611,6 +612,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         timeSpent: state.readingTimer ?? Duration.zero,
         title: state.content!.title,
         coverUrl: state.content!.coverUrl,
+        sourceId: state.content!.sourceId,
       );
       await addToHistoryUseCase(params);
     } catch (e) {

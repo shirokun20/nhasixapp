@@ -210,12 +210,13 @@ class PdfConversionService {
     required String contentId,
     required String title,
     required List<String> imagePaths,
+    String? sourceId,
     String? outputDir,
     int maxPagesPerFile = 50,
   }) async {
     try {
       debugPrint(
-          'PDF_NOTIFICATION: convertToPdfInBackground - STARTED for contentId=$contentId, title=$title, images=${imagePaths.length}');
+          'PDF_NOTIFICATION: convertToPdfInBackground - STARTED for contentId=$contentId, title=$title, sourceId=$sourceId, images=${imagePaths.length}');
 
       _logger.i(
           'PdfConversionService: Starting background PDF conversion for $contentId');
@@ -251,8 +252,11 @@ class PdfConversionService {
 
       // Buat direktori output untuk PDF
       // Create output directory for PDFs
-      final pdfOutputDir =
-          await _createPdfOutputDirectory(outputDir, contentId);
+      final pdfOutputDir = await _createPdfOutputDirectory(
+        outputDir,
+        contentId,
+        sourceId,
+      );
       _logger.d(
           'PdfConversionService: Output directory created: ${pdfOutputDir.path}');
 
@@ -408,8 +412,11 @@ class PdfConversionService {
   /// Creates output directory for PDF files
   ///
   /// Returns: Directory object untuk menyimpan PDF
-  Future<Directory> _createPdfOutputDirectory(String? customOutputDir,
-      [String? contentId]) async {
+  Future<Directory> _createPdfOutputDirectory(
+    String? customOutputDir, [
+    String? contentId,
+    String? sourceId,
+  ]) async {
     try {
       Directory outputDir;
 
@@ -423,10 +430,15 @@ class PdfConversionService {
         final downloadsPath = await DirectoryUtils.getDownloadsDirectory();
 
         if (contentId != null) {
-          // Simpan PDF di folder konten yang sama dengan images: Downloads/nhasix/[contentId]/pdf/
-          // Save PDF in same content folder as images: Downloads/nhasix/[contentId]/pdf/
-          outputDir =
-              Directory(path.join(downloadsPath, 'nhasix', contentId, 'pdf'));
+          if (sourceId != null) {
+            // New structure: Downloads/nhasix/[sourceId]/[contentId]/pdf/
+            outputDir = Directory(
+                path.join(downloadsPath, 'nhasix', sourceId, contentId, 'pdf'));
+          } else {
+            // Legacy/Fallback: Downloads/nhasix/[contentId]/pdf/
+            outputDir =
+                Directory(path.join(downloadsPath, 'nhasix', contentId, 'pdf'));
+          }
         } else {
           // Fallback ke folder umum: Downloads/nhasix-generate/pdf/
           // Fallback to general folder: Downloads/nhasix-generate/pdf/

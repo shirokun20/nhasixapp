@@ -25,8 +25,10 @@ class GetContentDetailUseCase extends UseCase<Content, GetContentDetailParams> {
       }
 
       // Get content detail from repository
-      final content =
-          await _contentRepository.getContentDetail(params.contentId);
+      final content = await _contentRepository.getContentDetail(
+        params.contentId,
+        sourceId: params.sourceId,
+      );
 
       return content;
     } on UseCaseException {
@@ -42,21 +44,25 @@ class GetContentDetailParams extends UseCaseParams {
   const GetContentDetailParams({
     required this.contentId,
     this.verifyExists = false,
+    this.sourceId,
   });
 
   final ContentId contentId;
   final bool verifyExists;
+  final String? sourceId;
 
   @override
-  List<Object> get props => [contentId, verifyExists];
+  List<Object?> get props => [contentId, verifyExists, sourceId];
 
   GetContentDetailParams copyWith({
     ContentId? contentId,
     bool? verifyExists,
+    String? sourceId,
   }) {
     return GetContentDetailParams(
       contentId: contentId ?? this.contentId,
       verifyExists: verifyExists ?? this.verifyExists,
+      sourceId: sourceId ?? this.sourceId,
     );
   }
 
@@ -64,10 +70,12 @@ class GetContentDetailParams extends UseCaseParams {
   factory GetContentDetailParams.fromString(
     String contentId, {
     bool verifyExists = false,
+    String? sourceId,
   }) {
     return GetContentDetailParams(
       contentId: ContentId.fromString(contentId),
       verifyExists: verifyExists,
+      sourceId: sourceId,
     );
   }
 

@@ -4,6 +4,7 @@ import '../../domain/entities/history.dart';
 class HistoryModel extends History {
   const HistoryModel({
     required super.contentId,
+    super.sourceId = 'nhentai',
     required super.lastViewed,
     super.lastPage = 1,
     super.totalPages = 0,
@@ -21,6 +22,7 @@ class HistoryModel extends History {
   }) {
     return HistoryModel(
       contentId: history.contentId,
+      sourceId: history.sourceId,
       lastViewed: history.lastViewed,
       lastPage: history.lastPage,
       totalPages: history.totalPages,
@@ -35,6 +37,7 @@ class HistoryModel extends History {
   History toEntity() {
     return History(
       contentId: contentId,
+      sourceId: sourceId,
       lastViewed: lastViewed,
       lastPage: lastPage,
       totalPages: totalPages,
@@ -49,6 +52,7 @@ class HistoryModel extends History {
   factory HistoryModel.fromMap(Map<String, dynamic> map) {
     return HistoryModel(
       contentId: map['id'], // Changed from content_id to id
+      sourceId: map['source_id'] ?? 'nhentai',
       lastViewed: DateTime.fromMillisecondsSinceEpoch(map['last_viewed']),
       lastPage: map['last_page'] ?? 1,
       totalPages: map['total_pages'] ?? 0,
@@ -63,6 +67,7 @@ class HistoryModel extends History {
   Map<String, dynamic> toMap() {
     return {
       'id': contentId, // Changed from content_id to id
+      'source_id': sourceId,
       'title': title,
       'cover_url': coverUrl,
       'last_viewed': lastViewed.millisecondsSinceEpoch,
