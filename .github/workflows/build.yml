@@ -1,6 +1,8 @@
 name: Build and Upload APK
 
 # Trigger only when merged to master branch
+# Send notifications to Telegram Channel (not personal chat)
+# Setup: Add bot as admin to channel, get channel ID (@channelname or -100XXXXXXXXX)
 on:
   push:
     branches: [ master, 'release/*' ]
@@ -76,29 +78,33 @@ jobs:
             fi
           done
 
-      # Notify on build failure
+      # Notify on build failure to Telegram Channel
       - name: Notify Build Failure
         if: failure()
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
         run: |
           curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
-            -d chat_id="$TELEGRAM_CHAT_ID" \
+            -d chat_id="$TELEGRAM_CHANNEL_ID" \
             -d parse_mode="Markdown" \
             -d text="
-          ❌ Build Failed
-          🔗 Commit: ${GITHUB_SHA::8}
+          ❌ *Build Failed*
+          
+          📦 Project: NhasixApp
+          🔗 Commit: \`${GITHUB_SHA::8}\`
           🌿 Branch: ${GITHUB_REF_NAME}
-          🔍 Check: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+          👤 Author: ${GITHUB_ACTOR}
+          
+          🔍 [View Details](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
           "
 
-      # Notify on build success
+      # Notify on build success to Telegram Channel
       - name: Notify Build Success
         if: success()
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
         run: |
           # Collect APK information
           APK_INFO=""
@@ -121,34 +127,34 @@ jobs:
           done
 
           curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
-            -d chat_id="$TELEGRAM_CHAT_ID" \
+            -d chat_id="$TELEGRAM_CHANNEL_ID" \
             -d parse_mode="Markdown" \
             -d text="
-          ✅ Build Success
-          🔗 Commit: ${GITHUB_SHA::8}
-          🌿 Branch: ${GITHUB_REF_NAME}
-          🎯 Trigger: ${GITHUB_EVENT_NAME}
+          🎉 *Cihuyy ada update baru nih!*
           
-          📦 Generated APKs: ${APK_COUNT}
-          💾 Total Size: ~${TOTAL_SIZE}MB
+          � NhasixApp
+          📦 APK tersedia: ${APK_COUNT}
+          💾 Total: ~${TOTAL_SIZE}MB
           ${APK_INFO}
           
-          ⬆️ Uploading to Telegram...
-          🔍 Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+          ⬇️ File lagi diupload, tunggu sebentar ya...
           "
 
-      # Upload APK to Telegram
-      - name: Upload APK to Telegram
+      # Upload APK to Telegram Channel
+      - name: Upload APK to Telegram Channel
         if: success()
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
         run: |
           # Check if APK files exist
           if [ ! -d "apk-output" ] || [ -z "$(ls -A apk-output/*.apk 2>/dev/null)" ]; then
             echo "❌ No APK files found in apk-output/"
             exit 1
           fi
+
+          # Get version from pubspec.yaml for caption
+          VERSION=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | cut -d '+' -f 1)
 
           # Priority: ARM64 > ARM > x86_64
           # Only upload ARM64 and ARM to save bandwidth and telegram storage
@@ -168,14 +174,14 @@ jobs:
 
               echo "📤 Uploading ARM64: $apk (${size_mb}MB)..."
               response=$(curl -s --max-time 600 --connect-timeout 60 --retry 3 --retry-delay 10 \
-                -F chat_id="$TELEGRAM_CHAT_ID" \
+                -F chat_id="$TELEGRAM_CHANNEL_ID" \
                 -F document=@"$apk" \
-                -F caption="📱 ARM64 APK (Recommended for modern devices)" \
+                -F caption="📱 NhasixApp v${VERSION} - ARM64 | ✅ Recommended for modern devices (Android 5.0+) | 💾 ${size_mb}MB | 🔗 ${GITHUB_SHA::8}" \
                 "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
 
               if echo "$response" | grep -q '"ok":true'; then
                 echo "✅ Successfully uploaded ARM64 APK"
-                UPLOADED_COUNT=$((UPLOADED_COUNT + 1))
+                UPLOADED_COUNT=$((UPLOADED_COUNT + 1))(${size_mb}MB)
               else
                 echo "❌ Failed to upload: $response"
                 exit 1
@@ -196,14 +202,14 @@ jobs:
 
               echo "📤 Uploading ARM: $apk (${size_mb}MB)..."
               response=$(curl -s --max-time 600 --connect-timeout 60 --retry 3 --retry-delay 10 \
-                -F chat_id="$TELEGRAM_CHAT_ID" \
+                -F chat_id="$TELEGRAM_CHANNEL_ID" \
                 -F document=@"$apk" \
-                -F caption="📱 ARM APK (For older devices)" \
+                -F caption="📱 NhasixApp v${VERSION} - ARMv7 | 📦 For older devices | 💾 ${size_mb}MB | 🔗 ${GITHUB_SHA::8}" \
                 "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
 
               if echo "$response" | grep -q '"ok":true'; then
                 echo "✅ Successfully uploaded ARM APK"
-                UPLOADED_COUNT=$((UPLOADED_COUNT + 1))
+                UPLOADED_COUNT=$((UPLOADED_COUNT + 1))(${size_mb}MB)
               else
                 echo "❌ Failed to upload: $response"
                 exit 1
