@@ -91,7 +91,7 @@ jobs:
             -d text="
           ❌ *Build Failed*
           
-          📦 Project: NhasixApp
+          📦 Project: Kuro-N
           🔗 Commit: \`${GITHUB_SHA::8}\`
           🌿 Branch: ${GITHUB_REF_NAME}
           👤 Author: ${GITHUB_ACTOR}
@@ -132,7 +132,7 @@ jobs:
             -d text="
           🎉 *Cihuyy ada update baru nih!*
           
-          � NhasixApp
+          � Kuro-N
           📦 APK tersedia: ${APK_COUNT}
           💾 Total: ~${TOTAL_SIZE}MB
           ${APK_INFO}
@@ -176,7 +176,7 @@ jobs:
               response=$(curl -s --max-time 600 --connect-timeout 60 --retry 3 --retry-delay 10 \
                 -F chat_id="$TELEGRAM_CHANNEL_ID" \
                 -F document=@"$apk" \
-                -F caption="📱 NhasixApp v${VERSION} - ARM64 | ✅ Recommended for modern devices (Android 5.0+) | 💾 ${size_mb}MB | 🔗 ${GITHUB_SHA::8}" \
+                -F caption="📱 Kuro-N v${VERSION} - ARM64 | ✅ Recommended for modern devices (Android 5.0+) | 💾 ${size_mb}MB | 🔗 ${GITHUB_SHA::8}" \
                 "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
 
               if echo "$response" | grep -q '"ok":true'; then
@@ -204,7 +204,7 @@ jobs:
               response=$(curl -s --max-time 600 --connect-timeout 60 --retry 3 --retry-delay 10 \
                 -F chat_id="$TELEGRAM_CHANNEL_ID" \
                 -F document=@"$apk" \
-                -F caption="📱 NhasixApp v${VERSION} - ARMv7 | 📦 For older devices | 💾 ${size_mb}MB | 🔗 ${GITHUB_SHA::8}" \
+                -F caption="📱 Kuro-N v${VERSION} - ARMv7 | 📦 For older devices | 💾 ${size_mb}MB | 🔗 ${GITHUB_SHA::8}" \
                 "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
 
               if echo "$response" | grep -q '"ok":true'; then
