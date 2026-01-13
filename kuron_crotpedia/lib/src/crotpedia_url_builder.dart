@@ -50,6 +50,7 @@ class CrotpediaUrlBuilder {
     String type = '', // Manga, Doujinshi, etc
     String order = 'update',
     List<String> genres = const [],
+    int page = 1,
   }) {
     final params = [
       'title=${Uri.encodeComponent(title)}',
@@ -65,7 +66,10 @@ class CrotpediaUrlBuilder {
       params.add('genre[]=${Uri.encodeComponent(genre)}');
     }
 
-    return '$baseUrl/advanced-search/?${params.join('&')}';
+    final baseUrlWithPage = page > 1
+        ? '$baseUrl/advanced-search/page/$page/'
+        : '$baseUrl/advanced-search/';
+    return '$baseUrlWithPage?${params.join('&')}';
   }
 
   // ============ Auth URLs ============
