@@ -8,6 +8,7 @@ import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/core/utils/app_state_manager.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/core/utils/directory_utils.dart';
+import 'package:nhasixapp/core/utils/tag_data_manager.dart';
 import 'package:nhasixapp/core/constants/app_constants.dart';
 
 part 'splash_event.dart';
@@ -25,11 +26,13 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
     required UserDataRepository userDataRepository,
     required Logger logger,
     required Connectivity connectivity,
+    required TagDataManager tagDataManager,
   })  : _remoteConfigService = remoteConfigService,
         _remoteDataSource = remoteDataSource,
         _userDataRepository = userDataRepository,
         _logger = logger,
         _connectivity = connectivity,
+        _tagDataManager = tagDataManager,
         super(SplashInitial()) {
     on<SplashStartedEvent>(_onSplashStarted);
     on<SplashInitializeBypassEvent>(_onInitializeBypass);
@@ -45,6 +48,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
   final UserDataRepository _userDataRepository;
   final Logger _logger;
   final Connectivity _connectivity;
+  final TagDataManager _tagDataManager;
 
   // static const Duration _initialDelay = Duration(seconds: 1); // Removed for optimization
 
@@ -95,6 +99,34 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       final lastSync = await _remoteConfigService.getLastSyncTime();
       _logger.i(
           'SplashBloc: Config synced (Last: ${lastSync?.toIso8601String()})');
+
+      // 4. Initialize Tag Data for all sources
+      emit(SplashInitializing(message: 'Initializing tags database...'));
+
+      // Initialize sources
+      final sources = ['nhentai', 'crotpedia'];
+
+      for (final source in sources) {
+        await _tagDataManager.initialize(source: source);
+
+        // Strict Mode: If tags missing, try downloading now
+        if (!_tagDataManager.hasTags(source)) {
+          emit(SplashInitializing(message: 'Downloading tags for $source...'));
+          // Check connectivity before downloading
+          final connectivityResults = await _connectivity.checkConnectivity();
+          if (connectivityResults.isNotEmpty &&
+              connectivityResults.first != ConnectivityResult.none) {
+            final config = _remoteConfigService.getConfig(source)?.tags;
+            if (config?.endpoint != null) {
+              await _tagDataManager.downloadTags(config!.endpoint!,
+                  int.tryParse(config.version ?? '0') ?? 0, source);
+            }
+          }
+        }
+
+        // Background update check (non-blocking if we have data)
+        _tagDataManager.checkForUpdates(source: source).ignore();
+      }
 
       // Check network connectivity first
       final connectivityResults = await _connectivity.checkConnectivity();

@@ -108,7 +108,6 @@ flutter:
     - assets/
     - assets/images/
     - assets/icons/
-    - assets/json/
     - assets/legal/en/
     - assets/legal/id/
     # Note: tags.json.gz (compressed) is 1.1MB vs tags.json (5MB)

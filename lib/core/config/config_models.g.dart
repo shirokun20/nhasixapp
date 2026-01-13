@@ -44,6 +44,9 @@ SourceConfig _$SourceConfigFromJson(Map<String, dynamic> json) => SourceConfig(
       auth: json['auth'] == null
           ? null
           : AuthConfig.fromJson(json['auth'] as Map<String, dynamic>),
+      tags: json['tags'] == null
+          ? null
+          : TagConfig.fromJson(json['tags'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$SourceConfigToJson(SourceConfig instance) =>
@@ -58,6 +61,7 @@ Map<String, dynamic> _$SourceConfigToJson(SourceConfig instance) =>
       'features': instance.features?.toJson(),
       'ui': instance.ui?.toJson(),
       'auth': instance.auth?.toJson(),
+      'tags': instance.tags?.toJson(),
     };
 
 ApiConfig _$ApiConfigFromJson(Map<String, dynamic> json) => ApiConfig(
@@ -229,4 +233,18 @@ Map<String, dynamic> _$AuthConfigToJson(AuthConfig instance) =>
       'registerEndpoint': instance.registerEndpoint,
       'sessionCookies': instance.sessionCookies,
       'sessionDurationSeconds': instance.sessionDurationSeconds,
+    };
+
+TagConfig _$TagConfigFromJson(Map<String, dynamic> json) => TagConfig(
+      enabled: json['enabled'] as bool,
+      version: json['version'] as String?,
+      endpoint: json['endpoint'] as String?,
+      updateIntervalHours: (json['updateIntervalHours'] as num?)?.toInt(),
+    );
+
+Map<String, dynamic> _$TagConfigToJson(TagConfig instance) => <String, dynamic>{
+      'enabled': instance.enabled,
+      'version': instance.version,
+      'endpoint': instance.endpoint,
+      'updateIntervalHours': instance.updateIntervalHours,
     };

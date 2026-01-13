@@ -26,6 +26,7 @@ class SourceConfig {
   final FeatureConfig? features;
   final UiConfig? ui;
   final AuthConfig? auth;
+  final TagConfig? tags;
 
   SourceConfig({
     required this.source,
@@ -38,6 +39,7 @@ class SourceConfig {
     this.features,
     this.ui,
     this.auth,
+    this.tags,
   });
 
   factory SourceConfig.fromJson(Map<String, dynamic> json) =>
@@ -229,4 +231,23 @@ class AuthConfig {
   factory AuthConfig.fromJson(Map<String, dynamic> json) =>
       _$AuthConfigFromJson(json);
   Map<String, dynamic> toJson() => _$AuthConfigToJson(this);
+}
+
+@JsonSerializable()
+class TagConfig {
+  final bool enabled;
+  final String? version;
+  final String? endpoint;
+  final int? updateIntervalHours;
+
+  TagConfig({
+    required this.enabled,
+    this.version,
+    this.endpoint,
+    this.updateIntervalHours,
+  });
+
+  factory TagConfig.fromJson(Map<String, dynamic> json) =>
+      _$TagConfigFromJson(json);
+  Map<String, dynamic> toJson() => _$TagConfigToJson(this);
 }

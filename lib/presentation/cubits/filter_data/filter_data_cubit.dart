@@ -36,11 +36,15 @@ class FilterDataCubit extends Cubit<FilterDataState> {
       _currentFilterType = filterType;
       _selectedFilters = List<FilterItem>.from(selectedFilters);
       emit(FilterDataLoading(state));
-      // Ensure tag data is cached
-      await _tagDataManager.cacheTagData();
+      // Ensure tag data is cached for default source (nhentai) for now
+      // TODO: Make FilterDataCubit source-aware
+      if (!_tagDataManager.hasTags('nhentai')) {
+        await _tagDataManager.initialize(source: 'nhentai');
+      }
+
       // Get tags by type
-      _filteredTags =
-          await _tagDataManager.getTagsByType(filterType, limit: 100);
+      _filteredTags = await _tagDataManager.getTagsByType(filterType,
+          limit: 100, source: 'nhentai');
       emit(
         state.copyWith(
           filterType: _currentFilterType,

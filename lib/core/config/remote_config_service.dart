@@ -12,7 +12,7 @@ class RemoteConfigService {
 
   // CDN URLs
   static const String _baseUrl =
-      'https://cdn.jsdelivr.net/gh/shirokun20/nhasixapp@master/configs';
+      'https://cdn.jsdelivr.net/gh/shirokun20/nhasixapp@configs/configs';
   static const String _nhentaiConfigUrl = '$_baseUrl/nhentai-config.json';
   static const String _crotpediaConfigUrl = '$_baseUrl/crotpedia-config.json';
 
