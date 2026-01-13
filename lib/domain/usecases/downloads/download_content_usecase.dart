@@ -224,9 +224,8 @@ class DownloadContentUseCase
       _logger.i(
           'Converting ${imageFiles.length} images to PDF for: ${content.id}');
 
-      // Create PDF folder: nhasix-generate/pdf/
-      final pdfOutputPath =
-          await _createPdfOutputPath(content.id, content.title);
+      // Create PDF folder: nhasix/{source}/{contentId}/pdf/
+      final pdfOutputPath = await _getOrCreatePdfOutputPath(content.id);
 
       // Emit progress for PDF conversion start
       DownloadManager().emitProgress(DownloadProgressUpdate(
@@ -267,15 +266,28 @@ class DownloadContentUseCase
     }
   }
 
-  /// Create PDF output path in nhasix-generate/pdf/ folder
-  Future<String> _createPdfOutputPath(String contentId, String title) async {
+  /// Create PDF output path in nhasix/{source}/{contentId}/pdf/ folder
+  Future<String> _getOrCreatePdfOutputPath(String contentId) async {
     try {
-      // Get app documents directory
-      final appDocDir = await getApplicationDocumentsDirectory();
+      // Get content download path (nhasix/{source}/{contentId})
+      final contentPath = await _downloadService.getDownloadPath(contentId);
 
-      // Create nhasix-generate/pdf/ folder
-      final pdfFolder =
-          Directory(path.join(appDocDir.path, 'nhasix-generate', 'pdf'));
+      if (contentPath == null) {
+        // Fallback to documents directory if path not found
+        final appDocDir = await getApplicationDocumentsDirectory();
+        final fallbackDir = Directory(
+            path.join(appDocDir.path, 'nhasix-fallback', contentId, 'pdf'));
+        _logger.w(
+            'Content path not found, using fallback for PDF: ${fallbackDir.path}');
+
+        if (!await fallbackDir.exists()) {
+          await fallbackDir.create(recursive: true);
+        }
+        return fallbackDir.path;
+      }
+
+      // Create pdf folder inside content folder
+      final pdfFolder = Directory(path.join(contentPath, 'pdf'));
 
       if (!await pdfFolder.exists()) {
         await pdfFolder.create(recursive: true);

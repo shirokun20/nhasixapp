@@ -5,15 +5,17 @@ import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/config/config_models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart'; // Add this import
 
 class RemoteConfigService {
   final Dio _dio;
   final Logger _logger;
 
   // CDN URLs
-  static const String _baseUrl =
-      'https://cdn.jsdelivr.net/gh/shirokun20/nhasixapp@configs/configs';
-  static const String _versionUrl = '$_baseUrl/version.json';
+  static String get _baseUrl => kDebugMode
+      ? 'https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/configs/configs'
+      : 'https://cdn.jsdelivr.net/gh/shirokun20/nhasixapp@configs/configs';
+  static String get _versionUrl => '$_baseUrl/version.json';
   static const String _tagsAssetPath = 'assets/configs/tags-config.json';
 
   // Config Cache Keys
@@ -102,8 +104,15 @@ class RemoteConfigService {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        _versionManifest = ConfigVersion.fromJson(response.data);
-        await prefs.setString(_versionCacheKey, jsonEncode(response.data));
+        final Map<String, dynamic> data;
+        if (response.data is String) {
+          data = jsonDecode(response.data as String) as Map<String, dynamic>;
+        } else {
+          data = response.data as Map<String, dynamic>;
+        }
+
+        _versionManifest = ConfigVersion.fromJson(data);
+        await prefs.setString(_versionCacheKey, jsonEncode(data));
         _logger.i('✅ Master Manifest synced: v${_versionManifest?.version}');
         return;
       }

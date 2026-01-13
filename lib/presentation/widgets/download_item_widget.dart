@@ -93,7 +93,7 @@ class DownloadItemWidget extends StatelessWidget {
                         Row(
                           children: [
                             Text(
-                              '#${download.contentId}',
+                              _getDisplayId(download),
                               style: TextStyleConst.caption.copyWith(
                                 color: colorScheme.onSurface
                                     .withValues(alpha: 0.5),
@@ -640,5 +640,26 @@ class DownloadItemWidget extends StatelessWidget {
         'isRangeDownload': false,
       };
     }
+  }
+
+  /// Get display ID string
+  /// Returns condensed ID for long slug-based IDs (like Crotpedia)
+  String _getDisplayId(DownloadStatus download) {
+    // If nhentai (numeric), show full ID
+    if (download.sourceId == SourceType.nhentai.id ||
+        download.sourceId == null) {
+      return '#${download.contentId}';
+    }
+
+    // For Crotpedia (slugs), show truncated hash
+    if (download.sourceId == SourceType.crotpedia.id) {
+      // Create a short 6-char hex code from the slug
+      final hash = download.contentId.hashCode.toRadixString(16).toUpperCase();
+      final shortCode = hash.padLeft(6, '0').substring(0, 6);
+      return '#$shortCode';
+    }
+
+    // Default fallback
+    return '#${download.contentId}';
   }
 }

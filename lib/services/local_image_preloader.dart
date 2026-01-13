@@ -7,24 +7,25 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
 /// Enhanced Local Image Preloader Service
-/// 
+///
 /// Provides progressive image loading with priority:
 /// 1. Downloaded content (`nhasix/[id]/images/`)
 /// 2. Local cache
 /// 3. Network fallback
-/// 
+///
 /// Supports metadata.json validation for downloaded content
 class LocalImagePreloader {
   static const String _baseLocalPath = 'nhasix';
   static const String _cacheSubPath = 'cache';
-  static const Duration _cacheExpiryDuration = Duration(hours: 6); // Cache expires in 6 hours
+  static const Duration _cacheExpiryDuration =
+      Duration(hours: 6); // Cache expires in 6 hours
   static final Logger _logger = Logger();
 
   /// Get all possible base paths where images might be stored
   /// Priority: External Download -> Internal Cache (with expiry) -> Internal App Documents
   static Future<List<String>> _getPossibleBasePaths() async {
     final List<String> basePaths = [];
-    
+
     try {
       // Priority 1: External storage Download folder (permanently downloaded files)
       final downloadPaths = await _getDownloadDirectories();
@@ -32,33 +33,33 @@ class LocalImagePreloader {
         final downloadDir = Directory(path.join(downloadPath, _baseLocalPath));
         if (await downloadDir.exists()) {
           basePaths.add(path.join(downloadPath, _baseLocalPath));
-          _logger.d('🐛 Found external storage: ${path.join(downloadPath, _baseLocalPath)}');
+          _logger.d(
+              '🐛 Found external storage: ${path.join(downloadPath, _baseLocalPath)}');
         }
       }
-      
+
       // Priority 2: Internal cache directory (temporary files with expiry)
       final cacheDir = await _getInternalCacheDirectory();
       if (cacheDir != null) {
         basePaths.add(cacheDir);
         _logger.d('🐛 Added internal cache: $cacheDir');
-        
+
         // Trigger cache cleanup in background
         _cleanupExpiredCache();
       }
-      
+
       // Priority 3: Internal app documents directory (fallback storage)
       final appDir = await getApplicationDocumentsDirectory();
       final internalPath = path.join(appDir.path, _baseLocalPath);
       basePaths.add(internalPath);
       _logger.d('🐛 Added internal storage: $internalPath');
-      
     } catch (e) {
       _logger.e('Error getting possible base paths: $e');
       // Fallback to internal storage only
       final appDir = await getApplicationDocumentsDirectory();
       basePaths.add(path.join(appDir.path, _baseLocalPath));
     }
-    
+
     return basePaths;
   }
 
@@ -66,7 +67,7 @@ class LocalImagePreloader {
   /// Reference implementation from download_service.dart _getDownloadsDirectory()
   static Future<List<String>> _getDownloadDirectories() async {
     final List<String> downloadPaths = [];
-    
+
     try {
       // Get external storage directory first
       Directory? externalDir;
@@ -79,16 +80,16 @@ class LocalImagePreloader {
       if (externalDir != null) {
         // Try to find Downloads folder in external storage root
         final externalRoot = externalDir.path.split('/Android')[0];
-        
+
         // Common Downloads folder names (same as download_service.dart)
         final downloadsFolderNames = [
-          'Download',     // English (most common)
-          'Downloads',    // English alternative
-          'Unduhan',      // Indonesian
-          'Descargas',    // Spanish
+          'Download', // English (most common)
+          'Downloads', // English alternative
+          'Unduhan', // Indonesian
+          'Descargas', // Spanish
           'Téléchargements', // French
-          'Downloads',    // German uses English
-          'ダウンロード',     // Japanese
+          'Downloads', // German uses English
+          'ダウンロード', // Japanese
         ];
 
         // Try each possible Downloads folder
@@ -117,11 +118,10 @@ class LocalImagePreloader {
           _logger.d('🐛 Found Downloads directory at common path: $commonPath');
         }
       }
-      
     } catch (e) {
       _logger.e('Error detecting Downloads directories: $e');
     }
-    
+
     return downloadPaths;
   }
 
@@ -130,13 +130,14 @@ class LocalImagePreloader {
   static Future<String?> _getInternalCacheDirectory() async {
     try {
       final appDir = await getApplicationDocumentsDirectory();
-      final cacheDir = Directory(path.join(appDir.path, _cacheSubPath, _baseLocalPath));
-      
+      final cacheDir =
+          Directory(path.join(appDir.path, _cacheSubPath, _baseLocalPath));
+
       if (!await cacheDir.exists()) {
         await cacheDir.create(recursive: true);
         _logger.d('🐛 Created internal cache directory: ${cacheDir.path}');
       }
-      
+
       return cacheDir.path;
     } catch (e) {
       _logger.e('Error getting internal cache directory: $e');
@@ -149,7 +150,7 @@ class LocalImagePreloader {
     try {
       final cacheDir = await _getInternalCacheDirectory();
       if (cacheDir == null) return;
-      
+
       final baseCacheDir = Directory(cacheDir);
       if (!await baseCacheDir.exists()) return;
 
@@ -161,24 +162,28 @@ class LocalImagePreloader {
       await for (final entity in baseCacheDir.list()) {
         if (entity is Directory) {
           final contentId = path.basename(entity.path);
-          final cacheMetadataFile = File(path.join(entity.path, 'cache_metadata.json'));
-          
+          final cacheMetadataFile =
+              File(path.join(entity.path, 'cache_metadata.json'));
+
           bool shouldDelete = false;
-          
+
           if (await cacheMetadataFile.exists()) {
             try {
               final metadataContent = await cacheMetadataFile.readAsString();
-              final metadata = jsonDecode(metadataContent) as Map<String, dynamic>;
+              final metadata =
+                  jsonDecode(metadataContent) as Map<String, dynamic>;
               final cacheTime = DateTime.parse(metadata['cached_at'] as String);
-              
+
               if (now.difference(cacheTime) > _cacheExpiryDuration) {
                 shouldDelete = true;
-                _logger.d('🐛 Cache expired for $contentId: ${now.difference(cacheTime)} > $_cacheExpiryDuration');
+                _logger.d(
+                    '🐛 Cache expired for $contentId: ${now.difference(cacheTime)} > $_cacheExpiryDuration');
               }
             } catch (e) {
               // Invalid metadata, delete the cache
               shouldDelete = true;
-              _logger.w('🐛 Invalid cache metadata for $contentId, marking for deletion: $e');
+              _logger.w(
+                  '🐛 Invalid cache metadata for $contentId, marking for deletion: $e');
             }
           } else {
             // No metadata, check file modification time
@@ -187,18 +192,20 @@ class LocalImagePreloader {
               final stat = await imagesDir.stat();
               if (now.difference(stat.modified) > _cacheExpiryDuration) {
                 shouldDelete = true;
-                _logger.d('🐛 Cache expired by file time for $contentId: ${now.difference(stat.modified)} > $_cacheExpiryDuration');
+                _logger.d(
+                    '🐛 Cache expired by file time for $contentId: ${now.difference(stat.modified)} > $_cacheExpiryDuration');
               }
             }
           }
-          
+
           if (shouldDelete) {
             try {
               await entity.delete(recursive: true);
               cleanedDirs++;
               _logger.d('🐛 Cleaned expired cache directory: ${entity.path}');
             } catch (e) {
-              _logger.w('🐛 Failed to delete expired cache directory ${entity.path}: $e');
+              _logger.w(
+                  '🐛 Failed to delete expired cache directory ${entity.path}: $e');
             }
           }
         } else if (entity is File) {
@@ -210,50 +217,53 @@ class LocalImagePreloader {
               cleanedFiles++;
               _logger.d('🐛 Cleaned expired cache file: ${entity.path}');
             } catch (e) {
-              _logger.w('🐛 Failed to delete expired cache file ${entity.path}: $e');
+              _logger.w(
+                  '🐛 Failed to delete expired cache file ${entity.path}: $e');
             }
           }
         }
       }
-      
+
       if (cleanedFiles > 0 || cleanedDirs > 0) {
-        _logger.i('🐛 Cache cleanup completed: $cleanedFiles files, $cleanedDirs directories removed');
+        _logger.i(
+            '🐛 Cache cleanup completed: $cleanedFiles files, $cleanedDirs directories removed');
       }
-      
     } catch (e) {
       _logger.e('Error during cache cleanup: $e');
     }
   }
 
   /// Save image to internal cache with metadata
-  static Future<String?> _saveToInternalCache(String contentId, int pageNumber, List<int> imageBytes) async {
+  static Future<String?> _saveToInternalCache(
+      String contentId, int pageNumber, List<int> imageBytes) async {
     try {
       final cacheDir = await _getInternalCacheDirectory();
       if (cacheDir == null) return null;
-      
-      final contentCacheDir = Directory(path.join(cacheDir, contentId, 'images'));
+
+      final contentCacheDir =
+          Directory(path.join(cacheDir, contentId, 'images'));
       if (!await contentCacheDir.exists()) {
         await contentCacheDir.create(recursive: true);
       }
-      
+
       final fileName = 'page_${pageNumber.toString().padLeft(3, '0')}.jpg';
       final filePath = path.join(contentCacheDir.path, fileName);
       final file = File(filePath);
-      
+
       await file.writeAsBytes(imageBytes);
-      
+
       // Save cache metadata
-      final metadataFile = File(path.join(contentCacheDir.parent.path, 'cache_metadata.json'));
+      final metadataFile =
+          File(path.join(contentCacheDir.parent.path, 'cache_metadata.json'));
       final metadata = {
         'content_id': contentId,
         'cached_at': DateTime.now().toIso8601String(),
         'expiry_hours': _cacheExpiryDuration.inHours,
       };
       await metadataFile.writeAsString(jsonEncode(metadata));
-      
+
       _logger.d('🐛 Saved image to cache: $filePath');
       return filePath;
-      
     } catch (e) {
       _logger.e('Error saving image to cache: $e');
       return null;
@@ -263,7 +273,7 @@ class LocalImagePreloader {
   /// Get only external download paths (excluding cache)
   static Future<List<String>> _getExternalDownloadPaths() async {
     final List<String> externalPaths = [];
-    
+
     try {
       // Only external storage Download folder (permanently downloaded files)
       final downloadPaths = await _getDownloadDirectories();
@@ -271,13 +281,14 @@ class LocalImagePreloader {
         final downloadDir = Directory(path.join(downloadPath, _baseLocalPath));
         if (await downloadDir.exists()) {
           externalPaths.add(path.join(downloadPath, _baseLocalPath));
-          _logger.d('🐛 External download path: ${path.join(downloadPath, _baseLocalPath)}');
+          _logger.d(
+              '🐛 External download path: ${path.join(downloadPath, _baseLocalPath)}');
         }
       }
     } catch (e) {
       _logger.e('Error getting external download paths: $e');
     }
-    
+
     return externalPaths;
   }
 
@@ -286,28 +297,31 @@ class LocalImagePreloader {
   static Future<bool> isContentDownloaded(String contentId) async {
     try {
       final basePaths = await _getExternalDownloadPaths();
-      
+
       for (final basePath in basePaths) {
         final metadataPath = path.join(basePath, contentId, 'metadata.json');
         final metadataFile = File(metadataPath);
-        
+
         if (await metadataFile.exists()) {
           _logger.d('Found metadata at: $metadataPath');
           return true;
         }
-        
+
         // Also check if images directory exists (even without metadata)
         final imagesDir = Directory(path.join(basePath, contentId, 'images'));
         if (await imagesDir.exists()) {
           final files = await imagesDir.list().toList();
-          final imageFiles = files.where((file) => file is File && _isImageFile(file.path)).toList();
+          final imageFiles = files
+              .where((file) => file is File && _isImageFile(file.path))
+              .toList();
           if (imageFiles.isNotEmpty) {
-            _logger.d('Found images directory at: ${imagesDir.path} with ${imageFiles.length} images');
+            _logger.d(
+                'Found images directory at: ${imagesDir.path} with ${imageFiles.length} images');
             return true;
           }
         }
       }
-      
+
       return false;
     } catch (e) {
       _logger.e('Error checking if content is downloaded for $contentId: $e');
@@ -316,19 +330,16 @@ class LocalImagePreloader {
   }
 
   /// Get local image path with priority: downloaded > internal cache > network cache > null
-  static Future<String?> getLocalImagePath(String contentId, int pageNumber) async {
+  static Future<String?> getLocalImagePath(
+      String contentId, int pageNumber) async {
     try {
       final basePaths = await _getPossibleBasePaths();
-      
+
       // Check all possible base paths for downloaded content
       for (final basePath in basePaths) {
         // Priority 1: Downloaded content with standard naming
-        final downloadedPath = path.join(
-          basePath, 
-          contentId, 
-          'images', 
-          'page_$pageNumber.jpg'
-        );
+        final downloadedPath =
+            path.join(basePath, contentId, 'images', 'page_$pageNumber.jpg');
         final downloadedFile = File(downloadedPath);
         if (await downloadedFile.exists()) {
           _logger.d('🐛 Found downloaded image: $downloadedPath');
@@ -362,7 +373,8 @@ class LocalImagePreloader {
               .toList();
 
           // Sort by filename to maintain page order
-          imageFiles.sort((a, b) => _extractPageNumber(a.path).compareTo(_extractPageNumber(b.path)));
+          imageFiles.sort((a, b) =>
+              _extractPageNumber(a.path).compareTo(_extractPageNumber(b.path)));
 
           // Return the image for the requested page number (1-indexed)
           if (pageNumber > 0 && pageNumber <= imageFiles.length) {
@@ -382,7 +394,8 @@ class LocalImagePreloader {
 
       return null; // Fallback to network
     } catch (e) {
-      _logger.e('Error getting local image path for $contentId page $pageNumber: $e');
+      _logger.e(
+          'Error getting local image path for $contentId page $pageNumber: $e');
       return null;
     }
   }
@@ -391,7 +404,7 @@ class LocalImagePreloader {
   static Future<String?> getLocalThumbnailPath(String contentId) async {
     try {
       final basePaths = await _getPossibleBasePaths();
-      
+
       // Check downloaded cover patterns in all base paths
       final downloadedCoverPatterns = [
         'cover.jpg',
@@ -411,9 +424,11 @@ class LocalImagePreloader {
           }
 
           // Also check in images folder
-          final coverInImagesPath = path.join(basePath, contentId, 'images', pattern);
+          final coverInImagesPath =
+              path.join(basePath, contentId, 'images', pattern);
           if (await File(coverInImagesPath).exists()) {
-            _logger.d('🐛 Found downloaded cover in images folder: $coverInImagesPath');
+            _logger.d(
+                '🐛 Found downloaded cover in images folder: $coverInImagesPath');
             return coverInImagesPath;
           }
         }
@@ -434,22 +449,24 @@ class LocalImagePreloader {
   }
 
   /// Read metadata for validation
-  static Future<Map<String, dynamic>?> getDownloadedMetadata(String contentId) async {
+  static Future<Map<String, dynamic>?> getDownloadedMetadata(
+      String contentId) async {
     try {
       final basePaths = await _getPossibleBasePaths();
-      
+
       for (final basePath in basePaths) {
         final metadataPath = path.join(basePath, contentId, 'metadata.json');
         final file = File(metadataPath);
-        
+
         if (await file.exists()) {
           final jsonString = await file.readAsString();
           final metadata = jsonDecode(jsonString) as Map<String, dynamic>;
-          _logger.d('Successfully read metadata for $contentId from $metadataPath');
+          _logger.d(
+              'Successfully read metadata for $contentId from $metadataPath');
           return metadata;
         }
       }
-      
+
       _logger.d('Metadata file not found for $contentId in any base path');
       return null;
     } catch (e) {
@@ -460,19 +477,22 @@ class LocalImagePreloader {
 
   /// Progressive loading: downloaded > internal cache > network
   /// Also saves network images to internal cache for future use
-  static ImageProvider getProgressiveImageProvider(String networkUrl, String? localPath) {
+  static ImageProvider getProgressiveImageProvider(
+      String networkUrl, String? localPath) {
     if (localPath != null && File(localPath).existsSync()) {
       _logger.d('🐛 Using local image provider: $localPath');
       return FileImage(File(localPath));
     }
-    
-    _logger.d('🐛 Using network image provider with cache fallback: $networkUrl');
+
+    _logger
+        .d('🐛 Using network image provider with cache fallback: $networkUrl');
     return CachedNetworkImageProvider(networkUrl);
   }
 
   /// Download and cache image from network to internal cache
   /// This method can be called when loading network images to cache them locally
-  static Future<String?> downloadAndCacheImage(String networkUrl, String contentId, int pageNumber) async {
+  static Future<String?> downloadAndCacheImage(
+      String networkUrl, String contentId, int pageNumber) async {
     try {
       // First check if already exists in cache to avoid duplicate downloads
       final existingPath = await getLocalImagePath(contentId, pageNumber);
@@ -481,30 +501,41 @@ class LocalImagePreloader {
         return existingPath;
       }
 
+      // Check if networkUrl is actually a local file path
+      if (!networkUrl.startsWith('http') &&
+          (networkUrl.startsWith('/') || networkUrl.startsWith('file://'))) {
+        final path = networkUrl.replaceFirst('file://', '');
+        final file = File(path);
+        if (await file.exists()) {
+          _logger.d('🐛 Provided URL is actually a local file: $path');
+          return path;
+        }
+      }
+
       // Download from network (this is a simplified version - in real app use proper HTTP client)
       final httpClient = HttpClient();
       final request = await httpClient.getUrl(Uri.parse(networkUrl));
       request.headers.set('User-Agent', 'AppleWebKit/537.36');
       request.headers.set('Referer', 'https://nhentai.net/');
-      
+
       final response = await request.close();
       if (response.statusCode == 200) {
         final bytes = <int>[];
         await for (var chunk in response) {
           bytes.addAll(chunk);
         }
-        
+
         // Save to internal cache
-        final cachedPath = await _saveToInternalCache(contentId, pageNumber, bytes);
+        final cachedPath =
+            await _saveToInternalCache(contentId, pageNumber, bytes);
         httpClient.close();
-        
+
         return cachedPath;
       } else {
         httpClient.close();
         _logger.w('🐛 Failed to download image: HTTP ${response.statusCode}');
         return null;
       }
-      
     } catch (e) {
       _logger.e('🐛 Error downloading and caching image: $e');
       return null;
@@ -515,11 +546,11 @@ class LocalImagePreloader {
   static Future<List<String>> getDownloadedContentIds() async {
     try {
       final basePaths = await _getPossibleBasePaths();
-      final contentIds = <String>{};  // Use Set to avoid duplicates
-      
+      final contentIds = <String>{}; // Use Set to avoid duplicates
+
       for (final basePath in basePaths) {
         final baseDir = Directory(basePath);
-        
+
         if (!await baseDir.exists()) {
           continue;
         }
@@ -535,7 +566,8 @@ class LocalImagePreloader {
       }
 
       final resultList = contentIds.toList();
-      _logger.i('Found ${resultList.length} downloaded contents across all storage locations');
+      _logger.i(
+          'Found ${resultList.length} downloaded contents across all storage locations');
       return resultList;
     } catch (e) {
       _logger.e('Error getting downloaded content IDs: $e');
@@ -547,21 +579,24 @@ class LocalImagePreloader {
   static Future<int> getDownloadedImageCount(String contentId) async {
     try {
       final basePaths = await _getPossibleBasePaths();
-      
+
       for (final basePath in basePaths) {
         final imagesDir = Directory(path.join(basePath, contentId, 'images'));
-        
+
         if (await imagesDir.exists()) {
           final files = await imagesDir.list().toList();
-          final imageFiles = files.where((file) => file is File && _isImageFile(file.path)).toList();
-          
+          final imageFiles = files
+              .where((file) => file is File && _isImageFile(file.path))
+              .toList();
+
           if (imageFiles.isNotEmpty) {
-            _logger.d('Found ${imageFiles.length} images for $contentId in $basePath');
+            _logger.d(
+                'Found ${imageFiles.length} images for $contentId in $basePath');
             return imageFiles.length;
           }
         }
       }
-      
+
       return 0;
     } catch (e) {
       _logger.e('Error getting downloaded image count for $contentId: $e');
@@ -579,10 +614,11 @@ class LocalImagePreloader {
       if (expectedPageCount == null) return false;
 
       final actualImageCount = await getDownloadedImageCount(contentId);
-      
+
       final isValid = actualImageCount >= expectedPageCount;
-      _logger.d('Content $contentId validation: $actualImageCount/$expectedPageCount images - ${isValid ? 'VALID' : 'INVALID'}');
-      
+      _logger.d(
+          'Content $contentId validation: $actualImageCount/$expectedPageCount images - ${isValid ? 'VALID' : 'INVALID'}');
+
       return isValid;
     } catch (e) {
       _logger.e('Error validating downloaded content $contentId: $e');
@@ -593,11 +629,13 @@ class LocalImagePreloader {
   // Private helper methods
 
   /// Get cached image path (simulate cache directory)
-  static Future<String?> _getCachedImagePath(String contentId, int pageNumber) async {
+  static Future<String?> _getCachedImagePath(
+      String contentId, int pageNumber) async {
     try {
       final appDir = await getApplicationDocumentsDirectory();
-      final cachePath = path.join(appDir.path, 'cache', 'images', contentId, 'page_$pageNumber.jpg');
-      
+      final cachePath = path.join(
+          appDir.path, 'cache', 'images', contentId, 'page_$pageNumber.jpg');
+
       // Check if cached version exists
       if (await File(cachePath).exists()) {
         return cachePath;
@@ -616,8 +654,9 @@ class LocalImagePreloader {
   static Future<String?> _getCachedThumbnailPath(String contentId) async {
     try {
       final appDir = await getApplicationDocumentsDirectory();
-      final cachePath = path.join(appDir.path, 'cache', 'thumbnails', '$contentId.jpg');
-      
+      final cachePath =
+          path.join(appDir.path, 'cache', 'thumbnails', '$contentId.jpg');
+
       if (await File(cachePath).exists()) {
         return cachePath;
       }
@@ -633,22 +672,23 @@ class LocalImagePreloader {
   static Future<void> clearContentCache(String contentId) async {
     try {
       final appDir = await getApplicationDocumentsDirectory();
-      
+
       // Clear internal cache images
-      final cacheImagesDir = Directory(path.join(appDir.path, 'cache', 'images', contentId));
+      final cacheImagesDir =
+          Directory(path.join(appDir.path, 'cache', 'images', contentId));
       if (await cacheImagesDir.exists()) {
         await cacheImagesDir.delete(recursive: true);
         _logger.i('🗑️ Cleared internal cache images for: $contentId');
       }
-      
+
       // Clear internal cache thumbnail
-      final cacheThumbnailPath = path.join(appDir.path, 'cache', 'thumbnails', '$contentId.jpg');
+      final cacheThumbnailPath =
+          path.join(appDir.path, 'cache', 'thumbnails', '$contentId.jpg');
       final thumbnailFile = File(cacheThumbnailPath);
       if (await thumbnailFile.exists()) {
         await thumbnailFile.delete();
         _logger.i('🗑️ Cleared internal cache thumbnail for: $contentId');
       }
-      
     } catch (e) {
       _logger.e('Error clearing content cache for $contentId: $e');
     }
@@ -658,14 +698,13 @@ class LocalImagePreloader {
   static Future<void> clearAllImageCache() async {
     try {
       final appDir = await getApplicationDocumentsDirectory();
-      
+
       // Clear all cached images
       final cacheDir = Directory(path.join(appDir.path, 'cache'));
       if (await cacheDir.exists()) {
         await cacheDir.delete(recursive: true);
         _logger.i('🗑️ Cleared all internal image cache');
       }
-      
     } catch (e) {
       _logger.e('Error clearing all image cache: $e');
     }
@@ -674,7 +713,8 @@ class LocalImagePreloader {
   /// Helper method to check if file is an image
   static bool _isImageFile(String filePath) {
     final extension = path.extension(filePath).toLowerCase();
-    return ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'].contains(extension);
+    return ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
+        .contains(extension);
   }
 
   /// Helper method to extract page number from filename

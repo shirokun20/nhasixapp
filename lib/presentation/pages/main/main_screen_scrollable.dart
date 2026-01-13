@@ -613,40 +613,45 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           // Sorting widget
           if (_shouldShowSorting(state))
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: BlocBuilder<SourceCubit, SourceState>(
-                  builder: (context, sourceState) {
-                    final sourceId = sourceState.activeSource?.id;
-                    final sourceConfig = sourceId != null
-                        ? getIt<RemoteConfigService>().getConfig(sourceId)
-                        : null;
-                    final searchConfig = sourceConfig?.searchConfig;
-                    final sortingConfig = searchConfig?.sortingConfig;
+              child: BlocBuilder<SourceCubit, SourceState>(
+                builder: (context, sourceState) {
+                  final sourceId = sourceState.activeSource?.id;
+                  final sourceConfig = sourceId != null
+                      ? getIt<RemoteConfigService>().getConfig(sourceId)
+                      : null;
+                  final searchConfig = sourceConfig?.searchConfig;
+                  final sortingConfig = searchConfig?.sortingConfig;
 
-                    if (sortingConfig == null) {
-                      // Fallback to legacy widget if no config
-                      return SortingWidget(
+                  if (sortingConfig == null) {
+                    // Fallback to legacy widget if no config
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 8.0),
+                      child: SortingWidget(
                         currentSort: _currentSortOption,
                         onSortChanged: _onSortingChanged,
-                      );
-                    }
-
-                    return DynamicSortingWidget(
-                      currentSortValue: _mapSortOptionToConfigValue(
-                          _currentSortOption, sortingConfig),
-                      config: sortingConfig,
-                      onSortChanged: (val) =>
-                          _handleDynamicSortChange(val, sortingConfig),
-                      onNavigateToSearch: () async {
-                        final result = await context.push(AppRoute.search);
-                        if (result == true && context.mounted) {
-                          await _reloadSearchFilter();
-                        }
-                      },
+                      ),
                     );
-                  },
-                ),
+                  }
+
+                  return DynamicSortingWidget(
+                    currentSortValue: _mapSortOptionToConfigValue(
+                        _currentSortOption, sortingConfig),
+                    config: sortingConfig,
+                    onSortChanged: (val) =>
+                        _handleDynamicSortChange(val, sortingConfig),
+                    onNavigateToSearch: () async {
+                      final result = await context.push(AppRoute.search);
+                      if (result == true && context.mounted) {
+                        await _reloadSearchFilter();
+                      }
+                    },
+                    resultCount: state.totalCount,
+                    infoText: _isShowingSearchResults
+                        ? 'Tap to change search filters'
+                        : null,
+                  );
+                },
               ),
             ),
 

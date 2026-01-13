@@ -321,7 +321,9 @@ class RemoteDataSource {
     try {
       _logger.i('Fetching popular content for period: $period, page: $page');
 
-      final url = '$baseUrl/search/?q=&sort=popular-$period&page=$page';
+      // nhentai doesn't support empty query search, use homepage for browsing
+      // Homepage shows latest content - for actual popularity sorting, we'd need different logic
+      final url = '$baseUrl/?page=$page';
       final html = await _getPageHtml(url);
 
       final contents = await scraper.parseContentList(html);
@@ -344,7 +346,9 @@ class RemoteDataSource {
       _logger.i(
           'Fetching popular content with pagination for period: $period, page: $page');
 
-      final url = '$baseUrl/search/?q=&sort=popular-$period&page=$page';
+      // nhentai doesn't support empty query search, use homepage for browsing
+      // Homepage shows latest content - for actual popularity sorting, we'd need different logic
+      final url = '$baseUrl/?page=$page';
       final html = await _getPageHtml(url);
 
       // Parse content list
@@ -377,7 +381,9 @@ class RemoteDataSource {
       _logger.i(
           'Fetching popular content (sync) for period: $period, page: $page');
 
-      final url = '$baseUrl/search/?q=&sort=popular-$period&page=$page';
+      // nhentai doesn't support empty query search, use homepage for browsing
+      // Homepage shows latest content - for actual popularity sorting, we'd need different logic
+      final url = '$baseUrl/?page=$page';
       final html = await _getPageHtml(url);
 
       final contents = scraper.parseContentListSync(html);

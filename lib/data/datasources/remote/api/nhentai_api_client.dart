@@ -227,14 +227,26 @@ class NhentaiApiClient {
     String period = 'all',
     int page = 1,
   }) async {
-    // Popular is just a search with empty query and sort option
-    final sort = switch (period.toLowerCase()) {
-      'week' => 'popular-week',
-      'today' => 'popular-today',
-      _ => 'popular',
-    };
+    // Use the all galleries endpoint for popular content
+    // nhentai API doesn't support empty query, but all galleries endpoint returns latest
+    // For actual popular sorting, we need to use HTML scraping (RemoteDataSource handles this)
+    final url = _getAllGalleriesEndpoint(page: page);
+    _logger.d(
+        'NhentaiApiClient: Fetching popular galleries (period: $period, page: $page)');
 
-    return search('', sort: sort, page: page);
+    try {
+      await _waitForRateLimit();
+      final response = await _makeRequest(url);
+
+      final listResponse = NhentaiListResponse.fromJson(response.data);
+      _logger.i(
+          'NhentaiApiClient: Fetched ${listResponse.result.length} popular galleries');
+      return listResponse;
+    } catch (e) {
+      _logger.e('NhentaiApiClient: Failed to fetch popular galleries',
+          error: e);
+      rethrow;
+    }
   }
 
   /// Make HTTP request with retry logic
