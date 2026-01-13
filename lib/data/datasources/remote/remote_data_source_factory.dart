@@ -17,19 +17,22 @@ class RemoteDataSourceFactory {
     // Create HTTP client
     final httpClient = Dio();
 
-    // Create dependencies
-    final scraper = NhentaiScraper(logger: log);
-    final cloudflareBypass = CloudflareBypassNoWebView(
-      httpClient: httpClient,
-      logger: log,
-    );
-    final antiDetection = AntiDetection(logger: log);
-
     // Create RemoteConfigService
     final remoteConfigService = RemoteConfigService(
       dio: httpClient,
       logger: log,
     );
+
+    // Create dependencies
+    final scraper = NhentaiScraper(
+      logger: log,
+      remoteConfigService: remoteConfigService,
+    );
+    final cloudflareBypass = CloudflareBypassNoWebView(
+      httpClient: httpClient,
+      logger: log,
+    );
+    final antiDetection = AntiDetection(logger: log);
 
     // Create RequestRateManager
     final rateManager = RequestRateManager(

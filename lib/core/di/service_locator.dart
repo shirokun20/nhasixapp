@@ -137,7 +137,7 @@ void _setupCore() {
 
   // Tag Data Manager
   getIt.registerLazySingleton<TagDataManager>(
-      () => TagDataManager(logger: getIt<Logger>()));
+      () => TagDataManager(logger: getIt<Logger>(), dio: getIt<Dio>()));
 
   // Remote Config Service
   getIt.registerLazySingleton<RemoteConfigService>(() => RemoteConfigService(
@@ -259,6 +259,7 @@ void _setupDataSources() {
   // Nhentai Scraper
   getIt.registerLazySingleton<NhentaiScraper>(() => NhentaiScraper(
         logger: getIt<Logger>(),
+        remoteConfigService: getIt<RemoteConfigService>(),
       ));
 
   // nhentai API Client (for API-first approach)
@@ -445,6 +446,7 @@ void _setupBlocs() {
         userDataRepository: getIt<UserDataRepository>(),
         logger: getIt<Logger>(),
         connectivity: getIt<Connectivity>(),
+        tagDataManager: getIt<TagDataManager>(),
       ));
 
   // Home BLoC
