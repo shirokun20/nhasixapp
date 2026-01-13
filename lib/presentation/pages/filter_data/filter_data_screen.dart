@@ -21,11 +21,13 @@ class FilterDataScreen extends StatefulWidget {
     required this.filterType,
     required this.selectedFilters,
     this.hideOtherTabs = false,
+    this.supportsExclude = true,
   });
 
   final String filterType;
   final List<FilterItem> selectedFilters;
   final bool hideOtherTabs;
+  final bool supportsExclude;
 
   @override
   State<FilterDataScreen> createState() => _FilterDataScreenState();
@@ -383,6 +385,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                   onTap: () => _onFilterItemTap(tag),
                   onInclude: () => _onFilterItemInclude(tag),
                   onExclude: () => _onFilterItemExclude(tag),
+                  supportsExclude: widget.supportsExclude,
                 ),
               );
             },

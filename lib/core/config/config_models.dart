@@ -1,5 +1,4 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
 
 part 'config_models.freezed.dart';
 part 'config_models.g.dart';
@@ -73,7 +72,7 @@ enum SortWidgetType {
 }
 
 @freezed
-class SearchConfig with _$SearchConfig {
+sealed class SearchConfig with _$SearchConfig {
   const factory SearchConfig({
     required SearchMode searchMode,
     required String endpoint,
@@ -91,7 +90,7 @@ class SearchConfig with _$SearchConfig {
 }
 
 @freezed
-class FilterSupportConfig with _$FilterSupportConfig {
+sealed class FilterSupportConfig with _$FilterSupportConfig {
   const factory FilterSupportConfig({
     required List<String> singleSelect,
     required List<String> multiSelect,
@@ -103,7 +102,7 @@ class FilterSupportConfig with _$FilterSupportConfig {
 }
 
 @freezed
-class TextFieldConfig with _$TextFieldConfig {
+sealed class TextFieldConfig with _$TextFieldConfig {
   const factory TextFieldConfig({
     required String name,
     required String label,
@@ -119,7 +118,7 @@ class TextFieldConfig with _$TextFieldConfig {
 }
 
 @freezed
-class RadioGroupConfig with _$RadioGroupConfig {
+sealed class RadioGroupConfig with _$RadioGroupConfig {
   const factory RadioGroupConfig({
     required String name,
     required String label,
@@ -131,7 +130,7 @@ class RadioGroupConfig with _$RadioGroupConfig {
 }
 
 @freezed
-class RadioOptionConfig with _$RadioOptionConfig {
+sealed class RadioOptionConfig with _$RadioOptionConfig {
   const factory RadioOptionConfig({
     required String value,
     required String label,
@@ -143,7 +142,7 @@ class RadioOptionConfig with _$RadioOptionConfig {
 }
 
 @freezed
-class CheckboxGroupConfig with _$CheckboxGroupConfig {
+sealed class CheckboxGroupConfig with _$CheckboxGroupConfig {
   const factory CheckboxGroupConfig({
     required String name,
     required String label,
@@ -159,7 +158,7 @@ class CheckboxGroupConfig with _$CheckboxGroupConfig {
 }
 
 @freezed
-class SortingConfig with _$SortingConfig {
+sealed class SortingConfig with _$SortingConfig {
   const factory SortingConfig({
     required bool allowDynamicReSort,
     required String defaultSort,
@@ -173,7 +172,7 @@ class SortingConfig with _$SortingConfig {
 }
 
 @freezed
-class SortOptionConfig with _$SortOptionConfig {
+sealed class SortOptionConfig with _$SortOptionConfig {
   const factory SortOptionConfig({
     required String value,
     required String apiValue,
@@ -188,7 +187,7 @@ class SortOptionConfig with _$SortOptionConfig {
 }
 
 @freezed
-class SortingMessages with _$SortingMessages {
+sealed class SortingMessages with _$SortingMessages {
   const factory SortingMessages({
     String? dropdownLabel,
     String? noOptionsAvailable,
@@ -203,7 +202,7 @@ class SortingMessages with _$SortingMessages {
 }
 
 @freezed
-class PaginationConfig with _$PaginationConfig {
+sealed class PaginationConfig with _$PaginationConfig {
   const factory PaginationConfig({
     required String urlPattern,
     @Default('page') String paramName,
@@ -423,6 +422,8 @@ class TagSourceConfig {
   final String? format;
   final List<String>? structure;
   final TagMigrationConfig? migration;
+  final Map<String, bool>? multiSelectSupport;
+  final Map<String, String>? mappings;
 
   TagSourceConfig({
     required this.type,
@@ -430,6 +431,8 @@ class TagSourceConfig {
     this.format,
     this.structure,
     this.migration,
+    this.multiSelectSupport,
+    this.mappings,
   });
 
   factory TagSourceConfig.fromJson(Map<String, dynamic> json) =>

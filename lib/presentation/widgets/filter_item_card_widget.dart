@@ -14,6 +14,7 @@ class FilterItemCard extends StatelessWidget {
     required this.onTap,
     required this.onInclude,
     required this.onExclude,
+    this.supportsExclude = true,
   });
 
   final Tag tag;
@@ -22,6 +23,7 @@ class FilterItemCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onInclude;
   final VoidCallback onExclude;
+  final bool supportsExclude;
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +58,8 @@ class FilterItemCard extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: _getTagTypeColor(context).withValues(alpha: 0.2),
+                            color: _getTagTypeColor(context)
+                                .withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -93,7 +96,10 @@ class FilterItemCard extends StatelessWidget {
                     Text(
                       '${tag.count} items',
                       style: TextStyleConst.bodySmall.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.7),
                       ),
                     ),
                   ],
@@ -126,8 +132,14 @@ class FilterItemCard extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: isIncluded
-                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
-                      : Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
+                      ? Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.1)
+                      : Theme.of(context)
+                          .colorScheme
+                          .error
+                          .withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -142,7 +154,9 @@ class FilterItemCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      isIncluded ? AppLocalizations.of(context)!.includeFilter : AppLocalizations.of(context)!.excludeFilter,
+                      isIncluded
+                          ? AppLocalizations.of(context)!.includeFilter
+                          : AppLocalizations.of(context)!.excludeFilter,
                       style: TextStyleConst.label.copyWith(
                         color: isIncluded
                             ? Theme.of(context).colorScheme.primary
@@ -160,7 +174,10 @@ class FilterItemCard extends StatelessWidget {
                 icon: Icon(
                   Icons.close,
                   size: 20,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.7),
                 ),
                 style: IconButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.surface,
@@ -184,26 +201,34 @@ class FilterItemCard extends StatelessWidget {
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 style: IconButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                  backgroundColor: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.1),
                   padding: const EdgeInsets.all(8),
                   minimumSize: const Size(36, 36),
                 ),
               ),
-              const SizedBox(width: 8),
-              // Exclude button
-              IconButton(
-                onPressed: onExclude,
-                icon: Icon(
-                  Icons.remove,
-                  size: 20,
-                  color: Theme.of(context).colorScheme.error,
+              if (supportsExclude) ...[
+                const SizedBox(width: 8),
+                // Exclude button
+                IconButton(
+                  onPressed: onExclude,
+                  icon: Icon(
+                    Icons.remove,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Theme.of(context)
+                        .colorScheme
+                        .error
+                        .withValues(alpha: 0.1),
+                    padding: const EdgeInsets.all(8),
+                    minimumSize: const Size(36, 36),
+                  ),
                 ),
-                style: IconButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
-                  padding: const EdgeInsets.all(8),
-                  minimumSize: const Size(36, 36),
-                ),
-              ),
+              ],
             ],
           );
         }
@@ -236,20 +261,32 @@ class FilterItemCard extends StatelessWidget {
   Color _getTagTypeColor(BuildContext context) {
     // Use theme-adaptive colors that work in both light and dark modes
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     switch (tag.type.toLowerCase()) {
       case 'artist':
-        return isDark ? const Color(0xFFFF6B6B) : const Color(0xFFE53E3E); // Red
+        return isDark
+            ? const Color(0xFFFF6B6B)
+            : const Color(0xFFE53E3E); // Red
       case 'character':
-        return isDark ? const Color(0xFF4ECDC4) : const Color(0xFF319795); // Teal
+        return isDark
+            ? const Color(0xFF4ECDC4)
+            : const Color(0xFF319795); // Teal
       case 'parody':
-        return isDark ? const Color(0xFF45B7D1) : const Color(0xFF3182CE); // Blue
+        return isDark
+            ? const Color(0xFF45B7D1)
+            : const Color(0xFF3182CE); // Blue
       case 'group':
-        return isDark ? const Color(0xFF96CEB4) : const Color(0xFF38A169); // Green
+        return isDark
+            ? const Color(0xFF96CEB4)
+            : const Color(0xFF38A169); // Green
       case 'language':
-        return isDark ? const Color(0xFFFFA726) : const Color(0xFFD69E2E); // Orange
+        return isDark
+            ? const Color(0xFFFFA726)
+            : const Color(0xFFD69E2E); // Orange
       case 'category':
-        return isDark ? const Color(0xFFBA68C8) : const Color(0xFF9F7AEA); // Purple
+        return isDark
+            ? const Color(0xFFBA68C8)
+            : const Color(0xFF9F7AEA); // Purple
       default:
         return Theme.of(context).colorScheme.primary; // Default theme primary
     }
@@ -331,7 +368,9 @@ class FilterItemCardCompact extends StatelessWidget {
     if (isIncluded || isExcluded) {
       return Icon(
         isIncluded ? Icons.add_circle : Icons.remove_circle,
-        color: isIncluded ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.error,
+        color: isIncluded
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.error,
         size: 24,
       );
     } else {

@@ -256,8 +256,6 @@ extension SearchConfigPatterns on SearchConfig {
     switch (_that) {
       case _SearchConfig():
         return $default(_that);
-      case _:
-        throw StateError('Unexpected subclass');
     }
   }
 
@@ -371,8 +369,6 @@ extension SearchConfigPatterns on SearchConfig {
             _that.radioGroups,
             _that.checkboxGroups,
             _that.pagination);
-      case _:
-        throw StateError('Unexpected subclass');
     }
   }
 
@@ -815,8 +811,6 @@ extension FilterSupportConfigPatterns on FilterSupportConfig {
     switch (_that) {
       case _FilterSupportConfig():
         return $default(_that);
-      case _:
-        throw StateError('Unexpected subclass');
     }
   }
 
@@ -898,8 +892,6 @@ extension FilterSupportConfigPatterns on FilterSupportConfig {
       case _FilterSupportConfig():
         return $default(
             _that.singleSelect, _that.multiSelect, _that.supportsExclude);
-      case _:
-        throw StateError('Unexpected subclass');
     }
   }
 
@@ -1221,8 +1213,6 @@ extension TextFieldConfigPatterns on TextFieldConfig {
     switch (_that) {
       case _TextFieldConfig():
         return $default(_that);
-      case _:
-        throw StateError('Unexpected subclass');
     }
   }
 
@@ -1304,8 +1294,6 @@ extension TextFieldConfigPatterns on TextFieldConfig {
       case _TextFieldConfig():
         return $default(_that.name, _that.label, _that.type, _that.placeholder,
             _that.maxLength, _that.min, _that.max);
-      case _:
-        throw StateError('Unexpected subclass');
     }
   }
 
@@ -1611,8 +1599,6 @@ extension RadioGroupConfigPatterns on RadioGroupConfig {
     switch (_that) {
       case _RadioGroupConfig():
         return $default(_that);
-      case _:
-        throw StateError('Unexpected subclass');
     }
   }
 
@@ -1691,8 +1677,6 @@ extension RadioGroupConfigPatterns on RadioGroupConfig {
     switch (_that) {
       case _RadioGroupConfig():
         return $default(_that.name, _that.label, _that.options);
-      case _:
-        throw StateError('Unexpected subclass');
     }
   }
 
@@ -1958,8 +1942,6 @@ extension RadioOptionConfigPatterns on RadioOptionConfig {
     switch (_that) {
       case _RadioOptionConfig():
         return $default(_that);
-      case _:
-        throw StateError('Unexpected subclass');
     }
   }
 
@@ -2035,8 +2017,6 @@ extension RadioOptionConfigPatterns on RadioOptionConfig {
     switch (_that) {
       case _RadioOptionConfig():
         return $default(_that.value, _that.label, _that.isDefault);
-      case _:
-        throw StateError('Unexpected subclass');
     }
   }
 
@@ -2331,8 +2311,6 @@ extension CheckboxGroupConfigPatterns on CheckboxGroupConfig {
     switch (_that) {
       case _CheckboxGroupConfig():
         return $default(_that);
-      case _:
-        throw StateError('Unexpected subclass');
     }
   }
 
@@ -2432,8 +2410,6 @@ extension CheckboxGroupConfigPatterns on CheckboxGroupConfig {
             _that.columns,
             _that.loadFromTags,
             _that.tagType);
-      case _:
-        throw StateError('Unexpected subclass');
     }
   }
 
@@ -2791,8 +2767,6 @@ extension SortingConfigPatterns on SortingConfig {
     switch (_that) {
       case _SortingConfig():
         return $default(_that);
-      case _:
-        throw StateError('Unexpected subclass');
     }
   }
 
@@ -2882,8 +2856,6 @@ extension SortingConfigPatterns on SortingConfig {
       case _SortingConfig():
         return $default(_that.allowDynamicReSort, _that.defaultSort,
             _that.widgetType, _that.options, _that.messages);
-      case _:
-        throw StateError('Unexpected subclass');
     }
   }
 
@@ -3225,8 +3197,6 @@ extension SortOptionConfigPatterns on SortOptionConfig {
     switch (_that) {
       case _SortOptionConfig():
         return $default(_that);
-      case _:
-        throw StateError('Unexpected subclass');
     }
   }
 
@@ -3308,8 +3278,6 @@ extension SortOptionConfigPatterns on SortOptionConfig {
       case _SortOptionConfig():
         return $default(_that.value, _that.apiValue, _that.label,
             _that.displayLabel, _that.icon, _that.isDefault);
-      case _:
-        throw StateError('Unexpected subclass');
     }
   }
 
@@ -3646,8 +3614,6 @@ extension SortingMessagesPatterns on SortingMessages {
     switch (_that) {
       case _SortingMessages():
         return $default(_that);
-      case _:
-        throw StateError('Unexpected subclass');
     }
   }
 
@@ -3749,8 +3715,6 @@ extension SortingMessagesPatterns on SortingMessages {
             _that.readOnlySuffix,
             _that.tapToModifyHint,
             _that.returnToSearchButton);
-      case _:
-        throw StateError('Unexpected subclass');
     }
   }
 
@@ -4060,8 +4024,6 @@ extension PaginationConfigPatterns on PaginationConfig {
     switch (_that) {
       case _PaginationConfig():
         return $default(_that);
-      case _:
-        throw StateError('Unexpected subclass');
     }
   }
 
@@ -4137,8 +4099,6 @@ extension PaginationConfigPatterns on PaginationConfig {
     switch (_that) {
       case _PaginationConfig():
         return $default(_that.urlPattern, _that.paramName);
-      case _:
-        throw StateError('Unexpected subclass');
     }
   }
 

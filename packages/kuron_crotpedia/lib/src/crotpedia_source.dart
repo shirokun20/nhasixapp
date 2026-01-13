@@ -384,6 +384,7 @@ class CrotpediaSource implements ContentSource {
       title: filter.query,
       order: _mapSortOption(filter.sort),
       genres: genres,
+      page: filter.page,
     );
   }
 

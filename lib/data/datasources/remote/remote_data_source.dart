@@ -685,8 +685,12 @@ class RemoteDataSource {
   String _buildSearchUrl(SearchFilter filter) {
     final buffer = StringBuffer('$baseUrl/search/?');
 
+    // Get tag mappings from config
+    final mapping =
+        _remoteConfigService.tagsManifest?.sources['nhentai']?.mappings ?? {};
+
     // Use the full query string from SearchFilter.toQueryString()
-    final queryString = filter.toQueryString();
+    final queryString = filter.toQueryString(prefixMap: mapping);
 
     if (queryString.isNotEmpty) {
       buffer.write(queryString);

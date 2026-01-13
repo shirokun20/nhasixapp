@@ -46,9 +46,7 @@ class _SearchScreenState extends State<SearchScreen> {
   // These are now handled by FilterDataScreen
 
   // Available options for single select
-  List<Tag> _languages = [];
-  List<Tag> _categories = [];
-  List<Tag> _genres = [];
+  final Map<String, List<Tag>> _singleSelectOptions = {};
 
   Timer? _tagSearchTimer;
   Timer? _debounceTimer;
@@ -100,6 +98,27 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  List<String> _getSingleSelectTypes(String sourceId) {
+    if (sourceId == 'nhentai') {
+      // Nhentai uses config to define single select supported types (where multiSelect == false)
+      final config =
+          getIt<RemoteConfigService>().tagsManifest?.sources['nhentai'];
+      if (config?.multiSelectSupport != null) {
+        return config!.multiSelectSupport!.entries
+            .where((e) => e.value == false)
+            .map((e) => e.key)
+            .toList();
+      }
+      // Fallback for nhentai
+      return ['language', 'category'];
+    }
+    // Crotpedia has no single select filters currently in this context, or maybe it does?
+    // Plan says "Crotpedia: ALL filters Multi-select include only"
+    // So distinct single select types might not exist for Crotpedia in the same way.
+    // Return empty for now or check config.
+    return [];
+  }
+
   /// Load tag options for single select filters
   Future<void> _loadTagOptions() async {
     try {
@@ -107,25 +126,20 @@ class _SearchScreenState extends State<SearchScreen> {
       final sourceId =
           context.read<SourceCubit>().state.activeSource?.id ?? 'nhentai';
 
-      // Get tags from TagDataManager (which has downloaded tags from splash)
-      _languages = await _tagDataManager.getTagsByType(
-        'language',
-        limit: 50,
-        source: sourceId,
-      );
-      _categories = await _tagDataManager.getTagsByType(
-        'category',
-        limit: 20,
-        source: sourceId,
-      );
-      _genres = await _tagDataManager.getTagsByType(
-        'genre',
-        limit: 50,
-        source: sourceId,
-      );
+      final types = _getSingleSelectTypes(sourceId);
+      _singleSelectOptions.clear();
+
+      for (final type in types) {
+        final tags = await _tagDataManager.getTagsByType(
+          type,
+          limit: 50,
+          source: sourceId,
+        );
+        _singleSelectOptions[type] = tags;
+      }
 
       Logger().i(
-          'SearchScreen: Loaded ${_languages.length} languages, ${_categories.length} categories, ${_genres.length} genres');
+          'SearchScreen: Loaded single select options for $sourceId: ${_singleSelectOptions.keys.join(", ")}');
       setState(() {});
     } catch (e) {
       Logger().e('Error loading tag options: $e');
@@ -357,6 +371,22 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  bool _supportsExclude(String type) {
+    final activeSource = context.read<SourceCubit>().state.activeSource;
+    final sourceId = activeSource?.id ?? 'nhentai';
+
+    final remoteConfig = getIt<RemoteConfigService>();
+    if (!remoteConfig.supportsTagExclusion(sourceId)) return false;
+
+    final multiSelectSupport =
+        remoteConfig.tagsManifest?.sources[sourceId]?.multiSelectSupport;
+    if (multiSelectSupport != null) {
+      return multiSelectSupport[type] ?? true;
+    }
+
+    return true;
+  }
+
   /// Navigate to FilterDataScreen for advanced filter selection
   Future<void> _navigateToFilterData(
       String filterType, List<FilterItem> selectedFilters) async {
@@ -367,6 +397,7 @@ class _SearchScreenState extends State<SearchScreen> {
         selectedFilters: selectedFilters,
         hideOtherTabs:
             true, // Hide other tabs when navigating from Filter Categories
+        supportsExclude: _supportsExclude(filterType),
       );
 
       // Update filter if result is not null (including empty results for clearing filters)
@@ -599,32 +630,43 @@ class _SearchScreenState extends State<SearchScreen> {
               _buildFilterNavigationButtons(),
               const SizedBox(height: 16),
 
-              // Single select filters (kept in SearchScreen)
-              _buildSingleSelectFilter(
-                  AppLocalizations.of(context)!.languageLabel,
-                  _languages,
-                  _currentFilter.language, (value) {
-                _currentFilter = _currentFilter.copyWith(language: value);
-                _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
-                setState(() {});
-              }),
-              const SizedBox(height: 16),
-              _buildSingleSelectFilter(
-                  AppLocalizations.of(context)!.categoryLabel,
-                  _categories,
-                  _currentFilter.category, (value) {
-                _currentFilter = _currentFilter.copyWith(category: value);
-                _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
-                setState(() {});
-              }),
-              const SizedBox(height: 16),
-              _buildSingleSelectFilter(
-                  'Genre', // TODO: Add to AppLocalizations
-                  _genres,
-                  _currentFilter.genre, (value) {
-                _currentFilter = _currentFilter.copyWith(genre: value);
-                _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
-                setState(() {});
+              // Single select filters
+              ..._singleSelectOptions.entries.map((entry) {
+                final type = entry.key;
+                final options = entry.value;
+
+                String label;
+                String? selectedValue;
+                Function(String?)? onChanged;
+
+                if (type == 'language') {
+                  label = AppLocalizations.of(context)!.languageLabel;
+                  selectedValue = _currentFilter.language;
+                  onChanged = (val) =>
+                      _currentFilter = _currentFilter.copyWith(language: val);
+                } else if (type == 'category') {
+                  label = AppLocalizations.of(context)!.categoryLabel;
+                  selectedValue = _currentFilter.category;
+                  onChanged = (val) =>
+                      _currentFilter = _currentFilter.copyWith(category: val);
+                } else {
+                  return const SizedBox.shrink();
+                }
+
+                return Column(
+                  children: [
+                    _buildSingleSelectFilter(label, options, selectedValue,
+                        (val) {
+                      if (onChanged != null) {
+                        onChanged(val);
+                        _searchBloc
+                            .add(SearchUpdateFilterEvent(_currentFilter));
+                        setState(() {});
+                      }
+                    }),
+                    const SizedBox(height: 16),
+                  ],
+                );
               }),
             ],
           ),

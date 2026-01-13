@@ -267,6 +267,13 @@ TagSourceConfig _$TagSourceConfigFromJson(Map<String, dynamic> json) =>
           ? null
           : TagMigrationConfig.fromJson(
               json['migration'] as Map<String, dynamic>),
+      multiSelectSupport:
+          (json['multiSelectSupport'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, e as bool),
+      ),
+      mappings: (json['mappings'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, e as String),
+      ),
     );
 
 Map<String, dynamic> _$TagSourceConfigToJson(TagSourceConfig instance) =>
@@ -276,6 +283,8 @@ Map<String, dynamic> _$TagSourceConfigToJson(TagSourceConfig instance) =>
       'format': instance.format,
       'structure': instance.structure,
       'migration': instance.migration?.toJson(),
+      'multiSelectSupport': instance.multiSelectSupport,
+      'mappings': instance.mappings,
     };
 
 TagMigrationConfig _$TagMigrationConfigFromJson(Map<String, dynamic> json) =>

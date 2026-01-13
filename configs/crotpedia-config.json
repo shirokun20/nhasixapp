@@ -242,7 +242,8 @@
             "genre": "/baca/genre/{slug}/",
             "search": "/?s={query}",
             "searchPaginated": "/page/{num}/?s={query}",
-            "advancedSearch": "/advanced-search/?title={title}&author={author}&artist={artist}&yearx={year}&status={status}&type={type}&order={order}"
+            "advancedSearch": "/advanced-search/?title={title}...",
+            "advancedSearchPaginated": "/advanced-search/page/{num}/?title={title}..."
         }
     },
     "auth": {

@@ -337,7 +337,6 @@ mixin _$SearchFilter {
   List<FilterItem> get groups;
   String? get language; // Single select only
   String? get category; // Single select only
-  String? get genre; // Single select only
   int get page;
   SortOption get sortBy;
   bool get popular; // Popular filter
@@ -373,7 +372,6 @@ mixin _$SearchFilter {
                 other.language == language) &&
             (identical(other.category, category) ||
                 other.category == category) &&
-            (identical(other.genre, genre) || other.genre == genre) &&
             (identical(other.page, page) || other.page == page) &&
             (identical(other.sortBy, sortBy) || other.sortBy == sortBy) &&
             (identical(other.popular, popular) || other.popular == popular) &&
@@ -398,7 +396,6 @@ mixin _$SearchFilter {
       const DeepCollectionEquality().hash(groups),
       language,
       category,
-      genre,
       page,
       sortBy,
       popular,
@@ -409,7 +406,7 @@ mixin _$SearchFilter {
 
   @override
   String toString() {
-    return 'SearchFilter(query: $query, tags: $tags, artists: $artists, characters: $characters, parodies: $parodies, groups: $groups, language: $language, category: $category, genre: $genre, page: $page, sortBy: $sortBy, popular: $popular, pageCountRange: $pageCountRange, source: $source, highlightMode: $highlightMode, highlightQuery: $highlightQuery)';
+    return 'SearchFilter(query: $query, tags: $tags, artists: $artists, characters: $characters, parodies: $parodies, groups: $groups, language: $language, category: $category, page: $page, sortBy: $sortBy, popular: $popular, pageCountRange: $pageCountRange, source: $source, highlightMode: $highlightMode, highlightQuery: $highlightQuery)';
   }
 }
 
@@ -428,7 +425,6 @@ abstract mixin class $SearchFilterCopyWith<$Res> {
       List<FilterItem> groups,
       String? language,
       String? category,
-      String? genre,
       int page,
       SortOption sortBy,
       bool popular,
@@ -460,7 +456,6 @@ class _$SearchFilterCopyWithImpl<$Res> implements $SearchFilterCopyWith<$Res> {
     Object? groups = null,
     Object? language = freezed,
     Object? category = freezed,
-    Object? genre = freezed,
     Object? page = null,
     Object? sortBy = null,
     Object? popular = null,
@@ -501,10 +496,6 @@ class _$SearchFilterCopyWithImpl<$Res> implements $SearchFilterCopyWith<$Res> {
       category: freezed == category
           ? _self.category
           : category // ignore: cast_nullable_to_non_nullable
-              as String?,
-      genre: freezed == genre
-          ? _self.genre
-          : genre // ignore: cast_nullable_to_non_nullable
               as String?,
       page: null == page
           ? _self.page
@@ -654,7 +645,6 @@ extension SearchFilterPatterns on SearchFilter {
             List<FilterItem> groups,
             String? language,
             String? category,
-            String? genre,
             int page,
             SortOption sortBy,
             bool popular,
@@ -677,7 +667,6 @@ extension SearchFilterPatterns on SearchFilter {
             _that.groups,
             _that.language,
             _that.category,
-            _that.genre,
             _that.page,
             _that.sortBy,
             _that.popular,
@@ -714,7 +703,6 @@ extension SearchFilterPatterns on SearchFilter {
             List<FilterItem> groups,
             String? language,
             String? category,
-            String? genre,
             int page,
             SortOption sortBy,
             bool popular,
@@ -736,7 +724,6 @@ extension SearchFilterPatterns on SearchFilter {
             _that.groups,
             _that.language,
             _that.category,
-            _that.genre,
             _that.page,
             _that.sortBy,
             _that.popular,
@@ -772,7 +759,6 @@ extension SearchFilterPatterns on SearchFilter {
             List<FilterItem> groups,
             String? language,
             String? category,
-            String? genre,
             int page,
             SortOption sortBy,
             bool popular,
@@ -794,7 +780,6 @@ extension SearchFilterPatterns on SearchFilter {
             _that.groups,
             _that.language,
             _that.category,
-            _that.genre,
             _that.page,
             _that.sortBy,
             _that.popular,
@@ -820,7 +805,6 @@ class _SearchFilter implements SearchFilter {
       final List<FilterItem> groups = const [],
       this.language,
       this.category,
-      this.genre,
       this.page = 1,
       this.sortBy = SortOption.newest,
       this.popular = false,
@@ -890,9 +874,6 @@ class _SearchFilter implements SearchFilter {
   final String? category;
 // Single select only
   @override
-  final String? genre;
-// Single select only
-  @override
   @JsonKey()
   final int page;
   @override
@@ -946,7 +927,6 @@ class _SearchFilter implements SearchFilter {
                 other.language == language) &&
             (identical(other.category, category) ||
                 other.category == category) &&
-            (identical(other.genre, genre) || other.genre == genre) &&
             (identical(other.page, page) || other.page == page) &&
             (identical(other.sortBy, sortBy) || other.sortBy == sortBy) &&
             (identical(other.popular, popular) || other.popular == popular) &&
@@ -971,7 +951,6 @@ class _SearchFilter implements SearchFilter {
       const DeepCollectionEquality().hash(_groups),
       language,
       category,
-      genre,
       page,
       sortBy,
       popular,
@@ -982,7 +961,7 @@ class _SearchFilter implements SearchFilter {
 
   @override
   String toString() {
-    return 'SearchFilter(query: $query, tags: $tags, artists: $artists, characters: $characters, parodies: $parodies, groups: $groups, language: $language, category: $category, genre: $genre, page: $page, sortBy: $sortBy, popular: $popular, pageCountRange: $pageCountRange, source: $source, highlightMode: $highlightMode, highlightQuery: $highlightQuery)';
+    return 'SearchFilter(query: $query, tags: $tags, artists: $artists, characters: $characters, parodies: $parodies, groups: $groups, language: $language, category: $category, page: $page, sortBy: $sortBy, popular: $popular, pageCountRange: $pageCountRange, source: $source, highlightMode: $highlightMode, highlightQuery: $highlightQuery)';
   }
 }
 
@@ -1003,7 +982,6 @@ abstract mixin class _$SearchFilterCopyWith<$Res>
       List<FilterItem> groups,
       String? language,
       String? category,
-      String? genre,
       int page,
       SortOption sortBy,
       bool popular,
@@ -1037,7 +1015,6 @@ class __$SearchFilterCopyWithImpl<$Res>
     Object? groups = null,
     Object? language = freezed,
     Object? category = freezed,
-    Object? genre = freezed,
     Object? page = null,
     Object? sortBy = null,
     Object? popular = null,
@@ -1078,10 +1055,6 @@ class __$SearchFilterCopyWithImpl<$Res>
       category: freezed == category
           ? _self.category
           : category // ignore: cast_nullable_to_non_nullable
-              as String?,
-      genre: freezed == genre
-          ? _self.genre
-          : genre // ignore: cast_nullable_to_non_nullable
               as String?,
       page: null == page
           ? _self.page

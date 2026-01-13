@@ -41,7 +41,6 @@ abstract class SearchFilter with _$SearchFilter {
     @Default([]) List<FilterItem> groups,
     String? language, // Single select only
     String? category, // Single select only
-    String? genre, // Single select only
     @Default(1) int page,
     @Default(SortOption.newest) SortOption sortBy,
     @Default(false) bool popular, // Popular filter
@@ -70,7 +69,6 @@ extension SearchFilterExtension on SearchFilter {
         groups.isEmpty &&
         language == null &&
         category == null &&
-        genre == null &&
         !popular &&
         pageCountRange == null &&
         !highlightMode &&
@@ -91,7 +89,6 @@ extension SearchFilterExtension on SearchFilter {
     if (groups.isNotEmpty) count++;
     if (language != null) count++;
     if (category != null) count++;
-    if (genre != null) count++;
     if (popular) count++;
     if (pageCountRange != null) count++;
     if (highlightMode) count++;
@@ -240,22 +237,22 @@ extension SearchFilterExtension on SearchFilter {
   }
 
   /// Convert to query string for URL (using SearchQueryBuilder)
-  String toQueryString() {
-    return _buildUrlQuery();
+  String toQueryString({Map<String, String>? prefixMap}) {
+    return _buildUrlQuery(prefixMap: prefixMap);
   }
 
   /// Build query string according to Matrix Filter Support rules
   /// Output format: "+-tag:"a1"+-artist:"b1"+language:"english""
-  String buildQueryString() {
-    return _buildQuery();
+  String buildQueryString({Map<String, String>? prefixMap}) {
+    return _buildQuery(prefixMap: prefixMap);
   }
 
   /// Build URL query string with all parameters
-  String _buildUrlQuery() {
+  String _buildUrlQuery({Map<String, String>? prefixMap}) {
     final params = <String>[];
 
     // Build main query part using SearchQueryBuilder
-    final queryString = _buildQuery();
+    final queryString = _buildQuery(prefixMap: prefixMap);
     if (queryString.isNotEmpty) {
       params.add('q=${Uri.encodeComponent(queryString)}');
     }
@@ -272,8 +269,20 @@ extension SearchFilterExtension on SearchFilter {
   }
 
   /// Build query string from SearchFilter according to Matrix Filter Support rules
-  String _buildQuery() {
+  String _buildQuery({Map<String, String>? prefixMap}) {
     final queryParts = <String>[];
+
+    // Default prefixes if not provided
+    final pm = prefixMap ??
+        {
+          'tag': 'tag',
+          'artist': 'artist',
+          'character': 'character',
+          'parody': 'parody',
+          'group': 'group',
+          'language': 'language',
+          'category': 'category',
+        };
 
     // Add text query if present (no prefix)
     if (query != null && query!.isNotEmpty) {
@@ -282,40 +291,40 @@ extension SearchFilterExtension on SearchFilter {
 
     // Add tags with include/exclude (multiple allowed)
     for (final tag in tags) {
-      queryParts.add('${tag.prefix}tag:"${tag.value}"');
+      queryParts.add('${tag.prefix}${pm['tag'] ?? 'tag'}:"${tag.value}"');
     }
 
     // Add artists with include/exclude (multiple allowed)
     for (final artist in artists) {
-      queryParts.add('${artist.prefix}artist:"${artist.value}"');
+      queryParts
+          .add('${artist.prefix}${pm['artist'] ?? 'artist'}:"${artist.value}"');
     }
 
     // Add characters with include/exclude (multiple allowed)
     for (final character in characters) {
-      queryParts.add('${character.prefix}character:"${character.value}"');
+      queryParts.add(
+          '${character.prefix}${pm['character'] ?? 'character'}:"${character.value}"');
     }
 
     // Add parodies with include/exclude (multiple allowed)
     for (final parody in parodies) {
-      queryParts.add('${parody.prefix}parody:"${parody.value}"');
+      queryParts
+          .add('${parody.prefix}${pm['parody'] ?? 'parody'}:"${parody.value}"');
     }
 
     // Add groups with include/exclude (multiple allowed)
     for (final group in groups) {
-      queryParts.add('${group.prefix}group:"${group.value}"');
+      queryParts
+          .add('${group.prefix}${pm['group'] ?? 'group'}:"${group.value}"');
     }
 
     // Add single select filters (no prefix, only one allowed)
     if (language != null) {
-      queryParts.add('language:"$language"');
+      queryParts.add('${pm['language'] ?? 'language'}:"$language"');
     }
 
     if (category != null) {
-      queryParts.add('category:"$category"');
-    }
-
-    if (genre != null) {
-      queryParts.add('genre:"$genre"');
+      queryParts.add('${pm['category'] ?? 'category'}:"$category"');
     }
 
     return queryParts.join(' ');
@@ -332,7 +341,6 @@ extension SearchFilterExtension on SearchFilter {
       'groups': groups.map((item) => item.toJson()).toList(),
       'language': language,
       'category': category,
-      'genre': genre,
       'page': page,
       'sortBy': sortBy.name,
       'popular': popular,
