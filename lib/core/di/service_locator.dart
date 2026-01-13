@@ -300,7 +300,12 @@ void _setupDataSources() {
       ));
 
   // Crotpedia Scraper
-  getIt.registerLazySingleton<CrotpediaScraper>(() => CrotpediaScraper());
+  getIt.registerLazySingleton<CrotpediaScraper>(() => CrotpediaScraper(
+        customSelectors: getIt<RemoteConfigService>()
+            .getConfig('crotpedia')
+            ?.scraper
+            ?.selectors,
+      ));
 
   // Crotpedia Source
   getIt.registerLazySingleton<CrotpediaSource>(() => CrotpediaSource(

@@ -27,6 +27,7 @@ class SourceConfig {
   final UiConfig? ui;
   final AuthConfig? auth;
   final TagConfig? tags;
+  final Map<String, String>? typeMapping; // Map type code to display name
 
   SourceConfig({
     required this.source,
@@ -40,6 +41,7 @@ class SourceConfig {
     this.ui,
     this.auth,
     this.tags,
+    this.typeMapping,
   });
 
   factory SourceConfig.fromJson(Map<String, dynamic> json) =>

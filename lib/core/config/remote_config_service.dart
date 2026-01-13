@@ -218,7 +218,6 @@ class RemoteConfigService {
   SourceConfig? getConfig(String source) {
     if (source == 'nhentai') return _nhentaiConfig;
     if (source == 'crotpedia') return _crotpediaConfig;
-    if (source == 'crotpedia') return _crotpediaConfig;
     return null;
   }
 

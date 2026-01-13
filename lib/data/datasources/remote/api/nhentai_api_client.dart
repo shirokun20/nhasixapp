@@ -59,17 +59,20 @@ class NhentaiApiClient {
     Dio? dio,
     required RequestRateManager rateManager,
     required RemoteConfigService remoteConfigService,
-  })  : _dio = dio ?? _createDefaultDio(),
+  })  : _dio = dio ??
+            _createDefaultDio(
+              timeout: remoteConfigService.getConfig('nhentai')?.api?.timeout,
+            ),
         _rateManager = rateManager,
         _remoteConfigService = remoteConfigService,
         _antiDetection = AntiDetection();
 
   /// Create default Dio instance with proper configuration
-  static Dio _createDefaultDio() {
+  static Dio _createDefaultDio({int? timeout}) {
     final antiDetection = AntiDetection();
     final dio = Dio(BaseOptions(
-      connectTimeout: Duration(milliseconds: ApiConfig.apiTimeout),
-      receiveTimeout: Duration(milliseconds: ApiConfig.apiTimeout),
+      connectTimeout: Duration(milliseconds: timeout ?? ApiConfig.apiTimeout),
+      receiveTimeout: Duration(milliseconds: timeout ?? ApiConfig.apiTimeout),
       headers: antiDetection.getRandomHeaders(),
     ));
 
@@ -239,7 +242,14 @@ class NhentaiApiClient {
     int attempts = 0;
     NhentaiApiException? lastException;
 
-    while (attempts < ApiConfig.maxRetryAttempts) {
+    // Get retry config from remote config service
+    final retryConfig =
+        _remoteConfigService.getConfig('nhentai')?.network?.retry;
+    final maxAttempts = retryConfig?.maxAttempts ?? ApiConfig.maxRetryAttempts;
+    final baseDelayMs = retryConfig?.delayMs ?? ApiConfig.retryDelayMs;
+    final exponentialBackoff = retryConfig?.exponentialBackoff ?? true;
+
+    while (attempts < maxAttempts) {
       attempts++;
 
       try {
@@ -260,8 +270,7 @@ class NhentaiApiClient {
       } on DioException catch (e) {
         lastException = _handleDioException(e, url);
 
-        if (!lastException.shouldRetry ||
-            attempts >= ApiConfig.maxRetryAttempts) {
+        if (!lastException.shouldRetry || attempts >= maxAttempts) {
           throw lastException;
         }
 
@@ -271,9 +280,11 @@ class NhentaiApiClient {
         }
 
         _logger.w(
-            'NhentaiApiClient: Retry attempt $attempts/${ApiConfig.maxRetryAttempts} for $url');
-        await Future.delayed(
-            Duration(milliseconds: ApiConfig.retryDelayMs * attempts));
+            'NhentaiApiClient: Retry attempt $attempts/$maxAttempts for $url');
+
+        // Calculate delay with optional exponential backoff
+        final delay = exponentialBackoff ? baseDelayMs * attempts : baseDelayMs;
+        await Future.delayed(Duration(milliseconds: delay));
       }
     }
 

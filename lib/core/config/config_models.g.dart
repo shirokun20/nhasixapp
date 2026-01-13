@@ -47,6 +47,9 @@ SourceConfig _$SourceConfigFromJson(Map<String, dynamic> json) => SourceConfig(
       tags: json['tags'] == null
           ? null
           : TagConfig.fromJson(json['tags'] as Map<String, dynamic>),
+      typeMapping: (json['typeMapping'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, e as String),
+      ),
     );
 
 Map<String, dynamic> _$SourceConfigToJson(SourceConfig instance) =>
@@ -62,6 +65,7 @@ Map<String, dynamic> _$SourceConfigToJson(SourceConfig instance) =>
       'ui': instance.ui?.toJson(),
       'auth': instance.auth?.toJson(),
       'tags': instance.tags?.toJson(),
+      'typeMapping': instance.typeMapping,
     };
 
 ApiConfig _$ApiConfigFromJson(Map<String, dynamic> json) => ApiConfig(
