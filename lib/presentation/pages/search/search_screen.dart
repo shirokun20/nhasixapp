@@ -9,8 +9,8 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/utils/responsive_grid_delegate.dart';
+import 'package:nhasixapp/core/utils/tag_data_manager.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
-import 'package:nhasixapp/data/datasources/remote/tag_resolver.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
@@ -34,7 +34,7 @@ class _SearchScreenState extends State<SearchScreen> {
   late final SearchBloc _searchBloc;
   late final TextEditingController _searchController;
   late final FocusNode _searchFocusNode;
-  late final TagResolver _tagResolver;
+  late final TagDataManager _tagDataManager;
 
   // UI state
   bool _showAdvancedFilters = false;
@@ -48,6 +48,7 @@ class _SearchScreenState extends State<SearchScreen> {
   // Available options for single select
   List<Tag> _languages = [];
   List<Tag> _categories = [];
+  List<Tag> _genres = [];
 
   Timer? _tagSearchTimer;
   Timer? _debounceTimer;
@@ -60,7 +61,7 @@ class _SearchScreenState extends State<SearchScreen> {
     _searchController = TextEditingController();
     _searchFocusNode = FocusNode();
     _searchBloc = getIt<SearchBloc>();
-    _tagResolver = TagResolver();
+    _tagDataManager = getIt<TagDataManager>();
 
     _initializeSearch();
     _loadTagOptions();
@@ -102,8 +103,29 @@ class _SearchScreenState extends State<SearchScreen> {
   /// Load tag options for single select filters
   Future<void> _loadTagOptions() async {
     try {
-      _languages = await _tagResolver.getTagsByType('language', limit: 50);
-      _categories = await _tagResolver.getTagsByType('category', limit: 20);
+      // Get active source
+      final sourceId =
+          context.read<SourceCubit>().state.activeSource?.id ?? 'nhentai';
+
+      // Get tags from TagDataManager (which has downloaded tags from splash)
+      _languages = await _tagDataManager.getTagsByType(
+        'language',
+        limit: 50,
+        source: sourceId,
+      );
+      _categories = await _tagDataManager.getTagsByType(
+        'category',
+        limit: 20,
+        source: sourceId,
+      );
+      _genres = await _tagDataManager.getTagsByType(
+        'genre',
+        limit: 50,
+        source: sourceId,
+      );
+
+      Logger().i(
+          'SearchScreen: Loaded ${_languages.length} languages, ${_categories.length} categories, ${_genres.length} genres');
       setState(() {});
     } catch (e) {
       Logger().e('Error loading tag options: $e');
@@ -391,19 +413,30 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _searchBloc,
-      child: AppScaffoldWithOffline(
-        title: AppLocalizations.of(context)!.searchTitle,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        appBar: _buildAppBar(),
-        body: Column(
-          children: [
-            _buildSearchHeader(),
-            if (_showAdvancedFilters) _buildAdvancedFilters(),
-            Expanded(child: _buildSearchResults()),
-            _buildSearchButton(),
-          ],
+    return MultiBlocListener(
+      listeners: [
+        // Listen to source changes to reload tag options
+        BlocListener<SourceCubit, SourceState>(
+          listener: (context, state) {
+            // Reload tags when source changes
+            _loadTagOptions();
+          },
+        ),
+      ],
+      child: BlocProvider.value(
+        value: _searchBloc,
+        child: AppScaffoldWithOffline(
+          title: AppLocalizations.of(context)!.searchTitle,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          appBar: _buildAppBar(),
+          body: Column(
+            children: [
+              _buildSearchHeader(),
+              if (_showAdvancedFilters) _buildAdvancedFilters(),
+              Expanded(child: _buildSearchResults()),
+              _buildSearchButton(),
+            ],
+          ),
         ),
       ),
     );
@@ -581,6 +614,15 @@ class _SearchScreenState extends State<SearchScreen> {
                   _categories,
                   _currentFilter.category, (value) {
                 _currentFilter = _currentFilter.copyWith(category: value);
+                _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
+                setState(() {});
+              }),
+              const SizedBox(height: 16),
+              _buildSingleSelectFilter(
+                  'Genre', // TODO: Add to AppLocalizations
+                  _genres,
+                  _currentFilter.genre, (value) {
+                _currentFilter = _currentFilter.copyWith(genre: value);
                 _searchBloc.add(SearchUpdateFilterEvent(_currentFilter));
                 setState(() {});
               }),

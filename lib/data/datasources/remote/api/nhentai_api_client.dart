@@ -342,7 +342,7 @@ class NhentaiApiClient {
     try {
       await _waitForRateLimit();
       final response = await _dio.get(
-        ApiConfig.getAllGalleriesEndpoint(page: 1),
+        _getAllGalleriesEndpoint(page: 1),
         options: Options(
           receiveTimeout: const Duration(seconds: 10),
         ),

@@ -186,9 +186,20 @@ class RemoteConfigService {
     String version,
   ) async {
     try {
-      final response = await _dio.get(url);
+      final response = await _dio.get(
+        url,
+        options: Options(responseType: ResponseType.json),
+      );
+
       if (response.statusCode == 200 && response.data != null) {
-        final data = response.data as Map<String, dynamic>;
+        // Handle both Map and String responses
+        final Map<String, dynamic> data;
+        if (response.data is String) {
+          data = jsonDecode(response.data as String) as Map<String, dynamic>;
+        } else {
+          data = response.data as Map<String, dynamic>;
+        }
+
         updateConfig(data);
         await prefs.setString(cacheKey, jsonEncode(data));
         await prefs.setString('${cacheKey}_version', version);

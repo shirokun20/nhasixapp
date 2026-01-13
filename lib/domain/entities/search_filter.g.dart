@@ -42,6 +42,7 @@ _SearchFilter _$SearchFilterFromJson(Map<String, dynamic> json) =>
           const [],
       language: json['language'] as String?,
       category: json['category'] as String?,
+      genre: json['genre'] as String?,
       page: (json['page'] as num?)?.toInt() ?? 1,
       sortBy: $enumDecodeNullable(_$SortOptionEnumMap, json['sortBy']) ??
           SortOption.newest,
@@ -65,6 +66,7 @@ Map<String, dynamic> _$SearchFilterToJson(_SearchFilter instance) =>
       'groups': instance.groups,
       'language': instance.language,
       'category': instance.category,
+      'genre': instance.genre,
       'page': instance.page,
       'sortBy': _$SortOptionEnumMap[instance.sortBy]!,
       'popular': instance.popular,

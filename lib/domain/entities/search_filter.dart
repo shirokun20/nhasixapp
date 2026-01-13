@@ -41,6 +41,7 @@ abstract class SearchFilter with _$SearchFilter {
     @Default([]) List<FilterItem> groups,
     String? language, // Single select only
     String? category, // Single select only
+    String? genre, // Single select only
     @Default(1) int page,
     @Default(SortOption.newest) SortOption sortBy,
     @Default(false) bool popular, // Popular filter
@@ -69,6 +70,7 @@ extension SearchFilterExtension on SearchFilter {
         groups.isEmpty &&
         language == null &&
         category == null &&
+        genre == null &&
         !popular &&
         pageCountRange == null &&
         !highlightMode &&
@@ -89,6 +91,7 @@ extension SearchFilterExtension on SearchFilter {
     if (groups.isNotEmpty) count++;
     if (language != null) count++;
     if (category != null) count++;
+    if (genre != null) count++;
     if (popular) count++;
     if (pageCountRange != null) count++;
     if (highlightMode) count++;
@@ -311,6 +314,10 @@ extension SearchFilterExtension on SearchFilter {
       queryParts.add('category:"$category"');
     }
 
+    if (genre != null) {
+      queryParts.add('genre:"$genre"');
+    }
+
     return queryParts.join(' ');
   }
 
@@ -325,6 +332,7 @@ extension SearchFilterExtension on SearchFilter {
       'groups': groups.map((item) => item.toJson()).toList(),
       'language': language,
       'category': category,
+      'genre': genre,
       'page': page,
       'sortBy': sortBy.name,
       'popular': popular,

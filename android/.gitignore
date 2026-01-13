@@ -11,3 +11,12 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# Keystore files
+*.jks
+**/*.jks
+*.keystore
+**/*.keystore
+key.properties
+**/*.properties
+keystore_base64.txt

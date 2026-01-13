@@ -161,20 +161,26 @@ class TagDataManager {
 
   Future<void> _loadFromAssets(String source) async {
     try {
-      // Determine asset path based on source
-      String assetPath;
-      if (source == 'nhentai') {
-        assetPath =
-            'configs/tags/tags_nhentai.json'; // New location? or assets/??
-        // Wait, bundles are in assets/. Using fallback path.
-        assetPath = 'assets/json/tags.json'; // Legacy fallback
-      } else if (source == 'crotpedia') {
-        assetPath = 'assets/json/tags_crotpedia.json'; // Legacy fallback only
-      } else {
+      // Get asset path from remote config manifest
+      final manifest = getIt<RemoteConfigService>().tagsManifest;
+      final sourceConfig = manifest?.sources[source];
+
+      if (sourceConfig == null) {
+        _logger.d('TagDataManager: No config found for source $source');
         return;
       }
 
-      // Check if asset exists (try catch on loadString)
+      // Only try to load from assets if type is "bundled" and assetPath is provided
+      if (sourceConfig.type != 'bundled' || sourceConfig.assetPath == null) {
+        _logger.d(
+            'TagDataManager: Source $source is not bundled, skipping asset load');
+        return;
+      }
+
+      final assetPath = sourceConfig.assetPath!;
+      _logger.d('TagDataManager: Loading tags from asset: $assetPath');
+
+      // Try to load from asset
       try {
         final String jsonString = await rootBundle.loadString(assetPath);
         await _parseAndCacheTags(
@@ -182,8 +188,12 @@ class TagDataManager {
           source: 'assets',
           tagSource: source,
         );
-      } catch (_) {
-        // Asset likely deleted (Remote-First), ignore.
+        _logger.i(
+            'TagDataManager: Successfully loaded tags from asset for $source');
+      } catch (e) {
+        // Asset doesn't exist - this is OK for remote-first sources
+        _logger
+            .d('TagDataManager: Asset not found for $source, will use remote');
       }
     } catch (e) {
       _logger.w('TagDataManager: Failed to load asset for $source', error: e);

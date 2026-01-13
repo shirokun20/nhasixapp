@@ -293,6 +293,7 @@ class TagMigrationConfig {
 @JsonSerializable()
 class ConfigVersion {
   final String version;
+  @JsonKey(name: 'minimumAppVersion')
   final String? minAppVersion;
   final Map<String, ConfigManifest> configs;
 
@@ -310,6 +311,7 @@ class ConfigVersion {
 @JsonSerializable()
 class ConfigManifest {
   final String version;
+  @JsonKey(name: 'url')
   final String file;
 
   ConfigManifest({

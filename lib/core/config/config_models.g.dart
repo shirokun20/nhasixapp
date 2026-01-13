@@ -293,7 +293,7 @@ Map<String, dynamic> _$TagMigrationConfigToJson(TagMigrationConfig instance) =>
 ConfigVersion _$ConfigVersionFromJson(Map<String, dynamic> json) =>
     ConfigVersion(
       version: json['version'] as String,
-      minAppVersion: json['minAppVersion'] as String?,
+      minAppVersion: json['minimumAppVersion'] as String?,
       configs: (json['configs'] as Map<String, dynamic>).map(
         (k, e) =>
             MapEntry(k, ConfigManifest.fromJson(e as Map<String, dynamic>)),
@@ -303,20 +303,20 @@ ConfigVersion _$ConfigVersionFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$ConfigVersionToJson(ConfigVersion instance) =>
     <String, dynamic>{
       'version': instance.version,
-      'minAppVersion': instance.minAppVersion,
+      'minimumAppVersion': instance.minAppVersion,
       'configs': instance.configs,
     };
 
 ConfigManifest _$ConfigManifestFromJson(Map<String, dynamic> json) =>
     ConfigManifest(
       version: json['version'] as String,
-      file: json['file'] as String,
+      file: json['url'] as String,
     );
 
 Map<String, dynamic> _$ConfigManifestToJson(ConfigManifest instance) =>
     <String, dynamic>{
       'version': instance.version,
-      'file': instance.file,
+      'url': instance.file,
     };
 
 AppConfig _$AppConfigFromJson(Map<String, dynamic> json) => AppConfig(
