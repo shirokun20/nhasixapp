@@ -1,3 +1,4 @@
+import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 
 import '../../../core/di/service_locator.dart';
@@ -20,6 +21,7 @@ class DetailCubitFactory {
       userDataRepository: getIt<UserDataRepository>(),
       imageMetadataService: getIt<ImageMetadataService>(),
       contentRepository: getIt<ContentRepository>(),
+      contentSourceRegistry: getIt<ContentSourceRegistry>(),
       logger: getIt<Logger>(),
     );
   }

@@ -12,16 +12,20 @@ import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/core/utils/app_state_manager.dart';
+import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
+import 'package:kuron_core/kuron_core.dart';
 import '../../widgets/download_button_widget.dart';
 import '../../widgets/progressive_image_widget.dart';
 import '../../widgets/shimmer_loading_widgets.dart';
 
 class DetailScreen extends StatefulWidget {
   final String contentId;
+  final String? sourceId;
 
   const DetailScreen({
     super.key,
     required this.contentId,
+    this.sourceId,
   });
 
   @override
@@ -38,6 +42,21 @@ class _DetailScreenState extends State<DetailScreen> {
   void initState() {
     super.initState();
     _detailCubit = getIt<DetailCubit>();
+
+    // Check if we need to switch source first
+    if (widget.sourceId != null) {
+      final sourceCubit = context.read<SourceCubit>();
+      final currentSourceId = sourceCubit.state.activeSource?.id;
+
+      if (currentSourceId != null &&
+          currentSourceId != widget.sourceId &&
+          // Don't switch if IDs are same (redundant check but safe)
+          currentSourceId != widget.sourceId) {
+        Logger().i(
+            'DetailScreen: Switching source from $currentSourceId to ${widget.sourceId}');
+        sourceCubit.switchSource(widget.sourceId!);
+      }
+    }
 
     // Load content detail first, then load related content separately
     _loadContentAndRelated();
@@ -68,7 +87,8 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   /// Navigate to tag browsing mode (SIMPLIFIED routing)
-  void _searchByTag(String tagName) async {
+  /// Navigate to tag browsing mode (SIMPLIFIED routing)
+  void _searchByTag(String tagName, {String? tagId}) async {
     // Prevent multiple simultaneous navigation attempts
     if (_isNavigating) {
       Logger()
@@ -79,9 +99,25 @@ class _DetailScreenState extends State<DetailScreen> {
     try {
       _isNavigating = true;
 
+      String query = tagName;
+
+      // SPECIAL HANDLING FOR CROTPEDIA GENRES
+      // Crotpedia supports specific genre browsing via /baca/genre/slug/
+      // We pass 'genre:slug' as query, which CrotpediaSource intercepts.
+      if (widget.contentId.contains(SourceType.crotpedia.id) ||
+          (context.read<DetailCubit>().state is DetailLoaded &&
+              (context.read<DetailCubit>().state as DetailLoaded)
+                      .content
+                      .sourceId ==
+                  SourceType.crotpedia.id)) {
+        // Use tagId (slug) if available, otherwise fallback to name
+        final slug = tagId ?? tagName.toLowerCase().replaceAll(' ', '-');
+        query = 'genre:$slug';
+      }
+
       // Navigate to ContentByTagScreen
       if (mounted) {
-        AppRouter.goToContentByTag(context, tagName);
+        AppRouter.goToContentByTag(context, query);
       } else {
         Logger().w("Widget unmounted before navigation for tag: $tagName");
       }
@@ -124,18 +160,84 @@ class _DetailScreenState extends State<DetailScreen> {
             builder: (context, offlineSnapshot) {
               final isOfflineMode = offlineSnapshot.data ?? false;
 
-              return BlocBuilder<DetailCubit, DetailState>(
-                builder: (context, state) {
-                  if (state is DetailLoading) {
-                    return _buildLoadingState(context);
-                  } else if (state is DetailLoaded) {
-                    return _buildDetailContent(state, isOfflineMode);
-                  } else if (state is DetailError) {
-                    return _buildErrorState(state);
+              return BlocListener<DetailCubit, DetailState>(
+                listener: (context, state) {
+                  if (state is DetailReaderReady) {
+                    _readContent(state.chapterContent,
+                        forceStartFromBeginning: true);
+                    context.read<DetailCubit>().resetToLoaded();
+                  } else if (state is DetailActionFailure) {
+                    if (state.needsLogin) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(AppLocalizations.of(context)!
+                              .loginRequiredForAction),
+                          behavior: SnackBarBehavior.floating,
+                          action: SnackBarAction(
+                            label: AppLocalizations.of(context)!.login,
+                            onPressed: () {
+                              context.push('/crotpedia-login');
+                            },
+                          ),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(state.message),
+                          backgroundColor: Theme.of(context).colorScheme.error,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                    context.read<DetailCubit>().resetToLoaded();
+                  } else if (state is DetailNeedsLogin) {
+                    // Legacy support or fallback
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Login required for this action'),
+                        action: SnackBarAction(
+                          label: 'Login',
+                          onPressed: () {
+                            context.push('/crotpedia-login');
+                          },
+                        ),
+                      ),
+                    );
                   }
 
-                  return const SizedBox.shrink();
+                  if (state is DetailLoaded &&
+                      state.content.sourceId == SourceType.crotpedia.id &&
+                      state.isFavorited &&
+                      !state.isTogglingFavorite) {
+                    // This is where we might check if user was prompted to login
+                    // and came back? Not strictly needed if Cubit handles it.
+                  }
                 },
+                child: BlocBuilder<DetailCubit, DetailState>(
+                  builder: (context, state) {
+                    if (state is DetailLoading) {
+                      return _buildLoadingState(context);
+                    } else if (state is DetailLoaded) {
+                      return Stack(
+                        children: [
+                          _buildDetailContent(state, isOfflineMode),
+                          if (state is DetailOpeningChapter)
+                            Container(
+                              color: Colors.black.withValues(alpha: 0.5),
+                              child: const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                        ],
+                      );
+                    } else if (state is DetailError) {
+                      return _buildErrorState(state);
+                    }
+
+                    return const SizedBox.shrink();
+                  },
+                ),
               );
             },
           ),
@@ -474,6 +576,7 @@ class _DetailScreenState extends State<DetailScreen> {
           const SizedBox(height: 16),
 
           // Metadata rows with enhanced styling
+          _buildMetadataRow('Source', content.source, Icons.dns_rounded),
           _buildMetadataRow(
               AppLocalizations.of(context)!.idLabel, content.id, Icons.tag),
           _buildMetadataRow(AppLocalizations.of(context)!.pagesLabel,
@@ -564,7 +667,8 @@ class _DetailScreenState extends State<DetailScreen> {
           runSpacing: 8,
           children: content.tags.map((tag) {
             return GestureDetector(
-              onTap: () => _searchByTag(tag.name),
+              onTap: () =>
+                  _searchByTag(tag.name, tagId: tag.slug ?? tag.id.toString()),
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -606,6 +710,11 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Widget _buildActionButtons(Content content) {
+    // If content has chapters, show chapter list instead of Read/Download buttons
+    if (content.chapters != null && content.chapters!.isNotEmpty) {
+      return _buildChapterList(content);
+    }
+
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -659,6 +768,106 @@ class _DetailScreenState extends State<DetailScreen> {
                 showProgress: true,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChapterList(Content content) {
+    final chapters = content.chapters!;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.list, color: Theme.of(context).colorScheme.onSurface),
+              const SizedBox(width: 8),
+              Text(
+                'Chapters (${chapters.length})',
+                style: TextStyleConst.headingMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: chapters.length,
+            separatorBuilder: (context, index) =>
+                const Divider(height: 1, indent: 16, endIndent: 16),
+            itemBuilder: (context, index) {
+              final chapter = chapters[index];
+
+              // Create a Content object for the chapter to use with DownloadButtonWidget
+              final chapterContent = Content(
+                id: chapter.id,
+                title: '${content.title} - ${chapter.title}',
+                coverUrl: content.coverUrl,
+                uploadDate: chapter.uploadDate ?? DateTime.now(),
+                language: content.language,
+                pageCount: 0,
+                imageUrls: const [],
+                sourceId: content.sourceId,
+                relatedContent: const [],
+                tags: content.tags,
+                artists: content.artists,
+                groups: content.groups,
+                characters: content.characters,
+                parodies: content.parodies,
+                favorites: 0,
+              );
+
+              return ListTile(
+                title: Text(
+                  chapter.title,
+                  style: TextStyleConst.bodyLarge.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                subtitle: chapter.uploadDate != null
+                    ? Text(
+                        _formatDate(chapter.uploadDate!),
+                        style: TextStyleConst.bodySmall.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      )
+                    : null,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: DownloadButtonWidget(
+                        content: chapterContent,
+                        size: DownloadButtonSize.small,
+                        showText: false,
+                        showProgress: true,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.chevron_right,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+                onTap: () => _detailCubit.openChapter(chapter),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              );
+            },
           ),
         ],
       ),
@@ -1089,10 +1298,36 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
+  /// Get active content source from SourceCubit
+  String _getActiveSourceId() {
+    final sourceState = context.read<SourceCubit>().state;
+    return sourceState.activeSource?.id ?? 'nhentai';
+  }
+
+  /// Get base URL for active source
+  String _getSourceBaseUrl() {
+    final sourceState = context.read<SourceCubit>().state;
+    return sourceState.activeSource?.baseUrl ?? 'https://nhentai.net';
+  }
+
+  /// Build source-aware content URL
+  String _buildContentUrl(String contentId) {
+    final baseUrl = _getSourceBaseUrl();
+    final sourceId = _getActiveSourceId();
+
+    if (sourceId == SourceType.crotpedia.id) {
+      // Crotpedia uses slug-based URLs: /baca/series/{slug}/
+      return '$baseUrl/baca/series/$contentId/';
+    } else {
+      // nhentai uses numeric IDs: /g/{id}/
+      return '$baseUrl/g/$contentId/';
+    }
+  }
+
   void _shareContent(Content content) async {
     try {
-      // Create shareable link and message
-      final contentUrl = 'https://nhentai.net/g/${content.id}/';
+      // Create shareable link and message (source-aware)
+      final contentUrl = _buildContentUrl(content.id);
       final shareText = _buildShareMessage(content, contentUrl);
 
       // Share using share_plus package
@@ -1133,7 +1368,7 @@ class _DetailScreenState extends State<DetailScreen> {
       Logger().e('Error sharing content: $e');
 
       // Fallback: copy to clipboard if sharing fails
-      final contentUrl = 'https://nhentai.net/g/${content.id}/';
+      final contentUrl = _buildContentUrl(content.id);
       await Clipboard.setData(ClipboardData(text: contentUrl));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1282,8 +1517,8 @@ class _DetailScreenState extends State<DetailScreen> {
   /// Copy content link to clipboard
   void _copyContentLink(Content content) {
     try {
-      // Generate shareable link - using the content ID for deep linking
-      final contentLink = 'https://nhentai.net/g/${content.id}/';
+      // Generate shareable link - source-aware URL
+      final contentLink = _buildContentUrl(content.id);
 
       // Copy to clipboard
       Clipboard.setData(ClipboardData(text: contentLink));

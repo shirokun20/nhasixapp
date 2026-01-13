@@ -1,4 +1,4 @@
-import '../../domain/entities/tag.dart';
+import 'package:kuron_core/kuron_core.dart';
 
 /// Data model for Tag entity with database serialization
 class TagModel extends Tag {

@@ -1,12 +1,15 @@
-import 'dart:io';
 import 'package:equatable/equatable.dart';
-import 'package:path/path.dart' as path;
 import 'tag.dart';
+import 'chapter.dart';
 
-/// Core content entity representing a manga/doujinshi
+/// Core content entity representing a manga/doujinshi.
+///
+/// This entity is source-agnostic and can represent content from
+/// any source (nhentai, crotpedia, etc.).
 class Content extends Equatable {
   const Content({
     required this.id,
+    required this.sourceId,
     required this.title,
     required this.coverUrl,
     required this.tags,
@@ -21,29 +24,72 @@ class Content extends Equatable {
     this.favorites = 0,
     this.englishTitle,
     this.japaneseTitle,
+    this.mediaId,
     this.relatedContent = const [],
+    this.chapters,
   });
 
+  /// Content ID (format varies by source)
   final String id;
+
+  /// Source identifier (e.g., 'nhentai', 'crotpedia')
+  final String sourceId;
+
+  /// Primary title
   final String title;
+
+  /// Cover image URL
   final String coverUrl;
+
+  /// Content tags
   final List<Tag> tags;
+
+  /// Artist names
   final List<String> artists;
+
+  /// Character names
   final List<String> characters;
+
+  /// Parody/series names
   final List<String> parodies;
+
+  /// Group/circle names
   final List<String> groups;
+
+  /// Content language
   final String language;
+
+  /// Number of pages
   final int pageCount;
+
+  /// List of page image URLs
   final List<String> imageUrls;
+
+  /// Upload/publish date
   final DateTime uploadDate;
-  final int favorites; // Popularity count
+
+  /// Favorites/popularity count
+  final int favorites;
+
+  /// English title (if available)
   final String? englishTitle;
+
+  /// Japanese title (if available)
   final String? japaneseTitle;
+
+  /// Media ID (used for image URL construction in some sources)
+  final String? mediaId;
+
+  /// Related content
   final List<Content> relatedContent;
+
+  /// List of chapters (for multi-chapter content like manga/webtoon)
+  final List<Chapter>? chapters;
 
   @override
   List<Object?> get props => [
         id,
+        sourceId,
         title,
         coverUrl,
         tags,
@@ -58,11 +104,14 @@ class Content extends Equatable {
         favorites,
         englishTitle,
         japaneseTitle,
+        mediaId,
         relatedContent,
+        chapters,
       ];
 
   Content copyWith({
     String? id,
+    String? sourceId,
     String? title,
     String? coverUrl,
     List<Tag>? tags,
@@ -77,10 +126,13 @@ class Content extends Equatable {
     int? favorites,
     String? englishTitle,
     String? japaneseTitle,
+    String? mediaId,
     List<Content>? relatedContent,
+    List<Chapter>? chapters,
   }) {
     return Content(
       id: id ?? this.id,
+      sourceId: sourceId ?? this.sourceId,
       title: title ?? this.title,
       coverUrl: coverUrl ?? this.coverUrl,
       tags: tags ?? this.tags,
@@ -95,7 +147,9 @@ class Content extends Equatable {
       favorites: favorites ?? this.favorites,
       englishTitle: englishTitle ?? this.englishTitle,
       japaneseTitle: japaneseTitle ?? this.japaneseTitle,
+      mediaId: mediaId ?? this.mediaId,
       relatedContent: relatedContent ?? this.relatedContent,
+      chapters: chapters ?? this.chapters,
     );
   }
 
@@ -126,47 +180,9 @@ class Content extends Equatable {
     return tags.where((tag) => tag.type == type).toList();
   }
 
-  /// Check if content is NSFW based on tags
-  bool get isNsfw {
-    const nsfwTags = [
-      'lolicon',
-      'shotacon',
-      'rape',
-      'netorare',
-      'ugly bastard'
-    ];
-    return tags.any((tag) => nsfwTags.contains(tag.name.toLowerCase()));
-  }
-
   /// Get content category
   String get category {
     final categoryTags = getTagsByType('category');
     return categoryTags.isNotEmpty ? categoryTags.first.name : 'doujinshi';
-  }
-
-  /// Derive the content directory path from imageUrls
-  ///
-  /// This extracts the local filesystem path to the content directory
-  /// by looking at the first image URL and navigating up to the parent folder.
-  /// If the parent is an "images" subfolder, it goes up one more level.
-  ///
-  /// Returns null if imageUrls is empty or doesn't contain local file paths.
-  String? get derivedContentPath {
-    if (imageUrls.isEmpty) return null;
-
-    final imagePath = imageUrls.first;
-    // Only process local file paths
-    if (imagePath.startsWith('http')) return null;
-
-    try {
-      var parentDir = File(imagePath).parent;
-      // If parent is "images" subfolder, go up one more level to content dir
-      if (path.basename(parentDir.path) == 'images') {
-        return parentDir.parent.path;
-      }
-      return parentDir.path;
-    } catch (e) {
-      return null;
-    }
   }
 }

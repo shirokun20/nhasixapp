@@ -7,7 +7,7 @@ import 'package:logger/logger.dart';
 /// Database helper class for managing SQLite database
 class DatabaseHelper {
   static const String _databaseName = 'nhasix_app.db';
-  static const int _databaseVersion = 6;
+  static const int _databaseVersion = 7; // Updated for multi-source support
 
   static Database? _database;
   static final Logger _logger = Logger();
@@ -140,12 +140,15 @@ class DatabaseHelper {
     if (oldVersion < 5 && newVersion >= 5) {
       // Add range download columns to downloads table in version 5
       try {
-        await db.execute('ALTER TABLE downloads ADD COLUMN retry_count INTEGER DEFAULT 0');
+        await db.execute(
+            'ALTER TABLE downloads ADD COLUMN retry_count INTEGER DEFAULT 0');
         await db.execute('ALTER TABLE downloads ADD COLUMN start_page INTEGER');
         await db.execute('ALTER TABLE downloads ADD COLUMN end_page INTEGER');
-        _logger.i('Added range download columns to downloads table in database upgrade');
+        _logger.i(
+            'Added range download columns to downloads table in database upgrade');
       } catch (e) {
-        _logger.w('Error adding range download columns (may already exist): $e');
+        _logger
+            .w('Error adding range download columns (may already exist): $e');
       }
     }
 
@@ -166,14 +169,78 @@ class DatabaseHelper {
             updated_at INTEGER NOT NULL
           )
         ''');
-        
+
         // Create index for reader positions
-        await db.execute('CREATE INDEX idx_reader_positions_last_accessed ON reader_positions (last_accessed DESC)');
-        
+        await db.execute(
+            'CREATE INDEX idx_reader_positions_last_accessed ON reader_positions (last_accessed DESC)');
+
         _logger.i('Added reader_positions table in database upgrade');
       } catch (e) {
-        _logger.w('Error adding reader_positions table (may already exist): $e');
+        _logger
+            .w('Error adding reader_positions table (may already exist): $e');
       }
+    }
+
+    // Version 7: Add source_id column for multi-source support
+    if (oldVersion < 7 && newVersion >= 7) {
+      _logger.i(
+          'Upgrading to version 7: Adding source_id columns for multi-source support');
+
+      try {
+        // Add source_id to favorites table
+        await db.execute(
+            "ALTER TABLE favorites ADD COLUMN source_id TEXT DEFAULT 'nhentai'");
+        _logger.d('Added source_id column to favorites table');
+      } catch (e) {
+        _logger
+            .w('Error adding source_id to favorites (may already exist): $e');
+      }
+
+      try {
+        // Add source_id to history table
+        await db.execute(
+            "ALTER TABLE history ADD COLUMN source_id TEXT DEFAULT 'nhentai'");
+        _logger.d('Added source_id column to history table');
+      } catch (e) {
+        _logger.w('Error adding source_id to history (may already exist): $e');
+      }
+
+      try {
+        // Add source_id to downloads table
+        await db.execute(
+            "ALTER TABLE downloads ADD COLUMN source_id TEXT DEFAULT 'nhentai'");
+        _logger.d('Added source_id column to downloads table');
+      } catch (e) {
+        _logger
+            .w('Error adding source_id to downloads (may already exist): $e');
+      }
+
+      try {
+        // Add source_id to reader_positions table
+        await db.execute(
+            "ALTER TABLE reader_positions ADD COLUMN source_id TEXT DEFAULT 'nhentai'");
+        _logger.d('Added source_id column to reader_positions table');
+      } catch (e) {
+        _logger.w(
+            'Error adding source_id to reader_positions (may already exist): $e');
+      }
+
+      try {
+        // Create composite indexes for source_id queries
+        await db.execute(
+            'CREATE INDEX IF NOT EXISTS idx_favorites_source ON favorites (source_id)');
+        await db.execute(
+            'CREATE INDEX IF NOT EXISTS idx_history_source ON history (source_id)');
+        await db.execute(
+            'CREATE INDEX IF NOT EXISTS idx_downloads_source ON downloads (source_id)');
+        await db.execute(
+            'CREATE INDEX IF NOT EXISTS idx_reader_source ON reader_positions (source_id)');
+        _logger.d('Created source_id indexes');
+      } catch (e) {
+        _logger.w('Error creating source_id indexes: $e');
+      }
+
+      _logger.i('Database upgrade to version 7 completed successfully');
     }
 
     // Fix history table schema if needed (for any version upgrade)
@@ -240,22 +307,25 @@ class DatabaseHelper {
     }
   }
 
-  /// Create favorites table (simplified - only id and cover_url)
+  /// Create favorites table with source_id for multi-source support
   void _createFavoritesTable(Batch batch) {
     batch.execute('''
       CREATE TABLE favorites (
-        id TEXT PRIMARY KEY,
+        id TEXT NOT NULL,
+        source_id TEXT NOT NULL DEFAULT 'nhentai',
         cover_url TEXT,
-        added_at INTEGER
+        added_at INTEGER,
+        PRIMARY KEY (id, source_id)
       )
     ''');
   }
 
-  /// Create downloads table
+  /// Create downloads table with source_id for multi-source support
   void _createDownloadsTable(Batch batch) {
     batch.execute('''
       CREATE TABLE downloads (
-        id TEXT PRIMARY KEY,
+        id TEXT NOT NULL,
+        source_id TEXT NOT NULL DEFAULT 'nhentai',
         title TEXT,
         cover_url TEXT,
         download_path TEXT,
@@ -268,23 +338,26 @@ class DatabaseHelper {
         error_message TEXT,
         retry_count INTEGER DEFAULT 0,
         start_page INTEGER,
-        end_page INTEGER
+        end_page INTEGER,
+        PRIMARY KEY (id, source_id)
       )
     ''');
   }
 
-  /// Create history table
+  /// Create history table with source_id for multi-source support
   void _createHistoryTable(Batch batch) {
     batch.execute('''
       CREATE TABLE history (
-        id TEXT PRIMARY KEY,
+        id TEXT NOT NULL,
+        source_id TEXT NOT NULL DEFAULT 'nhentai',
         title TEXT,
         cover_url TEXT,
         last_viewed INTEGER,
         last_page INTEGER DEFAULT 1,
         total_pages INTEGER,
         time_spent INTEGER DEFAULT 0, -- in milliseconds
-        is_completed INTEGER DEFAULT 0 -- boolean as integer
+        is_completed INTEGER DEFAULT 0, -- boolean as integer
+        PRIMARY KEY (id, source_id)
       )
     ''');
   }
@@ -321,11 +394,12 @@ class DatabaseHelper {
     ''');
   }
 
-  /// Create reader positions table
+  /// Create reader positions table with source_id for multi-source support
   void _createReaderPositionsTable(Batch batch) {
     batch.execute('''
       CREATE TABLE reader_positions (
-        content_id TEXT PRIMARY KEY,
+        content_id TEXT NOT NULL,
+        source_id TEXT NOT NULL DEFAULT 'nhentai',
         current_page INTEGER NOT NULL,
         total_pages INTEGER NOT NULL,
         last_accessed INTEGER NOT NULL,
@@ -334,7 +408,8 @@ class DatabaseHelper {
         title TEXT,
         cover_url TEXT,
         created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (content_id, source_id)
       )
     ''');
   }
@@ -344,17 +419,20 @@ class DatabaseHelper {
     // Favorites indexes
     batch.execute(
         'CREATE INDEX idx_favorites_added_at ON favorites (added_at DESC)');
+    batch.execute('CREATE INDEX idx_favorites_source ON favorites (source_id)');
 
     // Downloads indexes
     batch.execute('CREATE INDEX idx_downloads_state ON downloads (state)');
     batch.execute(
         'CREATE INDEX idx_downloads_start_time ON downloads (start_time DESC)');
+    batch.execute('CREATE INDEX idx_downloads_source ON downloads (source_id)');
 
     // History indexes
     batch.execute(
         'CREATE INDEX idx_history_last_viewed ON history (last_viewed DESC)');
     batch.execute(
         'CREATE INDEX idx_history_is_completed ON history (is_completed)');
+    batch.execute('CREATE INDEX idx_history_source ON history (source_id)');
 
     // Search history indexes
     batch.execute(
@@ -363,6 +441,8 @@ class DatabaseHelper {
     // Reader positions indexes
     batch.execute(
         'CREATE INDEX idx_reader_positions_last_accessed ON reader_positions (last_accessed DESC)');
+    batch.execute(
+        'CREATE INDEX idx_reader_source ON reader_positions (source_id)');
   }
 
   /// Insert default data

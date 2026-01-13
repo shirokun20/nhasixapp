@@ -21,11 +21,18 @@ class UserDataRepositoryImpl implements UserDataRepository {
   @override
   Future<void> addToFavorites({
     required String id,
+    required String sourceId,
     required String coverUrl,
+    String? title,
   }) async {
     try {
       _logger.i('Adding content $id to favorites');
-      await localDataSource.addToFavorites(id, coverUrl);
+      await localDataSource.addToFavorites(
+        id: id,
+        sourceId: sourceId,
+        coverUrl: coverUrl,
+        title: title,
+      );
       _logger.d('Successfully added to favorites');
     } catch (e, stackTrace) {
       _logger.e('Failed to add to favorites', error: e, stackTrace: stackTrace);
@@ -162,6 +169,25 @@ class UserDataRepositoryImpl implements UserDataRepository {
       _logger.e('Failed to get downloads count',
           error: e, stackTrace: stackTrace);
       return 0;
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> searchDownloads({
+    required String query,
+    DownloadState? state,
+    int limit = 100,
+  }) async {
+    try {
+      _logger.i('Searching downloads for query: $query');
+      return await localDataSource.searchDownloads(
+        query: query,
+        state: state,
+        limit: limit,
+      );
+    } catch (e, stackTrace) {
+      _logger.e('Failed to search downloads', error: e, stackTrace: stackTrace);
+      return [];
     }
   }
 

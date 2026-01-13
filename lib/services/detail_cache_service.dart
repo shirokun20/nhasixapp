@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../domain/entities/content.dart';
-import '../../domain/entities/tag.dart';
-import '../../data/models/content_model.dart';
+import 'package:kuron_core/kuron_core.dart';
+import '../data/models/content_model.dart';
 
 /// Service for caching content detail data to improve performance
 /// Reduces loading times from ~3-4 seconds to target <1.5 seconds

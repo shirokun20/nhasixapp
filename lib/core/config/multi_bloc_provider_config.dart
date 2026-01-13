@@ -43,6 +43,10 @@ class MultiBlocProviderConfig {
       create: (context) => getIt<ThemeCubit>(),
     ), // ThemeCubit for reactive theme management
 
+    BlocProvider<SourceCubit>(
+      create: (context) => getIt<SourceCubit>(),
+    ), // SourceCubit for multi-source management
+
     BlocProvider<DetailCubit>(
       create: (context) => getIt<DetailCubit>(),
     ),
@@ -57,6 +61,10 @@ class MultiBlocProviderConfig {
 
     BlocProvider<RandomGalleryCubit>(
       create: (context) => getIt<RandomGalleryCubit>(),
+    ),
+
+    BlocProvider<CrotpediaAuthCubit>(
+      create: (context) => getIt<CrotpediaAuthCubit>(),
     ),
 
     // Note: DetailCubit, ReaderCubit, FavoriteCubit akan di-provide secara lokal

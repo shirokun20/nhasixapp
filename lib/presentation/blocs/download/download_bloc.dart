@@ -15,6 +15,7 @@ import '../../../domain/entities/entities.dart';
 import '../../../domain/entities/download_task.dart';
 import '../../../domain/usecases/downloads/downloads_usecases.dart';
 import '../../../domain/usecases/content/content_usecases.dart';
+import '../../../domain/usecases/content/get_chapter_images_usecase.dart';
 import '../../../domain/repositories/repositories.dart';
 import '../../../services/notification_service.dart';
 import '../../../services/download_manager.dart';
@@ -34,6 +35,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   DownloadBloc({
     required DownloadContentUseCase downloadContentUseCase,
     required GetContentDetailUseCase getContentDetailUseCase,
+    required GetChapterImagesUseCase getChapterImagesUseCase,
     required UserDataRepository userDataRepository,
     required Logger logger,
     required Connectivity connectivity,
@@ -42,6 +44,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     AppLocalizations? appLocalizations,
   })  : _downloadContentUseCase = downloadContentUseCase,
         _getContentDetailUseCase = getContentDetailUseCase,
+        _getChapterImagesUseCase = getChapterImagesUseCase,
         _userDataRepository = userDataRepository,
         _logger = logger,
         _connectivity = connectivity,
@@ -87,6 +90,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
   final DownloadContentUseCase _downloadContentUseCase;
   final GetContentDetailUseCase _getContentDetailUseCase;
+  final GetChapterImagesUseCase _getChapterImagesUseCase;
   final UserDataRepository _userDataRepository;
   final Logger _logger;
   final Connectivity _connectivity;
@@ -285,6 +289,33 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     try {
       _logger.i('DownloadBloc: Queuing download for ${event.content.id}');
 
+      // Check if this is chapter-based content (Crotpedia manga)
+      // We now ALLOW this, but we need to ensure the UI handles it correctly
+      // (e.g. by downloading individual chapters if they are passed as content)
+      /*
+      if (event.content.imageUrls.isEmpty &&
+          event.content.chapters != null &&
+          event.content.chapters!.isNotEmpty) {
+        _logger.w(
+            'DownloadBloc: Cannot download chapter-based content ${event.content.id}');
+        
+        // ... Error emission logic removed ...
+        return;
+      }
+      */
+
+      // Validate that content has downloadable images
+      if (event.content.imageUrls.isEmpty && event.content.pageCount == 0) {
+        _logger.w(
+            'DownloadBloc: Content ${event.content.id} has no downloadable images');
+
+        emit(DownloadError(
+          message: 'This content has no downloadable images.',
+          errorType: DownloadErrorType.unknown,
+          previousState: currentState,
+        ));
+        return;
+      }
       // Check if already exists
       final existingDownload = currentState.downloads
           .where((d) => d.contentId == event.content.id)
@@ -515,9 +546,42 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       ));
 
       // Get content details for download
-      final content = await _getContentDetailUseCase.call(
-        GetContentDetailParams.fromString(event.contentId),
+      // Pass sourceId to ensure correct source usage
+      var content = await _getContentDetailUseCase.call(
+        GetContentDetailParams.fromString(event.contentId,
+            sourceId: updatedDownload.contentId.contains('_chapter_')
+                ? null
+                : null // We might need to store sourceId in DownloadStatus...
+            ),
       );
+
+      // CRITICAL FIX: For Crotpedia chapters, getContentDetail might return empty images
+      // because the ID is a chapter slug, not a manga slug.
+      // We need to try getChapterImages if images are empty.
+      // We need to try getChapterImages if images are empty.
+      if (content.imageUrls.isEmpty) {
+        _logger.i(
+            'DownloadBloc: Content has empty images, trying getChapterImages fallback for ${event.contentId}');
+        try {
+          final chapterImages = await _getChapterImagesUseCase.call(
+            GetChapterImagesParams.fromString(event.contentId),
+          );
+
+          if (chapterImages.isNotEmpty) {
+            _logger.i(
+                'DownloadBloc: Retrieved ${chapterImages.length} chapter images via fallback');
+            content = content.copyWith(
+              imageUrls: chapterImages,
+              pageCount: chapterImages.length,
+            );
+          } else {
+            _logger.w(
+                'DownloadBloc: Fallback chapter image fetch returned empty list');
+          }
+        } catch (e) {
+          _logger.w('Fallback chapter image fetch failed: $e');
+        }
+      }
 
       // Create download task for this download
       final task = DownloadTask(
@@ -1517,25 +1581,54 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         return;
       }
 
+      // Determine sourceId
+      String? sourceId = event.sourceId;
+
+      // If sourceId is not provided, try to discover it from known sources
+      if (sourceId == null) {
+        _logger.d(
+            'DownloadBloc: sourceId not provided, attempting discovery for ${event.contentId}');
+        for (final source in AppStorage.knownSources) {
+          final metadata = await DownloadStorageUtils.readLocalMetadata(
+            event.contentId,
+            sourceId: source,
+          );
+          if (metadata != null) {
+            sourceId = source;
+            _logger.i(
+                'DownloadBloc: Discovered sourceId for ${event.contentId}: $sourceId');
+            break;
+          }
+        }
+      }
+
       // Try to get content details from local metadata first
       String contentTitle = event.contentId; // Fallback title
-      final localMetadata =
-          await DownloadStorageUtils.readLocalMetadata(event.contentId);
+      final localMetadata = await DownloadStorageUtils.readLocalMetadata(
+        event.contentId,
+        sourceId: sourceId,
+      );
 
       if (localMetadata != null) {
         // Use local metadata for offline support
         contentTitle = localMetadata['title'] as String? ?? event.contentId;
+        // If sourceId was still null (legacy path), try to get it from metadata
+        if (sourceId == null && localMetadata['source'] != null) {
+          sourceId = localMetadata['source'] as String;
+        }
         _logger.i(
-            'DownloadBloc: Using local metadata for PDF conversion - Title: $contentTitle');
+            'DownloadBloc: Using local metadata for PDF conversion - Title: $contentTitle, Source: $sourceId');
       } else {
         // Fallback to API if no local metadata (online mode)
         try {
           final content = await _getContentDetailUseCase.call(
             GetContentDetailParams.fromString(event.contentId),
+            // Pass sourceId if known
           );
           contentTitle = content.title;
+          sourceId ??= content.sourceId;
           _logger.i(
-              'DownloadBloc: Using API content details for PDF conversion - Title: $contentTitle');
+              'DownloadBloc: Using API content details for PDF conversion - Title: $contentTitle, Source: $sourceId');
         } catch (e) {
           _logger.w(
               'DownloadBloc: Failed to get content details from API, using contentId as title: $e');
@@ -1544,8 +1637,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       }
 
       // Get downloaded image paths from content repository or download service
-      final imagePaths =
-          await DownloadStorageUtils.getDownloadedImagePaths(event.contentId);
+      final imagePaths = await DownloadStorageUtils.getDownloadedImagePaths(
+        event.contentId,
+        sourceId: sourceId,
+      );
 
       if (imagePaths.isEmpty) {
         _logger.w(
@@ -1566,6 +1661,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         contentId: event.contentId,
         title: contentTitle,
         imagePaths: imagePaths,
+        sourceId: sourceId,
         maxPagesPerFile: 50, // Split into 50-page chunks
       );
 

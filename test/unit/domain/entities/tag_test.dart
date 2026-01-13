@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nhasixapp/domain/entities/tag.dart';
+import 'package:kuron_core/kuron_core.dart';
+import 'package:nhasixapp/domain/extensions/tag_extensions.dart';
 
 void main() {
   group('Tag Entity', () {

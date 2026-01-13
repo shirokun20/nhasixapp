@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:kuron_core/kuron_core.dart';
 
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/entities.dart';
@@ -28,7 +29,9 @@ class DownloadItemWidget extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
-      color: isSelected ? colorScheme.primaryContainer.withValues(alpha: 0.3) : colorScheme.surface,
+      color: isSelected
+          ? colorScheme.primaryContainer.withValues(alpha: 0.3)
+          : colorScheme.surface,
       margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
         onTap: onTap,
@@ -55,20 +58,63 @@ class DownloadItemWidget extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          AppLocalizations.of(context)?.downloadContentTitle(download.contentId) ?? 'Content ${download.contentId}',
-                          style: TextStyleConst.titleMedium.copyWith(
-                            color: colorScheme.onSurface,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        // Source badge + Title
+                        Row(
+                          children: [
+                            // Source badge
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: _getSourceColor(
+                                    download.sourceId ?? SourceType.nhentai.id,
+                                    colorScheme),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                (download.sourceId ?? SourceType.nhentai.id)
+                                    .toUpperCase(),
+                                style: TextStyleConst.caption.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 9,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // Title with fallback to metadata.json
+                            Expanded(
+                              child: _buildTitleWidget(context, colorScheme),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          download.statusText,
-                          style: TextStyleConst.bodySmall.copyWith(
-                            color: _getStatusColor(context),
-                          ),
+                        // ID + Status
+                        Row(
+                          children: [
+                            Text(
+                              '#${download.contentId}',
+                              style: TextStyleConst.caption.copyWith(
+                                color: colorScheme.onSurface
+                                    .withValues(alpha: 0.5),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '•',
+                              style: TextStyleConst.caption.copyWith(
+                                color: colorScheme.onSurface
+                                    .withValues(alpha: 0.3),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              download.statusText,
+                              style: TextStyleConst.bodySmall.copyWith(
+                                color: _getStatusColor(context),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -88,8 +134,8 @@ class DownloadItemWidget extends StatelessWidget {
                         value: download.progress,
                         backgroundColor:
                             colorScheme.onSurface.withValues(alpha: 0.1),
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(_getProgressColor(context)),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            _getProgressColor(context)),
                         minHeight: 6,
                       ),
                     ),
@@ -217,7 +263,10 @@ class DownloadItemWidget extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      AppLocalizations.of(context)?.downloadEtaLabel(_formatDuration(download.estimatedTimeRemaining!)) ?? 'ETA: ${_formatDuration(download.estimatedTimeRemaining!)}',
+                      AppLocalizations.of(context)?.downloadEtaLabel(
+                              _formatDuration(
+                                  download.estimatedTimeRemaining!)) ??
+                          'ETA: ${_formatDuration(download.estimatedTimeRemaining!)}',
                       style: TextStyleConst.bodySmall.copyWith(
                         color: colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
@@ -287,7 +336,7 @@ class DownloadItemWidget extends StatelessWidget {
 
   void _showMoreActions(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: colorScheme.surface,
@@ -324,7 +373,8 @@ class DownloadItemWidget extends StatelessWidget {
               _buildActionTile(
                 context,
                 icon: Icons.pause,
-                title: AppLocalizations.of(context)?.downloadActionPause ?? 'Pause',
+                title: AppLocalizations.of(context)?.downloadActionPause ??
+                    'Pause',
                 action: 'pause',
               ),
 
@@ -332,7 +382,8 @@ class DownloadItemWidget extends StatelessWidget {
               _buildActionTile(
                 context,
                 icon: Icons.play_arrow,
-                title: AppLocalizations.of(context)?.downloadActionResume ?? 'Resume',
+                title: AppLocalizations.of(context)?.downloadActionResume ??
+                    'Resume',
                 action: 'start',
               ),
 
@@ -340,7 +391,8 @@ class DownloadItemWidget extends StatelessWidget {
               _buildActionTile(
                 context,
                 icon: Icons.cancel,
-                title: AppLocalizations.of(context)?.downloadActionCancel ?? 'Cancel',
+                title: AppLocalizations.of(context)?.downloadActionCancel ??
+                    'Cancel',
                 action: 'cancel',
                 isDestructive: true,
               ),
@@ -349,7 +401,8 @@ class DownloadItemWidget extends StatelessWidget {
               _buildActionTile(
                 context,
                 icon: Icons.refresh,
-                title: AppLocalizations.of(context)?.downloadActionRetry ?? 'Retry',
+                title: AppLocalizations.of(context)?.downloadActionRetry ??
+                    'Retry',
                 action: 'retry',
               ),
 
@@ -359,21 +412,25 @@ class DownloadItemWidget extends StatelessWidget {
               _buildActionTile(
                 context,
                 icon: Icons.picture_as_pdf,
-                title: AppLocalizations.of(context)?.downloadActionConvertToPdf ?? 'Convert to PDF',
+                title:
+                    AppLocalizations.of(context)?.downloadActionConvertToPdf ??
+                        'Convert to PDF',
                 action: 'convert_pdf',
               ),
 
             _buildActionTile(
               context,
               icon: Icons.info_outline,
-              title: AppLocalizations.of(context)?.downloadActionDetails ?? 'Details',
+              title: AppLocalizations.of(context)?.downloadActionDetails ??
+                  'Details',
               action: 'details',
             ),
 
             _buildActionTile(
               context,
               icon: Icons.delete_outline,
-              title: AppLocalizations.of(context)?.downloadActionRemove ?? 'Remove',
+              title: AppLocalizations.of(context)?.downloadActionRemove ??
+                  'Remove',
               action: 'remove',
               isDestructive: true,
             ),
@@ -393,7 +450,7 @@ class DownloadItemWidget extends StatelessWidget {
     bool isDestructive = false,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return ListTile(
       leading: Icon(
         icon,
@@ -414,7 +471,7 @@ class DownloadItemWidget extends StatelessWidget {
 
   Color _getStatusColor(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     switch (download.state) {
       case DownloadState.queued:
         return colorScheme.onSurface.withValues(alpha: 0.6);
@@ -435,9 +492,31 @@ class DownloadItemWidget extends StatelessWidget {
     }
   }
 
+  Color _getSourceColor(String sourceId, ColorScheme colorScheme) {
+    if (sourceId.toLowerCase() == SourceType.nhentai.id) {
+      return const Color(0xFFEC2854); // nhentai red
+    } else if (sourceId.toLowerCase() == SourceType.crotpedia.id) {
+      return const Color(0xFF1E88E5); // crotpedia blue
+    } else {
+      return colorScheme.secondary;
+    }
+  }
+
+  /// Build title widget - title is stored in database during download
+  Widget _buildTitleWidget(BuildContext context, ColorScheme colorScheme) {
+    return Text(
+      download.title ?? download.contentId,
+      style: TextStyleConst.titleMedium.copyWith(
+        color: colorScheme.onSurface,
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
   Color _getProgressColor(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     switch (download.state) {
       case DownloadState.downloading:
         // If progress is 100%, show success color even if state hasn't updated yet
@@ -474,18 +553,17 @@ class DownloadItemWidget extends StatelessWidget {
     if (download.isRangeDownload) {
       // For range downloads, show: "X/Y (Pages A-B of C)"
       return AppLocalizations.of(context)?.downloadPagesRangeFormat(
-        download.downloadedPages,
-        download.pagesToDownload,
-        download.startPage ?? 1,
-        download.endPage ?? download.totalPages,
-        download.totalPages
-      ) ?? '${download.downloadedPages}/${download.pagesToDownload} (Pages ${download.startPage ?? 1}-${download.endPage ?? download.totalPages} of ${download.totalPages})';
+              download.downloadedPages,
+              download.pagesToDownload,
+              download.startPage ?? 1,
+              download.endPage ?? download.totalPages,
+              download.totalPages) ??
+          '${download.downloadedPages}/${download.pagesToDownload} (Pages ${download.startPage ?? 1}-${download.endPage ?? download.totalPages} of ${download.totalPages})';
     } else {
       // For full downloads, show: "X/Y"
       return AppLocalizations.of(context)?.downloadPagesFormat(
-        download.downloadedPages,
-        download.totalPages
-      ) ?? '${download.downloadedPages}/${download.totalPages}';
+              download.downloadedPages, download.totalPages) ??
+          '${download.downloadedPages}/${download.totalPages}';
     }
   }
 
@@ -495,7 +573,7 @@ class DownloadItemWidget extends StatelessWidget {
       future: _verifyDownloadStatus(download.contentId),
       builder: (context, snapshot) {
         final colorScheme = Theme.of(context).colorScheme;
-        
+
         if (!snapshot.hasData) {
           return Text(
             _buildPagesText(context, download),
@@ -526,17 +604,16 @@ class DownloadItemWidget extends StatelessWidget {
           final rangeEnd = data['rangeEnd'] as int?;
           final totalPages = data['totalPages'] as int?;
           text = AppLocalizations.of(context)?.downloadPagesRangeFormat(
-            actualCount,
-            expectedCount,
-            rangeStart ?? 1,
-            rangeEnd ?? totalPages ?? expectedCount,
-            totalPages ?? expectedCount
-          ) ?? '$actualCount/$expectedCount (Pages ${rangeStart ?? 1}-${rangeEnd ?? expectedCount} of ${totalPages ?? expectedCount})';
+                  actualCount,
+                  expectedCount,
+                  rangeStart ?? 1,
+                  rangeEnd ?? totalPages ?? expectedCount,
+                  totalPages ?? expectedCount) ??
+              '$actualCount/$expectedCount (Pages ${rangeStart ?? 1}-${rangeEnd ?? expectedCount} of ${totalPages ?? expectedCount})';
         } else {
-          text = AppLocalizations.of(context)?.downloadPagesFormat(
-            actualCount,
-            expectedCount
-          ) ?? '$actualCount/$expectedCount';
+          text = AppLocalizations.of(context)
+                  ?.downloadPagesFormat(actualCount, expectedCount) ??
+              '$actualCount/$expectedCount';
         }
 
         return Text(
@@ -558,7 +635,8 @@ class DownloadItemWidget extends StatelessWidget {
       // Return null expectedCount to trigger fallback to database values
       return {
         'actualCount': 0,
-        'expectedCount': null, // This will trigger fallback in _buildVerifiedPagesText
+        'expectedCount':
+            null, // This will trigger fallback in _buildVerifiedPagesText
         'isRangeDownload': false,
       };
     }

@@ -1,0 +1,51 @@
+{
+    "version": "1.0.0",
+    "lastUpdated": "2026-01-13T13:24:00+07:00",
+    "sources": {
+        "nhentai": {
+            "type": "bundled",
+            "assetPath": "assets/json/tags.json",
+            "format": "array",
+            "structure": [
+                "id",
+                "name",
+                "slug",
+                "typeCode"
+            ],
+            "typeCodeMapping": {
+                "0": "category",
+                "1": "artist",
+                "2": "parody",
+                "3": "tag",
+                "4": "character",
+                "5": "group",
+                "6": "language",
+                "7": "category"
+            },
+            "multiSelectSupport": {
+                "tag": true,
+                "artist": true,
+                "character": true,
+                "parody": true,
+                "group": true,
+                "language": false,
+                "category": false
+            },
+            "migration": {
+                "enabled": false,
+                "remoteUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/main/configs/tags/nhentai-tags.json",
+                "fallbackUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/develop/configs/tags/nhentai-tags.json",
+                "compression": "none",
+                "cacheTtlSeconds": 86400
+            }
+        }
+    },
+    "notes": [
+        "Current: Tags loaded from bundled asset (5.17 MB)",
+        "Future: Will use GitHub Raw from main nhasixapp repo",
+        "Tag data will be in configs/tags/ directory",
+        "Primary: main branch, Fallback: develop branch",
+        "No CDN (jsdelivr) - direct GitHub Raw for simplicity",
+        "Set migration.enabled to true when ready to switch"
+    ]
+}

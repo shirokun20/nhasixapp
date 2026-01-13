@@ -180,3 +180,55 @@ class DetailError extends DetailState {
     }
   }
 }
+
+/// State when opening a chapter (loading images)
+class DetailOpeningChapter extends DetailLoaded {
+  const DetailOpeningChapter({
+    required super.content,
+    required super.isFavorited,
+    required super.lastUpdated,
+    super.imageMetadata,
+  });
+}
+
+/// State when chapter is ready to read
+class DetailReaderReady extends DetailLoaded {
+  const DetailReaderReady({
+    required this.chapterContent,
+    required super.content,
+    required super.isFavorited,
+    required super.lastUpdated,
+    super.imageMetadata,
+  });
+
+  final Content chapterContent;
+
+  @override
+  List<Object?> get props => [...super.props, chapterContent];
+}
+
+/// State when login is required for an action
+class DetailNeedsLogin extends DetailState {
+  const DetailNeedsLogin();
+
+  @override
+  List<Object?> get props => [];
+}
+
+/// State when an action fails but content is still loaded
+class DetailActionFailure extends DetailLoaded {
+  const DetailActionFailure({
+    required this.message,
+    required super.content,
+    required super.isFavorited,
+    required super.lastUpdated,
+    super.imageMetadata,
+    this.needsLogin = false,
+  });
+
+  final String message;
+  final bool needsLogin;
+
+  @override
+  List<Object?> get props => [...super.props, message, needsLogin];
+}

@@ -1,26 +1,38 @@
 import 'package:equatable/equatable.dart';
 
-/// Tag entity representing content metadata tags
+/// Tag entity representing content metadata tags.
+///
+/// Tags categorize content by artist, character, parody, etc.
 class Tag extends Equatable {
   const Tag({
     required this.id,
     required this.name,
     required this.type,
     required this.count,
-    required this.url,
+    this.url = '',
     this.slug,
   });
 
+  /// Tag ID
   final int id;
+
+  /// Tag name
   final String name;
-  final String
-      type; // tag, artist, character, parody, group, language, category
-  final int count; // Popularity count
+
+  /// Tag type (tag, artist, character, parody, group, language, category)
+  final String type;
+
+  /// Usage/popularity count
+  final int count;
+
+  /// URL to tag page (source-specific)
   final String url;
+
+  /// URL-safe slug
   final String? slug;
 
   @override
-  List<Object> get props => [id, name, type, count, url];
+  List<Object?> get props => [id, name, type, count, url, slug];
 
   Tag copyWith({
     int? id,
@@ -67,46 +79,8 @@ class Tag extends Equatable {
   /// Check if tag is regular tag
   bool get isRegularTag => isType('tag');
 
-  /// Get tag color based on type
-  String get colorHex {
-    switch (type.toLowerCase()) {
-      case 'artist':
-        return '#FF6B6B'; // Red
-      case 'character':
-        return '#4ECDC4'; // Teal
-      case 'parody':
-        return '#45B7D1'; // Blue
-      case 'group':
-        return '#96CEB4'; // Green
-      case 'language':
-        return '#FFEAA7'; // Yellow
-      case 'category':
-        return '#DDA0DD'; // Plum
-      default:
-        return '#74B9FF'; // Default blue
-    }
-  }
-
   /// Check if tag is popular (high count)
   bool get isPopular => count > 1000;
-
-  /// Get popularity level
-  TagPopularity get popularity {
-    if (count > 10000) return TagPopularity.veryHigh;
-    if (count > 5000) return TagPopularity.high;
-    if (count > 1000) return TagPopularity.medium;
-    if (count > 100) return TagPopularity.low;
-    return TagPopularity.veryLow;
-  }
-}
-
-/// Tag popularity levels
-enum TagPopularity {
-  veryLow,
-  low,
-  medium,
-  high,
-  veryHigh,
 }
 
 /// Tag type constants

@@ -9,7 +9,7 @@ import '../../core/constants/text_style_const.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/utils/offline_content_manager.dart';
 import '../../core/utils/responsive_grid_delegate.dart';
-import '../../domain/entities/content.dart';
+import 'package:kuron_core/kuron_core.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/pdf_conversion_service.dart';
 import '../blocs/download/download_bloc.dart';

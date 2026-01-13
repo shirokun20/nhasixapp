@@ -1,0 +1,12 @@
+# Config directory - ready for version control
+
+# Don't ignore the configs themselves
+!*.json
+!README.md
+!validate_configs.sh
+
+# But ignore temp/local files
+*.local.json
+*.bak
+*.tmp
+.DS_Store

@@ -1,4 +1,3 @@
-
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/favorites/favorites_usecases.dart';
 import '../../../domain/repositories/repositories.dart';
@@ -69,7 +68,8 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
 
       final errorType = determineErrorType(e);
       emit(FavoriteError(
-        message: localizations?.failedToLoadFavorites(e.toString()) ?? 'Failed to load favorites: ${e.toString()}',
+        message: localizations?.failedToLoadFavorites(e.toString()) ??
+            'Failed to load favorites: ${e.toString()}',
         errorType: errorType,
         canRetry: isRetryableError(errorType),
       ));
@@ -165,21 +165,22 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
 
       final params = RemoveFromFavoritesParams.fromString(contentId);
       logInfo('Calling removeFromFavoritesUseCase with params: $params');
-      
+
       await _removeFromFavoritesUseCase(params);
       logInfo('Successfully called removeFromFavoritesUseCase');
 
       // Update current state if loaded
       final currentState = state;
       if (currentState is FavoriteLoaded) {
-        logInfo('Updating favorites list in state, removing contentId: $contentId');
-        
+        logInfo(
+            'Updating favorites list in state, removing contentId: $contentId');
+
         final beforeCount = currentState.favorites.length;
         final updatedFavorites = currentState.favorites
             .where((favorite) => favorite['id'] != contentId)
             .toList();
         final afterCount = updatedFavorites.length;
-        
+
         logInfo('Favorites count: before=$beforeCount, after=$afterCount');
 
         emit(currentState.copyWith(
@@ -187,10 +188,11 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
           totalCount: currentState.totalCount - 1,
           lastUpdated: DateTime.now(),
         ));
-        
+
         logInfo('State updated successfully');
       } else {
-        logWarning('Current state is not FavoriteLoaded, state type: ${state.runtimeType}');
+        logWarning(
+            'Current state is not FavoriteLoaded, state type: ${state.runtimeType}');
       }
 
       logInfo('Successfully removed from favorites: $contentId');
@@ -344,11 +346,15 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
         try {
           final id = favoriteData['id']?.toString();
           final coverUrl = favoriteData['cover_url']?.toString();
+          final sourceId = favoriteData['source_id']?.toString() ?? 'nhentai';
+          final title = favoriteData['title']?.toString();
 
           if (id != null && coverUrl != null) {
             await _userDataRepository.addToFavorites(
               id: id,
+              sourceId: sourceId,
               coverUrl: coverUrl,
+              title: title,
             );
             importedCount++;
           }

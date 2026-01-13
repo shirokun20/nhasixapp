@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logger/logger.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:equatable/equatable.dart';
-import '../../../domain/entities/content.dart';
+import 'package:kuron_core/kuron_core.dart';
 import '../../../domain/entities/reader_position.dart';
 import '../../../domain/usecases/content/get_content_detail_usecase.dart';
 import '../../../domain/usecases/history/add_to_history_usecase.dart';
@@ -313,6 +313,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         timeSpent: state.readingTimer ?? Duration.zero,
         title: state.content!.title,
         coverUrl: state.content!.coverUrl,
+        sourceId: state.content!.sourceId,
       );
       await addToHistoryUseCase(params);
     } catch (e) {
@@ -611,6 +612,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         timeSpent: state.readingTimer ?? Duration.zero,
         title: state.content!.title,
         coverUrl: state.content!.coverUrl,
+        sourceId: state.content!.sourceId,
       );
       await addToHistoryUseCase(params);
     } catch (e) {

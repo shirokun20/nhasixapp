@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 class History extends Equatable {
   const History({
     required this.contentId,
+    this.sourceId = 'nhentai', // Default to nhentai for backward compatibility
     required this.lastViewed,
     this.lastPage = 1,
     this.totalPages = 0,
@@ -14,6 +15,7 @@ class History extends Equatable {
   });
 
   final String contentId;
+  final String sourceId;
   final DateTime lastViewed;
   final int lastPage;
   final int totalPages;
@@ -25,6 +27,7 @@ class History extends Equatable {
   @override
   List<Object?> get props => [
         contentId,
+        sourceId,
         lastViewed,
         lastPage,
         totalPages,
@@ -36,6 +39,7 @@ class History extends Equatable {
 
   History copyWith({
     String? contentId,
+    String? sourceId,
     DateTime? lastViewed,
     int? lastPage,
     int? totalPages,
@@ -46,6 +50,7 @@ class History extends Equatable {
   }) {
     return History(
       contentId: contentId ?? this.contentId,
+      sourceId: sourceId ?? this.sourceId,
       lastViewed: lastViewed ?? this.lastViewed,
       lastPage: lastPage ?? this.lastPage,
       totalPages: totalPages ?? this.totalPages,
@@ -157,9 +162,10 @@ class History extends Equatable {
 
   /// Create initial history entry
   factory History.initial(String contentId, int totalPages,
-      {String? title, String? coverUrl}) {
+      {String? title, String? coverUrl, String sourceId = 'nhentai'}) {
     return History(
       contentId: contentId,
+      sourceId: sourceId,
       lastViewed: DateTime.now(),
       totalPages: totalPages,
       title: title,
@@ -171,6 +177,7 @@ class History extends Equatable {
   Map<String, dynamic> toJson() {
     return {
       'contentId': contentId,
+      'sourceId': sourceId,
       'lastViewed': lastViewed.millisecondsSinceEpoch,
       'lastPage': lastPage,
       'totalPages': totalPages,
@@ -185,6 +192,7 @@ class History extends Equatable {
   factory History.fromJson(Map<String, dynamic> json) {
     return History(
       contentId: json['contentId'],
+      sourceId: json['sourceId'] ?? 'nhentai',
       lastViewed: DateTime.fromMillisecondsSinceEpoch(json['lastViewed']),
       lastPage: json['lastPage'] ?? 1,
       totalPages: json['totalPages'] ?? 0,

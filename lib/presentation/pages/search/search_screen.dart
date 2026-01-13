@@ -12,8 +12,11 @@ import 'package:nhasixapp/core/utils/responsive_grid_delegate.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/tag_resolver.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
+import 'package:kuron_core/kuron_core.dart' hide SearchFilter, FilterItem;
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
 import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/source/source_state.dart';
 import 'package:nhasixapp/presentation/widgets/content_card_widget.dart';
 import 'package:nhasixapp/presentation/widgets/pagination_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
@@ -422,17 +425,30 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       ),
       actions: [
-        IconButton(
-          icon: Icon(
-            _showAdvancedFilters ? Icons.filter_list : Icons.filter_list_off,
-            color: _showAdvancedFilters
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-          onPressed: () {
-            setState(() {
-              _showAdvancedFilters = !_showAdvancedFilters;
-            });
+        // Only show advanced filters for sources that support it (not Crotpedia)
+        BlocBuilder<SourceCubit, SourceState>(
+          builder: (context, sourceState) {
+            final isCrotpedia =
+                sourceState.activeSource?.id == SourceType.crotpedia.id;
+            if (isCrotpedia) {
+              // Crotpedia doesn't support advanced filters (no exclude tags, etc)
+              return const SizedBox.shrink();
+            }
+            return IconButton(
+              icon: Icon(
+                _showAdvancedFilters
+                    ? Icons.filter_list
+                    : Icons.filter_list_off,
+                color: _showAdvancedFilters
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              onPressed: () {
+                setState(() {
+                  _showAdvancedFilters = !_showAdvancedFilters;
+                });
+              },
+            );
           },
         ),
         IconButton(

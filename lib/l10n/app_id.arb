@@ -430,6 +430,9 @@
   
   "ok": "OK",
   "cancel": "Batal",
+  "exitApp": "Keluar Aplikasi",
+  "areYouSureExit": "Apakah Anda yakin ingin keluar dari aplikasi?",
+  "exit": "Keluar",
   "delete": "Hapus",
   "confirm": "Konfirmasi",
   "loading": "Memuat...",
@@ -734,6 +737,8 @@
     }
   },
   "failedToLoad": "Gagal memuat",
+  "loginRequiredForAction": "Login diperlukan untuk tindakan ini",
+  "login": "Login",
   "offlineContentTitle": "Konten Offline",
   "offlineContentError": "Error Konten Offline",
   "favorited": "Difavoritkan",

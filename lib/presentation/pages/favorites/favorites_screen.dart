@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../widgets/shimmer_loading_widgets.dart';
-import 'package:go_router/go_router.dart';
+
+import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/web.dart';
 
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
+import '../../../core/routing/app_router.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/responsive_grid_delegate.dart';
 import '../../cubits/favorite/favorite_cubit.dart';
@@ -566,7 +568,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           _toggleItemSelection(contentId);
         } else {
           // Navigate to content detail
-          context.push('/content/$contentId');
+          final sourceId = favorite['source_id']?.toString();
+          AppRouter.goToContentDetail(context, contentId, sourceId: sourceId);
         }
       },
       onLongPress: () {
@@ -606,18 +609,70 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '${AppLocalizations.of(context)?.idLabel ?? 'ID'}: $contentId',
-                        style: TextStyleConst.withColor(TextStyleConst.caption,
-                            Theme.of(context).colorScheme.onSurfaceVariant),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      // Source badge + Title row
+                      Row(
+                        children: [
+                          // Source badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: _getSourceColor(
+                                  favorite['source_id']?.toString() ??
+                                      SourceType.nhentai.id),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                            child: Text(
+                              (favorite['source_id']?.toString() ??
+                                      SourceType.nhentai.id)
+                                  .toUpperCase(),
+                              style: TextStyleConst.caption.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 8,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          // Title (if available)
+                          if (favorite['title'] != null)
+                            Expanded(
+                              child: Text(
+                                favorite['title'].toString(),
+                                style: TextStyleConst.caption.copyWith(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _formatDate(favorite['added_at']),
-                        style: TextStyleConst.withColor(TextStyleConst.caption,
-                            Theme.of(context).colorScheme.outline),
+                      const SizedBox(height: 2),
+                      // ID + Date row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '#$contentId',
+                            style: TextStyleConst.caption.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant
+                                  .withValues(alpha: 0.7),
+                              fontSize: 10,
+                            ),
+                          ),
+                          Text(
+                            _formatDate(favorite['added_at']),
+                            style: TextStyleConst.caption.copyWith(
+                              color: Theme.of(context).colorScheme.outline,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -732,6 +787,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ),
       ),
     );
+  }
+
+  Color _getSourceColor(String sourceId) {
+    if (sourceId.toLowerCase() == SourceType.nhentai.id) {
+      return const Color(0xFFEC2854); // nhentai red
+    } else if (sourceId.toLowerCase() == SourceType.crotpedia.id) {
+      return const Color(0xFF1E88E5); // crotpedia blue
+    } else {
+      return Theme.of(context).colorScheme.secondary;
+    }
   }
 
   String _formatDate(dynamic timestamp) {

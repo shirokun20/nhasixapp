@@ -6,6 +6,7 @@ import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
 import '../constants/app_constants.dart';
+import 'package:kuron_core/kuron_core.dart'; // Import ContentMetadata
 
 /// Utility class for download-related storage operations
 ///
@@ -141,18 +142,35 @@ class DownloadStorageUtils {
 
   /// Read local metadata.json for a content
   /// Returns metadata map if file exists and is valid, null otherwise
+  /// [sourceId] - Source identifier (default: 'nhentai')
   static Future<Map<String, dynamic>?> readLocalMetadata(
-      String contentId) async {
+    String contentId, {
+    String? sourceId,
+  }) async {
     try {
       _logger.d('Reading local metadata for content: $contentId');
 
       final downloadsPath = await getDownloadsDirectory();
-      final metadataFile = File(path.join(
+      final effectiveSourceId = sourceId ?? AppStorage.defaultSourceId;
+
+      // Try new path structure first: nhasix/{source}/{contentId}/
+      var metadataFile = File(path.join(
         downloadsPath,
         AppStorage.backupFolderName,
+        effectiveSourceId,
         contentId,
         AppStorage.metadataFileName,
       ));
+
+      // Fallback to legacy path: nhasix/{contentId}/ (for backward compatibility)
+      if (!await metadataFile.exists()) {
+        metadataFile = File(path.join(
+          downloadsPath,
+          AppStorage.backupFolderName,
+          contentId,
+          AppStorage.metadataFileName,
+        ));
+      }
 
       // Check if metadata file exists
       if (!await metadataFile.exists()) {
@@ -176,17 +194,18 @@ class DownloadStorageUtils {
 
   /// Get downloaded image paths for a content
   /// Returns sorted list of image file paths from the download directory
-  static Future<List<String>> getDownloadedImagePaths(String contentId) async {
+  /// [sourceId] - Source identifier (default: 'nhentai')
+  static Future<List<String>> getDownloadedImagePaths(
+    String contentId, {
+    String? sourceId,
+  }) async {
     try {
       _logger.d('Getting image paths for content: $contentId');
 
-      final downloadsPath = await getDownloadsDirectory();
-      final imagesDir = Directory(path.join(
-        downloadsPath,
-        AppStorage.backupFolderName,
-        contentId,
-        AppStorage.imagesSubfolder,
-      ));
+      final contentDir =
+          await getContentDirectory(contentId, sourceId: sourceId);
+      final imagesDir =
+          Directory(path.join(contentDir, AppStorage.imagesSubfolder));
 
       // Check if directory exists
       if (!await imagesDir.exists()) {
@@ -230,15 +249,172 @@ class DownloadStorageUtils {
   }
 
   /// Get the content directory path for a given content ID
-  static Future<String> getContentDirectory(String contentId) async {
+  /// Checks new source-based path first, then falls back to legacy path
+  /// [sourceId] - Source identifier (default: 'nhentai')
+  static Future<String> getContentDirectory(
+    String contentId, {
+    String? sourceId,
+  }) async {
     final downloadsPath = await getDownloadsDirectory();
-    return path.join(downloadsPath, AppStorage.backupFolderName, contentId);
+    final effectiveSourceId = sourceId ?? AppStorage.defaultSourceId;
+
+    // New path structure: nhasix/{source}/{contentId}/
+    final newPath = path.join(
+      downloadsPath,
+      AppStorage.backupFolderName,
+      effectiveSourceId,
+      contentId,
+    );
+
+    // Check if new path exists
+    if (await Directory(newPath).exists()) {
+      return newPath;
+    }
+
+    // Check legacy path: nhasix/{contentId}/
+    final legacyPath = path.join(
+      downloadsPath,
+      AppStorage.backupFolderName,
+      contentId,
+    );
+
+    if (await Directory(legacyPath).exists()) {
+      return legacyPath;
+    }
+
+    // Return new path for new downloads
+    return newPath;
+  }
+
+  /// Get the content directory path for new downloads (always uses new structure)
+  /// [sourceId] - Source identifier (default: 'nhentai')
+  static Future<String> getNewContentDirectory(
+    String contentId, {
+    String? sourceId,
+  }) async {
+    final downloadsPath = await getDownloadsDirectory();
+    final effectiveSourceId = sourceId ?? AppStorage.defaultSourceId;
+
+    return path.join(
+      downloadsPath,
+      AppStorage.backupFolderName,
+      effectiveSourceId,
+      contentId,
+    );
+  }
+
+  /// Get the source directory path
+  /// [sourceId] - Source identifier (default: 'nhentai')
+  static Future<String> getSourceDirectory({String? sourceId}) async {
+    final downloadsPath = await getDownloadsDirectory();
+    final effectiveSourceId = sourceId ?? AppStorage.defaultSourceId;
+
+    return path.join(
+      downloadsPath,
+      AppStorage.backupFolderName,
+      effectiveSourceId,
+    );
   }
 
   /// Check if content is downloaded (has images folder with files)
-  static Future<bool> isContentDownloaded(String contentId) async {
-    final imagePaths = await getDownloadedImagePaths(contentId);
+  /// [sourceId] - Source identifier (default: 'nhentai')
+  static Future<bool> isContentDownloaded(
+    String contentId, {
+    String? sourceId,
+  }) async {
+    final imagePaths =
+        await getDownloadedImagePaths(contentId, sourceId: sourceId);
     return imagePaths.isNotEmpty;
+  }
+
+  /// Migrate legacy content folder to new source-based structure
+  /// Returns true if migration was performed, false if not needed
+  static Future<bool> migrateToSourceFolder(
+    String contentId, {
+    String sourceId = 'nhentai',
+  }) async {
+    try {
+      final downloadsPath = await getDownloadsDirectory();
+
+      // Check if legacy path exists
+      final legacyPath = path.join(
+        downloadsPath,
+        AppStorage.backupFolderName,
+        contentId,
+      );
+      final legacyDir = Directory(legacyPath);
+
+      if (!await legacyDir.exists()) {
+        return false; // Nothing to migrate
+      }
+
+      // Check if it's actually a content folder (has metadata.json or images)
+      final hasMetadata =
+          await File(path.join(legacyPath, AppStorage.metadataFileName))
+              .exists();
+      final hasImages =
+          await Directory(path.join(legacyPath, AppStorage.imagesSubfolder))
+              .exists();
+
+      if (!hasMetadata && !hasImages) {
+        return false; // Not a content folder (could be source folder)
+      }
+
+      // Create source directory if needed
+      final sourceDir = Directory(path.join(
+        downloadsPath,
+        AppStorage.backupFolderName,
+        sourceId,
+      ));
+      if (!await sourceDir.exists()) {
+        await sourceDir.create(recursive: true);
+      }
+
+      // New path
+      final newPath = path.join(
+        downloadsPath,
+        AppStorage.backupFolderName,
+        sourceId,
+        contentId,
+      );
+
+      // Update metadata.json to v2 if it exists
+      final metadataFile =
+          File(path.join(legacyPath, AppStorage.metadataFileName));
+      if (await metadataFile.exists()) {
+        try {
+          final metadataContent = await metadataFile.readAsString();
+          final jsonMap = jsonDecode(metadataContent) as Map<String, dynamic>;
+
+          // Migrate using ContentMetadata model
+          // This automatically handles v1 -> v2 migration (adds source='nhentai', schemaVersion='2.0')
+          final metadata = ContentMetadata.fromJson(jsonMap);
+
+          // Force source to be the target sourceId of migration and upgrade schema version
+          final updatedMetadata = metadata.copyWith(
+            source: sourceId,
+            schemaVersion: MetadataVersion.v2,
+          );
+
+          // Write back updated metadata
+          await metadataFile
+              .writeAsString(jsonEncode(updatedMetadata.toJson()));
+          _logger.d('Upgraded metadata for $contentId to v2');
+        } catch (e) {
+          _logger.w('Failed to upgrade metadata for $contentId: $e');
+          // Start migration anyway, metadata will be readable as v1 fallback
+        }
+      }
+
+      // Move folder
+      await legacyDir.rename(newPath);
+      _logger.i('Migrated content $contentId to $sourceId folder');
+
+      return true;
+    } catch (e) {
+      _logger.e('Error migrating content $contentId: $e');
+      return false;
+    }
   }
 
   /// Format bytes to human-readable string

@@ -45,6 +45,7 @@ class AddToHistoryUseCase extends UseCase<void, AddToHistoryParams> {
         isCompleted: params.page >= params.totalPages,
         coverUrl: params.coverUrl,
         title: params.title,
+        sourceId: params.sourceId,
       );
 
       await _userDataRepository.saveHistory(history);
@@ -65,6 +66,7 @@ class AddToHistoryParams extends UseCaseParams {
     this.timeSpent,
     this.coverUrl,
     this.title,
+    this.sourceId = 'nhentai',
   });
 
   final ContentId contentId;
@@ -73,9 +75,10 @@ class AddToHistoryParams extends UseCaseParams {
   final Duration? timeSpent;
   final String? coverUrl;
   final String? title;
+  final String sourceId;
 
   @override
-  List<Object?> get props => [contentId, page, totalPages, timeSpent];
+  List<Object?> get props => [contentId, page, totalPages, timeSpent, sourceId];
 
   AddToHistoryParams copyWith({
     ContentId? contentId,
@@ -84,6 +87,7 @@ class AddToHistoryParams extends UseCaseParams {
     Duration? timeSpent,
     String? coverUrl,
     String? title,
+    String? sourceId,
   }) {
     return AddToHistoryParams(
       contentId: contentId ?? this.contentId,
@@ -92,6 +96,7 @@ class AddToHistoryParams extends UseCaseParams {
       timeSpent: timeSpent ?? this.timeSpent,
       title: title,
       coverUrl: coverUrl,
+      sourceId: sourceId ?? this.sourceId,
     );
   }
 
@@ -103,6 +108,7 @@ class AddToHistoryParams extends UseCaseParams {
     Duration? timeSpent,
     String? coverUrl,
     String? title,
+    String sourceId = 'nhentai',
   }) {
     return AddToHistoryParams(
       contentId: ContentId.fromString(contentId),
@@ -111,6 +117,7 @@ class AddToHistoryParams extends UseCaseParams {
       timeSpent: timeSpent,
       title: title,
       coverUrl: coverUrl,
+      sourceId: sourceId,
     );
   }
 
@@ -122,6 +129,7 @@ class AddToHistoryParams extends UseCaseParams {
     Duration? timeSpent,
     String? coverUrl,
     String? title,
+    String sourceId = 'nhentai',
   }) {
     return AddToHistoryParams(
       contentId: ContentId.fromInt(contentId),
@@ -130,6 +138,7 @@ class AddToHistoryParams extends UseCaseParams {
       timeSpent: timeSpent,
       title: title,
       coverUrl: coverUrl,
+      sourceId: sourceId,
     );
   }
 
@@ -152,6 +161,7 @@ class AddToHistoryParams extends UseCaseParams {
     Duration? timeSpent,
     String? coverUrl,
     String? title,
+    String sourceId = 'nhentai',
   }) {
     return AddToHistoryParams(
       contentId: contentId,
@@ -160,6 +170,7 @@ class AddToHistoryParams extends UseCaseParams {
       timeSpent: timeSpent,
       title: title,
       coverUrl: coverUrl,
+      sourceId: sourceId,
     );
   }
 

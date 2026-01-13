@@ -13,14 +13,33 @@ class ContentId extends Equatable {
   String toString() => value;
 
   /// Validate content ID format
+  /// Supports:
+  /// - Numeric IDs (nhentai): "123456"
+  /// - Slug IDs (crotpedia): "my-manga-title", "the-hatsunetsu"
   bool get isValid {
-    // Content ID should be numeric for nhentai
-    return RegExp(r'^\d+$').hasMatch(value);
+    if (value.isEmpty) return false;
+
+    // Any non-empty string is considered a valid ID.
+    // We differentiate between numeric (nhentai) and non-numeric (slug-based like crotpedia).
+    return true;
   }
 
-  /// Get content ID as integer
+  /// Check if this is a numeric ID (nhentai-style)
+  bool get isNumeric => RegExp(r'^\d+$').hasMatch(value);
+
+  bool get isSlug => !isNumeric;
+
+  /// Get content ID as integer (only for numeric IDs)
   int get asInt {
-    if (!isValid) throw FormatException('Invalid content ID: $value');
+    if (!isValid) {
+      throw FormatException('Invalid content ID: $value');
+    }
+    if (!isNumeric) {
+      throw FormatException(
+          'Cannot convert non-numeric content ID to int: $value. '
+          'This ID appears to be a slug-based ID (e.g., from crotpedia). '
+          'Use .value to get the string representation.');
+    }
     return int.parse(value);
   }
 
@@ -29,13 +48,9 @@ class ContentId extends Equatable {
     return ContentId(id.toString());
   }
 
-  /// Create from string with validation
+  /// Create from string without strict validation
   factory ContentId.fromString(String id) {
-    final contentId = ContentId(id);
-    if (!contentId.isValid) {
-      throw FormatException('Invalid content ID format: $id');
-    }
-    return contentId;
+    return ContentId(id);
   }
 
   /// Try to create from string, return null if invalid

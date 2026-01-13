@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -35,6 +36,9 @@ import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:nhasixapp/presentation/pages/main/widgets/main_grid_card.dart';
 import 'package:nhasixapp/presentation/pages/main/widgets/main_featured_card.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
+import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/source/source_state.dart';
+import 'package:kuron_core/kuron_core.dart' hide SearchFilter, SortOption;
 
 class MainScreenScrollable extends StatefulWidget {
   const MainScreenScrollable({super.key});
@@ -55,6 +59,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   SearchFilter? _currentSearchFilter;
   SortOption _currentSortOption = SortOption.newest;
   bool _isOffline = false;
+  DateTime? _lastBackPressTime;
 
   @override
   void initState() {
@@ -199,82 +204,137 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   Widget build(BuildContext context) {
     // Offline logic now handled within the scaffold to preserve header consistency
 
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider.value(value: _homeBloc),
-        BlocProvider.value(value: _contentBloc),
-        BlocProvider.value(value: _searchBloc),
-        BlocProvider.value(value: getIt<OfflineSearchCubit>()),
-        BlocProvider.value(value: _updateCubit),
-      ],
-      child: BlocListener<UpdateCubit, UpdateState>(
-        listener: (context, state) {
-          if (state is UpdateAvailable) {
-            showModalBottomSheet(
-              context: context,
-              backgroundColor: Colors.transparent,
-              isScrollControlled: true,
-              builder: (context) =>
-                  UpdateAvailableSheet(updateInfo: state.updateInfo),
-            );
-          }
-        },
-        child: BlocBuilder<HomeBloc, HomeState>(
-          buildWhen: (previous, current) => true,
-          builder: (context, homeState) {
-            // Show full screen loading during home initialization
-            if (homeState is HomeLoading) {
-              return SimpleOfflineScaffold(
-                title: AppLocalizations.of(context)?.appTitle ?? 'NHentai',
-                body: const ListShimmer(itemCount: 8),
-                drawer: AppMainDrawerWidget(context: context),
-              );
-            }
+    // Offline logic now handled within the scaffold to preserve header consistency
 
-            // Main screen UI when home is loaded
-            return BlocProvider<OfflineSearchCubit>.value(
-              value: _offlineSearchCubit,
-              child: BlocBuilder<OfflineSearchCubit, OfflineSearchState>(
-                buildWhen: (previous, current) =>
-                    _isOffline, // Only rebuild if offline
-                builder: (context, offlineState) {
-                  final l10n = AppLocalizations.of(context)!;
-                  return AppScaffoldWithOffline(
-                    title: l10n.appTitle,
-                    appBar: AppMainHeaderWidget(
-                      context: context,
-                      isOffline: _isOffline,
-                      offlineStats: _isOffline
-                          ? context.read<OfflineSearchCubit>().getOfflineStats()
-                          : null,
-                      onRefresh: _isOffline
-                          ? () =>
-                              context.read<OfflineSearchCubit>().forceRefresh()
-                          : null,
-                      onImport:
-                          _isOffline ? () => importFromBackup(context) : null,
-                      onExport:
-                          _isOffline ? () => exportLibrary(context) : null,
-                      onSearchPressed: () async {
-                        // Navigate to search and wait for result
-                        final result = await context.push(AppRoute.search);
-                        if (result == true && context.mounted) {
-                          // Search was performed, reload saved filter
-                          await _reloadSearchFilter();
-                        }
-                      },
-                      onOpenBrowser: () => _openInBrowser(),
-                      onDownloadAll: () => _downloadAllGalleries(),
-                    ),
-                    drawer: AppMainDrawerWidget(context: context),
-                    body: _isOffline
-                        ? const OfflineContentBody()
-                        : _buildScrollableBody(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final now = DateTime.now();
+        if (_lastBackPressTime == null ||
+            now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+          _lastBackPressTime = now;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Press back again to exit'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          return;
+        }
+
+        // Exit the app
+        await SystemNavigator.pop();
+      },
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: _homeBloc),
+          BlocProvider.value(value: _contentBloc),
+          BlocProvider.value(value: _searchBloc),
+          BlocProvider.value(value: getIt<OfflineSearchCubit>()),
+          BlocProvider.value(value: _updateCubit),
+        ],
+        child: MultiBlocListener(
+          listeners: [
+            BlocListener<UpdateCubit, UpdateState>(
+              listener: (context, state) {
+                if (state is UpdateAvailable) {
+                  showModalBottomSheet(
+                    context: context,
+                    backgroundColor: Colors.transparent,
+                    isScrollControlled: true,
+                    builder: (context) =>
+                        UpdateAvailableSheet(updateInfo: state.updateInfo),
                   );
-                },
-              ),
-            );
-          },
+                }
+              },
+            ),
+            BlocListener<SourceCubit, SourceState>(
+              listenWhen: (previous, current) =>
+                  previous.activeSource?.id != current.activeSource?.id,
+              listener: (context, state) async {
+                // Reload content when source changes
+                if (mounted) {
+                  // Clear saved search filter to prevent cross-source tag issues
+                  await getIt<LocalDataSource>().removeLastSearchFilter();
+
+                  // Reset search state
+                  setState(() {
+                    _isShowingSearchResults = false;
+                    _currentSearchFilter = null;
+                  });
+
+                  _contentBloc.add(ContentLoadEvent(
+                    sortBy: _currentSortOption,
+                    forceRefresh: true,
+                  ));
+                }
+              },
+            ),
+          ],
+          child: BlocBuilder<HomeBloc, HomeState>(
+            // ... rest of child
+
+            buildWhen: (previous, current) => true,
+            builder: (context, homeState) {
+              // Show full screen loading during home initialization
+              if (homeState is HomeLoading) {
+                return SimpleOfflineScaffold(
+                  title: AppLocalizations.of(context)?.appTitle ?? 'NHentai',
+                  body: const ListShimmer(itemCount: 8),
+                  drawer: AppMainDrawerWidget(context: context),
+                );
+              }
+
+              // Main screen UI when home is loaded
+              return BlocProvider<OfflineSearchCubit>.value(
+                value: _offlineSearchCubit,
+                child: BlocBuilder<OfflineSearchCubit, OfflineSearchState>(
+                  buildWhen: (previous, current) =>
+                      _isOffline, // Only rebuild if offline
+                  builder: (context, offlineState) {
+                    final l10n = AppLocalizations.of(context)!;
+                    return AppScaffoldWithOffline(
+                      title: l10n.appTitle,
+                      appBar: AppMainHeaderWidget(
+                        context: context,
+                        isOffline: _isOffline,
+                        offlineStats: _isOffline
+                            ? context
+                                .read<OfflineSearchCubit>()
+                                .getOfflineStats()
+                            : null,
+                        onRefresh: _isOffline
+                            ? () => context
+                                .read<OfflineSearchCubit>()
+                                .forceRefresh()
+                            : null,
+                        onImport:
+                            _isOffline ? () => importFromBackup(context) : null,
+                        onExport:
+                            _isOffline ? () => exportLibrary(context) : null,
+                        onSearchPressed: () async {
+                          // Navigate to search and wait for result
+                          final result = await context.push(AppRoute.search);
+                          if (result == true && context.mounted) {
+                            // Search was performed, reload saved filter
+                            await _reloadSearchFilter();
+                          }
+                        },
+                        onOpenBrowser: () => _openInBrowser(),
+                        onDownloadAll: () => _downloadAllGalleries(),
+                      ),
+                      drawer: AppMainDrawerWidget(context: context),
+                      body: _isOffline
+                          ? const OfflineContentBody()
+                          : _buildScrollableBody(),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -715,7 +775,11 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
   /// Handle content tap to navigate to detail screen
   void _onContentTap(Content content) async {
-    final searchFilter = await AppRouter.goToContentDetail(context, content.id);
+    final searchFilter = await AppRouter.goToContentDetail(
+      context,
+      content.id,
+      sourceId: content.sourceId,
+    );
 
     // If user searched by tag from detail screen, trigger search
     if (searchFilter != null && mounted) {
@@ -1050,8 +1114,13 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       return const SizedBox.shrink();
     }
 
-    // Don't show pagination if there's only one page
-    if (state.totalPages <= 1) {
+    // Show pagination if:
+    // 1. Has totalPages > 1 (nhentai with known total)
+    // 2. OR has next/previous navigation (crotpedia with unknown total)
+    final shouldShowPagination =
+        state.totalPages > 1 || state.hasNext || state.hasPrevious;
+
+    if (!shouldShowPagination) {
       return const SizedBox.shrink();
     }
 
@@ -1082,7 +1151,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         },
         showProgressBar: false, // Simplify for Phase 5
         showPercentage: false, // Simplify for Phase 5
-        showPageInput: true, // Keep tap-to-jump functionality
+        showPageInput: state.totalPages > 0, // Only show input if total known
       ),
     );
   }
@@ -1122,7 +1191,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             // Fallback to main page if query params are empty
             url = _buildMainPageUrl(contentState.currentPage);
           } else {
-            url = 'https://nhentai.net/search/?$queryParams';
+            final baseUrl = _getSourceBaseUrl();
+            url = '$baseUrl/search/?$queryParams';
           }
         }
       } else {
@@ -1165,7 +1235,11 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
       // Fallback: try launching directly for https URLs
       if (!launched && uri.scheme == 'https') {
-        try {} catch (e) {
+        try {
+          Logger().i('Attempting direct launch for: $url');
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          launched = true;
+        } catch (e) {
           Logger().e('Direct launch failed: $e');
           lastError = 'Direct launch failed: $e';
         }
@@ -1220,13 +1294,15 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
   /// Build URL for content state context (non-search)
   String _buildContentStateUrl(ContentLoaded contentState) {
+    final baseUrl = _getSourceBaseUrl();
+
     if (contentState.tag != null) {
       // Tag browsing page
       final tagName = Uri.encodeComponent(contentState.tag!.name);
       final pageParam = contentState.currentPage > 1
           ? '?page=${contentState.currentPage}'
           : '';
-      return 'https://nhentai.net/tag/$tagName/$pageParam';
+      return '$baseUrl/tag/$tagName/$pageParam';
     } else if (contentState.timeframe != null) {
       // Popular content page
       final timeframe = contentState.timeframe!;
@@ -1235,7 +1311,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       final pageParam = contentState.currentPage > 1
           ? '?page=${contentState.currentPage}'
           : '';
-      return 'https://nhentai.net/popular$timeframeSuffix/$pageParam';
+      return '$baseUrl/popular$timeframeSuffix/$pageParam';
     } else {
       // Main page with sort options
       return _buildMainPageUrl(contentState.currentPage, contentState.sortBy);
@@ -1244,12 +1320,13 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
   /// Build main page URL with optional sort and page parameters
   String _buildMainPageUrl(int currentPage, [SortOption? sortBy]) {
+    final baseUrl = _getSourceBaseUrl();
     final sort = sortBy ?? SortOption.newest;
     final sortParam = sort == SortOption.newest ? '' : '?sort=${sort.apiValue}';
     final pageParam = currentPage > 1
         ? (sortParam.isEmpty ? '?page=$currentPage' : '&page=$currentPage')
         : '';
-    return 'https://nhentai.net/$sortParam$pageParam';
+    return '$baseUrl/$sortParam$pageParam';
   }
 
   /// Clean URL by removing trailing ? or & characters and empty parameters
@@ -1289,6 +1366,23 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       });
       return cleaned;
     }
+  }
+
+  /// Get current active source
+  ContentSource? _getActiveSource() {
+    try {
+      final sourceCubit = context.read<SourceCubit>();
+      return sourceCubit.state.activeSource;
+    } catch (e) {
+      Logger().e('Failed to get active source: $e');
+      return null;
+    }
+  }
+
+  /// Get base URL for current source (fallback to nhentai)
+  String _getSourceBaseUrl() {
+    final source = _getActiveSource();
+    return source?.baseUrl ?? 'https://nhentai.net';
   }
 
   /// Download all galleries in current page

@@ -40,7 +40,6 @@ class HttpClientManager {
       'DNT': '1',
       'Connection': 'keep-alive',
       'Upgrade-Insecure-Requests': '1',
-      'referer': 'https://nhentai.net/',
       // 'Cookie': 'csrftoken=8FfRKO5iEnVwVfO3zzR2B7IDxHZUw674; session-affinity=1754401765.457.1635.890657|5438e073fbb56fb7666a0126dc9d5e81'
     };
 

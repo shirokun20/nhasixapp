@@ -32,10 +32,12 @@ class AddToFavoritesUseCase extends UseCase<void, AddToFavoritesParams> {
         }
       }
 
-      // Add to favorites (simplified - only id and cover_url)
+      // Add to favorites with full metadata
       await _userDataRepository.addToFavorites(
         id: params.content.id,
+        sourceId: params.content.sourceId,
         coverUrl: params.content.coverUrl,
+        title: params.content.title,
       );
     } on UseCaseException {
       rethrow;

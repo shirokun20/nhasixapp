@@ -37,8 +37,13 @@ class LocalDataSource {
 
   // ==================== FAVORITES OPERATIONS ====================
 
-  /// Add content to favorites (simplified - only id and cover_url)
-  Future<void> addToFavorites(String id, String coverUrl) async {
+  /// Add content to favorites with full metadata
+  Future<void> addToFavorites({
+    required String id,
+    required String sourceId,
+    required String coverUrl,
+    String? title,
+  }) async {
     try {
       final db = await _getSafeDatabase();
       if (db == null) {
@@ -50,13 +55,30 @@ class LocalDataSource {
         'favorites',
         {
           'id': id,
+          'source_id': sourceId,
           'cover_url': coverUrl,
           'added_at': DateTime.now().millisecondsSinceEpoch,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
-      _logger.d('Added content $id to favorites');
+      // Also save/update history with title for future retrieval
+      if (title != null && title.isNotEmpty) {
+        await db.insert(
+          'history',
+          {
+            'id': id,
+            'source_id': sourceId,
+            'title': title,
+            'cover_url': coverUrl,
+            'last_viewed': DateTime.now().millisecondsSinceEpoch,
+          },
+          conflictAlgorithm:
+              ConflictAlgorithm.ignore, // Don't override existing history
+        );
+      }
+
+      _logger.d('Added content $id from $sourceId to favorites');
     } catch (e) {
       _logger.e('Error adding to favorites: $e');
       rethrow;
@@ -80,7 +102,7 @@ class LocalDataSource {
     }
   }
 
-  /// Get favorite content (simplified)
+  /// Get favorite content with title from history/downloads
   Future<List<Map<String, dynamic>>> getFavorites({
     int page = 1,
     int limit = 20,
@@ -94,12 +116,20 @@ class LocalDataSource {
 
       final offset = (page - 1) * limit;
 
-      final result = await db.query(
-        'favorites',
-        orderBy: 'added_at DESC',
-        limit: limit,
-        offset: offset,
-      );
+      // LEFT JOIN with history and downloads to get the title
+      final result = await db.rawQuery('''
+        SELECT 
+          f.id,
+          f.source_id,
+          f.cover_url,
+          f.added_at,
+          COALESCE(h.title, d.title) as title
+        FROM favorites f
+        LEFT JOIN history h ON f.id = h.id AND f.source_id = h.source_id
+        LEFT JOIN downloads d ON f.id = d.id AND f.source_id = d.source_id
+        ORDER BY f.added_at DESC
+        LIMIT ? OFFSET ?
+      ''', [limit, offset]);
 
       return result;
     } catch (e) {
@@ -276,6 +306,46 @@ class LocalDataSource {
     } catch (e) {
       _logger.e('Error getting downloads count: $e');
       return 0;
+    }
+  }
+
+  /// Search downloads by query (id, title, or source_id)
+  Future<List<Map<String, dynamic>>> searchDownloads({
+    required String query,
+    DownloadState? state,
+    int limit = 100,
+  }) async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) {
+        _logger.e('Database not available, returning empty search results');
+        return [];
+      }
+
+      final queryPattern = '%${query.toLowerCase()}%';
+
+      String whereClause =
+          '(LOWER(id) LIKE ? OR LOWER(title) LIKE ? OR LOWER(source_id) LIKE ?)';
+      List<dynamic> whereArgs = [queryPattern, queryPattern, queryPattern];
+
+      if (state != null) {
+        whereClause = '$whereClause AND state = ?';
+        whereArgs.add(state.name);
+      }
+
+      final result = await db.query(
+        'downloads',
+        where: whereClause,
+        whereArgs: whereArgs,
+        orderBy: 'start_time DESC',
+        limit: limit,
+      );
+
+      _logger.d('Search downloads found ${result.length} results for: $query');
+      return result;
+    } catch (e) {
+      _logger.e('Error searching downloads: $e');
+      return [];
     }
   }
 

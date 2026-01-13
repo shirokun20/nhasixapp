@@ -58,12 +58,15 @@ class DownloadContentUseCase
         }
       }
 
-      // Create initial download status and save it  
+      // Create initial download status and save it
       var downloadStatus = DownloadStatus.initial(
         params.content.id,
         params.content.pageCount,
         startPage: params.startPage,
         endPage: params.endPage,
+        title: params.content.title,
+        sourceId: params.content.sourceId,
+        coverUrl: params.content.coverUrl,
       );
 
       await _userDataRepository.saveDownloadStatus(downloadStatus);
@@ -71,10 +74,10 @@ class DownloadContentUseCase
       // Start actual download if not just queuing
       if (params.startImmediately) {
         downloadStatus = await _performActualDownload(
-          params.content, 
-          downloadStatus, 
-          params.convertToPdf, 
-          params.imageQuality, 
+          params.content,
+          downloadStatus,
+          params.convertToPdf,
+          params.imageQuality,
           params.timeoutDuration,
           params.startPage,
           params.endPage,
@@ -158,7 +161,7 @@ class DownloadContentUseCase
         // Convert to PDF if requested
         if (downloadResult.downloadPath != null && convertToPdf) {
           _logger.i('Starting PDF conversion for content: ${content.id}');
-          
+
           // Notify about PDF conversion start
           DownloadManager().emitProgress(DownloadProgressUpdate(
             contentId: content.id,
@@ -167,7 +170,7 @@ class DownloadContentUseCase
             downloadSpeed: 0.0, // PDF conversion doesn't have speed
             estimatedTimeRemaining: const Duration(seconds: 30), // Estimated
           ));
-          
+
           await _convertToPdfIfRequested(content, downloadResult.downloadPath!);
         }
       } else {
@@ -180,13 +183,13 @@ class DownloadContentUseCase
       }
 
       await _userDataRepository.saveDownloadStatus(currentStatus);
-      
+
       // ✅ FIXED: Emit completion event to notify DownloadBloc to refresh
       // This ensures UI updates immediately when download completes
       if (currentStatus.isCompleted || currentStatus.isFailed) {
         DownloadManager().emitCompletion(content.id, currentStatus.state);
       }
-      
+
       return currentStatus;
     } catch (e) {
       _logger.e('Download failed for content: ${content.id}', error: e);
@@ -218,10 +221,12 @@ class DownloadContentUseCase
         return;
       }
 
-      _logger.i('Converting ${imageFiles.length} images to PDF for: ${content.id}');
+      _logger.i(
+          'Converting ${imageFiles.length} images to PDF for: ${content.id}');
 
       // Create PDF folder: nhasix-generate/pdf/
-      final pdfOutputPath = await _createPdfOutputPath(content.id, content.title);
+      final pdfOutputPath =
+          await _createPdfOutputPath(content.id, content.title);
 
       // Emit progress for PDF conversion start
       DownloadManager().emitProgress(DownloadProgressUpdate(
@@ -229,7 +234,8 @@ class DownloadContentUseCase
         downloadedPages: content.pageCount,
         totalPages: content.pageCount,
         downloadSpeed: 0.0,
-        estimatedTimeRemaining: Duration(seconds: imageFiles.length * 2), // Estimate 2s per image
+        estimatedTimeRemaining:
+            Duration(seconds: imageFiles.length * 2), // Estimate 2s per image
       ));
 
       // Convert to PDF with custom output path
@@ -241,8 +247,9 @@ class DownloadContentUseCase
       );
 
       if (pdfResult.success) {
-        _logger.i('PDF created successfully for content: ${content.id} at: $pdfOutputPath');
-        
+        _logger.i(
+            'PDF created successfully for content: ${content.id} at: $pdfOutputPath');
+
         // Emit final progress for PDF completion
         DownloadManager().emitProgress(DownloadProgressUpdate(
           contentId: content.id,
@@ -265,15 +272,16 @@ class DownloadContentUseCase
     try {
       // Get app documents directory
       final appDocDir = await getApplicationDocumentsDirectory();
-      
+
       // Create nhasix-generate/pdf/ folder
-      final pdfFolder = Directory(path.join(appDocDir.path, 'nhasix-generate', 'pdf'));
-      
+      final pdfFolder =
+          Directory(path.join(appDocDir.path, 'nhasix-generate', 'pdf'));
+
       if (!await pdfFolder.exists()) {
         await pdfFolder.create(recursive: true);
         _logger.i('Created PDF folder: ${pdfFolder.path}');
       }
-      
+
       return pdfFolder.path;
     } catch (e) {
       _logger.e('Error creating PDF folder: $e');
@@ -294,7 +302,7 @@ class DownloadContentParams extends UseCaseParams {
     this.imageQuality = 'high',
     this.timeoutDuration,
     this.startPage, // NEW: Start page for range download
-    this.endPage,   // NEW: End page for range download
+    this.endPage, // NEW: End page for range download
   });
 
   final Content content;
@@ -306,7 +314,7 @@ class DownloadContentParams extends UseCaseParams {
   final String imageQuality;
   final Duration? timeoutDuration;
   final int? startPage; // NEW: Start page for range download (1-based)
-  final int? endPage;   // NEW: End page for range download (1-based)
+  final int? endPage; // NEW: End page for range download (1-based)
 
   /// Check if this is a range download
   bool get isRangeDownload => startPage != null || endPage != null;
@@ -393,7 +401,11 @@ class DownloadContentParams extends UseCaseParams {
 
   /// Create params for immediate download with images
   factory DownloadContentParams.immediate(Content content,
-      {bool convertToPdf = false, String imageQuality = 'high', Duration? timeoutDuration, int? startPage, int? endPage}) {
+      {bool convertToPdf = false,
+      String imageQuality = 'high',
+      Duration? timeoutDuration,
+      int? startPage,
+      int? endPage}) {
     return DownloadContentParams(
       content: content,
       priority: 5,

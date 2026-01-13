@@ -12,6 +12,11 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart'
     hide ImageCacheManager;
 
+import 'package:kuron_core/kuron_core.dart';
+import 'package:kuron_nhentai/kuron_nhentai.dart';
+import 'package:kuron_crotpedia/kuron_crotpedia.dart';
+import 'package:nhasixapp/core/adapters/nhentai_scraper_adapter_impl.dart';
+
 // Core Network
 import 'package:nhasixapp/core/network/http_client_manager.dart';
 
@@ -48,6 +53,7 @@ import 'package:nhasixapp/data/repositories/reader_repository_impl.dart';
 
 // Use Cases
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
+import 'package:nhasixapp/domain/usecases/content/get_chapter_images_usecase.dart';
 import 'package:nhasixapp/domain/usecases/favorites/favorites_usecases.dart';
 import 'package:nhasixapp/domain/usecases/downloads/downloads_usecases.dart';
 import 'package:nhasixapp/domain/usecases/history/add_to_history_usecase.dart';
@@ -75,8 +81,6 @@ import 'package:nhasixapp/services/image_metadata_service.dart';
 import 'package:nhasixapp/services/export_service.dart';
 import 'package:nhasixapp/services/legal_content_service.dart';
 import 'package:nhasixapp/services/cache/cache_manager.dart' as multi_cache;
-import 'package:nhasixapp/domain/entities/content.dart';
-import 'package:nhasixapp/domain/entities/tag.dart';
 
 final getIt = GetIt.instance;
 
@@ -256,6 +260,44 @@ void _setupDataSources() {
         logger: getIt<Logger>(),
       ));
 
+  // Nhentai Scraper Adapter
+  getIt.registerLazySingleton<NhentaiScraperAdapter>(
+      () => NhentaiScraperAdapterImpl(getIt<RemoteDataSource>()));
+
+  // Nhentai Source
+  getIt.registerLazySingleton<NhentaiSource>(() => NhentaiSource(
+        scraper: getIt<NhentaiScraperAdapter>(),
+      ));
+
+  // Crotpedia Cookie Store
+  getIt.registerLazySingleton<CrotpediaCookieStore>(
+      () => CrotpediaCookieStore());
+
+  // Crotpedia Auth Manager
+  getIt.registerLazySingleton<CrotpediaAuthManager>(() => CrotpediaAuthManager(
+        dio: getIt<Dio>(),
+        cookieStore: getIt<CrotpediaCookieStore>(),
+      ));
+
+  // Crotpedia Scraper
+  getIt.registerLazySingleton<CrotpediaScraper>(() => CrotpediaScraper());
+
+  // Crotpedia Source
+  getIt.registerLazySingleton<CrotpediaSource>(() => CrotpediaSource(
+        scraper: getIt<CrotpediaScraper>(),
+        authManager: getIt<CrotpediaAuthManager>(),
+        dio: getIt<Dio>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // Content Source Registry
+  getIt.registerLazySingleton<ContentSourceRegistry>(() {
+    final registry = ContentSourceRegistry();
+    registry.register(getIt<NhentaiSource>());
+    registry.register(getIt<CrotpediaSource>());
+    return registry;
+  });
+
   // Database Helper
   getIt.registerLazySingleton<DatabaseHelper>(() => DatabaseHelper.instance);
 
@@ -272,6 +314,7 @@ void _setupDataSources() {
 void _setupRepositories() {
   // Content Repository with multi-layer cache integration
   getIt.registerLazySingleton<ContentRepository>(() => ContentRepositoryImpl(
+        contentSourceRegistry: getIt<ContentSourceRegistry>(),
         remoteDataSource: getIt<RemoteDataSource>(),
         detailCacheService: getIt<DetailCacheService>(),
         requestDeduplicationService: getIt<RequestDeduplicationService>(),
@@ -335,6 +378,8 @@ void _setupUseCases() {
       () => SearchContentUseCase(getIt()));
   getIt.registerLazySingleton<GetRandomContentUseCase>(
       () => GetRandomContentUseCase(getIt()));
+  getIt.registerLazySingleton<GetChapterImagesUseCase>(
+      () => GetChapterImagesUseCase(getIt()));
 
   // Favorites Use Cases
   getIt.registerLazySingleton<AddToFavoritesUseCase>(
@@ -404,6 +449,7 @@ void _setupBlocs() {
   getIt.registerLazySingleton<DownloadBloc>(() => DownloadBloc(
         downloadContentUseCase: getIt<DownloadContentUseCase>(),
         getContentDetailUseCase: getIt<GetContentDetailUseCase>(),
+        getChapterImagesUseCase: getIt<GetChapterImagesUseCase>(),
         userDataRepository: getIt<UserDataRepository>(),
         logger: getIt<Logger>(),
         connectivity: getIt<Connectivity>(),
@@ -423,6 +469,13 @@ void _setupCubits() {
   // NetworkCubit - App-wide connectivity monitoring
   getIt.registerLazySingleton<NetworkCubit>(() => NetworkCubit(
         connectivity: getIt<Connectivity>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // SourceCubit - Content Source Management
+  getIt.registerFactory<SourceCubit>(() => SourceCubit(
+        registry: getIt<ContentSourceRegistry>(),
+        prefs: getIt<SharedPreferences>(),
         logger: getIt<Logger>(),
       ));
 
@@ -446,6 +499,13 @@ void _setupCubits() {
         userDataRepository: getIt<UserDataRepository>(),
         imageMetadataService: getIt<ImageMetadataService>(),
         contentRepository: getIt<ContentRepository>(),
+        contentSourceRegistry: getIt<ContentSourceRegistry>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // CrotpediaAuthCubit - Crotpedia login management
+  getIt.registerLazySingleton<CrotpediaAuthCubit>(() => CrotpediaAuthCubit(
+        authManager: getIt<CrotpediaAuthManager>(),
         logger: getIt<Logger>(),
       ));
 

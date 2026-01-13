@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/text_style_const.dart';
-import '../../domain/entities/content.dart';
+import 'package:kuron_core/kuron_core.dart' as core;
 import '../../domain/entities/search_filter.dart';
-import '../../domain/entities/tag.dart';
 import 'widgets.dart';
 import 'shimmer_loading_widgets.dart';
 
@@ -20,16 +19,17 @@ class _WidgetExamplesScreenState extends State<WidgetExamplesScreen> {
   bool _isLoading = false;
 
   // Sample content for demonstration
-  final Content _sampleContent = Content(
+  final core.Content _sampleContent = core.Content(
+    sourceId: 'nhentai',
     id: '123456',
     title: 'Sample Manga Title',
     englishTitle: 'Sample English Title',
     japaneseTitle: 'サンプル日本語タイトル',
     coverUrl: 'https://example.com/cover.jpg',
     tags: [
-      const Tag(id: 1, name: 'romance', type: 'tag', count: 1000, url: ''),
-      const Tag(id: 2, name: 'comedy', type: 'tag', count: 500, url: ''),
-      const Tag(id: 3, name: 'school', type: 'tag', count: 300, url: ''),
+      const core.Tag(id: 1, name: 'romance', type: 'tag', count: 1000, url: ''),
+      const core.Tag(id: 2, name: 'comedy', type: 'tag', count: 500, url: ''),
+      const core.Tag(id: 3, name: 'school', type: 'tag', count: 300, url: ''),
     ],
     artists: ['Artist Name'],
     characters: ['Character 1', 'Character 2'],

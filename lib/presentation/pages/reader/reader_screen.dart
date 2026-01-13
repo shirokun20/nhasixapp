@@ -9,7 +9,7 @@ import '../../../core/di/service_locator.dart';
 import '../../../core/models/image_metadata.dart';
 import '../../../core/utils/offline_content_manager.dart';
 import '../../../data/models/reader_settings_model.dart';
-import '../../../domain/entities/content.dart';
+import 'package:kuron_core/kuron_core.dart';
 import '../../../services/local_image_preloader.dart';
 import '../../cubits/reader/reader_cubit.dart';
 // import '../../cubits/reader/reader_state.dart';

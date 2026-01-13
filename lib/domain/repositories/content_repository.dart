@@ -17,7 +17,7 @@ abstract class ContentRepository {
   ///
   /// [contentId] - Unique content identifier
   /// Returns detailed content information
-  Future<Content> getContentDetail(ContentId contentId);
+  Future<Content> getContentDetail(ContentId contentId, {String? sourceId});
 
   /// Search content with advanced filters
   ///
@@ -78,6 +78,14 @@ abstract class ContentRepository {
   /// [contentId] - Content ID to verify
   /// Returns true if content exists and accessible
   Future<bool> verifyContentExists(ContentId contentId);
+
+  /// Get chapter images
+  ///
+  /// [chapterId] - Chapter ID
+  /// [sourceId] - Optional source ID
+  /// Returns list of image URLs for the chapter
+  Future<List<String>> getChapterImages(ContentId chapterId,
+      {String? sourceId});
 }
 
 /// Result wrapper for paginated content lists

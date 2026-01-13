@@ -1,0 +1,41 @@
+{
+    "version": "1.0.0",
+    "lastUpdated": "2026-01-13T13:16:00+07:00",
+    "minimumAppVersion": "0.7.0",
+    "forceUpdate": false,
+    "configs": {
+        "nhentai": {
+            "version": "1.0.0",
+            "url": "configs/nhentai-config.json",
+            "checksum": ""
+        },
+        "crotpedia": {
+            "version": "1.0.0",
+            "url": "configs/crotpedia-config.json",
+            "checksum": ""
+        },
+        "app": {
+            "version": "1.0.0",
+            "url": "configs/app-config.json",
+            "checksum": ""
+        },
+        "tags": {
+            "version": "1.0.0",
+            "url": "configs/tags-config.json",
+            "checksum": ""
+        }
+    },
+    "changelog": [
+        {
+            "version": "1.0.0",
+            "date": "2026-01-13",
+            "changes": [
+                "Initial dynamic configuration release",
+                "Added nhentai API endpoints configuration",
+                "Added crotpedia scraper selectors configuration",
+                "Added network and rate limiting settings",
+                "Added feature flags for per-source capabilities"
+            ]
+        }
+    ]
+}

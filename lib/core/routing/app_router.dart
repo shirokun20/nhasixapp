@@ -17,6 +17,7 @@ import 'package:nhasixapp/presentation/pages/history/history_screen.dart';
 import 'package:nhasixapp/presentation/pages/random/random_gallery_screen.dart';
 import 'package:nhasixapp/presentation/pages/about/about_screen.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
+import 'package:nhasixapp/presentation/pages/crotpedia/crotpedia_login_page.dart';
 import 'package:nhasixapp/core/models/image_metadata.dart';
 import 'package:nhasixapp/core/utils/app_animations.dart';
 
@@ -117,10 +118,14 @@ class AppRouter {
         name: AppRoute.contentDetailName,
         pageBuilder: (context, state) {
           final contentId = state.pathParameters['id']!;
+          final sourceId = state.uri.queryParameters['sourceId'];
           return AppAnimations.animatedPageBuilder(
             context,
             state,
-            DetailScreen(contentId: contentId),
+            DetailScreen(
+              contentId: contentId,
+              sourceId: sourceId,
+            ),
             type: RouteTransitionType.fadeSlide,
           );
         },
@@ -286,6 +291,18 @@ class AppRouter {
           type: RouteTransitionType.fade,
         ),
       ),
+
+      // Crotpedia Login Screen
+      GoRoute(
+        path: AppRoute.crotpediaLogin,
+        name: 'crotpedia-login',
+        pageBuilder: (context, state) => AppAnimations.animatedPageBuilder(
+          context,
+          state,
+          const CrotpediaLoginPage(),
+          type: RouteTransitionType.fadeSlide,
+        ),
+      ),
     ],
 
     // Error handling
@@ -327,8 +344,10 @@ class AppRouter {
   }
 
   static Future<SearchFilter?> goToContentDetail(
-      BuildContext context, String contentId) async {
-    return await context.push<SearchFilter>('/content/$contentId');
+      BuildContext context, String contentId,
+      {String? sourceId}) async {
+    final query = sourceId != null ? '?sourceId=$sourceId' : '';
+    return await context.push<SearchFilter>('/content/$contentId$query');
   }
 
   static void goToReader(BuildContext context, String contentId,
@@ -379,6 +398,10 @@ class AppRouter {
 
   static void goToAbout(BuildContext context) {
     context.go(AppRoute.about);
+  }
+
+  static void goToCrotpediaLogin(BuildContext context) {
+    context.push(AppRoute.crotpediaLogin);
   }
 
   static Future<List<FilterItem>?> goToFilterData(
