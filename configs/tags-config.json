@@ -48,6 +48,12 @@
                 "slug",
                 "typeCode"
             ],
+            "typeCodeMapping": {
+                "8": "Genre"
+            },
+            "multiSelectSupport": {
+                "tag": true
+            },
             "migration": {
                 "enabled": true,
                 "remoteUrl": "https://cdn.jsdelivr.net/gh/shirokun20/nhasixapp@configs/configs/tags/tags_crotpedia.json",
