@@ -37,7 +37,7 @@ class FilterDataCubit extends Cubit<FilterDataState> {
       _selectedFilters = List<FilterItem>.from(selectedFilters);
       emit(FilterDataLoading(state));
       // Ensure tag data is cached for default source (nhentai) for now
-      // TODO: Make FilterDataCubit source-aware
+      // Make FilterDataCubit source-aware
       if (!_tagDataManager.hasTags('nhentai')) {
         await _tagDataManager.initialize(source: 'nhentai');
       }

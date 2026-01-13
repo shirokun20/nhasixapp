@@ -26,7 +26,6 @@ class SourceConfig {
   final FeatureConfig? features;
   final UiConfig? ui;
   final AuthConfig? auth;
-  final TagConfig? tags;
   final Map<String, String>? typeMapping; // Map type code to display name
 
   SourceConfig({
@@ -40,7 +39,6 @@ class SourceConfig {
     this.features,
     this.ui,
     this.auth,
-    this.tags,
     this.typeMapping,
   });
 
@@ -235,21 +233,184 @@ class AuthConfig {
   Map<String, dynamic> toJson() => _$AuthConfigToJson(this);
 }
 
-@JsonSerializable()
-class TagConfig {
-  final bool enabled;
-  final String? version;
-  final String? endpoint;
-  final int? updateIntervalHours;
+@JsonSerializable(explicitToJson: true)
+class TagsManifest {
+  final String version;
+  final String? lastUpdated;
+  final Map<String, TagSourceConfig> sources;
 
-  TagConfig({
-    required this.enabled,
-    this.version,
-    this.endpoint,
-    this.updateIntervalHours,
+  TagsManifest({
+    required this.version,
+    this.lastUpdated,
+    required this.sources,
   });
 
-  factory TagConfig.fromJson(Map<String, dynamic> json) =>
-      _$TagConfigFromJson(json);
-  Map<String, dynamic> toJson() => _$TagConfigToJson(this);
+  factory TagsManifest.fromJson(Map<String, dynamic> json) =>
+      _$TagsManifestFromJson(json);
+  Map<String, dynamic> toJson() => _$TagsManifestToJson(this);
+}
+
+@JsonSerializable(explicitToJson: true)
+class TagSourceConfig {
+  final String type;
+  final String? assetPath;
+  final String? format;
+  final List<String>? structure;
+  final TagMigrationConfig? migration;
+
+  TagSourceConfig({
+    required this.type,
+    this.assetPath,
+    this.format,
+    this.structure,
+    this.migration,
+  });
+
+  factory TagSourceConfig.fromJson(Map<String, dynamic> json) =>
+      _$TagSourceConfigFromJson(json);
+  Map<String, dynamic> toJson() => _$TagSourceConfigToJson(this);
+}
+
+@JsonSerializable()
+class TagMigrationConfig {
+  final bool enabled;
+  final String? remoteUrl;
+  final String? fallbackUrl;
+  final int? cacheTtlSeconds;
+
+  TagMigrationConfig({
+    required this.enabled,
+    this.remoteUrl,
+    this.fallbackUrl,
+    this.cacheTtlSeconds,
+  });
+
+  factory TagMigrationConfig.fromJson(Map<String, dynamic> json) =>
+      _$TagMigrationConfigFromJson(json);
+  Map<String, dynamic> toJson() => _$TagMigrationConfigToJson(this);
+}
+
+@JsonSerializable()
+class ConfigVersion {
+  final String version;
+  final String? minAppVersion;
+  final Map<String, ConfigManifest> configs;
+
+  ConfigVersion({
+    required this.version,
+    this.minAppVersion,
+    required this.configs,
+  });
+
+  factory ConfigVersion.fromJson(Map<String, dynamic> json) =>
+      _$ConfigVersionFromJson(json);
+  Map<String, dynamic> toJson() => _$ConfigVersionToJson(this);
+}
+
+@JsonSerializable()
+class ConfigManifest {
+  final String version;
+  final String file;
+
+  ConfigManifest({
+    required this.version,
+    required this.file,
+  });
+
+  factory ConfigManifest.fromJson(Map<String, dynamic> json) =>
+      _$ConfigManifestFromJson(json);
+  Map<String, dynamic> toJson() => _$ConfigManifestToJson(this);
+}
+
+@JsonSerializable(explicitToJson: true)
+class AppConfig {
+  final AppLimits? limits;
+  final AppDurations? durations;
+  final AppUiConfig? ui;
+  final AppStorage? storage;
+  final AppReader? reader;
+  final AppPrivacy? privacy;
+
+  AppConfig({
+    this.limits,
+    this.durations,
+    this.ui,
+    this.storage,
+    this.reader,
+    this.privacy,
+  });
+
+  factory AppConfig.fromJson(Map<String, dynamic> json) =>
+      _$AppConfigFromJson(json);
+  Map<String, dynamic> toJson() => _$AppConfigToJson(this);
+}
+
+// Sub-models for AppConfig (Simplified for now, can be expanded)
+@JsonSerializable()
+class AppLimits {
+  final int defaultPageSize;
+  final int maxConcurrentDownloads;
+
+  AppLimits({this.defaultPageSize = 20, this.maxConcurrentDownloads = 3});
+
+  factory AppLimits.fromJson(Map<String, dynamic> json) =>
+      _$AppLimitsFromJson(json);
+  Map<String, dynamic> toJson() => _$AppLimitsToJson(this);
+}
+
+@JsonSerializable()
+class AppDurations {
+  final int splashDelayMs;
+  final int snackbarDurationMs;
+
+  AppDurations({this.splashDelayMs = 2000, this.snackbarDurationMs = 3000});
+
+  factory AppDurations.fromJson(Map<String, dynamic> json) =>
+      _$AppDurationsFromJson(json);
+  Map<String, dynamic> toJson() => _$AppDurationsToJson(this);
+}
+
+@JsonSerializable()
+class AppUiConfig {
+  final int gridColumnsPortrait;
+  final double cardAspectRatio;
+
+  AppUiConfig({this.gridColumnsPortrait = 2, this.cardAspectRatio = 0.7});
+
+  factory AppUiConfig.fromJson(Map<String, dynamic> json) =>
+      _$AppUiConfigFromJson(json);
+  Map<String, dynamic> toJson() => _$AppUiConfigToJson(this);
+}
+
+@JsonSerializable()
+class AppStorage {
+  final String backupFolderName;
+
+  AppStorage({this.backupFolderName = 'nhasix_backup'});
+
+  factory AppStorage.fromJson(Map<String, dynamic> json) =>
+      _$AppStorageFromJson(json);
+  Map<String, dynamic> toJson() => _$AppStorageToJson(this);
+}
+
+@JsonSerializable()
+class AppReader {
+  final bool preloadNextChapter;
+
+  AppReader({this.preloadNextChapter = true});
+
+  factory AppReader.fromJson(Map<String, dynamic> json) =>
+      _$AppReaderFromJson(json);
+  Map<String, dynamic> toJson() => _$AppReaderToJson(this);
+}
+
+@JsonSerializable()
+class AppPrivacy {
+  final bool enableAnalytics;
+
+  AppPrivacy({this.enableAnalytics = true});
+
+  factory AppPrivacy.fromJson(Map<String, dynamic> json) =>
+      _$AppPrivacyFromJson(json);
+  Map<String, dynamic> toJson() => _$AppPrivacyToJson(this);
 }

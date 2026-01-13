@@ -79,39 +79,38 @@ class TagDataManager {
   /// Check for updates and download if necessary
   Future<void> checkForUpdates({required String source}) async {
     try {
-      final config = getIt<RemoteConfigService>().getConfig(source)?.tags;
-      if (config == null || !config.enabled) return;
+      final manifest = getIt<RemoteConfigService>().tagsManifest;
+      final sourceConfig = manifest?.sources[source];
+      if (sourceConfig == null) return;
 
-      final remoteVersion = int.tryParse(config.version ?? '0') ?? 0;
+      final migration = sourceConfig.migration;
+      if (migration == null || !migration.enabled) return;
+
+      final remoteVersion = manifest?.version ?? '0';
       final prefs = await SharedPreferences.getInstance();
       final versionKey = '${_tagsVersionKey}_$source';
-      final localVersion = prefs.getInt(versionKey) ?? 0;
+      final localVersion = prefs.getString(versionKey) ?? '0';
 
-      // Check if we actually have data loaded
       final hasData = hasTags(source);
 
-      // Force update if we have no data but have an endpoint, or if new version available
-      if ((remoteVersion > localVersion || !hasData) &&
-          config.endpoint != null) {
+      if ((remoteVersion != localVersion || !hasData) &&
+          migration.remoteUrl != null) {
         _logger.i(
-          'TagDataManager: Tag update required for $source (v$remoteVersion > v$localVersion, hasData: $hasData). Downloading...',
+          'TagDataManager: Tag update required for $source (v$remoteVersion != v$localVersion, hasData: $hasData). Downloading...',
         );
-        await downloadTags(config.endpoint!, remoteVersion, source);
+        await downloadTags(migration.remoteUrl!, remoteVersion, source);
       } else {
         _logger.d(
-          'TagDataManager: Tags for $source are up to date (v$localVersion)',
-        );
+            'TagDataManager: Tags for $source are up to date (v$localVersion)');
       }
     } catch (e) {
-      _logger.e(
-        'TagDataManager: Failed to check updates for $source',
-        error: e,
-      );
+      _logger.e('TagDataManager: Failed to check updates for $source',
+          error: e);
     }
   }
 
   /// Download and cache tags
-  Future<bool> downloadTags(String url, int version, String source) async {
+  Future<bool> downloadTags(String url, String version, String source) async {
     try {
       final docDir = await getApplicationDocumentsDirectory();
       final filePath = '${docDir.path}/tags_$source.json';
@@ -132,7 +131,7 @@ class TagDataManager {
 
       if (isValid) {
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setInt('${_tagsVersionKey}_$source', version);
+        await prefs.setString('${_tagsVersionKey}_$source', version);
         _logger.i(
           'TagDataManager: Successfully updated tags to version $version for $source',
         );

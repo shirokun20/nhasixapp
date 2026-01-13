@@ -44,9 +44,6 @@ SourceConfig _$SourceConfigFromJson(Map<String, dynamic> json) => SourceConfig(
       auth: json['auth'] == null
           ? null
           : AuthConfig.fromJson(json['auth'] as Map<String, dynamic>),
-      tags: json['tags'] == null
-          ? null
-          : TagConfig.fromJson(json['tags'] as Map<String, dynamic>),
       typeMapping: (json['typeMapping'] as Map<String, dynamic>?)?.map(
         (k, e) => MapEntry(k, e as String),
       ),
@@ -64,7 +61,6 @@ Map<String, dynamic> _$SourceConfigToJson(SourceConfig instance) =>
       'features': instance.features?.toJson(),
       'ui': instance.ui?.toJson(),
       'auth': instance.auth?.toJson(),
-      'tags': instance.tags?.toJson(),
       'typeMapping': instance.typeMapping,
     };
 
@@ -239,16 +235,175 @@ Map<String, dynamic> _$AuthConfigToJson(AuthConfig instance) =>
       'sessionDurationSeconds': instance.sessionDurationSeconds,
     };
 
-TagConfig _$TagConfigFromJson(Map<String, dynamic> json) => TagConfig(
-      enabled: json['enabled'] as bool,
-      version: json['version'] as String?,
-      endpoint: json['endpoint'] as String?,
-      updateIntervalHours: (json['updateIntervalHours'] as num?)?.toInt(),
+TagsManifest _$TagsManifestFromJson(Map<String, dynamic> json) => TagsManifest(
+      version: json['version'] as String,
+      lastUpdated: json['lastUpdated'] as String?,
+      sources: (json['sources'] as Map<String, dynamic>).map(
+        (k, e) =>
+            MapEntry(k, TagSourceConfig.fromJson(e as Map<String, dynamic>)),
+      ),
     );
 
-Map<String, dynamic> _$TagConfigToJson(TagConfig instance) => <String, dynamic>{
-      'enabled': instance.enabled,
+Map<String, dynamic> _$TagsManifestToJson(TagsManifest instance) =>
+    <String, dynamic>{
       'version': instance.version,
-      'endpoint': instance.endpoint,
-      'updateIntervalHours': instance.updateIntervalHours,
+      'lastUpdated': instance.lastUpdated,
+      'sources': instance.sources.map((k, e) => MapEntry(k, e.toJson())),
+    };
+
+TagSourceConfig _$TagSourceConfigFromJson(Map<String, dynamic> json) =>
+    TagSourceConfig(
+      type: json['type'] as String,
+      assetPath: json['assetPath'] as String?,
+      format: json['format'] as String?,
+      structure: (json['structure'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      migration: json['migration'] == null
+          ? null
+          : TagMigrationConfig.fromJson(
+              json['migration'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$TagSourceConfigToJson(TagSourceConfig instance) =>
+    <String, dynamic>{
+      'type': instance.type,
+      'assetPath': instance.assetPath,
+      'format': instance.format,
+      'structure': instance.structure,
+      'migration': instance.migration?.toJson(),
+    };
+
+TagMigrationConfig _$TagMigrationConfigFromJson(Map<String, dynamic> json) =>
+    TagMigrationConfig(
+      enabled: json['enabled'] as bool,
+      remoteUrl: json['remoteUrl'] as String?,
+      fallbackUrl: json['fallbackUrl'] as String?,
+      cacheTtlSeconds: (json['cacheTtlSeconds'] as num?)?.toInt(),
+    );
+
+Map<String, dynamic> _$TagMigrationConfigToJson(TagMigrationConfig instance) =>
+    <String, dynamic>{
+      'enabled': instance.enabled,
+      'remoteUrl': instance.remoteUrl,
+      'fallbackUrl': instance.fallbackUrl,
+      'cacheTtlSeconds': instance.cacheTtlSeconds,
+    };
+
+ConfigVersion _$ConfigVersionFromJson(Map<String, dynamic> json) =>
+    ConfigVersion(
+      version: json['version'] as String,
+      minAppVersion: json['minAppVersion'] as String?,
+      configs: (json['configs'] as Map<String, dynamic>).map(
+        (k, e) =>
+            MapEntry(k, ConfigManifest.fromJson(e as Map<String, dynamic>)),
+      ),
+    );
+
+Map<String, dynamic> _$ConfigVersionToJson(ConfigVersion instance) =>
+    <String, dynamic>{
+      'version': instance.version,
+      'minAppVersion': instance.minAppVersion,
+      'configs': instance.configs,
+    };
+
+ConfigManifest _$ConfigManifestFromJson(Map<String, dynamic> json) =>
+    ConfigManifest(
+      version: json['version'] as String,
+      file: json['file'] as String,
+    );
+
+Map<String, dynamic> _$ConfigManifestToJson(ConfigManifest instance) =>
+    <String, dynamic>{
+      'version': instance.version,
+      'file': instance.file,
+    };
+
+AppConfig _$AppConfigFromJson(Map<String, dynamic> json) => AppConfig(
+      limits: json['limits'] == null
+          ? null
+          : AppLimits.fromJson(json['limits'] as Map<String, dynamic>),
+      durations: json['durations'] == null
+          ? null
+          : AppDurations.fromJson(json['durations'] as Map<String, dynamic>),
+      ui: json['ui'] == null
+          ? null
+          : AppUiConfig.fromJson(json['ui'] as Map<String, dynamic>),
+      storage: json['storage'] == null
+          ? null
+          : AppStorage.fromJson(json['storage'] as Map<String, dynamic>),
+      reader: json['reader'] == null
+          ? null
+          : AppReader.fromJson(json['reader'] as Map<String, dynamic>),
+      privacy: json['privacy'] == null
+          ? null
+          : AppPrivacy.fromJson(json['privacy'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$AppConfigToJson(AppConfig instance) => <String, dynamic>{
+      'limits': instance.limits?.toJson(),
+      'durations': instance.durations?.toJson(),
+      'ui': instance.ui?.toJson(),
+      'storage': instance.storage?.toJson(),
+      'reader': instance.reader?.toJson(),
+      'privacy': instance.privacy?.toJson(),
+    };
+
+AppLimits _$AppLimitsFromJson(Map<String, dynamic> json) => AppLimits(
+      defaultPageSize: (json['defaultPageSize'] as num?)?.toInt() ?? 20,
+      maxConcurrentDownloads:
+          (json['maxConcurrentDownloads'] as num?)?.toInt() ?? 3,
+    );
+
+Map<String, dynamic> _$AppLimitsToJson(AppLimits instance) => <String, dynamic>{
+      'defaultPageSize': instance.defaultPageSize,
+      'maxConcurrentDownloads': instance.maxConcurrentDownloads,
+    };
+
+AppDurations _$AppDurationsFromJson(Map<String, dynamic> json) => AppDurations(
+      splashDelayMs: (json['splashDelayMs'] as num?)?.toInt() ?? 2000,
+      snackbarDurationMs: (json['snackbarDurationMs'] as num?)?.toInt() ?? 3000,
+    );
+
+Map<String, dynamic> _$AppDurationsToJson(AppDurations instance) =>
+    <String, dynamic>{
+      'splashDelayMs': instance.splashDelayMs,
+      'snackbarDurationMs': instance.snackbarDurationMs,
+    };
+
+AppUiConfig _$AppUiConfigFromJson(Map<String, dynamic> json) => AppUiConfig(
+      gridColumnsPortrait: (json['gridColumnsPortrait'] as num?)?.toInt() ?? 2,
+      cardAspectRatio: (json['cardAspectRatio'] as num?)?.toDouble() ?? 0.7,
+    );
+
+Map<String, dynamic> _$AppUiConfigToJson(AppUiConfig instance) =>
+    <String, dynamic>{
+      'gridColumnsPortrait': instance.gridColumnsPortrait,
+      'cardAspectRatio': instance.cardAspectRatio,
+    };
+
+AppStorage _$AppStorageFromJson(Map<String, dynamic> json) => AppStorage(
+      backupFolderName: json['backupFolderName'] as String? ?? 'nhasix_backup',
+    );
+
+Map<String, dynamic> _$AppStorageToJson(AppStorage instance) =>
+    <String, dynamic>{
+      'backupFolderName': instance.backupFolderName,
+    };
+
+AppReader _$AppReaderFromJson(Map<String, dynamic> json) => AppReader(
+      preloadNextChapter: json['preloadNextChapter'] as bool? ?? true,
+    );
+
+Map<String, dynamic> _$AppReaderToJson(AppReader instance) => <String, dynamic>{
+      'preloadNextChapter': instance.preloadNextChapter,
+    };
+
+AppPrivacy _$AppPrivacyFromJson(Map<String, dynamic> json) => AppPrivacy(
+      enableAnalytics: json['enableAnalytics'] as bool? ?? true,
+    );
+
+Map<String, dynamic> _$AppPrivacyToJson(AppPrivacy instance) =>
+    <String, dynamic>{
+      'enableAnalytics': instance.enableAnalytics,
     };

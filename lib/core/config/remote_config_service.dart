@@ -13,20 +13,21 @@ class RemoteConfigService {
   // CDN URLs
   static const String _baseUrl =
       'https://cdn.jsdelivr.net/gh/shirokun20/nhasixapp@configs/configs';
-  static const String _nhentaiConfigUrl = '$_baseUrl/nhentai-config.json';
-  static const String _crotpediaConfigUrl = '$_baseUrl/crotpedia-config.json';
-
-  // Asset Fallbacks
-  static const String _nhentaiAssetPath = 'assets/configs/nhentai-config.json';
-  static const String _crotpediaAssetPath =
-      'assets/configs/crotpedia-config.json';
+  static const String _versionUrl = '$_baseUrl/version.json';
+  static const String _tagsAssetPath = 'assets/configs/tags-config.json';
 
   // Config Cache Keys
+  static const String _versionCacheKey = 'config_version_manifest';
+  static const String _appConfigCacheKey = 'config_cache_app';
+  static const String _tagsCacheKey = 'config_cache_tags';
   static const String _nhentaiCacheKey = 'config_cache_nhentai';
   static const String _crotpediaCacheKey = 'config_cache_crotpedia';
   static const String _lastCheckedKey = 'config_last_checked';
 
   // In-memory Configs
+  ConfigVersion? _versionManifest;
+  AppConfig? _appConfig;
+  TagsManifest? _tagsManifest;
   SourceConfig? _nhentaiConfig;
   SourceConfig? _crotpediaConfig;
 
@@ -36,172 +37,178 @@ class RemoteConfigService {
   })  : _dio = dio,
         _logger = logger;
 
-  /// Initialize with Smart Sync logic
-  /// [isFirstRun] - If true, throws exception on failure (Strict Mode)
+  /// Initialize with Smart Sync logic (Master Manifest Pattern)
+  /// [isFirstRun] - If true, throws exception on critical failure
   Future<void> smartInitialize({bool isFirstRun = false}) async {
-    _logger
-        .i('Initializing Remote Config (Smart Mode, FirstRun: $isFirstRun)...');
-
-    await Future.wait([
-      _smartSyncSource(
-        'nhentai',
-        _nhentaiConfigUrl,
-        _nhentaiAssetPath,
-        _nhentaiCacheKey,
-        (json) => _nhentaiConfig = SourceConfig.fromJson(json),
-        isFirstRun,
-      ),
-      _smartSyncSource(
-        'crotpedia',
-        _crotpediaConfigUrl,
-        _crotpediaAssetPath,
-        _crotpediaCacheKey,
-        (json) => _crotpediaConfig = SourceConfig.fromJson(json),
-        isFirstRun,
-      ),
-    ]);
-  }
-
-  /// Check if we have a valid cache for a source
-  Future<bool> hasValidCache(String source) async {
+    _logger.i('Initializing Remote Config (Smart Mode)...');
     final prefs = await SharedPreferences.getInstance();
-    final key = source == 'nhentai' ? _nhentaiCacheKey : _crotpediaCacheKey;
-    return prefs.containsKey(key);
-  }
 
-  /// Get last sync timestamp
-  Future<DateTime?> getLastSyncTime() async {
-    final prefs = await SharedPreferences.getInstance();
-    final millis = prefs.getInt(_lastCheckedKey);
-    return millis != null ? DateTime.fromMillisecondsSinceEpoch(millis) : null;
-  }
-
-  Future<void> _smartSyncSource(
-    String sourceName,
-    String remoteUrl,
-    String assetPath,
-    String cacheKey,
-    Function(Map<String, dynamic>) updateConfig,
-    bool isFirstRun,
-  ) async {
-    final prefs = await SharedPreferences.getInstance();
-    final hasCache = prefs.containsKey(cacheKey);
-
-    // 1. Strict Mode (First Run) - MUST download
-    if (isFirstRun && !hasCache) {
-      _logger.i('First run for $sourceName: Enforcing remote fetch');
-      await _fetchAndCache(
-          sourceName, remoteUrl, cacheKey, updateConfig, prefs);
-      return;
-    }
-
-    // 2. Normal Mode - Try Remote (Smart Update), Fallback to Cache/Asset
     try {
-      if (hasCache) {
-        // Load current cache first so app has data immediately/fallback
-        final cachedJson = prefs.getString(cacheKey);
-        if (cachedJson != null) {
-          final currentData = jsonDecode(cachedJson) as Map<String, dynamic>;
-          updateConfig(currentData);
+      // 1. Fetch Master Manifest (version.json)
+      await _syncManifest(prefs, isFirstRun);
 
-          // If we have data, we can try to update in background or wait
-          // For now, checks version
-          await _tryUpdateRemote(sourceName, remoteUrl,
-              currentData['version'] as String?, cacheKey, updateConfig, prefs);
-        }
-      } else {
-        // No cache, but not strict? (Rare case, maybe manual retry or cleared cache)
-        // Try remote, if fail use asset
-        await _fetchAndCache(
-            sourceName, remoteUrl, cacheKey, updateConfig, prefs);
-      }
+      // 2. Sync Configs based on Manifest
+      await Future.wait([
+        _syncConfig(
+          'nhentai',
+          'nhentai-config.json',
+          _nhentaiCacheKey,
+          (json) => _nhentaiConfig = SourceConfig.fromJson(json),
+          prefs,
+        ),
+        _syncConfig(
+          'crotpedia',
+          'crotpedia-config.json',
+          _crotpediaCacheKey,
+          (json) => _crotpediaConfig = SourceConfig.fromJson(json),
+          prefs,
+        ),
+        _syncConfig(
+          'app',
+          'app-config.json',
+          _appConfigCacheKey,
+          (json) => _appConfig = AppConfig.fromJson(json),
+          prefs,
+        ),
+        _syncConfig(
+          'tags',
+          'tags-config.json',
+          _tagsCacheKey,
+          (json) => _tagsManifest = TagsManifest.fromJson(json),
+          prefs,
+        ),
+      ]);
+
+      // 3. Check Minimum App Version (Forced Update)
+      _checkMinAppVersion();
     } catch (e) {
-      if (isFirstRun) {
-        _logger.e('Strict initialization failed for $sourceName', error: e);
-        rethrow; // Block app start if strict
-      }
-
-      _logger.w('Remote sync failed for $sourceName, using fallback: $e');
-      // Ensure we have SOMETHING loaded (Cache already loaded above, or Asset)
-      if (getConfig(sourceName) == null) {
-        await _loadFromAsset(sourceName, assetPath, updateConfig);
-      }
+      _logger.e('Remote Config Initialization Failed', error: e);
+      // Fallback to local assets if everything fails and we have no cache
+      if (_nhentaiConfig == null) await _loadAllFallbacks();
+      if (isFirstRun && _nhentaiConfig == null) rethrow;
     }
   }
 
-  Future<void> _tryUpdateRemote(
-    String sourceName,
-    String remoteUrl,
-    String? currentVersion,
-    String cacheKey,
-    Function(Map<String, dynamic>) updateConfig,
-    SharedPreferences prefs,
-  ) async {
+  Future<void> _syncManifest(
+      SharedPreferences prefs, bool mustFetchRemote) async {
     try {
-      _logger.d('Checking updates for $sourceName (Current: $currentVersion)');
+      // Try fetch remote manifest
       final response = await _dio.get(
-        remoteUrl,
+        _versionUrl,
         options: Options(
           responseType: ResponseType.json,
-          receiveTimeout: const Duration(seconds: 5),
-          sendTimeout: const Duration(seconds: 5),
+          receiveTimeout: const Duration(seconds: 10),
         ),
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        final newData = response.data as Map<String, dynamic>;
-        final newVersion = newData['version'] as String?;
-
-        if (newVersion != currentVersion) {
-          _logger.i(
-              '🚀 Update found for $sourceName: $currentVersion -> $newVersion');
-          updateConfig(newData);
-          await prefs.setString(cacheKey, jsonEncode(newData));
-          await prefs.setInt(
-              _lastCheckedKey, DateTime.now().millisecondsSinceEpoch);
-        } else {
-          _logger.d('✅ $sourceName is up to date ($currentVersion)');
-          // Still update timestamp to show we checked
-          await prefs.setInt(
-              _lastCheckedKey, DateTime.now().millisecondsSinceEpoch);
-        }
+        _versionManifest = ConfigVersion.fromJson(response.data);
+        await prefs.setString(_versionCacheKey, jsonEncode(response.data));
+        _logger.i('✅ Master Manifest synced: v${_versionManifest?.version}');
+        return;
       }
     } catch (e) {
-      // Silent fail on update check, keep using cache
-      _logger.w('Failed to check validation for $sourceName: $e');
+      _logger.w('Failed to fetch remote manifest: $e');
+      if (mustFetchRemote) rethrow;
+    }
+
+    // Load cached manifest if remote failed
+    if (prefs.containsKey(_versionCacheKey)) {
+      final json = jsonDecode(prefs.getString(_versionCacheKey)!);
+      _versionManifest = ConfigVersion.fromJson(json);
+      _logger.i('Loaded cached manifest: v${_versionManifest?.version}');
+    } else {
+      // Load asset manifest as last resort
+      // final json = jsonDecode(await rootBundle.loadString('assets/configs/version.json'));
+      // _versionManifest = ConfigVersion.fromJson(json);
+      _logger.w('No manifest available. Will force load individual configs.');
     }
   }
 
-  Future<void> _fetchAndCache(
-    String sourceName,
-    String remoteUrl,
+  Future<void> _syncConfig<T>(
+    String configName,
+    String fileName,
     String cacheKey,
     Function(Map<String, dynamic>) updateConfig,
     SharedPreferences prefs,
   ) async {
-    _logger.d('Fetching fresh config for $sourceName');
-    final response = await _dio.get(
-      remoteUrl,
-      options: Options(
-        responseType: ResponseType.json,
-        receiveTimeout:
-            const Duration(seconds: 10), // Longer timeout for fresh fetch
-      ),
-    );
-
-    if (response.statusCode == 200 && response.data != null) {
-      final data = response.data as Map<String, dynamic>;
-      updateConfig(data);
-      await prefs.setString(cacheKey, jsonEncode(data));
-      await prefs.setInt(
-          _lastCheckedKey, DateTime.now().millisecondsSinceEpoch);
-      _logger.i('✅ Successfully fetched initial $sourceName config');
-    } else {
-      throw DioException(
-        requestOptions: response.requestOptions,
-        error: 'Invalid status code: ${response.statusCode}',
-      );
+    final cachedJson = prefs.getString(cacheKey);
+    // Load cache first (Optimistic UI)
+    if (cachedJson != null) {
+      try {
+        final data = jsonDecode(cachedJson);
+        updateConfig(data);
+        // Assuming all configs have a 'version' field.
+        // AppConfig doesn't have it directly in root in my model yet,
+        // but SourceConfig does.
+        // For AppConfig we might rely on Manifest versioning mapping.
+        // Let's rely on Manifest comparison.
+      } catch (e) {
+        _logger.w('Failed to load cache for $configName', error: e);
+      }
     }
+
+    // Check if we need to update based on Manifest
+    final remoteVersion = _versionManifest?.configs[configName]?.version;
+    // We strictly need to know the LOCAL version of the config file itself to compare.
+    // But since we have the Master Manifest, we can optimize:
+    // If we have a cached manifest, we can compare remoteManifest vs cachedManifest.
+    // Simplified Logic: Always try fetch if manifest says new version OR if we have no config.
+
+    // If _versionManifest is null (offline & no cache), use fallback asset
+    if (_versionManifest == null && _nhentaiConfig == null) {
+      await _loadFromAsset(
+          configName, 'assets/configs/$fileName', updateConfig);
+      return;
+    }
+
+    if (remoteVersion != null) {
+      // Compare with stored version. Ideally we store {configName}_version in prefs
+      // But for now, let's just fetch if we have a valid remote manifest.
+      // Optimization: store 'last_synced_version_$configName'
+      final lastSyncedVersion = prefs.getString('${cacheKey}_version');
+
+      if (lastSyncedVersion != remoteVersion) {
+        _logger.i('Updating $configName: $lastSyncedVersion -> $remoteVersion');
+        await _fetchAndCache('$_baseUrl/$fileName', cacheKey, updateConfig,
+            prefs, remoteVersion);
+      } else {
+        _logger.d('$configName is up to date ($remoteVersion)');
+      }
+    }
+  }
+
+  Future<void> _fetchAndCache(
+    String url,
+    String cacheKey,
+    Function(Map<String, dynamic>) updateConfig,
+    SharedPreferences prefs,
+    String version,
+  ) async {
+    try {
+      final response = await _dio.get(url);
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data as Map<String, dynamic>;
+        updateConfig(data);
+        await prefs.setString(cacheKey, jsonEncode(data));
+        await prefs.setString('${cacheKey}_version', version);
+        await prefs.setInt(
+            _lastCheckedKey, DateTime.now().millisecondsSinceEpoch);
+      }
+    } catch (e) {
+      _logger.w('Failed to fetch $url', error: e);
+    }
+  }
+
+  Future<void> _loadAllFallbacks() async {
+    await _loadFromAsset('nhentai', 'assets/configs/nhentai-config.json',
+        (json) => _nhentaiConfig = SourceConfig.fromJson(json));
+    await _loadFromAsset('crotpedia', 'assets/configs/crotpedia-config.json',
+        (json) => _crotpediaConfig = SourceConfig.fromJson(json));
+    await _loadFromAsset('app', 'assets/configs/app-config.json',
+        (json) => _appConfig = AppConfig.fromJson(json));
+    await _loadFromAsset('tags', _tagsAssetPath,
+        (json) => _tagsManifest = TagsManifest.fromJson(json));
   }
 
   Future<void> _loadFromAsset(
@@ -209,16 +216,45 @@ class RemoteConfigService {
     String assetPath,
     Function(Map<String, dynamic>) updateConfig,
   ) async {
-    _logger.d('Loading fallback asset for $sourceName');
-    final assetString = await rootBundle.loadString(assetPath);
-    final data = jsonDecode(assetString) as Map<String, dynamic>;
-    updateConfig(data);
+    try {
+      final assetString = await rootBundle.loadString(assetPath);
+      final data = jsonDecode(assetString) as Map<String, dynamic>;
+      updateConfig(data);
+    } catch (e) {
+      _logger.w('Asset load failed for $sourceName', error: e);
+    }
   }
 
+  // Helper to check app version
+  void _checkMinAppVersion() {
+    final minVersion = _versionManifest?.minAppVersion;
+    if (minVersion != null) {
+      _logger.i('Min App Version required: $minVersion');
+      // Logic to block app would go here
+    }
+  }
+
+  // Getters
   SourceConfig? getConfig(String source) {
     if (source == 'nhentai') return _nhentaiConfig;
     if (source == 'crotpedia') return _crotpediaConfig;
     return null;
+  }
+
+  AppConfig? get appConfig => _appConfig;
+  TagsManifest? get tagsManifest => _tagsManifest;
+
+  // Existing helpers
+  Future<bool> hasValidCache(String source) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.containsKey(
+        source == 'nhentai' ? _nhentaiCacheKey : _crotpediaCacheKey);
+  }
+
+  Future<DateTime?> getLastSyncTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    final millis = prefs.getInt(_lastCheckedKey);
+    return millis != null ? DateTime.fromMillisecondsSinceEpoch(millis) : null;
   }
 
   /// Get rate limit configuration for a specific source

@@ -109,23 +109,13 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       for (final source in sources) {
         await _tagDataManager.initialize(source: source);
 
-        // Strict Mode: If tags missing, try downloading now
+        // Check for updates (Blocking if no tags, Background if has tags)
         if (!_tagDataManager.hasTags(source)) {
           emit(SplashInitializing(message: 'Downloading tags for $source...'));
-          // Check connectivity before downloading
-          final connectivityResults = await _connectivity.checkConnectivity();
-          if (connectivityResults.isNotEmpty &&
-              connectivityResults.first != ConnectivityResult.none) {
-            final config = _remoteConfigService.getConfig(source)?.tags;
-            if (config?.endpoint != null) {
-              await _tagDataManager.downloadTags(config!.endpoint!,
-                  int.tryParse(config.version ?? '0') ?? 0, source);
-            }
-          }
+          await _tagDataManager.checkForUpdates(source: source);
+        } else {
+          _tagDataManager.checkForUpdates(source: source).ignore();
         }
-
-        // Background update check (non-blocking if we have data)
-        _tagDataManager.checkForUpdates(source: source).ignore();
       }
 
       // Check network connectivity first
