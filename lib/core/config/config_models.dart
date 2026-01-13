@@ -1,5 +1,7 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:json_annotation/json_annotation.dart';
 
+part 'config_models.freezed.dart';
 part 'config_models.g.dart';
 
 @JsonSerializable(explicitToJson: true)
@@ -27,6 +29,7 @@ class SourceConfig {
   final UiConfig? ui;
   final AuthConfig? auth;
   final Map<String, String>? typeMapping; // Map type code to display name
+  final SearchConfig? searchConfig;
 
   SourceConfig({
     required this.source,
@@ -40,11 +43,174 @@ class SourceConfig {
     this.ui,
     this.auth,
     this.typeMapping,
+    this.searchConfig,
   });
 
   factory SourceConfig.fromJson(Map<String, dynamic> json) =>
       _$SourceConfigFromJson(json);
   Map<String, dynamic> toJson() => _$SourceConfigToJson(this);
+}
+
+// ... existing classes ...
+
+enum SearchMode {
+  @JsonValue('query-string')
+  queryString,
+
+  @JsonValue('form-based')
+  formBased,
+}
+
+enum SortWidgetType {
+  @JsonValue('dropdown')
+  dropdown,
+
+  @JsonValue('chips')
+  chips,
+
+  @JsonValue('readonly')
+  readonly,
+}
+
+@freezed
+class SearchConfig with _$SearchConfig {
+  const factory SearchConfig({
+    required SearchMode searchMode,
+    required String endpoint,
+    SortingConfig? sortingConfig,
+    String? queryParam,
+    FilterSupportConfig? filterSupport,
+    List<TextFieldConfig>? textFields,
+    List<RadioGroupConfig>? radioGroups,
+    List<CheckboxGroupConfig>? checkboxGroups,
+    PaginationConfig? pagination,
+  }) = _SearchConfig;
+
+  factory SearchConfig.fromJson(Map<String, dynamic> json) =>
+      _$SearchConfigFromJson(json);
+}
+
+@freezed
+class FilterSupportConfig with _$FilterSupportConfig {
+  const factory FilterSupportConfig({
+    required List<String> singleSelect,
+    required List<String> multiSelect,
+    required bool supportsExclude,
+  }) = _FilterSupportConfig;
+
+  factory FilterSupportConfig.fromJson(Map<String, dynamic> json) =>
+      _$FilterSupportConfigFromJson(json);
+}
+
+@freezed
+class TextFieldConfig with _$TextFieldConfig {
+  const factory TextFieldConfig({
+    required String name,
+    required String label,
+    required String type,
+    String? placeholder,
+    int? maxLength,
+    int? min,
+    int? max,
+  }) = _TextFieldConfig;
+
+  factory TextFieldConfig.fromJson(Map<String, dynamic> json) =>
+      _$TextFieldConfigFromJson(json);
+}
+
+@freezed
+class RadioGroupConfig with _$RadioGroupConfig {
+  const factory RadioGroupConfig({
+    required String name,
+    required String label,
+    required List<RadioOptionConfig> options,
+  }) = _RadioGroupConfig;
+
+  factory RadioGroupConfig.fromJson(Map<String, dynamic> json) =>
+      _$RadioGroupConfigFromJson(json);
+}
+
+@freezed
+class RadioOptionConfig with _$RadioOptionConfig {
+  const factory RadioOptionConfig({
+    required String value,
+    required String label,
+    @Default(false) bool isDefault,
+  }) = _RadioOptionConfig;
+
+  factory RadioOptionConfig.fromJson(Map<String, dynamic> json) =>
+      _$RadioOptionConfigFromJson(json);
+}
+
+@freezed
+class CheckboxGroupConfig with _$CheckboxGroupConfig {
+  const factory CheckboxGroupConfig({
+    required String name,
+    required String label,
+    required String paramName,
+    @Default('expandable') String displayMode,
+    @Default(3) int columns,
+    @Default(false) bool loadFromTags,
+    String? tagType,
+  }) = _CheckboxGroupConfig;
+
+  factory CheckboxGroupConfig.fromJson(Map<String, dynamic> json) =>
+      _$CheckboxGroupConfigFromJson(json);
+}
+
+@freezed
+class SortingConfig with _$SortingConfig {
+  const factory SortingConfig({
+    required bool allowDynamicReSort,
+    required String defaultSort,
+    required SortWidgetType widgetType,
+    required List<SortOptionConfig> options,
+    required SortingMessages messages,
+  }) = _SortingConfig;
+
+  factory SortingConfig.fromJson(Map<String, dynamic> json) =>
+      _$SortingConfigFromJson(json);
+}
+
+@freezed
+class SortOptionConfig with _$SortOptionConfig {
+  const factory SortOptionConfig({
+    required String value,
+    required String apiValue,
+    required String label,
+    required String displayLabel,
+    String? icon,
+    @Default(false) bool isDefault,
+  }) = _SortOptionConfig;
+
+  factory SortOptionConfig.fromJson(Map<String, dynamic> json) =>
+      _$SortOptionConfigFromJson(json);
+}
+
+@freezed
+class SortingMessages with _$SortingMessages {
+  const factory SortingMessages({
+    String? dropdownLabel,
+    String? noOptionsAvailable,
+    String? readOnlyPrefix,
+    String? readOnlySuffix,
+    String? tapToModifyHint,
+    String? returnToSearchButton,
+  }) = _SortingMessages;
+
+  factory SortingMessages.fromJson(Map<String, dynamic> json) =>
+      _$SortingMessagesFromJson(json);
+}
+
+@freezed
+class PaginationConfig with _$PaginationConfig {
+  const factory PaginationConfig({
+    required String urlPattern,
+    @Default('page') String paramName,
+  }) = _PaginationConfig;
+
+  factory PaginationConfig.fromJson(Map<String, dynamic> json) =>
+      _$PaginationConfigFromJson(json);
 }
 
 @JsonSerializable(explicitToJson: true)

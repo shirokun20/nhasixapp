@@ -15,22 +15,22 @@
 **Estimated**: 1-1.5 hours
 
 #### Phase 1: Config Models
-- [ ] Create `SearchConfig` model with searchMode, endpoint, sortingConfig
-- [ ] Create `SortingConfig` model with allowDynamicReSort, widgetType, options
-- [ ] Create `SortOptionConfig` model
-- [ ] Create `SortingMessages` model
-- [ ] Create `FilterSupportConfig`, `TextFieldConfig`, `RadioGroupConfig`, `CheckboxGroupConfig`
-- [ ] Update `SourceConfig` to include `SearchConfig? searchConfig`
-- [ ] Run `dart run build_runner build --delete-conflicting-outputs`
-- [ ] Verify no compile errors with `flutter analyze`
+- [x] Create `SearchConfig` model with searchMode, endpoint, sortingConfig
+- [x] Create `SortingConfig` model with allowDynamicReSort, widgetType, options
+- [x] Create `SortOptionConfig` model
+- [x] Create `SortingMessages` model
+- [x] Create `FilterSupportConfig`, `TextFieldConfig`, `RadioGroupConfig`, `CheckboxGroupConfig`
+- [x] Update `SourceConfig` to include `SearchConfig? searchConfig`
+- [x] Run `dart run build_runner build --delete-conflicting-outputs`
+- [x] Verify no compile errors with `flutter analyze`
 
 #### Phase 2: CDN Configs
-- [ ] Update `nhentai-config.json` with searchConfig (query-string mode)
-- [ ] Add sortingConfig to nhentai (allowDynamicReSort: true, dropdown)
-- [ ] Update `crotpedia-config.json` with searchConfig (form-based mode)
-- [ ] Add sortingConfig to crotpedia (allowDynamicReSort: false, readonly)
-- [ ] Add textFields, radioGroups, checkboxGroups to crotpedia
-- [ ] Commit: "feat(search): add dynamic search config models and CDN configs"
+- [x] Update `nhentai-config.json` with searchConfig (query-string mode)
+- [x] Add sortingConfig to nhentai (allowDynamicReSort: true, dropdown)
+- [x] Update `crotpedia-config.json` with searchConfig (form-based mode)
+- [x] Add sortingConfig to crotpedia (allowDynamicReSort: false, readonly)
+- [x] Add textFields, radioGroups, checkboxGroups to crotpedia
+- [x] Commit: "feat(search): add dynamic search config models and CDN configs"
 
 **End of Day 1**: ✅ Config foundation ready
 

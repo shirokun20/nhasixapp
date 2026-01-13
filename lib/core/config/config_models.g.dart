@@ -47,6 +47,9 @@ SourceConfig _$SourceConfigFromJson(Map<String, dynamic> json) => SourceConfig(
       typeMapping: (json['typeMapping'] as Map<String, dynamic>?)?.map(
         (k, e) => MapEntry(k, e as String),
       ),
+      searchConfig: json['searchConfig'] == null
+          ? null
+          : SearchConfig.fromJson(json['searchConfig'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$SourceConfigToJson(SourceConfig instance) =>
@@ -62,6 +65,7 @@ Map<String, dynamic> _$SourceConfigToJson(SourceConfig instance) =>
       'ui': instance.ui?.toJson(),
       'auth': instance.auth?.toJson(),
       'typeMapping': instance.typeMapping,
+      'searchConfig': instance.searchConfig?.toJson(),
     };
 
 ApiConfig _$ApiConfigFromJson(Map<String, dynamic> json) => ApiConfig(
@@ -406,4 +410,223 @@ AppPrivacy _$AppPrivacyFromJson(Map<String, dynamic> json) => AppPrivacy(
 Map<String, dynamic> _$AppPrivacyToJson(AppPrivacy instance) =>
     <String, dynamic>{
       'enableAnalytics': instance.enableAnalytics,
+    };
+
+_SearchConfig _$SearchConfigFromJson(Map<String, dynamic> json) =>
+    _SearchConfig(
+      searchMode: $enumDecode(_$SearchModeEnumMap, json['searchMode']),
+      endpoint: json['endpoint'] as String,
+      sortingConfig: json['sortingConfig'] == null
+          ? null
+          : SortingConfig.fromJson(
+              json['sortingConfig'] as Map<String, dynamic>),
+      queryParam: json['queryParam'] as String?,
+      filterSupport: json['filterSupport'] == null
+          ? null
+          : FilterSupportConfig.fromJson(
+              json['filterSupport'] as Map<String, dynamic>),
+      textFields: (json['textFields'] as List<dynamic>?)
+          ?.map((e) => TextFieldConfig.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      radioGroups: (json['radioGroups'] as List<dynamic>?)
+          ?.map((e) => RadioGroupConfig.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      checkboxGroups: (json['checkboxGroups'] as List<dynamic>?)
+          ?.map((e) => CheckboxGroupConfig.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      pagination: json['pagination'] == null
+          ? null
+          : PaginationConfig.fromJson(
+              json['pagination'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$SearchConfigToJson(_SearchConfig instance) =>
+    <String, dynamic>{
+      'searchMode': _$SearchModeEnumMap[instance.searchMode]!,
+      'endpoint': instance.endpoint,
+      'sortingConfig': instance.sortingConfig,
+      'queryParam': instance.queryParam,
+      'filterSupport': instance.filterSupport,
+      'textFields': instance.textFields,
+      'radioGroups': instance.radioGroups,
+      'checkboxGroups': instance.checkboxGroups,
+      'pagination': instance.pagination,
+    };
+
+const _$SearchModeEnumMap = {
+  SearchMode.queryString: 'query-string',
+  SearchMode.formBased: 'form-based',
+};
+
+_FilterSupportConfig _$FilterSupportConfigFromJson(Map<String, dynamic> json) =>
+    _FilterSupportConfig(
+      singleSelect: (json['singleSelect'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+      multiSelect: (json['multiSelect'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+      supportsExclude: json['supportsExclude'] as bool,
+    );
+
+Map<String, dynamic> _$FilterSupportConfigToJson(
+        _FilterSupportConfig instance) =>
+    <String, dynamic>{
+      'singleSelect': instance.singleSelect,
+      'multiSelect': instance.multiSelect,
+      'supportsExclude': instance.supportsExclude,
+    };
+
+_TextFieldConfig _$TextFieldConfigFromJson(Map<String, dynamic> json) =>
+    _TextFieldConfig(
+      name: json['name'] as String,
+      label: json['label'] as String,
+      type: json['type'] as String,
+      placeholder: json['placeholder'] as String?,
+      maxLength: (json['maxLength'] as num?)?.toInt(),
+      min: (json['min'] as num?)?.toInt(),
+      max: (json['max'] as num?)?.toInt(),
+    );
+
+Map<String, dynamic> _$TextFieldConfigToJson(_TextFieldConfig instance) =>
+    <String, dynamic>{
+      'name': instance.name,
+      'label': instance.label,
+      'type': instance.type,
+      'placeholder': instance.placeholder,
+      'maxLength': instance.maxLength,
+      'min': instance.min,
+      'max': instance.max,
+    };
+
+_RadioGroupConfig _$RadioGroupConfigFromJson(Map<String, dynamic> json) =>
+    _RadioGroupConfig(
+      name: json['name'] as String,
+      label: json['label'] as String,
+      options: (json['options'] as List<dynamic>)
+          .map((e) => RadioOptionConfig.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
+Map<String, dynamic> _$RadioGroupConfigToJson(_RadioGroupConfig instance) =>
+    <String, dynamic>{
+      'name': instance.name,
+      'label': instance.label,
+      'options': instance.options,
+    };
+
+_RadioOptionConfig _$RadioOptionConfigFromJson(Map<String, dynamic> json) =>
+    _RadioOptionConfig(
+      value: json['value'] as String,
+      label: json['label'] as String,
+      isDefault: json['isDefault'] as bool? ?? false,
+    );
+
+Map<String, dynamic> _$RadioOptionConfigToJson(_RadioOptionConfig instance) =>
+    <String, dynamic>{
+      'value': instance.value,
+      'label': instance.label,
+      'isDefault': instance.isDefault,
+    };
+
+_CheckboxGroupConfig _$CheckboxGroupConfigFromJson(Map<String, dynamic> json) =>
+    _CheckboxGroupConfig(
+      name: json['name'] as String,
+      label: json['label'] as String,
+      paramName: json['paramName'] as String,
+      displayMode: json['displayMode'] as String? ?? 'expandable',
+      columns: (json['columns'] as num?)?.toInt() ?? 3,
+      loadFromTags: json['loadFromTags'] as bool? ?? false,
+      tagType: json['tagType'] as String?,
+    );
+
+Map<String, dynamic> _$CheckboxGroupConfigToJson(
+        _CheckboxGroupConfig instance) =>
+    <String, dynamic>{
+      'name': instance.name,
+      'label': instance.label,
+      'paramName': instance.paramName,
+      'displayMode': instance.displayMode,
+      'columns': instance.columns,
+      'loadFromTags': instance.loadFromTags,
+      'tagType': instance.tagType,
+    };
+
+_SortingConfig _$SortingConfigFromJson(Map<String, dynamic> json) =>
+    _SortingConfig(
+      allowDynamicReSort: json['allowDynamicReSort'] as bool,
+      defaultSort: json['defaultSort'] as String,
+      widgetType: $enumDecode(_$SortWidgetTypeEnumMap, json['widgetType']),
+      options: (json['options'] as List<dynamic>)
+          .map((e) => SortOptionConfig.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      messages:
+          SortingMessages.fromJson(json['messages'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$SortingConfigToJson(_SortingConfig instance) =>
+    <String, dynamic>{
+      'allowDynamicReSort': instance.allowDynamicReSort,
+      'defaultSort': instance.defaultSort,
+      'widgetType': _$SortWidgetTypeEnumMap[instance.widgetType]!,
+      'options': instance.options,
+      'messages': instance.messages,
+    };
+
+const _$SortWidgetTypeEnumMap = {
+  SortWidgetType.dropdown: 'dropdown',
+  SortWidgetType.chips: 'chips',
+  SortWidgetType.readonly: 'readonly',
+};
+
+_SortOptionConfig _$SortOptionConfigFromJson(Map<String, dynamic> json) =>
+    _SortOptionConfig(
+      value: json['value'] as String,
+      apiValue: json['apiValue'] as String,
+      label: json['label'] as String,
+      displayLabel: json['displayLabel'] as String,
+      icon: json['icon'] as String?,
+      isDefault: json['isDefault'] as bool? ?? false,
+    );
+
+Map<String, dynamic> _$SortOptionConfigToJson(_SortOptionConfig instance) =>
+    <String, dynamic>{
+      'value': instance.value,
+      'apiValue': instance.apiValue,
+      'label': instance.label,
+      'displayLabel': instance.displayLabel,
+      'icon': instance.icon,
+      'isDefault': instance.isDefault,
+    };
+
+_SortingMessages _$SortingMessagesFromJson(Map<String, dynamic> json) =>
+    _SortingMessages(
+      dropdownLabel: json['dropdownLabel'] as String?,
+      noOptionsAvailable: json['noOptionsAvailable'] as String?,
+      readOnlyPrefix: json['readOnlyPrefix'] as String?,
+      readOnlySuffix: json['readOnlySuffix'] as String?,
+      tapToModifyHint: json['tapToModifyHint'] as String?,
+      returnToSearchButton: json['returnToSearchButton'] as String?,
+    );
+
+Map<String, dynamic> _$SortingMessagesToJson(_SortingMessages instance) =>
+    <String, dynamic>{
+      'dropdownLabel': instance.dropdownLabel,
+      'noOptionsAvailable': instance.noOptionsAvailable,
+      'readOnlyPrefix': instance.readOnlyPrefix,
+      'readOnlySuffix': instance.readOnlySuffix,
+      'tapToModifyHint': instance.tapToModifyHint,
+      'returnToSearchButton': instance.returnToSearchButton,
+    };
+
+_PaginationConfig _$PaginationConfigFromJson(Map<String, dynamic> json) =>
+    _PaginationConfig(
+      urlPattern: json['urlPattern'] as String,
+      paramName: json['paramName'] as String? ?? 'page',
+    );
+
+Map<String, dynamic> _$PaginationConfigToJson(_PaginationConfig instance) =>
+    <String, dynamic>{
+      'urlPattern': instance.urlPattern,
+      'paramName': instance.paramName,
     };
