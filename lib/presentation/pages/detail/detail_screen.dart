@@ -13,6 +13,7 @@ import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/core/utils/app_state_manager.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../widgets/download_button_widget.dart';
 import '../../widgets/progressive_image_widget.dart';
@@ -756,19 +757,23 @@ class _DetailScreenState extends State<DetailScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          // Download button - secondary action
-          Expanded(
-            child: SizedBox(
-              height: 48,
-              child: DownloadButtonWidget(
-                content: content,
-                size: DownloadButtonSize.large,
-                showText: true,
-                showProgress: true,
+
+          // Download button - conditional
+          if (getIt<RemoteConfigService>()
+              .isFeatureEnabled(content.sourceId, (f) => f.download)) ...[
+            const SizedBox(width: 8),
+            Expanded(
+              child: SizedBox(
+                height: 48,
+                child: DownloadButtonWidget(
+                  content: content,
+                  size: DownloadButtonSize.large,
+                  showText: true,
+                  showProgress: true,
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );

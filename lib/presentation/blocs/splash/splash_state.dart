@@ -7,7 +7,12 @@ abstract class SplashState extends Equatable {
 
 class SplashInitial extends SplashState {}
 
-class SplashInitializing extends SplashState {}
+class SplashInitializing extends SplashState {
+  final String message;
+  SplashInitializing({this.message = 'Initializing...'});
+  @override
+  List<Object?> get props => [message];
+}
 
 class SplashCloudflareInitial extends SplashState {}
 
@@ -36,7 +41,8 @@ class SplashOfflineSuccess extends SplashState {
   SplashOfflineSuccess({
     required this.downloadCount,
     String? message,
-  }) : message = message ?? 'Offline mode: $downloadCount downloaded contents available';
+  }) : message = message ??
+            'Offline mode: $downloadCount downloaded contents available';
 
   @override
   List<Object?> get props => [message, downloadCount];
@@ -79,7 +85,8 @@ class SplashOfflineReady extends SplashState {
   SplashOfflineReady({
     required this.offlineContentCount,
     String? message,
-  }) : message = message ?? 'Found $offlineContentCount offline items. Continuing...';
+  }) : message = message ??
+            'Found $offlineContentCount offline items. Continuing...';
 
   @override
   List<Object?> get props => [message, offlineContentCount];

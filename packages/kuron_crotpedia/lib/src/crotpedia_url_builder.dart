@@ -1,6 +1,12 @@
 /// Centralized URL construction for Crotpedia website.
 class CrotpediaUrlBuilder {
-  static const String baseUrl = 'https://crotpedia.net';
+  static String _baseUrl = 'https://crotpedia.net';
+
+  static String get baseUrl => _baseUrl;
+
+  static void setBaseUrl(String url) {
+    _baseUrl = url;
+  }
 
   // ============ Browse URLs ============
 

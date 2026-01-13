@@ -7,6 +7,7 @@ library;
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 
+import '../../../../core/config/remote_config_service.dart';
 import '../../../../core/config/api_config.dart';
 import '../anti_detection.dart';
 import '../request_rate_manager.dart';
@@ -48,14 +49,19 @@ class NhentaiApiClient {
   final Dio _dio;
   final Logger _logger = Logger();
   final RequestRateManager _rateManager;
+  final RemoteConfigService _remoteConfigService;
   final AntiDetection _antiDetection;
 
   /// Create a new NhentaiApiClient
   ///
   /// [dio] - Optional custom Dio instance (useful for testing)
-  NhentaiApiClient({Dio? dio})
-      : _dio = dio ?? _createDefaultDio(),
-        _rateManager = RequestRateManager(),
+  NhentaiApiClient({
+    Dio? dio,
+    required RequestRateManager rateManager,
+    required RemoteConfigService remoteConfigService,
+  })  : _dio = dio ?? _createDefaultDio(),
+        _rateManager = rateManager,
+        _remoteConfigService = remoteConfigService,
         _antiDetection = AntiDetection();
 
   /// Create default Dio instance with proper configuration
@@ -77,6 +83,28 @@ class NhentaiApiClient {
     return dio;
   }
 
+  // ============ Dynamic Endpoints ============
+
+  String get _apiBaseUrl =>
+      _remoteConfigService.getConfig('nhentai')?.api?.baseUrl ??
+      ApiConfig.nhentaiApiBase;
+
+  String _getGalleryEndpoint(String id) => '$_apiBaseUrl/gallery/$id';
+
+  String _getAllGalleriesEndpoint({int page = 1}) =>
+      '$_apiBaseUrl/galleries/all?page=$page';
+
+  String _getSearchEndpoint({
+    required String query,
+    String sort = 'date',
+    int page = 1,
+  }) {
+    final encodedQuery = Uri.encodeComponent(query);
+    return '$_apiBaseUrl/galleries/search?query=$encodedQuery&sort=$sort&page=$page';
+  }
+
+  String _getRelatedEndpoint(String id) => '$_apiBaseUrl/gallery/$id/related';
+
   /// Wait for rate limiting before making request
   Future<void> _waitForRateLimit() async {
     if (!_rateManager.canMakeRequest()) {
@@ -92,7 +120,7 @@ class NhentaiApiClient {
   /// [id] - Gallery ID (numeric string)
   /// Returns [NhentaiGalleryResponse] with full gallery details
   Future<NhentaiGalleryResponse> getGallery(String id) async {
-    final url = ApiConfig.getGalleryEndpoint(id);
+    final url = _getGalleryEndpoint(id);
     _logger.d('NhentaiApiClient: Fetching gallery $id');
 
     try {
@@ -113,7 +141,7 @@ class NhentaiApiClient {
   /// [page] - Page number (1-indexed)
   /// Returns [NhentaiListResponse] with list of galleries
   Future<NhentaiListResponse> getAllGalleries({int page = 1}) async {
-    final url = ApiConfig.getAllGalleriesEndpoint(page: page);
+    final url = _getAllGalleriesEndpoint(page: page);
     _logger.d('NhentaiApiClient: Fetching all galleries page $page');
 
     try {
@@ -143,7 +171,7 @@ class NhentaiApiClient {
     int page = 1,
   }) async {
     final mappedSort = ApiConfig.mapSortOption(sort);
-    final url = ApiConfig.getSearchEndpoint(
+    final url = _getSearchEndpoint(
       query: query,
       sort: mappedSort,
       page: page,
@@ -170,7 +198,7 @@ class NhentaiApiClient {
   /// [id] - Gallery ID to find related content for
   /// Returns [NhentaiRelatedResponse] with related galleries
   Future<NhentaiRelatedResponse> getRelated(String id) async {
-    final url = ApiConfig.getRelatedEndpoint(id);
+    final url = _getRelatedEndpoint(id);
     _logger.d('NhentaiApiClient: Fetching related for gallery $id');
 
     try {

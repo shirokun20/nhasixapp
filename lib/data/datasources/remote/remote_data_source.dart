@@ -13,6 +13,7 @@ import 'nhentai_scraper.dart';
 import 'anti_detection.dart';
 import 'request_rate_manager.dart';
 import 'exceptions.dart';
+import '../../../../core/config/remote_config_service.dart';
 
 /// Remote data source for nhentai.net
 /// Supports both API and HTML scraping with automatic fallback
@@ -22,10 +23,13 @@ class RemoteDataSource {
     required this.scraper,
     required this.cloudflareBypass,
     required this.antiDetection,
+    required RequestRateManager rateManager,
+    required RemoteConfigService remoteConfigService,
     this.apiClient,
     Logger? logger,
   })  : _logger = logger ?? Logger(),
-        _rateManager = RequestRateManager(logger: logger);
+        _rateManager = rateManager,
+        _remoteConfigService = remoteConfigService;
 
   final Dio httpClient;
   final NhentaiScraper scraper;
@@ -34,11 +38,15 @@ class RemoteDataSource {
   final NhentaiApiClient? apiClient;
   final Logger _logger;
   final RequestRateManager _rateManager;
+  final RemoteConfigService _remoteConfigService;
 
   /// Whether to prefer API over scraping
   bool _useApi = true;
 
-  static const String baseUrl = 'https://nhentai.net';
+  String get baseUrl =>
+      _remoteConfigService.getConfig('nhentai')?.baseUrl ??
+      'https://nhentai.net';
+
   static const Duration requestTimeout = Duration(seconds: 30);
   static const int maxRetries = 3;
 

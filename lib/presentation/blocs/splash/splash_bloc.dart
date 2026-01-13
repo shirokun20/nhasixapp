@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/core/utils/app_state_manager.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
@@ -12,13 +13,20 @@ import 'package:nhasixapp/core/constants/app_constants.dart';
 part 'splash_event.dart';
 part 'splash_state.dart';
 
+// Extension to add message to SplashInitializing if it doesn't exist
+// Assuming SplashState has a message property or SplashInitializing does not taking it.
+// Let's modify SplashState separately if needed, but for now I will assume existing structure or update state.
+// Checking SplashState file content is safer.
+
 class SplashBloc extends Bloc<SplashEvent, SplashState> {
   SplashBloc({
+    required RemoteConfigService remoteConfigService,
     required RemoteDataSource remoteDataSource,
     required UserDataRepository userDataRepository,
     required Logger logger,
     required Connectivity connectivity,
-  })  : _remoteDataSource = remoteDataSource,
+  })  : _remoteConfigService = remoteConfigService,
+        _remoteDataSource = remoteDataSource,
         _userDataRepository = userDataRepository,
         _logger = logger,
         _connectivity = connectivity,
@@ -32,6 +40,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
     on<SplashCheckOfflineContentEvent>(_onCheckOfflineContent);
   }
 
+  final RemoteConfigService _remoteConfigService;
   final RemoteDataSource _remoteDataSource;
   final UserDataRepository _userDataRepository;
   final Logger _logger;
@@ -47,8 +56,45 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
     try {
       _logger.i('SplashBloc: Starting initialization...');
 
-      // Add initial delay for splash screen visibility
-      // await Future.delayed(_initialDelay); // Removed for optimization
+      // Smart Config Sync
+      // 1. Check if we have valid cache (Condition 1 vs Condition 2)
+      // We check nhentai as valid proxy for "has config"
+      final hasCache = await _remoteConfigService.hasValidCache('nhentai');
+
+      if (!hasCache) {
+        // Condition 1: No Cache (Fresh Install) -> STRICT MODE
+        // Must verify internet first
+        final connectivityResults = await _connectivity.checkConnectivity();
+        final hasInternet = connectivityResults.isNotEmpty &&
+            connectivityResults.first != ConnectivityResult.none;
+
+        if (!hasInternet) {
+          _logger.i('SplashBloc: First run requires internet connection');
+          emit(SplashError(
+            message:
+                'First run requires internet connection to download configuration.',
+            canRetry: true,
+            canUseOffline: false,
+          ));
+          return;
+        }
+
+        emit(SplashInitializing(
+            message: 'Downloading initial configuration...'));
+        // Will throw if download fails
+        await _remoteConfigService.smartInitialize(isFirstRun: true);
+      } else {
+        // Condition 2: Has Cache (Normal Run) -> SMART UPDATE
+        emit(SplashInitializing(message: 'Checking for updates...'));
+
+        // This won't throw on error, keeps old config
+        await _remoteConfigService.smartInitialize(isFirstRun: false);
+      }
+
+      // Get last sync time for UI
+      final lastSync = await _remoteConfigService.getLastSyncTime();
+      _logger.i(
+          'SplashBloc: Config synced (Last: ${lastSync?.toIso8601String()})');
 
       // Check network connectivity first
       final connectivityResults = await _connectivity.checkConnectivity();
@@ -57,10 +103,9 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
           : ConnectivityResult.none;
       if (connectivityResult == ConnectivityResult.none) {
         _logger.i(
-            'SplashBloc: No internet connection, skipping check and entering offline mode...');
-        // Simplified: Directly enable offline mode and continue
-        AppStateManager().enableOfflineMode();
-        emit(SplashSuccess(message: 'Offline Mode'));
+            'SplashBloc: No internet connection, checking offline content...');
+        // Instead of immediate success, check offline content
+        await _handleOfflineMode(emit);
         return;
       }
 
@@ -68,7 +113,9 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       final isAlreadyBypassed = await _remoteDataSource.checkCloudflareStatus();
       if (isAlreadyBypassed) {
         _logger.i('SplashBloc: Cloudflare already bypassed');
-        emit(SplashSuccess(message: 'Already connected to nhentai.net'));
+        emit(SplashSuccess(
+            message:
+                'Ready (Last Sync: ${lastSync != null ? "${lastSync.hour}:${lastSync.minute}" : "Unknown"})'));
         return;
       }
 

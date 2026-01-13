@@ -23,6 +23,7 @@ import 'package:nhasixapp/core/network/http_client_manager.dart';
 // Core Utils
 import 'package:nhasixapp/core/utils/tag_data_manager.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
 
 // Data Sources
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
@@ -30,6 +31,7 @@ import 'package:nhasixapp/data/datasources/remote/anti_detection.dart';
 import 'package:nhasixapp/data/datasources/remote/nhentai_scraper.dart';
 import 'package:nhasixapp/data/datasources/remote/api/nhentai_api_client.dart';
 import 'package:nhasixapp/data/datasources/local/tag_data_source.dart';
+import 'package:nhasixapp/data/datasources/remote/request_rate_manager.dart';
 
 // BLoCs
 import 'package:nhasixapp/presentation/blocs/splash/splash_bloc.dart';
@@ -136,6 +138,18 @@ void _setupCore() {
   // Tag Data Manager
   getIt.registerLazySingleton<TagDataManager>(
       () => TagDataManager(logger: getIt<Logger>()));
+
+  // Remote Config Service
+  getIt.registerLazySingleton<RemoteConfigService>(() => RemoteConfigService(
+        dio: getIt<Dio>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // Request Rate Manager
+  getIt.registerLazySingleton<RequestRateManager>(() => RequestRateManager(
+        remoteConfigService: getIt<RemoteConfigService>(),
+        logger: getIt<Logger>(),
+      ));
 }
 
 /// Setup services
@@ -248,7 +262,10 @@ void _setupDataSources() {
       ));
 
   // nhentai API Client (for API-first approach)
-  getIt.registerLazySingleton<NhentaiApiClient>(() => NhentaiApiClient());
+  getIt.registerLazySingleton<NhentaiApiClient>(() => NhentaiApiClient(
+        rateManager: getIt<RequestRateManager>(),
+        remoteConfigService: getIt<RemoteConfigService>(),
+      ));
 
   // Remote Data Source (with API client for fallback support)
   getIt.registerLazySingleton<RemoteDataSource>(() => RemoteDataSource(
@@ -256,6 +273,8 @@ void _setupDataSources() {
         scraper: getIt<NhentaiScraper>(),
         cloudflareBypass: getIt<CloudflareBypassNoWebView>(),
         antiDetection: getIt<AntiDetection>(),
+        rateManager: getIt<RequestRateManager>(),
+        remoteConfigService: getIt<RemoteConfigService>(),
         apiClient: getIt<NhentaiApiClient>(),
         logger: getIt<Logger>(),
       ));
@@ -288,6 +307,8 @@ void _setupDataSources() {
         authManager: getIt<CrotpediaAuthManager>(),
         dio: getIt<Dio>(),
         logger: getIt<Logger>(),
+        baseUrl:
+            getIt<RemoteConfigService>().getConfig('crotpedia')?.api?.baseUrl,
       ));
 
   // Content Source Registry
@@ -419,6 +440,7 @@ void _setupUseCases() {
 void _setupBlocs() {
   // Splash BLoC
   getIt.registerFactory<SplashBloc>(() => SplashBloc(
+        remoteConfigService: getIt<RemoteConfigService>(),
         remoteDataSource: getIt<RemoteDataSource>(),
         userDataRepository: getIt<UserDataRepository>(),
         logger: getIt<Logger>(),

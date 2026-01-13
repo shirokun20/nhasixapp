@@ -20,16 +20,23 @@ class CrotpediaSource implements ContentSource {
   final CrotpediaAuthManager _authManager;
   final Dio _dio;
   final Logger? _logger;
+  final String _overriddenBaseUrl;
 
   CrotpediaSource({
     required CrotpediaScraper scraper,
     required CrotpediaAuthManager authManager,
     required Dio dio,
     Logger? logger,
+    String? baseUrl,
   })  : _scraper = scraper,
         _authManager = authManager,
         _dio = dio,
-        _logger = logger;
+        _logger = logger,
+        _overriddenBaseUrl = baseUrl ?? baseUrlValue {
+    if (baseUrl != null) {
+      CrotpediaUrlBuilder.setBaseUrl(baseUrl);
+    }
+  }
 
   // ============ ContentSource Interface ============
 
@@ -43,7 +50,7 @@ class CrotpediaSource implements ContentSource {
   String get iconPath => 'assets/icons/crotpedia.png';
 
   @override
-  String get baseUrl => baseUrlValue;
+  String get baseUrl => _overriddenBaseUrl;
 
   @override
   bool get requiresBypass => false; // No cloudflare for now

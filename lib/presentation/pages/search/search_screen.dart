@@ -12,8 +12,8 @@ import 'package:nhasixapp/core/utils/responsive_grid_delegate.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/tag_resolver.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
-import 'package:kuron_core/kuron_core.dart' hide SearchFilter, FilterItem;
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_state.dart';
@@ -428,10 +428,12 @@ class _SearchScreenState extends State<SearchScreen> {
         // Only show advanced filters for sources that support it (not Crotpedia)
         BlocBuilder<SourceCubit, SourceState>(
           builder: (context, sourceState) {
-            final isCrotpedia =
-                sourceState.activeSource?.id == SourceType.crotpedia.id;
-            if (isCrotpedia) {
-              // Crotpedia doesn't support advanced filters (no exclude tags, etc)
+            final sourceId = sourceState.activeSource?.id ?? 'nhentai';
+            final supportsAdvanced =
+                getIt<RemoteConfigService>().supportsAdvancedSearch(sourceId);
+
+            if (!supportsAdvanced) {
+              // Source doesn't support advanced filters
               return const SizedBox.shrink();
             }
             return IconButton(
