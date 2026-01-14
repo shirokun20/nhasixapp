@@ -25,8 +25,14 @@ class CrotpediaUrlBuilder {
   /// Chapter reader
   static String chapterReader(String slug) => '$baseUrl/baca/$slug/';
 
-  /// Genre page
-  static String genre(String genreSlug) => '$baseUrl/baca/genre/$genreSlug/';
+  /// Genre page with pagination support
+  /// URL format: /baca/genre/{slug}/ for page 1, /baca/genre/{slug}/page/{N}/ for page 2+
+  static String genre(String genreSlug, {int page = 1}) {
+    if (page > 1) {
+      return '$baseUrl/baca/genre/$genreSlug/page/$page/';
+    }
+    return '$baseUrl/baca/genre/$genreSlug/';
+  }
 
   // ============ Search URLs ============
 
