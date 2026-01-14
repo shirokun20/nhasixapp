@@ -4,7 +4,7 @@
     "sources": {
         "nhentai": {
             "type": "bundled",
-            "assetPath": "assets/json/tags.json",
+            "assetPath": "configs/tags/tags_nhentai.json",
             "format": "array",
             "structure": [
                 "id",
@@ -48,9 +48,6 @@
                 "slug",
                 "typeCode"
             ],
-            "typeCodeMapping": {
-                "8": "Genre"
-            },
             "multiSelectSupport": {
                 "tag": true
             },
