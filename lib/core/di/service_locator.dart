@@ -213,9 +213,9 @@ void _setupServices() {
         getIt<Logger>(),
       ));
 
-  // Multi-layer Cache Manager for Content - Memory + Disk caching
-  getIt.registerLazySingleton<multi_cache.CacheManager<Content>>(
-    () => multi_cache.CacheManager<Content>.standard(
+  // Multi-layer Cache Manager for Content - Memory + Disk caching -- USING MAP to prevent serialization issues
+  getIt.registerLazySingleton<multi_cache.CacheManager<Map<String, dynamic>>>(
+    () => multi_cache.CacheManager<Map<String, dynamic>>.standard(
       namespace: 'content',
       memoryMaxEntries: 50,
       diskMaxSizeMB: 30,
@@ -345,7 +345,8 @@ void _setupRepositories() {
         remoteDataSource: getIt<RemoteDataSource>(),
         detailCacheService: getIt<DetailCacheService>(),
         requestDeduplicationService: getIt<RequestDeduplicationService>(),
-        contentCacheManager: getIt<multi_cache.CacheManager<Content>>(),
+        contentCacheManager:
+            getIt<multi_cache.CacheManager<Map<String, dynamic>>>(),
         tagCacheManager: getIt<multi_cache.CacheManager<List<Tag>>>(),
         // localDataSource: getIt<LocalDataSource>(),
         logger: getIt<Logger>(),

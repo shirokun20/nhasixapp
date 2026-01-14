@@ -289,7 +289,7 @@ class RemoteDataSource {
   /// Get random content
   Future<ContentModel> getRandomContent() async {
     try {
-      _logger.i('Fetching random content');
+      _logger.i('Fetching random content ID (scraping /random/)');
 
       final url = '$baseUrl/random/';
       final html = await _getPageHtml(url);
@@ -303,9 +303,11 @@ class RemoteDataSource {
         throw Exception('Failed to extract content ID from random page');
       }
 
-      _logger
-          .i('Successfully extracted content ID: $contentId from random page');
-      return await getContentDetail(contentId);
+      _logger.i(
+          'Successfully extracted content ID: $contentId from random page. Fetching details via API...');
+      
+      // Use API-enabled method to get details
+      return await getContentDetailViaApi(contentId);
     } catch (e, stackTrace) {
       _logger.e('Failed to get random content',
           error: e, stackTrace: stackTrace);

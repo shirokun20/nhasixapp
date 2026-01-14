@@ -80,7 +80,10 @@ class NhentaiApiClient {
     dio.interceptors.add(LogInterceptor(
       requestBody: false,
       responseBody: false,
-      logPrint: (object) => Logger().d(object.toString()),
+      logPrint: (object) {
+        // return Logger().d(object.toString());
+        // return;
+      },
     ));
 
     return dio;
@@ -92,10 +95,10 @@ class NhentaiApiClient {
       _remoteConfigService.getConfig('nhentai')?.api?.baseUrl ??
       ApiConfig.nhentaiApiBase;
 
-  String _getGalleryEndpoint(String id) => '$_apiBaseUrl/gallery/$id';
+  String _getGalleryEndpoint(String id) => '$_apiBaseUrl/api/gallery/$id';
 
   String _getAllGalleriesEndpoint({int page = 1}) =>
-      '$_apiBaseUrl/galleries/all?page=$page';
+      '$_apiBaseUrl/api/galleries/all?page=$page';
 
   String _getSearchEndpoint({
     required String query,
@@ -103,10 +106,10 @@ class NhentaiApiClient {
     int page = 1,
   }) {
     final encodedQuery = Uri.encodeComponent(query);
-    return '$_apiBaseUrl/galleries/search?query=$encodedQuery&sort=$sort&page=$page';
+    return '$_apiBaseUrl/api/galleries/search?query=$encodedQuery&sort=$sort&page=$page';
   }
 
-  String _getRelatedEndpoint(String id) => '$_apiBaseUrl/gallery/$id/related';
+  String _getRelatedEndpoint(String id) => '$_apiBaseUrl/api/gallery/$id/related';
 
   /// Wait for rate limiting before making request
   Future<void> _waitForRateLimit() async {
@@ -145,7 +148,7 @@ class NhentaiApiClient {
   /// Returns [NhentaiListResponse] with list of galleries
   Future<NhentaiListResponse> getAllGalleries({int page = 1}) async {
     final url = _getAllGalleriesEndpoint(page: page);
-    _logger.d('NhentaiApiClient: Fetching all galleries page $page');
+    _logger.d('NhentaiApiClient: Fetching all galleries page $page with url $url');
 
     try {
       await _waitForRateLimit();

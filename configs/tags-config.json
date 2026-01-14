@@ -4,7 +4,7 @@
     "sources": {
         "nhentai": {
             "type": "bundled",
-            "assetPath": "assets/json/tags.json",
+            "assetPath": "configs/tags/tags_nhentai.json",
             "format": "array",
             "structure": [
                 "id",

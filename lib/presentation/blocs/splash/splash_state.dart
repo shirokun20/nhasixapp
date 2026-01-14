@@ -9,9 +9,13 @@ class SplashInitial extends SplashState {}
 
 class SplashInitializing extends SplashState {
   final String message;
-  SplashInitializing({this.message = 'Initializing...'});
+  final double progress;
+  SplashInitializing({
+    this.message = 'Initializing...',
+    this.progress = 0.0,
+  });
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, progress];
 }
 
 class SplashCloudflareInitial extends SplashState {}

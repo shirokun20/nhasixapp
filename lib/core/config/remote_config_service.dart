@@ -41,45 +41,73 @@ class RemoteConfigService {
 
   /// Initialize with Smart Sync logic (Master Manifest Pattern)
   /// [isFirstRun] - If true, throws exception on critical failure
-  Future<void> smartInitialize({bool isFirstRun = false}) async {
+  /// [onProgress] - Optional callback for progress tracking (0.0 to 1.0)
+  Future<void> smartInitialize({
+    bool isFirstRun = false,
+    void Function(double progress, String message)? onProgress,
+  }) async {
     _logger.i('Initializing Remote Config (Smart Mode)...');
     final prefs = await SharedPreferences.getInstance();
 
     try {
       // 1. Fetch Master Manifest (version.json)
+      onProgress?.call(0.1, 'Checking version manifest...');
       await _syncManifest(prefs, isFirstRun);
 
       // 2. Sync Configs based on Manifest
-      await Future.wait([
-        _syncConfig(
-          'nhentai',
-          'nhentai-config.json',
-          _nhentaiCacheKey,
-          (json) => _nhentaiConfig = SourceConfig.fromJson(json),
-          prefs,
-        ),
-        _syncConfig(
-          'crotpedia',
-          'crotpedia-config.json',
-          _crotpediaCacheKey,
-          (json) => _crotpediaConfig = SourceConfig.fromJson(json),
-          prefs,
-        ),
-        _syncConfig(
-          'app',
-          'app-config.json',
-          _appConfigCacheKey,
-          (json) => _appConfig = AppConfig.fromJson(json),
-          prefs,
-        ),
-        _syncConfig(
-          'tags',
-          'tags-config.json',
-          _tagsCacheKey,
-          (json) => _tagsManifest = TagsManifest.fromJson(json),
-          prefs,
-        ),
-      ]);
+      // We have 4 configs to sync. Let's distribute the remaining 90% progress
+      // 0.1 -> 0.325 -> 0.55 -> 0.775 -> 1.0
+      
+      double currentProgress = 0.1;
+      final step = 0.9 / 4;
+
+      // Nhentai Config
+      onProgress?.call(currentProgress, 'Syncing nhentai config...');
+      await _syncConfig(
+        'nhentai',
+        'nhentai-config.json',
+        _nhentaiCacheKey,
+        (json) => _nhentaiConfig = SourceConfig.fromJson(json),
+        prefs,
+      );
+      currentProgress += step;
+      onProgress?.call(currentProgress, 'Synced nhentai config');
+
+      // Crotpedia Config
+      onProgress?.call(currentProgress, 'Syncing crotpedia config...');
+      await _syncConfig(
+        'crotpedia',
+        'crotpedia-config.json',
+        _crotpediaCacheKey,
+        (json) => _crotpediaConfig = SourceConfig.fromJson(json),
+        prefs,
+      );
+      currentProgress += step;
+      onProgress?.call(currentProgress, 'Synced crotpedia config');
+
+      // App Config
+      onProgress?.call(currentProgress, 'Syncing app config...');
+      await _syncConfig(
+        'app',
+        'app-config.json',
+        _appConfigCacheKey,
+        (json) => _appConfig = AppConfig.fromJson(json),
+        prefs,
+      );
+      currentProgress += step;
+      onProgress?.call(currentProgress, 'Synced app config');
+
+      // Tags Config
+      onProgress?.call(currentProgress, 'Syncing tags config...');
+      await _syncConfig(
+        'tags',
+        'tags-config.json',
+        _tagsCacheKey,
+        (json) => _tagsManifest = TagsManifest.fromJson(json),
+        prefs,
+      );
+      currentProgress += step;
+      onProgress?.call(1.0, 'All configs synced');
 
       // 3. Check Minimum App Version (Forced Update)
       _checkMinAppVersion();
@@ -166,6 +194,8 @@ class RemoteConfigService {
 
     // If _versionManifest is null (offline & no cache), use fallback asset
     if (_versionManifest == null && _nhentaiConfig == null) {
+      // Simulate asset load delay
+      await Future.delayed(const Duration(milliseconds: 100));
       await _loadFromAsset(
           configName, 'assets/configs/$fileName', updateConfig);
       return;
@@ -182,8 +212,13 @@ class RemoteConfigService {
         await _fetchAndCache('$_baseUrl/$fileName', cacheKey, updateConfig,
             prefs, remoteVersion);
       } else {
+        // Simulate "Checking..." delay even if up to date
+        await Future.delayed(const Duration(milliseconds: 150));
         _logger.d('$configName is up to date ($remoteVersion)');
       }
+    } else {
+       // Simulate check delay when remote version isn't available
+       await Future.delayed(const Duration(milliseconds: 50));
     }
   }
 

@@ -84,15 +84,25 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
         }
 
         emit(SplashInitializing(
-            message: 'Downloading initial configuration...'));
+            message: 'Downloading initial configuration...', progress: 0.05));
         // Will throw if download fails
-        await _remoteConfigService.smartInitialize(isFirstRun: true);
+        await _remoteConfigService.smartInitialize(
+          isFirstRun: true,
+          onProgress: (progress, message) {
+            emit(SplashInitializing(message: message, progress: progress));
+          },
+        );
       } else {
         // Condition 2: Has Cache (Normal Run) -> SMART UPDATE
-        emit(SplashInitializing(message: 'Checking for updates...'));
+        emit(SplashInitializing(message: 'Checking for updates...', progress: 0.1));
 
         // This won't throw on error, keeps old config
-        await _remoteConfigService.smartInitialize(isFirstRun: false);
+        await _remoteConfigService.smartInitialize(
+          isFirstRun: false,
+          onProgress: (progress, message) {
+            emit(SplashInitializing(message: message, progress: progress));
+          },
+        );
       }
 
       // Get last sync time for UI
@@ -101,7 +111,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
           'SplashBloc: Config synced (Last: ${lastSync?.toIso8601String()})');
 
       // 4. Initialize Tag Data for all sources
-      emit(SplashInitializing(message: 'Initializing tags database...'));
+      emit(SplashInitializing(message: 'Initializing tags database...', progress: 1.0));
 
       // Initialize sources
       final sources = ['nhentai', 'crotpedia'];
@@ -111,7 +121,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
 
         // Check for updates (Blocking if no tags, Background if has tags)
         if (!_tagDataManager.hasTags(source)) {
-          emit(SplashInitializing(message: 'Downloading tags for $source...'));
+          emit(SplashInitializing(message: 'Downloading tags for $source...', progress: 1.0));
           await _tagDataManager.checkForUpdates(source: source);
         } else {
           _tagDataManager.checkForUpdates(source: source).ignore();

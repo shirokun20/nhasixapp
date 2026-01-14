@@ -295,39 +295,54 @@ class FeaturedContentCard extends StatelessWidget {
   }
 
   Widget _buildLanguageFlag(BuildContext context) {
-    return Container(
-      width: 28,
-      height: 18,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(3),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
-          width: 0.5,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(3),
-        child: Image.asset(
-          'assets/images/${content.language.toLowerCase()}.gif',
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
           width: 28,
           height: 18,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: Center(
-                child: Text(
-                  content.language.substring(0, 2).toUpperCase(),
-                  style: TextStyleConst.labelSmall.copyWith(
-                    fontSize: 8,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(3),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
+              width: 0.5,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: Image.asset(
+              'assets/images/${content.language.toLowerCase()}.gif',
+              width: 28,
+              height: 18,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: Center(
+                    child: Text(
+                      content.language.substring(0, 2).toUpperCase(),
+                      style: TextStyleConst.labelSmall.copyWith(
+                        fontSize: 8,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            );
-          },
+                );
+              },
+            ),
+          ),
         ),
-      ),
+        const SizedBox(width: 6),
+        Text(
+          content.language.length > 1 
+              ? '${content.language[0].toUpperCase()}${content.language.substring(1)}'
+              : content.language.toUpperCase(),
+          style: TextStyleConst.labelSmall.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }
