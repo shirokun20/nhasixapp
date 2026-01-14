@@ -378,7 +378,7 @@ class CrotpediaSource implements ContentSource {
       // Check for genre navigation (legacy/direct)
       if (filter.query.startsWith('genre:')) {
         final genreSlug = filter.query.substring(6); // Remove 'genre:'
-        return CrotpediaUrlBuilder.genre(genreSlug);
+        return CrotpediaUrlBuilder.genre(genreSlug, page: filter.page);
       }
 
       // Check if it's a form-encoded query (contains known keys)

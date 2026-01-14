@@ -89,7 +89,8 @@ class _DetailScreenState extends State<DetailScreen> {
 
   /// Navigate to tag browsing mode (SIMPLIFIED routing)
   /// Navigate to tag browsing mode (SIMPLIFIED routing)
-  void _searchByTag(String tagName, {String? tagId}) async {
+  void _searchByTag(String tagName,
+      {String? tagId, String? tagType, String? sourceId}) async {
     // Prevent multiple simultaneous navigation attempts
     if (_isNavigating) {
       Logger()
@@ -101,19 +102,39 @@ class _DetailScreenState extends State<DetailScreen> {
       _isNavigating = true;
 
       String query = tagName;
+      final actualSourceId = sourceId ??
+          ((context.read<DetailCubit>().state is DetailLoaded)
+              ? (context.read<DetailCubit>().state as DetailLoaded)
+                  .content
+                  .sourceId
+              : 'nhentai');
 
-      // SPECIAL HANDLING FOR CROTPEDIA GENRES
-      // Crotpedia supports specific genre browsing via /baca/genre/slug/
-      // We pass 'genre:slug' as query, which CrotpediaSource intercepts.
-      if (widget.contentId.contains(SourceType.crotpedia.id) ||
-          (context.read<DetailCubit>().state is DetailLoaded &&
-              (context.read<DetailCubit>().state as DetailLoaded)
-                      .content
-                      .sourceId ==
-                  SourceType.crotpedia.id)) {
-        // Use tagId (slug) if available, otherwise fallback to name
-        final slug = tagId ?? tagName.toLowerCase().replaceAll(' ', '-');
+      if (actualSourceId == SourceType.crotpedia.id) {
+        // SPECIAL HANDLING FOR CROTPEDIA GENRES
+        // Crotpedia supports specific genre browsing via /baca/genre/slug/
+        // We pass 'genre:slug' as query, which CrotpediaSource intercepts.
+        final slug = tagName.toLowerCase().replaceAll(' ', '-');
         query = 'genre:$slug';
+      } else if (actualSourceId == 'nhentai') {
+        // SPECIAL HANDLING FOR NHENTAI
+        // User requested strict slug format: lowercase + hyphens
+        // e.g. "Big Breasts" -> "big-breasts", "Lucy Heartfilia" -> "lucy-heartfilia"
+        
+        // Prioritize explicit slug/tagId if it's text (not numeric ID)
+        String value = tagName.toLowerCase().replaceAll(' ', '-');
+        if (tagId != null && int.tryParse(tagId) == null) {
+           value = tagId;
+        }
+
+        if (tagType != null &&
+            !['tag', 'category'].contains(tagType.toLowerCase())) {
+           // type:slug syntax (e.g. artist:shidou, character:lucy-heartfilia)
+           query = '${tagType.toLowerCase()}:$value';
+        } else {
+           // General tags: just the slug (e.g. big-breasts)
+           // This will map to "q=big-breasts" in search
+           query = value;
+        }
       }
 
       // Navigate to ContentByTagScreen
@@ -668,8 +689,12 @@ class _DetailScreenState extends State<DetailScreen> {
           runSpacing: 8,
           children: content.tags.map((tag) {
             return GestureDetector(
-              onTap: () =>
-                  _searchByTag(tag.name, tagId: tag.slug ?? tag.id.toString()),
+              onTap: () => _searchByTag(
+                tag.name,
+                tagId: tag.slug ?? tag.id.toString(),
+                tagType: tag.type,
+                sourceId: content.sourceId,
+              ),
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -711,8 +736,12 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Widget _buildActionButtons(Content content) {
-    // If content has chapters, show chapter list instead of Read/Download buttons
-    if (content.chapters != null && content.chapters!.isNotEmpty) {
+    // Check if chapters feature is enabled for this source
+    final remoteConfig = getIt<RemoteConfigService>();
+    final hasChaptersFeature = remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.chapters);
+
+    // If content has chapters AND feature is enabled, show chapter list
+    if (hasChaptersFeature && content.chapters != null && content.chapters!.isNotEmpty) {
       return _buildChapterList(content);
     }
 
@@ -957,6 +986,14 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Widget _buildRelatedContentSection(Content content) {
+    // Check if related content feature is enabled for this source
+    final remoteConfig = getIt<RemoteConfigService>();
+    final hasRelatedFeature = remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.related);
+
+    if (!hasRelatedFeature || content.relatedContent.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

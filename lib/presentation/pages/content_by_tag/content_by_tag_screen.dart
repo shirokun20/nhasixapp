@@ -201,6 +201,12 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
 
   /// Check if sorting should be shown
   bool _shouldShowSorting(ContentState state) {
+    // Hide sorting for Crotpedia genre browsing (genre: prefix)
+    // Sorting is currently only supported by Nhentai
+    if (widget.tagQuery.startsWith('genre:')) {
+      return false;
+    }
+
     // Show sorting only when there's data
     if (state is ContentLoaded && state.contents.isNotEmpty) {
       return true;

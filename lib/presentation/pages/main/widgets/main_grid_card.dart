@@ -105,20 +105,22 @@ class MainGridCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(
-                              Icons.menu_book,
-                              size: 12,
-                              color: Colors.white.withValues(alpha: 0.8),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${content.pageCount}',
-                              style: TextStyleConst.overline.copyWith(
+                            if (content.pageCount > 1) ...[
+                              Icon(
+                                Icons.menu_book,
+                                size: 12,
                                 color: Colors.white.withValues(alpha: 0.8),
                               ),
-                            ),
-                            if (content.language.isNotEmpty) ...[
+                              const SizedBox(width: 4),
+                              Text(
+                                '${content.pageCount}',
+                                style: TextStyleConst.overline.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                ),
+                              ),
                               const SizedBox(width: 8),
+                            ],
+                            if (content.language.isNotEmpty) ...[
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 6,
