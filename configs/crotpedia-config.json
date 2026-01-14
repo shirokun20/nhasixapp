@@ -268,10 +268,10 @@
         "search": true,
         "random": false,
         "related": false,
-        "download": true,
-        "favorite": true,
+        "download": false,
+        "favorite": false,
         "chapters": true,
-        "bookmark": true,
+        "bookmark": false,
         "supportsTagExclusion": false,
         "supportsAdvancedSearch": true
     },
