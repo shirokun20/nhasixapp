@@ -1,153 +1,70 @@
 {
-    "source": "nhentai",
     "version": "1.0.0",
-    "lastUpdated": "2026-01-13T13:16:00+07:00",
-    "api": {
-        "enabled": true,
-        "baseUrl": "https://nhentai.net",
-        "apiBase": "https://nhentai.net/api",
-        "timeout": 30000,
-        "endpoints": {
-            "galleryDetail": "/api/gallery/{id}",
-            "allGalleries": "/api/galleries/all?page={page}",
-            "search": "/api/galleries/search?query={query}&page={page}&sort={sort}",
-            "tagSearch": "/api/galleries/tagged?tag_id={tagId}&page={page}",
-            "related": "/api/gallery/{id}/related",
-            "random": "/random"
-        },
-        "images": {
-            "fullSize": "https://i.nhentai.net/galleries/{mediaId}/{page}.{ext}",
-            "thumbnail": "https://t.nhentai.net/galleries/{mediaId}/thumb.{ext}",
-            "cover": "https://t.nhentai.net/galleries/{mediaId}/cover.{ext}",
-            "pageThumbnail": "https://t.nhentai.net/galleries/{mediaId}/{page}t.{ext}"
-        },
-        "extensionMapping": {
-            "j": "jpg",
-            "p": "png",
-            "g": "gif",
-            "w": "webp"
-        },
-        "mirrors": [
-            "https://nhentai.xxx",
-            "https://nhentai.to"
-        ],
-        "useMirrors": false
-    },
-    "searchConfig": {
-        "searchMode": "query-string",
-        "endpoint": "/search/",
-        "queryParam": "q",
-        "filterSupport": {
-            "singleSelect": [
-                "language",
-                "category"
+    "lastUpdated": "2026-01-13T13:24:00+07:00",
+    "sources": {
+        "nhentai": {
+            "type": "bundled",
+            "assetPath": "configs/tags/tags_nhentai.json",
+            "format": "array",
+            "structure": [
+                "id",
+                "name",
+                "slug",
+                "typeCode"
             ],
-            "multiSelect": [
-                "tag",
-                "artist",
-                "character",
-                "parody",
-                "group"
-            ],
-            "supportsExclude": true
-        },
-        "sortingConfig": {
-            "allowDynamicReSort": true,
-            "defaultSort": "newest",
-            "widgetType": "dropdown",
-            "options": [
-                {
-                    "value": "newest",
-                    "apiValue": "",
-                    "label": "Recent",
-                    "displayLabel": "Sorted by: Recent",
-                    "icon": "update",
-                    "default": true
-                },
-                {
-                    "value": "popular",
-                    "apiValue": "popular",
-                    "label": "Popular",
-                    "displayLabel": "Sorted by: Most Popular",
-                    "icon": "trending_up"
-                },
-                {
-                    "value": "popular-week",
-                    "apiValue": "popular-week",
-                    "label": "Popular This Week",
-                    "displayLabel": "Sorted by: Popular This Week",
-                    "icon": "date_range"
-                },
-                {
-                    "value": "popular-today",
-                    "apiValue": "popular-today",
-                    "label": "Popular Today",
-                    "displayLabel": "Sorted by: Popular Today",
-                    "icon": "today"
-                }
-            ],
-            "messages": {
-                "dropdownLabel": "Sort by:",
-                "noOptionsAvailable": "No sorting options"
+            "typeCodeMapping": {
+                "0": "category",
+                "1": "artist",
+                "2": "parody",
+                "3": "tag",
+                "4": "character",
+                "5": "group",
+                "6": "language",
+                "7": "category"
+            },
+            "multiSelectSupport": {
+                "tag": true,
+                "artist": true,
+                "character": true,
+                "parody": true,
+                "group": true,
+                "language": false,
+                "category": false
+            },
+            "migration": {
+                "enabled": true,
+                "remoteUrl": "https://cdn.jsdelivr.net/gh/shirokun20/nhasixapp@configs/configs/tags/tags_nhentai.json",
+                "fallbackUrl": "https://cdn.jsdelivr.net/gh/shirokun20/nhasixapp@master/configs/tags/tags_nhentai.json",
+                "compression": "none",
+                "cacheTtlSeconds": 86400
             }
         },
-        "pagination": {
-            "urlPattern": "/search/?q={query}&page={page}",
-            "paramName": "page"
-        }
-    },
-    "scraper": {
-        "enabled": true,
-        "selectors": {
-            "homepage": {
-                "container": ".index-container",
-                "galleryCard": ".gallery",
-                "cover": ".cover img",
-                "link": "a.cover",
-                "title": "caption"
+        "crotpedia": {
+            "type": "remote",
+            "format": "array",
+            "structure": [
+                "id",
+                "name",
+                "slug",
+                "typeCode"
+            ],
+            "multiSelectSupport": {
+                "tag": true
             },
-            "detail": {
-                "titleEnglish": "#info h1",
-                "titleJapanese": "#info h2",
-                "tags": "#info a.tag",
-                "tagContainer": ".tag-container"
-            },
-            "pagination": {
-                "pageLinks": ".pagination a.page",
-                "current": ".pagination .current"
+            "migration": {
+                "enabled": true,
+                "remoteUrl": "https://cdn.jsdelivr.net/gh/shirokun20/nhasixapp@configs/configs/tags/tags_crotpedia.json",
+                "compression": "none",
+                "cacheTtlSeconds": 86400
             }
         }
     },
-    "network": {
-        "rateLimit": {
-            "enabled": true,
-            "requestsPerMinute": 60,
-            "minDelayMs": 200,
-            "cooldownDurationMs": 300000
-        },
-        "retry": {
-            "maxAttempts": 3,
-            "delayMs": 1000,
-            "exponentialBackoff": true
-        },
-        "cloudflare": {
-            "bypassEnabled": true,
-            "antiDetection": true
-        }
-    },
-    "features": {
-        "search": true,
-        "random": true,
-        "related": true,
-        "download": true,
-        "favorite": true,
-        "supportsTagExclusion": true,
-        "supportsAdvancedSearch": true
-    },
-    "ui": {
-        "displayName": "nhentai",
-        "iconPath": "assets/icons/nhentai.png",
-        "themeColor": "#EC2C79",
-        "cardStyle": "standard"
-    }
+    "notes": [
+        "Current: Tags loaded from bundled asset (5.17 MB)",
+        "Future: Will use GitHub Raw from main nhasixapp repo",
+        "Tag data will be in configs/tags/ directory",
+        "Primary: main branch, Fallback: develop branch",
+        "No CDN (jsdelivr) - direct GitHub Raw for simplicity",
+        "Set migration.enabled to true when ready to switch"
+    ]
 }
