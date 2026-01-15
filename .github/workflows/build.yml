@@ -1,0 +1,244 @@
+name: Build and Upload APK
+
+# Trigger only when merged to master branch
+# Send notifications to Telegram Channel (not personal chat)
+# Setup: Add bot as admin to channel, get channel ID (@channelname or -100XXXXXXXXX)
+on:
+  push:
+    branches: [ master, 'release/*' ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout repository
+      - uses: actions/checkout@v4
+
+      # Setup Java environment
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # Setup Flutter environment
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      # Verify Flutter and Android setup
+      - name: Verify Setup
+        run: |
+          echo "=== Flutter Version ==="
+          flutter --version
+          echo ""
+          echo "=== Flutter Doctor ==="
+          flutter doctor -v
+          echo ""
+          echo "=== Android SDK Location ==="
+          echo "$ANDROID_HOME"
+          ls -la "$ANDROID_HOME" || echo "Android SDK not found"
+
+      # Decode Keystore from Secrets
+      - name: Decode Keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+          echo "Keystore decoded to android/app/upload-keystore.jks"
+
+      # Make build script executable
+      - name: Prepare Build Script
+        run: chmod +x build_optimized.sh
+
+      # Build optimized APK
+      - name: Build APK
+        env:
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          ALIAS_NAME: ${{ secrets.ALIAS_NAME }}
+          KEYSTORE_PATH: "upload-keystore.jks" # Relative to android/app/ or resolved by gradle
+        run: ./build_optimized.sh release
+
+      # Verify build outputs
+      - name: Verify Build Outputs
+        run: |
+          echo "=== Checking Flutter APK Directory ==="
+          ls -la build/app/outputs/flutter-apk/ || echo "No flutter-apk directory"
+          echo ""
+          echo "=== Checking APK Output Directory ==="
+          ls -lh apk-output/ || echo "No apk-output directory"
+          echo ""
+          echo "=== APK Details ==="
+          for apk in apk-output/*.apk; do
+            if [ -f "$apk" ]; then
+              echo "📱 $(basename "$apk") - $(du -h "$apk" | cut -f1)"
+            fi
+          done
+
+      # Notify on build failure to Telegram Channel
+      - name: Notify Build Failure
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+            -d chat_id="$TELEGRAM_CHANNEL_ID" \
+            -d parse_mode="Markdown" \
+            -d text="
+          ❌ *Build Failed*
+          
+          📦 Project: Kuro-N
+          🔗 Commit: \`${GITHUB_SHA::8}\`
+          🌿 Branch: ${GITHUB_REF_NAME}
+          👤 Author: ${GITHUB_ACTOR}
+          
+          🔍 [View Details](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
+          "
+
+      # Notify on build success to Telegram Channel
+      - name: Notify Build Success
+        if: success()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+        run: |
+          # Collect APK information
+          APK_INFO=""
+          APK_COUNT=0
+          TOTAL_SIZE=0
+          for apk in apk-output/*.apk; do
+            if [ -f "$apk" ]; then
+              size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null || echo "0")
+              size_mb=$((size / 1024 / 1024))
+              TOTAL_SIZE=$((TOTAL_SIZE + size_mb))
+              APK_COUNT=$((APK_COUNT + 1))
+              
+              # Extract ABI from filename (e.g., arm64-v8a, armeabi-v7a, x86_64)
+              filename=$(basename "$apk")
+              # Escape underscores for Markdown
+              filename_escaped=$(echo "$filename" | sed 's/_/\\_/g')
+              APK_INFO="${APK_INFO}
+              📱 ${filename_escaped} (${size_mb}MB)"
+            fi
+          done
+
+          curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+            -d chat_id="$TELEGRAM_CHANNEL_ID" \
+            -d parse_mode="Markdown" \
+            -d text="
+          🎉 *Cihuyy ada update baru nih!*
+          
+          � Kuro-N
+          📦 APK tersedia: ${APK_COUNT}
+          💾 Total: ~${TOTAL_SIZE}MB
+          ${APK_INFO}
+          
+          ⬇️ File lagi diupload, tunggu sebentar ya...
+          "
+
+      # Upload APK to Telegram Channel
+      - name: Upload APK to Telegram Channel
+        if: success()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+        run: |
+          # Check if APK files exist
+          if [ ! -d "apk-output" ] || [ -z "$(ls -A apk-output/*.apk 2>/dev/null)" ]; then
+            echo "❌ No APK files found in apk-output/"
+            exit 1
+          fi
+
+          # Get version from pubspec.yaml for caption
+          VERSION=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | cut -d '+' -f 1)
+
+          # Priority: ARM64 > ARM > x86_64
+          # Only upload ARM64 and ARM to save bandwidth and telegram storage
+          # x86_64 is mainly for emulators/testing
+          UPLOADED_COUNT=0
+          
+          # Upload ARM64 (highest priority - 95% of users)
+          for apk in apk-output/*arm64-v8a*.apk; do
+            if [ -f "$apk" ]; then
+              size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null || echo "0")
+              size_mb=$((size / 1024 / 1024))
+
+              if [ $size_mb -gt 50 ]; then
+                echo "⚠️ Skipping $apk - too large (${size_mb}MB > 50MB limit)"
+                continue
+              fi
+
+              echo "📤 Uploading ARM64: $apk (${size_mb}MB)..."
+              response=$(curl -s --max-time 600 --connect-timeout 60 --retry 3 --retry-delay 10 \
+                -F chat_id="$TELEGRAM_CHANNEL_ID" \
+                -F document=@"$apk" \
+                -F caption="📱 Kuro-N v${VERSION} - ARM64 | ✅ Recommended for modern devices (Android 5.0+) | 💾 ${size_mb}MB | 🔗 ${GITHUB_SHA::8}" \
+                "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
+
+                if echo "$response" | grep -q '"ok":true'; then
+                  echo "✅ Successfully uploaded ARM64 APK (${size_mb}MB)"
+                  UPLOADED_COUNT=$((UPLOADED_COUNT + 1))
+                else
+                echo "❌ Failed to upload: $response"
+                exit 1
+              fi
+            fi
+          done
+
+          # Upload ARM (compatibility for older devices)
+          for apk in apk-output/*armeabi-v7a*.apk; do
+            if [ -f "$apk" ]; then
+              size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null || echo "0")
+              size_mb=$((size / 1024 / 1024))
+
+              if [ $size_mb -gt 50 ]; then
+                echo "⚠️ Skipping $apk - too large (${size_mb}MB > 50MB limit)"
+                continue
+              fi
+
+              echo "📤 Uploading ARM: $apk (${size_mb}MB)..."
+              response=$(curl -s --max-time 600 --connect-timeout 60 --retry 3 --retry-delay 10 \
+                -F chat_id="$TELEGRAM_CHANNEL_ID" \
+                -F document=@"$apk" \
+                -F caption="📱 Kuro-N v${VERSION} - ARMv7 | 📦 For older devices | 💾 ${size_mb}MB | 🔗 ${GITHUB_SHA::8}" \
+                "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
+
+                if echo "$response" | grep -q '"ok":true'; then
+                  echo "✅ Successfully uploaded ARM APK (${size_mb}MB)"
+                  UPLOADED_COUNT=$((UPLOADED_COUNT + 1))
+                else
+                echo "❌ Failed to upload: $response"
+                exit 1
+              fi
+            fi
+          done
+
+          # Note: x86_64 not uploaded to save space (mainly for emulators)
+          echo ""
+          echo "🎉 Upload complete! Total uploaded: $UPLOADED_COUNT APKs"
+
+      # Extract Version from pubspec.yaml
+      - name: Read Version
+        id: version
+        run: |
+          VERSION=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | cut -d '+' -f 1)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Detected version: $VERSION"
+
+      # Create Draft Release & Upload APK
+      - name: Create Draft Release
+        if: startsWith(github.ref, 'refs/heads/release/')
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: v${{ env.VERSION }}
+          draft: true
+          files: apk-output/*.apk
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

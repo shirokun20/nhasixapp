@@ -45,7 +45,6 @@ app.*.map.json
 
 # Project documentation and Agent metadata
 .agent/
-.github/
 .opencode/
 projects/
 
