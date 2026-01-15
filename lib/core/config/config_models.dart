@@ -520,9 +520,18 @@ class AppConfig {
 @JsonSerializable()
 class AppLimits {
   final int defaultPageSize;
+  final int maxBatchSize;
   final int maxConcurrentDownloads;
+  final int searchHistoryLimit;
+  final int imagePreloadBuffer;
 
-  AppLimits({this.defaultPageSize = 20, this.maxConcurrentDownloads = 3});
+  AppLimits({
+    this.defaultPageSize = 20,
+    this.maxBatchSize = 1000,
+    this.maxConcurrentDownloads = 3,
+    this.searchHistoryLimit = 50,
+    this.imagePreloadBuffer = 5,
+  });
 
   factory AppLimits.fromJson(Map<String, dynamic> json) =>
       _$AppLimitsFromJson(json);
@@ -532,9 +541,26 @@ class AppLimits {
 @JsonSerializable()
 class AppDurations {
   final int splashDelayMs;
-  final int snackbarDurationMs;
+  final int snackbarShortMs;
+  final int snackbarLongMs;
+  final int pageTransitionMs;
+  final int searchDebounceMs;
+  final int networkTimeoutMs;
+  final int cacheExpirationHours;
+  final int readerAutoHideDelaySeconds;
+  final int progressUpdateIntervalMs;
 
-  AppDurations({this.splashDelayMs = 2000, this.snackbarDurationMs = 3000});
+  AppDurations({
+    this.splashDelayMs = 1000,
+    this.snackbarShortMs = 2000,
+    this.snackbarLongMs = 4000,
+    this.pageTransitionMs = 300,
+    this.searchDebounceMs = 300,
+    this.networkTimeoutMs = 30000,
+    this.cacheExpirationHours = 24,
+    this.readerAutoHideDelaySeconds = 3,
+    this.progressUpdateIntervalMs = 100,
+  });
 
   factory AppDurations.fromJson(Map<String, dynamic> json) =>
       _$AppDurationsFromJson(json);
@@ -544,9 +570,22 @@ class AppDurations {
 @JsonSerializable()
 class AppUiConfig {
   final int gridColumnsPortrait;
+  final int gridColumnsLandscape;
+  final double minCardWidth;
   final double cardAspectRatio;
+  final double cardBorderRadius;
+  final double defaultPadding;
+  final int titleMaxLength;
 
-  AppUiConfig({this.gridColumnsPortrait = 2, this.cardAspectRatio = 0.7});
+  AppUiConfig({
+    this.gridColumnsPortrait = 2,
+    this.gridColumnsLandscape = 3,
+    this.minCardWidth = 150.0,
+    this.cardAspectRatio = 0.65,
+    this.cardBorderRadius = 12.0,
+    this.defaultPadding = 16.0,
+    this.titleMaxLength = 40,
+  });
 
   factory AppUiConfig.fromJson(Map<String, dynamic> json) =>
       _$AppUiConfigFromJson(json);
@@ -556,8 +595,14 @@ class AppUiConfig {
 @JsonSerializable()
 class AppStorage {
   final String backupFolderName;
+  final int maxImageSizeKb;
+  final int pdfPartsSizePages;
 
-  AppStorage({this.backupFolderName = 'nhasix_backup'});
+  AppStorage({
+    this.backupFolderName = 'nhasix',
+    this.maxImageSizeKb = 200,
+    this.pdfPartsSizePages = 100,
+  });
 
   factory AppStorage.fromJson(Map<String, dynamic> json) =>
       _$AppStorageFromJson(json);

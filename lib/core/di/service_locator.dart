@@ -485,8 +485,8 @@ void _setupBlocs() {
         connectivity: getIt<Connectivity>(),
         notificationService: getIt<NotificationService>(),
         pdfConversionService: getIt<PdfConversionService>(),
-        appLocalizations:
-            null, // Will be provided via context in MultiBlocProviderConfig
+        remoteConfigService: getIt<RemoteConfigService>(),
+        appLocalizations: null, // Initialized during main setup
       ));
 
   // Register other BLoCs when implemented

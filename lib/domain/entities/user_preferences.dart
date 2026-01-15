@@ -1,8 +1,9 @@
 import 'package:equatable/equatable.dart';
+import '../../core/constants/app_constants.dart';
 
 /// User preferences entity for app customization
 class UserPreferences extends Equatable {
-  const UserPreferences({
+  UserPreferences({
     this.theme = 'dark',
     this.defaultLanguage = 'english',
     this.imageQuality = 'high',
@@ -10,14 +11,14 @@ class UserPreferences extends Equatable {
     this.showTitles = true,
     this.blurThumbnails = true,
     this.usePagination = true,
-    this.columnsPortrait = 2,
-    this.columnsLandscape = 3,
+    int? columnsPortrait,
+    int? columnsLandscape,
     this.useVolumeKeys = false,
     this.readingDirection = ReadingDirection.vertical,
     this.keepScreenOn = false,
     this.showSystemUI = true,
     this.downloadPath,
-    this.maxConcurrentDownloads = 3,
+    int? maxConcurrentDownloads,
     this.autoBackup = false,
     this.showNsfwContent = true,
     this.blacklistedTags = const [],
@@ -28,7 +29,7 @@ class UserPreferences extends Equatable {
     this.readerShowPageNumbers = true,
     this.readerShowProgressBar = true,
     this.readerAutoHideUI = true,
-    this.readerAutoHideDelay = 3,
+    int? readerAutoHideDelay,
     this.readerHideOnTap = true,
     this.readerHideOnSwipe = true,
     // History cleanup settings
@@ -40,7 +41,12 @@ class UserPreferences extends Equatable {
     this.lastAppAccess,
     this.lastHistoryCleanup,
     this.disguiseMode = 'default',
-  });
+  })  : columnsPortrait = columnsPortrait ?? AppUI.gridColumnsPortrait,
+        columnsLandscape = columnsLandscape ?? AppUI.gridColumnsLandscape,
+        maxConcurrentDownloads =
+            maxConcurrentDownloads ?? AppLimits.maxConcurrentDownloads,
+        readerAutoHideDelay =
+            readerAutoHideDelay ?? AppDurations.readerAutoHideDelay.inSeconds;
 
   final String theme; // light, dark, amoled
   final String defaultLanguage;

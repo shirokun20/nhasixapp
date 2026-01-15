@@ -1,122 +1,156 @@
-/// App-wide constants to avoid magic numbers and duplicated values
-///
-/// This file centralizes all hardcoded values for easier maintenance
-/// and consistency across the codebase.
 library;
-
+ 
 import 'dart:core';
 import 'package:kuron_core/kuron_core.dart';
-
+import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
+ 
 /// Pagination and data fetching limits
 class AppLimits {
   AppLimits._();
-
+ 
+  static RemoteConfigService get _remoteConfig => getIt<RemoteConfigService>();
+ 
   /// Default page size for paginated lists
-  static const int defaultPageSize = 20;
-
+  static int get defaultPageSize =>
+      _remoteConfig.appConfig?.limits?.defaultPageSize ?? 20;
+ 
   /// Maximum items to fetch for offline/downloads lists
-  static const int maxBatchSize = 1000;
-
+  static int get maxBatchSize =>
+      _remoteConfig.appConfig?.limits?.maxBatchSize ?? 1000;
+ 
   /// Default page for pagination (1-indexed)
   static const int defaultPage = 1;
-
+ 
   /// Maximum concurrent downloads
-  static const int maxConcurrentDownloads = 3;
-
+  static int get maxConcurrentDownloads =>
+      _remoteConfig.appConfig?.limits?.maxConcurrentDownloads ?? 3;
+ 
   /// Search history limit
-  static const int searchHistoryLimit = 50;
-
+  static int get searchHistoryLimit =>
+      _remoteConfig.appConfig?.limits?.searchHistoryLimit ?? 50;
+ 
   /// Image preload buffer size
-  static const int imagePreloadBuffer = 5;
+  static int get imagePreloadBuffer =>
+      _remoteConfig.appConfig?.limits?.imagePreloadBuffer ?? 5;
 }
 
 /// Duration constants for timeouts, delays, and animations
 class AppDurations {
   AppDurations._();
-
+ 
+  static RemoteConfigService get _remoteConfig => getIt<RemoteConfigService>();
+ 
   /// Splash screen delay before initialization
-  static const Duration splashDelay = Duration(seconds: 1);
-
+  static Duration get splashDelay => Duration(
+      milliseconds: _remoteConfig.appConfig?.durations?.splashDelayMs ?? 1000);
+ 
   /// Snackbar display duration (short)
-  static const Duration snackbarShort = Duration(seconds: 2);
-
+  static Duration get snackbarShort => Duration(
+      milliseconds: _remoteConfig.appConfig?.durations?.snackbarShortMs ?? 2000);
+ 
   /// Snackbar display duration (long)
-  static const Duration snackbarLong = Duration(seconds: 4);
-
+  static Duration get snackbarLong => Duration(
+      milliseconds: _remoteConfig.appConfig?.durations?.snackbarLongMs ?? 4000);
+ 
   /// Animation duration for page transitions
-  static const Duration pageTransition = Duration(milliseconds: 300);
-
+  static Duration get pageTransition => Duration(
+      milliseconds:
+          _remoteConfig.appConfig?.durations?.pageTransitionMs ?? 300);
+ 
   /// Debounce delay for search input
-  static const Duration searchDebounce = Duration(milliseconds: 300);
-
+  static Duration get searchDebounce => Duration(
+      milliseconds:
+          _remoteConfig.appConfig?.durations?.searchDebounceMs ?? 300);
+ 
   /// Timeout for network requests
-  static const Duration networkTimeout = Duration(seconds: 30);
-
+  static Duration get networkTimeout => Duration(
+      milliseconds:
+          _remoteConfig.appConfig?.durations?.networkTimeoutMs ?? 30000);
+ 
   /// Cache expiration time
-  static const Duration cacheExpiration = Duration(hours: 24);
-
+  static Duration get cacheExpiration => Duration(
+      hours: _remoteConfig.appConfig?.durations?.cacheExpirationHours ?? 24);
+ 
   /// Auto-hide UI delay for reader
-  static const Duration readerAutoHideDelay = Duration(seconds: 3);
-
+  static Duration get readerAutoHideDelay => Duration(
+      seconds:
+          _remoteConfig.appConfig?.durations?.readerAutoHideDelaySeconds ?? 3);
+ 
   /// Download progress update interval
-  static const Duration progressUpdateInterval = Duration(milliseconds: 100);
+  static Duration get progressUpdateInterval => Duration(
+      milliseconds:
+          _remoteConfig.appConfig?.durations?.progressUpdateIntervalMs ?? 100);
 }
 
 /// File and storage related constants
 class AppStorage {
   AppStorage._();
-
+ 
+  static RemoteConfigService get _remoteConfig => getIt<RemoteConfigService>();
+ 
   /// Backup folder name
-  static const String backupFolderName = 'nhasix';
-
-  /// Default source ID for backward compatibility with existing downloads
+  static String get backupFolderName =>
+      _remoteConfig.appConfig?.storage?.backupFolderName ?? 'nhasix';
+ 
   /// Default source ID for backward compatibility with existing downloads
   static final String defaultSourceId = SourceType.nhentai.id;
-
+ 
   /// Known content sources for validation
   static final List<String> knownSources = [
     SourceType.nhentai.id,
     SourceType.crotpedia.id,
   ];
-
+ 
   /// Metadata file name
   static const String metadataFileName = 'metadata.json';
-
+ 
   /// Images subfolder name
   static const String imagesSubfolder = 'images';
-
+ 
   /// Maximum image file size (for compression threshold)
-  static const int maxImageSizeKb = 200;
-
+  static int get maxImageSizeKb =>
+      _remoteConfig.appConfig?.storage?.maxImageSizeKb ?? 200;
+ 
   /// PDF parts size limit in pages
-  static const int pdfPartsSizePages = 100;
+  static int get pdfPartsSizePages =>
+      _remoteConfig.appConfig?.storage?.pdfPartsSizePages ?? 100;
 }
 
 /// UI related constants
 class AppUI {
   AppUI._();
-
+ 
+  static RemoteConfigService get _remoteConfig => getIt<RemoteConfigService>();
+ 
   /// Grid columns for portrait mode
-  static const int gridColumnsPortrait = 2;
-
+  static int get gridColumnsPortrait =>
+      _remoteConfig.appConfig?.ui?.gridColumnsPortrait ?? 2;
+ 
   /// Grid columns for landscape mode
-  static const int gridColumnsLandscape = 3;
-
+  static int get gridColumnsLandscape =>
+      _remoteConfig.appConfig?.ui?.gridColumnsLandscape ?? 3;
+ 
   /// Minimum card width for responsive grids
-  static const double minCardWidth = 150.0;
-
+  static double get minCardWidth =>
+      _remoteConfig.appConfig?.ui?.minCardWidth ?? 150.0;
+ 
   /// Content card aspect ratio
-  static const double cardAspectRatio = 0.65;
-
+  static double get cardAspectRatio =>
+      _remoteConfig.appConfig?.ui?.cardAspectRatio ?? 0.65;
+ 
   /// Border radius for cards
-  static const double cardBorderRadius = 12.0;
-
+  static double get cardBorderRadius =>
+      _remoteConfig.appConfig?.ui?.cardBorderRadius ?? 12.0;
+ 
   /// Default padding
-  static const double defaultPadding = 16.0;
-
+  static double get defaultPadding =>
+      _remoteConfig.appConfig?.ui?.defaultPadding ?? 16.0;
+ 
   /// Title max length before truncation
-  static const int titleMaxLength = 40;
-
+  static int get titleMaxLength =>
+      _remoteConfig.appConfig?.ui?.titleMaxLength ?? 40;
+ 
   /// Error message max length before truncation
   static const int errorMaxLength = 100;
 }

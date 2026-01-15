@@ -1,39 +1,41 @@
-/// API Configuration
-///
-/// Centralized configuration for API endpoints and settings.
-library;
-
+import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/config/config_models.dart' as models;
+ 
 /// Configuration class for nhentai API
 class ApiConfig {
   ApiConfig._();
-
+ 
+  static models.SourceConfig? get _nhentaiConfig =>
+      getIt<RemoteConfigService>().getConfig('nhentai');
+ 
   // ============ nhentai API ============
 
   /// Base URL for nhentai API
-  static const String nhentaiApiBase = 'https://nhentai.net/api';
-
+  static String get nhentaiApiBase => _nhentaiConfig?.api?.apiBase ?? 'https://nhentai.net/api';
+ 
   /// nhentai website base URL (for fallback scraping)
-  static const String nhentaiWebBase = 'https://nhentai.net';
-
+  static String get nhentaiWebBase => _nhentaiConfig?.baseUrl ?? 'https://nhentai.net';
+ 
   /// API request timeout in milliseconds
-  static const int apiTimeout = 30000;
-
+  static int get apiTimeout => _nhentaiConfig?.api?.timeout ?? 30000;
+ 
   /// Enable automatic fallback to HTML scraper if API fails
-  static const bool enableApiFallback = true;
-
+  static bool get enableApiFallback => _nhentaiConfig?.features?.related ?? true;
+ 
   /// Maximum retry attempts for API requests
-  static const int maxRetryAttempts = 3;
-
+  static int get maxRetryAttempts => _nhentaiConfig?.network?.retry?.maxAttempts ?? 3;
+ 
   /// Delay between retries in milliseconds
-  static const int retryDelayMs = 1000;
+  static int get retryDelayMs => _nhentaiConfig?.network?.retry?.delayMs ?? 1000;
 
   // ============ Rate Limiting ============
-
+ 
   /// Minimum delay between API requests in milliseconds
-  static const int minRequestDelayMs = 200;
-
+  static int get minRequestDelayMs => _nhentaiConfig?.network?.rateLimit?.minDelayMs ?? 200;
+ 
   /// Maximum requests per minute
-  static const int maxRequestsPerMinute = 60;
+  static int get maxRequestsPerMinute => _nhentaiConfig?.network?.rateLimit?.requestsPerMinute ?? 60;
 
   // ============ Endpoints ============
 

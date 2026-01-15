@@ -43,13 +43,13 @@ class SettingsRepositoryImpl implements SettingsRepository {
       }
 
       // Return default preferences if none exist
-      const defaultPreferences = UserPreferences();
+      final defaultPreferences = UserPreferences();
       await updateUserPreferences(defaultPreferences);
       return defaultPreferences;
     } catch (e, stackTrace) {
       _logger.e('Failed to get user preferences',
           error: e, stackTrace: stackTrace);
-      return const UserPreferences();
+      return UserPreferences();
     }
   }
 
@@ -74,7 +74,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
     try {
       _logger.i('Resetting preferences to defaults');
 
-      const defaultPreferences = UserPreferences();
+      final defaultPreferences = UserPreferences();
       await updateUserPreferences(defaultPreferences);
 
       _logger.d('Preferences reset to defaults');

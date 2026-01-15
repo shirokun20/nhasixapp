@@ -147,78 +147,85 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
         run: |
+          set -e
           # Check if APK files exist
           if [ ! -d "apk-output" ] || [ -z "$(ls -A apk-output/*.apk 2>/dev/null)" ]; then
             echo "❌ No APK files found in apk-output/"
             exit 1
           fi
 
-          # Get version from pubspec.yaml for caption
+          # Get version from pubspec.yaml
           VERSION=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | cut -d '+' -f 1)
+          SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-8)
+          
+          echo "📦 Version: $VERSION"
+          echo "🔗 Commit: $SHORT_SHA"
 
-          # Priority: ARM64 > ARM > x86_64
-          # Only upload ARM64 and ARM to save bandwidth and telegram storage
-          # x86_64 is mainly for emulators/testing
+          # Absolute path for reliability
+          OUTPUT_DIR="$(pwd)/apk-output"
           UPLOADED_COUNT=0
           
           # Upload ARM64 (highest priority - 95% of users)
-          for apk in apk-output/*arm64-v8a*.apk; do
+          for apk in "$OUTPUT_DIR"/*arm64-v8a*.apk; do
             if [ -f "$apk" ]; then
+              filename=$(basename "$apk")
               size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null || echo "0")
               size_mb=$((size / 1024 / 1024))
 
               if [ $size_mb -gt 50 ]; then
-                echo "⚠️ Skipping $apk - too large (${size_mb}MB > 50MB limit)"
+                echo "⚠️ Skipping $filename - too large (${size_mb}MB > 50MB limit)"
                 continue
               fi
 
-              echo "📤 Uploading ARM64: $apk (${size_mb}MB)..."
-              response=$(curl -s --max-time 600 --connect-timeout 60 --retry 3 --retry-delay 10 \
+              echo "📤 Uploading ARM64: $filename (${size_mb}MB)..."
+              
+              # Use -S to show errors but keep it quiet otherwise
+              response=$(curl -S --max-time 600 --connect-timeout 60 --retry 3 --retry-delay 10 \
                 -F chat_id="$TELEGRAM_CHANNEL_ID" \
                 -F document=@"$apk" \
-                -F caption="📱 Kuro-N v${VERSION} - ARM64 | ✅ Recommended for modern devices (Android 5.0+) | 💾 ${size_mb}MB | 🔗 ${GITHUB_SHA::8}" \
+                -F caption="📱 Kuro-N v${VERSION} - ARM64 | ✅ Recommended for modern devices | 💾 ${size_mb}MB | 🔗 $SHORT_SHA" \
                 "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
 
-                if echo "$response" | grep -q '"ok":true'; then
-                  echo "✅ Successfully uploaded ARM64 APK (${size_mb}MB)"
-                  UPLOADED_COUNT=$((UPLOADED_COUNT + 1))
-                else
-                echo "❌ Failed to upload: $response"
+              if echo "$response" | grep -q '"ok":true'; then
+                echo "✅ Successfully uploaded ARM64: $filename"
+                UPLOADED_COUNT=$((UPLOADED_COUNT + 1))
+              else
+                echo "❌ Failed to upload $filename: $response"
                 exit 1
               fi
             fi
           done
 
           # Upload ARM (compatibility for older devices)
-          for apk in apk-output/*armeabi-v7a*.apk; do
+          for apk in "$OUTPUT_DIR"/*armeabi-v7a*.apk; do
             if [ -f "$apk" ]; then
+              filename=$(basename "$apk")
               size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null || echo "0")
               size_mb=$((size / 1024 / 1024))
 
               if [ $size_mb -gt 50 ]; then
-                echo "⚠️ Skipping $apk - too large (${size_mb}MB > 50MB limit)"
+                echo "⚠️ Skipping $filename - too large (${size_mb}MB > 50MB limit)"
                 continue
               fi
 
-              echo "📤 Uploading ARM: $apk (${size_mb}MB)..."
-              response=$(curl -s --max-time 600 --connect-timeout 60 --retry 3 --retry-delay 10 \
+              echo "📤 Uploading ARM: $filename (${size_mb}MB)..."
+              
+              response=$(curl -S --max-time 600 --connect-timeout 60 --retry 3 --retry-delay 10 \
                 -F chat_id="$TELEGRAM_CHANNEL_ID" \
                 -F document=@"$apk" \
-                -F caption="📱 Kuro-N v${VERSION} - ARMv7 | 📦 For older devices | 💾 ${size_mb}MB | 🔗 ${GITHUB_SHA::8}" \
+                -F caption="📱 Kuro-N v${VERSION} - ARMv7 | 📦 For older devices | 💾 ${size_mb}MB | 🔗 $SHORT_SHA" \
                 "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
 
-                if echo "$response" | grep -q '"ok":true'; then
-                  echo "✅ Successfully uploaded ARM APK (${size_mb}MB)"
-                  UPLOADED_COUNT=$((UPLOADED_COUNT + 1))
-                else
-                echo "❌ Failed to upload: $response"
+              if echo "$response" | grep -q '"ok":true'; then
+                echo "✅ Successfully uploaded ARM: $filename"
+                UPLOADED_COUNT=$((UPLOADED_COUNT + 1))
+              else
+                echo "❌ Failed to upload $filename: $response"
                 exit 1
               fi
             fi
           done
 
-          # Note: x86_64 not uploaded to save space (mainly for emulators)
-          echo ""
           echo "🎉 Upload complete! Total uploaded: $UPLOADED_COUNT APKs"
 
       # Extract Version from pubspec.yaml
