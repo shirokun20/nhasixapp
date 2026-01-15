@@ -207,6 +207,15 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
   }
 
   Future<void> _onSearchSubmitted() async {
+    final textQuery = _searchController.text.trim();
+
+    // Check if this is a direct navigation to Nhentai gallery ID
+    if (_isNhentaiDirectNavigation(textQuery)) {
+      await _navigateToGalleryDetail(textQuery);
+      return;
+    }
+
+    // Normal search flow
     final filter = _buildSearchFilter();
 
     try {
@@ -224,6 +233,57 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
           SnackBar(content: Text('Failed to apply search: $e')),
         );
       }
+    }
+  }
+
+  /// Check if query should trigger direct navigation to Nhentai gallery detail
+  /// Returns true only if:
+  /// 1. Source is Nhentai
+  /// 2. Query contains only digits (no spaces, no special characters)
+  bool _isNhentaiDirectNavigation(String query) {
+    // Only for Nhentai source
+    if (widget.sourceId != 'nhentai') return false;
+
+    // Empty query should use normal search
+    if (query.isEmpty) return false;
+
+    // Check if query is purely numeric
+    final numericPattern = RegExp(r'^\d+$');
+    return numericPattern.hasMatch(query);
+  }
+
+  /// Navigate directly to gallery detail page for numeric Nhentai ID
+  /// Handles return value from detail screen (SearchFilter if user applies filter)
+  Future<void> _navigateToGalleryDetail(String galleryId) async {
+    // Normalize: remove leading zeros (00123 -> 123)
+    final normalizedId = int.tryParse(galleryId)?.toString() ?? galleryId;
+
+    _logger.i('Direct navigation to Nhentai gallery: $normalizedId');
+
+    if (!mounted) return;
+
+    // Navigate to detail using existing router helper
+    // This may return a SearchFilter if user applies filter from detail screen
+    final returnedFilter = await AppRouter.goToContentDetail(
+      context,
+      normalizedId,
+      sourceId: 'nhentai',
+    );
+
+    // If detail screen returned a filter, apply it to search
+    if (returnedFilter != null && mounted) {
+      try {
+        await getIt<LocalDataSource>().saveSearchFilter(returnedFilter.toJson());
+        if (!mounted) return;
+        context.read<SearchBloc>().add(SearchUpdateFilterEvent(returnedFilter));
+        context.read<SearchBloc>().add(const SearchSubmittedEvent());
+        context.pop(true);
+      } catch (e) {
+        _logger.e('Failed to apply filter from detail screen: $e');
+      }
+    } else if (mounted) {
+      // No filter returned, just close search screen
+      context.pop(false);
     }
   }
 
