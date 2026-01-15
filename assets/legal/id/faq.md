@@ -59,6 +59,7 @@ Coba solusi ini:
 2. Website mungkin sedang down sementara
 3. Coba gunakan VPN jika akses diblokir di wilayah Anda
 4. Tarik ke bawah untuk menyegarkan konten
+5. **Khusus Crotpedia**: Beberapa chapter mewajibkan login. Buka **Drawer → Login** untuk mengakses konten penuh.
 
 ---
 

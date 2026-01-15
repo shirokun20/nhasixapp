@@ -88,7 +88,7 @@ class ExportService {
         'version': '1.0',
         'exportDate': DateTime.now().toIso8601String(),
         'totalItems': downloads.length,
-        'app': 'NhasixApp',
+        'app': 'Kuron',
       };
       final manifestFile = File('${exportDir.path}/manifest.json');
       await manifestFile.writeAsString(jsonEncode(manifest));

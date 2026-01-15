@@ -1327,7 +1327,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get platformNotSupportedBody =>
-      'NhasixApp is designed exclusively for Android devices.';
+      'Kuron is designed exclusively for Android devices.';
 
   @override
   String get platformNotSupportedInstall =>

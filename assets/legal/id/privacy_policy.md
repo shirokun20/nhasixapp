@@ -1,6 +1,6 @@
 # Kebijakan Privasi
 
-**Terakhir Diperbarui: Desember 2025**
+**Terakhir Diperbarui: Januari 2026**
 
 ## Ringkasan
 
@@ -12,7 +12,7 @@ Kuron ("Aplikasi") berkomitmen untuk melindungi privasi Anda. Kebijakan Privasi 
 
 ✅ **Tidak ada informasi pribadi** - Kami tidak mengumpulkan nama, email, atau informasi identitas apapun
 
-✅ **Tidak ada sistem akun** - Tidak perlu login atau registrasi
+✅ **Tidak ada sistem akun** - Tidak perlu login atau registrasi untuk menjelajah. Login opsional tersedia untuk sumber tertentu (misal: Crotpedia) untuk mengakses konten penuh.
 
 ✅ **Tidak ada pelacakan eksternal** - Tidak ada layanan analitik atau pelacakan pihak ketiga
 

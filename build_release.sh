@@ -4,7 +4,7 @@
 # Usage: ./build_release.sh
 
 echo "🚀 Building RELEASE APK dengan custom naming..."
-echo "📱 App: nhasix"
+echo "📱 App: Kuron"
 echo "📦 Version: $(grep 'version:' pubspec.yaml | sed 's/version: //')"
 echo "📅 Date: $(date +%Y%m%d)"
 echo ""

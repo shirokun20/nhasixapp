@@ -23,7 +23,7 @@ class CloudflareBypassNoWebView {
     // Only Android platform is supported
     if (kIsWeb || Platform.isIOS || Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       _logger.e('CloudflareBypass only supported on Android platform');
-      throw UnsupportedError('NhasixApp is only supported on Android devices. Current platform: ${Platform.operatingSystem}');
+      throw UnsupportedError('Kuron is only supported on Android devices. Current platform: ${Platform.operatingSystem}');
     }
 
     _logger.i('Starting Cloudflare bypass without WebView...');

@@ -644,7 +644,7 @@
   "keepScreenOn": "Keep Screen On",
   "keepScreenOnDescription": "Prevent screen from turning off while reading",
   "platformNotSupported": "Platform Not Supported",
-  "platformNotSupportedBody": "NhasixApp is designed exclusively for Android devices.",
+  "platformNotSupportedBody": "Kuron is designed exclusively for Android devices.",
   "platformNotSupportedInstall": "Please install and run this app on an Android device.",
   "storagePermissionRequired": "Storage Permission Required",
   "storagePermissionExplanation": "This app needs storage permission to download files to your device. Files will be saved to the Downloads/nhasix folder.",
