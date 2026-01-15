@@ -179,10 +179,10 @@ jobs:
                 -F caption="📱 Kuro-N v${VERSION} - ARM64 | ✅ Recommended for modern devices (Android 5.0+) | 💾 ${size_mb}MB | 🔗 ${GITHUB_SHA::8}" \
                 "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
 
-              if echo "$response" | grep -q '"ok":true'; then
-                echo "✅ Successfully uploaded ARM64 APK"
-                UPLOADED_COUNT=$((UPLOADED_COUNT + 1))(${size_mb}MB)
-              else
+                if echo "$response" | grep -q '"ok":true'; then
+                  echo "✅ Successfully uploaded ARM64 APK (${size_mb}MB)"
+                  UPLOADED_COUNT=$((UPLOADED_COUNT + 1))
+                else
                 echo "❌ Failed to upload: $response"
                 exit 1
               fi
@@ -207,10 +207,10 @@ jobs:
                 -F caption="📱 Kuro-N v${VERSION} - ARMv7 | 📦 For older devices | 💾 ${size_mb}MB | 🔗 ${GITHUB_SHA::8}" \
                 "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
 
-              if echo "$response" | grep -q '"ok":true'; then
-                echo "✅ Successfully uploaded ARM APK"
-                UPLOADED_COUNT=$((UPLOADED_COUNT + 1))(${size_mb}MB)
-              else
+                if echo "$response" | grep -q '"ok":true'; then
+                  echo "✅ Successfully uploaded ARM APK (${size_mb}MB)"
+                  UPLOADED_COUNT=$((UPLOADED_COUNT + 1))
+                else
                 echo "❌ Failed to upload: $response"
                 exit 1
               fi

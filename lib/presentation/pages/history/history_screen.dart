@@ -322,11 +322,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   void _navigateToContent(BuildContext context, History historyItem) {
-    // Navigate to content detail/reader with sourceId to ensure correct source is used
-    // This fixes the issue where clicking Crotpedia items caused errors due to missing source context
-    context.push(
-      '/content/${historyItem.contentId}?sourceId=${historyItem.sourceId}',
-    );
+    // Source-aware navigation based on content source type
+    // 
+    // Crotpedia: Chapter-based structure
+    //   - History stores chapter ID (e.g., "manga-slug-chapter-5")
+    //   - Navigate directly to reader for seamless continuation
+    //
+    // Nhentai: Series-based structure
+    //   - History stores series ID (e.g., "123456")
+    //   - Navigate to detail screen first (backward compatible)
+    //   - User can view tags/info before continuing to read
+    
+    if (historyItem.sourceId == 'crotpedia') {
+      // Crotpedia: Direct to reader (chapter ID already stored)
+      context.push('/reader/${historyItem.contentId}');
+    } else {
+      // Nhentai & others: To detail screen (backward compatible)
+      context.push(
+        '/content/${historyItem.contentId}?sourceId=${historyItem.sourceId}',
+      );
+    }
   }
 
   void _navigateToCleanupSettings(BuildContext context) {
