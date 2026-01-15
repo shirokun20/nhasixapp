@@ -54,11 +54,12 @@ Pergi ke **Pengaturan → Pembaca → Hapus Semua Riwayat** atau aktifkan **Pemb
 
 **Q: Aplikasi tidak bisa terhubung / menampilkan error**
 
-Coba solusi ini:
+Coba solusi berikut:
 1. Periksa koneksi internet Anda
 2. Website mungkin sedang down sementara
-3. Coba gunakan VPN jika akses diblokir di wilayah Anda
-4. Tarik ke bawah untuk menyegarkan konten
+3. Gunakan VPN jika akses diblokir di wilayah Anda
+4. Tarik ke bawah untuk refresh konten
+5. **Khusus Crotpedia**: Beberapa chapter mewajibkan login. Buka **Drawer → Login** untuk mengakses konten penuh.
 
 ---
 

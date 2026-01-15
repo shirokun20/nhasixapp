@@ -161,23 +161,22 @@ jobs:
           echo "📦 Version: $VERSION"
           echo "🔗 Commit: $SHORT_SHA"
 
-          # Absolute path for reliability
-          OUTPUT_DIR="$(pwd)/apk-output"
+          # Change to output directory to simplify paths for curl
+          cd apk-output
           UPLOADED_COUNT=0
           
           # Upload ARM64 (highest priority - 95% of users)
-          for apk in "$OUTPUT_DIR"/*arm64-v8a*.apk; do
+          for apk in *arm64-v8a*.apk; do
             if [ -f "$apk" ]; then
-              filename=$(basename "$apk")
               size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null || echo "0")
               size_mb=$((size / 1024 / 1024))
 
               if [ $size_mb -gt 50 ]; then
-                echo "⚠️ Skipping $filename - too large (${size_mb}MB > 50MB limit)"
+                echo "⚠️ Skipping $apk - too large (${size_mb}MB > 50MB limit)"
                 continue
               fi
 
-              echo "📤 Uploading ARM64: $filename (${size_mb}MB)..."
+              echo "📤 Uploading ARM64: $apk (${size_mb}MB)..."
               
               # Use -S to show errors but keep it quiet otherwise
               response=$(curl -S --max-time 600 --connect-timeout 60 --retry 3 --retry-delay 10 \
@@ -187,28 +186,27 @@ jobs:
                 "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
 
               if echo "$response" | grep -q '"ok":true'; then
-                echo "✅ Successfully uploaded ARM64: $filename"
+                echo "✅ Successfully uploaded ARM64: $apk"
                 UPLOADED_COUNT=$((UPLOADED_COUNT + 1))
               else
-                echo "❌ Failed to upload $filename: $response"
+                echo "❌ Failed to upload $apk: $response"
                 exit 1
               fi
             fi
           done
 
           # Upload ARM (compatibility for older devices)
-          for apk in "$OUTPUT_DIR"/*armeabi-v7a*.apk; do
+          for apk in *armeabi-v7a*.apk; do
             if [ -f "$apk" ]; then
-              filename=$(basename "$apk")
               size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null || echo "0")
               size_mb=$((size / 1024 / 1024))
 
               if [ $size_mb -gt 50 ]; then
-                echo "⚠️ Skipping $filename - too large (${size_mb}MB > 50MB limit)"
+                echo "⚠️ Skipping $apk - too large (${size_mb}MB > 50MB limit)"
                 continue
               fi
 
-              echo "📤 Uploading ARM: $filename (${size_mb}MB)..."
+              echo "📤 Uploading ARM: $apk (${size_mb}MB)..."
               
               response=$(curl -S --max-time 600 --connect-timeout 60 --retry 3 --retry-delay 10 \
                 -F chat_id="$TELEGRAM_CHANNEL_ID" \
@@ -217,10 +215,10 @@ jobs:
                 "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
 
               if echo "$response" | grep -q '"ok":true'; then
-                echo "✅ Successfully uploaded ARM: $filename"
+                echo "✅ Successfully uploaded ARM: $apk"
                 UPLOADED_COUNT=$((UPLOADED_COUNT + 1))
               else
-                echo "❌ Failed to upload $filename: $response"
+                echo "❌ Failed to upload $apk: $response"
                 exit 1
               fi
             fi

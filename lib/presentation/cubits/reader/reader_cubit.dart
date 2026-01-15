@@ -66,7 +66,8 @@ class ReaderCubit extends Cubit<ReaderState> {
         else
           _restoreReaderPosition(contentId),
         // If connected, start loading online content in parallel
-        if (isConnected)
+        // Skip online fetch for Crotpedia chapters (they don't have detail API)
+        if (isConnected && !_isCrotpediaChapterId(contentId))
           () async {
             try {
               return await getContentDetailUseCase(
@@ -135,6 +136,12 @@ class ReaderCubit extends Cubit<ReaderState> {
       }
 
       if (content == null) {
+        // Provide specific error message for Crotpedia chapters
+        if (_isCrotpediaChapterId(contentId)) {
+          throw Exception(
+            'Chapter not available offline. Please access this chapter from the series detail page to read online.'
+          );
+        }
         throw Exception('Content not available online or offline');
       }
 
@@ -603,8 +610,16 @@ class ReaderCubit extends Cubit<ReaderState> {
   }
 
   /// Save current reading progress to history
+  /// Skip for Crotpedia chapters as they cannot be reloaded from history
   Future<void> _saveToHistory() async {
     try {
+      // Skip saving Crotpedia to history
+      // Crotpedia chapters don't have detail API and cannot be reloaded
+      if (state.content != null && state.content!.sourceId == 'crotpedia') {
+        _logger.d('Skipping history save for Crotpedia: ${state.content!.id}');
+        return;
+      }
+      
       final params = AddToHistoryParams.fromString(
         state.content!.id,
         state.currentPage ?? 1,
@@ -694,6 +709,29 @@ class ReaderCubit extends Cubit<ReaderState> {
         hideUI();
       }
     });
+  }
+
+  /// Check if contentId is a Crotpedia chapter ID
+  /// Crotpedia chapter IDs typically contain "chapter" in the slug
+  /// e.g., "manga-name-chapter-1-bahasa-indonesia"
+  bool _isCrotpediaChapterId(String contentId) {
+    // Nhentai IDs are pure numbers (e.g., "123456")
+    // Crotpedia chapter IDs are slugs with "chapter" keyword or multiple dashes
+    
+    // If it's purely numeric, it's definitely not a Crotpedia chapter
+    if (RegExp(r'^\d+$').hasMatch(contentId)) {
+      return false;
+    }
+    
+    // If it contains "chapter" or "ch-", it's likely a Crotpedia chapter
+    if (contentId.contains('chapter') || contentId.contains('ch-')) {
+      return true;
+    }
+    
+    // Additional check: Crotpedia slugs typically have multiple dashes
+    // and contain language indicators like "bahasa-indonesia"
+    final dashCount = '-'.allMatches(contentId).length;
+    return dashCount >= 3; // e.g., "series-name-chapter-1" has 3 dashes minimum
   }
 
   /// Stop auto-hide UI timer
