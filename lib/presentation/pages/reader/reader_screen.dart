@@ -248,6 +248,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
           return;
         }
 
+        // Skip prefetching if the URL is already a local file path
+        if (!imageUrl.startsWith('http') &&
+            (imageUrl.startsWith('/') || imageUrl.startsWith('file://'))) {
+          // Already local, no need to prefetch
+          return;
+        }
+
         // Prefetch in background (non-blocking) - only if validation passes
         LocalImagePreloader.downloadAndCacheImage(
           imageUrl,

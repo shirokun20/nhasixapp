@@ -6,6 +6,7 @@ import '../../domain/value_objects/value_objects.dart';
 import '../datasources/remote/remote_data_source.dart';
 import '../../services/cache/cache_manager.dart' as multi_cache;
 import '../models/tag_model.dart';
+import '../models/content_model.dart';
 import '../../services/detail_cache_service.dart';
 import '../datasources/remote/exceptions.dart';
 import '../../services/request_deduplication_service.dart';
@@ -28,7 +29,7 @@ class ContentRepositoryImpl implements ContentRepository {
   final RemoteDataSource remoteDataSource;
   final DetailCacheService detailCacheService;
   final RequestDeduplicationService requestDeduplicationService;
-  final multi_cache.CacheManager<Content> contentCacheManager;
+  final multi_cache.CacheManager<Map<String, dynamic>> contentCacheManager;
   final multi_cache.CacheManager<List<Tag>> tagCacheManager;
   final Logger _logger;
 
@@ -70,7 +71,9 @@ class ContentRepositoryImpl implements ContentRepository {
 
         for (final content in entities) {
           final cacheKey = 'content_${content.id}';
-          await contentCacheManager.set(cacheKey, content);
+          // Convert to ContentModel and then to JSON Map (including tags)
+          final model = ContentModel.fromEntity(content);
+          await contentCacheManager.set(cacheKey, model.toJson());
         }
 
         _logger.i(
@@ -102,8 +105,14 @@ class ContentRepositoryImpl implements ContentRepository {
           final multiLayerCached = await contentCacheManager.get(cacheKey);
 
           if (multiLayerCached != null) {
-            if (multiLayerCached.imageUrls.isNotEmpty) {
-              return multiLayerCached;
+            try {
+              final cachedModel = ContentModel.fromJson(multiLayerCached);
+              if (cachedModel.imageUrls.isNotEmpty) {
+                return cachedModel.toEntity();
+              }
+            } catch (e) {
+              _logger.w('Failed to parse cached content for $contentId: $e');
+              // Proceed to fallback
             }
           }
 
@@ -111,7 +120,8 @@ class ContentRepositoryImpl implements ContentRepository {
               await detailCacheService.getCachedDetail(contentId.value);
           if (legacyCached != null) {
             if (legacyCached.imageUrls.isNotEmpty) {
-              await contentCacheManager.set(cacheKey, legacyCached);
+              await contentCacheManager.set(
+                  cacheKey, ContentModel.fromEntity(legacyCached).toJson());
               return legacyCached;
             }
           }
@@ -130,7 +140,8 @@ class ContentRepositoryImpl implements ContentRepository {
             final entity = _mapToAppContent(coreContent);
 
             await Future.wait([
-              contentCacheManager.set(cacheKey, entity),
+              contentCacheManager.set(
+                  cacheKey, ContentModel.fromEntity(entity).toJson()),
               detailCacheService.cacheDetail(entity),
             ]);
 
@@ -296,7 +307,7 @@ class ContentRepositoryImpl implements ContentRepository {
   @override
   Future<bool> verifyContentExists(ContentId contentId) async {
     try {
-      await remoteDataSource.getContentDetail(contentId.value);
+      await remoteDataSource.getContentDetailViaApi(contentId.value);
       return true;
     } catch (e) {
       _logger.d('Content verification failed: $e');

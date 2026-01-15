@@ -7,41 +7,74 @@ import '../../models/content_model.dart';
 import '../../models/tag_model.dart';
 import 'tag_resolver.dart';
 
+import 'package:nhasixapp/core/config/remote_config_service.dart';
+
 /// HTML scraper for nhentai.net with CSS selectors
 class NhentaiScraper {
-  NhentaiScraper({Logger? logger, TagResolver? tagResolver})
-      : _logger = logger ?? Logger(),
-        _tagResolver = tagResolver ?? TagResolver(logger: logger);
+  NhentaiScraper({
+    Logger? logger,
+    TagResolver? tagResolver,
+    required RemoteConfigService remoteConfigService,
+  })  : _logger = logger ?? Logger(),
+        _tagResolver = tagResolver ?? TagResolver(logger: logger),
+        _remoteConfigService = remoteConfigService;
 
   final Logger _logger;
   final TagResolver _tagResolver;
+  final RemoteConfigService _remoteConfigService;
 
-  // CSS Selectors for content list
-  static const String contentListSelector = 'div.gallery';
-  static const String contentLinkSelector = 'a.cover';
-  static const String contentCoverSelector = 'img';
-  static const String contentTitleSelector = '.caption';
+  // Default Selectors
+  static const Map<String, String> _defaultSelectors = {
+    'contentList': 'div.gallery',
+    'contentLink': 'a.cover',
+    'contentCover': 'img',
+    'contentTitle': '.caption',
+    'popularSection': '.container.index-container.index-popular',
+    'newUploadsSection': '.container.index-container:not(.index-popular)',
+    'indexContainer': '.container.index-container',
+    'detailTitle': '#info h1',
+    'detailSubtitle': '#info h2',
+    'detailTags': '.tag-container .tag',
+    'detailPages': '#thumbnail-container .thumb-container img',
+    'detailPageLink': '#thumbnail-container .thumb-container a',
+    'detailInfo': '#info',
+    'detailCover': '#cover img',
+    'tagItem': '.tag',
+    'tagName': '.name',
+    'tagCount': '.count',
+  };
 
-  // CSS Selectors for homepage sections
-  static const String popularSectionSelector =
-      '.container.index-container.index-popular';
-  static const String newUploadsSectionSelector =
-      '.container.index-container:not(.index-popular)';
-  static const String indexContainerSelector = '.container.index-container';
+  String _getSelector(String key) {
+    if (_remoteConfigService.getConfig('nhentai')?.scraper?.selectors != null) {
+      final remoteVal =
+          _remoteConfigService.getConfig('nhentai')!.scraper!.selectors![key];
+      if (remoteVal != null && remoteVal is String && remoteVal.isNotEmpty) {
+        return remoteVal;
+      }
+    }
+    return _defaultSelectors[key] ?? '';
+  }
 
-  // CSS Selectors for content detail
-  static const String detailTitleSelector = '#info h1';
-  static const String detailSubtitleSelector = '#info h2';
-  static const String detailTagsSelector = '.tag-container .tag';
-  static const String detailPagesSelector =
-      '#thumbnail-container .thumb-container img';
-  static const String detailInfoSelector = '#info';
-  static const String detailCoverSelector = '#cover img';
+  // Dynamic Getters
+  String get contentListSelector => _getSelector('contentList');
+  String get contentLinkSelector => _getSelector('contentLink');
+  String get contentCoverSelector => _getSelector('contentCover');
+  String get contentTitleSelector => _getSelector('contentTitle');
 
-  // CSS Selectors for tags page
-  static const String tagItemSelector = '.tag';
-  static const String tagNameSelector = '.name';
-  static const String tagCountSelector = '.count';
+  String get popularSectionSelector => _getSelector('popularSection');
+  String get newUploadsSectionSelector => _getSelector('newUploadsSection');
+  String get indexContainerSelector => _getSelector('indexContainer');
+
+  String get detailTitleSelector => _getSelector('detailTitle');
+  String get detailSubtitleSelector => _getSelector('detailSubtitle');
+  String get detailTagsSelector => _getSelector('detailTags');
+  String get detailPagesSelector => _getSelector('detailPages');
+  String get detailInfoSelector => _getSelector('detailInfo');
+  String get detailCoverSelector => _getSelector('detailCover');
+
+  String get tagItemSelector => _getSelector('tagItem');
+  String get tagNameSelector => _getSelector('tagName');
+  String get tagCountSelector => _getSelector('tagCount');
 
   // URL patterns
   static const String contentUrlPattern = r'/g/(\d+)/';

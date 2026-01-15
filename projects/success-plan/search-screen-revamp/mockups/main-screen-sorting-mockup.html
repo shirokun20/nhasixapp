@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NhasixApp - Main Screen Sorting Mockup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --bg-tertiary: #e0e0e0;
+            --bg-surface: #fafafa;
+            --text-primary: #000000;
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+            --accent: #2196F3;
+            --accent-dark: #1976D2;
+            --border: #e0e0e0;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --bg-tertiary: #2a2a2a;
+            --bg-surface: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --text-tertiary: #808080;
+            --accent: #64B5F6;
+            --accent-dark: #42A5F5;
+            --border: #333333;
+            --shadow: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-secondary);
+            padding: 20px;
+            transition: background 0.3s;
+        }
+
+        .controls {
+            max-width: 400px;
+            margin: 0 auto 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .controls button {
+            flex: 1;
+            padding: 10px 16px;
+            border: 2px solid var(--border);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .controls button:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent);
+        }
+
+        .phone-frame {
+            max-width: 400px;
+            margin: 0 auto;
+            background: var(--bg-primary);
+            border-radius: 30px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .status-bar {
+            height: 24px;
+            background: var(--bg-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 12px;
+            color: var(--text-primary);
+        }
+
+        .screen {
+            height: 700px;
+            background: var(--bg-secondary);
+            overflow-y: auto;
+        }
+
+        /* App Bar */
+        .app-bar {
+            background: var(--accent);
+            color: white;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .app-bar h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .app-bar .actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* Content */
+        .content {
+            padding: 16px;
+        }
+
+        /* Search Results Header */
+        .search-results-header {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .search-results-header .title-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .search-results-header .icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(33, 150, 243, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 18px;
+        }
+
+        .search-results-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .search-results-header .clear-btn {
+            padding: 6px 12px;
+            background: transparent;
+            color: #f44336;
+            border: 1px solid #f44336;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .search-results-header .filter-summary {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* Sorting Widget - Dropdown (Nhentai) */
+        .sorting-widget-dropdown {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sorting-widget-dropdown label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .sorting-widget-dropdown select {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 15px;
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sorting-widget-dropdown select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Sorting Widget - Readonly (Crotpedia) */
+        .sorting-widget-readonly {
+            background: var(--bg-surface);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sorting-widget-readonly:hover {
+            border-color: var(--accent);
+            background: var(--bg-tertiary);
+        }
+
+        .sorting-widget-readonly .main-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .sorting-widget-readonly .left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sorting-widget-readonly .icon {
+            color: var(--accent);
+            font-size: 18px;
+        }
+
+        .sorting-widget-readonly .label {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .sorting-widget-readonly .lock {
+            font-size: 14px;
+        }
+
+        .sorting-widget-readonly .edit-icon {
+            color: var(--text-tertiary);
+            font-size: 16px;
+        }
+
+        .sorting-widget-readonly .hint {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-left: 26px;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .card {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .card .image {
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+
+        .card .info {
+            padding: 12px;
+        }
+
+        .card .title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .card .meta {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        .source-tabs {
+            display: flex;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 4px;
+            gap: 4px;
+            margin-bottom: 16px;
+        }
+
+        .source-tab {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .source-tab.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .info-note {
+            background: rgba(33, 150, 243, 0.1);
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="controls">
+        <button onclick="toggleTheme()" id="themeBtn">🌙 Dark Mode</button>
+        <button onclick="toggleLanguage()" id="langBtn">🇮🇩 Bahasa Indonesia</button>
+    </div>
+
+    <div class="phone-frame">
+        <div class="status-bar">
+            <span>9:41</span>
+            <span>📶 📡 🔋</span>
+        </div>
+
+        <div class="screen">
+            <!-- App Bar -->
+            <div class="app-bar">
+                <h1 data-en="NhasixApp" data-id="NhasixApp">NhasixApp</h1>
+                <div class="actions">
+                    <span>🔍</span>
+                    <span>⋮</span>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Source Selector -->
+                <div class="source-tabs">
+                    <button class="source-tab active" onclick="showSource('nhentai')" data-en="Nhentai"
+                        data-id="Nhentai">Nhentai</button>
+                    <button class="source-tab" onclick="showSource('crotpedia')" data-en="Crotpedia"
+                        data-id="Crotpedia">Crotpedia</button>
+                </div>
+
+                <!-- Nhentai Results (Interactive Sorting) -->
+                <div id="nhentai-results">
+                    <div class="info-note">
+                        <strong>ℹ️ <span data-en="Nhentai Mode" data-id="Mode Nhentai">Nhentai Mode</span>:</strong><br>
+                        <span data-en="Interactive dropdown - you can re-sort results dynamically"
+                            data-id="Dropdown interaktif - Anda bisa mengubah urutan hasil secara dinamis">Interactive
+                            dropdown - you can re-sort results dynamically</span>
+                    </div>
+
+                    <!-- Search Results Header -->
+                    <div class="search-results-header">
+                        <div class="title-row">
+                            <div class="icon">🔍</div>
+                            <h2 data-en="Search Results" data-id="Hasil Pencarian">Search Results</h2>
+                            <button class="clear-btn">
+                                <span>×</span>
+                                <span data-en="Clear" data-id="Hapus">Clear</span>
+                            </button>
+                        </div>
+                        <div class="filter-summary" data-en='Query: "isekai romance"'
+                            data-id='Pencarian: "isekai romance"'>
+                            Query: "isekai romance"
+                        </div>
+                    </div>
+
+                    <!-- Sorting Widget (Interactive Dropdown) -->
+                    <div class="sorting-widget-dropdown">
+                        <label data-en="Sort by:" data-id="Urut:">Sort by:</label>
+                        <select onchange="updateSortLabel(this)">
+                            <option value="newest" data-en="Recent" data-id="Terbaru">Recent</option>
+                            <option value="popular" selected data-en="Popular" data-id="Populer">Popular</option>
+                            <option value="popular-week" data-en="Popular This Week" data-id="Populer Minggu Ini">
+                                Popular This Week</option>
+                            <option value="popular-today" data-en="Popular Today" data-id="Populer Hari Ini">Popular
+                                Today</option>
+                        </select>
+                    </div>
+
+                    <!-- Grid -->
+                    <div class="grid">
+                        <div class="card">
+                            <div class="image">📖 Cover</div>
+                            <div class="info">
+                                <div class="title">Isekai Romance Story</div>
+                                <div class="meta">❤️ 1.2k</div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="image">📖 Cover</div>
+                            <div class="info">
+                                <div class="title">Fantasy Adventure</div>
+                                <div class="meta">❤️ 856</div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="image">📖 Cover</div>
+                            <div class="info">
+                                <div class="title">Magic & Romance</div>
+                                <div class="meta">❤️ 645</div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="image">📖 Cover</div>
+                            <div class="info">
+                                <div class="title">Reincarnation Tale</div>
+                                <div class="meta">❤️ 532</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Crotpedia Results (Readonly Sorting) -->
+                <div id="crotpedia-results" class="hidden">
+                    <div class="info-note">
+                        <strong>ℹ️ <span data-en="Crotpedia Mode" data-id="Mode Crotpedia">Crotpedia
+                                Mode</span>:</strong><br>
+                        <span data-en="Read-only display - tap to go back to search and modify order"
+                            data-id="Tampilan read-only - ketuk untuk kembali ke pencarian dan ubah urutan">Read-only
+                            display - tap to go back to search and modify order</span>
+                    </div>
+
+                    <!-- Search Results Header -->
+                    <div class="search-results-header">
+                        <div class="title-row">
+                            <div class="icon">🔍</div>
+                            <h2 data-en="Search Results" data-id="Hasil Pencarian">Search Results</h2>
+                            <button class="clear-btn">
+                                <span>×</span>
+                                <span data-en="Clear" data-id="Hapus">Clear</span>
+                            </button>
+                        </div>
+                        <div class="filter-summary">
+                            <span data-en="Title:" data-id="Judul:">Title:</span> "isekai"<br>
+                            <span data-en="Genre:" data-id="Genre:">Genre:</span> Romance, Fantasy
+                        </div>
+                    </div>
+
+                    <!-- Sorting Widget (Readonly) -->
+                    <div class="sorting-widget-readonly" onclick="showModifyHint()">
+                        <div class="main-row">
+                            <div class="left">
+                                <span class="icon">📊</span>
+                                <span class="label" data-en="Sorted by: Latest Update"
+                                    data-id="Diurutkan: Update Terbaru">Sorted by: Latest Update</span>
+                                <span class="lock">🔒</span>
+                            </div>
+                            <span class="edit-icon">✏️</span>
+                        </div>
+                        <div class="hint" data-en="Tap to modify search filters"
+                            data-id="Ketuk untuk mengubah filter pencarian">Tap to modify search filters</div>
+                    </div>
+
+                    <!-- Grid -->
+                    <div class="grid">
+                        <div class="card">
+                            <div class="image">📖 Cover</div>
+                            <div class="info">
+                                <div class="title">Isekai Chronicles</div>
+                                <div class="meta">⏰ 2 days ago</div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="image">📖 Cover</div>
+                            <div class="info">
+                                <div class="title">Another World</div>
+                                <div class="meta">⏰ 3 days ago</div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="image">📖 Cover</div>
+                            <div class="info">
+                                <div class="title">Reborn Hero</div>
+                                <div class="meta">⏰ 5 days ago</div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="image">📖 Cover</div>
+                            <div class="info">
+                                <div class="title">Magic Academy</div>
+                                <div class="meta">⏰ 1 week ago</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLang = 'en';
+        let currentTheme = 'light';
+
+        function toggleTheme() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            document.getElementById('themeBtn').textContent = currentTheme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode';
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'id' : 'en';
+            updateTexts();
+            document.getElementById('langBtn').textContent = currentLang === 'en' ? '🇮🇩 Bahasa Indonesia' : '🇬🇧 English';
+        }
+
+        function updateTexts() {
+            document.querySelectorAll('[data-en]').forEach(el => {
+                const text = el.getAttribute(`data-${currentLang}`);
+                if (el.tagName === 'OPTION') {
+                    el.textContent = text;
+                } else {
+                    const childNodes = Array.from(el.childNodes);
+                    const textNode = childNodes.find(node => node.nodeType === Node.TEXT_NODE);
+                    if (textNode) {
+                        textNode.textContent = text;
+                    } else {
+                        el.textContent = text;
+                    }
+                }
+            });
+        }
+
+        function showSource(source) {
+            document.getElementById('nhentai-results').classList.toggle('hidden', source !== 'nhentai');
+            document.getElementById('crotpedia-results').classList.toggle('hidden', source !== 'crotpedia');
+
+            document.querySelectorAll('.source-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function updateSortLabel(select) {
+            const selectedOption = select.options[select.selectedIndex];
+            console.log('Sort changed to:', selectedOption.value);
+        }
+
+        function showModifyHint() {
+            const msg = currentLang === 'en'
+                ? '↩️ Navigating back to search screen to modify order...'
+                : '↩️ Kembali ke layar pencarian untuk mengubah urutan...';
+            alert(msg);
+        }
+    </script>
+</body>
+
+</html>

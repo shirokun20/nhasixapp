@@ -269,6 +269,36 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                         textAlign: TextAlign.center,
                       ),
 
+                      if (state is SplashInitializing) ...[
+                        const SizedBox(height: 24),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 48),
+                          child: Column(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: state.progress,
+                                  backgroundColor: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainer,
+                                  color: Theme.of(context).colorScheme.primary,
+                                  minHeight: 6,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '${(state.progress * 100).toInt()}%',
+                                style: TextStyleConst.bodySmall.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
                       // Enhanced progress dots animation
                       const SizedBox(height: 20),
                       _buildProgressDots(),

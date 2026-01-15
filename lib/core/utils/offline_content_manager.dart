@@ -87,7 +87,7 @@ class OfflineContentManager {
         }
       }
 
-      _logger.w('No offline content path found for $contentId');
+      // _logger.w('No offline content path found for $contentId');
       return null;
     } catch (e, stackTrace) {
       _logger.e('Error getting offline content path for $contentId',
@@ -1192,7 +1192,7 @@ class OfflineContentManager {
         for (final folderName in downloadsFolderNames) {
           final downloadsDir = Directory(path.join(externalRoot, folderName));
           if (await downloadsDir.exists()) {
-            _logger.i('Found Downloads directory: ${downloadsDir.path}');
+            // _logger.i('Found Downloads directory: ${downloadsDir.path}');
             return downloadsDir.path;
           }
         }

@@ -4,6 +4,80 @@ import 'models/crotpedia_series.dart';
 
 /// HTML parsing logic for Crotpedia website.
 class CrotpediaScraper {
+  // Default CSS selectors (matching remote JSON structure)
+  static const Map<String, String> _defaultSelectors = {
+    // latest
+    'latest_container': '.flexbox4-item',
+    'latest_link': 'a',
+    'latest_cover': '.flexbox4-thumb img',
+    'latest_title': '.flexbox4-side .title a',
+
+    // search
+    'search_container': '.flexbox2-item',
+    'search_link': 'a',
+    'search_cover': '.flexbox2-thumb img',
+    'search_title': '.flexbox2-title span',
+
+    // doujinList
+    'doujinList_link': 'a.series',
+
+    // pagination
+    'pagination_current': '.pagination .page-numbers.current',
+    'pagination_next': '.pagination .next.page-numbers',
+    'pagination_prev': '.pagination .prev.page-numbers',
+    'pagination_links': '.pagination a.page-numbers:not(.next):not(.prev)',
+
+    // detail
+    'detail_title': '.series-titlex h2',
+    'detail_cover': '.series-thumb img',
+    'detail_status': '.series-infoz .status',
+    'detail_infoList': '.series-infolist li',
+    'detail_genres': '.series-genres a',
+    'detail_synopsis': '.series-synops p',
+    // detail (chapters)
+    'detail_chapterList': '.series-chapterlist li',
+    'detail_chapterLink': '.flexch-infoz a',
+    'detail_chapterDate': '.flexch-infoz .date',
+    'detail_chapterTitle': '.flexch-infoz a span',
+
+    // reader
+    'reader_container': '.reader-area',
+    'reader_images': 'p img',
+  };
+
+  final Map<String, String> _selectors;
+
+  /// Create scraper with optional custom selectors
+  /// [customSelectors] can be a nested Map matching the JSON config structure
+  CrotpediaScraper({Map<String, dynamic>? customSelectors})
+      : _selectors = {
+          ..._defaultSelectors,
+          ...?_flattenSelectors(customSelectors),
+        };
+
+  /// Helper to flatten nested JSON selector map into Key_Value format
+  static Map<String, String>? _flattenSelectors(Map<String, dynamic>? json) {
+    if (json == null) return null;
+    final result = <String, String>{};
+
+    void flatten(String prefix, Map<String, dynamic> map) {
+      map.forEach((key, value) {
+        final newKey = prefix.isEmpty ? key : '${prefix}_$key';
+        if (value is Map) {
+          flatten(newKey, Map<String, dynamic>.from(value));
+        } else if (value is String) {
+          result[newKey] = value;
+        }
+      });
+    }
+
+    flatten('', json);
+    return result;
+  }
+
+  /// Get selector by key, fallback to default if not found
+  String _getSelector(String key) => _selectors[key] ?? _defaultSelectors[key]!;
+
   // ============ Series List Parsing ============
 
   /// Parse homepage "Update Terbaru" section
@@ -11,16 +85,17 @@ class CrotpediaScraper {
   /// Output: List of series with basic info
   List<CrotpediaSeries> parseLatestSeries(String htmlContent) {
     final document = html_parser.parse(htmlContent);
-    // Real HTML uses .flexbox4-item for latest updates
-    final items = document.querySelectorAll('.flexbox4-item');
+    // Get items using configured selector
+    final items = document.querySelectorAll(_getSelector('latest_container'));
 
     return items.map((item) {
-      // Series URL from first <a> tag
-      final link = item.querySelector('a');
-      // Cover image from .flexbox4-thumb img
-      final img = item.querySelector('.flexbox4-thumb img');
-      // Title from .flexbox4-side .title a
-      final title = item.querySelector('.flexbox4-side .title a')?.text ?? '';
+      // Series URL from link
+      final link = item.querySelector(_getSelector('latest_link'));
+      // Cover image
+      final img = item.querySelector(_getSelector('latest_cover'));
+      // Title
+      final title =
+          item.querySelector(_getSelector('latest_title'))?.text ?? '';
 
       return CrotpediaSeries(
         slug: _extractSlug(link?.attributes['href']),
@@ -33,16 +108,16 @@ class CrotpediaScraper {
   /// Parse search results page
   List<CrotpediaSeries> parseSearchResults(String htmlContent) {
     final document = html_parser.parse(htmlContent);
-    // Real HTML uses .flexbox2-item for search results
-    final items = document.querySelectorAll('.flexbox2-item');
+    // Get items using configured selector
+    final items = document.querySelectorAll(_getSelector('search_container'));
 
     return items.map((item) {
-      // Series URL from first <a> tag
-      final link = item.querySelector('a');
-      // Cover image from .flexbox2-thumb img
-      final img = item.querySelector('.flexbox2-thumb img');
-      // Title from .flexbox2-title span:first-child
-      final titleElement = item.querySelector('.flexbox2-title span');
+      // Series URL from link
+      final link = item.querySelector(_getSelector('search_link'));
+      // Cover image
+      final img = item.querySelector(_getSelector('search_cover'));
+      // Title
+      final titleElement = item.querySelector(_getSelector('search_title'));
       final title = titleElement?.text ?? '';
 
       return CrotpediaSeries(
@@ -56,7 +131,7 @@ class CrotpediaScraper {
   /// Parse doujin list page (alphabetical)
   List<CrotpediaSeries> parseDoujinList(String htmlContent) {
     final document = html_parser.parse(htmlContent);
-    final items = document.querySelectorAll('a.series');
+    final items = document.querySelectorAll(_getSelector('doujinList_link'));
 
     return items.map((item) {
       return CrotpediaSeries(
@@ -73,24 +148,22 @@ class CrotpediaScraper {
       parsePagination(String htmlContent) {
     final document = html_parser.parse(htmlContent);
 
-    // Current page from .pagination .page-numbers.current
+    // Current page from pagination
     final currentEl =
-        document.querySelector('.pagination .page-numbers.current');
+        document.querySelector(_getSelector('pagination_current'));
     final currentPage = int.tryParse(currentEl?.text.trim() ?? '1') ?? 1;
 
     // Check for "Next" and "Previous" links
-    // Real HTML uses a.next.page-numbers and a.prev.page-numbers
-    final nextEl = document.querySelector('.pagination .next.page-numbers');
+    final nextEl = document.querySelector(_getSelector('pagination_next'));
     final hasNext = nextEl != null;
 
-    final prevEl = document.querySelector('.pagination .prev.page-numbers');
+    final prevEl = document.querySelector(_getSelector('pagination_prev'));
     final hasPrevious = prevEl != null;
 
     // Extract total pages from the last numbered page link
-    // HTML structure: <a class="page-numbers" href=".../page/136/">136</a>
     // Get all numbered page links (excluding current, dots, and next/prev)
-    final pageLinks = document
-        .querySelectorAll('.pagination a.page-numbers:not(.next):not(.prev)');
+    final pageLinks =
+        document.querySelectorAll(_getSelector('pagination_links'));
 
     int totalPages = 0;
     if (pageLinks.isNotEmpty) {
@@ -141,16 +214,16 @@ class CrotpediaScraper {
   }
 
   List<CrotpediaChapter> _parseChapterList(Document document) {
-    // Real HTML uses .series-chapterlist li
-    final items = document.querySelectorAll('.series-chapterlist li');
+    // Get chapter list items using configured selector
+    final items = document.querySelectorAll(_getSelector('detail_chapterList'));
 
     return items.map((item) {
-      // Chapter link from .flexch-infoz a
-      final link = item.querySelector('.flexch-infoz a');
-      // Chapter date from .flexch-infoz .date
-      final date = item.querySelector('.flexch-infoz .date')?.text;
-      // Chapter title from .flexch-infoz a span:first-child
-      final titleSpan = item.querySelector('.flexch-infoz a span');
+      // Chapter link
+      final link = item.querySelector(_getSelector('detail_chapterLink'));
+      // Chapter date
+      final date = item.querySelector(_getSelector('detail_chapterDate'))?.text;
+      // Chapter title
+      final titleSpan = item.querySelector(_getSelector('detail_chapterTitle'));
       final title = titleSpan?.text ?? '';
 
       return CrotpediaChapter(
@@ -170,13 +243,13 @@ class CrotpediaScraper {
   List<String> parseChapterImages(String htmlContent) {
     final document = html_parser.parse(htmlContent);
 
-    // Real HTML uses .reader-area for chapter images
-    final container = document.querySelector('.reader-area');
+    // Get reader container using configured selector
+    final container = document.querySelector(_getSelector('reader_container'));
 
     if (container == null) return [];
 
-    // Images are within <p> tags: .reader-area p img
-    final images = container.querySelectorAll('p img');
+    // Images within container
+    final images = container.querySelectorAll(_getSelector('reader_images'));
 
     return images
         .map((img) => img.attributes['src'] ?? '')
@@ -207,17 +280,16 @@ class CrotpediaScraper {
   }
 
   String _parseTitle(Document doc) {
-    return doc.querySelector('.series-titlex h2')?.text.trim() ?? '';
+    return doc.querySelector(_getSelector('detail_title'))?.text.trim() ?? '';
   }
 
   String _parseCover(Document doc) {
-    final img = doc.querySelector('.series-thumb img');
+    final img = doc.querySelector(_getSelector('detail_cover'));
     return img?.attributes['src'] ?? '';
   }
 
   String? _parseStatus(Document doc) {
-    // Real HTML: <div class="series-infoz block"><span class="status Completed">Completed</span></div>
-    return doc.querySelector('.series-infoz .status')?.text.trim();
+    return doc.querySelector(_getSelector('detail_status'))?.text.trim();
   }
 
   String? _parseAuthor(Document doc) {
@@ -239,8 +311,8 @@ class CrotpediaScraper {
   }
 
   Map<String, String> _parseGenres(Document doc) {
-    // Real HTML: <div class="series-genres"><a href="https://crotpedia.net/baca/genre/comedy/">Comedy</a></div>
-    final genreLinks = doc.querySelectorAll('.series-genres a');
+    // Get genre links using configured selector
+    final genreLinks = doc.querySelectorAll(_getSelector('detail_genres'));
     final Map<String, String> genres = {};
 
     for (final link in genreLinks) {
@@ -268,7 +340,7 @@ class CrotpediaScraper {
 
   /// Helper to extract value from info list based on label
   String? _parseInfoFromList(Document doc, String label) {
-    final items = doc.querySelectorAll('.series-infolist li');
+    final items = doc.querySelectorAll(_getSelector('detail_infoList'));
     for (var item in items) {
       final bKey = item.querySelector('b')?.text.trim();
       if (bKey != null && bKey.contains(label)) {
@@ -279,8 +351,8 @@ class CrotpediaScraper {
   }
 
   String? _parseSynopsis(Document doc) {
-    // Real HTML: <div class="series-synops"> <p>...</p> </div>
-    final synopsisElement = doc.querySelector('.series-synops p');
+    // Get synopsis using configured selector
+    final synopsisElement = doc.querySelector(_getSelector('detail_synopsis'));
     return synopsisElement?.text.trim();
   }
 

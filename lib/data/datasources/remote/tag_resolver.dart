@@ -3,16 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 
 import 'package:kuron_core/kuron_core.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 
 /// Simple tag resolver that uses local assets only
-/// Loads tag mapping from assets/json/tags.json
+/// Loads tag mapping from configured asset path via RemoteConfigService
 class TagResolver {
   TagResolver({Logger? logger}) : _logger = logger ?? Logger();
 
   final Logger _logger;
-
-  // Local asset path for tag mapping
-  static const String _localTagsAsset = 'assets/json/tags.json';
 
   // In-memory cache
   Map<String, Map<String, dynamic>>? _tagMapping;
@@ -389,9 +388,28 @@ class TagResolver {
   /// Load tag mapping from local asset with enhanced error handling
   Future<Map<String, Map<String, dynamic>>?> _loadFromLocalAsset() async {
     try {
-      _logger.d('Loading tag mapping from local asset: $_localTagsAsset');
+      // Import service locator at top if not already imported
+      final remoteConfig = getIt<RemoteConfigService>();
+      final manifest = remoteConfig.tagsManifest;
 
-      final jsonString = await rootBundle.loadString(_localTagsAsset);
+      // Try nhentai first as default source
+      final sourceConfig = manifest?.sources['nhentai'];
+
+      if (sourceConfig == null) {
+        _logger.w('No tag source config found in manifest');
+        return null;
+      }
+
+      // Only load from asset if type is 'bundled'
+      if (sourceConfig.type != 'bundled' || sourceConfig.assetPath == null) {
+        _logger.d('Tag source is not bundled, skipping asset load');
+        return null;
+      }
+
+      final assetPath = sourceConfig.assetPath!;
+      _logger.d('Loading tag mapping from local asset: $assetPath');
+
+      final jsonString = await rootBundle.loadString(assetPath);
       final jsonData = jsonDecode(jsonString) as List<dynamic>;
 
       final mapping = <String, Map<String, dynamic>>{};
@@ -442,9 +460,8 @@ class TagResolver {
       _logger.d(
           'Successfully loaded ${mapping.length} tag mappings from local asset');
       return mapping;
-    } catch (e, stackTrace) {
-      _logger.e('Failed to load tag mapping from local asset',
-          error: e, stackTrace: stackTrace);
+    } catch (e) {
+      _logger.d('Asset not available for tags (remote-first mode)', error: e);
       return null;
     }
   }

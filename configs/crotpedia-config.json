@@ -3,6 +3,194 @@
     "version": "1.0.0",
     "lastUpdated": "2026-01-13T13:16:00+07:00",
     "baseUrl": "https://crotpedia.net",
+    "searchConfig": {
+        "searchMode": "form-based",
+        "endpoint": "/advanced-search/",
+        "textFields": [
+            {
+                "name": "title",
+                "label": "Title",
+                "type": "text",
+                "placeholder": "Search by title...",
+                "maxLength": 100
+            },
+            {
+                "name": "author",
+                "label": "Author",
+                "type": "text",
+                "placeholder": "Search by author...",
+                "maxLength": 100
+            },
+            {
+                "name": "artist",
+                "label": "Artist",
+                "type": "text",
+                "placeholder": "Search by artist...",
+                "maxLength": 100
+            },
+            {
+                "name": "yearx",
+                "label": "Year",
+                "type": "number",
+                "min": 1900,
+                "max": 2100,
+                "placeholder": "e.g., 2024"
+            }
+        ],
+        "radioGroups": [
+            {
+                "name": "status",
+                "label": "Status",
+                "options": [
+                    {
+                        "value": "",
+                        "label": "All",
+                        "default": true
+                    },
+                    {
+                        "value": "ongoing",
+                        "label": "Ongoing"
+                    },
+                    {
+                        "value": "completed",
+                        "label": "Completed"
+                    }
+                ]
+            },
+            {
+                "name": "type",
+                "label": "Type",
+                "options": [
+                    {
+                        "value": "",
+                        "label": "All",
+                        "default": true
+                    },
+                    {
+                        "value": "Manga",
+                        "label": "Manga"
+                    },
+                    {
+                        "value": "Image-set",
+                        "label": "Image Set"
+                    },
+                    {
+                        "value": "Manhwa",
+                        "label": "Manhwa"
+                    },
+                    {
+                        "value": "One-shot",
+                        "label": "One Shot"
+                    },
+                    {
+                        "value": "Doujinshi",
+                        "label": "Doujinshi"
+                    }
+                ]
+            },
+            {
+                "name": "order",
+                "label": "Order By",
+                "options": [
+                    {
+                        "value": "update",
+                        "label": "Latest Update",
+                        "default": true
+                    },
+                    {
+                        "value": "latest",
+                        "label": "Latest Added"
+                    },
+                    {
+                        "value": "popular",
+                        "label": "Popular"
+                    },
+                    {
+                        "value": "rating",
+                        "label": "Rating"
+                    },
+                    {
+                        "value": "title",
+                        "label": "A-Z"
+                    },
+                    {
+                        "value": "titlereverse",
+                        "label": "Z-A"
+                    }
+                ]
+            }
+        ],
+        "checkboxGroups": [
+            {
+                "name": "genre",
+                "label": "Genre",
+                "paramName": "genre[]",
+                "displayMode": "expandable",
+                "columns": 3,
+                "loadFromTags": true,
+                "tagType": "genre"
+            }
+        ],
+        "sortingConfig": {
+            "allowDynamicReSort": false,
+            "defaultSort": "update",
+            "widgetType": "readonly",
+            "options": [
+                {
+                    "value": "update",
+                    "apiValue": "update",
+                    "label": "Latest Update",
+                    "displayLabel": "Sorted by: Latest Update",
+                    "icon": "update",
+                    "default": true
+                },
+                {
+                    "value": "latest",
+                    "apiValue": "latest",
+                    "label": "Latest Added",
+                    "displayLabel": "Sorted by: Latest Added",
+                    "icon": "new_releases"
+                },
+                {
+                    "value": "popular",
+                    "apiValue": "popular",
+                    "label": "Popular",
+                    "displayLabel": "Sorted by: Most Popular",
+                    "icon": "trending_up"
+                },
+                {
+                    "value": "rating",
+                    "apiValue": "rating",
+                    "label": "Rating",
+                    "displayLabel": "Sorted by: Highest Rating",
+                    "icon": "star"
+                },
+                {
+                    "value": "title",
+                    "apiValue": "title",
+                    "label": "A-Z",
+                    "displayLabel": "Sorted by: A-Z",
+                    "icon": "sort_by_alpha"
+                },
+                {
+                    "value": "titlereverse",
+                    "apiValue": "titlereverse",
+                    "label": "Z-A",
+                    "displayLabel": "Sorted by: Z-A",
+                    "icon": "sort_by_alpha"
+                }
+            ],
+            "messages": {
+                "readOnlyPrefix": "Sorted by:",
+                "readOnlySuffix": "🔒",
+                "tapToModifyHint": "Tap to modify search filters"
+            }
+        },
+        "pagination": {
+            "urlPattern": "/advanced-search/page/{page}/",
+            "paramName": "page"
+        }
+    },
     "scraper": {
         "enabled": true,
         "selectors": {
@@ -54,7 +242,8 @@
             "genre": "/baca/genre/{slug}/",
             "search": "/?s={query}",
             "searchPaginated": "/page/{num}/?s={query}",
-            "advancedSearch": "/advanced-search/?title={title}&author={author}&artist={artist}&yearx={year}&status={status}&type={type}&order={order}"
+            "advancedSearch": "/advanced-search/?title={title}...",
+            "advancedSearchPaginated": "/advanced-search/page/{num}/?title={title}..."
         }
     },
     "auth": {

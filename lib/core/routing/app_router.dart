@@ -65,6 +65,8 @@ class AppRouter {
           final filterType = state.uri.queryParameters['type'] ?? 'tag';
           final hideOtherTabs =
               state.uri.queryParameters['hideOtherTabs'] == 'true';
+          final supportsExclude =
+              state.uri.queryParameters['supportsExclude'] != 'false';
 
           // Safe type casting for List<FilterItem>
           List<FilterItem> selectedFilters = [];
@@ -89,6 +91,7 @@ class AppRouter {
             filterType: filterType,
             selectedFilters: selectedFilters,
             hideOtherTabs: hideOtherTabs,
+            supportsExclude: supportsExclude,
           );
         },
       ),
@@ -409,10 +412,11 @@ class AppRouter {
     required String filterType,
     required List<FilterItem> selectedFilters,
     bool hideOtherTabs = false,
+    bool supportsExclude = true,
   }) async {
     try {
       final result = await context.push<List<FilterItem>>(
-        '${AppRoute.filterData}?type=$filterType&hideOtherTabs=$hideOtherTabs',
+        '${AppRoute.filterData}?type=$filterType&hideOtherTabs=$hideOtherTabs&supportsExclude=$supportsExclude',
         extra: selectedFilters,
       );
 

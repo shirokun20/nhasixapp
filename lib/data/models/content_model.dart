@@ -89,8 +89,9 @@ class ContentModel extends Content {
         .toList();
 
     // Extract language from tags
+    // kasih info jika ketemu text translated maka skip
     final languageTag = response.tags.firstWhere(
-      (t) => t.type == 'language',
+      (t) => t.type == 'language' && !t.name.contains('translated'),
       orElse: () =>
           const NhentaiTagInfo(id: 0, type: 'language', name: 'unknown'),
     );
@@ -180,7 +181,7 @@ class ContentModel extends Content {
 
     // Extract language from tags
     final languageTag = response.tags.firstWhere(
-      (t) => t.type == 'language',
+      (t) => t.type == 'language' && !t.name.contains('translated'),
       orElse: () =>
           const NhentaiTagInfo(id: 0, type: 'language', name: 'unknown'),
     );
@@ -295,9 +296,40 @@ class ContentModel extends Content {
       'upload_date': uploadDate.millisecondsSinceEpoch,
       'source_id': sourceId,
       'favorites': favorites,
+      'tags': tags.map((t) => {
+        'id': t.id,
+        'name': t.name,
+        'type': t.type,
+        'count': t.count,
+        'url': t.url,
+        'slug': t.slug,
+      }).toList(),
       'cached_at': cachedAt?.millisecondsSinceEpoch ??
           DateTime.now().millisecondsSinceEpoch,
     };
+  }
+
+  /// Convert to JSON map (alias for toMap for jsonEncode support)
+  Map<String, dynamic> toJson() => toMap();
+
+  /// Create from JSON map (includes tags parsing)
+  factory ContentModel.fromJson(Map<String, dynamic> json) {
+    final tagsList = json['tags'] as List<dynamic>? ?? [];
+    final tags = tagsList.map((t) {
+      if (t is Map<String, dynamic>) {
+        return Tag(
+          id: t['id'],
+          name: t['name'],
+          type: t['type'],
+          count: t['count'] ?? 0,
+          url: t['url'] ?? '',
+          slug: t['slug'],
+        );
+      }
+      return const Tag(id: 0, name: 'unknown', type: 'tag', count: 0, url: '');
+    }).toList();
+
+    return ContentModel.fromMap(json, tags);
   }
 
   /// Create copy with updated cache time

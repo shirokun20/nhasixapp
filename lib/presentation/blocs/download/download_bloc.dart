@@ -305,7 +305,13 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       */
 
       // Validate that content has downloadable images
-      if (event.content.imageUrls.isEmpty && event.content.pageCount == 0) {
+      // Exception: For chapter-based content (Crotpedia), images may be fetched lazily during download
+      // We check for slug-based IDs which indicate chapter content that will have images fetched during _onStart
+      final isSlugBasedContent = !RegExp(r'^\d+$').hasMatch(event.content.id);
+
+      if (event.content.imageUrls.isEmpty &&
+          event.content.pageCount == 0 &&
+          !isSlugBasedContent) {
         _logger.w(
             'DownloadBloc: Content ${event.content.id} has no downloadable images');
 
@@ -315,6 +321,12 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           previousState: currentState,
         ));
         return;
+      }
+
+      // Log if this is slug-based content that will fetch images later
+      if (isSlugBasedContent && event.content.imageUrls.isEmpty) {
+        _logger.i(
+            'DownloadBloc: Slug-based content ${event.content.id} - images will be fetched during download');
       }
       // Check if already exists
       final existingDownload = currentState.downloads
@@ -341,6 +353,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         event.content.pageCount,
         startPage: event.startPage,
         endPage: event.endPage,
+        title: event.content.title,
+        coverUrl: event.content.coverUrl,
+        sourceId: event.content.sourceId,
       );
 
       // Save to database
@@ -431,6 +446,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         event.content.pageCount,
         startPage: event.startPage,
         endPage: event.endPage,
+        title: event.content.title,
+        coverUrl: event.content.coverUrl,
+        sourceId: event.content.sourceId,
       );
 
       // Save to database
@@ -546,18 +564,48 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       ));
 
       // Get content details for download
-      // Pass sourceId to ensure correct source usage
-      var content = await _getContentDetailUseCase.call(
-        GetContentDetailParams.fromString(event.contentId,
-            sourceId: updatedDownload.contentId.contains('_chapter_')
-                ? null
-                : null // We might need to store sourceId in DownloadStatus...
-            ),
-      );
+      // For Crotpedia chapters, getContentDetail may fail (404) because chapter slugs
+      // don't work with the series detail endpoint. In that case, we'll create a minimal
+      // content object and rely on getChapterImages for the actual images.
+      late Content content;
+      try {
+        content = await _getContentDetailUseCase.call(
+          GetContentDetailParams.fromString(
+            event.contentId,
+            sourceId: updatedDownload.sourceId,
+          ),
+        );
+      } catch (e) {
+        // getContentDetail failed - this is expected for Crotpedia chapter slugs
+        // Create a minimal content object and try to fetch images via getChapterImages
+        _logger.w(
+            'DownloadBloc: getContentDetail failed for ${event.contentId}, will try getChapterImages fallback: $e');
+        content = Content(
+          id: event.contentId,
+          title: event.contentId
+              .replaceAll('-', ' ')
+              .split(' ')
+              .map((w) =>
+                  w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : w)
+              .join(' '),
+          coverUrl: '',
+          pageCount: 0,
+          imageUrls: const [],
+          tags: const [],
+          artists: const [],
+          characters: const [],
+          parodies: const [],
+          groups: const [],
+          language: '',
+          uploadDate: DateTime.now(),
+          favorites: 0,
+          sourceId: updatedDownload.sourceId ??
+              'crotpedia', // Default to crotpedia for this fallback
+        );
+      }
 
       // CRITICAL FIX: For Crotpedia chapters, getContentDetail might return empty images
       // because the ID is a chapter slug, not a manga slug.
-      // We need to try getChapterImages if images are empty.
       // We need to try getChapterImages if images are empty.
       if (content.imageUrls.isEmpty) {
         _logger.i(
@@ -574,6 +622,26 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
               imageUrls: chapterImages,
               pageCount: chapterImages.length,
             );
+
+            // Update DownloadStatus with correct totalPages now that we know the actual count
+            updatedDownload = updatedDownload.copyWith(
+              totalPages: chapterImages.length,
+              sourceId: updatedDownload.sourceId ?? 'crotpedia',
+            );
+            await _userDataRepository.saveDownloadStatus(updatedDownload);
+
+            // Update state to reflect new totalPages
+            final latestState = state;
+            if (latestState is DownloadLoaded) {
+              final refreshedDownloads = latestState.downloads
+                  .map((d) =>
+                      d.contentId == event.contentId ? updatedDownload : d)
+                  .toList();
+              emit(latestState.copyWith(
+                downloads: refreshedDownloads,
+                lastUpdated: DateTime.now(),
+              ));
+            }
           } else {
             _logger.w(
                 'DownloadBloc: Fallback chapter image fetch returned empty list');
@@ -1155,6 +1223,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Create updated download with new progress
       final updatedDownload = currentDownload.copyWith(
         downloadedPages: event.downloadedPages,
+        totalPages: event
+            .totalPages, // ✅ Update totalPages from event (crucial for Crotpedia)
         speed: event.downloadSpeed,
       );
 
@@ -1195,25 +1265,37 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       }
 
       // Save progress to database (but don't await to keep it fast)
-      _userDataRepository.saveDownloadStatus(updatedDownload).catchError((e) {
-        _logger.w('DownloadBloc: Failed to save progress to database: $e');
-      });
+      // ✅ FIXED: Only save intermediate progress to DB (avoid overwriting completion status at 100%)
+      if (updatedDownload.downloadedPages < updatedDownload.totalPages) {
+        _userDataRepository.saveDownloadStatus(updatedDownload).catchError((e) {
+          _logger.w('DownloadBloc: Failed to save progress to database: $e');
+        });
+      } else {
+        _logger.d(
+            'DownloadBloc: Skipping DB save for 100% progress to avoid overwriting completion status');
+      }
 
       // ✅ NEW: Update notification progress through DownloadBloc for synchronization
       if (currentState.settings.enableNotifications &&
           updatedDownload.isInProgress) {
         final progressPercentage = updatedDownload.progressPercentage.round();
-        _notificationService
-            .updateDownloadProgress(
-          contentId: event.contentId,
-          progress: progressPercentage,
-          title:
-              updatedDownload.contentId, // Use contentId as fallback for title
-          isPaused: false,
-        )
-            .catchError((e) {
-          _logger.w('DownloadBloc: Failed to update notification progress: $e');
-        });
+
+        // Only update notification if progress < 100%
+        // At 100%, we wait for the completion notification to avoid showing "Pause/Cancel" buttons
+        if (progressPercentage < 100) {
+          _notificationService
+              .updateDownloadProgress(
+            contentId: event.contentId,
+            progress: progressPercentage,
+            title: updatedDownload
+                .contentId, // Use contentId as fallback for title
+            isPaused: false,
+          )
+              .catchError((e) {
+            _logger
+                .w('DownloadBloc: Failed to update notification progress: $e');
+          });
+        }
       }
 
       _logger.d(

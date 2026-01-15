@@ -4,7 +4,7 @@
     "sources": {
         "nhentai": {
             "type": "bundled",
-            "assetPath": "assets/json/tags.json",
+            "assetPath": "configs/tags/tags_nhentai.json",
             "format": "array",
             "structure": [
                 "id",
@@ -32,9 +32,28 @@
                 "category": false
             },
             "migration": {
-                "enabled": false,
-                "remoteUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/main/configs/tags/nhentai-tags.json",
-                "fallbackUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/develop/configs/tags/nhentai-tags.json",
+                "enabled": true,
+                "remoteUrl": "https://cdn.jsdelivr.net/gh/shirokun20/nhasixapp@configs/configs/tags/tags_nhentai.json",
+                "fallbackUrl": "https://cdn.jsdelivr.net/gh/shirokun20/nhasixapp@master/configs/tags/tags_nhentai.json",
+                "compression": "none",
+                "cacheTtlSeconds": 86400
+            }
+        },
+        "crotpedia": {
+            "type": "remote",
+            "format": "array",
+            "structure": [
+                "id",
+                "name",
+                "slug",
+                "typeCode"
+            ],
+            "multiSelectSupport": {
+                "tag": true
+            },
+            "migration": {
+                "enabled": true,
+                "remoteUrl": "https://cdn.jsdelivr.net/gh/shirokun20/nhasixapp@configs/configs/tags/tags_crotpedia.json",
                 "compression": "none",
                 "cacheTtlSeconds": 86400
             }

@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NhasixApp - Search Screen Mockup (Revised)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --bg-tertiary: #e0e0e0;
+            --text-primary: #000000;
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+            --accent: #2196F3;
+            --accent-dark: #1976D2;
+            --border: #e0e0e0;
+            --error: #f44336;
+            --success: #4caf50;
+            --warning: #ff9800;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --bg-tertiary: #2a2a2a;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --text-tertiary: #808080;
+            --accent: #64B5F6;
+            --accent-dark: #42A5F5;
+            --border: #333333;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-secondary);
+            padding: 20px;
+            transition: background 0.3s;
+        }
+
+        .controls {
+            max-width: 400px;
+            margin: 0 auto 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .controls button {
+            flex: 1;
+            padding: 10px 16px;
+            border: 2px solid var(--border);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .controls button:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent);
+        }
+
+        .controls button.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .phone-frame {
+            max-width: 400px;
+            margin: 0 auto;
+            background: var(--bg-primary);
+            border-radius: 30px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            transition: background 0.3s;
+        }
+
+        .status-bar {
+            height: 24px;
+            background: var(--bg-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 12px;
+            color: var(--text-primary);
+        }
+
+        .screen {
+            min-height: 700px;
+            background: var(--bg-secondary);
+        }
+
+        /* App Bar */
+        .app-bar {
+            background: var(--accent);
+            color: white;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .app-bar .back-btn {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .app-bar h1 {
+            font-size: 20px;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        /* Content */
+        .content {
+            padding: 16px;
+        }
+
+        .search-input-group {
+            margin-bottom: 20px;
+        }
+
+        .search-input-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 16px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Filter Section */
+        .filter-section {
+            margin-bottom: 24px;
+        }
+
+        .filter-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        /* Tag Chips */
+        .tag-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .chip {
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 14px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .chip.exclude {
+            background: #ffebee;
+            border-color: var(--error);
+            color: var(--error);
+        }
+
+        [data-theme="dark"] .chip.exclude {
+            background: rgba(244, 67, 54, 0.1);
+        }
+
+        .chip .remove {
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .add-tag-btn {
+            padding: 8px 16px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Dropdown */
+        .dropdown {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 16px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        /* Radio Group */
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            background: var(--bg-primary);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .radio-option:hover {
+            border-color: var(--accent);
+        }
+
+        .radio-option.selected {
+            border-color: var(--accent);
+            background: rgba(33, 150, 243, 0.1);
+        }
+
+        .radio-option input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--accent);
+        }
+
+        /* Checkbox Group */
+        .checkbox-group {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+        }
+
+        .checkbox-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .checkbox-option:last-child {
+            border-bottom: none;
+        }
+
+        .checkbox-option:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .checkbox-option input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--accent);
+        }
+
+        /* Expandable Section */
+        .expandable {
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .expandable-header {
+            padding: 12px 16px;
+            background: var(--bg-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .expandable-header:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .expandable-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .expandable.open .expandable-content {
+            max-height: 500px;
+        }
+
+        .expandable.open .expandable-header svg {
+            transform: rotate(180deg);
+        }
+
+        /* Search Button */
+        .search-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 24px;
+        }
+
+        .search-btn:hover {
+            background: var(--accent-dark);
+        }
+
+        /* Info Badge */
+        .info-badge {
+            background: rgba(33, 150, 243, 0.1);
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .toggle-container {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .source-tabs {
+            display: inline-flex;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .source-tab {
+            padding: 10px 24px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .source-tab.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="controls">
+        <button onclick="toggleTheme()" id="themeBtn">🌙 Dark Mode</button>
+        <button onclick="toggleLanguage()" id="langBtn">🇮🇩 Bahasa Indonesia</button>
+    </div>
+
+    <div class="phone-frame">
+        <div class="status-bar">
+            <span>9:41</span>
+            <span>📶 📡 🔋</span>
+        </div>
+
+        <div class="screen">
+            <!-- App Bar -->
+            <div class="app-bar">
+                <div class="back-btn">←</div>
+                <h1 data-en="Search" data-id="Cari">Search</h1>
+            </div>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Source Tabs -->
+                <div class="toggle-container">
+                    <div class="source-tabs">
+                        <button class="source-tab active" onclick="showSource('nhentai')" data-en="Nhentai"
+                            data-id="Nhentai">Nhentai</button>
+                        <button class="source-tab" onclick="showSource('crotpedia')" data-en="Crotpedia"
+                            data-id="Crotpedia">Crotpedia</button>
+                    </div>
+                </div>
+
+                <!-- Nhentai Search (Query String Mode) -->
+                <div id="nhentai-search">
+                    <div class="info-badge">
+                        <span>ℹ️</span>
+                        <span data-en="Query-string search with include/exclude tags"
+                            data-id="Pencarian query dengan include/exclude tags">Query-string search with
+                            include/exclude tags</span>
+                    </div>
+
+                    <!-- Search Input -->
+                    <div class="search-input-group">
+                        <label data-en="Search Query" data-id="Pencarian">Search Query</label>
+                        <input type="text" class="search-input" placeholder="isekai romance..."
+                            data-en-placeholder="isekai romance..." data-id-placeholder="isekai romance...">
+                    </div>
+
+                    <!-- Tags (Include) -->
+                    <div class="filter-section">
+                        <h3 data-en="Include Tags" data-id="Tag yang Disertakan">Include Tags</h3>
+                        <div class="tag-chips">
+                            <div class="chip">
+                                <span>romance</span>
+                                <span class="remove">×</span>
+                            </div>
+                            <div class="chip">
+                                <span>vanilla</span>
+                                <span class="remove">×</span>
+                            </div>
+                        </div>
+                        <button class="add-tag-btn">+ <span data-en="Add Tag" data-id="Tambah Tag">Add
+                                Tag</span></button>
+                    </div>
+
+                    <!-- Tags (Exclude) -->
+                    <div class="filter-section">
+                        <h3 data-en="Exclude Tags" data-id="Tag yang Dikecualikan">Exclude Tags</h3>
+                        <div class="tag-chips">
+                            <div class="chip exclude">
+                                <span>netorare</span>
+                                <span class="remove">×</span>
+                            </div>
+                        </div>
+                        <button class="add-tag-btn">+ <span data-en="Exclude Tag" data-id="Kecualikan Tag">Exclude
+                                Tag</span></button>
+                    </div>
+
+                    <!-- Language -->
+                    <div class="filter-section">
+                        <h3 data-en="Language" data-id="Bahasa">Language</h3>
+                        <select class="dropdown">
+                            <option data-en="All" data-id="Semua">All</option>
+                            <option selected data-en="English" data-id="Inggris">English</option>
+                            <option data-en="Japanese" data-id="Jepang">Japanese</option>
+                        </select>
+                    </div>
+
+                    <!-- Category -->
+                    <div class="filter-section">
+                        <h3 data-en="Category" data-id="Kategori">Category</h3>
+                        <select class="dropdown">
+                            <option data-en="All" data-id="Semua">All</option>
+                            <option selected>Manga</option>
+                            <option>Doujinshi</option>
+                        </select>
+                    </div>
+
+                    <button class="search-btn" data-en="Search" data-id="Cari">Search</button>
+                </div>
+
+                <!-- Crotpedia Search (Form-Based Mode) -->
+                <div id="crotpedia-search" class="hidden">
+                    <div class="info-badge">
+                        <span>ℹ️</span>
+                        <span data-en="Form-based search with multiple criteria"
+                            data-id="Pencarian berbasis form dengan kriteria lengkap">Form-based search with multiple
+                            criteria</span>
+                    </div>
+
+                    <!-- Title -->
+                    <div class="search-input-group">
+                        <label data-en="Title" data-id="Judul">Title</label>
+                        <input type="text" class="search-input" placeholder="Search by title..."
+                            data-en-placeholder="Search by title..." data-id-placeholder="Cari berdasarkan judul...">
+                    </div>
+
+                    <!-- Author -->
+                    <div class="search-input-group">
+                        <label data-en="Author" data-id="Penulis">Author</label>
+                        <input type="text" class="search-input" placeholder="Search by author..."
+                            data-en-placeholder="Search by author..." data-id-placeholder="Cari berdasarkan penulis...">
+                    </div>
+
+                    <!-- Artist -->
+                    <div class="search-input-group">
+                        <label data-en="Artist" data-id="Artis">Artist</label>
+                        <input type="text" class="search-input" placeholder="Search by artist..."
+                            data-en-placeholder="Search by artist..." data-id-placeholder="Cari berdasarkan artis...">
+                    </div>
+
+                    <!-- Year -->
+                    <div class="search-input-group">
+                        <label data-en="Year" data-id="Tahun">Year</label>
+                        <input type="number" class="search-input" placeholder="2024" min="1900" max="2100">
+                    </div>
+
+                    <!-- Status -->
+                    <div class="filter-section">
+                        <h3 data-en="Status" data-id="Status">Status</h3>
+                        <div class="radio-group">
+                            <label class="radio-option selected">
+                                <input type="radio" name="status" value="" checked>
+                                <span data-en="All" data-id="Semua">All</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="status" value="ongoing">
+                                <span data-en="Ongoing" data-id="Ongoing">Ongoing</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="status" value="completed">
+                                <span data-en="Completed" data-id="Selesai">Completed</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Type -->
+                    <div class="filter-section">
+                        <h3 data-en="Type" data-id="Tipe">Type</h3>
+                        <div class="radio-group">
+                            <label class="radio-option selected">
+                                <input type="radio" name="type" value="" checked>
+                                <span data-en="All" data-id="Semua">All</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="type" value="manga">
+                                <span>Manga</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="type" value="manhwa">
+                                <span>Manhwa</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="type" value="doujinshi">
+                                <span>Doujinshi</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Order By -->
+                    <div class="filter-section">
+                        <h3 data-en="Order By" data-id="Urutkan Berdasarkan">Order By</h3>
+                        <div class="radio-group">
+                            <label class="radio-option selected">
+                                <input type="radio" name="order" value="update" checked>
+                                <span data-en="Latest Update" data-id="Update Terbaru">Latest Update</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="order" value="popular">
+                                <span data-en="Popular" data-id="Populer">Popular</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="order" value="title">
+                                <span>A-Z</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Genre (Expandable) -->
+                    <div class="expandable">
+                        <div class="expandable-header" onclick="toggleExpand(this)">
+                            <span data-en="Genre (0 selected)" data-id="Genre (0 terpilih)">Genre (0 selected)</span>
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"
+                                style="transition: transform 0.3s;">
+                                <path d="M5 7l5 5 5-5H5z" />
+                            </svg>
+                        </div>
+                        <div class="expandable-content">
+                            <div class="checkbox-group">
+                                <label class="checkbox-option">
+                                    <input type="checkbox">
+                                    <span>Romance</span>
+                                </label>
+                                <label class="checkbox-option">
+                                    <input type="checkbox">
+                                    <span>Fantasy</span>
+                                </label>
+                                <label class="checkbox-option">
+                                    <input type="checkbox">
+                                    <span>Action</span>
+                                </label>
+                                <label class="checkbox-option">
+                                    <input type="checkbox">
+                                    <span>Comedy</span>
+                                </label>
+                                <label class="checkbox-option">
+                                    <input type="checkbox">
+                                    <span>Drama</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="search-btn" data-en="Search" data-id="Cari">Search</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLang = 'en';
+        let currentTheme = 'light';
+
+        function toggleTheme() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            document.getElementById('themeBtn').textContent = currentTheme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode';
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'id' : 'en';
+            updateTexts();
+            document.getElementById('langBtn').textContent = currentLang === 'en' ? '🇮🇩 Bahasa Indonesia' : '🇬🇧 English';
+        }
+
+        function updateTexts() {
+            document.querySelectorAll('[data-en]').forEach(el => {
+                const text = el.getAttribute(`data-${currentLang}`);
+                if (el.tagName === 'INPUT' && el.hasAttribute('placeholder')) {
+                    el.placeholder = el.getAttribute(`data-${currentLang}-placeholder`);
+                } else if (el.tagName === 'OPTION') {
+                    el.textContent = text;
+                } else {
+                    el.textContent = text;
+                }
+            });
+        }
+
+        function showSource(source) {
+            document.getElementById('nhentai-search').classList.toggle('hidden', source !== 'nhentai');
+            document.getElementById('crotpedia-search').classList.toggle('hidden', source !== 'crotpedia');
+
+            document.querySelectorAll('.source-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function toggleExpand(header) {
+            header.parentElement.classList.toggle('open');
+        }
+
+        // Radio option selection effect
+        document.querySelectorAll('.radio-option').forEach(option => {
+            option.addEventListener('click', function () {
+                const radio = this.querySelector('input[type="radio"]');
+                radio.checked = true;
+
+                // Remove selected class from siblings
+                this.parentElement.querySelectorAll('.radio-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+            });
+        });
+    </script>
+</body>
+
+</html>

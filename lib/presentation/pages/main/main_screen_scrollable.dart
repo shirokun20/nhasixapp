@@ -1,10 +1,11 @@
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
@@ -39,6 +40,11 @@ import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_state.dart';
 import 'package:kuron_core/kuron_core.dart' hide SearchFilter, SortOption;
+
+// New imports for dynamic sorting
+import 'package:nhasixapp/core/config/config_models.dart';
+import 'package:nhasixapp/presentation/widgets/dynamic_sorting_widget.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
 
 class MainScreenScrollable extends StatefulWidget {
   const MainScreenScrollable({super.key});
@@ -598,26 +604,58 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       onRefresh: _handleRefresh,
       child: CustomScrollView(
         slivers: [
-          // Search results header (if showing search results) - sebagai sliver
+          // Search results header
           if (_isShowingSearchResults)
             SliverToBoxAdapter(
               child: _buildSearchResultsHeader(),
             ),
 
-          // Sorting widget - sebagai sliver
+          // Sorting widget
           if (_shouldShowSorting(state))
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: SortingWidget(
-                  currentSort: _currentSortOption,
-                  onSortChanged: _onSortingChanged,
-                ),
+              child: BlocBuilder<SourceCubit, SourceState>(
+                builder: (context, sourceState) {
+                  final sourceId = sourceState.activeSource?.id;
+                  final sourceConfig = sourceId != null
+                      ? getIt<RemoteConfigService>().getConfig(sourceId)
+                      : null;
+                  final searchConfig = sourceConfig?.searchConfig;
+                  final sortingConfig = searchConfig?.sortingConfig;
+
+                  if (sortingConfig == null) {
+                    // Fallback to legacy widget if no config
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 8.0),
+                      child: SortingWidget(
+                        currentSort: _currentSortOption,
+                        onSortChanged: _onSortingChanged,
+                      ),
+                    );
+                  }
+
+                  return DynamicSortingWidget(
+                    currentSortValue: _mapSortOptionToConfigValue(
+                        _currentSortOption, sortingConfig),
+                    config: sortingConfig,
+                    onSortChanged: (val) =>
+                        _handleDynamicSortChange(val, sortingConfig),
+                    onNavigateToSearch: () async {
+                      final result = await context.push(AppRoute.search);
+                      if (result == true && context.mounted) {
+                        await _reloadSearchFilter();
+                      }
+                    },
+                    resultCount: state.totalCount,
+                    infoText: _isShowingSearchResults
+                        ? 'Tap to change search filters'
+                        : null,
+                  );
+                },
               ),
             ),
 
           // Hybrid Pinterest-style Grid Layout
-          // Combines full-width featured cards with 2-column masonry
           BlocBuilder<SettingsCubit, SettingsState>(
             builder: (context, settingsState) {
               final blurThumbnails = settingsState is SettingsLoaded
@@ -627,7 +665,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             },
           ),
 
-          // Pagination footer - sebagai sliver di bottom
+          // Pagination footer
           SliverToBoxAdapter(
             child: _buildContentFooter(state),
           ),
@@ -639,6 +677,43 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         ],
       ),
     );
+  }
+
+  String _mapSortOptionToConfigValue(SortOption option, SortingConfig config) {
+    // Try to find option with matching apiValue
+    try {
+      final match = config.options.firstWhere(
+        (o) => o.apiValue == option.apiValue,
+      );
+      return match.value;
+    } catch (_) {
+      // If no match found (e.g. Crotpedia sort options don't match SortOption enum exactly),
+      // return the default option's value
+      final defaultOption = config.options.firstWhere(
+        (o) => o.isDefault,
+        orElse: () => config.options.first,
+      );
+      return defaultOption.value;
+    }
+  }
+
+  void _handleDynamicSortChange(String newValue, SortingConfig config) {
+    // Map string value back to SortOption
+    try {
+      final optionConfig =
+          config.options.firstWhere((o) => o.value == newValue);
+
+      // Find SortOption that matches the apiValue
+      final sortOption = SortOption.values.firstWhere(
+        (so) => so.apiValue == optionConfig.apiValue,
+        orElse: () => SortOption.newest,
+      );
+
+      _onSortingChanged(sortOption);
+    } catch (e) {
+      Logger().w(
+          'MainScreen: Could not map dynamic sort "$newValue" to SortOption');
+    }
   }
 
   /// Build hybrid masonry grid with full-width featured cards at dynamic intervals

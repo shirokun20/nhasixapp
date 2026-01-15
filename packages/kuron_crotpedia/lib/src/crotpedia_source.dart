@@ -20,16 +20,23 @@ class CrotpediaSource implements ContentSource {
   final CrotpediaAuthManager _authManager;
   final Dio _dio;
   final Logger? _logger;
+  final String _overriddenBaseUrl;
 
   CrotpediaSource({
     required CrotpediaScraper scraper,
     required CrotpediaAuthManager authManager,
     required Dio dio,
     Logger? logger,
+    String? baseUrl,
   })  : _scraper = scraper,
         _authManager = authManager,
         _dio = dio,
-        _logger = logger;
+        _logger = logger,
+        _overriddenBaseUrl = baseUrl ?? baseUrlValue {
+    if (baseUrl != null) {
+      CrotpediaUrlBuilder.setBaseUrl(baseUrl);
+    }
+  }
 
   // ============ ContentSource Interface ============
 
@@ -43,7 +50,7 @@ class CrotpediaSource implements ContentSource {
   String get iconPath => 'assets/icons/crotpedia.png';
 
   @override
-  String get baseUrl => baseUrlValue;
+  String get baseUrl => _overriddenBaseUrl;
 
   @override
   bool get requiresBypass => false; // No cloudflare for now
@@ -358,26 +365,116 @@ class CrotpediaSource implements ContentSource {
 
   String _buildSearchUrl(SearchFilter filter) {
     if (filter.query.isNotEmpty) {
-      // Check for genre navigation
-      if (filter.query.startsWith('genre:')) {
-        final genreSlug = filter.query.substring(6); // Remove 'genre:'
-        return CrotpediaUrlBuilder.genre(genreSlug);
+      // Check for raw parameter format from FormBasedSearchUI
+      // Format: "raw:title=val&author=val&genre[]=x&genre[]=y"
+      if (filter.query.startsWith('raw:')) {
+        final rawParams = filter.query.substring(4); // Remove 'raw:'
+        // Construct advanced search URL with pagination support
+        // Format: /advanced-search/page/N/?params (when page > 1)
+        final pagePath = filter.page > 1 ? 'page/${filter.page}/' : '';
+        return '$baseUrl/advanced-search/$pagePath?$rawParams';
       }
 
-      // Simple search if just query
+      // Check for genre navigation (legacy/direct)
+      if (filter.query.startsWith('genre:')) {
+        final genreSlug = filter.query.substring(6); // Remove 'genre:'
+        return CrotpediaUrlBuilder.genre(genreSlug, page: filter.page);
+      }
+
+      // Check if it's a form-encoded query (contains known keys)
+      // We look for 'title:', 'author:', 'artist:', 'year:', 'status:', 'type:'
+      // If found, we parse it.
+      if (_isFormEncoded(filter.query)) {
+        final params = _parseQueryString(filter.query);
+        final genres = filter.includeTags.map((tag) => tag.name).toList();
+
+        return CrotpediaUrlBuilder.advancedSearch(
+          title: params['title'] ?? '',
+          author: params['author'] ?? '',
+          artist: params['artist'] ?? '',
+          year: params['year'] ?? '',
+          status: params['status'] ?? '',
+          type: params['type'] ?? '',
+          order: _mapSortOption(filter.sort),
+          genres: genres,
+          page: filter.page,
+        );
+      }
+
+      // Simple search if just query and NO tags
       if (filter.includeTags.isEmpty && filter.excludeTags.isEmpty) {
         return CrotpediaUrlBuilder.simpleSearch(filter.query,
             page: filter.page);
       }
     }
 
-    // Advanced search
+    // Default Advanced search (if tags are present but no special query parsing needed)
+    // Here we treat filter.query as 'title' by default if it's just a string
     final genres = filter.includeTags.map((tag) => tag.name).toList();
     return CrotpediaUrlBuilder.advancedSearch(
       title: filter.query,
       order: _mapSortOption(filter.sort),
       genres: genres,
+      page: filter.page,
     );
+  }
+
+  bool _isFormEncoded(String query) {
+    return query.contains('title:') ||
+        query.contains('author:') ||
+        query.contains('artist:') ||
+        query.contains('year:') ||
+        query.contains('status:') ||
+        query.contains('type:');
+  }
+
+  Map<String, String> _parseQueryString(String query) {
+    final Map<String, String> params = {};
+    // Split by space, validation needed for quoted strings?
+    // FormBasedSearchWidget currently just appends "key:value "
+    // We assume value doesn't contain space for now or implementation in widget handles it.
+    // Ideally we should have better parsing but for now strict split is okay if widget respects it.
+    // If widget allows spaces in value without quotes, this split is fragile.
+    // BUT FormBasedSearchWidget logic was: buffer.write('$key:${controller.text} ');
+    // If controller.text has spaces, e.g. "My Title", it becomes "title:My Title ".
+    // Splitting by space will break "Title".
+    // "title:My", "Title" -> "Title" is lost or treated as next key?
+
+    // Better Regex approach:
+    // keys are specific.
+    // We can regex match `(title|author|artist|year|status|type):(.+?)(\s|$)`
+    // Wait, regex lookahead is safer.
+
+    // Let's use a simpler approach that works with the current widget implementation.
+    // Widget produces: "title:val author:val "
+    // If val has spaces, we need to handle it.
+    // Current widget logic: `buffer.write('$key:${controller.text} ');`
+    // Example: "title:My Book author:John Doe "
+
+    // We can iterate through known keys and extract values between them.
+    // But we don't know the order or which keys are present.
+
+    // Regex strategy:
+    // Match `(\w+):` to find keys.
+    // The value is everything until the next key or end of string.
+
+    final keyRegex = RegExp(r'\b(title|author|artist|year|status|type):');
+    final matches = keyRegex.allMatches(query).toList();
+
+    if (matches.isEmpty) return {};
+
+    for (int i = 0; i < matches.length; i++) {
+      final match = matches[i];
+      final key = match.group(1)!;
+      final start = match.end;
+      final end =
+          (i + 1 < matches.length) ? matches[i + 1].start : query.length;
+
+      var value = query.substring(start, end).trim();
+      params[key] = value;
+    }
+
+    return params;
   }
 
   String _mapSortOption(SortOption option) {

@@ -7,6 +7,7 @@ library;
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 
+import '../../../../core/config/remote_config_service.dart';
 import '../../../../core/config/api_config.dart';
 import '../anti_detection.dart';
 import '../request_rate_manager.dart';
@@ -48,22 +49,30 @@ class NhentaiApiClient {
   final Dio _dio;
   final Logger _logger = Logger();
   final RequestRateManager _rateManager;
+  final RemoteConfigService _remoteConfigService;
   final AntiDetection _antiDetection;
 
   /// Create a new NhentaiApiClient
   ///
   /// [dio] - Optional custom Dio instance (useful for testing)
-  NhentaiApiClient({Dio? dio})
-      : _dio = dio ?? _createDefaultDio(),
-        _rateManager = RequestRateManager(),
+  NhentaiApiClient({
+    Dio? dio,
+    required RequestRateManager rateManager,
+    required RemoteConfigService remoteConfigService,
+  })  : _dio = dio ??
+            _createDefaultDio(
+              timeout: remoteConfigService.getConfig('nhentai')?.api?.timeout,
+            ),
+        _rateManager = rateManager,
+        _remoteConfigService = remoteConfigService,
         _antiDetection = AntiDetection();
 
   /// Create default Dio instance with proper configuration
-  static Dio _createDefaultDio() {
+  static Dio _createDefaultDio({int? timeout}) {
     final antiDetection = AntiDetection();
     final dio = Dio(BaseOptions(
-      connectTimeout: Duration(milliseconds: ApiConfig.apiTimeout),
-      receiveTimeout: Duration(milliseconds: ApiConfig.apiTimeout),
+      connectTimeout: Duration(milliseconds: timeout ?? ApiConfig.apiTimeout),
+      receiveTimeout: Duration(milliseconds: timeout ?? ApiConfig.apiTimeout),
       headers: antiDetection.getRandomHeaders(),
     ));
 
@@ -71,11 +80,36 @@ class NhentaiApiClient {
     dio.interceptors.add(LogInterceptor(
       requestBody: false,
       responseBody: false,
-      logPrint: (object) => Logger().d(object.toString()),
+      logPrint: (object) {
+        // return Logger().d(object.toString());
+        // return;
+      },
     ));
 
     return dio;
   }
+
+  // ============ Dynamic Endpoints ============
+
+  String get _apiBaseUrl =>
+      _remoteConfigService.getConfig('nhentai')?.api?.baseUrl ??
+      ApiConfig.nhentaiApiBase;
+
+  String _getGalleryEndpoint(String id) => '$_apiBaseUrl/api/gallery/$id';
+
+  String _getAllGalleriesEndpoint({int page = 1}) =>
+      '$_apiBaseUrl/api/galleries/all?page=$page';
+
+  String _getSearchEndpoint({
+    required String query,
+    String sort = 'date',
+    int page = 1,
+  }) {
+    final encodedQuery = Uri.encodeComponent(query);
+    return '$_apiBaseUrl/api/galleries/search?query=$encodedQuery&sort=$sort&page=$page';
+  }
+
+  String _getRelatedEndpoint(String id) => '$_apiBaseUrl/api/gallery/$id/related';
 
   /// Wait for rate limiting before making request
   Future<void> _waitForRateLimit() async {
@@ -92,7 +126,7 @@ class NhentaiApiClient {
   /// [id] - Gallery ID (numeric string)
   /// Returns [NhentaiGalleryResponse] with full gallery details
   Future<NhentaiGalleryResponse> getGallery(String id) async {
-    final url = ApiConfig.getGalleryEndpoint(id);
+    final url = _getGalleryEndpoint(id);
     _logger.d('NhentaiApiClient: Fetching gallery $id');
 
     try {
@@ -113,8 +147,8 @@ class NhentaiApiClient {
   /// [page] - Page number (1-indexed)
   /// Returns [NhentaiListResponse] with list of galleries
   Future<NhentaiListResponse> getAllGalleries({int page = 1}) async {
-    final url = ApiConfig.getAllGalleriesEndpoint(page: page);
-    _logger.d('NhentaiApiClient: Fetching all galleries page $page');
+    final url = _getAllGalleriesEndpoint(page: page);
+    _logger.d('NhentaiApiClient: Fetching all galleries page $page with url $url');
 
     try {
       await _waitForRateLimit();
@@ -143,7 +177,7 @@ class NhentaiApiClient {
     int page = 1,
   }) async {
     final mappedSort = ApiConfig.mapSortOption(sort);
-    final url = ApiConfig.getSearchEndpoint(
+    final url = _getSearchEndpoint(
       query: query,
       sort: mappedSort,
       page: page,
@@ -170,7 +204,7 @@ class NhentaiApiClient {
   /// [id] - Gallery ID to find related content for
   /// Returns [NhentaiRelatedResponse] with related galleries
   Future<NhentaiRelatedResponse> getRelated(String id) async {
-    final url = ApiConfig.getRelatedEndpoint(id);
+    final url = _getRelatedEndpoint(id);
     _logger.d('NhentaiApiClient: Fetching related for gallery $id');
 
     try {
@@ -196,14 +230,26 @@ class NhentaiApiClient {
     String period = 'all',
     int page = 1,
   }) async {
-    // Popular is just a search with empty query and sort option
-    final sort = switch (period.toLowerCase()) {
-      'week' => 'popular-week',
-      'today' => 'popular-today',
-      _ => 'popular',
-    };
+    // Use the all galleries endpoint for popular content
+    // nhentai API doesn't support empty query, but all galleries endpoint returns latest
+    // For actual popular sorting, we need to use HTML scraping (RemoteDataSource handles this)
+    final url = _getAllGalleriesEndpoint(page: page);
+    _logger.d(
+        'NhentaiApiClient: Fetching popular galleries (period: $period, page: $page)');
 
-    return search('', sort: sort, page: page);
+    try {
+      await _waitForRateLimit();
+      final response = await _makeRequest(url);
+
+      final listResponse = NhentaiListResponse.fromJson(response.data);
+      _logger.i(
+          'NhentaiApiClient: Fetched ${listResponse.result.length} popular galleries');
+      return listResponse;
+    } catch (e) {
+      _logger.e('NhentaiApiClient: Failed to fetch popular galleries',
+          error: e);
+      rethrow;
+    }
   }
 
   /// Make HTTP request with retry logic
@@ -211,7 +257,14 @@ class NhentaiApiClient {
     int attempts = 0;
     NhentaiApiException? lastException;
 
-    while (attempts < ApiConfig.maxRetryAttempts) {
+    // Get retry config from remote config service
+    final retryConfig =
+        _remoteConfigService.getConfig('nhentai')?.network?.retry;
+    final maxAttempts = retryConfig?.maxAttempts ?? ApiConfig.maxRetryAttempts;
+    final baseDelayMs = retryConfig?.delayMs ?? ApiConfig.retryDelayMs;
+    final exponentialBackoff = retryConfig?.exponentialBackoff ?? true;
+
+    while (attempts < maxAttempts) {
       attempts++;
 
       try {
@@ -232,8 +285,7 @@ class NhentaiApiClient {
       } on DioException catch (e) {
         lastException = _handleDioException(e, url);
 
-        if (!lastException.shouldRetry ||
-            attempts >= ApiConfig.maxRetryAttempts) {
+        if (!lastException.shouldRetry || attempts >= maxAttempts) {
           throw lastException;
         }
 
@@ -243,9 +295,11 @@ class NhentaiApiClient {
         }
 
         _logger.w(
-            'NhentaiApiClient: Retry attempt $attempts/${ApiConfig.maxRetryAttempts} for $url');
-        await Future.delayed(
-            Duration(milliseconds: ApiConfig.retryDelayMs * attempts));
+            'NhentaiApiClient: Retry attempt $attempts/$maxAttempts for $url');
+
+        // Calculate delay with optional exponential backoff
+        final delay = exponentialBackoff ? baseDelayMs * attempts : baseDelayMs;
+        await Future.delayed(Duration(milliseconds: delay));
       }
     }
 
@@ -303,7 +357,7 @@ class NhentaiApiClient {
     try {
       await _waitForRateLimit();
       final response = await _dio.get(
-        ApiConfig.getAllGalleriesEndpoint(page: 1),
+        _getAllGalleriesEndpoint(page: 1),
         options: Options(
           receiveTimeout: const Duration(seconds: 10),
         ),

@@ -48,12 +48,26 @@ android {
             if (storeFile == null && System.getenv("KEYSTORE_PATH") != null) {
                 storeFile = file(System.getenv("KEYSTORE_PATH"))
             }
+
+            // CI/CD: Decode KEYSTORE_BASE64 if present
+            if (System.getenv("KEYSTORE_BASE64") != null) {
+                def keystoreFile = file("${project.buildDir}/release.jks")
+                keystoreFile.parentFile.mkdirs()
+                keystoreFile.bytes = System.getenv("KEYSTORE_BASE64").decodeBase64()
+                storeFile = keystoreFile
+            }
         }
     }
 
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            // Fallback to debug signing if release keys are missing
+            if (signingConfigs.release.storeFile != null && signingConfigs.release.storeFile.exists()) {
+                signingConfig signingConfigs.release
+            } else {
+                println "Release signing keys not found. Falling back to debug signing config."
+                signingConfig signingConfigs.debug
+            }
             minifyEnabled true
             shrinkResources true
         }

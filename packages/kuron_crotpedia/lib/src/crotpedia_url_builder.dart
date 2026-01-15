@@ -1,6 +1,12 @@
 /// Centralized URL construction for Crotpedia website.
 class CrotpediaUrlBuilder {
-  static const String baseUrl = 'https://crotpedia.net';
+  static String _baseUrl = 'https://crotpedia.net';
+
+  static String get baseUrl => _baseUrl;
+
+  static void setBaseUrl(String url) {
+    _baseUrl = url;
+  }
 
   // ============ Browse URLs ============
 
@@ -19,8 +25,14 @@ class CrotpediaUrlBuilder {
   /// Chapter reader
   static String chapterReader(String slug) => '$baseUrl/baca/$slug/';
 
-  /// Genre page
-  static String genre(String genreSlug) => '$baseUrl/baca/genre/$genreSlug/';
+  /// Genre page with pagination support
+  /// URL format: /baca/genre/{slug}/ for page 1, /baca/genre/{slug}/page/{N}/ for page 2+
+  static String genre(String genreSlug, {int page = 1}) {
+    if (page > 1) {
+      return '$baseUrl/baca/genre/$genreSlug/page/$page/';
+    }
+    return '$baseUrl/baca/genre/$genreSlug/';
+  }
 
   // ============ Search URLs ============
 
@@ -44,6 +56,7 @@ class CrotpediaUrlBuilder {
     String type = '', // Manga, Doujinshi, etc
     String order = 'update',
     List<String> genres = const [],
+    int page = 1,
   }) {
     final params = [
       'title=${Uri.encodeComponent(title)}',
@@ -59,7 +72,10 @@ class CrotpediaUrlBuilder {
       params.add('genre[]=${Uri.encodeComponent(genre)}');
     }
 
-    return '$baseUrl/advanced-search/?${params.join('&')}';
+    final baseUrlWithPage = page > 1
+        ? '$baseUrl/advanced-search/page/$page/'
+        : '$baseUrl/advanced-search/';
+    return '$baseUrlWithPage?${params.join('&')}';
   }
 
   // ============ Auth URLs ============

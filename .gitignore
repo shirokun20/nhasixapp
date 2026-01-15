@@ -49,4 +49,4 @@ app.*.map.json
 
 # APK files (should not be tracked in git)
 *.apk
-/projects/*
+# /projects/*

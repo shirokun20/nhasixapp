@@ -372,6 +372,8 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                       onTap: () => widget.onContentTap?.call(content),
                       // Using default settings (showUploadDate: false) for main screen style
                       // For search/browse screens, set showUploadDate: true
+                      // Hide page count for Crotpedia (manga/manhwa) - only show for nhentai
+                      showPageCount: content.sourceId != 'crotpedia',
                       isBlurred: widget.shouldBlurContent?.call(content) ??
                           false, // NEW: Apply blur logic
                       isHighlighted:

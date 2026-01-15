@@ -1,17 +1,25 @@
 import 'dart:math';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
 
 /// Advanced request rate manager for intelligent rate limiting
 class RequestRateManager {
-  RequestRateManager({Logger? logger}) : _logger = logger ?? Logger();
+  RequestRateManager({
+    required this.remoteConfigService,
+    Logger? logger,
+  }) : _logger = logger ?? Logger();
 
+  final RemoteConfigService remoteConfigService;
   final Logger _logger;
   final List<DateTime> _requestHistory = [];
-  static const Duration _timeWindow = Duration(minutes: 1);
-  static const int _maxRequestsPerWindow =
-      30; // Increased from 12 to 30 requests per minute
-  static const Duration _baseDelay =
-      Duration(milliseconds: 1500); // Reduced from 3000ms to 1500ms
+  static const Duration _defaultTimeWindow = Duration(minutes: 1);
+
+  // Dynamic getters from config with fallbacks
+  int get _maxRequestsPerWindow =>
+      remoteConfigService.getRateLimitConfig('nhentai').requestsPerMinute;
+  Duration get _baseDelay => Duration(
+      milliseconds:
+          remoteConfigService.getRateLimitConfig('nhentai').minDelayMs);
 
   bool _isInCooldown = false;
   DateTime? _cooldownEndTime;
@@ -110,7 +118,8 @@ class RequestRateManager {
   /// Clean up old requests outside the time window
   void _cleanupOldRequests() {
     final now = DateTime.now();
-    _requestHistory.removeWhere((time) => now.difference(time) > _timeWindow);
+    _requestHistory
+        .removeWhere((time) => now.difference(time) > _defaultTimeWindow);
   }
 
   /// Reset all counters and state

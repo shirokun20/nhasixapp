@@ -13,6 +13,7 @@ import 'nhentai_scraper.dart';
 import 'anti_detection.dart';
 import 'request_rate_manager.dart';
 import 'exceptions.dart';
+import '../../../../core/config/remote_config_service.dart';
 
 /// Remote data source for nhentai.net
 /// Supports both API and HTML scraping with automatic fallback
@@ -22,10 +23,13 @@ class RemoteDataSource {
     required this.scraper,
     required this.cloudflareBypass,
     required this.antiDetection,
+    required RequestRateManager rateManager,
+    required RemoteConfigService remoteConfigService,
     this.apiClient,
     Logger? logger,
   })  : _logger = logger ?? Logger(),
-        _rateManager = RequestRateManager(logger: logger);
+        _rateManager = rateManager,
+        _remoteConfigService = remoteConfigService;
 
   final Dio httpClient;
   final NhentaiScraper scraper;
@@ -34,11 +38,15 @@ class RemoteDataSource {
   final NhentaiApiClient? apiClient;
   final Logger _logger;
   final RequestRateManager _rateManager;
+  final RemoteConfigService _remoteConfigService;
 
   /// Whether to prefer API over scraping
   bool _useApi = true;
 
-  static const String baseUrl = 'https://nhentai.net';
+  String get baseUrl =>
+      _remoteConfigService.getConfig('nhentai')?.baseUrl ??
+      'https://nhentai.net';
+
   static const Duration requestTimeout = Duration(seconds: 30);
   static const int maxRetries = 3;
 
@@ -281,7 +289,7 @@ class RemoteDataSource {
   /// Get random content
   Future<ContentModel> getRandomContent() async {
     try {
-      _logger.i('Fetching random content');
+      _logger.i('Fetching random content ID (scraping /random/)');
 
       final url = '$baseUrl/random/';
       final html = await _getPageHtml(url);
@@ -295,9 +303,11 @@ class RemoteDataSource {
         throw Exception('Failed to extract content ID from random page');
       }
 
-      _logger
-          .i('Successfully extracted content ID: $contentId from random page');
-      return await getContentDetail(contentId);
+      _logger.i(
+          'Successfully extracted content ID: $contentId from random page. Fetching details via API...');
+      
+      // Use API-enabled method to get details
+      return await getContentDetailViaApi(contentId);
     } catch (e, stackTrace) {
       _logger.e('Failed to get random content',
           error: e, stackTrace: stackTrace);
@@ -313,7 +323,9 @@ class RemoteDataSource {
     try {
       _logger.i('Fetching popular content for period: $period, page: $page');
 
-      final url = '$baseUrl/search/?q=&sort=popular-$period&page=$page';
+      // nhentai doesn't support empty query search, use homepage for browsing
+      // Homepage shows latest content - for actual popularity sorting, we'd need different logic
+      final url = '$baseUrl/?page=$page';
       final html = await _getPageHtml(url);
 
       final contents = await scraper.parseContentList(html);
@@ -336,7 +348,9 @@ class RemoteDataSource {
       _logger.i(
           'Fetching popular content with pagination for period: $period, page: $page');
 
-      final url = '$baseUrl/search/?q=&sort=popular-$period&page=$page';
+      // nhentai doesn't support empty query search, use homepage for browsing
+      // Homepage shows latest content - for actual popularity sorting, we'd need different logic
+      final url = '$baseUrl/?page=$page';
       final html = await _getPageHtml(url);
 
       // Parse content list
@@ -369,7 +383,9 @@ class RemoteDataSource {
       _logger.i(
           'Fetching popular content (sync) for period: $period, page: $page');
 
-      final url = '$baseUrl/search/?q=&sort=popular-$period&page=$page';
+      // nhentai doesn't support empty query search, use homepage for browsing
+      // Homepage shows latest content - for actual popularity sorting, we'd need different logic
+      final url = '$baseUrl/?page=$page';
       final html = await _getPageHtml(url);
 
       final contents = scraper.parseContentListSync(html);
@@ -677,8 +693,12 @@ class RemoteDataSource {
   String _buildSearchUrl(SearchFilter filter) {
     final buffer = StringBuffer('$baseUrl/search/?');
 
+    // Get tag mappings from config
+    final mapping =
+        _remoteConfigService.tagsManifest?.sources['nhentai']?.mappings ?? {};
+
     // Use the full query string from SearchFilter.toQueryString()
-    final queryString = filter.toQueryString();
+    final queryString = filter.toQueryString(prefixMap: mapping);
 
     if (queryString.isNotEmpty) {
       buffer.write(queryString);

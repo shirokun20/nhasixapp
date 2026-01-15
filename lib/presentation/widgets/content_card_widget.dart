@@ -646,39 +646,55 @@ class ContentCard extends StatelessWidget {
 
   Widget _buildLanguageFlag() {
     return Builder(
-      builder: (context) => Container(
-        width: 24,
-        height: 16,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(2),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outline,
-            width: 0.5,
-          ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(2),
-          child: Image.asset(
-            'assets/images/${content.language.toLowerCase()}.gif',
-            width: 24,
-            height: 16,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                child: Center(
-                  child: Text(
-                    content.language.substring(0, 2).toUpperCase(),
-                    style: TextStyleConst.labelSmall.copyWith(
-                      fontSize: 8,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+      builder: (context) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 20,
+            height: 14,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(2),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
+                width: 0.5,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: Image.asset(
+                'assets/images/${content.language.toLowerCase()}.gif',
+                width: 20,
+                height: 14,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    child: Center(
+                      child: Text(
+                        content.language.substring(0, 2).toUpperCase(),
+                        style: TextStyleConst.labelSmall.copyWith(
+                          fontSize: 8,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              );
-            },
+                  );
+                },
+              ),
+            ),
           ),
-        ),
+          const SizedBox(width: 4),
+          Text(
+            content.language.length > 1 
+                ? '${content.language[0].toUpperCase()}${content.language.substring(1)}'
+                : content.language.toUpperCase(),
+            style: TextStyleConst.caption.copyWith(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+            ),
+          ),
+        ],
       ),
     );
   }

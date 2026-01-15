@@ -412,6 +412,25 @@ class _ProgressiveReaderImageWidgetState
       return;
     }
 
+    // ✅ CHECK FOR DIRECT FILE PATH
+    // If the "networkUrl" is actually a local path, use it directly
+    if (!widget.networkUrl.startsWith('http') &&
+        (widget.networkUrl.startsWith('/') ||
+            widget.networkUrl.startsWith('file://'))) {
+      final path = widget.networkUrl.replaceFirst('file://', '');
+      final file = File(path);
+      if (await file.exists()) {
+        if (mounted) {
+          setState(() {
+            _cachedLocalPath = path;
+            _isLocalPathResolved = true;
+          });
+          widget.onLoadingStateChange?.call(false);
+        }
+        return;
+      }
+    }
+
     // Priority 2: Check LocalImagePreloader (downloaded content)
     final localPath = await LocalImagePreloader.getLocalImagePath(
       widget.contentId,
