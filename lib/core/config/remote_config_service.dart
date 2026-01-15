@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/config/config_models.dart';
+import 'package:nhasixapp/core/constants/app_constants.dart' as constants;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart'; // Add this import
 
@@ -127,7 +128,7 @@ class RemoteConfigService {
         _versionUrl,
         options: Options(
           responseType: ResponseType.json,
-          receiveTimeout: const Duration(seconds: 10),
+          receiveTimeout: constants.AppDurations.networkTimeout,
         ),
       );
 

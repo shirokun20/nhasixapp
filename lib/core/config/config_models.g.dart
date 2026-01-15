@@ -364,44 +364,82 @@ Map<String, dynamic> _$AppConfigToJson(AppConfig instance) => <String, dynamic>{
 
 AppLimits _$AppLimitsFromJson(Map<String, dynamic> json) => AppLimits(
       defaultPageSize: (json['defaultPageSize'] as num?)?.toInt() ?? 20,
+      maxBatchSize: (json['maxBatchSize'] as num?)?.toInt() ?? 1000,
       maxConcurrentDownloads:
           (json['maxConcurrentDownloads'] as num?)?.toInt() ?? 3,
+      searchHistoryLimit: (json['searchHistoryLimit'] as num?)?.toInt() ?? 50,
+      imagePreloadBuffer: (json['imagePreloadBuffer'] as num?)?.toInt() ?? 5,
     );
 
 Map<String, dynamic> _$AppLimitsToJson(AppLimits instance) => <String, dynamic>{
       'defaultPageSize': instance.defaultPageSize,
+      'maxBatchSize': instance.maxBatchSize,
       'maxConcurrentDownloads': instance.maxConcurrentDownloads,
+      'searchHistoryLimit': instance.searchHistoryLimit,
+      'imagePreloadBuffer': instance.imagePreloadBuffer,
     };
 
 AppDurations _$AppDurationsFromJson(Map<String, dynamic> json) => AppDurations(
-      splashDelayMs: (json['splashDelayMs'] as num?)?.toInt() ?? 2000,
-      snackbarDurationMs: (json['snackbarDurationMs'] as num?)?.toInt() ?? 3000,
+      splashDelayMs: (json['splashDelayMs'] as num?)?.toInt() ?? 1000,
+      snackbarShortMs: (json['snackbarShortMs'] as num?)?.toInt() ?? 2000,
+      snackbarLongMs: (json['snackbarLongMs'] as num?)?.toInt() ?? 4000,
+      pageTransitionMs: (json['pageTransitionMs'] as num?)?.toInt() ?? 300,
+      searchDebounceMs: (json['searchDebounceMs'] as num?)?.toInt() ?? 300,
+      networkTimeoutMs: (json['networkTimeoutMs'] as num?)?.toInt() ?? 30000,
+      cacheExpirationHours:
+          (json['cacheExpirationHours'] as num?)?.toInt() ?? 24,
+      readerAutoHideDelaySeconds:
+          (json['readerAutoHideDelaySeconds'] as num?)?.toInt() ?? 3,
+      progressUpdateIntervalMs:
+          (json['progressUpdateIntervalMs'] as num?)?.toInt() ?? 100,
     );
 
 Map<String, dynamic> _$AppDurationsToJson(AppDurations instance) =>
     <String, dynamic>{
       'splashDelayMs': instance.splashDelayMs,
-      'snackbarDurationMs': instance.snackbarDurationMs,
+      'snackbarShortMs': instance.snackbarShortMs,
+      'snackbarLongMs': instance.snackbarLongMs,
+      'pageTransitionMs': instance.pageTransitionMs,
+      'searchDebounceMs': instance.searchDebounceMs,
+      'networkTimeoutMs': instance.networkTimeoutMs,
+      'cacheExpirationHours': instance.cacheExpirationHours,
+      'readerAutoHideDelaySeconds': instance.readerAutoHideDelaySeconds,
+      'progressUpdateIntervalMs': instance.progressUpdateIntervalMs,
     };
 
 AppUiConfig _$AppUiConfigFromJson(Map<String, dynamic> json) => AppUiConfig(
       gridColumnsPortrait: (json['gridColumnsPortrait'] as num?)?.toInt() ?? 2,
-      cardAspectRatio: (json['cardAspectRatio'] as num?)?.toDouble() ?? 0.7,
+      gridColumnsLandscape:
+          (json['gridColumnsLandscape'] as num?)?.toInt() ?? 3,
+      minCardWidth: (json['minCardWidth'] as num?)?.toDouble() ?? 150.0,
+      cardAspectRatio: (json['cardAspectRatio'] as num?)?.toDouble() ?? 0.65,
+      cardBorderRadius: (json['cardBorderRadius'] as num?)?.toDouble() ?? 12.0,
+      defaultPadding: (json['defaultPadding'] as num?)?.toDouble() ?? 16.0,
+      titleMaxLength: (json['titleMaxLength'] as num?)?.toInt() ?? 40,
     );
 
 Map<String, dynamic> _$AppUiConfigToJson(AppUiConfig instance) =>
     <String, dynamic>{
       'gridColumnsPortrait': instance.gridColumnsPortrait,
+      'gridColumnsLandscape': instance.gridColumnsLandscape,
+      'minCardWidth': instance.minCardWidth,
       'cardAspectRatio': instance.cardAspectRatio,
+      'cardBorderRadius': instance.cardBorderRadius,
+      'defaultPadding': instance.defaultPadding,
+      'titleMaxLength': instance.titleMaxLength,
     };
 
 AppStorage _$AppStorageFromJson(Map<String, dynamic> json) => AppStorage(
-      backupFolderName: json['backupFolderName'] as String? ?? 'nhasix_backup',
+      backupFolderName: json['backupFolderName'] as String? ?? 'nhasix',
+      maxImageSizeKb: (json['maxImageSizeKb'] as num?)?.toInt() ?? 200,
+      pdfPartsSizePages: (json['pdfPartsSizePages'] as num?)?.toInt() ?? 100,
     );
 
 Map<String, dynamic> _$AppStorageToJson(AppStorage instance) =>
     <String, dynamic>{
       'backupFolderName': instance.backupFolderName,
+      'maxImageSizeKb': instance.maxImageSizeKb,
+      'pdfPartsSizePages': instance.pdfPartsSizePages,
     };
 
 AppReader _$AppReaderFromJson(Map<String, dynamic> json) => AppReader(

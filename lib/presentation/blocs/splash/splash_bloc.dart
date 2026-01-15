@@ -257,7 +257,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
 
         // Check if there are downloaded contents for offline use
         final downloadedContents = await _userDataRepository.getAllDownloads(
-            limit: AppLimits.maxBatchSize);
+            limit: _remoteConfigService.appConfig?.limits?.maxBatchSize ?? 1000);
         final completedDownloads =
             downloadedContents.where((d) => d.isCompleted).toList();
 

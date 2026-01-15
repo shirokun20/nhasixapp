@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/config/remote_config_service.dart';
 
 import '../../../domain/entities/entities.dart';
 import '../../../domain/entities/download_task.dart';
@@ -41,6 +42,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     required Connectivity connectivity,
     required NotificationService notificationService,
     required PdfConversionService pdfConversionService,
+    required RemoteConfigService remoteConfigService,
     AppLocalizations? appLocalizations,
   })  : _downloadContentUseCase = downloadContentUseCase,
         _getContentDetailUseCase = getContentDetailUseCase,
@@ -50,6 +52,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _connectivity = connectivity,
         _notificationService = notificationService,
         _pdfConversionService = pdfConversionService,
+        _remoteConfigService = remoteConfigService,
         _appLocalizations = appLocalizations,
         super(const DownloadInitial()) {
     // Register event handlers
@@ -96,6 +99,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   final Connectivity _connectivity;
   final NotificationService _notificationService;
   final PdfConversionService _pdfConversionService;
+  final RemoteConfigService _remoteConfigService;
   final AppLocalizations? _appLocalizations;
 
   /// Helper method to get localized string with fallback
@@ -196,8 +200,12 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // Load settings (use existing settings)
       final userPrefs = await _userDataRepository.getUserPreferences();
+      final remoteMaxConcurrent = _remoteConfigService.appConfig?.limits?.maxConcurrentDownloads ?? 3;
+      
       _settings = DownloadSettings(
-        maxConcurrentDownloads: userPrefs.maxConcurrentDownloads,
+        maxConcurrentDownloads: userPrefs.maxConcurrentDownloads != 3 
+            ? userPrefs.maxConcurrentDownloads 
+            : remoteMaxConcurrent,
         imageQuality: userPrefs.imageQuality,
         autoRetry: true, // Default to true
         retryAttempts: 3, // Default to 3

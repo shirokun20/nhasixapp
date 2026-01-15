@@ -91,14 +91,12 @@ class NhentaiApiClient {
 
   // ============ Dynamic Endpoints ============
 
-  String get _apiBaseUrl =>
-      _remoteConfigService.getConfig('nhentai')?.api?.baseUrl ??
-      ApiConfig.nhentaiApiBase;
+  String get _apiBaseUrl => ApiConfig.nhentaiApiBase;
 
-  String _getGalleryEndpoint(String id) => '$_apiBaseUrl/api/gallery/$id';
+  String _getGalleryEndpoint(String id) => '$_apiBaseUrl/gallery/$id';
 
   String _getAllGalleriesEndpoint({int page = 1}) =>
-      '$_apiBaseUrl/api/galleries/all?page=$page';
+      '$_apiBaseUrl/galleries/all?page=$page';
 
   String _getSearchEndpoint({
     required String query,
@@ -106,10 +104,10 @@ class NhentaiApiClient {
     int page = 1,
   }) {
     final encodedQuery = Uri.encodeComponent(query);
-    return '$_apiBaseUrl/api/galleries/search?query=$encodedQuery&sort=$sort&page=$page';
+    return '$_apiBaseUrl/galleries/search?query=$encodedQuery&sort=$sort&page=$page';
   }
 
-  String _getRelatedEndpoint(String id) => '$_apiBaseUrl/api/gallery/$id/related';
+  String _getRelatedEndpoint(String id) => '$_apiBaseUrl/gallery/$id/related';
 
   /// Wait for rate limiting before making request
   Future<void> _waitForRateLimit() async {

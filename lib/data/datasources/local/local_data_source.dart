@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:logger/logger.dart';
 
+import 'package:nhasixapp/core/constants/app_constants.dart';
 import '../../models/download_status_model.dart';
 import '../../models/history_model.dart';
 import '../../models/reader_position_model.dart';
@@ -551,7 +552,7 @@ class LocalDataSource {
       final db = await _getSafeDatabase();
       if (db == null) {
         _logger.e('Database not available, returning default preferences');
-        return const UserPreferences();
+        return UserPreferences();
       }
 
       final result = await db.query('preferences');
@@ -583,7 +584,8 @@ class LocalDataSource {
     } catch (e, stackTrace) {
       _logger.e('Error getting user preferences: $e');
       _logger.e('Stack trace: $stackTrace');
-      return const UserPreferences(); // Return default preferences
+      final defaultPrefs = UserPreferences(); // Return default preferences
+      return defaultPrefs;
     }
   }
 
@@ -733,7 +735,7 @@ class LocalDataSource {
         WHERE id NOT IN (
           SELECT id FROM search_history 
           ORDER BY searched_at DESC 
-          LIMIT 50
+          LIMIT ${AppLimits.searchHistoryLimit}
         )
       ''');
 
@@ -744,7 +746,8 @@ class LocalDataSource {
   }
 
   /// Get search history
-  Future<List<String>> getSearchHistory({int limit = 20}) async {
+  Future<List<String>> getSearchHistory({int? limit}) async {
+    final effectiveLimit = limit ?? AppLimits.searchHistoryLimit;
     try {
       final db = await _getSafeDatabase();
       if (db == null) {
@@ -756,7 +759,7 @@ class LocalDataSource {
         'search_history',
         columns: ['query'],
         orderBy: 'searched_at DESC',
-        limit: limit,
+        limit: effectiveLimit,
       );
 
       return result.map((row) => row['query'] as String).toList();

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
+import '../constants/app_constants.dart';
 
 /// Singleton HTTP client manager to ensure proper lifecycle management
 /// and prevent disposal issues across the application
@@ -44,9 +45,9 @@ class HttpClientManager {
     };
 
     // Set default timeouts
-    _httpClient!.options.connectTimeout = const Duration(seconds: 30);
-    _httpClient!.options.receiveTimeout = const Duration(seconds: 30);
-    _httpClient!.options.sendTimeout = const Duration(seconds: 30);
+    _httpClient!.options.connectTimeout = AppDurations.networkTimeout;
+    _httpClient!.options.receiveTimeout = AppDurations.networkTimeout;
+    _httpClient!.options.sendTimeout = AppDurations.networkTimeout;
     _httpClient!.options.followRedirects = true;
     _httpClient!.options.maxRedirects = 5;
     _httpClient!.options.responseType = ResponseType.plain;
