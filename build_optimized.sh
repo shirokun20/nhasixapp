@@ -50,14 +50,22 @@ echo ""
 # Location: build/app/outputs/apk/release/ or build/app/outputs/apk/debug/
 APK_SEARCH_PATH="build/app/outputs/apk/$BUILD_TYPE/kuron_*.apk"
 
+FOUND_COUNT=0
 for apk in $APK_SEARCH_PATH; do
     if [ -f "$apk" ]; then
         filename=$(basename "$apk")
         size=$(du -h "$apk" | cut -f1)
         cp "$apk" "$OUTPUT_DIR/"
         echo "  📱 $filename - $size"
+        FOUND_COUNT=$((FOUND_COUNT + 1))
     fi
 done
+
+if [ $FOUND_COUNT -eq 0 ]; then
+    echo "❌ Error: No APK files found matching $APK_SEARCH_PATH"
+    echo "Check build output directory!"
+    exit 1
+fi
 
 echo ""
 echo "📏 SIZE SUMMARY:"

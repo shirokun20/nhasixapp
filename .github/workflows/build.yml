@@ -6,10 +6,15 @@ name: Build and Upload APK
 on:
   push:
     branches: [ master, 'release/*' ]
+    tags:
+      - 'v*' # Trigger on version tags (e.g. v0.8.0)
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required for creating releases
+
 
     steps:
       # Checkout repository
@@ -132,101 +137,15 @@ jobs:
             -d text="
           🎉 *Cihuyy ada update baru nih!*
           
-          � Kuro-N
+          📦 Kuro-N
           📦 APK tersedia: ${APK_COUNT}
           💾 Total: ~${TOTAL_SIZE}MB
           ${APK_INFO}
           
-          ⬇️ File lagi diupload, tunggu sebentar ya...
+          ⬇️ [Download APK di GitHub Releases](https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME})
           "
 
-      # Upload APK to Telegram Channel
-      - name: Upload APK to Telegram Channel
-        if: success()
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
-        run: |
-          set -e
-          # Check if APK files exist
-          if [ ! -d "apk-output" ] || [ -z "$(ls -A apk-output/*.apk 2>/dev/null)" ]; then
-            echo "❌ No APK files found in apk-output/"
-            exit 1
-          fi
-
-          # Get version from pubspec.yaml
-          VERSION=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | cut -d '+' -f 1)
-          SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-8)
-          
-          echo "📦 Version: $VERSION"
-          echo "🔗 Commit: $SHORT_SHA"
-
-          # Change to output directory to simplify paths for curl
-          cd apk-output
-          UPLOADED_COUNT=0
-          
-          # Upload ARM64 (highest priority - 95% of users)
-          for apk in *arm64-v8a*.apk; do
-            if [ -f "$apk" ]; then
-              size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null || echo "0")
-              size_mb=$((size / 1024 / 1024))
-
-              if [ $size_mb -gt 50 ]; then
-                echo "⚠️ Skipping $apk - too large (${size_mb}MB > 50MB limit)"
-                continue
-              fi
-
-              echo "📤 Uploading ARM64: $apk (${size_mb}MB)..."
-              
-              # Use -S to show errors but keep it quiet otherwise
-              response=$(curl -S --max-time 600 --connect-timeout 60 --retry 3 --retry-delay 10 \
-                -F chat_id="$TELEGRAM_CHANNEL_ID" \
-                -F document=@"$apk" \
-                -F caption="📱 Kuro-N v${VERSION} - ARM64 | ✅ Recommended for modern devices | 💾 ${size_mb}MB | 🔗 $SHORT_SHA" \
-                "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
-
-              if echo "$response" | grep -q '"ok":true'; then
-                echo "✅ Successfully uploaded ARM64: $apk"
-                UPLOADED_COUNT=$((UPLOADED_COUNT + 1))
-              else
-                echo "❌ Failed to upload $apk: $response"
-                exit 1
-              fi
-            fi
-          done
-
-          # Upload ARM (compatibility for older devices)
-          for apk in *armeabi-v7a*.apk; do
-            if [ -f "$apk" ]; then
-              size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null || echo "0")
-              size_mb=$((size / 1024 / 1024))
-
-              if [ $size_mb -gt 50 ]; then
-                echo "⚠️ Skipping $apk - too large (${size_mb}MB > 50MB limit)"
-                continue
-              fi
-
-              echo "📤 Uploading ARM: $apk (${size_mb}MB)..."
-              
-              response=$(curl -S --max-time 600 --connect-timeout 60 --retry 3 --retry-delay 10 \
-                -F chat_id="$TELEGRAM_CHANNEL_ID" \
-                -F document=@"$apk" \
-                -F caption="📱 Kuro-N v${VERSION} - ARMv7 | 📦 For older devices | 💾 ${size_mb}MB | 🔗 $SHORT_SHA" \
-                "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
-
-              if echo "$response" | grep -q '"ok":true'; then
-                echo "✅ Successfully uploaded ARM: $apk"
-                UPLOADED_COUNT=$((UPLOADED_COUNT + 1))
-              else
-                echo "❌ Failed to upload $apk: $response"
-                exit 1
-              fi
-            fi
-          done
-
-          echo "🎉 Upload complete! Total uploaded: $UPLOADED_COUNT APKs"
-
-      # Extract Version from pubspec.yaml
+      # EXTRACT VERSION Step moved here to be available for release
       - name: Read Version
         id: version
         run: |
@@ -234,16 +153,23 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "Detected version: $VERSION"
 
-      # Create Draft Release & Upload APK
-      - name: Create Draft Release
-        if: startsWith(github.ref, 'refs/heads/release/')
+      # DISABLED: Upload APK to Telegram Channel (User Request)
+      # - name: Upload APK to Telegram Channel
+      #   if: success()
+      #   ... (disabled)
+
+      # Create Release & Upload APK to GitHub
+      # Triggered when a tag (v*) is pushed
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ env.VERSION }}
-          name: v${{ env.VERSION }}
-          draft: true
           files: apk-output/*.apk
           generate_release_notes: true
+          # Note: 'draft' defaults to false, so it will be published immediately or as draft if configured
+          draft: false 
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
