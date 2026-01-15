@@ -59,6 +59,7 @@ Try these solutions:
 2. The website may be temporarily down
 3. Try using a VPN if access is blocked in your region
 4. Pull down to refresh the content
+5. **Crotpedia Only**: Some chapters require login. Navigate to **Drawer → Login** to access full content.
 
 ---
 

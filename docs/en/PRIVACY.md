@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last Updated: December 2025**
+**Last Updated: January 2026**
 
 ## Overview
 
@@ -12,7 +12,7 @@ Kuron ("the App") is committed to protecting your privacy. This Privacy Policy e
 
 ✅ **No personal information** - We do not collect names, emails, or any identifying information
 
-✅ **No account system** - No login or registration required
+✅ **No account system** - No login or registration required for browsing. Optional login available for specific sources (e.g., Crotpedia) to access full content.
 
 ✅ **No external tracking** - No third-party analytics or tracking services
 
