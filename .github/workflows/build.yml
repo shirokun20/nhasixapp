@@ -139,7 +139,7 @@ jobs:
           💾 Total: ~${TOTAL_SIZE}MB
           ${APK_INFO}
           
-          ⬇️ Cek rilis di GitHub untuk download APK...
+          ⬇️ [Download APK di GitHub Releases](https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME})
           "
 
       # EXTRACT VERSION Step moved here to be available for release
