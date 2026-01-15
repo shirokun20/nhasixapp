@@ -5,7 +5,7 @@ name: Build and Upload APK
 # Setup: Add bot as admin to channel, get channel ID (@channelname or -100XXXXXXXXX)
 on:
   push:
-    branches: [ master, 'release/*' ]
+    # branches: [ master, 'release/*' ]
     tags:
       - 'v*' # Trigger on version tags (e.g. v0.8.0)
 
