@@ -635,7 +635,7 @@
   "keepScreenOn": "Jaga Layar Hidup",
   "keepScreenOnDescription": "Mencegah layar mati saat membaca",
   "platformNotSupported": "Platform Tidak Didukung",
-  "platformNotSupportedBody": "NhasixApp dirancang khusus untuk perangkat Android.",
+  "platformNotSupportedBody": "Kuron dirancang khusus untuk perangkat Android.",
   "platformNotSupportedInstall": "Silakan pasang dan jalankan aplikasi ini di perangkat Android.",
   "storagePermissionRequired": "Izin Penyimpanan Diperlukan",
   "storagePermissionExplanation": "Aplikasi ini membutuhkan izin penyimpanan untuk mengunduh file ke perangkat Anda. File akan disimpan di folder Downloads/nhasix.",

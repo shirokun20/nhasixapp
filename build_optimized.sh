@@ -6,7 +6,7 @@
 BUILD_TYPE=${1:-release}
 
 echo "🚀 Building OPTIMIZED $BUILD_TYPE APK..."
-echo "📱 App: nhasix"
+echo "📱 App: Kuron"
 echo "📦 Version: $(grep 'version:' pubspec.yaml | sed 's/version: //')"
 echo "📅 Date: $(date +%Y%m%d)"
 echo ""
@@ -46,7 +46,11 @@ echo "📂 Output directory: $OUTPUT_DIR/"
 echo ""
 
 # Find and copy all split APKs
-for apk in build/app/outputs/apk/release/nhasix_*.apk; do
+# Note: Renamed via android/app/build.gradle to kuron_*.apk
+# Location: build/app/outputs/apk/release/ or build/app/outputs/apk/debug/
+APK_SEARCH_PATH="build/app/outputs/apk/$BUILD_TYPE/kuron_*.apk"
+
+for apk in $APK_SEARCH_PATH; do
     if [ -f "$apk" ]; then
         filename=$(basename "$apk")
         size=$(du -h "$apk" | cut -f1)
@@ -57,8 +61,8 @@ done
 
 echo ""
 echo "📏 SIZE SUMMARY:"
-total_size=$(du -ch $OUTPUT_DIR/nhasix_*.apk 2>/dev/null | grep total | cut -f1 || echo '0')
-count=$(ls -1 $OUTPUT_DIR/nhasix_*.apk 2>/dev/null | wc -l | tr -d ' ')
+total_size=$(du -ch $OUTPUT_DIR/kuron_*.apk 2>/dev/null | grep total | cut -f1 || echo '0')
+count=$(ls -1 $OUTPUT_DIR/kuron_*.apk 2>/dev/null | wc -l | tr -d ' ')
 echo "📦 Total APKs: $count"
 echo "📊 Combined size: $total_size"
 echo "💾 Previous universal: ~29MB"

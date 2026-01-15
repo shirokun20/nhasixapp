@@ -2519,7 +2519,7 @@ abstract class AppLocalizations {
   /// No description provided for @platformNotSupportedBody.
   ///
   /// In en, this message translates to:
-  /// **'NhasixApp is designed exclusively for Android devices.'**
+  /// **'Kuron is designed exclusively for Android devices.'**
   String get platformNotSupportedBody;
 
   /// No description provided for @platformNotSupportedInstall.

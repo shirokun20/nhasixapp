@@ -343,7 +343,7 @@ class DownloadService {
         await nomediaFile.writeAsString(
             '# This file prevents Android Media Scanner from indexing this folder\n'
             '# Images in this folder and subfolders will not appear in Gallery apps\n'
-            '# Created by NhasixApp for privacy protection\n');
+            '# Created by Kuron for privacy protection\n');
         _logger.i(_getLocalized('createdNoMediaFile',
             args: {'path': nomediaFile.path},
             fallback:

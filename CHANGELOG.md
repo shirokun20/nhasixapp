@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.8.0] - 2026-01-15
+
+### 🚀 Features & UX
+- **Tag Pagination**: 
+  - Implemented pagination for tag-based searches on **Nhentai** (`/tag/{slug}/?page={N}`).
+  - Implemented pagination for genre browsing on **Crotpedia** (`/baca/genre/{slug}/page/{N}/`).
+- **Nhentai Smart Search**:
+  - Direct navigation to gallery detail page when inputting numeric ID (Gallery ID) in Nhentai search.
+  - Skips search results step for faster access to known IDs.
+  - Automatic normalization of numeric IDs (removes leading zeros).
+- **Crotpedia Account Integration**:
+  - Added login functionality for Crotpedia to access all chapters.
+  - Source-aware account status in App Drawer.
+
+### 🎨 Rebranding
+- **APK Naming**: Updated APK output filename to `kuron_[version]_[date]_[abi].apk` to match the brand identity.
+
+---
+
 ## [0.7.2] - 2025-12-28
 
 ### 🔒 Privacy & Safety

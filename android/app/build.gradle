@@ -76,7 +76,7 @@ android {
     // Note: ABI splits handled by Flutter's --split-per-abi flag
     // Don't use gradle splits.abi as it conflicts with Flutter's ndk.abiFilters
 
-    // Custom APK naming with ABI support: nhasix_[version]_[date]_[abi].apk
+    // Custom APK naming with ABI support: kuron_[version]_[date]_[abi].apk
     applicationVariants.all { variant ->
         variant.outputs.all { output ->
             def versionName = variant.versionName
@@ -84,8 +84,8 @@ android {
             def date = new Date().format('yyyyMMdd')
             def abi = output.getFilter(com.android.build.OutputFile.ABI) ?: 'universal'
             
-            // Custom filename format: nhasix_[version]_[date]_[buildType]_[abi].apk
-            def fileName = "nhasix_${versionName}_${date}_${buildType}_${abi}.apk"
+            // Custom filename format: kuron_[version]_[date]_[buildType]_[abi].apk
+            def fileName = "kuron_${versionName}_${date}_${buildType}_${abi}.apk"
             outputFileName = fileName
         }
     }

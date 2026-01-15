@@ -1327,7 +1327,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get platformNotSupportedBody =>
-      'NhasixApp dirancang khusus untuk perangkat Android.';
+      'Kuron dirancang khusus untuk perangkat Android.';
 
   @override
   String get platformNotSupportedInstall =>
