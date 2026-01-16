@@ -50,6 +50,7 @@ import 'package:nhasixapp/presentation/cubits/update/update_cubit.dart';
 import 'package:nhasixapp/domain/repositories/repositories.dart';
 import 'package:nhasixapp/data/repositories/content_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/user_data_repository_impl.dart';
+import 'package:nhasixapp/data/repositories/settings_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/reader_settings_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/reader_repository_impl.dart';
 
@@ -67,6 +68,10 @@ import 'package:nhasixapp/domain/usecases/settings/get_user_preferences_usecase.
 import 'package:nhasixapp/domain/usecases/settings/save_user_preferences_usecase.dart';
 
 // Services
+import 'package:nhasixapp/services/native_download_service.dart';
+import 'package:nhasixapp/services/native_pdf_service.dart';
+import 'package:nhasixapp/services/native_backup_service.dart';
+import 'package:nhasixapp/services/native_pdf_reader_service.dart';
 import 'package:nhasixapp/services/download_service.dart';
 import 'package:nhasixapp/core/services/update_service.dart';
 import 'package:nhasixapp/services/notification_service.dart';
@@ -162,11 +167,22 @@ void _setupServices() {
   getIt.registerLazySingleton<PdfService>(
       () => PdfService(logger: getIt<Logger>()));
 
+  // Native PDF Service
+  getIt.registerLazySingleton<NativePdfService>(() => NativePdfService());
+
+  // Native Services
+  getIt.registerLazySingleton<NativeBackupService>(() => NativeBackupService());
+  getIt.registerLazySingleton<NativePdfReaderService>(
+    () => NativePdfReaderService(),
+  );
+
   // PDF Conversion Service - High-level orchestration service for background PDF processing
   getIt.registerLazySingleton<PdfConversionService>(() => PdfConversionService(
         pdfService: getIt<PdfService>(),
         notificationService: getIt<NotificationService>(),
         userDataRepository: getIt<UserDataRepository>(),
+        nativePdfService: getIt<NativePdfService>(),
+        remoteConfigService: getIt<RemoteConfigService>(),
         logger: getIt<Logger>(),
       ));
 
@@ -176,6 +192,9 @@ void _setupServices() {
         notificationService: getIt<NotificationService>(),
         logger: getIt<Logger>(),
       ));
+
+  // Native Download Service
+  getIt.registerLazySingleton<NativeDownloadService>(() => NativeDownloadService());
 
   // History Cleanup Service
   getIt
@@ -370,10 +389,13 @@ void _setupRepositories() {
       ));
 
   // Settings Repository
-  // getIt.registerLazySingleton<SettingsRepository>(() => SettingsRepositoryImpl(
-  //   sharedPreferences: getIt(),
-  //   logger: getIt(),
-  // ));
+  // Settings Repository
+  getIt.registerLazySingleton<SettingsRepository>(() => SettingsRepositoryImpl(
+    sharedPreferences: getIt(),
+    nativeBackupService: getIt(),
+    databaseHelper: DatabaseHelper.instance,
+    logger: getIt(),
+  ));
 
   // Offline Content Manager (depends on UserDataRepository)
   getIt
@@ -486,6 +508,7 @@ void _setupBlocs() {
         notificationService: getIt<NotificationService>(),
         pdfConversionService: getIt<PdfConversionService>(),
         remoteConfigService: getIt<RemoteConfigService>(),
+        nativeDownloadService: getIt<NativeDownloadService>(),
         appLocalizations: null, // Initialized during main setup
       ));
 

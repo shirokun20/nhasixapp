@@ -9,6 +9,8 @@ import '../core/utils/directory_utils.dart';
 import 'pdf_service.dart';
 import 'notification_service.dart';
 import '../domain/repositories/repositories.dart';
+import 'native_pdf_service.dart';
+import '../core/config/remote_config_service.dart';
 
 /// Service yang menangani konversi PDF di background dengan fitur splitting dan notifikasi
 /// Handles background PDF conversion with splitting, progress tracking, and notifications
@@ -17,16 +19,22 @@ class PdfConversionService {
     required PdfService pdfService,
     required NotificationService notificationService,
     required UserDataRepository userDataRepository,
+    required NativePdfService nativePdfService,
+    required RemoteConfigService remoteConfigService,
     Logger? logger,
   })  : _pdfService = pdfService,
         _notificationService = notificationService,
         _userDataRepository = userDataRepository,
+        _nativePdfService = nativePdfService,
+        _remoteConfigService = remoteConfigService,
         _logger = logger ?? Logger();
 
   final PdfService _pdfService;
   final NotificationService _notificationService;
   // ignore: unused_field
   final UserDataRepository _userDataRepository;
+  final NativePdfService _nativePdfService;
+  final RemoteConfigService _remoteConfigService;
   final Logger _logger;
 
   // Localization callback
@@ -34,56 +42,19 @@ class PdfConversionService {
 
   /// Test method untuk verify apakah notification service bisa menampilkan notification
   /// Test method to verify if notification service can display notifications
-  ///
-  /// Returns: true jika test notification berhasil ditampilkan
   Future<bool> testPdfNotification({
     String testContentId = 'test-pdf-123',
     String testTitle = 'PDF Notification Test',
   }) async {
     try {
-      debugPrint(
-          'PDF_NOTIFICATION: testPdfNotification - STARTING test with contentId=$testContentId');
-
-      // Test basic notification service first
-      debugPrint(
-          'PDF_NOTIFICATION: testPdfNotification - Testing basic notification service');
-
-      try {
-        await _notificationService.showTestActionNotification();
-        debugPrint(
-            'PDF_NOTIFICATION: testPdfNotification - Basic test notification completed');
-      } catch (basicTestError) {
-        debugPrint(
-            'PDF_NOTIFICATION: testPdfNotification - Basic test FAILED: ${basicTestError.toString()}');
-      }
-
-      // Ensure service is ready
+      debugPrint('PDF_NOTIFICATION: testPdfNotification - STARTING test');
       await _ensureNotificationServiceReady();
-
-      // Check service state
-      final isEnabled = _notificationService.isEnabled;
-      debugPrint(
-          'PDF_NOTIFICATION: testPdfNotification - NotificationService.isEnabled = $isEnabled');
-
-      if (!isEnabled) {
-        debugPrint(
-            'PDF_NOTIFICATION: testPdfNotification - FAILED - NotificationService is not enabled');
-        return false;
-      }
-
-      // Try to show simple PDF notification
-      debugPrint(
-          'PDF_NOTIFICATION: testPdfNotification - Attempting to show test PDF notification');
-
+      
       await _notificationService.showPdfConversionStarted(
         contentId: testContentId,
         title: testTitle,
       );
 
-      debugPrint(
-          'PDF_NOTIFICATION: testPdfNotification - Test notification completed successfully');
-
-      // Wait a bit then show completion notification
       await Future.delayed(const Duration(seconds: 2));
 
       await _notificationService.showPdfConversionCompleted(
@@ -92,95 +63,30 @@ class PdfConversionService {
         pdfPaths: ['/test/path/test.pdf'],
         partsCount: 1,
       );
-
-      debugPrint(
-          'PDF_NOTIFICATION: testPdfNotification - Test completion notification sent');
       return true;
-    } catch (e, stackTrace) {
-      debugPrint(
-          'PDF_NOTIFICATION: testPdfNotification - EXCEPTION: ${e.toString()}');
-      debugPrint(
-          'PDF_NOTIFICATION: testPdfNotification - STACKTRACE: ${stackTrace.toString()}');
+    } catch (e) {
+      debugPrint('PDF_NOTIFICATION: testPdfNotification - EXCEPTION: $e');
       return false;
     }
   }
 
-  /// Quick static method untuk test dari UI atau main function
-  /// Quick static method for testing from UI or main function
   static Future<void> quickTestPdfNotifications() async {
     try {
-      debugPrint(
-          'PDF_NOTIFICATION: quickTestPdfNotifications - Starting quick test');
-
       final service = GetIt.instance<PdfConversionService>();
-      final result = await service.testPdfNotification();
-
-      debugPrint(
-          'PDF_NOTIFICATION: quickTestPdfNotifications - Test Result: $result');
+      await service.testPdfNotification();
     } catch (e) {
-      debugPrint(
-          'PDF_NOTIFICATION: quickTestPdfNotifications - Quick test failed: $e');
+      debugPrint('PDF_NOTIFICATION: quickTestPdfNotifications - FAILED: $e');
     }
   }
 
-  /// Ensure notification service is properly initialized before PDF notifications
-  /// This fixes the issue where PDF notifications don't appear in release mode
   Future<void> _ensureNotificationServiceReady() async {
     try {
-      debugPrint(
-          'PDF_NOTIFICATION: _ensureNotificationServiceReady - Starting notification service setup');
-
-      // Check initial state
-      final initialEnabled = _notificationService.isEnabled;
-      debugPrint(
-          'PDF_NOTIFICATION: _ensureNotificationServiceReady - Initial isEnabled = $initialEnabled');
-
-      // Re-initialize notification service to ensure it's ready for PDF notifications
-      // This is especially important in release mode where the service might not be warm
       await _notificationService.initialize();
-
-      debugPrint(
-          'PDF_NOTIFICATION: _ensureNotificationServiceReady - NotificationService.initialize() completed');
-
-      // Check state after first initialization
-      final afterInitEnabled = _notificationService.isEnabled;
-      debugPrint(
-          'PDF_NOTIFICATION: _ensureNotificationServiceReady - After init isEnabled = $afterInitEnabled');
-
-      // Additional setup for release mode compatibility
-      // Force another initialization to ensure channels are properly registered
-      try {
-        // Double initialization to ensure proper channel setup
-        await _notificationService.initialize();
-
-        final finalEnabled = _notificationService.isEnabled;
-        debugPrint(
-            'PDF_NOTIFICATION: _ensureNotificationServiceReady - After double init isEnabled = $finalEnabled');
-
-        if (!finalEnabled) {
-          debugPrint(
-              'PDF_NOTIFICATION: _ensureNotificationServiceReady - WARNING - Service still not enabled after double init!');
-        }
-      } catch (doubleInitError) {
-        debugPrint(
-            'PDF_NOTIFICATION: _ensureNotificationServiceReady - Double init error: ${doubleInitError.toString()}');
-      }
-
-      _logger.d(
-          'PdfConversionService: Notification service re-initialized for PDF notifications');
-      debugPrint(
-          'PDF_NOTIFICATION: _ensureNotificationServiceReady - Setup completed successfully');
     } catch (e) {
-      _logger.w(
-          'PdfConversionService: Failed to re-initialize notification service',
-          error: e);
-      debugPrint(
-          'PDF_NOTIFICATION: _ensureNotificationServiceReady - FAILED: ${e.toString()}');
+      _logger.w('PdfConversionService: Failed to re-initialize notification service', error: e);
     }
   }
 
-  /// Hitung total ukuran file dari daftar path PDF
-  /// Calculate total file size from list of PDF paths
   Future<int> _calculateTotalFileSize(List<String> pdfPaths) async {
     int totalSize = 0;
     for (final pdfPath in pdfPaths) {
@@ -190,8 +96,7 @@ class PdfConversionService {
           totalSize += await file.length();
         }
       } catch (e) {
-        _logger.w('PdfConversionService: Error getting file size for $pdfPath',
-            error: e);
+        _logger.w('PdfConversionService: Error getting file size for $pdfPath', error: e);
       }
     }
     return totalSize;
@@ -225,6 +130,33 @@ class PdfConversionService {
       if (imagePaths.isEmpty) {
         throw Exception(_getLocalized('pdfNoImagesProvided',
             fallback: 'No images provided for PDF conversion'));
+      }
+
+      // Feature flag: use native PDF generation
+      final useNative = _remoteConfigService.appConfig?.featureFlags?['use_native_pdf'] ?? false;
+      
+      if (useNative) {
+         _logger.i('PdfConversionService: Using Native PDF Generation for $contentId');
+         
+         // In native mode, we delegate everything to the native worker
+         // Note: Native worker handles progress notifications internally or via callback
+         // For now we just await the enqueue (which is fast)
+         // To properly wait for completion, we would need to listen to a result stream.
+         // Current implementation fires and forgets from Dart perspective, 
+         // but Native Worker survives app backgrounding.
+         await _nativePdfService.generatePdf(
+            contentId: contentId,
+            imagePaths: imagePaths,
+            maxPagesPerFile: maxPagesPerFile
+         );
+         
+         // We might want to show a "Started" notification here if native doesn't immediately show one
+         await _notificationService.showPdfConversionStarted(
+            contentId: contentId,
+            title: title,
+         );
+         
+         return;
       }
 
       // Tampilkan notifikasi bahwa konversi PDF dimulai

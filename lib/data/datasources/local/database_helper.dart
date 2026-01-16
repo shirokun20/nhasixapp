@@ -22,6 +22,12 @@ class DatabaseHelper {
     return _database!;
   }
 
+  /// Get database path
+  Future<String> getDatabasePath() async {
+    final documentsDirectory = await getApplicationDocumentsDirectory();
+    return '${documentsDirectory.path}/$_databaseName';
+  }
+
   /// Initialize database
   Future<Database> _initDatabase() async {
     try {

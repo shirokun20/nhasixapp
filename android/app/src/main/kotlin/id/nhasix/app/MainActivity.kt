@@ -3,16 +3,25 @@ package id.nhasix.app
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Bundle
 import android.util.Log
 import androidx.annotation.NonNull
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import id.nhasix.app.download.DownloadMethodChannel
+import id.nhasix.app.pdf.PdfMethodChannel
+import id.nhasix.app.backup.BackupMethodChannel
+import id.nhasix.app.pdf.PdfReaderMethodChannel
 
 class MainActivity: FlutterActivity() {
     private val CHANNEL = "app_disguise"
+    private lateinit var downloadChannel: DownloadMethodChannel
+    private lateinit var pdfChannel: PdfMethodChannel
+    private lateinit var backupChannel: BackupMethodChannel
+    private lateinit var pdfReaderChannel: PdfReaderMethodChannel
 
-    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("AppDisguise", "MainActivity onCreate called")
         Log.d("AppDisguise", "Intent action: ${intent?.action}")
@@ -23,6 +32,51 @@ class MainActivity: FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         Log.d("AppDisguise", "configureFlutterEngine called")
 
+        // 1. Setup Download Channel
+        try {
+            downloadChannel = DownloadMethodChannel(
+                context = applicationContext,
+                messenger = flutterEngine.dartExecutor.binaryMessenger
+            )
+            Log.d("DownloadService", "DownloadMethodChannel setup completed")
+        } catch (e: Exception) {
+            Log.e("DownloadService", "Error setting up DownloadMethodChannel", e)
+        }
+
+        // 2. Setup PDF Channel
+        try {
+            pdfChannel = PdfMethodChannel(
+                context = applicationContext,
+                messenger = flutterEngine.dartExecutor.binaryMessenger
+            )
+            Log.d("PdfService", "PdfMethodChannel setup completed")
+        } catch (e: Exception) {
+            Log.e("PdfService", "Error setting up PdfMethodChannel", e)
+        }
+
+        // 3. Setup Backup Channel
+        try {
+            backupChannel = BackupMethodChannel(
+                activity = this,
+                messenger = flutterEngine.dartExecutor.binaryMessenger
+            )
+            Log.d("BackupService", "BackupMethodChannel setup completed")
+        } catch (e: Exception) {
+            Log.e("BackupService", "Error setting up BackupMethodChannel", e)
+        }
+
+        // 4. Setup PDF Reader Channel
+        try {
+            pdfReaderChannel = PdfReaderMethodChannel(
+                activity = this,
+                messenger = flutterEngine.dartExecutor.binaryMessenger
+            )
+            Log.d("PdfReaderService", "PdfReaderMethodChannel setup completed")
+        } catch (e: Exception) {
+            Log.e("PdfReaderService", "Error setting up PdfReaderMethodChannel", e)
+        }
+
+        // 4. Setup App Disguise Channel
         try {
             val methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             Log.d("AppDisguise", "MethodChannel created successfully")
@@ -37,8 +91,6 @@ class MainActivity: FlutterActivity() {
 
                             if (mode != null) {
                                 setAppDisguise(mode)
-
-                                // Simple response without restart for now
                                 result.success("Mode set to: $mode")
                                 Log.d("AppDisguise", "setDisguiseMode completed for mode: $mode")
                             } else {
@@ -61,17 +113,34 @@ class MainActivity: FlutterActivity() {
                     result.error("METHOD_ERROR", e.message, null)
                 }
             }
-
             Log.d("AppDisguise", "MethodChannel handler setup completed successfully")
         } catch (e: Exception) {
-            Log.e("AppDisguise", "Error setting up MethodChannel", e)
+            Log.e("AppDisguise", "Error setting up MethodChannel (AppDisguise)", e)
         }
     }
     
+    override fun onDestroy() {
+        if (::downloadChannel.isInitialized) {
+            downloadChannel.dispose()
+        }
+        if (::pdfChannel.isInitialized) {
+            pdfChannel.dispose()
+        }
+        if (::backupChannel.isInitialized) {
+            backupChannel.dispose()
+        }
+        super.onDestroy()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (::backupChannel.isInitialized) {
+            backupChannel.onActivityResult(requestCode, resultCode, data)
+        }
+    }
+
     private fun setAppDisguise(mode: String) {
         try {
-            val packageManager = packageManager
-            val packageName = packageName
             Log.d("AppDisguise", "setAppDisguise called with mode: $mode")
 
             // Disable all aliases first
@@ -79,12 +148,12 @@ class MainActivity: FlutterActivity() {
             aliases.forEach { alias ->
                 try {
                     val componentName = ComponentName(packageName, "id.nhasix.app.$alias")
-                    val result = packageManager.setComponentEnabledSetting(
+                    packageManager.setComponentEnabledSetting(
                         componentName,
                         PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                         PackageManager.DONT_KILL_APP
                     )
-                    Log.d("AppDisguise", "Disabled alias: $alias, result: $result")
+                    Log.d("AppDisguise", "Disabled alias: $alias")
                 } catch (e: Exception) {
                     Log.e("AppDisguise", "Error disabling alias $alias", e)
                 }
@@ -105,7 +174,7 @@ class MainActivity: FlutterActivity() {
                     enableAlias("WeatherActivity")
                 }
                 else -> {
-                    // Default mode - enable main activity, disable all aliases
+                    // Default mode - enable main activity
                     enableMainActivity()
                     Log.d("AppDisguise", "Default mode - main activity enabled")
                 }
@@ -118,12 +187,12 @@ class MainActivity: FlutterActivity() {
     private fun disableMainActivity() {
         try {
             val mainComponent = ComponentName(packageName, "id.nhasix.app.MainActivity")
-            val result = packageManager.setComponentEnabledSetting(
+            packageManager.setComponentEnabledSetting(
                 mainComponent,
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                 PackageManager.DONT_KILL_APP
             )
-            Log.d("AppDisguise", "Disabled main activity, result: $result")
+            Log.d("AppDisguise", "Disabled main activity")
         } catch (e: Exception) {
             Log.e("AppDisguise", "Error disabling main activity", e)
         }
@@ -132,46 +201,32 @@ class MainActivity: FlutterActivity() {
     private fun enableMainActivity() {
         try {
             val mainComponent = ComponentName(packageName, "id.nhasix.app.MainActivity")
-            val result = packageManager.setComponentEnabledSetting(
+            packageManager.setComponentEnabledSetting(
                 mainComponent,
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
                 PackageManager.DONT_KILL_APP
             )
-            Log.d("AppDisguise", "Enabled main activity, result: $result")
+            Log.d("AppDisguise", "Enabled main activity")
         } catch (e: Exception) {
             Log.e("AppDisguise", "Error enabling main activity", e)
-        }
-    }
-
-    private fun refreshLauncher() {
-        try {
-            Log.d("AppDisguise", "Refreshing launcher")
-            val intent = Intent(Intent.ACTION_MAIN)
-            intent.addCategory(Intent.CATEGORY_HOME)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            startActivity(intent)
-        } catch (e: Exception) {
-            Log.e("AppDisguise", "Error refreshing launcher", e)
         }
     }
     
     private fun enableAlias(aliasName: String) {
         try {
             val componentName = ComponentName(packageName, "id.nhasix.app.$aliasName")
-            val result = packageManager.setComponentEnabledSetting(
+            packageManager.setComponentEnabledSetting(
                 componentName,
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
                 PackageManager.DONT_KILL_APP
             )
-            Log.d("AppDisguise", "Enabled alias: $aliasName, result: $result")
+            Log.d("AppDisguise", "Enabled alias: $aliasName")
         } catch (e: Exception) {
             Log.e("AppDisguise", "Error enabling alias $aliasName", e)
         }
     }
     
     private fun getCurrentDisguise(): String {
-        val packageManager = packageManager
-        val packageName = packageName
         Log.d("AppDisguise", "getCurrentDisguise called")
 
         // Check aliases first
@@ -180,7 +235,6 @@ class MainActivity: FlutterActivity() {
             try {
                 val componentName = ComponentName(packageName, "id.nhasix.app.$alias")
                 val state = packageManager.getComponentEnabledSetting(componentName)
-                Log.d("AppDisguise", "Alias $alias state: $state")
                 if (state == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
                     val mode = when (alias) {
                         "CalculatorActivity" -> "calculator"
@@ -196,21 +250,7 @@ class MainActivity: FlutterActivity() {
             }
         }
 
-        // Check main activity
-        try {
-            val mainComponent = ComponentName(packageName, "id.nhasix.app.MainActivity")
-            val mainState = packageManager.getComponentEnabledSetting(mainComponent)
-            Log.d("AppDisguise", "Main activity state: $mainState")
-            if (mainState == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
-                Log.d("AppDisguise", "Current disguise mode: default")
-                return "default"
-            }
-        } catch (e: Exception) {
-            Log.e("AppDisguise", "Error checking main activity", e)
-        }
-
-        // If nothing is enabled, default to default
-        Log.d("AppDisguise", "No activity enabled, defaulting to default")
+        // Default
         return "default"
     }
 }

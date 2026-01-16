@@ -501,6 +501,7 @@ class AppConfig {
   final AppStorage? storage;
   final AppReader? reader;
   final AppPrivacy? privacy;
+  final Map<String, dynamic>? featureFlags;
 
   AppConfig({
     this.limits,
@@ -509,6 +510,7 @@ class AppConfig {
     this.storage,
     this.reader,
     this.privacy,
+    this.featureFlags,
   });
 
   factory AppConfig.fromJson(Map<String, dynamic> json) =>

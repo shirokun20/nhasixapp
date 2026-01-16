@@ -85,6 +85,13 @@
             </intent-filter>
         </activity-alias>
 
+        <!-- PDF Reader Activity -->
+        <activity
+            android:name=".pdf.PdfReaderActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:configChanges="orientation|screenSize"
+            android:exported="false" />
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
