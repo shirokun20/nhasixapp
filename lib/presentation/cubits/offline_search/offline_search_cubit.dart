@@ -6,7 +6,7 @@ import '../../../core/utils/offline_content_manager.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../../domain/entities/download_status.dart';
 import '../../../domain/repositories/user_data_repository.dart';
-import '../../../core/constants/app_constants.dart';
+
 import '../base/base_cubit.dart';
 
 part 'offline_search_state.dart';
@@ -68,136 +68,181 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     return sizes;
   }
 
-  /// Search in offline content - uses DATABASE first, filesystem as fallback
-  Future<void> searchOfflineContent(String query, {String? backupPath}) async {
+  /// Search in offline content - DATABASE ONLY (optimized)
+  /// 
+  /// [query] - Search query string
+  /// [loadMore] - If true, appends to existing search results (pagination)
+  Future<void> searchOfflineContent(
+    String query, {
+    bool loadMore = false,
+  }) async {
     try {
       if (query.trim().isEmpty) {
         emit(const OfflineSearchInitial());
         return;
       }
 
-      logInfo('Searching offline content for: $query');
-      emit(const OfflineSearchLoading());
+      const pageSize = 20;
 
-      // PRIMARY: Search from database (fast, synced data)
+      // If loading more, check current state
+      if (loadMore) {
+        final currentState = state;
+        if (currentState is! OfflineSearchLoaded) {
+          logInfo('Cannot load more: not in loaded state');
+          return;
+        }
+        if (!currentState.hasMore) {
+          logInfo('No more search results to load');
+          return;
+        }
+        if (currentState.isLoadingMore) {
+          logInfo('Already loading more search results');
+          return;
+        }
+        
+        // Verify we're still searching the same query
+        if (currentState.query != query) {
+          logInfo('Query changed, ignoring load more');
+          return;
+        }
+
+        // Show loading indicator
+        emit(currentState.copyWith(isLoadingMore: true));
+      } else {
+        // Initial search
+        logInfo('Searching offline content for: $query');
+        emit(const OfflineSearchLoading());
+      }
+
+      // Calculate offset based on current page
+      final offset = loadMore && state is OfflineSearchLoaded
+          ? (state as OfflineSearchLoaded).results.length
+          : 0;
+
+      // Search from database with pagination
       final dbResults = await _userDataRepository.searchDownloads(
+        query: query,
+        state: DownloadState.completed,
+        limit: pageSize,
+        offset: offset,
+      );
+
+      if (isClosed) return;
+
+      // Get total count for pagination
+      final totalCount = await _userDataRepository.getSearchCount(
         query: query,
         state: DownloadState.completed,
       );
 
-      if (dbResults.isNotEmpty) {
-        logInfo('Found ${dbResults.length} results from database');
+      // Convert database results to Content objects
+      final newContents = <Content>[];
+      final newOfflineSizes = <String, String>{};
+      int newStorageUsage = 0;
 
-        // Convert database results to Content objects
-        final contents = <Content>[];
-        final offlineSizes = <String, String>{};
-        int totalStorageUsage = 0;
+      for (final row in dbResults) {
+        if (isClosed) return;
+        
+        final contentId = row['id'] as String;
+        final sourceId = row['source_id'] as String? ?? 'nhentai';
+        final title = row['title'] as String? ?? contentId;
+        // coverUrl from DB not used - we use local first image instead
+        final fileSize = row['file_size'] as int? ?? 0;
+        final totalPages = row['total_pages'] as int? ?? 0;
+        final downloadPath = row['download_path'] as String?;
 
-        for (final row in dbResults) {
-          final contentId = row['id'] as String;
-          final sourceId = row['source_id'] as String? ?? 'nhentai';
-          final title = row['title'] as String? ?? contentId;
-          final coverUrl = row['cover_url'] as String? ?? '';
-          final fileSize = row['file_size'] as int? ?? 0;
-          final totalPages = row['total_pages'] as int? ?? 0;
+        // OPTIMIZED: Get only first image for cover (fast pattern matching)
+        // Full image URLs will be loaded on-demand when entering reader
+        final firstImagePath = await _offlineContentManager.getOfflineFirstImagePath(
+          contentId,
+          downloadPath: downloadPath,
+        );
 
-          // Get offline image URLs from OfflineContentManager
-          final imageUrls =
-              await _offlineContentManager.getOfflineImageUrls(contentId);
+        if (firstImagePath == null) continue; // Skip if no images found
 
-          if (imageUrls.isEmpty) continue; // Skip if no images found
+        newContents.add(Content(
+          sourceId: sourceId,
+          id: contentId,
+          title: title,
+          coverUrl: firstImagePath,  // Use local first image as cover
+          tags: [],
+          artists: [],
+          characters: [],
+          parodies: [],
+          groups: [],
+          language: '',
+          pageCount: totalPages,
+          imageUrls: [],  // Empty - loaded on-demand in reader
+          uploadDate: DateTime.now(),
+          favorites: 0,
+          englishTitle: null,
+          japaneseTitle: null,
+        ));
 
-          contents.add(Content(
-            sourceId: sourceId,
-            id: contentId,
-            title: title,
-            coverUrl: imageUrls.isNotEmpty ? imageUrls.first : coverUrl,
-            tags: [],
-            artists: [],
-            characters: [],
-            parodies: [],
-            groups: [],
-            language: '',
-            pageCount: totalPages > 0 ? totalPages : imageUrls.length,
-            imageUrls: imageUrls,
-            uploadDate: DateTime.now(),
-            favorites: 0,
-            englishTitle: null,
-            japaneseTitle: null,
-          ));
-
-          offlineSizes[contentId] =
-              OfflineContentManager.formatStorageSize(fileSize);
-          totalStorageUsage += fileSize;
-        }
-
-        if (contents.isNotEmpty) {
-          emit(OfflineSearchLoaded(
-            query: query,
-            results: contents,
-            totalResults: contents.length,
-            offlineSizes: offlineSizes,
-            storageUsage: totalStorageUsage,
-            formattedStorageUsage:
-                OfflineContentManager.formatStorageSize(totalStorageUsage),
-          ));
-          logInfo(
-              'Loaded ${contents.length} offline content from database search');
-          return;
-        }
+        newOfflineSizes[contentId] =
+            OfflineContentManager.formatStorageSize(fileSize);
+        newStorageUsage += fileSize;
       }
 
-      // FALLBACK: Search from filesystem (for unsynced content)
-      logInfo('Database search empty, falling back to filesystem');
-      String? searchPath = backupPath;
-      if (searchPath == null) {
-        final nhasixPath = await findNhasixBackupFolder();
-        if (nhasixPath == null) {
-          emit(OfflineSearchEmpty(query: query));
-          return;
-        }
-        searchPath = nhasixPath;
+      if (isClosed) return;
+
+      // Merge with existing results if loading more
+      final List<Content> finalResults;
+      final Map<String, String> finalSizes;
+      final int finalStorageUsage;
+
+      if (loadMore && state is OfflineSearchLoaded) {
+        final currentState = state as OfflineSearchLoaded;
+        finalResults = [...currentState.results, ...newContents];
+        finalSizes = {...currentState.offlineSizes, ...newOfflineSizes};
+        finalStorageUsage = currentState.storageUsage + newStorageUsage;
+      } else {
+        finalResults = newContents;
+        finalSizes = newOfflineSizes;
+        finalStorageUsage = newStorageUsage;
       }
 
-      final contents = await _offlineContentManager
-          .searchOfflineContentFromFileSystem(searchPath, query);
+      // Calculate pagination metadata
+      final currentPage = (finalResults.length / pageSize).ceil();
+      final totalPages = (totalCount / pageSize).ceil();
+      final hasMore = finalResults.length < totalCount;
 
-      if (contents.isEmpty) {
+      if (finalResults.isEmpty && offset == 0) {
         emit(OfflineSearchEmpty(query: query));
         return;
       }
 
-      // Calculate sizes for filesystem results
-      final offlineSizes = await _calculateContentSizes(contents);
-      int totalStorageUsage = 0;
-      for (final content in contents) {
-        if (content.imageUrls.isNotEmpty) {
-          try {
-            final file = File(content.imageUrls.first);
-            final dirPath = file.parent.path;
-            totalStorageUsage += await _getDirectorySize(Directory(dirPath));
-          } catch (_) {}
-        }
-      }
-
       emit(OfflineSearchLoaded(
         query: query,
-        results: contents,
-        totalResults: contents.length,
-        offlineSizes: offlineSizes,
-        storageUsage: totalStorageUsage,
+        results: finalResults,
+        totalResults: totalCount,
+        offlineSizes: finalSizes,
+        storageUsage: finalStorageUsage,
         formattedStorageUsage:
-            OfflineContentManager.formatStorageSize(totalStorageUsage),
+            OfflineContentManager.formatStorageSize(finalStorageUsage),
+        currentPage: currentPage,
+        totalPages: totalPages,
+        hasMore: hasMore,
+        isLoadingMore: false,
       ));
 
       logInfo(
-          'Found ${contents.length} offline content matches from filesystem');
+        'Search complete: ${finalResults.length}/$totalCount results for "$query" '
+        '(page $currentPage/$totalPages, hasMore: $hasMore)'
+      );
     } catch (e, stackTrace) {
+      if (isClosed) return;
       handleError(e, stackTrace, 'search offline content');
-      emit(OfflineSearchError(
-        message: 'Failed to search offline content: ${e.toString()}',
-        query: query,
-      ));
+      
+      // If we were loading more, restore previous state
+      if (loadMore && state is OfflineSearchLoaded) {
+        emit((state as OfflineSearchLoaded).copyWith(isLoadingMore: false));
+      } else {
+        emit(OfflineSearchError(
+          message: 'Failed to search offline content: ${e.toString()}',
+          query: query,
+        ));
+      }
     }
   }
 
@@ -228,22 +273,73 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
+  /// Load more search results (pagination)
+  /// 
+  /// This is a convenience method for infinite scroll in search
+  Future<void> loadMoreSearchResults() async {
+    final currentState = state;
+    if (currentState is OfflineSearchLoaded && currentState.query.isNotEmpty) {
+      await searchOfflineContent(currentState.query, loadMore: true);
+    }
+  }
+
   /// Get all offline content from DATABASE (primary source)
   /// Falls back to file scan only if no database entries exist
-  Future<void> getAllOfflineContent({String? backupPath}) async {
+  /// 
+  /// [loadMore] - If true, appends to existing results (pagination)
+  /// [backupPath] - Optional custom backup path
+  Future<void> getAllOfflineContent({
+    String? backupPath,
+    bool loadMore = false,
+  }) async {
     try {
-      logInfo('Loading all offline content from database');
-      emit(const OfflineSearchLoading());
+      // Page size constant (20 items per page)
+      const pageSize = 20;
+      
+      // If loading more, check current state
+      if (loadMore) {
+        final currentState = state;
+        if (currentState is! OfflineSearchLoaded) {
+          logInfo('Cannot load more: not in loaded state');
+          return;
+        }
+        if (!currentState.hasMore) {
+          logInfo('No more content to load');
+          return;
+        }
+        if (currentState.isLoadingMore) {
+          logInfo('Already loading more content');
+          return;
+        }
+        
+        // Show loading indicator
+        emit(currentState.copyWith(isLoadingMore: true));
+      } else {
+        // Initial load
+        logInfo('Loading all offline content from database (page 1)');
+        emit(const OfflineSearchLoading());
+      }
 
-      // Load completed downloads from database
+      // Calculate offset based on current page
+      final offset = loadMore && state is OfflineSearchLoaded
+          ? (state as OfflineSearchLoaded).results.length
+          : 0;
+
+      // Load page from database
       final downloads = await _userDataRepository.getAllDownloads(
         state: DownloadState.completed,
-        limit: AppLimits.maxBatchSize,
+        limit: pageSize,
+        offset: offset,
       );
 
       if (isClosed) return;
 
-      if (downloads.isEmpty) {
+      // Get total count for pagination
+      final totalCount = await _userDataRepository.getDownloadsCount(
+        state: DownloadState.completed,
+      );
+
+      if (downloads.isEmpty && offset == 0) {
         // Fallback to file scan if database is empty (first-time setup)
         logInfo('No downloads in database, falling back to file scan');
         await _loadFromFileSystem(backupPath);
@@ -251,68 +347,105 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       }
 
       // Convert DownloadStatus to Content objects
-      final contents = <Content>[];
-      final offlineSizes = <String, String>{};
-      int totalStorageUsage = 0;
+      final newContents = <Content>[];
+      final newOfflineSizes = <String, String>{};
+      int newStorageUsage = 0;
 
       for (final download in downloads) {
         if (isClosed) return;
-        final content = await _offlineContentManager
-            .createOfflineContent(download.contentId);
-        if (content != null) {
-          contents.add(content);
+        
+        // OPTIMIZED: Get only first image for cover (fast pattern matching)
+        // Full image URLs will be loaded on-demand when entering reader
+        final firstImagePath = await _offlineContentManager.getOfflineFirstImagePath(
+          download.contentId,
+          downloadPath: download.downloadPath,
+        );
+        
+        if (firstImagePath == null) continue; // Skip if no images found
+        
+        newContents.add(Content(
+          sourceId: download.sourceId ?? 'nhentai',  // Fallback to nhentai
+          id: download.contentId,
+          title: download.title ?? download.contentId,
+          coverUrl: firstImagePath,  // Use local first image as cover
+          tags: [],
+          artists: [],
+          characters: [],
+          parodies: [],
+          groups: [],
+          language: '',
+          pageCount: download.totalPages,
+          imageUrls: [],  // Empty - loaded on-demand in reader
+          uploadDate: DateTime.now(),
+          favorites: 0,
+          englishTitle: download.title,  // Store original title
+          japaneseTitle: null,
+        ));
 
-          // Use DB size if available, otherwise calculate from file system
-          if (download.fileSize > 0) {
-            offlineSizes[download.contentId] = download.formattedFileSize;
-            totalStorageUsage += download.fileSize;
-          } else {
-            // Fallback: calculate size from directory
-            if (content.imageUrls.isNotEmpty) {
-              try {
-                final firstImagePath = content.imageUrls.first;
-                final file = File(firstImagePath);
-                final dirPath = file.parent.path;
-                final sizeInBytes = await _getDirectorySize(Directory(dirPath));
-                offlineSizes[content.id] =
-                    OfflineContentManager.formatStorageSize(sizeInBytes);
-                totalStorageUsage += sizeInBytes;
-              } catch (e) {
-                // Keep 0 if calculation fails
-                offlineSizes[download.contentId] = download.formattedFileSize;
-              }
-            } else {
-              offlineSizes[download.contentId] = download.formattedFileSize;
-            }
-          }
-        }
+        // Use DB size (already available)
+        newOfflineSizes[download.contentId] = download.formattedFileSize;
+        newStorageUsage += download.fileSize;
       }
 
       if (isClosed) return;
 
-      if (contents.isEmpty) {
+      // Merge with existing results if loading more
+      final List<Content> finalResults;
+      final Map<String, String> finalSizes;
+      final int finalStorageUsage;
+      
+      if (loadMore && state is OfflineSearchLoaded) {
+        final currentState = state as OfflineSearchLoaded;
+        finalResults = [...currentState.results, ...newContents];
+        finalSizes = {...currentState.offlineSizes, ...newOfflineSizes};
+        finalStorageUsage = currentState.storageUsage + newStorageUsage;
+      } else {
+        finalResults = newContents;
+        finalSizes = newOfflineSizes;
+        finalStorageUsage = newStorageUsage;
+      }
+
+      // Calculate pagination metadata
+      final currentPage = (finalResults.length / pageSize).ceil();
+      final totalPages = (totalCount / pageSize).ceil();
+      final hasMore = finalResults.length < totalCount;
+
+      if (finalResults.isEmpty) {
         emit(const OfflineSearchEmpty(query: ''));
         return;
       }
 
       emit(OfflineSearchLoaded(
         query: '',
-        results: contents,
-        totalResults: contents.length,
-        offlineSizes: offlineSizes,
-        storageUsage: totalStorageUsage,
+        results: finalResults,
+        totalResults: totalCount,
+        offlineSizes: finalSizes,
+        storageUsage: finalStorageUsage,
         formattedStorageUsage:
-            OfflineContentManager.formatStorageSize(totalStorageUsage),
+            OfflineContentManager.formatStorageSize(finalStorageUsage),
+        currentPage: currentPage,
+        totalPages: totalPages,
+        hasMore: hasMore,
+        isLoadingMore: false,
       ));
 
-      logInfo('Loaded ${contents.length} offline content items from database');
+      logInfo(
+        'Loaded ${finalResults.length}/$totalCount offline content items '
+        '(page $currentPage/$totalPages, hasMore: $hasMore)'
+      );
     } catch (e, stackTrace) {
       if (isClosed) return;
       handleError(e, stackTrace, 'get all offline content');
-      emit(const OfflineSearchError(
-        message: 'Failed to load offline content',
-        query: '',
-      ));
+      
+      // If we were loading more, restore previous state
+      if (loadMore && state is OfflineSearchLoaded) {
+        emit((state as OfflineSearchLoaded).copyWith(isLoadingMore: false));
+      } else {
+        emit(const OfflineSearchError(
+          message: 'Failed to load offline content',
+          query: '',
+        ));
+      }
     }
   }
 
@@ -377,6 +510,13 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       logInfo('Auto-sync failed (non-blocking): $e');
       // Don't throw - content is already displayed, sync is best-effort
     }
+  }
+
+  /// Load more offline content (pagination)
+  /// 
+  /// This is a convenience method that calls getAllOfflineContent with loadMore = true
+  Future<void> loadMoreContent() async {
+    await getAllOfflineContent(loadMore: true);
   }
 
   /// Force reload content from database

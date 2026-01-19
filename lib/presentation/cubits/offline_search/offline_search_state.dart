@@ -30,6 +30,11 @@ class OfflineSearchLoaded extends OfflineSearchState {
     this.offlineSizes = const {},
     this.storageUsage = 0,
     this.formattedStorageUsage = '0 B',
+    // NEW: Pagination fields
+    this.currentPage = 1,
+    this.totalPages = 1,
+    this.hasMore = false,
+    this.isLoadingMore = false,
   });
 
   final String query;
@@ -38,6 +43,12 @@ class OfflineSearchLoaded extends OfflineSearchState {
   final Map<String, String> offlineSizes;
   final int storageUsage;
   final String formattedStorageUsage;
+  
+  // NEW: Pagination fields
+  final int currentPage;
+  final int totalPages;
+  final bool hasMore;
+  final bool isLoadingMore;
 
   @override
   List<Object?> get props => [
@@ -47,6 +58,10 @@ class OfflineSearchLoaded extends OfflineSearchState {
         offlineSizes,
         storageUsage,
         formattedStorageUsage,
+        currentPage,
+        totalPages,
+        hasMore,
+        isLoadingMore,
       ];
 
   /// Check if this is a search result or all content
@@ -70,6 +85,33 @@ class OfflineSearchLoaded extends OfflineSearchState {
     } else {
       return '$totalResults items found';
     }
+  }
+  
+  /// Create a copy with updated fields
+  OfflineSearchLoaded copyWith({
+    String? query,
+    List<Content>? results,
+    int? totalResults,
+    Map<String, String>? offlineSizes,
+    int? storageUsage,
+    String? formattedStorageUsage,
+    int? currentPage,
+    int? totalPages,
+    bool? hasMore,
+    bool? isLoadingMore,
+  }) {
+    return OfflineSearchLoaded(
+      query: query ?? this.query,
+      results: results ?? this.results,
+      totalResults: totalResults ?? this.totalResults,
+      offlineSizes: offlineSizes ?? this.offlineSizes,
+      storageUsage: storageUsage ?? this.storageUsage,
+      formattedStorageUsage: formattedStorageUsage ?? this.formattedStorageUsage,
+      currentPage: currentPage ?? this.currentPage,
+      totalPages: totalPages ?? this.totalPages,
+      hasMore: hasMore ?? this.hasMore,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+    );
   }
 }
 

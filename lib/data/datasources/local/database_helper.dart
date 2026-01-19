@@ -431,6 +431,8 @@ class DatabaseHelper {
     batch.execute('CREATE INDEX idx_downloads_state ON downloads (state)');
     batch.execute(
         'CREATE INDEX idx_downloads_start_time ON downloads (start_time DESC)');
+    batch.execute(
+        'CREATE INDEX idx_downloads_state_start_time ON downloads (state, start_time DESC)'); // NEW: For pagination
     batch.execute('CREATE INDEX idx_downloads_source ON downloads (source_id)');
 
     // History indexes

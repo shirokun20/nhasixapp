@@ -228,8 +228,10 @@ class LocalDataSource {
   /// Get all downloads with optional state filtering
   Future<List<DownloadStatusModel>> getAllDownloads({
     DownloadState? state,
-    int page = 1,
     int limit = 20,
+    int offset = 0,
+    String orderBy = 'created_at',
+    bool descending = true,
   }) async {
     try {
       final db = await _getSafeDatabase();
@@ -237,8 +239,6 @@ class LocalDataSource {
         _logger.e('Database not available, returning empty downloads');
         return [];
       }
-
-      final offset = (page - 1) * limit;
 
       String whereClause = '1=1';
       List<dynamic> whereArgs = [];
@@ -248,11 +248,16 @@ class LocalDataSource {
         whereArgs.add(state.name);
       }
 
+      // Map orderBy field names to actual column names
+      final columnName = _mapOrderByField(orderBy);
+      final orderDirection = descending ? 'DESC' : 'ASC';
+      final orderByClause = '$columnName $orderDirection';
+
       final result = await db.query(
         'downloads',
         where: whereClause,
         whereArgs: whereArgs.isNotEmpty ? whereArgs : null,
-        orderBy: 'start_time DESC',
+        orderBy: orderByClause,
         limit: limit,
         offset: offset,
       );
@@ -261,6 +266,20 @@ class LocalDataSource {
     } catch (e) {
       _logger.e('Error getting all downloads: $e');
       return [];
+    }
+  }
+
+  /// Map orderBy field to actual database column
+  String _mapOrderByField(String orderBy) {
+    switch (orderBy) {
+      case 'created_at':
+        return 'start_time'; // downloads table uses start_time
+      case 'updated_at':
+        return 'end_time';
+      case 'content_id':
+        return 'id';
+      default:
+        return 'start_time'; // Default to start_time
     }
   }
 
@@ -310,11 +329,12 @@ class LocalDataSource {
     }
   }
 
-  /// Search downloads by query (id, title, or source_id)
+  /// Search downloads by query (id, title, or source_id) with pagination
   Future<List<Map<String, dynamic>>> searchDownloads({
     required String query,
     DownloadState? state,
-    int limit = 100,
+    int limit = 20,
+    int offset = 0,
   }) async {
     try {
       final db = await _getSafeDatabase();
@@ -340,13 +360,45 @@ class LocalDataSource {
         whereArgs: whereArgs,
         orderBy: 'start_time DESC',
         limit: limit,
+        offset: offset,
       );
 
-      _logger.d('Search downloads found ${result.length} results for: $query');
+      _logger.d('Search downloads found ${result.length} results for: $query (offset: $offset)');
       return result;
     } catch (e) {
       _logger.e('Error searching downloads: $e');
       return [];
+    }
+  }
+  
+  /// Get search results count
+  Future<int> getSearchCount({
+    required String query,
+    DownloadState? state,
+  }) async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) return 0;
+
+      final queryPattern = '%${query.toLowerCase()}%';
+
+      String whereClause =
+          '(LOWER(id) LIKE ? OR LOWER(title) LIKE ? OR LOWER(source_id) LIKE ?)';
+      List<dynamic> whereArgs = [queryPattern, queryPattern, queryPattern];
+
+      if (state != null) {
+        whereClause = '$whereClause AND state = ?';
+        whereArgs.add(state.name);
+      }
+
+      final result = await db.rawQuery(
+        'SELECT COUNT(*) as count FROM downloads WHERE $whereClause',
+        whereArgs,
+      );
+      return result.first['count'] as int;
+    } catch (e) {
+      _logger.e('Error getting search count: $e');
+      return 0;
     }
   }
 

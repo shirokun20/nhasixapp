@@ -59,13 +59,17 @@ abstract class UserDataRepository {
   /// Get all download statuses
   ///
   /// [state] - Filter by download state (all states if null)
-  /// [page] - Page number for pagination
-  /// [limit] - Items per page
+  /// [limit] - Maximum items to return (default: 20)
+  /// [offset] - Number of items to skip for pagination (default: 0)
+  /// [orderBy] - Field to sort by: 'created_at', 'updated_at', 'content_id' (default: 'created_at')
+  /// [descending] - Sort in descending order if true (default: true - newest first)
   /// Returns list of download statuses
   Future<List<DownloadStatus>> getAllDownloads({
     DownloadState? state,
-    int page = 1,
     int limit = 20,
+    int offset = 0,
+    String orderBy = 'created_at',
+    bool descending = true,
   });
 
   /// Delete download status
@@ -73,21 +77,34 @@ abstract class UserDataRepository {
   /// [id] - Content ID to delete
   Future<void> deleteDownloadStatus(String id);
 
-  /// Get downloads count
+  /// Get downloads count (for pagination)
   ///
   /// [state] - Filter by download state (all states if null)
-  /// Returns total number of downloads
+  /// Returns total number of downloads matching the state filter
   Future<int> getDownloadsCount({DownloadState? state});
 
   /// Search downloads by query
   ///
   /// [query] - Search query to match against content ID, title, or source ID
   /// [state] - Filter by download state (completed by default for offline search)
+  /// [limit] - Maximum items to return (default: 20)
+  /// [offset] - Number of items to skip for pagination (default: 0)
   /// Returns list of matching download records as maps with id, title, source_id, etc.
   Future<List<Map<String, dynamic>>> searchDownloads({
     required String query,
     DownloadState? state,
-    int limit = 100,
+    int limit = 20,
+    int offset = 0,
+  });
+  
+  /// Get search results count
+  ///
+  /// [query] - Search query to match against content ID, title, or source ID
+  /// [state] - Filter by download state
+  /// Returns total number of downloads matching the search query
+  Future<int> getSearchCount({
+    required String query,
+    DownloadState? state,
   });
 
   // ==================== HISTORY ====================

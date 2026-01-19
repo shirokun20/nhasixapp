@@ -345,28 +345,69 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
           Expanded(
             child: BlocBuilder<SettingsCubit, SettingsState>(
               builder: (context, settingsState) {
-                return GridView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  gridDelegate:
-                      ResponsiveGridDelegate.createStandardGridDelegate(
-                    context,
-                    context.read<SettingsCubit>(),
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
-                  itemCount: state.results.length,
-                  itemBuilder: (context, index) {
-                    final content = state.results[index];
-                    return ContentCard(
-                      content: content,
-                      onTap: () =>
-                          context.push('/reader/${content.id}', extra: content),
-                      onLongPress: () => _showContentActions(context, content),
-                      showOfflineIndicator: true,
-                      isHighlighted: false,
-                      offlineSize: state.offlineSizes[content.id],
-                    );
+                // Wrap GridView with NotificationListener for infinite scroll
+                return NotificationListener<ScrollNotification>(
+                  onNotification: (scrollInfo) {
+                    // Trigger load more when user scrolls to 80% of content
+                    if (scrollInfo.metrics.pixels >=
+                        scrollInfo.metrics.maxScrollExtent * 0.8) {
+                      if (state.hasMore && !state.isLoadingMore) {
+                        _offlineSearchCubit.loadMoreContent();
+                      }
+                    }
+                    return false;
                   },
+                  child: GridView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    gridDelegate:
+                        ResponsiveGridDelegate.createStandardGridDelegate(
+                      context,
+                      context.read<SettingsCubit>(),
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    // Add 1 for loading indicator if loading more
+                    itemCount: state.results.length + 
+                        (state.isLoadingMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      // Show loading indicator at bottom if loading more
+                      if (index == state.results.length) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 24),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircularProgressIndicator(
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Loading more...',
+                                  style: TextStyleConst.bodySmall.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                      
+                      final content = state.results[index];
+                      return ContentCard(
+                        content: content,
+                        onTap: () =>
+                            context.push('/reader/${content.id}', extra: content),
+                        onLongPress: () => _showContentActions(context, content),
+                        showOfflineIndicator: true,
+                        isHighlighted: false,
+                        offlineSize: state.offlineSizes[content.id],
+                      );
+                    },
+                  ),
                 );
               },
             ),

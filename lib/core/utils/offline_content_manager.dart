@@ -231,6 +231,52 @@ class OfflineContentManager {
     }
   }
 
+  /// Get offline first image path (fast, for cover display)
+  /// 
+  /// This method constructs the path to the first image without scanning
+  /// the entire directory, making it much faster for grid/list displays.
+  /// 
+  /// Tries common patterns: 001.jpg, 001.png, 001.webp, 1.jpg
+  Future<String?> getOfflineFirstImagePath(String contentId, {String? downloadPath}) async {
+    try {
+      final contentPath = downloadPath ?? await getOfflineContentPath(contentId);
+      if (contentPath == null) return null;
+
+      // Try images subdirectory first (new structure)
+      final imagesDir = path.join(contentPath, 'images');
+      
+      // Common first page patterns
+      final patterns = [
+        '001.jpg', '001.png', '001.webp', '001.jpeg',
+        '1.jpg', '1.png', '1.webp', '1.jpeg',
+        '0001.jpg', '0001.png', '0001.webp',
+      ];
+
+      // Try new structure first
+      for (final pattern in patterns) {
+        final imagePath = path.join(imagesDir, pattern);
+        if (await File(imagePath).exists()) {
+          return imagePath;
+        }
+      }
+
+      // Fallback: try old structure (images directly in content folder)
+      for (final pattern in patterns) {
+        final imagePath = path.join(contentPath, pattern);
+        if (await File(imagePath).exists()) {
+          return imagePath;
+        }
+      }
+
+      // Last resort: scan directory (but only return first)
+      final imageUrls = await getOfflineImageUrls(contentId);
+      return imageUrls.isNotEmpty ? imageUrls.first : null;
+    } catch (e) {
+      _logger.e('Error getting first offline image for $contentId: $e');
+      return null;
+    }
+  }
+
   /// Check if specific image is downloaded
   Future<bool> isImageDownloaded(String imageUrl) async {
     try {
