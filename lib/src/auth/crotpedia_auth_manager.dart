@@ -73,6 +73,27 @@ class CrotpediaAuthManager {
   bool get isLoggedIn => _state == CrotpediaAuthState.loggedIn;
   String? get username => _username;
   String? get email => _email;
+  
+  /// Get cookies for specific domain as Map for MethodChannel
+  /// Used to pass authentication cookies to native download layer
+  Future<Map<String, String>> getCookiesForDomain(String baseUrl) async {
+    try {
+      final uri = Uri.parse(baseUrl);
+      final cookies = await _cookieJar.loadForRequest(uri);
+      
+      if (cookies.isEmpty) {
+        return {};
+      }
+      
+      // Convert List<Cookie> to Map<String, String> for MethodChannel
+      return Map.fromEntries(
+        cookies.map((cookie) => MapEntry(cookie.name, cookie.value))
+      );
+    } catch (e) {
+      // Log error but don't throw - return empty map to allow graceful fallback
+      return {};
+    }
+  }
 
   // ============ Login Flow (User Provides Credentials) ============
 
