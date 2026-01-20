@@ -16,14 +16,23 @@ class NativeDownloadManager(private val context: Context) {
         contentId: String,
         sourceId: String,
         imageUrls: List<String>,
-        destinationPath: String
+        destinationPath: String,
+        cookies: Map<String, String>? = null  // NEW: Optional cookies for authentication
     ): String {
+        // NEW: Convert cookies Map to JSON string for WorkManager Data
+        val cookiesJson = cookies?.let { map ->
+            map.entries.joinToString(",", "{", "}") { (key, value) ->
+                "\"$key\":\"$value\""
+            }
+        }
+        
         val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
             .setInputData(workDataOf(
                 DownloadWorker.KEY_CONTENT_ID to contentId,
                 DownloadWorker.KEY_SOURCE_ID to sourceId,
                 DownloadWorker.KEY_IMAGE_URLS to imageUrls.toTypedArray(),
-                DownloadWorker.KEY_DESTINATION_PATH to destinationPath
+                DownloadWorker.KEY_DESTINATION_PATH to destinationPath,
+                DownloadWorker.KEY_COOKIES to cookiesJson  // NEW: Pass cookies as JSON
             ))
             .setConstraints(Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)

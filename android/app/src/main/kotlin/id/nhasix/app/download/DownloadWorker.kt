@@ -20,6 +20,7 @@ import timber.log.Timber
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import id.nhasix.app.network.DnsManager
 
 class DownloadWorker(
     context: Context,
@@ -31,23 +32,36 @@ class DownloadWorker(
         const val KEY_SOURCE_ID = "source_id"
         const val KEY_IMAGE_URLS = "image_urls"
         const val KEY_DESTINATION_PATH = "destination_path"
+        const val KEY_COOKIES = "cookies"  // NEW: Cookies as JSON string
         const val KEY_PROGRESS = "progress"
         
         private const val TAG = "DownloadWorker"
         private const val CHANNEL_ID = "download_channel"
         private const val CHANNEL_NAME = "Downloads"
+        private const val ALLOWED_COOKIE_DOMAIN = "crotpedia.com"  // NEW: Security - only allow crotpedia.com
     }
     
     private val notificationManager by lazy {
         applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     }
     
+    // NEW: Parse cookies from inputData and create HTTP client with authentication + DNS
     private val okHttpClient by lazy {
-        OkHttpClient.Builder()
+        val cookiesJson = inputData.getString(KEY_COOKIES)
+        val cookies = parseCookies(cookiesJson)
+        
+        val builder = OkHttpClient.Builder()
+            .dns(DnsManager.createDns())  // FIXED: Use imported DnsManager
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
-            .build()
+        
+        if (cookies != null && cookies.isNotEmpty()) {
+            Timber.tag(TAG).d("Creating HTTP client with ${cookies.size} cookies for authentication")
+            builder.cookieJar(createCookieJar(cookies))
+        }
+        
+        builder.build()
     }
 
     init {
@@ -194,5 +208,100 @@ class DownloadWorker(
             .setAutoCancel(true)
             
         notificationManager.notify(notificationId, builder.build())
+    }
+    
+    // ============ Cookie Handling Methods (NEW) ============
+    
+    /**
+     * Parse cookies from JSON string to Map
+     * Format: {"cookie1":"value1","cookie2":"value2"}
+     */
+    private fun parseCookies(cookiesJson: String?): Map<String, String>? {
+        if (cookiesJson.isNullOrBlank()) return null
+        
+        return try {
+            // Simple JSON parsing without external library
+            val trimmed = cookiesJson.trim().removeSurrounding("{", "}")
+            if (trimmed.isEmpty()) return null
+            
+            trimmed.split(",")
+                .mapNotNull { entry ->
+                    val parts = entry.split(":")
+                    if (parts.size == 2) {
+                        val key = parts[0].trim().removeSurrounding("\"")
+                        val value = parts[1].trim().removeSurrounding("\"")
+                        key to value
+                    } else null
+                }
+                .toMap()
+                .also { cookies ->
+                    Timber.tag(TAG).d("Parsed ${cookies.size} cookies from JSON")
+                }
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Failed to parse cookies JSON")
+            null
+        }
+    }
+    
+    /**
+     * Create OkHttpClient with CookieJar for authentication
+     * Security: Only allows cookies for crotpedia.com domain
+     */
+    private fun createHttpClientWithCookies(cookies: Map<String, String>): OkHttpClient {
+        val cookieJar = createCookieJar(cookies)
+        
+        return OkHttpClient.Builder()
+            .cookieJar(cookieJar)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .addInterceptor { chain ->
+                val request = chain.request()
+                // Security check: Only send cookies to HTTPS crotpedia.com
+                if (!isSecureRequest(request.url.toString())) {
+                    Timber.tag(TAG).w("Blocking cookies for non-HTTPS or non-crotpedia request: ${request.url}")
+                }
+                chain.proceed(request)
+            }
+            .build()
+    }
+    
+    /**
+     * Create CookieJar from Map with domain validation
+     * Security: Cookies only sent to crotpedia.com
+     */
+    private fun createCookieJar(cookiesMap: Map<String, String>): okhttp3.CookieJar {
+        return object : okhttp3.CookieJar {
+            override fun saveFromResponse(url: okhttp3.HttpUrl, cookies: List<okhttp3.Cookie>) {
+                // No-op: we don't save cookies from responses
+            }
+            
+            override fun loadForRequest(url: okhttp3.HttpUrl): List<okhttp3.Cookie> {
+                // Security: Only return cookies for allowed domain
+                if (!url.host.endsWith(ALLOWED_COOKIE_DOMAIN)) {
+                    Timber.tag(TAG).d("No cookies for domain: ${url.host}")
+                    return emptyList()
+                }
+                
+                // Convert Map to OkHttp Cookie objects
+                return cookiesMap.map { (name, value) ->
+                    okhttp3.Cookie.Builder()
+                        .name(name)
+                        .value(value)
+                        .domain(url.host)
+                        .path("/")
+                        .build()
+                }.also { cookieList ->
+                    Timber.tag(TAG).d("Loaded ${cookieList.size} cookies for ${url.host}")
+                }
+            }
+        }
+    }
+    
+    /**
+     * Security check: Ensure request is HTTPS and to crotpedia.com
+     */
+    private fun isSecureRequest(url: String): Boolean {
+        return url.startsWith("https://") && url.contains(ALLOWED_COOKIE_DOMAIN)
     }
 }

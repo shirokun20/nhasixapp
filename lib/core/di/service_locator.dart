@@ -24,6 +24,8 @@ import 'package:nhasixapp/core/network/http_client_manager.dart';
 import 'package:nhasixapp/core/utils/tag_data_manager.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/network/dns_settings_service.dart';
+import 'package:nhasixapp/core/network/dns_resolver.dart';  // NEW
 
 // Data Sources
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
@@ -132,9 +134,12 @@ void _setupCore() {
         ),
       ));
 
-  // HTTP Client (Dio) - Using singleton manager to prevent disposal issues
+  // HTTP Client (Dio) - Using singleton manager with DNS-over-HTTPS support
   getIt.registerLazySingleton<Dio>(() {
-    return HttpClientManager.initializeHttpClient(logger: getIt<Logger>());
+    return HttpClientManager.initializeHttpClient(
+      logger: getIt<Logger>(),
+      dnsResolver: getIt<DnsResolver>(),  // NEW: Enable DoH for all requests
+    );
   });
 
   // Cache Manager
@@ -147,6 +152,19 @@ void _setupCore() {
   // Remote Config Service
   getIt.registerLazySingleton<RemoteConfigService>(() => RemoteConfigService(
         dio: getIt<Dio>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // DNS Settings Service
+  getIt.registerLazySingleton<DnsSettingsService>(() => DnsSettingsService(
+        prefs: getIt<SharedPreferences>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // DNS Resolver (NEW)
+  getIt.registerLazySingleton<DnsResolver>(() => DnsResolver(
+        dio: getIt<Dio>(),
+        settingsService: getIt<DnsSettingsService>(),
         logger: getIt<Logger>(),
       ));
 
@@ -510,6 +528,7 @@ void _setupBlocs() {
         remoteConfigService: getIt<RemoteConfigService>(),
         nativeDownloadService: getIt<NativeDownloadService>(),
         appLocalizations: null, // Initialized during main setup
+        crotpediaAuthManager: getIt<CrotpediaAuthManager>(),  // NEW: Inject for cookie extraction
       ));
 
   // Register other BLoCs when implemented

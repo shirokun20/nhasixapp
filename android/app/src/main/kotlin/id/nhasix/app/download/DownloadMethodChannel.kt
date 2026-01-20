@@ -142,8 +142,18 @@ class DownloadMethodChannel(
                 ?: throw IllegalArgumentException("imageUrls is required")
             val destinationPath = call.argument<String>("destinationPath")
                 ?: throw IllegalArgumentException("destinationPath is required")
+            
+            // NEW: Extract cookies (optional, for authentication)
+            @Suppress("UNCHECKED_CAST")
+            val cookies = call.argument<Map<String, String>>("cookies")
 
-            val workId = downloadManager.queueDownload(contentId, sourceId, imageUrls, destinationPath)
+            val workId = downloadManager.queueDownload(
+                contentId, 
+                sourceId, 
+                imageUrls, 
+                destinationPath,
+                cookies  // NEW: Pass cookies to download manager
+            )
             result.success(workId)
         } catch (e: Exception) {
             result.error("DOWNLOAD_ERROR", e.message, e.stackTraceToString())

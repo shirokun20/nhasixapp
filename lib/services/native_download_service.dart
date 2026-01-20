@@ -12,6 +12,7 @@ class NativeDownloadService {
     required String sourceId,
     required List<String> imageUrls,
     required String destinationPath,
+    Map<String, String>? cookies,  // NEW: Optional cookies for authentication
   }) async {
     try {
       final workId = await _channel.invokeMethod<String>('startDownload', {
@@ -19,6 +20,7 @@ class NativeDownloadService {
         'sourceId': sourceId,
         'imageUrls': imageUrls,
         'destinationPath': destinationPath,
+        'cookies': cookies,  // NEW: Pass cookies to native layer
       });
       return workId ?? '';
     } on PlatformException catch (e) {

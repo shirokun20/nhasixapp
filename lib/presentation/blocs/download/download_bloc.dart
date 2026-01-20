@@ -12,6 +12,8 @@ import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/config/remote_config_service.dart';
 
+import 'package:kuron_crotpedia/kuron_crotpedia.dart';  // NEW: For CrotpediaAuthManager
+
 import '../../../domain/entities/entities.dart';
 import '../../../domain/entities/download_task.dart';
 import '../../../domain/usecases/downloads/downloads_usecases.dart';
@@ -48,6 +50,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     required RemoteConfigService remoteConfigService,
     required NativeDownloadService nativeDownloadService,
     AppLocalizations? appLocalizations,
+    CrotpediaAuthManager? crotpediaAuthManager,  // NEW: Optional for cookie extraction
   })  : _downloadContentUseCase = downloadContentUseCase,
         _getContentDetailUseCase = getContentDetailUseCase,
         _getChapterImagesUseCase = getChapterImagesUseCase,
@@ -59,6 +62,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _remoteConfigService = remoteConfigService,
         _nativeDownloadService = nativeDownloadService,
         _appLocalizations = appLocalizations,
+        _crotpediaAuthManager = crotpediaAuthManager,  // NEW: Store reference
         super(const DownloadInitial()) {
     // Register event handlers
     on<DownloadInitializeEvent>(_onInitialize);
@@ -107,6 +111,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   final RemoteConfigService _remoteConfigService;
   final NativeDownloadService _nativeDownloadService;
   final AppLocalizations? _appLocalizations;
+  final CrotpediaAuthManager? _crotpediaAuthManager;  // NEW: For cookie extraction
 
   /// Helper method to get localized string with fallback
   String _getLocalizedString(
@@ -609,11 +614,21 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           );
           final destinationPath = path.join(contentDir, AppStorage.imagesSubfolder);
 
+          // NEW: Extract cookies for Crotpedia authentication
+          Map<String, String>? cookies;
+          if (updatedDownload.sourceId == 'crotpedia') {
+            cookies = await _getCrotpediaCookies();
+            if (cookies != null && cookies.isNotEmpty) {
+              _logger.i('DownloadBloc: Extracted ${cookies.length} cookies for Crotpedia download');
+            }
+          }
+
           await _nativeDownloadService.startDownload(
             contentId: event.contentId,
             sourceId: updatedDownload.sourceId ?? 'unknown',
             imageUrls: content.imageUrls,
             destinationPath: destinationPath,
+            cookies: cookies,  // NEW: Pass cookies to native layer
           );
 
           _activeTasks[event.contentId] = DownloadTask(contentId: event.contentId, title: content.title);
@@ -894,6 +909,32 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           stackTrace: stackTrace,
         ));
       }
+    }
+  }
+
+  /// Get cookies from CrotpediaAuthManager for authenticated downloads
+  /// Returns null if cookies cannot be retrieved
+  Future<Map<String, String>?> _getCrotpediaCookies() async {
+    if (_crotpediaAuthManager == null) {
+      _logger.w('DownloadBloc: CrotpediaAuthManager not available');
+      return null;
+    }
+    
+    try {
+      final cookies = await _crotpediaAuthManager.getCookiesForDomain(
+        CrotpediaUrlBuilder.baseUrl,
+      );
+      
+      if (cookies.isEmpty) {
+        _logger.i('DownloadBloc: No Crotpedia cookies found (user not logged in?)');
+        return null;
+      }
+      
+      _logger.i('DownloadBloc: Retrieved ${cookies.length} cookies for Crotpedia');
+      return cookies;
+    } catch (e) {
+      _logger.e('DownloadBloc: Failed to get Crotpedia cookies', error: e);
+      return null;
     }
   }
 

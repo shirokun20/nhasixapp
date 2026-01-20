@@ -13,6 +13,7 @@ import id.nhasix.app.download.DownloadMethodChannel
 import id.nhasix.app.pdf.PdfMethodChannel
 import id.nhasix.app.backup.BackupMethodChannel
 import id.nhasix.app.pdf.PdfReaderMethodChannel
+import id.nhasix.app.network.DnsMethodChannel  // NEW
 
 class MainActivity: FlutterActivity() {
     private val CHANNEL = "app_disguise"
@@ -76,7 +77,15 @@ class MainActivity: FlutterActivity() {
             Log.e("PdfReaderService", "Error setting up PdfReaderMethodChannel", e)
         }
 
-        // 4. Setup App Disguise Channel
+        // 5. Setup DNS Channel (NEW)
+        try {
+            DnsMethodChannel(flutterEngine.dartExecutor.binaryMessenger)
+            Log.d("DnsService", "DnsMethodChannel setup completed")
+        } catch (e: Exception) {
+            Log.e("DnsService", "Error setting up DnsMethodChannel", e)
+        }
+
+        // 6. Setup App Disguise Channel
         try {
             val methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             Log.d("AppDisguise", "MethodChannel created successfully")
