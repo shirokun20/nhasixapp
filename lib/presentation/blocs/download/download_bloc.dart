@@ -12,7 +12,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/config/remote_config_service.dart';
 
-import 'package:kuron_crotpedia/kuron_crotpedia.dart';  // NEW: For CrotpediaAuthManager
+import 'package:kuron_crotpedia/kuron_crotpedia.dart'; // NEW: For CrotpediaAuthManager
 
 import '../../../domain/entities/entities.dart';
 import '../../../domain/entities/download_task.dart';
@@ -30,7 +30,6 @@ import '../../widgets/content_list_widget.dart';
 
 import 'package:nhasixapp/services/workers/background_download_utils.dart';
 import 'package:nhasixapp/services/workers/download_worker.dart';
-import 'package:nhasixapp/services/native_download_service.dart';
 import 'package:path_provider/path_provider.dart';
 
 part 'download_event.dart';
@@ -48,9 +47,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     required NotificationService notificationService,
     required PdfConversionService pdfConversionService,
     required RemoteConfigService remoteConfigService,
-    required NativeDownloadService nativeDownloadService,
     AppLocalizations? appLocalizations,
-    CrotpediaAuthManager? crotpediaAuthManager,  // NEW: Optional for cookie extraction
+    CrotpediaAuthManager?
+        crotpediaAuthManager, // NEW: Optional for cookie extraction
   })  : _downloadContentUseCase = downloadContentUseCase,
         _getContentDetailUseCase = getContentDetailUseCase,
         _getChapterImagesUseCase = getChapterImagesUseCase,
@@ -60,9 +59,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _notificationService = notificationService,
         _pdfConversionService = pdfConversionService,
         _remoteConfigService = remoteConfigService,
-        _nativeDownloadService = nativeDownloadService,
         _appLocalizations = appLocalizations,
-        _crotpediaAuthManager = crotpediaAuthManager,  // NEW: Store reference
         super(const DownloadInitial()) {
     // Register event handlers
     on<DownloadInitializeEvent>(_onInitialize);
@@ -109,9 +106,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   final NotificationService _notificationService;
   final PdfConversionService _pdfConversionService;
   final RemoteConfigService _remoteConfigService;
-  final NativeDownloadService _nativeDownloadService;
   final AppLocalizations? _appLocalizations;
-  final CrotpediaAuthManager? _crotpediaAuthManager;  // NEW: For cookie extraction
 
   /// Helper method to get localized string with fallback
   String _getLocalizedString(
@@ -126,7 +121,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   DownloadSettings _settings = DownloadSettings.defaultSettings();
   final Map<String, DownloadTask> _activeTasks = {};
   StreamSubscription<DownloadProgressUpdate>? _progressSubscription;
-  StreamSubscription<Map<String, dynamic>>? _nativeProgressSubscription;
 
   /// Initialize progress stream subscription for real-time updates
   void _initializeProgressStream() {
@@ -152,39 +146,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       },
       onError: (error) {
         _logger.e('DownloadBloc: Progress stream error: $error');
-      },
-    );
-
-    // Initialize native progress stream
-    _nativeProgressSubscription = _nativeDownloadService.getProgressStream().listen(
-      (update) {
-         try {
-           final contentId = update['contentId'] as String;
-           final status = update['status'] as String?;
-           
-           if (status == 'COMPLETED') {
-             _logger.d('DownloadBloc: Received native completion for $contentId');
-             add(const DownloadRefreshEvent());
-           } else if (status == 'RUNNING' || status == null) {
-              final downloaded = update['downloadedPages'] as int? ?? 0;
-              final total = update['totalPages'] as int? ?? 0;
-              
-              if (total > 0) {
-                 add(DownloadProgressUpdateEvent(
-                   contentId: contentId,
-                   downloadedPages: downloaded,
-                   totalPages: total,
-                   downloadSpeed: 0,
-                   estimatedTimeRemaining: Duration.zero,
-                 ));
-              }
-           }
-         } catch (e) {
-           _logger.e('DownloadBloc: Native progress parsing error: $e');
-         }
-      },
-      onError: (error) {
-        _logger.e('DownloadBloc: Native progress stream error: $error');
       },
     );
 
@@ -246,11 +207,12 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // Load settings (use existing settings)
       final userPrefs = await _userDataRepository.getUserPreferences();
-      final remoteMaxConcurrent = _remoteConfigService.appConfig?.limits?.maxConcurrentDownloads ?? 3;
-      
+      final remoteMaxConcurrent =
+          _remoteConfigService.appConfig?.limits?.maxConcurrentDownloads ?? 3;
+
       _settings = DownloadSettings(
-        maxConcurrentDownloads: userPrefs.maxConcurrentDownloads != 3 
-            ? userPrefs.maxConcurrentDownloads 
+        maxConcurrentDownloads: userPrefs.maxConcurrentDownloads != 3
+            ? userPrefs.maxConcurrentDownloads
             : remoteMaxConcurrent,
         imageQuality: userPrefs.imageQuality,
         autoRetry: true, // Default to true
@@ -574,99 +536,29 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         return;
       }
 
-      // Feature flag: use native download
-      final useNative = _remoteConfigService.appConfig?.featureFlags?['use_native_download'] ?? false;
-
-      if (useNative) {
-        _logger.i('DownloadBloc: Using NATIVE download service for ${event.contentId}');
-
-        // Update status to downloading
-        var updatedDownload = download.copyWith(
-          state: DownloadState.downloading,
-          startTime: DateTime.now(),
-          error: null,
-        );
-        await _userDataRepository.saveDownloadStatus(updatedDownload);
-
-        // Emit state
-        emit(currentState.copyWith(
-          downloads: currentState.downloads.map((d) => d.contentId == event.contentId ? updatedDownload : d).toList(),
-          lastUpdated: DateTime.now(),
-        ));
-
-        try {
-          // Get content details to pass to native
-          Content content = await _getContentDetailUseCase.call(GetContentDetailParams.fromString(event.contentId, sourceId: updatedDownload.sourceId));
-
-          if (content.imageUrls.isEmpty) {
-            final chapterImages = await _getChapterImagesUseCase.call(GetChapterImagesParams.fromString(event.contentId));
-            content = content.copyWith(imageUrls: chapterImages);
-          }
-
-          if (content.imageUrls.isEmpty) {
-            throw Exception('No images found for content');
-          }
-
-          // Determine destination path exactly as Flutter expects it
-          final contentDir = await DownloadStorageUtils.getNewContentDirectory(
-            event.contentId,
-            sourceId: updatedDownload.sourceId ?? 'unknown',
-          );
-          final destinationPath = path.join(contentDir, AppStorage.imagesSubfolder);
-
-          // NEW: Extract cookies for Crotpedia authentication
-          Map<String, String>? cookies;
-          if (updatedDownload.sourceId == 'crotpedia') {
-            cookies = await _getCrotpediaCookies();
-            if (cookies != null && cookies.isNotEmpty) {
-              _logger.i('DownloadBloc: Extracted ${cookies.length} cookies for Crotpedia download');
-            }
-          }
-
-          await _nativeDownloadService.startDownload(
-            contentId: event.contentId,
-            sourceId: updatedDownload.sourceId ?? 'unknown',
-            imageUrls: content.imageUrls,
-            destinationPath: destinationPath,
-            cookies: cookies,  // NEW: Pass cookies to native layer
-          );
-
-          _activeTasks[event.contentId] = DownloadTask(contentId: event.contentId, title: content.title);
-          return;
-        } catch (e) {
-          _logger.e('DownloadBloc: Native download failed', error: e);
-          _activeTasks.remove(event.contentId);
-          // Don't throw, let it fall through to error handling or re-throw if critical
-          // For now, let's allow it to be caught by the outer catch block to handle retry/failure state
-          rethrow;
-        }
-      }
-
-      // Fallback to Dart implementation (Original Logic)
-      
       // Check WiFi requirement before starting download
       if (currentState.settings.wifiOnly) {
-         final connectivityResults = await _connectivity.checkConnectivity();
-         final connectivityResult = connectivityResults.isNotEmpty
-             ? connectivityResults.first
-             : ConnectivityResult.none;
-         
-         if (connectivityResult != ConnectivityResult.wifi) {
-           _logger.i(
-               'DownloadBloc: WiFi required but not connected, queuing download for ${event.contentId}');
- 
-           final waitingDownload = download.copyWith(
-             state: DownloadState.queued,
-             error: _getLocalizedString(
-               (l10n) => l10n.waitingForWifiConnection,
-               'Waiting for WiFi connection',
-             ),
-           );
- 
-           await _userDataRepository.saveDownloadStatus(waitingDownload);
-           add(const DownloadRefreshEvent());
-           return;
-         }
+        final connectivityResults = await _connectivity.checkConnectivity();
+        final connectivityResult = connectivityResults.isNotEmpty
+            ? connectivityResults.first
+            : ConnectivityResult.none;
+
+        if (connectivityResult != ConnectivityResult.wifi) {
+          _logger.i(
+              'DownloadBloc: WiFi required but not connected, queuing download for ${event.contentId}');
+
+          final waitingDownload = download.copyWith(
+            state: DownloadState.queued,
+            error: _getLocalizedString(
+              (l10n) => l10n.waitingForWifiConnection,
+              'Waiting for WiFi connection',
+            ),
+          );
+
+          await _userDataRepository.saveDownloadStatus(waitingDownload);
+          add(const DownloadRefreshEvent());
+          return;
+        }
       }
 
       // Update status to downloading
@@ -721,7 +613,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // Fallback chapter image logic
       if (content.imageUrls.isEmpty) {
-        _logger.i('DownloadBloc: Content has empty images, trying getChapterImages fallback for ${event.contentId}');
+        _logger.i(
+            'DownloadBloc: Content has empty images, trying getChapterImages fallback for ${event.contentId}');
         try {
           final chapterImages = await _getChapterImagesUseCase.call(
             GetChapterImagesParams.fromString(event.contentId),
@@ -732,22 +625,25 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
               imageUrls: chapterImages,
               pageCount: chapterImages.length,
             );
-            
+
             // Update total pages
-             updatedDownload = updatedDownload.copyWith(
-               totalPages: chapterImages.length,
-               sourceId: updatedDownload.sourceId ?? 'crotpedia',
-             );
-             await _userDataRepository.saveDownloadStatus(updatedDownload);
-             
-             // Update state again
-             final latestState = state;
-             if (latestState is DownloadLoaded) {
-                emit(latestState.copyWith(
-                  downloads: latestState.downloads.map((d) => d.contentId == event.contentId ? updatedDownload : d).toList(),
-                  lastUpdated: DateTime.now(),
-                ));
-             }
+            updatedDownload = updatedDownload.copyWith(
+              totalPages: chapterImages.length,
+              sourceId: updatedDownload.sourceId ?? 'crotpedia',
+            );
+            await _userDataRepository.saveDownloadStatus(updatedDownload);
+
+            // Update state again
+            final latestState = state;
+            if (latestState is DownloadLoaded) {
+              emit(latestState.copyWith(
+                downloads: latestState.downloads
+                    .map((d) =>
+                        d.contentId == event.contentId ? updatedDownload : d)
+                    .toList(),
+                lastUpdated: DateTime.now(),
+              ));
+            }
           }
         } catch (e) {
           _logger.w('Fallback chapter image fetch failed: $e');
@@ -779,7 +675,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
         await BackgroundDownloadUtils.saveResumeState(
           event.contentId,
-          downloadUrl: content.imageUrls.isNotEmpty ? content.imageUrls.first : '',
+          downloadUrl:
+              content.imageUrls.isNotEmpty ? content.imageUrls.first : '',
           savePath: savePath,
           title: content.title,
           totalImages: content.pageCount,
@@ -814,10 +711,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       if (result.isCompleted) {
         add(const DownloadRefreshEvent());
       }
-      
+
       ContentDownloadCache.invalidateCache(event.contentId);
       _processQueue();
-
     } catch (e, stackTrace) {
       _logger.e('DownloadBloc: Error starting download',
           error: e, stackTrace: stackTrace);
@@ -827,9 +723,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // Handle failure (copy existing failure logic here or simplify)
       if (currentState.getDownload(event.contentId) != null) {
-          // ... Simplified fallback for brevity, relying on user to improve if needed ...
-          // OR copy the original complex retry logic. 
-          // Let's copy the original retry logic to be safe.
+        // ... Simplified fallback for brevity, relying on user to improve if needed ...
+        // OR copy the original complex retry logic.
+        // Let's copy the original retry logic to be safe.
         final currentDownload = currentState.getDownload(event.contentId)!;
 
         // Check if auto retry is enabled and we haven't exceeded retry attempts
@@ -881,7 +777,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         );
 
         await _userDataRepository.saveDownloadStatus(failedDownload);
-        
+
         // Show error notification
         if (currentState.settings.enableNotifications) {
           _notificationService.showDownloadError(
@@ -902,39 +798,13 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
         _processQueue();
       } else {
-         emit(DownloadError(
+        emit(DownloadError(
           message: 'Failed to start download: ${e.toString()}',
           errorType: _determineErrorType(e),
           previousState: currentState,
           stackTrace: stackTrace,
         ));
       }
-    }
-  }
-
-  /// Get cookies from CrotpediaAuthManager for authenticated downloads
-  /// Returns null if cookies cannot be retrieved
-  Future<Map<String, String>?> _getCrotpediaCookies() async {
-    if (_crotpediaAuthManager == null) {
-      _logger.w('DownloadBloc: CrotpediaAuthManager not available');
-      return null;
-    }
-    
-    try {
-      final cookies = await _crotpediaAuthManager.getCookiesForDomain(
-        CrotpediaUrlBuilder.baseUrl,
-      );
-      
-      if (cookies.isEmpty) {
-        _logger.i('DownloadBloc: No Crotpedia cookies found (user not logged in?)');
-        return null;
-      }
-      
-      _logger.i('DownloadBloc: Retrieved ${cookies.length} cookies for Crotpedia');
-      return cookies;
-    } catch (e) {
-      _logger.e('DownloadBloc: Failed to get Crotpedia cookies', error: e);
-      return null;
     }
   }
 
@@ -958,9 +828,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         return;
       }
 
-      // Feature flag: use native download
-      final useNative = _remoteConfigService.appConfig?.featureFlags?['use_native_download'] ?? false;
-
       // Pause the download task (Dart side)
       final task = _activeTasks[event.contentId];
       if (task != null) {
@@ -968,12 +835,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _logger.i('DownloadBloc: Paused task for ${event.contentId}');
       }
 
-      if (useNative) {
-         await _nativeDownloadService.pauseDownload(event.contentId);
-      } else {
-         // Cancel background worker if scheduled (Legacy)
-         await DownloadWorkerManager.cancelDownload(event.contentId);
-      }
+      // Cancel background worker if scheduled (Legacy)
+      await DownloadWorkerManager.cancelDownload(event.contentId);
 
       // Update status to paused
       final updatedDownload = download.copyWith(
@@ -985,7 +848,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // Immediately update notification to show paused status with current progress
       // Only if NOT using native
-      if (currentState.settings.enableNotifications && !useNative) {
+      if (currentState.settings.enableNotifications) {
         final progressPercentage = updatedDownload.progressPercentage.round();
         _notificationService
             .updateDownloadProgress(
@@ -1039,18 +902,11 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         return;
       }
 
-      // Feature flag: use native download
-      final useNative = _remoteConfigService.appConfig?.featureFlags?['use_native_download'] ?? false;
-
       // Cancel the download task (Dart side)
       _cancelDownloadTask(event.contentId);
 
-      if (useNative) {
-         await _nativeDownloadService.cancelDownload(event.contentId);
-      } else {
-         // Cancel background worker if scheduled (Legacy)
-         await DownloadWorkerManager.cancelDownload(event.contentId);
-      }
+      // Cancel background worker if scheduled (Legacy)
+      await DownloadWorkerManager.cancelDownload(event.contentId);
 
       // Update status to cancelled
       final updatedDownload = download.copyWith(
@@ -1085,10 +941,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     DownloadRetryEvent event,
     Emitter<DownloadBlocState> emit,
   ) async {
-     // ... retry logic, mostly resets state
-     // Same logic as standard retry
-     final currentState = state;
-     if (currentState is! DownloadLoaded) return;
+    // ... retry logic, mostly resets state
+    // Same logic as standard retry
+    final currentState = state;
+    if (currentState is! DownloadLoaded) return;
 
     try {
       _logger.i('DownloadBloc: Retrying download for ${event.contentId}');
@@ -1115,18 +971,18 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       _logger.i('DownloadBloc: Queued retry for ${event.contentId}');
     } catch (e, stackTrace) {
-        // ...
-       _logger.e('DownloadBloc: Error retrying download',
+      // ...
+      _logger.e('DownloadBloc: Error retrying download',
           error: e, stackTrace: stackTrace);
-       emit(DownloadError(
-         message: _getLocalizedString(
-           (l10n) => l10n.failedToRetryDownload(e.toString()),
-           'Failed to retry download: ${e.toString()}',
-         ),
-         errorType: _determineErrorType(e),
-         previousState: currentState,
-         stackTrace: stackTrace,
-       ));
+      emit(DownloadError(
+        message: _getLocalizedString(
+          (l10n) => l10n.failedToRetryDownload(e.toString()),
+          'Failed to retry download: ${e.toString()}',
+        ),
+        errorType: _determineErrorType(e),
+        previousState: currentState,
+        stackTrace: stackTrace,
+      ));
     }
   }
 
@@ -1150,9 +1006,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         return;
       }
 
-      // Feature flag: use native download
-      final useNative = _remoteConfigService.appConfig?.featureFlags?['use_native_download'] ?? false;
-
       // Resume the task if it exists (Legacy)
       final task = _activeTasks[event.contentId];
       if (task != null) {
@@ -1171,7 +1024,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // Update notification to show resumed status with current progress
       // Only if NOT using native
-      if (currentState.settings.enableNotifications && !useNative) {
+      if (currentState.settings.enableNotifications) {
         final progressPercentage = updatedDownload.progressPercentage.round();
         _notificationService
             .updateDownloadProgress(
@@ -1410,13 +1263,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             'DownloadBloc: Skipping DB save for 100% progress to avoid overwriting completion status');
       }
 
-      // Feature flag: use native download
-      final useNative = _remoteConfigService.appConfig?.featureFlags?['use_native_download'] ?? false;
-
       // Update notification progress through DownloadBloc only if NOT using native
       if (currentState.settings.enableNotifications &&
-          updatedDownload.isInProgress &&
-          !useNative) {
+          updatedDownload.isInProgress) {
         final progressPercentage = updatedDownload.progressPercentage.round();
 
         // Only update notification if progress < 100%
@@ -2110,9 +1959,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
                   .list()
                   .where((entity) => entity.path.endsWith('.pdf'))
                   .toList();
-              
+
               if (pdfFiles.isNotEmpty) {
-                _logger.i('DownloadBloc: Found PDF file, opening with native reader');
+                _logger.i(
+                    'DownloadBloc: Found PDF file, opening with native reader');
                 final pdfReaderService = getIt<NativePdfReaderService>();
                 await pdfReaderService.openPdf(pdfFiles.first.path);
                 return;
@@ -2418,7 +2268,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   Future<void> close() {
     // Cancel progress stream subscription
     _progressSubscription?.cancel();
-    _nativeProgressSubscription?.cancel();
     _logger.i('DownloadBloc: Progress stream subscription cancelled');
 
     // Cancel all active downloads

@@ -25,7 +25,7 @@ import 'package:nhasixapp/core/utils/tag_data_manager.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/network/dns_settings_service.dart';
-import 'package:nhasixapp/core/network/dns_resolver.dart';  // NEW
+import 'package:nhasixapp/core/network/dns_resolver.dart'; // NEW
 
 // Data Sources
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
@@ -206,8 +206,6 @@ void _setupServices() {
         logger: getIt<Logger>(),
       ));
 
-
-
   // Download Service - Core download logic with MediaStore support
   getIt.registerLazySingleton<DownloadService>(() => DownloadService(
         httpClient: getIt<Dio>(),
@@ -216,7 +214,8 @@ void _setupServices() {
       ));
 
   // Native Download Service
-  getIt.registerLazySingleton<NativeDownloadService>(() => NativeDownloadService());
+  getIt.registerLazySingleton<NativeDownloadService>(
+      () => NativeDownloadService());
 
   // History Cleanup Service
   getIt
@@ -413,11 +412,11 @@ void _setupRepositories() {
   // Settings Repository
   // Settings Repository
   getIt.registerLazySingleton<SettingsRepository>(() => SettingsRepositoryImpl(
-    sharedPreferences: getIt(),
-    nativeBackupService: getIt(),
-    databaseHelper: DatabaseHelper.instance,
-    logger: getIt(),
-  ));
+        sharedPreferences: getIt(),
+        nativeBackupService: getIt(),
+        databaseHelper: DatabaseHelper.instance,
+        logger: getIt(),
+      ));
 
   // Offline Content Manager (depends on UserDataRepository)
   getIt
@@ -530,9 +529,9 @@ void _setupBlocs() {
         notificationService: getIt<NotificationService>(),
         pdfConversionService: getIt<PdfConversionService>(),
         remoteConfigService: getIt<RemoteConfigService>(),
-        nativeDownloadService: getIt<NativeDownloadService>(),
         appLocalizations: null, // Initialized during main setup
-        crotpediaAuthManager: getIt<CrotpediaAuthManager>(),  // NEW: Inject for cookie extraction
+        crotpediaAuthManager:
+            getIt<CrotpediaAuthManager>(), // NEW: Inject for cookie extraction
       ));
 
   // Register other BLoCs when implemented

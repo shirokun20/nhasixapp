@@ -24,6 +24,7 @@ class MainActivity: FlutterActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // FIX: Plant Timber for logging
         Log.d("AppDisguise", "MainActivity onCreate called")
         Log.d("AppDisguise", "Intent action: ${intent?.action}")
         Log.d("AppDisguise", "Component: ${intent?.component}")

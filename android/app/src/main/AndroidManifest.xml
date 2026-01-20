@@ -15,6 +15,7 @@
     <!-- For WorkManager background tasks -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" /> <!-- NEW: Required for Android 14+ -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     
     <application
@@ -98,6 +99,13 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+            
+        <!-- Required for WorkManager Foreground Service on Android 14+ -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            android:exported="false" /> // Tools:node="merge" handled automatically by merge logic usually but explicit is safer here if not merging.
+            
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

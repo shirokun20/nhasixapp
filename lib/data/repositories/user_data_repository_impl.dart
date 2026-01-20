@@ -132,7 +132,7 @@ class UserDataRepositoryImpl implements UserDataRepository {
     bool descending = true,
   }) async {
     try {
-      _logger.i('Getting all downloads - state: $state, limit: $limit, offset: $offset, orderBy: $orderBy');
+      // _logger.i('Getting all downloads - state: $state, limit: $limit, offset: $offset, orderBy: $orderBy');
 
       final statusModels = await localDataSource.getAllDownloads(
         state: state,
@@ -143,7 +143,7 @@ class UserDataRepositoryImpl implements UserDataRepository {
       );
 
       final downloads = statusModels.map((model) => model.toEntity()).toList();
-      _logger.d('Retrieved ${downloads.length} downloads');
+      // _logger.d('Retrieved ${downloads.length} downloads');
       return downloads;
     } catch (e, stackTrace) {
       _logger.e('Failed to get all downloads',
