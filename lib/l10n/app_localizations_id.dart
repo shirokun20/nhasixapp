@@ -3119,7 +3119,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String syncResult(int synced, int updated) {
-    return 'Disinkronkan: $synced baru, $updated diperbarui';
+    return 'Hasil Sinkronisasi: $synced diimpor, $updated diperbarui';
   }
 
   @override
@@ -3156,4 +3156,28 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get cacheManagementDebug => '🚀 Manajemen Cache (Debug)';
+
+  @override
+  String get syncStarted => 'Menyingkronkan Cadangan...';
+
+  @override
+  String get syncStartedMessage => 'Memindai dan mengimpor konten offline';
+
+  @override
+  String syncInProgress(int percent) {
+    return 'Menyingkronkan Cadangan ($percent%)';
+  }
+
+  @override
+  String syncProgressMessage(int processed, int total) {
+    return 'Diproses $processed dari $total item';
+  }
+
+  @override
+  String get syncCompleted => 'Sinkronisasi Selesai';
+
+  @override
+  String syncCompletedMessage(int synced, int updated) {
+    return 'Diimpor: $synced, Diperbarui: $updated';
+  }
 }

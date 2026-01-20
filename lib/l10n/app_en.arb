@@ -2223,5 +2223,35 @@
       "title": {"type": "String"},
       "error": {"type": "String"}
     }
+  },
+  "syncStarted": "Syncing Backup...",
+  "syncStartedMessage": "Scanning and importing offline content",
+  "syncInProgress": "Syncing Backup ({percent}%)",
+  "@syncInProgress": {
+    "placeholders": {
+      "percent": {"type": "int"}
+    }
+  },
+  "syncProgressMessage": "Processed {processed} of {total} items",
+  "@syncProgressMessage": {
+    "placeholders": {
+      "processed": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "syncCompleted": "Sync Completed",
+  "syncCompletedMessage": "Imported: {synced}, Updated: {updated}",
+  "@syncCompletedMessage": {
+    "placeholders": {
+      "synced": {"type": "int"},
+      "updated": {"type": "int"}
+    }
+  },
+  "syncResult": "Sync Result: {synced} imported, {updated} updated",
+  "@syncResult": {
+    "placeholders": {
+      "synced": {"type": "int"},
+      "updated": {"type": "int"}
+    }
   }
 }

@@ -99,13 +99,29 @@ class ReaderCubit extends Cubit<ReaderState> {
       bool isOfflineMode = false;
 
       // 🚀 OPTIMIZATION: Use preloaded content if available and valid (highest priority)
-      if (preloadedContent != null && preloadedContent.imageUrls.isNotEmpty) {
+      // 🚀 OPTIMIZATION: Use preloaded content if available and valid (highest priority)
+      bool shouldUsePreloaded = preloadedContent != null && preloadedContent.imageUrls.isNotEmpty;
+
+      // If offline content is available, check if we should override preloaded content
+      if (shouldUsePreloaded && isOfflineAvailable) {
+        // If preloaded content has remote URLs but we have offline files,
+        // it means we should load from disk to get local paths.
+        final hasRemoteUrls = preloadedContent.imageUrls.any((url) => url.startsWith('http'));
+        if (hasRemoteUrls) {
+          _logger.i("⚠️ Preloaded content has remote URLs but offline content is available. Preferring offline storage.");
+          shouldUsePreloaded = false;
+        }
+      }
+
+      if (shouldUsePreloaded) {
         _logger.i("✅ Using preloaded content from navigation: $contentId");
         content = preloadedContent;
-        // Detect if preloaded content is from offline storage by checking if we're offline
-        isOfflineMode = !isConnected;
-      } else if (isOfflineAvailable &&
-          (!isConnected || _shouldPreferOffline())) {
+        // Detect if preloaded content is from offline storage by checking if urls are local path
+        // validation: if any url starts with /, it's local.
+        final hasLocalPaths = content!.imageUrls.any((url) => url.startsWith('/'));
+        isOfflineMode = hasLocalPaths || !isConnected;
+      } else if (isOfflineAvailable) {
+        // Always prefer offline if available (saves data, faster)
         _logger.i("💾 Loading content from offline storage: $contentId");
         content = await offlineContentManager.createOfflineContent(contentId);
         isOfflineMode = true;
@@ -113,10 +129,11 @@ class ReaderCubit extends Cubit<ReaderState> {
         _logger.i("🌐 Using preloaded online content: $contentId");
         content = onlineContent;
         isOfflineMode = false;
-      } else if (preloadedContent != null) {
+      } else if (preloadedContent != null && preloadedContent.imageUrls.isNotEmpty) {
         // Fallback: If we have preloaded content but no online content and not offline capable,
         // use what we have (even if partial) to avoid total failure
-        _logger.w("⚠️ Using partial preloaded content as fallback: $contentId");
+        // BUT ONLY IF IT HAS IMAGES. If no images, better to try offline fallback.
+        _logger.w("⚠️ Using preloaded content as fallback (images: ${preloadedContent.imageUrls.length}): $contentId");
         content = preloadedContent;
         isOfflineMode = !isConnected;
       }
@@ -202,13 +219,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     } catch (e) {
       _logger.w("Post-load setup failed: $e");
     }
-  }
-
-  /// Check if offline mode should be preferred
-  bool _shouldPreferOffline() {
-    // Prefer offline if on mobile data to save bandwidth
-    final connectionType = networkCubit.connectionType;
-    return connectionType == NetworkConnectionType.mobile;
   }
 
   /// Navigate to next page
@@ -493,6 +503,12 @@ class ReaderCubit extends Cubit<ReaderState> {
   void _validateImageUrl(String url, int expectedPage, String contentId) {
     try {
       // Check if URL is accessible (basic validation)
+      // Allow local file paths (start with /)
+      if (url.startsWith('/')) {
+        _logger.d('✅ Local file path validation passed for page $expectedPage: $url');
+        return;
+      }
+
       final uri = Uri.parse(url);
       if (!uri.hasScheme || !uri.hasAuthority) {
         _logger.w('⚠️ Invalid URL format for page $expectedPage: $url');

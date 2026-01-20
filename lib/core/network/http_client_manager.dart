@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 import '../constants/app_constants.dart';
 import 'dns_resolver.dart';  // NEW
-import 'dns_http_client_adapter.dart';  // NEW
+import 'dns_interceptor.dart';  // NEW
 
 /// Singleton HTTP client manager to ensure proper lifecycle management
 /// and prevent disposal issues across the application
@@ -20,7 +20,7 @@ class HttpClientManager {
   }
 
   /// Initialize the HTTP client with proper configuration
-  /// Optional dnsResolver enables DNS-over-HTTPS for all requests
+  /// Optional dnsResolver enables DNS-over-HTTPS for all requests via interceptor
   static Dio initializeHttpClient({Logger? logger, DnsResolver? dnsResolver}) {
     _logger = logger ?? Logger();
 
@@ -33,15 +33,6 @@ class HttpClientManager {
     _logger?.i('Initializing HTTP client singleton...');
 
     _httpClient = Dio();
-
-    // NEW: Use DNS-over-HTTPS adapter if DnsResolver provided
-    if (dnsResolver != null) {
-      _logger?.i('Configuring HTTP client with DNS-over-HTTPS adapter');
-      _httpClient!.httpClientAdapter = DnsHttpClientAdapter(
-        dnsResolver: dnsResolver,
-        logger: _logger!,
-      );
-    }
 
     // Configure default options
     _httpClient!.options.headers = {
@@ -63,6 +54,17 @@ class HttpClientManager {
     _httpClient!.options.followRedirects = true;
     _httpClient!.options.maxRedirects = 5;
     _httpClient!.options.responseType = ResponseType.plain;
+
+    // Add DNS-over-HTTPS interceptor if DnsResolver provided
+    if (dnsResolver != null) {
+      _logger?.i('Adding DNS-over-HTTPS interceptor');
+      _httpClient!.interceptors.add(
+        DnsInterceptor(
+          dnsResolver: dnsResolver,
+          logger: _logger!,
+        ),
+      );
+    }
 
     // Add logging interceptor
     _httpClient!.interceptors.add(

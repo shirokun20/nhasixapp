@@ -75,6 +75,7 @@ import 'package:nhasixapp/services/native_pdf_service.dart';
 import 'package:nhasixapp/services/native_backup_service.dart';
 import 'package:nhasixapp/services/native_pdf_reader_service.dart';
 import 'package:nhasixapp/services/download_service.dart';
+
 import 'package:nhasixapp/core/services/update_service.dart';
 import 'package:nhasixapp/services/notification_service.dart';
 import 'package:nhasixapp/services/pdf_service.dart';
@@ -134,11 +135,13 @@ void _setupCore() {
         ),
       ));
 
-  // HTTP Client (Dio) - Using singleton manager with DNS-over-HTTPS support
+  // HTTP Client (Dio) - Using singleton manager
+  // DNS-over-HTTPS is DISABLED because it's incompatible with HTTPS/SSL
+  // (SNI and certificate validation fail when using IP addresses)
   getIt.registerLazySingleton<Dio>(() {
     return HttpClientManager.initializeHttpClient(
       logger: getIt<Logger>(),
-      dnsResolver: getIt<DnsResolver>(),  // NEW: Enable DoH for all requests
+      // dnsResolver: getIt<DnsResolver>(),  // DISABLED - incompatible with HTTPS
     );
   });
 
@@ -163,7 +166,6 @@ void _setupCore() {
 
   // DNS Resolver (NEW)
   getIt.registerLazySingleton<DnsResolver>(() => DnsResolver(
-        dio: getIt<Dio>(),
         settingsService: getIt<DnsSettingsService>(),
         logger: getIt<Logger>(),
       ));
@@ -204,7 +206,9 @@ void _setupServices() {
         logger: getIt<Logger>(),
       ));
 
-  // Download Service
+
+
+  // Download Service - Core download logic with MediaStore support
   getIt.registerLazySingleton<DownloadService>(() => DownloadService(
         httpClient: getIt<Dio>(),
         notificationService: getIt<NotificationService>(),

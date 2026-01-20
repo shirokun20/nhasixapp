@@ -1868,5 +1868,35 @@
       "title": {"type": "String"},
       "error": {"type": "String"}
     }
+  },
+  "syncStarted": "Menyingkronkan Cadangan...",
+  "syncStartedMessage": "Memindai dan mengimpor konten offline",
+  "syncInProgress": "Menyingkronkan Cadangan ({percent}%)",
+  "@syncInProgress": {
+    "placeholders": {
+      "percent": {"type": "int"}
+    }
+  },
+  "syncProgressMessage": "Diproses {processed} dari {total} item",
+  "@syncProgressMessage": {
+    "placeholders": {
+      "processed": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "syncCompleted": "Sinkronisasi Selesai",
+  "syncCompletedMessage": "Diimpor: {synced}, Diperbarui: {updated}",
+  "@syncCompletedMessage": {
+    "placeholders": {
+      "synced": {"type": "int"},
+      "updated": {"type": "int"}
+    }
+  },
+  "syncResult": "Hasil Sinkronisasi: {synced} diimpor, {updated} diperbarui",
+  "@syncResult": {
+    "placeholders": {
+      "synced": {"type": "int"},
+      "updated": {"type": "int"}
+    }
   }
  }

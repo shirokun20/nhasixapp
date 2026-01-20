@@ -513,10 +513,18 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   }
 
   /// Load more offline content (pagination)
-  /// 
-  /// This is a convenience method that calls getAllOfflineContent with loadMore = true
+  ///
+  /// This smart method calls either searchOfflineContent or getAllOfflineContent
+  /// depending on whether a search query is active.
   Future<void> loadMoreContent() async {
-    await getAllOfflineContent(loadMore: true);
+    final currentState = state;
+    if (currentState is OfflineSearchLoaded && currentState.query.isNotEmpty) {
+      // If active search, load more search results
+      await searchOfflineContent(currentState.query, loadMore: true);
+    } else {
+      // If no active search, load more general content
+      await getAllOfflineContent(loadMore: true);
+    }
   }
 
   /// Force reload content from database
@@ -549,43 +557,36 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     try {
       // If we have content loaded (whether filtered by search or all content),
       // calculate stats from the loaded results for consistency
+      int storageUsage = 0;
+      int totalCount = 0;
+      bool isSearchResult = false;
+
       if (state is OfflineSearchLoaded) {
         final loadedState = state as OfflineSearchLoaded;
-        final totalContent = loadedState.totalResults;
-
-        // Calculate storage usage from loaded content files
-        int totalSize = 0;
-        for (final content in loadedState.results) {
-          for (final imageUrl in content.imageUrls) {
-            try {
-              final file = File(imageUrl);
-              if (await file.exists()) {
-                totalSize += await file.length();
-              }
-            } catch (e) {
-              // Skip files that can't be accessed
-            }
-          }
+        if (loadedState.query.isNotEmpty) {
+          isSearchResult = true;
+          totalCount = loadedState.totalResults;
+          
+          // Use optimized DB query for search result size
+          storageUsage = await _userDataRepository.getSearchDownloadSize(
+            query: loadedState.query,
+            state: DownloadState.completed,
+          );
         }
-
-        return {
-          'totalContent': totalContent,
-          'storageUsage': totalSize,
-          'formattedSize': OfflineContentManager.formatStorageSize(totalSize),
-          'isSearchResult': loadedState.query.isNotEmpty,
-        };
       }
 
-      // Default: get stats from database (when no content is loaded yet)
-      final offlineIds = await _offlineContentManager.getOfflineContentIds();
-      final storageUsage =
-          await _offlineContentManager.getOfflineStorageUsage();
-
+      // If not a search result (or empty query), get total library stats
+      if (!isSearchResult) {
+         storageUsage = await _offlineContentManager.getOfflineStorageUsage();
+         final offlineIds = await _offlineContentManager.getOfflineContentIds();
+         totalCount = offlineIds.length;
+      }
+      
       return {
-        'totalContent': offlineIds.length,
+        'totalContent': totalCount,
         'storageUsage': storageUsage,
         'formattedSize': OfflineContentManager.formatStorageSize(storageUsage),
-        'isSearchResult': false,
+        'isSearchResult': isSearchResult,
       };
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'get offline stats');

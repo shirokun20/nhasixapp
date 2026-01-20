@@ -3,13 +3,14 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:path/path.dart' as path;
 import 'package:logger/logger.dart';
-import 'package:permission_handler/permission_handler.dart';
+
 import 'package:path_provider/path_provider.dart';
 
 import '../domain/entities/entities.dart';
 import '../domain/value_objects/image_url.dart' as img;
 import 'notification_service.dart';
 import 'download_manager.dart';
+import '../core/utils/permission_helper.dart';
 
 /// Service untuk handle actual file download
 class DownloadService {
@@ -525,53 +526,11 @@ class DownloadService {
 
   /// Check and request necessary permissions
   Future<void> _checkPermissions() async {
-    try {
-      // For Android 13+ (API 33+), we need different permissions
-      // Check if we can write to the Downloads directory
-
-      // Get the Downloads directory path using smart detection
-      final downloadsPath = await _getDownloadsDirectory();
-      final testDir = Directory(path.join(downloadsPath, 'nhasix'));
-
-      // Try to create directory - this will fail if no permission
-      if (!await testDir.exists()) {
-        try {
-          await testDir.create(recursive: true);
-          _logger
-              .i('Successfully created download directory at: ${testDir.path}');
-        } catch (e) {
-          _logger.e('Failed to create download directory: $e');
-
-          // Try requesting storage permission
-          final storagePermission = await Permission.storage.status;
-          if (!storagePermission.isGranted) {
-            final result = await Permission.storage.request();
-            if (!result.isGranted) {
-              // Try manage external storage for Android 11+
-              final managePermission =
-                  await Permission.manageExternalStorage.status;
-              if (!managePermission.isGranted) {
-                final manageResult =
-                    await Permission.manageExternalStorage.request();
-                if (!manageResult.isGranted) {
-                  throw Exception(_getLocalized('storagePermissionRequired',
-                      fallback:
-                          'Storage permission is required for downloads. Please grant storage permission in app settings.'));
-                }
-              }
-            }
-          }
-
-          // Try creating directory again after permission
-          await testDir.create(recursive: true);
-        }
-      }
-
-      _logger.i('Storage permission check completed successfully');
-    } catch (e) {
-      _logger.e('Permission check failed: $e');
+    final hasPermission = await PermissionHelper.hasStoragePermission();
+    if (!hasPermission) {
       throw Exception(_getLocalized('storagePermissionRequired',
-          fallback: 'Storage permission is required for downloads. Error: $e'));
+          fallback:
+              'Storage permission is required for downloads. Please grant storage permission in app settings.'));
     }
   }
 

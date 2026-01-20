@@ -15,6 +15,7 @@ class NotificationDetailsBuilder {
     int maxProgress = 100,
     bool ongoing = true,
     bool autoCancel = false,
+    bool indeterminate = false,
     List<AndroidNotificationAction>? actions,
   }) {
     return NotificationDetails(
@@ -27,6 +28,7 @@ class NotificationDetailsBuilder {
         ongoing: ongoing,
         autoCancel: autoCancel,
         showProgress: true,
+        indeterminate: indeterminate,
         maxProgress: maxProgress,
         progress: progress,
         actions: actions,

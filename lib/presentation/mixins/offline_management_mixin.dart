@@ -166,7 +166,16 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       final notificationService = getIt<NotificationService>();
       await notificationService.showSyncStarted();
 
-      final syncResult = await offlineManager.syncBackupToDatabase(backupPath);
+      final syncResult = await offlineManager.syncBackupToDatabase(
+        backupPath,
+        onProgress: (processed, total) {
+          final percentage = total > 0 ? ((processed / total) * 100).toInt() : 0;
+          notificationService.updateSyncProgress(
+            progress: percentage,
+            message: AppLocalizations.of(context)!.syncProgressMessage(processed, total),
+          );
+        },
+      );
       final synced = syncResult['synced'] ?? 0;
       final updated = syncResult['updated'] ?? 0;
 

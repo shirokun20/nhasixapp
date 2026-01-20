@@ -329,6 +329,36 @@ class LocalDataSource {
     }
   }
 
+  /// Get total download size
+  Future<int> getTotalDownloadSize({DownloadState? state}) async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) return 0;
+
+      String whereClause = '1=1';
+      List<dynamic> whereArgs = [];
+
+      if (state != null) {
+        whereClause += ' AND state = ?';
+        whereArgs.add(state.name);
+      }
+
+      final result = await db.rawQuery(
+        'SELECT SUM(file_size) as total_size FROM downloads WHERE $whereClause',
+        whereArgs.isNotEmpty ? whereArgs : null,
+      );
+      
+      final totalKey = result.first['total_size'];
+      if (totalKey != null) {
+         return totalKey as int;
+      }
+      return 0;
+    } catch (e) {
+      _logger.e('Error getting total download size: $e');
+      return 0;
+    }
+  }
+
   /// Search downloads by query (id, title, or source_id) with pagination
   Future<List<Map<String, dynamic>>> searchDownloads({
     required String query,
@@ -368,6 +398,42 @@ class LocalDataSource {
     } catch (e) {
       _logger.e('Error searching downloads: $e');
       return [];
+    }
+  }
+
+  /// Get total size of search results
+  Future<int> getSearchDownloadSize({
+    required String query,
+    DownloadState? state,
+  }) async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) return 0;
+
+      final queryPattern = '%${query.toLowerCase()}%';
+
+      String whereClause =
+          '(LOWER(id) LIKE ? OR LOWER(title) LIKE ? OR LOWER(source_id) LIKE ?)';
+      List<dynamic> whereArgs = [queryPattern, queryPattern, queryPattern];
+
+      if (state != null) {
+        whereClause = '$whereClause AND state = ?';
+        whereArgs.add(state.name);
+      }
+
+      final result = await db.rawQuery(
+        'SELECT SUM(file_size) as total_size FROM downloads WHERE $whereClause',
+        whereArgs,
+      );
+
+      final totalKey = result.first['total_size'];
+      if (totalKey != null) {
+        return totalKey as int;
+      }
+      return 0;
+    } catch (e) {
+      _logger.e('Error getting search download size: $e');
+      return 0;
     }
   }
   

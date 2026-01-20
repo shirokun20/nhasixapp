@@ -303,6 +303,8 @@ class NotificationService {
     }
   }
 
+
+
   /// Check if notifications are enabled
   bool get isEnabled => _permissionGranted && _initialized;
 

@@ -3105,7 +3105,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String syncResult(int synced, int updated) {
-    return 'Synced: $synced new, $updated updated';
+    return 'Sync Result: $synced imported, $updated updated';
   }
 
   @override
@@ -3142,4 +3142,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cacheManagementDebug => '🚀 Cache Management (Debug)';
+
+  @override
+  String get syncStarted => 'Syncing Backup...';
+
+  @override
+  String get syncStartedMessage => 'Scanning and importing offline content';
+
+  @override
+  String syncInProgress(int percent) {
+    return 'Syncing Backup ($percent%)';
+  }
+
+  @override
+  String syncProgressMessage(int processed, int total) {
+    return 'Processed $processed of $total items';
+  }
+
+  @override
+  String get syncCompleted => 'Sync Completed';
+
+  @override
+  String syncCompletedMessage(int synced, int updated) {
+    return 'Imported: $synced, Updated: $updated';
+  }
 }

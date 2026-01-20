@@ -5359,7 +5359,7 @@ abstract class AppLocalizations {
   /// No description provided for @syncResult.
   ///
   /// In en, this message translates to:
-  /// **'Synced: {synced} new, {updated} updated'**
+  /// **'Sync Result: {synced} imported, {updated} updated'**
   String syncResult(int synced, int updated);
 
   /// No description provided for @exportingLibrary.
@@ -5415,6 +5415,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'🚀 Cache Management (Debug)'**
   String get cacheManagementDebug;
+
+  /// No description provided for @syncStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing Backup...'**
+  String get syncStarted;
+
+  /// No description provided for @syncStartedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning and importing offline content'**
+  String get syncStartedMessage;
+
+  /// No description provided for @syncInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing Backup ({percent}%)'**
+  String syncInProgress(int percent);
+
+  /// No description provided for @syncProgressMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Processed {processed} of {total} items'**
+  String syncProgressMessage(int processed, int total);
+
+  /// No description provided for @syncCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Completed'**
+  String get syncCompleted;
+
+  /// No description provided for @syncCompletedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported: {synced}, Updated: {updated}'**
+  String syncCompletedMessage(int synced, int updated);
 }
 
 class _AppLocalizationsDelegate

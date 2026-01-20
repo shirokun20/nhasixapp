@@ -177,6 +177,17 @@ class UserDataRepositoryImpl implements UserDataRepository {
   }
 
   @override
+  Future<int> getTotalDownloadSize({DownloadState? state}) async {
+    try {
+      return await localDataSource.getTotalDownloadSize(state: state);
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get total download size',
+          error: e, stackTrace: stackTrace);
+      return 0;
+    }
+  }
+
+  @override
   Future<List<Map<String, dynamic>>> searchDownloads({
     required String query,
     DownloadState? state,
@@ -209,6 +220,22 @@ class UserDataRepositoryImpl implements UserDataRepository {
       );
     } catch (e, stackTrace) {
       _logger.e('Failed to get search count', error: e, stackTrace: stackTrace);
+      return 0;
+    }
+  }
+
+  @override
+  Future<int> getSearchDownloadSize({
+    required String query,
+    DownloadState? state,
+  }) async {
+    try {
+      return await localDataSource.getSearchDownloadSize(
+        query: query,
+        state: state,
+      );
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get search download size', error: e, stackTrace: stackTrace);
       return 0;
     }
   }

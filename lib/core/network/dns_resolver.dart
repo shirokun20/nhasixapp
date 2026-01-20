@@ -7,7 +7,7 @@ import 'dns_settings_service.dart';
 
 /// DNS resolver with DNS-over-HTTPS support
 class DnsResolver {
-  final Dio _dio;
+  late final Dio _dio;
   final DnsSettingsService _settingsService;
   final Logger _logger;
 
@@ -18,12 +18,18 @@ class DnsResolver {
   static const Duration cacheTtl = Duration(minutes: 5);
 
   DnsResolver({
-    required Dio dio,
     required DnsSettingsService settingsService,
     required Logger logger,
-  })  : _dio = dio,
-        _settingsService = settingsService,
-        _logger = logger;
+  })  : _settingsService = settingsService,
+        _logger = logger {
+    // Create a standalone Dio instance for DoH requests
+    // This breaks the circular dependency with HttpClientManager
+    _dio = Dio(BaseOptions(
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+      sendTimeout: const Duration(seconds: 5),
+    ));
+  }
 
   /// Lookup DNS A records for hostname
   /// Returns list of IP addresses

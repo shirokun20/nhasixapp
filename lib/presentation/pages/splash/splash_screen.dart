@@ -8,6 +8,7 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/presentation/blocs/splash/splash_bloc.dart';
+import 'package:nhasixapp/core/utils/permission_helper.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
@@ -85,8 +86,39 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
 
     // Start the splash process after the widget is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<SplashBloc>().add(SplashStartedEvent());
+      _checkAndRequestPermission();
     });
+  }
+
+  Future<void> _checkAndRequestPermission() async {
+    // Check and request permission
+    final granted = await PermissionHelper.requestStoragePermission(context);
+
+    if (!mounted) return;
+
+    if (granted) {
+      context.read<SplashBloc>().add(SplashStartedEvent());
+    } else {
+      // Force permission by showing blocking dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(AppLocalizations.of(context)!.permissionRequired),
+          content: Text(
+              AppLocalizations.of(context)!.storagePermissionSettingsPrompt),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                _checkAndRequestPermission(); // Retry
+              },
+              child: Text(AppLocalizations.of(context)!.retry),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   @override

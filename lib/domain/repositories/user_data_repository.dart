@@ -83,6 +83,12 @@ abstract class UserDataRepository {
   /// Returns total number of downloads matching the state filter
   Future<int> getDownloadsCount({DownloadState? state});
 
+  /// Get total download size
+  ///
+  /// [state] - Filter by download state (all states if null)
+  /// Returns total size in bytes of matching downloads
+  Future<int> getTotalDownloadSize({DownloadState? state});
+
   /// Search downloads by query
   ///
   /// [query] - Search query to match against content ID, title, or source ID
@@ -103,6 +109,16 @@ abstract class UserDataRepository {
   /// [state] - Filter by download state
   /// Returns total number of downloads matching the search query
   Future<int> getSearchCount({
+    required String query,
+    DownloadState? state,
+  });
+
+  /// Get total size of search results
+  ///
+  /// [query] - Search query
+  /// [state] - Filter by download state
+  /// Returns total size in bytes
+  Future<int> getSearchDownloadSize({
     required String query,
     DownloadState? state,
   });
