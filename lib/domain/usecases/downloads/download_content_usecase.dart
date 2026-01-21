@@ -81,6 +81,7 @@ class DownloadContentUseCase
           params.timeoutDuration,
           params.startPage,
           params.endPage,
+          params.cookies,  // NEW
         );
       }
 
@@ -114,6 +115,7 @@ class DownloadContentUseCase
     Duration? timeoutDuration,
     int? startPage,
     int? endPage,
+    Map<String, String>? cookies,  // NEW
   ) async {
     var currentStatus = initialStatus;
 
@@ -136,6 +138,7 @@ class DownloadContentUseCase
         timeoutDuration: timeoutDuration,
         startPage: startPage,
         endPage: endPage,
+        cookies: cookies,  // NEW: Use local parameter
         onProgress: (progress) async {
           // ✅ FIXED: Only emit to stream, let DownloadBloc handle database saves
           // This prevents race condition between multiple save operations
@@ -315,6 +318,7 @@ class DownloadContentParams extends UseCaseParams {
     this.timeoutDuration,
     this.startPage, // NEW: Start page for range download
     this.endPage, // NEW: End page for range download
+    this.cookies,  // NEW: Cookies for authentication
   });
 
   final Content content;
@@ -327,6 +331,7 @@ class DownloadContentParams extends UseCaseParams {
   final Duration? timeoutDuration;
   final int? startPage; // NEW: Start page for range download (1-based)
   final int? endPage; // NEW: End page for range download (1-based)
+  final Map<String, String>? cookies;  // NEW: Cookies for authentication
 
   /// Check if this is a range download
   bool get isRangeDownload => startPage != null || endPage != null;
@@ -349,6 +354,7 @@ class DownloadContentParams extends UseCaseParams {
         timeoutDuration,
         startPage,
         endPage,
+        cookies,  // NEW
       ];
 
   DownloadContentParams copyWith({
@@ -362,6 +368,7 @@ class DownloadContentParams extends UseCaseParams {
     Duration? timeoutDuration,
     int? startPage,
     int? endPage,
+    Map<String, String>? cookies,  // NEW
   }) {
     return DownloadContentParams(
       content: content ?? this.content,
@@ -374,6 +381,7 @@ class DownloadContentParams extends UseCaseParams {
       timeoutDuration: timeoutDuration ?? this.timeoutDuration,
       startPage: startPage ?? this.startPage,
       endPage: endPage ?? this.endPage,
+      cookies: cookies ?? this.cookies,  // NEW
     );
   }
 
@@ -417,7 +425,8 @@ class DownloadContentParams extends UseCaseParams {
       String imageQuality = 'high',
       Duration? timeoutDuration,
       int? startPage,
-      int? endPage}) {
+      int? endPage,
+      Map<String, String>? cookies}) {  // NEW
     return DownloadContentParams(
       content: content,
       priority: 5,
@@ -427,6 +436,7 @@ class DownloadContentParams extends UseCaseParams {
       timeoutDuration: timeoutDuration,
       startPage: startPage,
       endPage: endPage,
+      cookies: cookies,  // NEW
     );
   }
 

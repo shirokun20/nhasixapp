@@ -106,15 +106,19 @@ class DownloadWorker(
         destinationPath: String?
     ) {
         val downloadDir = getDownloadDirectory(sourceId, contentId, destinationPath)
-        if (!downloadDir.exists() && !downloadDir.mkdirs()) {
-            throw IOException("Failed to create directory: ${downloadDir.absolutePath}")
+        // Create /images/ subfolder to match Flutter pattern
+        val imagesDir = File(downloadDir, "images")
+        if (!imagesDir.exists() && !imagesDir.mkdirs()) {
+            throw IOException("Failed to create directory: ${imagesDir.absolutePath}")
         }
         
         imageUrls.forEachIndexed { index, url ->
             if (isStopped) throw CancellationException("Work cancelled")
             
-            val fileName = "${index + 1}.jpg"
-            val destFile = File(downloadDir, fileName)
+            // Use page_001.jpg format to match Flutter pattern
+            val pageNumber = index + 1
+            val fileName = "page_${pageNumber.toString().padStart(3, '0')}.jpg"
+            val destFile = File(imagesDir, fileName)
             
             // Skip if already exists (resume capability)
             if (!destFile.exists() || destFile.length() == 0L) {

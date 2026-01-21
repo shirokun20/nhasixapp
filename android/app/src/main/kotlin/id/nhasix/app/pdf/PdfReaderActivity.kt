@@ -181,10 +181,23 @@ class PdfReaderActivity : AppCompatActivity() {
         val layoutManager = recyclerView.layoutManager as? LinearLayoutManager
         val currentPage = layoutManager?.findFirstVisibleItemPosition() ?: 0
         
+        // Reset zoom on all visible items before mode change
+        resetAllZoom()
+        
         isVerticalMode = !isVerticalMode
         applyLayoutManager(currentPage)
         // Notify adapter to rebind views with correct layout params
         adapter?.notifyDataSetChanged()
+    }
+    
+    private fun resetAllZoom() {
+        // Reset zoom on all currently visible ViewHolders
+        for (i in 0 until recyclerView.childCount) {
+            val view = recyclerView.getChildAt(i)
+            if (view is ZoomableImageView) {
+                view.resetZoom()
+            }
+        }
     }
 
     private fun toggleControls() {
@@ -226,9 +239,9 @@ class PdfReaderActivity : AppCompatActivity() {
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PdfPageViewHolder {
-            val imageView = ImageView(parent.context).apply {
-                scaleType = ImageView.ScaleType.FIT_CENTER
-                adjustViewBounds = true
+            val imageView = ZoomableImageView(parent.context).apply {
+                // Don't override scaleType - ZoomableImageView sets it to MATRIX in init
+                adjustViewBounds = false  // Disable to allow zoom/pan
             }
             return PdfPageViewHolder(imageView)
         }
@@ -308,7 +321,7 @@ class PdfReaderActivity : AppCompatActivity() {
         override fun getItemCount(): Int = count
     }
 
-    inner class PdfPageViewHolder(val imageView: ImageView) : RecyclerView.ViewHolder(imageView) {
+    inner class PdfPageViewHolder(val imageView: ZoomableImageView) : RecyclerView.ViewHolder(imageView) {
         var currentPosition: Int = -1
     }
 }

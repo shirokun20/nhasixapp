@@ -116,32 +116,35 @@ class _DnsSettingsViewState extends State<_DnsSettingsView> {
                   ),
                 ),
 
-                ...DnsProvider.values
-                    .where((p) => p != DnsProvider.system)
-                    .map((provider) => RadioListTile<DnsProvider>(
-                          title: Text(provider.displayName),
-                          subtitle: provider.dnsServers.isNotEmpty
-                              ? Text(
-                                  provider.dnsServers.join(', '),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.color,
-                                  ),
-                                )
-                              : null,
-                          value: provider,
-                          groupValue: settings.provider,
-                          onChanged: (DnsProvider? value) {
-                            if (value != null) {
-                              context
-                                  .read<DnsSettingsCubit>()
-                                  .updateProvider(value);
-                            }
-                          },
-                        )),
+                RadioGroup<DnsProvider>(
+                  groupValue: settings.provider,
+                  onChanged: (DnsProvider? value) {
+                    if (value != null) {
+                      context.read<DnsSettingsCubit>().updateProvider(value);
+                    }
+                  },
+                  child: Column(
+                    children: DnsProvider.values
+                        .where((p) => p != DnsProvider.system)
+                        .map((provider) => RadioListTile<DnsProvider>(
+                              title: Text(provider.displayName),
+                              subtitle: provider.dnsServers.isNotEmpty
+                                  ? Text(
+                                      provider.dnsServers.join(', '),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.color,
+                                      ),
+                                    )
+                                  : null,
+                              value: provider,
+                            ))
+                        .toList(),
+                  ),
+                ),
 
                 // Custom DNS input (if custom selected)
                 if (settings.provider == DnsProvider.custom) ...[

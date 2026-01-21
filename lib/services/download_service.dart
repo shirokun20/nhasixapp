@@ -38,6 +38,7 @@ class DownloadService {
     Duration? timeoutDuration, // Optional timeout override
     int? startPage, // NEW: Start page for range download (1-based)
     int? endPage, // NEW: End page for range download (1-based)
+    Map<String, String>? cookies,  // NEW: Optional cookies for authentication
   }) async {
     try {
       _logger.i('Starting download for content: ${content.id}');
@@ -163,6 +164,7 @@ class DownloadService {
             filePath: filePath,
             cancelToken: cancelToken,
             timeoutDuration: timeoutDuration,
+            cookies: cookies,  // NEW: Pass cookies for authentication
           );
 
           downloadedFiles.add(filePath);
@@ -239,6 +241,7 @@ class DownloadService {
     required String filePath,
     CancelToken? cancelToken,
     Duration? timeoutDuration,
+    Map<String, String>? cookies,  // NEW: Optional cookies
   }) async {
     // Create dio instance with custom timeout if provided
     final dio = timeoutDuration != null
@@ -249,11 +252,14 @@ class DownloadService {
           ))
         : _httpClient;
 
+    // Build headers with cookies if provided
+    final headers = _getHeadersForSource(imageUrl, cookies: cookies);
+
     final response = await dio.get<List<int>>(
       imageUrl,
       options: Options(
         responseType: ResponseType.bytes,
-        headers: _getHeadersForSource(imageUrl),
+        headers: headers,  // Use headers with cookies
       ),
       cancelToken: cancelToken,
     );
@@ -269,17 +275,31 @@ class DownloadService {
   }
 
   /// Get headers for source based on URL
-  Map<String, dynamic> _getHeadersForSource(String imageUrl) {
+  Map<String, dynamic> _getHeadersForSource(String imageUrl, {Map<String, String>? cookies}) {
+    final headers = <String, dynamic>{};
+    
+    // Add source-specific headers
     if (imageUrl.contains('nhentai')) {
-      return {
-        'User-Agent': 'AppleWebKit/537.36',
-        'Referer': 'https://nhentai.net/',
-      };
+      headers['User-Agent'] = 'AppleWebKit/537.36';
+      headers['Referer'] = 'https://nhentai.net/';
+    } else if (imageUrl.contains('crotpedia')) {
+      headers['User-Agent'] = 'AppleWebKit/537.36';
+      headers['Referer'] = 'https://crotpedia.com/';
+      
+      // Add cookies for Crotpedia authentication
+      if (cookies != null && cookies.isNotEmpty) {
+        final cookieString = cookies.entries
+            .map((e) => '${e.key}=${e.value}')
+            .join('; ');
+        headers['Cookie'] = cookieString;
+        _logger.d('Added authentication cookies for Crotpedia download');
+      }
+    } else {
+      // Fallback for generic sources
+      headers['User-Agent'] = 'AppleWebKit/537.36';
     }
-    // Fallback for generic sources or other known sources
-    return {
-      'User-Agent': 'AppleWebKit/537.36',
-    };
+    
+    return headers;
   }
 
   /// ✅ NEW: Get existing downloaded files for proper resume

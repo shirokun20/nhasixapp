@@ -278,7 +278,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
                   ),
                 ),
               ],
-              if (!state.query.isEmpty) ...[
+              if (state.query.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(
                   AppLocalizations.of(context)!.noResultsFound,

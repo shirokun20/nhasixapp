@@ -60,6 +60,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _pdfConversionService = pdfConversionService,
         _remoteConfigService = remoteConfigService,
         _appLocalizations = appLocalizations,
+        _crotpediaAuthManager = crotpediaAuthManager, // NEW: Store auth manager
         super(const DownloadInitial()) {
     // Register event handlers
     on<DownloadInitializeEvent>(_onInitialize);
@@ -107,6 +108,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   final PdfConversionService _pdfConversionService;
   final RemoteConfigService _remoteConfigService;
   final AppLocalizations? _appLocalizations;
+  final CrotpediaAuthManager?
+      _crotpediaAuthManager; // NEW: For cookie extraction
 
   /// Helper method to get localized string with fallback
   String _getLocalizedString(
@@ -685,6 +688,34 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _logger.w('Failed to save resume state for worker: $e');
       }
 
+      // NEW: Extract cookies for Crotpedia protected content
+      Map<String, String>? cookies;
+      
+      // DEBUG: Log source and auth manager state
+      _logger.i('🔍 Download sourceId: ${content.sourceId}');
+      _logger.i('🔍 AuthManager null?: ${_crotpediaAuthManager == null}');
+      
+      if (content.sourceId == 'crotpedia' && _crotpediaAuthManager != null) {
+        _logger.i('✅ Entering cookie extraction block');
+        try {
+          cookies = await _crotpediaAuthManager.getCookiesForDomain(
+              'https://crotpedia.net'); // Match actual baseUrl (.net not .com)
+          
+          _logger.i('🍪 Cookie Count: ${cookies.length}');
+          _logger.i('🍪 Cookie Keys: ${cookies.keys.join(", ")}');
+          
+          if (cookies.isNotEmpty) {
+            _logger.i(
+                'DownloadBloc: Extracted ${cookies.length} cookies for protected download');
+          }
+        } catch (e) {
+          _logger.w('DownloadBloc: Failed to extract cookies: $e');
+          // Continue without cookies - may fail for protected content
+        }
+      } else {
+        _logger.w('❌ Skipped cookie extraction - sourceId: ${content.sourceId}, authManager null: ${_crotpediaAuthManager == null}');
+      }
+
       // Start actual download
       final downloadParams = DownloadContentParams.immediate(
         content,
@@ -692,6 +723,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         timeoutDuration: currentState.settings.timeoutDuration,
         startPage: updatedDownload.startPage,
         endPage: updatedDownload.endPage,
+        cookies: cookies, // NEW: Pass cookies
       );
       final result = await _downloadContentUseCase.call(downloadParams);
 

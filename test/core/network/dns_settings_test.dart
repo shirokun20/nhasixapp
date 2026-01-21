@@ -94,7 +94,7 @@ void main() {
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
-      final logger = Logger(level: Level.nothing);
+      final logger = Logger(level: Level.off);
       service = DnsSettingsService(prefs: prefs, logger: logger);
     });
     
