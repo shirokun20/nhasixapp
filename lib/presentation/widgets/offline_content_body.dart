@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:path/path.dart' as p;
+import 'package:nhasixapp/core/routing/app_router.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/utils/offline_content_manager.dart';
@@ -249,70 +250,97 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
               ),
               const SizedBox(height: 24),
               Text(
-                'No Offline Content',
-                style: TextStyleConst.headingMedium.copyWith(
+                state.query.isEmpty
+                    ? 'No offline content'
+                    : AppLocalizations.of(context)!.noResultsFoundFor(state.query),
+                textAlign: TextAlign.center,
+                style: TextStyleConst.titleMedium.copyWith(
                   color: colorScheme.onSurface,
                 ),
-                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
-              Text(
-                state.emptyMessage,
-                style: TextStyleConst.bodyMedium.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.lightbulb_outline,
-                          size: 20,
-                          color: colorScheme.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'How to get started',
-                          style: TextStyleConst.titleSmall.copyWith(
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTipRow(colorScheme, '1. Browse comics you like'),
-                    const SizedBox(height: 8),
-                    _buildTipRow(colorScheme, '2. Tap the download button'),
-                    const SizedBox(height: 8),
-                    _buildTipRow(colorScheme,
-                        '3. Access them here anytime, even offline!'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: () => context.go('/downloads'),
-                icon: const Icon(Icons.download_rounded),
-                label: Text(AppLocalizations.of(context)!.browseDownloads),
-                style: FilledButton.styleFrom(
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
+              if (state.query.isEmpty) ...[
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    // Explicit Import Action for Empty State
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Importing from backup...')),
+                    );
+                    await _offlineSearchCubit.importFromBackup();
+                  },
+                  icon: const Icon(Icons.restore_page),
+                  label: const Text('Import from Backup'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
                   ),
                 ),
-              ),
+              ],
+              if (!state.query.isEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  AppLocalizations.of(context)!.noResultsFound,
+                  style: TextStyleConst.bodyMedium.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+              const SizedBox(height: 32),
+              if (state.query.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.lightbulb_outline,
+                            size: 20,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'How to get started',
+                            style: TextStyleConst.titleSmall.copyWith(
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTipRow(colorScheme, '1. Browse comics you like'),
+                      const SizedBox(height: 8),
+                      _buildTipRow(colorScheme, '2. Tap the download button'),
+                      const SizedBox(height: 8),
+                      _buildTipRow(colorScheme,
+                          '3. Access them here anytime, even offline!'),
+                    ],
+                  ),
+                ),
+              if (state.query.isEmpty) ...[
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: () => context.go('/downloads'),
+                  icon: const Icon(Icons.download_rounded),
+                  label: Text('Browse Downloads'), // Hardcoded to avoid key guessing
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -399,8 +427,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
                       final content = state.results[index];
                       return ContentCard(
                         content: content,
-                        onTap: () =>
-                            context.push('/reader/${content.id}', extra: content),
+                        onTap: () => _openReader(context, content),
                         onLongPress: () => _showContentActions(context, content),
                         showOfflineIndicator: true,
                         isHighlighted: false,
@@ -551,12 +578,22 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
                 ),
               ),
               const Divider(),
-              ListTile(
-                leading: const Icon(Icons.remove_red_eye),
-                title: Text(l10n.readNow),
-                onTap: () {
-                  Navigator.pop(bottomSheetContext);
-                  parentContext.push('/reader/${content.id}', extra: content);
+              FutureBuilder<bool>(
+                future: _checkPdfExists(content.id),
+                builder: (context, snapshot) {
+                  final isPdf = snapshot.data ?? false;
+                  return ListTile(
+                    leading: Icon(
+                        isPdf ? Icons.picture_as_pdf : Icons.remove_red_eye,
+                        color:
+                            isPdf ? colorScheme.tertiary : colorScheme.primary),
+                    title: Text(
+                        isPdf ? '${l10n.readNow} (PDF)' : l10n.readNow),
+                    onTap: () {
+                      Navigator.pop(bottomSheetContext);
+                      _openReader(parentContext, content);
+                    },
+                  );
                 },
               ),
               ListTile(
@@ -623,6 +660,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
         contentId: content.id,
         title: content.title,
         imagePaths: imagePaths,
+        sourceId: content.sourceId,  // ← FIX: Use sourceId property
         maxPagesPerFile: 50,
       );
     } catch (e) {
@@ -748,5 +786,67 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
         ),
       );
     }
+  }
+
+  Future<void> _openReader(BuildContext context, Content content) async {
+    final offlineManager = getIt<OfflineContentManager>();
+    // Try to find PDF
+    try {
+      final firstImagePath = await offlineManager.getOfflineFirstImagePath(content.id);
+      if (firstImagePath != null) {
+        final contentDir = File(firstImagePath).parent.parent.path;
+        final pdfDir = Directory(p.join(contentDir, 'pdf'));
+        
+        if (await pdfDir.exists()) {
+          final files = await pdfDir.list().toList();
+          final pdfs = files.where((f) => f.path.toLowerCase().endsWith('.pdf')).toList();
+          if (pdfs.isNotEmpty) {
+             // Found PDF!
+             final pdfFile = pdfs.first;
+             if (context.mounted) {
+                 AppRouter.goToReaderPdf(
+                    context, 
+                    filePath: pdfFile.path, 
+                    contentId: content.id, 
+                    title: content.title
+                 );
+                 return;
+             }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking for PDF: $e');
+    }
+    
+    // Fallback to Image Reader
+    if (context.mounted) {
+       AppRouter.goToReader(
+          context, 
+          content.id, 
+          content: content
+       );
+    }
+  }
+
+  Future<bool> _checkPdfExists(String contentId) async {
+    final offlineManager = getIt<OfflineContentManager>();
+    try {
+      final firstImagePath = await offlineManager.getOfflineFirstImagePath(contentId);
+      debugPrint('First image path: $firstImagePath');
+      if (firstImagePath != null) {
+        final contentDir = File(firstImagePath).parent.parent.path;
+        debugPrint('contentDir: $contentDir');
+        final pdfDir = Directory(p.join(contentDir, 'pdf'));
+        debugPrint('pdfDir: $pdfDir');
+        if (await pdfDir.exists()) {
+          final files = await pdfDir.list().toList();
+          return files.any((f) => f.path.toLowerCase().endsWith('.pdf'));
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking PDF existence: $e');
+    }
+    return false;
   }
 }

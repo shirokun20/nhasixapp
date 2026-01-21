@@ -82,6 +82,7 @@ dependencies:
 
   # PDF Generation
   pdf: ^3.11.1
+
   package_info_plus: ^9.0.0
   markdown_widget: ^2.3.2+8
 

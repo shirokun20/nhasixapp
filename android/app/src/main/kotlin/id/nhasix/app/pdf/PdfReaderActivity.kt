@@ -6,25 +6,25 @@ import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.os.Bundle
 import android.os.ParcelFileDescriptor
-import android.view.GestureDetector
-import android.view.MotionEvent
-import android.view.ScaleGestureDetector
+import android.util.LruCache
+import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.floatingactionbutton.FloatingActionButton
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import id.nhasix.app.R
+import kotlinx.coroutines.*
 import java.io.File
-import kotlin.math.max
-import kotlin.math.min
 
 /**
- * Full-screen PDF viewer using Android's PdfRenderer
- * Features:
- * - Smooth 60 FPS rendering
- * - Pinch-to-zoom
- * - Swipe to navigate pages
- * - Page indicator
+ * Vertical Continuous Scroll PDF Viewer (Webtoon Style)
+ * Uses RecyclerView for 120Hz smooth scrolling and memory efficiency.
  */
 class PdfReaderActivity : AppCompatActivity() {
 
@@ -42,190 +42,273 @@ class PdfReaderActivity : AppCompatActivity() {
         }
     }
 
-    private lateinit var imageView: ImageView
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var toolbar: com.google.android.material.appbar.MaterialToolbar
+    private lateinit var appBarLayout: com.google.android.material.appbar.AppBarLayout
     private lateinit var pageIndicator: TextView
-    private lateinit var prevButton: FloatingActionButton
-    private lateinit var nextButton: FloatingActionButton
+    private lateinit var loadingIndicator: ProgressBar
+    private lateinit var btnToggleMode: android.widget.ImageButton
 
     private var pdfRenderer: PdfRenderer? = null
-    private var currentPage: PdfRenderer.Page? = null
-    private var currentPageIndex = 0
+    private var fileDescriptor: ParcelFileDescriptor? = null
     private var totalPages = 0
+    private var adapter: PdfPageAdapter? = null
 
-    // Zoom and pan variables
-    private var scaleFactor = 1.0f
-    private var translateX = 0f
-    private var translateY = 0f
+    private var isVerticalMode = true // Default to Vertical (Webtoon)
+    private var isControlsVisible = true
 
-    private lateinit var scaleGestureDetector: ScaleGestureDetector
-    private lateinit var gestureDetector: GestureDetector
+    // Coroutine scope for async rendering
+    private val scope = CoroutineScope(Dispatchers.Main + Job())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Enable Edge-to-Edge
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        
         setContentView(R.layout.activity_pdf_reader)
 
-        // Hide action bar for full-screen experience
-        supportActionBar?.hide()
-
-        // Initialize views
-        imageView = findViewById(R.id.pdfImageView)
+        // Initialize Views
+        recyclerView = findViewById(R.id.pdfRecyclerView)
+        toolbar = findViewById(R.id.toolbar)
+        appBarLayout = findViewById(R.id.appBarLayout)
         pageIndicator = findViewById(R.id.pageIndicator)
-        prevButton = findViewById(R.id.prevPageButton)
-        nextButton = findViewById(R.id.nextPageButton)
+        loadingIndicator = findViewById(R.id.loadingIndicator)
+        btnToggleMode = findViewById(R.id.btnToggleMode)
 
-        // Get PDF path from intent
         val pdfPath = intent?.getStringExtra(EXTRA_PDF_PATH)
         val title = intent?.getStringExtra(EXTRA_PDF_TITLE) ?: "PDF Document"
-        currentPageIndex = intent?.getIntExtra(EXTRA_START_PAGE, 0) ?: 0
+        val startPage = intent?.getIntExtra(EXTRA_START_PAGE, 0) ?: 0
 
         if (pdfPath == null) {
             finish()
             return
         }
 
-        // Setup gesture detectors
-        scaleGestureDetector = ScaleGestureDetector(this, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-            override fun onScale(detector: ScaleGestureDetector): Boolean {
-                scaleFactor *= detector.scaleFactor
-                scaleFactor = max(0.5f, min(scaleFactor, 5.0f))
-                updateImageTransform()
-                return true
-            }
-        })
-
-        gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onFling(
-                e1: MotionEvent?,
-                e2: MotionEvent,
-                velocityX: Float,
-                velocityY: Float
-            ): Boolean {
-                val diffX = e2.x - (e1?.x ?: 0f)
-                
-                if (Math.abs(diffX) > 100 && Math.abs(velocityX) > 100) {
-                    if (diffX > 0) {
-                        showPreviousPage()
-                    } else {
-                        showNextPage()
-                    }
-                    return true
-                }
-                return false
-            }
-
-            override fun onDoubleTap(e: MotionEvent): Boolean {
-                if (scaleFactor > 1.0f) {
-                    resetTransform()
-                } else {
-                    scaleFactor = 2.0f
-                    updateImageTransform()
-                }
-                return true
-            }
-        })
-
-        imageView.setOnTouchListener { _, event ->
-            scaleGestureDetector.onTouchEvent(event)
-            gestureDetector.onTouchEvent(event)
-            true
-        }
-
-        // Open PDF
-        openPdfRenderer(pdfPath)
-
-        // Setup navigation buttons
-        prevButton.setOnClickListener { showPreviousPage() }
-        nextButton.setOnClickListener { showNextPage() }
-
-        // Setup title
-        this.title = title
-    }
-
-    private fun openPdfRenderer(pdfPath: String) {
-        try {
-            val file = File(pdfPath)
-            if (!file.exists()) {
-                finish()
-                return
-            }
-
-            val fileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-            pdfRenderer = PdfRenderer(fileDescriptor)
-            totalPages = pdfRenderer?.pageCount ?: 0
-
-            if (totalPages > 0) {
-                currentPageIndex = currentPageIndex.coerceIn(0, totalPages - 1)
-                showPage(currentPageIndex)
-            } else {
-                finish()
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        // Setup Toolbar
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayShowHomeEnabled(true)
+        toolbar.title = title
+        toolbar.setNavigationOnClickListener {
             finish()
         }
+
+        btnToggleMode.setOnClickListener {
+            toggleReadingMode()
+        }
+        
+        openPdf(pdfPath, startPage)
     }
 
-    private fun showPage(index: Int) {
-        currentPage?.close()
+    private fun openPdf(path: String, startPage: Int) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                val file = File(path)
+                if (!file.exists()) {
+                    withContext(Dispatchers.Main) { finish() }
+                    return@launch
+                }
 
-        if (pdfRenderer == null) return
+                fileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+                pdfRenderer = PdfRenderer(fileDescriptor!!)
+                totalPages = pdfRenderer?.pageCount ?: 0
 
-        currentPage = pdfRenderer?.openPage(index)
-        currentPage?.let { page ->
-            val bitmap = Bitmap.createBitmap(
-                page.width * 2,
-                page.height * 2,
-                Bitmap.Config.ARGB_8888
-            )
-
-            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-            imageView.setImageBitmap(bitmap)
-            resetTransform()
-            updatePageIndicator()
-            updateNavigationButtons()
+                withContext(Dispatchers.Main) {
+                    setupRecyclerView(startPage)
+                    updatePageIndicator(startPage)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) { finish() }
+            }
         }
     }
 
-    private fun showNextPage() {
-        if (currentPageIndex < totalPages - 1) {
-            showPage(++currentPageIndex)
+    private fun setupRecyclerView(startPage: Int) {
+        adapter = PdfPageAdapter(pdfRenderer!!, totalPages) {
+            toggleControls()
+        }
+        recyclerView.adapter = adapter
+        recyclerView.setHasFixedSize(true)
+        recyclerView.setItemViewCacheSize(5)
+
+        applyLayoutManager(startPage)
+
+        // Scroll Listener for Indicator
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                val layoutManager = recyclerView.layoutManager as? LinearLayoutManager
+                val pos = layoutManager?.findFirstVisibleItemPosition() ?: RecyclerView.NO_POSITION
+                if (pos != RecyclerView.NO_POSITION) {
+                    updatePageIndicator(pos)
+                }
+            }
+        })
+    }
+
+    private var snapHelper: androidx.recyclerview.widget.SnapHelper? = null
+
+    private fun applyLayoutManager(targetPage: Int) {
+        val layoutManager = LinearLayoutManager(this)
+        layoutManager.orientation = if (isVerticalMode) RecyclerView.VERTICAL else RecyclerView.HORIZONTAL
+        recyclerView.layoutManager = layoutManager
+        
+        // Remove existing SnapHelper
+        snapHelper?.attachToRecyclerView(null)
+        snapHelper = null
+        recyclerView.onFlingListener = null // Ensure FlingListener is cleared
+        
+        if (!isVerticalMode) {
+            // Horizontal Mode: Snap to pages
+            snapHelper = androidx.recyclerview.widget.PagerSnapHelper()
+            snapHelper?.attachToRecyclerView(recyclerView)
+            
+            // Icon: Rotate to indicate horizontal
+            btnToggleMode.rotation = 90f 
+        } else {
+             // Vertical Mode: Default
+             btnToggleMode.rotation = 0f
+        }
+
+        // Restore position
+        if (targetPage >= 0) {
+            recyclerView.scrollToPosition(targetPage)
         }
     }
 
-    private fun showPreviousPage() {
-        if (currentPageIndex > 0) {
-            showPage(--currentPageIndex)
-        }
+    private fun toggleReadingMode() {
+        val layoutManager = recyclerView.layoutManager as? LinearLayoutManager
+        val currentPage = layoutManager?.findFirstVisibleItemPosition() ?: 0
+        
+        isVerticalMode = !isVerticalMode
+        applyLayoutManager(currentPage)
+        // Notify adapter to rebind views with correct layout params
+        adapter?.notifyDataSetChanged()
     }
 
-    private fun updatePageIndicator() {
-        pageIndicator.text = "${currentPageIndex + 1} / $totalPages"
+    private fun toggleControls() {
+        isControlsVisible = !isControlsVisible
+        val visibility = if (isControlsVisible) View.VISIBLE else View.GONE
+        appBarLayout.visibility = visibility
+        pageIndicator.visibility = visibility
     }
 
-    private fun updateNavigationButtons() {
-        prevButton.isEnabled = currentPageIndex > 0
-        nextButton.isEnabled = currentPageIndex < totalPages - 1
-        prevButton.alpha = if (currentPageIndex > 0) 1.0f else 0.5f
-        nextButton.alpha = if (currentPageIndex < totalPages - 1) 1.0f else 0.5f
-    }
-
-    private fun resetTransform() {
-        scaleFactor = 1.0f
-        translateX = 0f
-        translateY = 0f
-        updateImageTransform()
-    }
-
-    private fun updateImageTransform() {
-        imageView.scaleX = scaleFactor
-        imageView.scaleY = scaleFactor
-        imageView.translationX = translateX
-        imageView.translationY = translateY
+    private fun updatePageIndicator(pageIndex: Int) {
+        pageIndicator.text = "${pageIndex + 1} / $totalPages"
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        currentPage?.close()
-        pdfRenderer?.close()
+        scope.cancel() // Cancel all pending rendering jobs
+        try {
+            pdfRenderer?.close()
+            fileDescriptor?.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    // --- Adapter ---
+
+    inner class PdfPageAdapter(
+        private val renderer: PdfRenderer,
+        private val count: Int,
+        private val onItemClick: () -> Unit
+    ) : RecyclerView.Adapter<PdfPageViewHolder>() {
+
+        private val maxMemory = (Runtime.getRuntime().maxMemory() / 1024).toInt()
+        private val cacheSize = maxMemory / 4
+        private val memoryCache = object : LruCache<Int, Bitmap>(cacheSize) {
+            override fun sizeOf(key: Int, bitmap: Bitmap): Int {
+                return bitmap.byteCount / 1024
+            }
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PdfPageViewHolder {
+            val imageView = ImageView(parent.context).apply {
+                scaleType = ImageView.ScaleType.FIT_CENTER
+                adjustViewBounds = true
+            }
+            return PdfPageViewHolder(imageView)
+        }
+
+        override fun onBindViewHolder(holder: PdfPageViewHolder, position: Int) {
+            // Adjust LayoutParams based on Mode
+            if (isVerticalMode) {
+                holder.imageView.layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            } else {
+                holder.imageView.layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            }
+
+            holder.imageView.setOnClickListener { onItemClick() }
+
+            val cachedBitmap = memoryCache.get(position)
+            
+            if (cachedBitmap != null) {
+                holder.imageView.setImageBitmap(cachedBitmap)
+            } else {
+                holder.imageView.setImageBitmap(null)
+                holder.imageView.setBackgroundColor(0xFF222222.toInt())
+                renderPageAsync(position, holder)
+            }
+        }
+
+        private fun renderPageAsync(index: Int, holder: PdfPageViewHolder) {
+            holder.currentPosition = index
+
+            scope.launch(Dispatchers.Default) {
+                if (holder.currentPosition != index) return@launch
+                var bitmap: Bitmap? = null
+
+                try {
+                    synchronized(renderer) {
+                        if (index >= count) return@launch
+                        
+                        renderer.openPage(index).use { page ->
+                            val screenWidth = resources.displayMetrics.widthPixels
+                            // Simple quality logic:
+                            val srcWidth = page.width
+                            val srcHeight = page.height
+                            
+                            val renderWidth = screenWidth
+                            val renderHeight = (srcHeight * (screenWidth.toFloat() / srcWidth)).toInt()
+                            
+                            bitmap = Bitmap.createBitmap(
+                                renderWidth,
+                                renderHeight,
+                                Bitmap.Config.ARGB_8888
+                            )
+                            
+                            page.render(bitmap!!, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        }
+                    }
+
+                    if (bitmap != null) {
+                        memoryCache.put(index, bitmap)
+                        withContext(Dispatchers.Main) {
+                            if (holder.currentPosition == index) {
+                                holder.imageView.setImageBitmap(bitmap)
+                                holder.imageView.background = null
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+
+        override fun getItemCount(): Int = count
+    }
+
+    inner class PdfPageViewHolder(val imageView: ImageView) : RecyclerView.ViewHolder(imageView) {
+        var currentPosition: Int = -1
     }
 }

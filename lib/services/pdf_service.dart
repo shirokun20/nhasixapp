@@ -6,6 +6,7 @@ import 'package:image/image.dart' as img;
 import 'package:pdf/widgets.dart' as pw;
 
 import 'pdf_isolate_worker.dart';
+import '../core/utils/image_splitter.dart';
 
 /// Service untuk convert downloaded images ke PDF
 class PdfService {
@@ -19,19 +20,32 @@ class PdfService {
     try {
       final processedImages = <Uint8List>[];
       
-      // Process each image
+      // Process each image (with auto-split for webtoons)
       for (int i = 0; i < task.imagePaths.length; i++) {
         final imagePath = task.imagePaths[i];
         
         try {
-          final imageBytes = await _processImageStatic(
-            imagePath,
-            maxWidth: task.maxWidth,
-            quality: task.quality,
-          );
+          // ✅ NEW: Auto-split webtoon images into chunks
+          final imageChunks = await ImageSplitter.splitImage(imagePath);
           
-          if (imageBytes != null) {
-            processedImages.add(imageBytes);
+          // Process each chunk
+          for (final chunkBytes in imageChunks) {
+            try {
+              // Process chunk (resize if needed)
+              final processedBytes = await _processImageBytesStatic(
+                chunkBytes,
+                maxWidth: task.maxWidth,
+                quality: task.quality,
+              );
+              
+              if (processedBytes != null) {
+                processedImages.add(processedBytes);
+              }
+            } catch (e) {
+              // Skip failed chunk, continue with others
+              debugPrint('Failed to process chunk for image $imagePath: $e');
+              continue;
+            }
           }
         } catch (e) {
           // Skip failed images, continue processing
@@ -66,23 +80,17 @@ class PdfService {
     }
   }
 
-  /// Static image processing function for isolate
-  static Future<Uint8List?> _processImageStatic(
-    String imagePath, {
+  /// Static image processing function for isolate (processes bytes directly)
+  static Future<Uint8List?> _processImageBytesStatic(
+    Uint8List imageBytes, {
     required int maxWidth,
     required int quality,
   }) async {
     try {
-      final file = File(imagePath);
-      if (!await file.exists()) {
-        throw Exception('Image file not found: $imagePath');
-      }
-
-      final imageBytes = await file.readAsBytes();
       final image = img.decodeImage(imageBytes);
 
       if (image == null) {
-        throw Exception('Could not decode image: $imagePath');
+        throw Exception('Could not decode image bytes');
       }
 
       // Resize image if needed
@@ -104,7 +112,7 @@ class PdfService {
 
       return Uint8List.fromList(compressedBytes);
     } catch (e) {
-      debugPrint('Error processing image $imagePath: $e');
+      debugPrint('Error processing image bytes: $e');
       return null;
     }
   }
@@ -154,11 +162,23 @@ class PdfService {
     int? partNumber,
   }) async {
     try {
-      _logger.i('Starting PDF conversion using compute() for content: $contentId');
+      _logger.i('========================================');
+      _logger.i('PDF GENERATION STARTED');
+      _logger.i('Content ID: $contentId');
+      _logger.i('Title: $title');
+      _logger.i('Images: ${imagePaths.length} files');
+      _logger.i('Part: ${partNumber ?? "Single file"}');
+      _logger.i('========================================');
 
       if (imagePaths.isEmpty) {
         throw Exception('No images to convert to PDF');
       }
+
+      // Estimate processing time (rough: 0.5s per image)
+      final estimatedSeconds = (imagePaths.length * 0.5).round();
+      _logger.i('⏱️  Estimated processing time: ~$estimatedSeconds seconds');
+      _logger.i('📊 Processing in isolate (compute)...');
+      _logger.i('🎯 This may take a while, please wait...');
 
       // Create safe filename with part number support
       final safeTitle = _createSafeFilename(title);
@@ -177,10 +197,23 @@ class PdfService {
       );
 
       // Use compute() to run heavy processing in isolate
+      _logger.i('🚀 Starting compute() for ${imagePaths.length} images...');
+      final stopwatch = Stopwatch()..start();
+      
       final result = await compute(_processPdfTask, task);
+      
+      stopwatch.stop();
+      _logger.i('✅ compute() completed in ${stopwatch.elapsed.inSeconds}s');
+      _logger.i('📄 Pages generated: ${result.pageCount ?? 0}');
 
       if (result.success) {
-        _logger.i('PDF created successfully using compute(): ${result.pdfPath} (${_formatFileSize(result.fileSize!)})');
+        _logger.i('========================================');
+        _logger.i('✨ PDF GENERATION SUCCESS!');
+        _logger.i('📁 Path: ${result.pdfPath}');
+        _logger.i('💾 Size: ${_formatFileSize(result.fileSize!)}');
+        _logger.i('📄 Pages: ${result.pageCount}');
+        _logger.i('⏱️  Total time: ${stopwatch.elapsed.inSeconds}s');
+        _logger.i('========================================');
 
         return PdfResult(
           success: true,

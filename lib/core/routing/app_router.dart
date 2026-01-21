@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/presentation/pages/reader/reader_screen.dart';
+import 'package:nhasixapp/presentation/pages/reader/reader_pdf_screen.dart';
 import 'package:nhasixapp/presentation/pages/settings/settings_screen.dart';
 import 'package:nhasixapp/presentation/pages/splash/splash_screen.dart';
 import 'package:nhasixapp/presentation/pages/main/main_screen_scrollable.dart';
@@ -163,6 +164,24 @@ class AppRouter {
             forceStartFromBeginning: forceStartFromBeginning,
             preloadedContent: content,
             imageMetadata: imageMetadata,
+          );
+        },
+      ),
+
+      // Reader PDF Screen
+      GoRoute(
+        path: '/reader_pdf',
+        name: 'reader_pdf',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          final filePath = extra['filePath'] as String;
+          final contentId = extra['contentId'] as String;
+          final title = extra['title'] as String;
+
+          return ReaderPdfScreen(
+            filePath: filePath,
+            contentId: contentId,
+            title: title,
           );
         },
       ),
@@ -361,6 +380,17 @@ class AppRouter {
     context.push(
         '/reader/$contentId?page=$page&forceStartFromBeginning=$forceStartFromBeginning',
         extra: {'content': content, 'imageMetadata': imageMetadata});
+  }
+
+  static void goToReaderPdf(BuildContext context,
+      {required String filePath,
+      required String contentId,
+      required String title}) {
+    context.push('/reader_pdf', extra: {
+      'filePath': filePath,
+      'contentId': contentId,
+      'title': title
+    });
   }
 
   static void goToFavorites(BuildContext context) {

@@ -340,9 +340,10 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       );
 
       if (downloads.isEmpty && offset == 0) {
-        // Fallback to file scan if database is empty (first-time setup)
-        logInfo('No downloads in database, falling back to file scan');
-        await _loadFromFileSystem(backupPath);
+        // Enforce DB First: Do NOT auto-scan filesystem.
+        // If DB is empty, user must explicitly trigger "Sync" or "Import".
+        logInfo('No downloads in database. Waiting for user to sync/import.');
+        emit(const OfflineSearchEmpty(query: ''));
         return;
       }
 
@@ -449,8 +450,9 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
-  /// Fallback: Load from file system (used for initial setup/import)
-  Future<void> _loadFromFileSystem(String? backupPath) async {
+  /// Manual Import/Sync: Load from file system and populate database
+  /// This is now EXPLICITLY triggered by the user (not automatic)
+  Future<void> importFromBackup([String? backupPath]) async {
     String? loadPath = backupPath;
     if (loadPath == null) {
       final nhasixPath = await findNhasixBackupFolder();
