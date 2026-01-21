@@ -78,17 +78,20 @@ class CrotpediaAuthManager {
   /// Used to pass authentication cookies to native download layer
   Future<Map<String, String>> getCookiesForDomain(String baseUrl) async {
     try {
+      
       final uri = Uri.parse(baseUrl);
+      
       final cookies = await _cookieJar.loadForRequest(uri);
       
       if (cookies.isEmpty) {
         return {};
       }
       
-      // Convert List<Cookie> to Map<String, String> for MethodChannel
-      return Map.fromEntries(
+      final cookieMap = Map.fromEntries(
         cookies.map((cookie) => MapEntry(cookie.name, cookie.value))
       );
+      
+      return cookieMap;
     } catch (e) {
       // Log error but don't throw - return empty map to allow graceful fallback
       return {};
