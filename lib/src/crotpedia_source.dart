@@ -21,6 +21,7 @@ class CrotpediaSource implements ContentSource {
   final Dio _dio;
   final Logger? _logger;
   final String _overriddenBaseUrl;
+  final String _displayName;
 
   CrotpediaSource({
     required CrotpediaScraper scraper,
@@ -28,11 +29,13 @@ class CrotpediaSource implements ContentSource {
     required Dio dio,
     Logger? logger,
     String? baseUrl,
+    String? displayName,
   })  : _scraper = scraper,
         _authManager = authManager,
         _dio = dio,
         _logger = logger,
-        _overriddenBaseUrl = baseUrl ?? baseUrlValue {
+        _overriddenBaseUrl = baseUrl ?? baseUrlValue,
+        _displayName = displayName ?? displayNameValue {
     if (baseUrl != null) {
       CrotpediaUrlBuilder.setBaseUrl(baseUrl);
     }
@@ -44,7 +47,7 @@ class CrotpediaSource implements ContentSource {
   String get id => sourceIdValue;
 
   @override
-  String get displayName => displayNameValue;
+  String get displayName => _displayName;
 
   @override
   String get iconPath => 'assets/icons/crotpedia.png';
@@ -216,13 +219,13 @@ class CrotpediaSource implements ContentSource {
                   slug: e.key,
                 ))
             .toList(),
-        artists: seriesDetail.artist != null ? [seriesDetail.artist!] : [],
+        artists: seriesDetail.artist != null ? [seriesDetail.artist!] : seriesDetail.author != null ? [seriesDetail.author!] : [],
         characters: const [],
         parodies: const [],
         groups: const [],
         language: 'indonesian',
         uploadDate: DateTime.now(), // Use latest chapter date if available
-        favorites: 0,
+        favorites: seriesDetail.favorites ?? 0,
       );
     } catch (e) {
       _logger?.e('Failed to get detail: $e');
