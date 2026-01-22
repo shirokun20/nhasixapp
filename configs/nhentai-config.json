@@ -145,7 +145,7 @@
         "supportsAdvancedSearch": true
     },
     "ui": {
-        "displayName": "nhentai",
+        "displayName": "NHentai",
         "iconPath": "assets/icons/nhentai.png",
         "themeColor": "#EC2C79",
         "cardStyle": "standard"
