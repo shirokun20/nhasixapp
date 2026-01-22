@@ -152,6 +152,8 @@ class MyApp extends StatelessWidget {
       switch (settingsState.preferences.defaultLanguage) {
         case 'indonesian':
           return const Locale('id');
+        case 'chinese':
+          return const Locale('zh');
         case 'english':
         default:
           return const Locale('en');

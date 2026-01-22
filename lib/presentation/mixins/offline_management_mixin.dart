@@ -32,15 +32,18 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       }
     }
 
+    // FIXED: Show loading state BEFORE starting sync operation
+    // This ensures users see loading shimmer immediately
+    if (context.mounted) {
+      context.read<OfflineSearchCubit>().setLoadingState();
+    }
+
     // Scan and sync backup folder
     if (context.mounted) {
       await _autoScanBackupFolder(context);
     }
 
-    // Refresh list from database
-    if (context.mounted) {
-      context.read<OfflineSearchCubit>().getAllOfflineContent();
-    }
+    // Note: forceRefresh() inside _autoScanBackupFolder already reloads from database
   }
 
   /// Export library with progress dialog
@@ -155,9 +158,7 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
 
     if (backupPath != null) {
       debugPrint(
-          'OFFLINE_AUTO_SCAN: Found backup path: $backupPath, starting scan...');
-      if (!context.mounted) return;
-      await _scanBackupFolder(context, backupPath, showSnackBar: false);
+          'OFFLINE_AUTO_SCAN: Found backup path: $backupPath, starting sync...');
 
       // Auto-sync backup content to database
       final offlineManager = getIt<OfflineContentManager>();
@@ -201,30 +202,4 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
     }
   }
 
-  /// Internal method to scan a specific backup folder
-  Future<void> _scanBackupFolder(BuildContext context, String backupPath,
-      {bool showSnackBar = true}) async {
-    try {
-      if (!context.mounted) return;
-
-      if (showSnackBar) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text(AppLocalizations.of(context)!.scanningBackupFolder)),
-        );
-      }
-
-      await context.read<OfflineSearchCubit>().scanBackupContent(backupPath);
-    } catch (e) {
-      if (!context.mounted) return;
-      if (showSnackBar) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(AppLocalizations.of(context)!
-                  .errorScanningBackup(e.toString()))),
-        );
-      }
-    }
-  }
 }

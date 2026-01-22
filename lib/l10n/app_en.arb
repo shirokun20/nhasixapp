@@ -525,6 +525,8 @@
   "english": "English",
   "japanese": "Japanese",
   "indonesian": "Indonesian",
+  "chinese": "Chinese (Simplified)",
+  "comfortReading": "Comfortable Reading",
   
   "sortBy": "Sort by",
   "filterBy": "Filter by",
@@ -667,6 +669,21 @@
   
   "openInBrowser": "Open in browser",
   "downloadAllGalleries": "Download all galleries in this page",
+  
+  "featureDisabledTitle": "Feature Not Available",
+  "downloadFeatureDisabled": "Download feature is not available for this source",
+  "favoriteFeatureDisabled": "Favorite feature is not available for this source",
+  "featureNotAvailable": "This feature is currently unavailable",
+  
+  "chaptersTitle": "Chapters",
+  "chapterCount": "{count} chapters",
+  "@chapterCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "readChapter": "Read",
+  "downloadChapter": "Download Chapter",
   
   "enterPageNumber": "Enter page number (1 - {totalPages})",
   "@enterPageNumber": {

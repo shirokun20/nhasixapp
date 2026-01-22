@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
 import '../../core/constants/text_style_const.dart';
+import '../../core/config/remote_config_service.dart';
+import '../../core/di/service_locator.dart';
 import '../../core/routing/app_router.dart';
 
 class AppMainHeaderWidget extends StatelessWidget
@@ -12,6 +14,7 @@ class AppMainHeaderWidget extends StatelessWidget
   final VoidCallback? onExport;
   final Future<Map<String, dynamic>>? offlineStats;
   final String? title;
+  final String? sourceId;  // For feature flag checking
 
   const AppMainHeaderWidget({
     super.key,
@@ -25,6 +28,7 @@ class AppMainHeaderWidget extends StatelessWidget
     this.onExport,
     this.offlineStats,
     this.title,
+    this.sourceId,  // Optional sourceId for feature checking
   });
 
   final BuildContext context;
@@ -139,7 +143,6 @@ class AppMainHeaderWidget extends StatelessWidget
                 icon: Icon(Icons.more_vert,
                     color: Theme.of(context).colorScheme.onSurface),
                 onSelected: (String item) {
-                  // Handle item selection
                   switch (item) {
                     case 'opob':
                       if (onOpenBrowser != null) {
@@ -147,6 +150,14 @@ class AppMainHeaderWidget extends StatelessWidget
                       }
                       break;
                     case 'download-all':
+                      // Check feature flag before downloading
+                      if (sourceId != null) {
+                        final remoteConfig = getIt<RemoteConfigService>();
+                        if (!remoteConfig.isFeatureEnabled(sourceId!, (f) => f.download)) {
+                          _showFeatureDisabledDialog(context);
+                          return;
+                        }
+                      }
                       if (onDownloadAll != null) {
                         onDownloadAll!();
                       }
@@ -159,15 +170,6 @@ class AppMainHeaderWidget extends StatelessWidget
                       value: 'opob',
                       child: Text(
                         l10n.openInBrowser,
-                        style: TextStyleConst.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'download-all',
-                      child: Text(
-                        l10n.downloadAllGalleries,
                         style: TextStyleConst.bodyMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -189,4 +191,21 @@ class AppMainHeaderWidget extends StatelessWidget
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  
+  void _showFeatureDisabledDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.featureDisabledTitle),
+        content: Text(l10n.downloadFeatureDisabled),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 }

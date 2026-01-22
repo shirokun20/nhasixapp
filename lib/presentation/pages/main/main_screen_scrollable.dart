@@ -280,8 +280,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             ),
           ],
           child: BlocBuilder<HomeBloc, HomeState>(
-            // ... rest of child
-
             buildWhen: (previous, current) => true,
             builder: (context, homeState) {
               // Show full screen loading during home initialization

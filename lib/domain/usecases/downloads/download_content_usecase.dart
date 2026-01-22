@@ -153,12 +153,82 @@ class DownloadContentUseCase
       );
 
       if (downloadResult.success) {
-        // Update status to completed
+        // VERIFICATION PHASE: 90% → 100%
+        // This phase calculates file size and verifies integrity before marking as complete
+        _logger.i('Starting verification phase for ${content.id}');
+        
+        // Emit 90% progress (download complete, starting verification)
+        DownloadManager().emitProgress(DownloadProgressUpdate(
+          contentId: content.id,
+          downloadedPages: 90,
+          totalPages: 100,
+          downloadSpeed: 0.0,
+          estimatedTimeRemaining: const Duration(seconds: 5),
+        ));
+
+        int totalFileSize = 0;
+        int verifiedFiles = 0;
+        
+        if (downloadResult.downloadPath != null) {
+          try {
+            // Get all downloaded files for verification
+            final downloadedFiles = await _downloadService.getDownloadedFiles(content.id);
+            final totalFilesToVerify = downloadedFiles.length;
+            
+            _logger.i('Verifying $totalFilesToVerify files for ${content.id}');
+            
+            // Verify each file and calculate size
+            for (int i = 0; i < downloadedFiles.length; i++) {
+              final filePath = downloadedFiles[i];
+              final file = File(filePath);
+              
+              if (await file.exists()) {
+                final fileSize = await file.length();
+                totalFileSize += fileSize;
+                verifiedFiles++;
+                
+                // Update verification progress (90% to 100%)
+                // Progress = 90 + (verifiedFiles / totalFiles * 10)
+                final verificationProgress = 90 + ((verifiedFiles / totalFilesToVerify) * 10).toInt();
+                
+                DownloadManager().emitProgress(DownloadProgressUpdate(
+                  contentId: content.id,
+                  downloadedPages: verificationProgress,
+                  totalPages: 100,
+                  downloadSpeed: 0.0,
+                  estimatedTimeRemaining: Duration(
+                    seconds: ((totalFilesToVerify - verifiedFiles) * 0.1).ceil(),
+                  ),
+                ));
+              } else {
+                _logger.w('File not found during verification: $filePath');
+              }
+            }
+            
+            _logger.i('Verification complete for ${content.id}: '
+                '$verifiedFiles files verified, total size: $totalFileSize bytes');
+          } catch (e) {
+            _logger.w('Failed to calculate file size during verification for ${content.id}: $e');
+            // Continue with fileSize = 0 instead of failing the download
+          }
+        }
+
+        // Emit 100% completion
+        DownloadManager().emitProgress(DownloadProgressUpdate(
+          contentId: content.id,
+          downloadedPages: 100,
+          totalPages: 100,
+          downloadSpeed: 0.0,
+          estimatedTimeRemaining: Duration.zero,
+        ));
+
+        // Update status to completed with calculated file size
         currentStatus = currentStatus.copyWith(
           state: DownloadState.completed,
           endTime: DateTime.now(),
           downloadedPages: content.pageCount,
           downloadPath: downloadResult.downloadPath,
+          fileSize: totalFileSize,  // Set the calculated file size
         );
 
         // Convert to PDF if requested

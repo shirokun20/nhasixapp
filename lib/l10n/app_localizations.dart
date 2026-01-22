@@ -7,6 +7,7 @@ import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
 import 'app_localizations_id.dart';
+import 'app_localizations_zh.dart';
 
 // ignore_for_file: type=lint
 
@@ -95,7 +96,8 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('id')
+    Locale('id'),
+    Locale('zh')
   ];
 
   /// No description provided for @appTitle.
@@ -2114,6 +2116,18 @@ abstract class AppLocalizations {
   /// **'Indonesian'**
   String get indonesian;
 
+  /// No description provided for @chinese.
+  ///
+  /// In en, this message translates to:
+  /// **'Chinese (Simplified)'**
+  String get chinese;
+
+  /// No description provided for @comfortReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Comfortable Reading'**
+  String get comfortReading;
+
   /// No description provided for @sortBy.
   ///
   /// In en, this message translates to:
@@ -2623,6 +2637,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Download all galleries in this page'**
   String get downloadAllGalleries;
+
+  /// No description provided for @featureDisabledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature Not Available'**
+  String get featureDisabledTitle;
+
+  /// No description provided for @downloadFeatureDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Download feature is not available for this source'**
+  String get downloadFeatureDisabled;
+
+  /// No description provided for @favoriteFeatureDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorite feature is not available for this source'**
+  String get favoriteFeatureDisabled;
+
+  /// No description provided for @featureNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This feature is currently unavailable'**
+  String get featureNotAvailable;
+
+  /// No description provided for @chaptersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chapters'**
+  String get chaptersTitle;
+
+  /// No description provided for @chapterCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} chapters'**
+  String chapterCount(int count);
+
+  /// No description provided for @readChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get readChapter;
+
+  /// No description provided for @downloadChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Chapter'**
+  String get downloadChapter;
 
   /// No description provided for @enterPageNumber.
   ///
@@ -5464,7 +5526,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'id'].contains(locale.languageCode);
+      <String>['en', 'id', 'zh'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -5477,6 +5539,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
       return AppLocalizationsEn();
     case 'id':
       return AppLocalizationsId();
+    case 'zh':
+      return AppLocalizationsZh();
   }
 
   throw FlutterError(

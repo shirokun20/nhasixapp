@@ -333,8 +333,9 @@ class ReaderCubit extends Cubit<ReaderState> {
         sourceId: state.content!.sourceId,
       );
       await addToHistoryUseCase(params);
-    } catch (e) {
-      _logger.e('Failed to save silent page update: $e');
+    } catch (e, stackTrace) {
+      _logger.e('Failed to save silent page update to history',
+          error: e, stackTrace: stackTrace);
       // Don't emit error state
     }
   }
@@ -646,7 +647,9 @@ class ReaderCubit extends Cubit<ReaderState> {
         sourceId: state.content!.sourceId,
       );
       await addToHistoryUseCase(params);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _logger.e('Failed to save reading progress to history',
+          error: e, stackTrace: stackTrace);
       // Log error but don't emit error state for history saving
     }
   }

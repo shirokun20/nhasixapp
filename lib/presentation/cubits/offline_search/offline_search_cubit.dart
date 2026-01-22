@@ -550,6 +550,11 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     emit(const OfflineSearchInitial());
   }
 
+  /// Set loading state (for external triggers like import operations)
+  void setLoadingState() {
+    emit(const OfflineSearchLoading());
+  }
+
   /// Get offline storage statistics
   ///
   /// Returns stats based on current state:

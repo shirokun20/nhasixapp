@@ -19,6 +19,7 @@ import '../cubits/settings/settings_cubit.dart';
 import 'content_card_widget.dart';
 import 'error_widget.dart';
 import 'offline_content_shimmer.dart';
+import '../mixins/offline_management_mixin.dart';
 
 /// Reusable widget that displays offline content with search and filtering
 /// Used by OfflineContentScreen and OfflineMode in MainScreen
@@ -29,7 +30,8 @@ class OfflineContentBody extends StatefulWidget {
   State<OfflineContentBody> createState() => _OfflineContentBodyState();
 }
 
-class _OfflineContentBodyState extends State<OfflineContentBody> {
+class _OfflineContentBodyState extends State<OfflineContentBody>
+    with OfflineManagementMixin<OfflineContentBody> {
   late OfflineSearchCubit _offlineSearchCubit;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -263,10 +265,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
                 ElevatedButton.icon(
                   onPressed: () async {
                     // Explicit Import Action for Empty State
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Importing from backup...')),
-                    );
-                    await _offlineSearchCubit.importFromBackup();
+                    await importFromBackup(context);
                   },
                   icon: const Icon(Icons.restore_page),
                   label: const Text('Import from Backup'),

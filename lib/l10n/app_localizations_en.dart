@@ -1104,6 +1104,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get indonesian => 'Indonesian';
 
   @override
+  String get chinese => 'Chinese (Simplified)';
+
+  @override
+  String get comfortReading => 'Comfortable Reading';
+
+  @override
   String get sortBy => 'Sort by';
 
   @override
@@ -1384,6 +1390,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get downloadAllGalleries => 'Download all galleries in this page';
+
+  @override
+  String get featureDisabledTitle => 'Feature Not Available';
+
+  @override
+  String get downloadFeatureDisabled =>
+      'Download feature is not available for this source';
+
+  @override
+  String get favoriteFeatureDisabled =>
+      'Favorite feature is not available for this source';
+
+  @override
+  String get featureNotAvailable => 'This feature is currently unavailable';
+
+  @override
+  String get chaptersTitle => 'Chapters';
+
+  @override
+  String chapterCount(int count) {
+    return '$count chapters';
+  }
+
+  @override
+  String get readChapter => 'Read';
+
+  @override
+  String get downloadChapter => 'Download Chapter';
 
   @override
   String enterPageNumber(int totalPages) {

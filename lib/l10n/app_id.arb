@@ -421,6 +421,8 @@
   "english": "Bahasa Inggris",
   "japanese": "Bahasa Jepang",
   "indonesian": "Bahasa Indonesia",
+  "chinese": "Bahasa Tionghoa (Sederhana)",
+  "comfortReading": "Pembacaan yang Nyaman",
   
   "sortBy": "Urutkan berdasarkan",
   "filterBy": "Filter berdasarkan",
@@ -658,6 +660,21 @@
   
   "openInBrowser": "Buka di browser",
   "downloadAllGalleries": "Unduh semua galeri di halaman ini",
+  
+  "featureDisabledTitle": "Fitur Tidak Tersedia",
+  "downloadFeatureDisabled": "Fitur download tidak tersedia untuk source ini",
+  "favoriteFeatureDisabled": "Fitur favorit tidak tersedia untuk source ini",
+  "featureNotAvailable": "Fitur ini saat ini tidak tersedia",
+  
+  "chaptersTitle": "Chapter",
+  "chapterCount": "{count} chapter",
+  "@chapterCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "readChapter": "Baca",
+  "downloadChapter": "Download Chapter",
   
   "enterPageNumber": "Masukkan nomor halaman (1 - {totalPages})",
   "pageNumber": "Nomor halaman",

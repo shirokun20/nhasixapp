@@ -1105,6 +1105,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get indonesian => 'Bahasa Indonesia';
 
   @override
+  String get chinese => 'Bahasa Tionghoa (Sederhana)';
+
+  @override
+  String get comfortReading => 'Pembacaan yang Nyaman';
+
+  @override
   String get sortBy => 'Urutkan berdasarkan';
 
   @override
@@ -1384,6 +1390,34 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get downloadAllGalleries => 'Unduh semua galeri di halaman ini';
+
+  @override
+  String get featureDisabledTitle => 'Fitur Tidak Tersedia';
+
+  @override
+  String get downloadFeatureDisabled =>
+      'Fitur download tidak tersedia untuk source ini';
+
+  @override
+  String get favoriteFeatureDisabled =>
+      'Fitur favorit tidak tersedia untuk source ini';
+
+  @override
+  String get featureNotAvailable => 'Fitur ini saat ini tidak tersedia';
+
+  @override
+  String get chaptersTitle => 'Chapter';
+
+  @override
+  String chapterCount(int count) {
+    return '$count chapter';
+  }
+
+  @override
+  String get readChapter => 'Baca';
+
+  @override
+  String get downloadChapter => 'Download Chapter';
 
   @override
   String enterPageNumber(int totalPages) {

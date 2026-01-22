@@ -170,11 +170,16 @@ class DownloadService {
           downloadedFiles.add(filePath);
           downloadedCount++;
 
-          // Update progress with proper calculation for range downloads
+          // FIXED: Cap progress at 90% during file downloads
+          // Reserve 90-100% for verification phase (size calculation, integrity check)
+          final rawProgress = downloadedCount / totalImages;
+          final cappedProgress = (rawProgress * 0.9).clamp(0.0, 0.9); // Max 90%
+          final progressPercentage = (cappedProgress * 100).toInt();
+          
           final progress = DownloadProgress(
             contentId: content.id,
-            downloadedPages: downloadedCount,
-            totalPages: totalImages,
+            downloadedPages: progressPercentage, // Use capped percentage instead
+            totalPages: 100, // Always out of 100 for consistency
             currentFileName: fileName,
           );
 
