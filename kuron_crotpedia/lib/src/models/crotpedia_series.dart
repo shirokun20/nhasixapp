@@ -44,8 +44,13 @@ class CrotpediaSeriesDetail extends CrotpediaSeries {
     super.year,
     super.genres,
     super.synopsis,
+    this.favorites,
+    this.alternativeTitle,
     required this.chapters,
   });
+
+  final int? favorites;
+  final String? alternativeTitle;
 
   @override
   String toString() {

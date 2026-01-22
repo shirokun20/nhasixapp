@@ -511,8 +511,11 @@ class CrotpediaSource implements ContentSource {
       parodies: const [],
       groups: const [],
       language: 'indonesian',
-      uploadDate: DateTime.now(),
-      favorites: 0,
+      uploadDate: series.year != null 
+          ? DateTime(series.year!, 1, 1) // Default to Jan 1st of year
+          : DateTime.now(),
+      favorites: series is CrotpediaSeriesDetail ? (series.favorites ?? 0) : 0,
+      englishTitle: series is CrotpediaSeriesDetail ? series.alternativeTitle : null,
     );
   }
 }
