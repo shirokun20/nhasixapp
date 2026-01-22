@@ -54,37 +54,21 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       final isConnected = networkCubit.isConnected;
 
-      // 🚀 OPTIMIZATION: Run multiple async operations in parallel
-      final results = await Future.wait([
-        // Check offline availability
-        offlineContentManager.isContentAvailableOffline(contentId),
-        // Load reader settings (simplified version)
+      // 1. Check offline availability first (Fastest)
+      // This uses the new caching in OfflineContentManager so it's very fast
+      final isOfflineAvailable = await offlineContentManager.isContentAvailableOffline(contentId);
+      
+      // 2. Load settings and restore position in parallel (Fast local DB ops)
+      final localResults = await Future.wait([
         _loadReaderSettingsOptimized(),
-        // Restore reader position if exists (override initialPage)
         if (forceStartFromBeginning)
           Future<int>.value(1)
         else
           _restoreReaderPosition(contentId),
-        // If connected, start loading online content in parallel
-        // Skip online fetch for Crotpedia chapters (they don't have detail API)
-        if (isConnected && !_isCrotpediaChapterId(contentId))
-          () async {
-            try {
-              return await getContentDetailUseCase(
-                  GetContentDetailParams.fromString(contentId));
-            } catch (e) {
-              _logger.w("Online content load failed: $e");
-              return null;
-            }
-          }()
-        else
-          Future<Content?>.value(null),
       ]);
-
-      final isOfflineAvailable = results[0] as bool;
-      final savedSettings = results[1] as ReaderSettings;
-      final restoredPage = results[2] as int;
-      final onlineContent = results.length > 3 ? results[3] as Content? : null;
+      
+      final savedSettings = localResults[0] as ReaderSettings;
+      final restoredPage = localResults[1] as int;
 
       // Use initialPage if user explicitly requested a specific page (initialPage > 1)
       // Otherwise use restored page if available, fallback to initialPage
@@ -92,68 +76,69 @@ class ReaderCubit extends Cubit<ReaderState> {
           ? initialPage
           : (restoredPage > 1 ? restoredPage : initialPage);
 
-      _logger.i(
-          '📍 Loading content: $contentId, initialPage: $initialPage, restoredPage: $restoredPage, startPage: $startPage, preloaded: ${preloadedContent != null}');
-
       Content? content;
       bool isOfflineMode = false;
 
-      // 🚀 OPTIMIZATION: Use preloaded content if available and valid (highest priority)
-      // 🚀 OPTIMIZATION: Use preloaded content if available and valid (highest priority)
+      // 3. Determine Loading Strategy
+      
+      // Strategy A: Preloaded Content (Navigation from specialized screens)
       bool shouldUsePreloaded = preloadedContent != null && preloadedContent.imageUrls.isNotEmpty;
-
-      // If offline content is available, check if we should override preloaded content
+      
       if (shouldUsePreloaded && isOfflineAvailable) {
-        // If preloaded content has remote URLs but we have offline files,
-        // it means we should load from disk to get local paths.
+        // Prefer offline path if available, even if we have preloaded content with remote URLs
         final hasRemoteUrls = preloadedContent.imageUrls.any((url) => url.startsWith('http'));
         if (hasRemoteUrls) {
-          _logger.i("⚠️ Preloaded content has remote URLs but offline content is available. Preferring offline storage.");
-          shouldUsePreloaded = false;
+          shouldUsePreloaded = false; 
         }
       }
 
       if (shouldUsePreloaded) {
-        _logger.i("✅ Using preloaded content from navigation: $contentId");
+        _logger.i("✅ Strategy A: Using preloaded content: $contentId");
         content = preloadedContent;
-        // Detect if preloaded content is from offline storage by checking if urls are local path
-        // validation: if any url starts with /, it's local.
+        // Check if it's local paths
         final hasLocalPaths = content!.imageUrls.any((url) => url.startsWith('/'));
         isOfflineMode = hasLocalPaths || !isConnected;
-      } else if (isOfflineAvailable) {
-        // Always prefer offline if available (saves data, faster)
-        _logger.i("💾 Loading content from offline storage: $contentId");
+      } 
+      // Strategy B: Offline Content (Primary Performance Path)
+      else if (isOfflineAvailable) {
+        _logger.i("💾 Strategy B: Loading content from offline storage: $contentId");
         content = await offlineContentManager.createOfflineContent(contentId);
         isOfflineMode = true;
-      } else if (onlineContent != null) {
-        _logger.i("🌐 Using preloaded online content: $contentId");
-        content = onlineContent;
-        isOfflineMode = false;
-      } else if (preloadedContent != null && preloadedContent.imageUrls.isNotEmpty) {
-        // Fallback: If we have preloaded content but no online content and not offline capable,
-        // use what we have (even if partial) to avoid total failure
-        // BUT ONLY IF IT HAS IMAGES. If no images, better to try offline fallback.
-        _logger.w("⚠️ Using preloaded content as fallback (images: ${preloadedContent.imageUrls.length}): $contentId");
-        content = preloadedContent;
-        isOfflineMode = !isConnected;
+        
+        // 🚀 OPTIONAL: Trigger background online update if connected
+        // This updates metadata/details silently without blocking UI
+        if (isConnected && !_isCrotpediaChapterId(contentId)) {
+          _fetchOnlineDetailsInBackground(contentId);
+        }
+      } 
+      // Strategy C: Online Content (Fallback)
+      else if (isConnected && !_isCrotpediaChapterId(contentId)) {
+        _logger.i("🌐 Strategy C: Fetching online content: $contentId");
+        try {
+          content = await getContentDetailUseCase(
+              GetContentDetailParams.fromString(contentId));
+          isOfflineMode = false;
+        } catch (e) {
+          _logger.w("Online fetch failed: $e");
+        }
       }
 
-      // Fallback to offline if online failed (even if isOfflineAvailable is false)
+      // Strategy D: Last Resort Fallback (Partial Preloaded or Offline Retry)
       if (content == null) {
-        _logger.w("⚠️ Primary loading failed, attempting offline fallback...");
-        try {
-          content = await offlineContentManager.createOfflineContent(contentId);
-          if (content != null) {
-            _logger.i("✅ Successfully loaded content from offline fallback");
-            isOfflineMode = true;
-          }
-        } catch (e) {
-          _logger.e("❌ Offline fallback also failed: $e");
+        if (preloadedContent != null && preloadedContent.imageUrls.isNotEmpty) {
+           _logger.w("⚠️ Strategy D: Using preloaded content as fallback: $contentId");
+           content = preloadedContent;
+           isOfflineMode = !isConnected;
+        } else {
+           // Try offline creation one last time (maybe cache missed?)
+           try {
+             content = await offlineContentManager.createOfflineContent(contentId);
+             if (content != null) isOfflineMode = true;
+           } catch (_) {}
         }
       }
 
       if (content == null) {
-        // Provide specific error message for Crotpedia chapters
         if (_isCrotpediaChapterId(contentId)) {
           throw Exception(
             'Chapter not available offline. Please access this chapter from the series detail page to read online.'
@@ -162,7 +147,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         throw Exception('Content not available online or offline');
       }
 
-      // 🚀 OPTIMIZATION: Emit loaded state immediately, then handle side effects
+      // 4. Emit Loaded State Immediately
       emit(state.copyWith(
         content: content,
         currentPage: startPage,
@@ -174,22 +159,31 @@ class ReaderCubit extends Cubit<ReaderState> {
         imageMetadata: imageMetadata,
       ));
 
-      // 🐛 DEBUG: Log all image URLs with their page numbers
       _logImageUrlMapping(content);
-
       emit(ReaderLoaded(state));
 
-      // 🚀 OPTIMIZATION: Handle side effects asynchronously (don't block UI)
+      // 5. Post-load setup (Async)
       _handlePostLoadSetup(savedSettings);
+      
     } catch (e, stackTrace) {
-      _logger.e("Reader Cubit: $e, $stackTrace");
+      _logger.e("Reader Cubit Error: $e", error: e, stackTrace: stackTrace);
       _stopAutoHideTimer();
-
       if (!isClosed) {
         emit(ReaderError(state.copyWith(
           message: 'Failed to load content: ${e.toString()}',
         )));
       }
+    }
+  }
+
+  /// Fire-and-forget online fetch to update metadata or cache
+  Future<void> _fetchOnlineDetailsInBackground(String contentId) async {
+    try {
+      await getContentDetailUseCase(GetContentDetailParams.fromString(contentId));
+      // Results are cached by repository, so next load handles it.
+      // We don't update current UI to avoid jarring changes while reading.
+    } catch (e) {
+      // Ignore background errors
     }
   }
 

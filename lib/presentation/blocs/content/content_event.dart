@@ -13,13 +13,15 @@ class ContentLoadEvent extends ContentEvent {
   const ContentLoadEvent({
     this.sortBy = SortOption.newest,
     this.forceRefresh = false,
+    this.page = 1,
   });
 
   final SortOption sortBy;
   final bool forceRefresh;
+  final int page;
 
   @override
-  List<Object?> get props => [sortBy, forceRefresh];
+  List<Object?> get props => [sortBy, forceRefresh, page];
 }
 
 /// Event to load more content (infinite scrolling)

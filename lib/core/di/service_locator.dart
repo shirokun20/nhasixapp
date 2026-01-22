@@ -327,7 +327,8 @@ void _setupDataSources() {
   // Nhentai Source
   getIt.registerLazySingleton<NhentaiSource>(() => NhentaiSource(
         scraper: getIt<NhentaiScraperAdapter>(),
-        displayName: getIt<RemoteConfigService>().getConfig('nhentai')?.ui?.displayName,
+        displayName:
+            getIt<RemoteConfigService>().getConfig('nhentai')?.ui?.displayName,
       ));
 
   // Crotpedia Cookie Store
@@ -356,7 +357,10 @@ void _setupDataSources() {
         logger: getIt<Logger>(),
         baseUrl:
             getIt<RemoteConfigService>().getConfig('crotpedia')?.api?.baseUrl,
-        displayName: getIt<RemoteConfigService>().getConfig('crotpedia')?.ui?.displayName,
+        displayName: getIt<RemoteConfigService>()
+            .getConfig('crotpedia')
+            ?.ui
+            ?.displayName,
       ));
 
   // Content Source Registry
@@ -503,8 +507,10 @@ void _setupBlocs() {
   // Home BLoC
   getIt.registerFactory<HomeBloc>(() => HomeBloc());
 
-  // Register ContentBloc when repositories and use cases are implemented
-  getIt.registerFactory<ContentBloc>(() => ContentBloc(
+  // Register ContentBloc as singleton to preserve state across widget rebuilds
+  // IMPORTANT: Changed from registerFactory to registerLazySingleton
+  // to fix pagination retry bug where state was reset on widget rebuild
+  getIt.registerLazySingleton<ContentBloc>(() => ContentBloc(
         getContentListUseCase: getIt<GetContentListUseCase>(),
         searchContentUseCase: getIt<SearchContentUseCase>(),
         getRandomContentUseCase: getIt<GetRandomContentUseCase>(),

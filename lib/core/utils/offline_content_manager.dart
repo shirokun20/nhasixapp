@@ -32,6 +32,14 @@ class OfflineContentManager {
   final Map<String, DateTime> _metadataCacheTime = {};
   static const Duration _metadataCacheDuration = Duration(minutes: 10);
 
+  // 🚀 OPTIMIZATION: Cache for content paths and image URLs to reduce I/O
+  final Map<String, String> _pathCache = {};
+  final Map<String, List<String>> _imageUrlsCache = {};
+  final Map<String, DateTime> _imageUrlsCacheTime = {};
+
+  static const Duration _urlCacheDuration = Duration(minutes: 5); 
+
+
   // Localization callback
   String Function(String key, {Map<String, dynamic>? args})? _localize;
 
@@ -97,6 +105,14 @@ class OfflineContentManager {
 
   /// Get offline content path for a specific content ID
   Future<String?> getOfflineContentPath(String contentId) async {
+    // 🚀 OPTIMIZATION: Check cache first
+    if (_pathCache.containsKey(contentId)) {
+      final cachedPath = _pathCache[contentId]!;
+      // verify it still exists occasionally? No, assume it persists for session to be fast.
+      // validation is expensive.
+      return cachedPath;
+    }
+
     try {
       final downloadStatus =
           await _userDataRepository.getDownloadStatus(contentId);
@@ -118,6 +134,8 @@ class OfflineContentManager {
       for (final contentPath in possiblePaths) {
         if (await Directory(contentPath).exists()) {
           _logger.i('✅ Found offline content path for $contentId: $contentPath');
+          // 🚀 OPTIMIZATION: Update cache
+          _pathCache[contentId] = contentPath;
           return contentPath;
         }
       }
@@ -237,6 +255,13 @@ class OfflineContentManager {
   /// Get offline image URLs for content
   Future<List<String>> getOfflineImageUrls(String contentId) async {
     try {
+      // 🚀 OPTIMIZATION: Check cache first
+      if (_imageUrlsCache.containsKey(contentId) &&
+          _imageUrlsCacheTime.containsKey(contentId) &&
+          DateTime.now().difference(_imageUrlsCacheTime[contentId]!) < _urlCacheDuration) {
+        return _imageUrlsCache[contentId]!;
+      }
+
       final contentPath = await getOfflineContentPath(contentId);
       if (contentPath == null) return [];
 
@@ -272,7 +297,15 @@ class OfflineContentManager {
       imageFiles.sort((a, b) =>
           _extractPageNumber(a.path).compareTo(_extractPageNumber(b.path)));
 
-      return imageFiles.map((file) => file.path).toList();
+      final urls = imageFiles.map((file) => file.path).toList();
+      
+      // 🚀 OPTIMIZATION: Update cache
+      if (urls.isNotEmpty) {
+        _imageUrlsCache[contentId] = urls;
+        _imageUrlsCacheTime[contentId] = DateTime.now();
+      }
+
+      return urls;
     } catch (e, stackTrace) {
       _logger.e('Error getting offline image URLs for $contentId',
           error: e, stackTrace: stackTrace);
@@ -1575,3 +1608,4 @@ class OfflineContentManager {
     }
   }
 }
+

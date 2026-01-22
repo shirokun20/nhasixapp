@@ -8,7 +8,7 @@ import '../../../domain/entities/entities.dart';
 import '../../blocs/download/download_bloc.dart';
 import '../../widgets/widgets.dart';
 import '../../widgets/app_scaffold_with_offline.dart';
-import '../../../core/utils/offline_content_manager.dart';
+
 
 /// Screen for managing downloads with status tracking and progress indicators
 class DownloadsScreen extends StatefulWidget {
@@ -464,7 +464,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       if (download.isCompleted) {
         // Navigate to reader if download is completed
         // Create Content object from offline data asynchronously
-        _navigateToReader(download.contentId);
+        _navigateToReader(download);
       } else {
         // Show download details
         _showDownloadDetails(download);
@@ -472,24 +472,31 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     }
   }
 
-  void _navigateToReader(String contentId) async {
-    try {
-      final offlineContentManager = context.read<OfflineContentManager>();
-      final content =
-          await offlineContentManager.createOfflineContent(contentId);
-      if (!mounted) return;
-      if (content != null) {
-        context.push('/reader/$contentId', extra: content);
-      } else {
-        // Fallback to navigation without extra if content creation fails
-        context.push('/reader/$contentId');
-      }
-    } catch (e) {
-      // If content creation fails, navigate without extra
-      if (mounted) {
-        context.push('/reader/$contentId');
-      }
-    }
+  void _navigateToReader(DownloadStatus download) {
+    // 🚀 OPTIMIZATION: Non-blocking navigation
+    // Construct lightweight content directly from download status
+    // ReaderCubit will handle the actual loading/verification
+    
+    final content = Content(
+      id: download.contentId,
+      title: download.title ?? download.contentId,
+      coverUrl: download.coverUrl ?? '',
+      pageCount: download.totalPages,
+      imageUrls: [], // Empty initially, ReaderCubit will load
+      sourceId: download.sourceId ?? 'nhentai', // Default fallback
+      
+      // Default empty values for required fields
+      uploadDate: DateTime.now(),
+      tags: [],
+      artists: [],
+      characters: [],
+      groups: [],
+      parodies: [],
+      language: '',
+      favorites: 0,
+    );
+
+    context.push('/reader/${download.contentId}', extra: content);
   }
 
   void _handleDownloadAction(String action, DownloadStatus download) {

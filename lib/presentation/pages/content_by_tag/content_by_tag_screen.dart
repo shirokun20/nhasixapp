@@ -77,7 +77,8 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
 
   @override
   void dispose() {
-    _contentBloc.close();
+    // Don't close ContentBloc - it's a singleton managed by DI container
+    // _contentBloc.close();
     super.dispose();
   }
 

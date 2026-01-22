@@ -193,10 +193,11 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
             duration: const Duration(seconds: 2),
           ),
         );
-
-        // Force refresh to reload from database
-        context.read<OfflineSearchCubit>().forceRefresh();
       }
+
+      // Force refresh to reload from database AND clear loading state
+      // This must run unconditionally to stop the loading shimmer
+      context.read<OfflineSearchCubit>().forceRefresh();
     } else {
       debugPrint('OFFLINE_AUTO_SCAN: No backup folder found automatically');
     }

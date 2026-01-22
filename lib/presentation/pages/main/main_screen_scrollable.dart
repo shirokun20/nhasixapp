@@ -200,7 +200,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   @override
   void dispose() {
     _homeBloc.close();
-    _contentBloc.close();
+    // Don't close ContentBloc - it's a singleton managed by DI container
+    // _contentBloc.close();
     _searchBloc.close();
     _updateCubit.close();
     super.dispose();
@@ -365,11 +366,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                     ? SnackBarAction(
                         label: AppLocalizations.of(context)!.retry,
                         onPressed: () {
-                          // Use same pattern as error screen retry button
-                          _contentBloc.add(ContentLoadEvent(
-                            sortBy: _currentSortOption,
-                            forceRefresh: true,
-                          ));
+                          // Use smart retry that preserves pagination context
+                          _contentBloc.add(const ContentRetryEvent());
                         },
                       )
                     : null,
@@ -537,8 +535,9 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           if (state.canRetry) ...[
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () async {
-                await _initializeContent();
+              onPressed: () {
+                // Use smart retry to preserve context (page, filter, etc.)
+                context.read<ContentBloc>().add(const ContentRetryEvent());
               },
               child:
                   Text(AppLocalizations.of(context)?.tryAgain ?? 'Try Again'),
@@ -575,8 +574,9 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           if (state.canRetry) ...[
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () async {
-                await _initializeContent();
+              onPressed: () {
+                // Use smart retry to preserve context (page, filter, etc.)
+                context.read<ContentBloc>().add(const ContentRetryEvent());
               },
               child: Text(AppLocalizations.of(context)!.retry),
             ),

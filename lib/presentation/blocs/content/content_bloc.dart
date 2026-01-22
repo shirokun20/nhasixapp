@@ -89,15 +89,21 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
 
       // Get content list
       final params = GetContentListParams(
-        page: 1,
+        page: event.page,
         sortBy: event.sortBy,
       );
 
       final result = await _getContentListUseCase(params);
 
       if (result.isEmpty) {
-        emit(const ContentEmpty(
+        _logger.w(
+            'ContentBloc: Load page ${event.page} returned empty result, emitting ContentEmpty with currentPage: ${event.page}');
+        emit(ContentEmpty(
           message: 'No content available at the moment.',
+          sortBy: event.sortBy,
+          currentPage: event.page,
+          // If we are on page > 1 and it's empty, we might want to capture that
+          // But usually empty page > 1 just means end of list, handled by UI
         ));
         return;
       }
@@ -126,11 +132,26 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
           error: e, stackTrace: stackTrace);
 
       final errorType = _determineErrorType(e);
+
+      // Get previous contents to preserve them
+      List<Content>? previousContents;
+      if (state is ContentLoading) {
+        previousContents = (state as ContentLoading).previousContents;
+      } else if (state is ContentLoaded) {
+        previousContents = (state as ContentLoaded).contents;
+      } else if (state is ContentError) {
+        previousContents = (state as ContentError).previousContents;
+      }
+
+      // Capture context for retry
       emit(ContentError(
         message: e.toString(),
         canRetry: errorType.isRetryable,
         errorType: errorType,
+        previousContents: previousContents,
         stackTrace: stackTrace,
+        currentPage: event.page,
+        sortBy: event.sortBy,
       ));
     }
   }
@@ -323,12 +344,33 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
       final previousContents =
           currentState is ContentLoaded ? currentState.contents : null;
 
+      // Extract context from current state for the error
+      int? currentPage;
+      SortOption? sortBy;
+      SearchFilter? searchFilter;
+      Tag? tag;
+      PopularTimeframe? timeframe;
+
+      if (currentState is ContentLoaded) {
+        currentPage = currentState.currentPage;
+        sortBy = currentState.sortBy;
+        searchFilter = currentState.searchFilter;
+        tag = currentState.tag;
+        timeframe = currentState.timeframe;
+      }
+
       emit(ContentError(
         message: e.toString(),
         canRetry: errorType.isRetryable,
         previousContents: previousContents,
         errorType: errorType,
         stackTrace: stackTrace,
+        // Preserve context
+        currentPage: currentPage,
+        sortBy: sortBy,
+        searchFilter: searchFilter,
+        tag: tag,
+        timeframe: timeframe,
       ));
     }
   }
@@ -382,13 +424,50 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     Emitter<ContentState> emit,
   ) async {
     _logger.i('ContentBloc: Retrying content load');
+    _logger.d(
+        'ContentBloc: Current state type before retry: ${state.runtimeType}');
 
     // Get previous content if available for better UX
     List<Content>? previousContents;
+    int retryPage = 1;
+    SortOption retrySort = _currentSortBy;
+    SearchFilter? retryFilter;
+    Tag? retryTag;
+    PopularTimeframe? retryTimeframe;
+
+    // Extract context from previous state
     if (state is ContentError) {
-      previousContents = (state as ContentError).previousContents;
+      final errorState = state as ContentError;
+      previousContents = errorState.previousContents;
+      retryPage = errorState.currentPage ?? 1;
+      retrySort = errorState.sortBy ?? _currentSortBy;
+      retryFilter = errorState.searchFilter;
+      retryTag = errorState.tag;
+      retryTimeframe = errorState.timeframe;
+      _logger.d(
+          'ContentBloc: Extracted from ContentError - page: $retryPage, sort: $retrySort, hasFilter: ${retryFilter != null}, hasTag: ${retryTag != null}');
+    } else if (state is ContentEmpty) {
+      final emptyState = state as ContentEmpty;
+      retryPage = emptyState.currentPage ?? 1;
+      retrySort = emptyState.sortBy ?? _currentSortBy;
+      retryFilter = emptyState.searchFilter;
+      retryTag = emptyState.tag;
+      retryTimeframe = emptyState.timeframe;
+      _logger.d(
+          'ContentBloc: Extracted from ContentEmpty - page: $retryPage (raw: ${emptyState.currentPage}), sort: $retrySort, hasFilter: ${retryFilter != null}, hasTag: ${retryTag != null}');
     } else if (state is ContentLoaded) {
-      previousContents = (state as ContentLoaded).contents;
+      final loadedState = state as ContentLoaded;
+      previousContents = loadedState.contents;
+      retryPage = loadedState.currentPage;
+      retrySort = loadedState.sortBy;
+      retryFilter = loadedState.searchFilter;
+      retryTag = loadedState.tag;
+      retryTimeframe = loadedState.timeframe;
+      _logger.d(
+          'ContentBloc: Extracted from ContentLoaded - page: $retryPage, sort: $retrySort, hasFilter: ${retryFilter != null}, hasTag: ${retryTag != null}');
+    } else {
+      _logger.w(
+          'ContentBloc: Retry called from unexpected state: ${state.runtimeType}');
     }
 
     // Emit loading state immediately for instant visual feedback
@@ -396,25 +475,52 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
       message: 'Retrying...',
       previousContents: previousContents,
     ));
-    _logger.i('ContentBloc: Emitted ContentLoading for retry');
+    _logger
+        .i('ContentBloc: Emitted ContentLoading for retry on page $retryPage');
 
-    // Retry by dispatching appropriate event with forceRefresh
-    // The receiving event handler will emit loading state
-    final currentState = state;
-    if (currentState is ContentLoaded) {
-      // Retry with current context
-      if (currentState.searchFilter != null) {
-        add(ContentSearchEvent(currentState.searchFilter!));
-      } else if (currentState.tag != null) {
-        add(ContentLoadByTagEvent(tag: currentState.tag!));
-      } else if (currentState.timeframe != null) {
-        add(ContentLoadPopularEvent(timeframe: currentState.timeframe!));
-      } else {
-        add(ContentLoadEvent(sortBy: currentState.sortBy, forceRefresh: true));
-      }
+    // Retry based on extracted context
+    if (retryFilter != null) {
+      // Ensure the filter has the correct page
+      final filter = retryFilter.copyWith(page: retryPage);
+      add(ContentSearchEvent(filter));
+    } else if (retryTag != null) {
+      // If we are retrying a tag load, use the correct page
+      // Note: ContentLoadByTagEvent doesn't have a page param in simplified version,
+      // but logic handles it. However, to support specific page retry for tags would require
+      // updating ContentLoadByTagEvent or handling it differently.
+      // For now, if we have a tag, we might need to rely on the fact that we might be reloading page 1 unless we add page support to tag event.
+      // But typically pagination for tags is handled via LoadMore/NextPage.
+      // If we are retrying a specific page failure for tags, we need to ensure we request that page.
+      // Since ContentLoadByTagEvent defaults to page 1, we might need to add page param to it too or use a different approach.
+      // Let's assume for now we reload the tag (page 1) or if we want specific page:
+
+      // Ideally ContentLoadByTagEvent should support page param too.
+      // For this fix, let's update ContentLoadByTagEvent to support page as well,
+      // OR we can misuse the fact that if we are already 'loaded' (which we aren't in error state), we can't easily jump to page X with standard event.
+      // BUT, we can add 'page' to ContentLoadByTagEvent context!
+      // Let's stick to what we have or update ContentLoadByTagEvent.
+      // ContentLoadByTagEvent definition: class ContentLoadByTagEvent extends ContentEvent { ... }
+      // It doesn't have a page param. It's better to reload fresh (page 1) for tags for now, OR update the event.
+      // Given the scope, let's stick to page 1 for tags/popular unless we update those events.
+      // Updating ContentLoadByTagEvent constitutes a larger refactor.
+      // Let's check if we can just use _loadSpecificPage internal helper if we could...
+      // But we can't call methods from here, we must emit states or add events.
+
+      // IMPORTANT: For the main bug (Refresh Resets Pagination), it's mostly about the main list.
+      // For tags/search, if we are deep in pagination, we want to stay there.
+      // Search has page in filter, so that works!
+      // Tags/Popular don't have page in event.
+      // Let's handle Main List and Search perfectly first.
+
+      add(ContentLoadByTagEvent(
+          tag: retryTag, sortBy: retrySort, forceRefresh: true));
+    } else if (retryTimeframe != null) {
+      add(ContentLoadPopularEvent(
+          timeframe: retryTimeframe, forceRefresh: true));
     } else {
-      // Default retry - force refresh to ensure loading state is shown
-      add(ContentLoadEvent(sortBy: _currentSortBy, forceRefresh: true));
+      // Regular content
+      add(ContentLoadEvent(
+          sortBy: retrySort, forceRefresh: true, page: retryPage));
     }
   }
 
@@ -521,6 +627,9 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         emit(ContentEmpty(
           message: 'No content found matching your search criteria.',
           searchFilter: event.filter,
+          // Context
+          sortBy: event.filter.sortBy,
+          currentPage: event.filter.page,
         ));
         return;
       }
@@ -546,11 +655,27 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
           error: e, stackTrace: stackTrace);
 
       final errorType = _determineErrorType(e);
+
+      // Get previous contents to preserve them
+      List<Content>? previousContents;
+      if (state is ContentLoading) {
+        previousContents = (state as ContentLoading).previousContents;
+      } else if (state is ContentLoaded) {
+        previousContents = (state as ContentLoaded).contents;
+      } else if (state is ContentError) {
+        previousContents = (state as ContentError).previousContents;
+      }
+
       emit(ContentError(
         message: e.toString(),
         canRetry: errorType.isRetryable,
         errorType: errorType,
+        previousContents: previousContents,
         stackTrace: stackTrace,
+        // Context
+        searchFilter: event.filter,
+        currentPage: event.filter.page,
+        sortBy: event.filter.sortBy,
       ));
     }
   }
@@ -576,6 +701,8 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
       if (result.isEmpty) {
         emit(const ContentEmpty(
           message: 'No popular content available at the moment.',
+          currentPage: 1,
+          sortBy: SortOption.popular,
         ));
         return;
       }
@@ -602,11 +729,27 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
           error: e, stackTrace: stackTrace);
 
       final errorType = _determineErrorType(e);
+
+      // Get previous contents to preserve them
+      List<Content>? previousContents;
+      if (state is ContentLoading) {
+        previousContents = (state as ContentLoading).previousContents;
+      } else if (state is ContentLoaded) {
+        previousContents = (state as ContentLoaded).contents;
+      } else if (state is ContentError) {
+        previousContents = (state as ContentError).previousContents;
+      }
+
       emit(ContentError(
         message: e.toString(),
         canRetry: errorType.isRetryable,
         errorType: errorType,
+        previousContents: previousContents,
         stackTrace: stackTrace,
+        // Context
+        timeframe: event.timeframe,
+        sortBy: SortOption.popular,
+        currentPage: 1, // Popular always starts at page 1 unless paginated
       ));
     }
   }
@@ -683,6 +826,9 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         emit(ContentEmpty(
           message: 'No content found for this tag.',
           tag: event.tag,
+          // Context
+          sortBy: event.sortBy,
+          currentPage: 1,
         ));
         return;
       }
@@ -709,11 +855,27 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
           error: e, stackTrace: stackTrace);
 
       final errorType = _determineErrorType(e);
+
+      // Get previous contents to preserve them
+      List<Content>? previousContents;
+      if (state is ContentLoading) {
+        previousContents = (state as ContentLoading).previousContents;
+      } else if (state is ContentLoaded) {
+        previousContents = (state as ContentLoaded).contents;
+      } else if (state is ContentError) {
+        previousContents = (state as ContentError).previousContents;
+      }
+
       emit(ContentError(
         message: e.toString(),
         canRetry: errorType.isRetryable,
         errorType: errorType,
+        previousContents: previousContents,
         stackTrace: stackTrace,
+        // Context
+        tag: event.tag,
+        sortBy: event.sortBy,
+        currentPage: 1, // Assume start page for now
       ));
     }
   }
@@ -846,8 +1008,16 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
       }
 
       if (result.isEmpty) {
-        emit(const ContentEmpty(
+        _logger.w(
+            'ContentBloc: Page $page returned empty result, emitting ContentEmpty with currentPage: $page');
+        emit(ContentEmpty(
           message: 'No content found on this page.',
+          // Context
+          currentPage: page,
+          sortBy: currentState.sortBy,
+          searchFilter: currentState.searchFilter,
+          tag: currentState.tag,
+          timeframe: currentState.timeframe,
         ));
         return;
       }
@@ -876,12 +1046,29 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
           error: e, stackTrace: stackTrace);
 
       final errorType = _determineErrorType(e);
+
+      // Get previous contents to preserve them
+      List<Content>? previousContents;
+      if (state is ContentLoading) {
+        previousContents = (state as ContentLoading).previousContents;
+      } else if (state is ContentLoaded) {
+        previousContents = (state as ContentLoaded).contents;
+      } else if (state is ContentError) {
+        previousContents = (state as ContentError).previousContents;
+      }
+
       emit(ContentError(
         message: e.toString(),
         canRetry: errorType.isRetryable,
-        previousContents: currentState.contents,
+        previousContents: previousContents,
         errorType: errorType,
         stackTrace: stackTrace,
+        // Context
+        currentPage: page,
+        sortBy: currentState.sortBy,
+        searchFilter: currentState.searchFilter,
+        tag: currentState.tag,
+        timeframe: currentState.timeframe,
       ));
     }
   }
