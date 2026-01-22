@@ -327,6 +327,7 @@ void _setupDataSources() {
   // Nhentai Source
   getIt.registerLazySingleton<NhentaiSource>(() => NhentaiSource(
         scraper: getIt<NhentaiScraperAdapter>(),
+        displayName: getIt<RemoteConfigService>().getConfig('nhentai')?.ui?.displayName,
       ));
 
   // Crotpedia Cookie Store
@@ -355,6 +356,7 @@ void _setupDataSources() {
         logger: getIt<Logger>(),
         baseUrl:
             getIt<RemoteConfigService>().getConfig('crotpedia')?.api?.baseUrl,
+        displayName: getIt<RemoteConfigService>().getConfig('crotpedia')?.ui?.displayName,
       ));
 
   // Content Source Registry
