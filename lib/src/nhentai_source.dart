@@ -13,17 +13,21 @@ class NhentaiSource implements ContentSource {
   /// [scraper] - The scraper implementation for making HTTP requests
   /// This allows the main app to inject its existing scraper with
   /// all the cloudflare bypass logic.
+  /// [displayName] - Optional display name from config (defaults to 'NHentai')
   NhentaiSource({
     required NhentaiScraperAdapter scraper,
-  }) : _scraper = scraper;
+    String? displayName,
+  })  : _scraper = scraper,
+        _displayName = displayName ?? 'NHentai';
 
   final NhentaiScraperAdapter _scraper;
+  final String _displayName;
 
   @override
   String get id => 'nhentai';
 
   @override
-  String get displayName => 'nhentai';
+  String get displayName => _displayName;
 
   @override
   String get iconPath => 'assets/icons/nhentai.png';
