@@ -486,6 +486,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get downloadError => 'Download Error';
 
   @override
+  String get verifyingFiles => 'Verifying Files';
+
+  @override
+  String verifyingFilesWithTitle(String title) {
+    return 'Verifying $title...';
+  }
+
+  @override
+  String verifyingProgress(int progress) {
+    return 'Verifying ($progress%)';
+  }
+
+  @override
   String get initializingDownloads => 'Initializing downloads...';
 
   @override
@@ -751,6 +764,57 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get useBroaderSearchTerms => 'Use broader search terms';
+
+  @override
+  String get welcomeTitle => 'Welcome to Kuron!';
+
+  @override
+  String get welcomeMessage =>
+      'Thank you for installing our app. Before you start, please note:';
+
+  @override
+  String get ispBlockingInfo => '🚨 ISP Blocking Notice';
+
+  @override
+  String get ispBlockingMessage =>
+      'If this app is blocked by your ISP (Internet Service Provider), please use a VPN like Cloudflare WARP (1.1.1.1) to access content.';
+
+  @override
+  String get downloadWarp => 'Download 1.1.1.1 VPN';
+
+  @override
+  String get permissionsRequired => 'Required Permissions';
+
+  @override
+  String get storagePermissionInfo =>
+      '📁 Storage: Required to download and save content offline';
+
+  @override
+  String get notificationPermissionInfo =>
+      '🔔 Notifications: Required to show download progress and completion';
+
+  @override
+  String get grantStoragePermission => 'Grant Storage Permission';
+
+  @override
+  String get grantNotificationPermission => 'Grant Notification Permission';
+
+  @override
+  String get storageGranted => '✅ Storage permission granted';
+
+  @override
+  String get notificationGranted => '✅ Notification permission granted';
+
+  @override
+  String get getStarted => 'Get Started';
+
+  @override
+  String get pleaseGrantAllPermissions =>
+      'Please grant all required permissions to continue';
+
+  @override
+  String get permissionDenied =>
+      'Permission denied. Some features may not work properly.';
 
   @override
   String get loadingFavorites => 'Loading favorites...';

@@ -20,6 +20,7 @@ import 'content_card_widget.dart';
 import 'error_widget.dart';
 import 'offline_content_shimmer.dart';
 import '../mixins/offline_management_mixin.dart';
+import 'permission_request_sheet.dart';
 
 /// Reusable widget that displays offline content with search and filtering
 /// Used by OfflineContentScreen and OfflineMode in MainScreen
@@ -254,7 +255,8 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
               Text(
                 state.query.isEmpty
                     ? 'No offline content'
-                    : AppLocalizations.of(context)!.noResultsFoundFor(state.query),
+                    : AppLocalizations.of(context)!
+                        .noResultsFoundFor(state.query),
                 textAlign: TextAlign.center,
                 style: TextStyleConst.titleMedium.copyWith(
                   color: colorScheme.onSurface,
@@ -329,7 +331,8 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                 FilledButton.icon(
                   onPressed: () => context.go('/downloads'),
                   icon: const Icon(Icons.download_rounded),
-                  label: Text('Browse Downloads'), // Hardcoded to avoid key guessing
+                  label: Text(
+                      'Browse Downloads'), // Hardcoded to avoid key guessing
                   style: FilledButton.styleFrom(
                     backgroundColor: colorScheme.primary,
                     foregroundColor: colorScheme.onPrimary,
@@ -394,8 +397,8 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                       mainAxisSpacing: 12,
                     ),
                     // Add 1 for loading indicator if loading more
-                    itemCount: state.results.length + 
-                        (state.isLoadingMore ? 1 : 0),
+                    itemCount:
+                        state.results.length + (state.isLoadingMore ? 1 : 0),
                     itemBuilder: (context, index) {
                       // Show loading indicator at bottom if loading more
                       if (index == state.results.length) {
@@ -422,12 +425,13 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                           ),
                         );
                       }
-                      
+
                       final content = state.results[index];
                       return ContentCard(
                         content: content,
                         onTap: () => _openReader(context, content),
-                        onLongPress: () => _showContentActions(context, content),
+                        onLongPress: () =>
+                            _showContentActions(context, content),
                         showOfflineIndicator: true,
                         isHighlighted: false,
                         offlineSize: state.offlineSizes[content.id],
@@ -586,8 +590,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                         isPdf ? Icons.picture_as_pdf : Icons.remove_red_eye,
                         color:
                             isPdf ? colorScheme.tertiary : colorScheme.primary),
-                    title: Text(
-                        isPdf ? '${l10n.readNow} (PDF)' : l10n.readNow),
+                    title: Text(isPdf ? '${l10n.readNow} (PDF)' : l10n.readNow),
                     onTap: () {
                       Navigator.pop(bottomSheetContext);
                       _openReader(parentContext, content);
@@ -631,6 +634,27 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
     final pdfService = getIt<PdfConversionService>();
 
     try {
+      // Check permissions before starting PDF conversion
+      if (!context.mounted) return;
+
+      final hasPermissions = await showPermissionRequestSheet(
+        context,
+        requireStorage: true,
+        requireNotification: true,
+      );
+
+      if (!context.mounted || !hasPermissions) {
+        if (context.mounted && !hasPermissions) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.permissionDenied),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+        return;
+      }
+
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -659,7 +683,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
         contentId: content.id,
         title: content.title,
         imagePaths: imagePaths,
-        sourceId: content.sourceId,  // ← FIX: Use sourceId property
+        sourceId: content.sourceId, // ← FIX: Use sourceId property
         maxPagesPerFile: 50,
       );
     } catch (e) {
@@ -791,47 +815,45 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
     final offlineManager = getIt<OfflineContentManager>();
     // Try to find PDF
     try {
-      final firstImagePath = await offlineManager.getOfflineFirstImagePath(content.id);
+      final firstImagePath =
+          await offlineManager.getOfflineFirstImagePath(content.id);
       if (firstImagePath != null) {
         final contentDir = File(firstImagePath).parent.parent.path;
         final pdfDir = Directory(p.join(contentDir, 'pdf'));
-        
+
         if (await pdfDir.exists()) {
           final files = await pdfDir.list().toList();
-          final pdfs = files.where((f) => f.path.toLowerCase().endsWith('.pdf')).toList();
+          final pdfs = files
+              .where((f) => f.path.toLowerCase().endsWith('.pdf'))
+              .toList();
           if (pdfs.isNotEmpty) {
-             // Found PDF!
-             final pdfFile = pdfs.first;
-             if (context.mounted) {
-                 AppRouter.goToReaderPdf(
-                    context, 
-                    filePath: pdfFile.path, 
-                    contentId: content.id, 
-                    title: content.title
-                 );
-                 return;
-             }
+            // Found PDF!
+            final pdfFile = pdfs.first;
+            if (context.mounted) {
+              AppRouter.goToReaderPdf(context,
+                  filePath: pdfFile.path,
+                  contentId: content.id,
+                  title: content.title);
+              return;
+            }
           }
         }
       }
     } catch (e) {
       debugPrint('Error checking for PDF: $e');
     }
-    
+
     // Fallback to Image Reader
     if (context.mounted) {
-       AppRouter.goToReader(
-          context, 
-          content.id, 
-          content: content
-       );
+      AppRouter.goToReader(context, content.id, content: content);
     }
   }
 
   Future<bool> _checkPdfExists(String contentId) async {
     final offlineManager = getIt<OfflineContentManager>();
     try {
-      final firstImagePath = await offlineManager.getOfflineFirstImagePath(contentId);
+      final firstImagePath =
+          await offlineManager.getOfflineFirstImagePath(contentId);
       debugPrint('First image path: $firstImagePath');
       if (firstImagePath != null) {
         final contentDir = File(firstImagePath).parent.parent.path;

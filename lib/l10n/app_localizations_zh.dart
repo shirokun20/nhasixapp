@@ -474,6 +474,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get downloadError => '下载错误';
 
   @override
+  String get verifyingFiles => '验证文件';
+
+  @override
+  String verifyingFilesWithTitle(String title) {
+    return '验证 $title...';
+  }
+
+  @override
+  String verifyingProgress(int progress) {
+    return '验证中 ($progress%)';
+  }
+
+  @override
   String get initializingDownloads => 'Initializing downloads...';
 
   @override
@@ -739,6 +752,52 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get useBroaderSearchTerms => 'Use broader 搜索terms';
+
+  @override
+  String get welcomeTitle => '欢迎使用 Kuron！';
+
+  @override
+  String get welcomeMessage => '感谢您安装我们的应用。在开始之前，请注意：';
+
+  @override
+  String get ispBlockingInfo => '🚨 ISP 封锁通知';
+
+  @override
+  String get ispBlockingMessage =>
+      '如果此应用被您的 ISP（互联网服务提供商）封锁，请使用 VPN（如 Cloudflare WARP 1.1.1.1）来访问内容。';
+
+  @override
+  String get downloadWarp => '下载 1.1.1.1 VPN';
+
+  @override
+  String get permissionsRequired => '所需权限';
+
+  @override
+  String get storagePermissionInfo => '📁 存储：下载和离线保存内容所需';
+
+  @override
+  String get notificationPermissionInfo => '🔔 通知：显示下载进度和完成通知所需';
+
+  @override
+  String get grantStoragePermission => '授予存储权限';
+
+  @override
+  String get grantNotificationPermission => '授予通知权限';
+
+  @override
+  String get storageGranted => '✅ 存储权限已授予';
+
+  @override
+  String get notificationGranted => '✅ 通知权限已授予';
+
+  @override
+  String get getStarted => '开始使用';
+
+  @override
+  String get pleaseGrantAllPermissions => '请授予所有必需的权限以继续';
+
+  @override
+  String get permissionDenied => '权限被拒绝。某些功能可能无法正常工作。';
 
   @override
   String get loadingFavorites => '加载中收藏...';

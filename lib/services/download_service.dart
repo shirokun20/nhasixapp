@@ -154,6 +154,20 @@ class DownloadService {
           if (isRangeDownload && !downloadedFiles.contains(filePath)) {
             downloadedFiles.add(filePath);
           }
+          
+          // ✅ FIXED: Update progress even when skipping existing files
+          // This ensures notification shows correct progress during retry/resume
+          downloadedCount++;
+          final rawProgress = downloadedCount / totalImages;
+          final progressPercentage = (rawProgress * 90).toInt(); // Cap at 90%
+          
+          onProgress(DownloadProgress(
+            contentId: content.id,
+            downloadedPages: progressPercentage,
+            totalPages: 100,
+            currentFileName: '$fileName (cached)',
+          ));
+          
           continue;
         }
 
@@ -170,20 +184,23 @@ class DownloadService {
           downloadedFiles.add(filePath);
           downloadedCount++;
 
-          // FIXED: Cap progress at 90% during file downloads
-          // Reserve 90-100% for verification phase (size calculation, integrity check)
+          // ✅ FIXED: Phase 1 - File Downloads (0-90%)
+          // Progress is capped at 90% during file downloads
+          // Reserve 90-100% for verification, metadata, and completion phases
           final rawProgress = downloadedCount / totalImages;
-          final cappedProgress = (rawProgress * 0.9).clamp(0.0, 0.9); // Max 90%
-          final progressPercentage = (cappedProgress * 100).toInt();
+          final progressPercentage = (rawProgress * 90).toInt(); // Cap at 90%
           
           final progress = DownloadProgress(
             contentId: content.id,
-            downloadedPages: progressPercentage, // Use capped percentage instead
-            totalPages: 100, // Always out of 100 for consistency
+            downloadedPages: progressPercentage,
+            totalPages: 100,
             currentFileName: fileName,
           );
 
           onProgress(progress);
+          
+          _logger.d(
+              'Download progress: $progressPercentage% ($downloadedCount/$totalImages files)');
         } catch (e, stackTrace) {
           _logger.e('Failed to download page $pageNum: $e and $stackTrace');
           // Continue with next image instead of failing completely,
@@ -191,6 +208,17 @@ class DownloadService {
           continue;
         }
       }
+
+
+
+      // ✅ Phase 2: File Verification (90-95%)
+      _logger.i('Starting file verification phase...');
+      onProgress(DownloadProgress(
+        contentId: content.id,
+        downloadedPages: 92,
+        totalPages: 100,
+        currentFileName: 'Verifying files...',
+      ));
 
       // Verify all files were downloaded
       // We expect (actualEndPage - actualStartPage + 1) images for this batch
@@ -205,9 +233,31 @@ class DownloadService {
             'Download incomplete: $downloadedCount/$expectedBatchCount files verified');
       }
 
+      _logger.i('File verification complete: $downloadedCount/$expectedBatchCount files verified');
+
+      // ✅ Phase 3: Metadata Generation (95-98%)
+      _logger.i('Starting metadata generation phase...');
+      onProgress(DownloadProgress(
+        contentId: content.id,
+        downloadedPages: 96,
+        totalPages: 100,
+        currentFileName: 'Saving metadata...',
+      ));
+
       // Save metadata with range information
       await _saveDownloadMetadata(content, downloadDir, downloadedFiles,
           actualStartPage, actualEndPage);
+
+      _logger.i('Metadata generation complete');
+
+      // ✅ Phase 4: Completion (100%)
+      onProgress(DownloadProgress(
+        contentId: content.id,
+        downloadedPages: 100,
+        totalPages: 100,
+        currentFileName: 'Completed',
+      ));
+
 
       // NOTE: Notification is handled by DownloadBloc._onStart() to avoid duplication
 

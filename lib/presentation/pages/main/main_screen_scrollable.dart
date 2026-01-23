@@ -40,6 +40,8 @@ import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_state.dart';
 import 'package:kuron_core/kuron_core.dart' hide SearchFilter, SortOption;
+import 'package:nhasixapp/presentation/widgets/welcome_onboarding_sheet.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // New imports for dynamic sorting
 import 'package:nhasixapp/core/config/config_models.dart';
@@ -93,6 +95,32 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     });
 
     _initializeContent();
+
+    // Show welcome onboarding sheet on first launch
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndShowWelcomeSheet();
+    });
+  }
+
+  /// Check if this is first launch and show welcome sheet
+  Future<void> _checkAndShowWelcomeSheet() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenWelcome = prefs.getBool('has_seen_welcome_v1') ?? false;
+
+    if (!hasSeenWelcome && mounted) {
+      showModalBottomSheet(
+        context: context,
+        isDismissible: false,
+        enableDrag: false,
+        isScrollControlled: true,
+        builder: (context) => WelcomeOnboardingSheet(
+          onComplete: () async {
+            // Mark as seen
+            await prefs.setBool('has_seen_welcome_v1', true);
+          },
+        ),
+      );
+    }
   }
 
   Future<void> _checkConnectivity() async {

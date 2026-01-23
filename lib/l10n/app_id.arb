@@ -207,6 +207,19 @@
   "downloadProgress": "Progres Unduhan",
   "downloadComplete": "Unduhan Selesai",
   "downloadError": "Error Unduhan",
+  "verifyingFiles": "Memverifikasi File",
+  "verifyingFilesWithTitle": "Memverifikasi {title}...",
+  "@verifyingFilesWithTitle": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "verifyingProgress": "Memverifikasi ({progress}%)",
+  "@verifyingProgress": {
+    "placeholders": {
+      "progress": {"type": "int"}
+    }
+  },
   "initializingDownloads": "Memulai unduhan...",
   "loadingDownloads": "Memuat unduhan...",
   "pauseAll": "Pause Semua",
@@ -300,6 +313,22 @@
   "removeSomeFilters": "Hapus beberapa filter",
   "checkSpelling": "Periksa ejaan",
   "useBroaderSearchTerms": "Gunakan istilah pencarian yang lebih luas",
+  
+  "welcomeTitle": "Selamat Datang di Kuron!",
+  "welcomeMessage": "Terima kasih telah menginstal aplikasi kami. Sebelum memulai, harap perhatikan:",
+  "ispBlockingInfo": "🚨 Pemberitahuan Pemblokiran ISP",
+  "ispBlockingMessage": "Jika aplikasi ini diblokir oleh ISP (Penyedia Layanan Internet) Anda, silakan gunakan VPN seperti Cloudflare WARP (1.1.1.1) untuk mengakses konten.",
+  "downloadWarp": "Unduh VPN 1.1.1.1",
+  "permissionsRequired": "Izin yang Diperlukan",
+  "storagePermissionInfo": "📁 Penyimpanan: Diperlukan untuk mengunduh dan menyimpan konten offline",
+  "notificationPermissionInfo": "🔔 Notifikasi: Diperlukan untuk menampilkan progress dan penyelesaian unduhan",
+  "grantStoragePermission": "Berikan Izin Penyimpanan",
+  "grantNotificationPermission": "Berikan Izin Notifikasi",
+  "storageGranted": "✅ Izin penyimpanan diberikan",
+  "notificationGranted": "✅ Izin notifikasi diberikan",
+  "getStarted": "Mulai",
+  "pleaseGrantAllPermissions": "Harap berikan semua izin yang diperlukan untuk melanjutkan",
+  "permissionDenied": "Izin ditolak. Beberapa fitur mungkin tidak berfungsi dengan baik.",
   
   "loadingFavorites": "Memuat favorit...",
   "errorLoadingFavorites": "Error Memuat Favorit",

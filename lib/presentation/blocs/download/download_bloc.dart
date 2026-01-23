@@ -88,7 +88,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     on<DownloadClearSelectionEvent>(_onClearSelection);
     on<DownloadBulkDeleteEvent>(_onBulkDelete);
 
-    // Initialize notifications
+    // Initialize notifications (checks existing permission, doesn't request)
+    // If permission not granted, service will be initialized later when user grants permission
     _notificationService.initialize();
 
     // Setup notification action callbacks
@@ -690,20 +691,20 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // NEW: Extract cookies for Crotpedia protected content
       Map<String, String>? cookies;
-      
+
       // DEBUG: Log source and auth manager state
       _logger.i('🔍 Download sourceId: ${content.sourceId}');
       _logger.i('🔍 AuthManager null?: ${_crotpediaAuthManager == null}');
-      
+
       if (content.sourceId == 'crotpedia' && _crotpediaAuthManager != null) {
         _logger.i('✅ Entering cookie extraction block');
         try {
           cookies = await _crotpediaAuthManager.getCookiesForDomain(
               'https://crotpedia.net'); // Match actual baseUrl (.net not .com)
-          
+
           _logger.i('🍪 Cookie Count: ${cookies.length}');
           _logger.i('🍪 Cookie Keys: ${cookies.keys.join(", ")}');
-          
+
           if (cookies.isNotEmpty) {
             _logger.i(
                 'DownloadBloc: Extracted ${cookies.length} cookies for protected download');
@@ -713,7 +714,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           // Continue without cookies - may fail for protected content
         }
       } else {
-        _logger.w('❌ Skipped cookie extraction - sourceId: ${content.sourceId}, authManager null: ${_crotpediaAuthManager == null}');
+        _logger.w(
+            '❌ Skipped cookie extraction - sourceId: ${content.sourceId}, authManager null: ${_crotpediaAuthManager == null}');
       }
 
       // Start actual download
@@ -998,6 +1000,18 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       await _userDataRepository.saveDownloadStatus(updatedDownload);
 
+      // ✅ FIXED: Reset notification when retrying
+      // This prevents the notification from being stuck at the last progress (e.g., 92%)
+      if (currentState.settings.enableNotifications) {
+        _notificationService.showDownloadStarted(
+          contentId: event.contentId,
+          title: download.title ?? download.contentId,
+        ).catchError((e) {
+          _logger.w('DownloadBloc: Failed to reset notification on retry: $e');
+        });
+        _logger.i('DownloadBloc: Reset notification for retry ${event.contentId}');
+      }
+
       // Refresh downloads
       add(const DownloadRefreshEvent());
 
@@ -1233,6 +1247,66 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       final currentDownload = downloads[downloadIndex];
 
+      // ============================================================
+      // HANDLE VERIFICATION PROGRESS (Special Case)
+      // ============================================================
+      // downloadedPages = -2 signals verification progress
+      // totalPages = verification percentage (0-100)
+      if (event.downloadedPages == -2) {
+        _logger.d(
+            'DownloadBloc: Verification progress update for ${event.contentId}: ${event.totalPages}%');
+
+        // Show verification notification
+        if (currentState.settings.enableNotifications) {
+          final verificationPercentage = event.totalPages;
+
+          // Show verification started on first progress update
+          if (verificationPercentage == 0 || verificationPercentage == 1) {
+            _notificationService
+                .showVerificationStarted(
+              contentId: event.contentId,
+              title: currentDownload.title ?? currentDownload.contentId,
+            )
+                .catchError((e) {
+              _logger.w(
+                  'DownloadBloc: Failed to show verification started notification: $e');
+            });
+          }
+
+          // Update verification progress (only every 20% to reduce spam)
+          if (verificationPercentage % 20 == 0 ||
+              verificationPercentage >= 95) {
+            _notificationService
+                .updateVerificationProgress(
+              contentId: event.contentId,
+              progress: verificationPercentage,
+              title: currentDownload.title ?? currentDownload.contentId,
+            )
+                .catchError((e) {
+              _logger.w(
+                  'DownloadBloc: Failed to update verification progress: $e');
+            });
+          }
+
+          // Cancel verification notification when complete
+          if (verificationPercentage >= 100) {
+            _notificationService
+                .cancelVerificationNotification(event.contentId)
+                .catchError((e) {
+              _logger.w(
+                  'DownloadBloc: Failed to cancel verification notification: $e');
+            });
+          }
+        }
+
+        // Don't update download status for verification progress
+        return;
+      }
+
+      // ============================================================
+      // HANDLE NORMAL DOWNLOAD PROGRESS
+      // ============================================================
+
       // Update progress only if download is still in progress
       if (!currentDownload.isInProgress) {
         _logger.d(
@@ -1262,6 +1336,24 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           event.estimatedTimeRemaining == Duration.zero) {
         _logger.i(
             'DownloadBloc: Download appears completed, refreshing status for ${event.contentId}');
+        
+        // ✅ FIXED: Show completion notification BEFORE returning
+        // This fixes the issue where notification was stuck at ~90%
+        if (currentState.settings.enableNotifications) {
+          _notificationService
+              .showDownloadCompleted(
+            contentId: event.contentId,
+            title: currentDownload.title ?? currentDownload.contentId,
+            downloadPath: currentDownload.downloadPath ?? '',
+          )
+              .catchError((e) {
+            _logger.w(
+                'DownloadBloc: Failed to show completion notification on early complete: $e');
+          });
+          _logger.i(
+              'DownloadBloc: Triggered completion notification for ${event.contentId} (early complete)');
+        }
+        
         add(const DownloadRefreshEvent());
         return;
       }
@@ -1295,20 +1387,33 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             'DownloadBloc: Skipping DB save for 100% progress to avoid overwriting completion status');
       }
 
-      // Update notification progress through DownloadBloc only if NOT using native
-      if (currentState.settings.enableNotifications &&
-          updatedDownload.isInProgress) {
+      // Update notification progress through DownloadBloc
+      if (currentState.settings.enableNotifications) {
         final progressPercentage = updatedDownload.progressPercentage.round();
 
-        // Only update notification if progress < 100%
-        // At 100%, we wait for the completion notification to avoid showing "Pause/Cancel" buttons
-        if (progressPercentage < 100) {
+        // ✅ FIXED: Completion notification should trigger regardless of isInProgress
+        // because when progress = 100%, download may already be marked as completed
+        if (progressPercentage >= 100) {
+          // Show completion notification
+          _notificationService
+              .showDownloadCompleted(
+            contentId: event.contentId,
+            title: updatedDownload.title ?? updatedDownload.contentId,
+            downloadPath: updatedDownload.downloadPath ?? '',
+          )
+              .catchError((e) {
+            _logger.w(
+                'DownloadBloc: Failed to show completion notification: $e');
+          });
+          _logger.i(
+              'DownloadBloc: Triggered completion notification for ${event.contentId}');
+        } else if (updatedDownload.isInProgress) {
+          // Update progress notification only if still in progress (< 100%)
           _notificationService
               .updateDownloadProgress(
             contentId: event.contentId,
             progress: progressPercentage,
-            title: updatedDownload
-                .contentId, // Use contentId as fallback for title
+            title: updatedDownload.contentId, // Use contentId as fallback for title
             isPaused: false,
           )
               .catchError((e) {

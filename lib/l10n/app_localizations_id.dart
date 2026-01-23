@@ -486,6 +486,19 @@ class AppLocalizationsId extends AppLocalizations {
   String get downloadError => 'Error Unduhan';
 
   @override
+  String get verifyingFiles => 'Memverifikasi File';
+
+  @override
+  String verifyingFilesWithTitle(String title) {
+    return 'Memverifikasi $title...';
+  }
+
+  @override
+  String verifyingProgress(int progress) {
+    return 'Memverifikasi ($progress%)';
+  }
+
+  @override
   String get initializingDownloads => 'Memulai unduhan...';
 
   @override
@@ -753,6 +766,57 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get useBroaderSearchTerms =>
       'Gunakan istilah pencarian yang lebih luas';
+
+  @override
+  String get welcomeTitle => 'Selamat Datang di Kuron!';
+
+  @override
+  String get welcomeMessage =>
+      'Terima kasih telah menginstal aplikasi kami. Sebelum memulai, harap perhatikan:';
+
+  @override
+  String get ispBlockingInfo => '🚨 Pemberitahuan Pemblokiran ISP';
+
+  @override
+  String get ispBlockingMessage =>
+      'Jika aplikasi ini diblokir oleh ISP (Penyedia Layanan Internet) Anda, silakan gunakan VPN seperti Cloudflare WARP (1.1.1.1) untuk mengakses konten.';
+
+  @override
+  String get downloadWarp => 'Unduh VPN 1.1.1.1';
+
+  @override
+  String get permissionsRequired => 'Izin yang Diperlukan';
+
+  @override
+  String get storagePermissionInfo =>
+      '📁 Penyimpanan: Diperlukan untuk mengunduh dan menyimpan konten offline';
+
+  @override
+  String get notificationPermissionInfo =>
+      '🔔 Notifikasi: Diperlukan untuk menampilkan progress dan penyelesaian unduhan';
+
+  @override
+  String get grantStoragePermission => 'Berikan Izin Penyimpanan';
+
+  @override
+  String get grantNotificationPermission => 'Berikan Izin Notifikasi';
+
+  @override
+  String get storageGranted => '✅ Izin penyimpanan diberikan';
+
+  @override
+  String get notificationGranted => '✅ Izin notifikasi diberikan';
+
+  @override
+  String get getStarted => 'Mulai';
+
+  @override
+  String get pleaseGrantAllPermissions =>
+      'Harap berikan semua izin yang diperlukan untuk melanjutkan';
+
+  @override
+  String get permissionDenied =>
+      'Izin ditolak. Beberapa fitur mungkin tidak berfungsi dengan baik.';
 
   @override
   String get loadingFavorites => 'Memuat favorit...';

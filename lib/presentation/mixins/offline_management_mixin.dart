@@ -6,6 +6,7 @@ import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/core/utils/permission_helper.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
+import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart'; // NEW: For download screen refresh
 import 'package:nhasixapp/services/export_service.dart';
 import 'package:nhasixapp/services/notification_service.dart';
 
@@ -198,6 +199,18 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       // Force refresh to reload from database AND clear loading state
       // This must run unconditionally to stop the loading shimmer
       context.read<OfflineSearchCubit>().forceRefresh();
+
+      // ✅ NEW: Refresh DownloadBloc to sync Downloads Screen with database
+      // This ensures Downloads Screen shows imported content immediately
+      // without requiring app restart
+      try {
+        context.read<DownloadBloc>().add(const DownloadRefreshEvent());
+        debugPrint('OFFLINE_AUTO_SCAN: Triggered DownloadBloc refresh after sync');
+      } catch (e) {
+        // DownloadBloc might not be available in all contexts (e.g., if Downloads Screen hasn't been visited)
+        // This is non-critical, so just log and continue
+        debugPrint('OFFLINE_AUTO_SCAN: Could not refresh DownloadBloc (not initialized yet): $e');
+      }
     } else {
       debugPrint('OFFLINE_AUTO_SCAN: No backup folder found automatically');
     }

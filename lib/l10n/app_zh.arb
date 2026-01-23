@@ -198,6 +198,19 @@
   "downloadProgress": "下载进度",
   "downloadComplete": "下载 Complete",
   "downloadError": "下载错误",
+  "verifyingFiles": "验证文件",
+  "verifyingFilesWithTitle": "验证 {title}...",
+  "@verifyingFilesWithTitle": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "verifyingProgress": "验证中 ({progress}%)",
+  "@verifyingProgress": {
+    "placeholders": {
+      "progress": {"type": "int"}
+    }
+  },
   "initializingDownloads": "Initializing downloads...",
   "loadingDownloads": "加载中 downloads...",
   "pauseAll": "Pause 全部",
@@ -370,6 +383,23 @@
   "tryAgainLater": "请稍后重试",
   "serverUnavailable": "The 服务器 is currently不可用. Please try again later.",
   "useBroaderSearchTerms": "Use broader 搜索terms",
+  
+  "welcomeTitle": "欢迎使用 Kuron！",
+  "welcomeMessage": "感谢您安装我们的应用。在开始之前，请注意：",
+  "ispBlockingInfo": "🚨 ISP 封锁通知",
+  "ispBlockingMessage": "如果此应用被您的 ISP（互联网服务提供商）封锁，请使用 VPN（如 Cloudflare WARP 1.1.1.1）来访问内容。",
+  "downloadWarp": "下载 1.1.1.1 VPN",
+  "permissionsRequired": "所需权限",
+  "storagePermissionInfo": "📁 存储：下载和离线保存内容所需",
+  "notificationPermissionInfo": "🔔 通知：显示下载进度和完成通知所需",
+  "grantStoragePermission": "授予存储权限",
+  "grantNotificationPermission": "授予通知权限",
+  "storageGranted": "✅ 存储权限已授予",
+  "notificationGranted": "✅ 通知权限已授予",
+  "getStarted": "开始使用",
+  "pleaseGrantAllPermissions": "请授予所有必需的权限以继续",
+  "permissionDenied": "权限被拒绝。某些功能可能无法正常工作。",
+  
   "loadingFavorites": "加载中收藏...",
   "errorLoadingFavorites": "错误 加载中 收藏",
   "removeFavorite": "移除Favorite",

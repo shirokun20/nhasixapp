@@ -994,6 +994,24 @@ abstract class AppLocalizations {
   /// **'Download Error'**
   String get downloadError;
 
+  /// No description provided for @verifyingFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying Files'**
+  String get verifyingFiles;
+
+  /// No description provided for @verifyingFilesWithTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying {title}...'**
+  String verifyingFilesWithTitle(String title);
+
+  /// No description provided for @verifyingProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying ({progress}%)'**
+  String verifyingProgress(int progress);
+
   /// No description provided for @initializingDownloads.
   ///
   /// In en, this message translates to:
@@ -1467,6 +1485,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use broader search terms'**
   String get useBroaderSearchTerms;
+
+  /// No description provided for @welcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Kuron!'**
+  String get welcomeTitle;
+
+  /// No description provided for @welcomeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you for installing our app. Before you start, please note:'**
+  String get welcomeMessage;
+
+  /// No description provided for @ispBlockingInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'🚨 ISP Blocking Notice'**
+  String get ispBlockingInfo;
+
+  /// No description provided for @ispBlockingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'If this app is blocked by your ISP (Internet Service Provider), please use a VPN like Cloudflare WARP (1.1.1.1) to access content.'**
+  String get ispBlockingMessage;
+
+  /// No description provided for @downloadWarp.
+  ///
+  /// In en, this message translates to:
+  /// **'Download 1.1.1.1 VPN'**
+  String get downloadWarp;
+
+  /// No description provided for @permissionsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Required Permissions'**
+  String get permissionsRequired;
+
+  /// No description provided for @storagePermissionInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'📁 Storage: Required to download and save content offline'**
+  String get storagePermissionInfo;
+
+  /// No description provided for @notificationPermissionInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'🔔 Notifications: Required to show download progress and completion'**
+  String get notificationPermissionInfo;
+
+  /// No description provided for @grantStoragePermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Grant Storage Permission'**
+  String get grantStoragePermission;
+
+  /// No description provided for @grantNotificationPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Grant Notification Permission'**
+  String get grantNotificationPermission;
+
+  /// No description provided for @storageGranted.
+  ///
+  /// In en, this message translates to:
+  /// **'✅ Storage permission granted'**
+  String get storageGranted;
+
+  /// No description provided for @notificationGranted.
+  ///
+  /// In en, this message translates to:
+  /// **'✅ Notification permission granted'**
+  String get notificationGranted;
+
+  /// No description provided for @getStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
+  String get getStarted;
+
+  /// No description provided for @pleaseGrantAllPermissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Please grant all required permissions to continue'**
+  String get pleaseGrantAllPermissions;
+
+  /// No description provided for @permissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission denied. Some features may not work properly.'**
+  String get permissionDenied;
 
   /// No description provided for @loadingFavorites.
   ///

@@ -197,6 +197,19 @@
   "downloadProgress": "Download Progress",
   "downloadComplete": "Download Complete",
   "downloadError": "Download Error",
+  "verifyingFiles": "Verifying Files",
+  "verifyingFilesWithTitle": "Verifying {title}...",
+  "@verifyingFilesWithTitle": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "verifyingProgress": "Verifying ({progress}%)",
+  "@verifyingProgress": {
+    "placeholders": {
+      "progress": {"type": "int"}
+    }
+  },
   "initializingDownloads": "Initializing downloads...",
   "loadingDownloads": "Loading downloads...",
   "pauseAll": "Pause All",
@@ -368,6 +381,22 @@
   "removeSomeFilters": "Remove some filters",
   "checkSpelling": "Check spelling",
   "useBroaderSearchTerms": "Use broader search terms",
+  
+  "welcomeTitle": "Welcome to Kuron!",
+  "welcomeMessage": "Thank you for installing our app. Before you start, please note:",
+  "ispBlockingInfo": "🚨 ISP Blocking Notice",
+  "ispBlockingMessage": "If this app is blocked by your ISP (Internet Service Provider), please use a VPN like Cloudflare WARP (1.1.1.1) to access content.",
+  "downloadWarp": "Download 1.1.1.1 VPN",
+  "permissionsRequired": "Required Permissions",
+  "storagePermissionInfo": "📁 Storage: Required to download and save content offline",
+  "notificationPermissionInfo": "🔔 Notifications: Required to show download progress and completion",
+  "grantStoragePermission": "Grant Storage Permission",
+  "grantNotificationPermission": "Grant Notification Permission",
+  "storageGranted": "✅ Storage permission granted",
+  "notificationGranted": "✅ Notification permission granted",
+  "getStarted": "Get Started",
+  "pleaseGrantAllPermissions": "Please grant all required permissions to continue",
+  "permissionDenied": "Permission denied. Some features may not work properly.",
   
   "loadingFavorites": "Loading favorites...",
   "errorLoadingFavorites": "Error Loading Favorites",

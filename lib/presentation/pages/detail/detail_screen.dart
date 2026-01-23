@@ -18,7 +18,7 @@ import 'package:kuron_core/kuron_core.dart';
 import '../../widgets/download_button_widget.dart';
 import '../../widgets/progressive_image_widget.dart';
 import '../../widgets/shimmer_loading_widgets.dart';
-
+import '../../widgets/permission_request_sheet.dart';
 
 class DetailScreen extends StatefulWidget {
   final String contentId;
@@ -120,21 +120,21 @@ class _DetailScreenState extends State<DetailScreen> {
         // SPECIAL HANDLING FOR NHENTAI
         // User requested strict slug format: lowercase + hyphens
         // e.g. "Big Breasts" -> "big-breasts", "Lucy Heartfilia" -> "lucy-heartfilia"
-        
+
         // Prioritize explicit slug/tagId if it's text (not numeric ID)
         String value = tagName.toLowerCase().replaceAll(' ', '-');
         if (tagId != null && int.tryParse(tagId) == null) {
-           value = tagId;
+          value = tagId;
         }
 
         if (tagType != null &&
             !['tag', 'category'].contains(tagType.toLowerCase())) {
-           // type:slug syntax (e.g. artist:shidou, character:lucy-heartfilia)
-           query = '${tagType.toLowerCase()}:$value';
+          // type:slug syntax (e.g. artist:shidou, character:lucy-heartfilia)
+          query = '${tagType.toLowerCase()}:$value';
         } else {
-           // General tags: just the slug (e.g. big-breasts)
-           // This will map to "q=big-breasts" in search
-           query = value;
+          // General tags: just the slug (e.g. big-breasts)
+          // This will map to "q=big-breasts" in search
+          query = value;
         }
       }
 
@@ -366,31 +366,37 @@ class _DetailScreenState extends State<DetailScreen> {
                     if (detailState is! DetailLoaded) {
                       return const SizedBox.shrink();
                     }
-                    
+
                     final remoteConfig = getIt<RemoteConfigService>();
                     final favoriteEnabled = remoteConfig.isFeatureEnabled(
                       detailState.content.sourceId,
                       (f) => f.favorite,
                     );
-                    
+
                     return IconButton(
                       icon: Icon(
-                        detailState.isFavorited ? Icons.favorite : Icons.favorite_border,
+                        detailState.isFavorited
+                            ? Icons.favorite
+                            : Icons.favorite_border,
                         color: detailState.isFavorited
                             ? Theme.of(context).colorScheme.error
                             : (favoriteEnabled
                                 ? Theme.of(context).colorScheme.onSurface
-                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.3)),
                       ),
-                      onPressed: (detailState.isTogglingFavorite || !favoriteEnabled)
-                          ? null
-                          : () {
-                              if (!favoriteEnabled) {
-                                _showFeatureDisabledDialog('favorite');
-                                return;
-                              }
-                              _detailCubit.toggleFavorite();
-                            },
+                      onPressed:
+                          (detailState.isTogglingFavorite || !favoriteEnabled)
+                              ? null
+                              : () {
+                                  if (!favoriteEnabled) {
+                                    _showFeatureDisabledDialog('favorite');
+                                    return;
+                                  }
+                                  _detailCubit.toggleFavorite();
+                                },
                     );
                   },
                 ),
@@ -761,10 +767,13 @@ class _DetailScreenState extends State<DetailScreen> {
   Widget _buildActionButtons(Content content) {
     // Check if chapters feature is enabled for this source
     final remoteConfig = getIt<RemoteConfigService>();
-    final hasChaptersFeature = remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.chapters);
+    final hasChaptersFeature =
+        remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.chapters);
 
     // If content has chapters AND feature is enabled, show chapter list
-    if (hasChaptersFeature && content.chapters != null && content.chapters!.isNotEmpty) {
+    if (hasChaptersFeature &&
+        content.chapters != null &&
+        content.chapters!.isNotEmpty) {
       return _buildChapterList(content);
     }
 
@@ -839,7 +848,10 @@ class _DetailScreenState extends State<DetailScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.15),
+            Theme.of(context)
+                .colorScheme
+                .primaryContainer
+                .withValues(alpha: 0.15),
             Theme.of(context).colorScheme.surfaceContainer,
           ],
           begin: Alignment.topLeft,
@@ -852,7 +864,8 @@ class _DetailScreenState extends State<DetailScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+            color:
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -872,7 +885,8 @@ class _DetailScreenState extends State<DetailScreen> {
                   Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
                 ],
               ),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(18)),
             ),
             child: Row(
               children: [
@@ -889,7 +903,10 @@ class _DetailScreenState extends State<DetailScreen> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -961,11 +978,17 @@ class _DetailScreenState extends State<DetailScreen> {
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .outline
+                        .withValues(alpha: 0.2),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.04),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .shadow
+                          .withValues(alpha: 0.04),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -996,7 +1019,10 @@ class _DetailScreenState extends State<DetailScreen> {
                               borderRadius: BorderRadius.circular(14),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withValues(alpha: 0.25),
                                   blurRadius: 6,
                                   offset: const Offset(0, 2),
                                 ),
@@ -1006,7 +1032,8 @@ class _DetailScreenState extends State<DetailScreen> {
                               child: Text(
                                 '${index + 1}',
                                 style: TextStyleConst.headingSmall.copyWith(
-                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 18,
                                 ),
@@ -1024,7 +1051,8 @@ class _DetailScreenState extends State<DetailScreen> {
                                   chapter.title,
                                   style: TextStyleConst.bodyLarge.copyWith(
                                     fontWeight: FontWeight.w600,
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
@@ -1036,13 +1064,18 @@ class _DetailScreenState extends State<DetailScreen> {
                                       Icon(
                                         Icons.schedule,
                                         size: 14,
-                                        color: Theme.of(context).colorScheme.primary,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
                                         _formatDate(chapter.uploadDate!),
-                                        style: TextStyleConst.bodySmall.copyWith(
-                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                        style:
+                                            TextStyleConst.bodySmall.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -1083,13 +1116,19 @@ class _DetailScreenState extends State<DetailScreen> {
                                   gradient: LinearGradient(
                                     colors: [
                                       Theme.of(context).colorScheme.primary,
-                                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+                                      Theme.of(context)
+                                          .colorScheme
+                                          .primary
+                                          .withValues(alpha: 0.8),
                                     ],
                                   ),
                                   borderRadius: BorderRadius.circular(12),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary
+                                          .withValues(alpha: 0.3),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
                                     ),
@@ -1100,8 +1139,11 @@ class _DetailScreenState extends State<DetailScreen> {
                                   children: [
                                     Text(
                                       l10n.readChapter,
-                                      style: TextStyleConst.labelMedium.copyWith(
-                                        color: Theme.of(context).colorScheme.onPrimary,
+                                      style:
+                                          TextStyleConst.labelMedium.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onPrimary,
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
@@ -1109,7 +1151,9 @@ class _DetailScreenState extends State<DetailScreen> {
                                     Icon(
                                       Icons.arrow_forward,
                                       size: 16,
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
                                     ),
                                   ],
                                 ),
@@ -1209,7 +1253,8 @@ class _DetailScreenState extends State<DetailScreen> {
   Widget _buildRelatedContentSection(Content content) {
     // Check if related content feature is enabled for this source
     final remoteConfig = getIt<RemoteConfigService>();
-    final hasRelatedFeature = remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.related);
+    final hasRelatedFeature =
+        remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.related);
 
     if (!hasRelatedFeature || content.relatedContent.isEmpty) {
       return const SizedBox.shrink();
@@ -1695,11 +1740,12 @@ class _DetailScreenState extends State<DetailScreen> {
 
   void _handleMenuAction(String action, Content content) {
     final remoteConfig = getIt<RemoteConfigService>();
-    
+
     switch (action) {
       case 'download':
         // Check feature flag before downloading
-        if (!remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.download)) {
+        if (!remoteConfig.isFeatureEnabled(
+            content.sourceId, (f) => f.download)) {
           _showFeatureDisabledDialog('download');
           return;
         }
@@ -1712,11 +1758,49 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   /// Start download for the content
-  void _startDownload(Content content) {
+  Future<void> _startDownload(Content content) async {
     // Check if download feature is enabled
     final remoteConfig = getIt<RemoteConfigService>();
     if (!remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.download)) {
       _showFeatureDisabledDialog('download');
+      return;
+    }
+
+    // Check permissions before starting download
+    if (!mounted) return;
+
+    final hasPermissions = await showPermissionRequestSheet(
+      context,
+      requireStorage: true,
+      requireNotification: true,
+    );
+
+    if (!mounted || !hasPermissions) {
+      if (mounted && !hasPermissions) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  Icons.error,
+                  color: Theme.of(context).colorScheme.onError,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    AppLocalizations.of(context)!.permissionDenied,
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onError,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
       return;
     }
 
