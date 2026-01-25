@@ -1,6 +1,7 @@
 enum SourceType {
   nhentai('nhentai'),
-  crotpedia('crotpedia');
+  crotpedia('crotpedia'),
+  komiktap('komiktap');
 
   final String id;
   const SourceType(this.id);
