@@ -639,6 +639,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
           pageNumber: pageNumber,
           readingMode: ReadingMode.continuousScroll,
           enableZoom: zoom,
+          onImageLoaded:
+              _readerCubit.onImageLoaded, // 🎨 Auto-detect webtoon/manhwa
         ),
       );
     }
@@ -659,6 +661,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
             pageNumber: pageNumber,
             readingMode: state.readingMode ?? ReadingMode.singlePage,
             enableZoom: zoom,
+            onImageLoaded:
+                _readerCubit.onImageLoaded, // 🎨 Auto-detect webtoon/manhwa
           );
         }
 

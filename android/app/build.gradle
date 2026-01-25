@@ -60,6 +60,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix ".debug"
+            resValue "string", "app_name", "Kuron Dev"
+        }
         release {
             // Fallback to debug signing if release keys are missing
             if (signingConfigs.release.storeFile != null && signingConfigs.release.storeFile.exists()) {
@@ -70,6 +74,7 @@ android {
             }
             minifyEnabled true
             shrinkResources true
+            resValue "string", "app_name", "Kuron"
         }
     }
 

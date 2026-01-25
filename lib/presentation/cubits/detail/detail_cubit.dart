@@ -1,3 +1,5 @@
+import 'package:kuron_komiktap/kuron_komiktap.dart';
+
 import '../../../domain/value_objects/value_objects.dart';
 import '../../../domain/usecases/content/content_usecases.dart';
 import '../../../domain/usecases/content/get_content_detail_usecase.dart';
@@ -369,6 +371,8 @@ class DetailCubit extends BaseCubit<DetailState> {
       List<String> images = [];
 
       if (source is CrotpediaSource) {
+        images = await source.getChapterImages(chapter.id);
+      } else if (source is KomiktapSource) {
         images = await source.getChapterImages(chapter.id);
       } else {
         logWarning(

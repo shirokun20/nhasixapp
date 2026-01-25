@@ -17,7 +17,7 @@ class RemoteDataSourceFactory {
     // Create HTTP client
     final httpClient = Dio();
 
-    // Create RemoteConfigService
+    // Create RemoteConfigService (configs from assets, tags from remote)
     final remoteConfigService = RemoteConfigService(
       dio: httpClient,
       logger: log,

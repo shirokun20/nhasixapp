@@ -24,6 +24,7 @@ class Content extends Equatable {
     this.favorites = 0,
     this.englishTitle,
     this.japaneseTitle,
+    this.subTitle,
     this.mediaId,
     this.relatedContent = const [],
     this.chapters,
@@ -77,6 +78,9 @@ class Content extends Equatable {
   /// Japanese title (if available)
   final String? japaneseTitle;
 
+  /// Subtitle (if available)
+  final String? subTitle;
+
   /// Media ID (used for image URL construction in some sources)
   final String? mediaId;
 
@@ -104,6 +108,7 @@ class Content extends Equatable {
         favorites,
         englishTitle,
         japaneseTitle,
+        subTitle,
         mediaId,
         relatedContent,
         chapters,
@@ -126,6 +131,7 @@ class Content extends Equatable {
     int? favorites,
     String? englishTitle,
     String? japaneseTitle,
+    String? subTitle,
     String? mediaId,
     List<Content>? relatedContent,
     List<Chapter>? chapters,
@@ -147,6 +153,7 @@ class Content extends Equatable {
       favorites: favorites ?? this.favorites,
       englishTitle: englishTitle ?? this.englishTitle,
       japaneseTitle: japaneseTitle ?? this.japaneseTitle,
+      subTitle: subTitle ?? this.subTitle,
       mediaId: mediaId ?? this.mediaId,
       relatedContent: relatedContent ?? this.relatedContent,
       chapters: chapters ?? this.chapters,

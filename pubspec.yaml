@@ -113,6 +113,7 @@ flutter:
     - assets/icons/
     - assets/legal/en/
     - assets/legal/id/
+    - assets/configs/
     # Note: tags.json.gz (compressed) is 1.1MB vs tags.json (5MB)
 
 # Flutter Launcher Icons Configuration

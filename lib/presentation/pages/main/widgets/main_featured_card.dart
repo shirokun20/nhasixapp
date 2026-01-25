@@ -175,6 +175,21 @@ class MainFeaturedCard extends StatelessWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
+                            // Subtitle (Chapter info)
+                            if (content.subTitle != null &&
+                                content.subTitle!.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                content.subTitle!,
+                                style: TextStyleConst.labelSmall.copyWith(
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.6),
+                                  fontSize: 10,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                             const SizedBox(height: 8),
                             // Artists
                             if (content.artists.isNotEmpty)

@@ -22,6 +22,7 @@ class ContentModel extends Content {
     super.favorites = 0,
     super.englishTitle,
     super.japaneseTitle,
+    super.subTitle,
     super.relatedContent = const [],
     super.chapters,
     super.mediaId,
@@ -298,14 +299,16 @@ class ContentModel extends Content {
       'upload_date': uploadDate.millisecondsSinceEpoch,
       'source_id': sourceId,
       'favorites': favorites,
-      'tags': tags.map((t) => {
-        'id': t.id,
-        'name': t.name,
-        'type': t.type,
-        'count': t.count,
-        'url': t.url,
-        'slug': t.slug,
-      }).toList(),
+      'tags': tags
+          .map((t) => {
+                'id': t.id,
+                'name': t.name,
+                'type': t.type,
+                'count': t.count,
+                'url': t.url,
+                'slug': t.slug,
+              })
+          .toList(),
       'cached_at': cachedAt?.millisecondsSinceEpoch ??
           DateTime.now().millisecondsSinceEpoch,
     };
@@ -340,6 +343,7 @@ class ContentModel extends Content {
     String? title,
     String? englishTitle,
     String? japaneseTitle,
+    String? subTitle,
     String? coverUrl,
     List<Tag>? tags,
     List<String>? artists,
@@ -362,6 +366,7 @@ class ContentModel extends Content {
       title: title ?? this.title,
       englishTitle: englishTitle ?? this.englishTitle,
       japaneseTitle: japaneseTitle ?? this.japaneseTitle,
+      subTitle: subTitle ?? this.subTitle,
       coverUrl: coverUrl ?? this.coverUrl,
       tags: tags ?? this.tags,
       artists: artists ?? this.artists,

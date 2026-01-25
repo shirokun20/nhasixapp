@@ -102,6 +102,20 @@ class MainGridCard extends StatelessWidget {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        // Subtitle (Chapter info)
+                        if (content.subTitle != null &&
+                            content.subTitle!.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            content.subTitle!,
+                            style: TextStyleConst.overline.copyWith(
+                              color: Colors.white.withValues(alpha: 0.7),
+                              fontSize: 9,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                         const SizedBox(height: 4),
                         Row(
                           children: [

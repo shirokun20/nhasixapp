@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:html/parser.dart' as html_parser;
 import 'package:html/dom.dart';
 import 'models/komiktap_models.dart';
@@ -9,12 +11,12 @@ import 'models/komiktap_models.dart';
 class KomiktapScraper {
   // Default CSS selectors (matching remote JSON structure)
   static const Map<String, String> _defaultSelectors = {
-    // home (latest updates)
-    'home_container': 'div.bsx',
-    'home_link': 'a[href]',
-    'home_cover': '.limit img',
-    'home_title': '.tt',
-    'home_chapter': '.epxs',
+    // home (latest updates) - using .utao structure from "Latest Update" section ONLY
+    'home_container': '.utao',
+    'home_link': 'a.series',
+    'home_cover': 'img.ts-post-image',
+    'home_title': '.luf > a > h4', // Direct child to avoid chapter text
+    'home_chapter': '.eggchap',
 
     // search results
     'search_container': 'div.bsx',
@@ -26,22 +28,22 @@ class KomiktapScraper {
     // pagination (dual pattern)
     'pagination_container': '.pagination',
     'pagination_current': '.pagination .current',
-    'pagination_next': '.pagination .r',
-    'pagination_links': '.pagination a:not(.r):not(.l)',
-    // Alternative pagination
+    'pagination_next': '.pagination .next.page-numbers',
+    'pagination_links': '.pagination a.page-numbers:not(.next):not(.prev)',
+    // Alternative pagination (.hpage for home)
     'pagination_alt_container': '.hpage',
-    'pagination_alt_current': '.hpage .r',
-    'pagination_alt_next': '.hpage a:last-child',
+    'pagination_alt_next': '.hpage a.r',
+    'pagination_alt_prev': '.hpage a.l',
 
     // series detail
     'detail_title': '.entry-title',
     'detail_cover': '.thumb img',
-    'detail_status': '.imptdt:contains("Status") i',
-    'detail_type': '.imptdt:contains("Type") a',
+    'detail_status': '.imptdt',
+    'detail_type': '.imptdt',
     'detail_infoList': '.fmed',
-    'detail_genres': '.mgen a',
+    'detail_genres': '.seriestugenre a',
     'detail_synopsis': '[itemprop="description"]',
-    
+
     // detail (chapters)
     'detail_chapterList': '#chapterlist li',
     'detail_chapterLink': '.chbox .eph-num a',
@@ -50,7 +52,7 @@ class KomiktapScraper {
 
     // reader
     'reader_container': '#readerarea',
-    'reader_images': '#readerarea img',
+    'reader_images': 'img',
   };
 
   final Map<String, String> _selectors;
@@ -100,10 +102,11 @@ class KomiktapScraper {
 
       final url = link?.attributes['href'] ?? '';
       final slug = _extractSlugFromUrl(url);
+      final title = titleEl?.text.trim() ?? '';
 
       return KomiktapSeriesMetadata(
         id: slug,
-        title: titleEl?.text.trim() ?? '',
+        title: title,
         coverImageUrl: img?.attributes['src'] ?? '',
         subtitle: chapterEl?.text.trim(), // Latest chapter
       );
@@ -140,14 +143,16 @@ class KomiktapScraper {
     final document = html_parser.parse(htmlContent);
 
     // Try primary pagination pattern first
-    var container = document.querySelector(_getSelector('pagination_container'));
-    
+    var container =
+        document.querySelector(_getSelector('pagination_container'));
+
     if (container != null) {
       return _parsePrimaryPagination(document);
     }
 
     // Fallback to alternative pattern
-    container = document.querySelector(_getSelector('pagination_alt_container'));
+    container =
+        document.querySelector(_getSelector('pagination_alt_container'));
     if (container != null) {
       return _parseAlternativePagination(document);
     }
@@ -163,14 +168,16 @@ class KomiktapScraper {
 
   /// Primary pagination pattern (.pagination)
   KomiktapPagination _parsePrimaryPagination(Document document) {
-    final currentEl = document.querySelector(_getSelector('pagination_current'));
+    final currentEl =
+        document.querySelector(_getSelector('pagination_current'));
     final currentPage = int.tryParse(currentEl?.text.trim() ?? '1') ?? 1;
 
     final nextEl = document.querySelector(_getSelector('pagination_next'));
     final hasNext = nextEl != null;
 
-    final pageLinks = document.querySelectorAll(_getSelector('pagination_links'));
-    
+    final pageLinks =
+        document.querySelectorAll(_getSelector('pagination_links'));
+
     int totalPages = currentPage;
     for (final link in pageLinks) {
       final pageNum = int.tryParse(link.text.trim());
@@ -179,6 +186,8 @@ class KomiktapScraper {
       }
     }
 
+    // If dots exist, we don't know exact total, but it's more than what we see
+    // Set to a large number to allow navigation, rely on hasNext for actual navigation
     return KomiktapPagination(
       currentPage: currentPage,
       totalPages: totalPages,
@@ -189,29 +198,38 @@ class KomiktapScraper {
 
   /// Alternative pagination pattern (.hpage)
   KomiktapPagination _parseAlternativePagination(Document document) {
-    final currentEl = document.querySelector(_getSelector('pagination_alt_current'));
-    final currentText = currentEl?.text.trim() ?? '1';
-    
-    // Extract "Page X of Y" format
-    final match = RegExp(r'Page (\d+) of (\d+)').firstMatch(currentText);
-    
-    if (match != null) {
-      final current = int.tryParse(match.group(1)!) ?? 1;
-      final total = int.tryParse(match.group(2)!) ?? 1;
-      
-      return KomiktapPagination(
-        currentPage: current,
-        totalPages: total,
-        hasNext: current < total,
-        hasPrevious: current > 1,
-      );
+    final nextEl = document.querySelector(_getSelector('pagination_alt_next'));
+    final prevEl = document.querySelector(_getSelector('pagination_alt_prev'));
+
+    final hasNext = nextEl != null;
+    final hasPrevious = prevEl != null;
+
+    // Try to extract current page from URL if possible
+    int currentPage = 1;
+
+    // Check prev link for page number
+    if (prevEl != null) {
+      final href = prevEl.attributes['href'] ?? '';
+      final match = RegExp(r'/page/(\d+)').firstMatch(href);
+      if (match != null) {
+        final prevPage = int.tryParse(match.group(1)!) ?? 0;
+        currentPage = prevPage + 1;
+      }
     }
 
-    return const KomiktapPagination(
-      currentPage: 1,
-      totalPages: 1,
-      hasNext: false,
-      hasPrevious: false,
+    // If no prev, check next link
+    if (currentPage == 1 && nextEl != null) {
+      final href = nextEl.attributes['href'] ?? '';
+      if (href.contains('/page/2')) {
+        currentPage = 1; // We're on page 1
+      }
+    }
+
+    return KomiktapPagination(
+      currentPage: currentPage,
+      totalPages: hasNext ? currentPage + 1 : currentPage, // Unknown total
+      hasNext: hasNext,
+      hasPrevious: hasPrevious,
     );
   }
 
@@ -256,10 +274,10 @@ class KomiktapScraper {
 
       final url = link?.attributes['href'] ?? '';
       final chapterSlug = _extractSlugFromUrl(url);
-      
+
       // Extract chapter number from URL or title
-      final chapterNum = _extractChapterNumber(url) ?? 
-                        _extractChapterNumber(titleEl?.text ?? '');
+      final chapterNum = _extractChapterNumber(url) ??
+          _extractChapterNumber(titleEl?.text ?? '');
 
       return KomiktapChapterInfo(
         id: chapterSlug,
@@ -273,6 +291,49 @@ class KomiktapScraper {
 
   /// Parse chapter page to extract image URLs
   List<String> parseChapterImages(String htmlContent) {
+    try {
+      // Try to extract from ts_reader.run() JavaScript
+      final tsReaderRegex = RegExp(
+        r'ts_reader\.run\((.*?)\);',
+        dotAll: true,
+      );
+
+      final match = tsReaderRegex.firstMatch(htmlContent);
+
+      if (match != null) {
+        final jsonStr = match.group(1);
+        if (jsonStr != null) {
+          // Clean escaped characters
+          final cleanJson =
+              jsonStr.replaceAll(r'\/', '/').replaceAll(r'\"', '"');
+
+          try {
+            final data = json.decode(cleanJson) as Map<String, dynamic>;
+            final sources = data['sources'] as List<dynamic>?;
+
+            if (sources != null && sources.isNotEmpty) {
+              final firstSource = sources[0] as Map<String, dynamic>;
+              final images = firstSource['images'] as List<dynamic>?;
+
+              if (images != null) {
+                final imageUrls = images
+                    .map((img) => img.toString())
+                    .where((url) => url.isNotEmpty)
+                    .toList();
+
+                return imageUrls;
+              }
+            }
+          } catch (e) {
+            // JSON parsing failed, fallback to DOM parsing
+          }
+        }
+      }
+    } catch (e) {
+      // Regex extraction failed, fallback to DOM parsing
+    }
+
+    // Fallback: Try DOM parsing
     final document = html_parser.parse(htmlContent);
     final container = document.querySelector(_getSelector('reader_container'));
 
@@ -290,41 +351,41 @@ class KomiktapScraper {
 
   String _extractSlugFromUrl(String? url) {
     if (url == null || url.isEmpty) return '';
-    
+
     // Match /manga/{slug}/ or /{slug}-chapter-{num}/
     final mangaRegex = RegExp(r'/manga/([^/]+)');
-    final chapterRegex = RegExp(r'/([^/]+)-chapter-\d+');
-    
+    final chapterRegex = RegExp(r'/([^/]+?-chapter-\d+)');
+
     var match = mangaRegex.firstMatch(url);
     if (match != null) {
       return match.group(1) ?? '';
     }
-    
+
     match = chapterRegex.firstMatch(url);
     if (match != null) {
       return match.group(1) ?? '';
     }
-    
+
     return '';
   }
 
   int? _extractChapterNumber(String? text) {
     if (text == null || text.isEmpty) return null;
-    
+
     // Try patterns: "Chapter 123", "chapter-123", "Ch. 123"
     final patterns = [
       RegExp(r'chapter[- ](\d+)', caseSensitive: false),
       RegExp(r'ch\.?\s*(\d+)', caseSensitive: false),
       RegExp(r'#(\d+)'),
     ];
-    
+
     for (final pattern in patterns) {
       final match = pattern.firstMatch(text);
       if (match != null) {
         return int.tryParse(match.group(1)!);
       }
     }
-    
+
     return null;
   }
 
@@ -343,14 +404,40 @@ class KomiktapScraper {
   }
 
   String? _parseStatus(Document doc) {
-    // Find "Status" row in .imptdt
-    final statusEl = doc.querySelector(_getSelector('detail_status'));
-    return statusEl?.text.trim();
+    try {
+      final rows = doc.querySelectorAll(_getSelector('detail_status'));
+
+      for (final row in rows) {
+        final cells = row.querySelectorAll('td');
+        if (cells.length < 2) continue;
+
+        if (cells[0].text.contains('Status')) {
+          return cells[1].text.trim();
+        }
+      }
+
+      // Fallback: Check for specific status keywords if structure is unknown
+      final allText = doc.body?.text ?? '';
+      if (allText.contains('Ongoing')) return 'Ongoing';
+      if (allText.contains('Completed')) return 'Completed';
+    } catch (_) {}
+    return null;
   }
 
   String? _parseType(Document doc) {
-    final typeEl = doc.querySelector(_getSelector('detail_type'));
-    return typeEl?.text.trim();
+    try {
+      final rows = doc.querySelectorAll(_getSelector('detail_type'));
+
+      for (final row in rows) {
+        final cells = row.querySelectorAll('td');
+        if (cells.length < 2) continue;
+
+        if (cells[0].text.contains('Type')) {
+          return cells[1].text.trim();
+        }
+      }
+    } catch (_) {}
+    return null;
   }
 
   List<String> _parseGenres(Document doc) {
@@ -363,46 +450,48 @@ class KomiktapScraper {
 
   Map<String, dynamic> _parseMetadata(Document doc) {
     final metadata = <String, dynamic>{};
-    
-    // Parse all .fmed rows (Author, Artist, etc.)
+
+    // Parse all .infotable rows
     final infoRows = doc.querySelectorAll(_getSelector('detail_infoList'));
-    
+
     for (final row in infoRows) {
-      final label = row.querySelector('b')?.text.trim().toLowerCase();
-      final value = row.querySelector('span')?.text.trim();
-      
-      if (label != null && value != null) {
-        if (label.contains('author')) {
-          metadata['author'] = value;
-        } else if (label.contains('artist')) {
-          metadata['artist'] = value;
-        } else if (label.contains('serialization')) {
-          metadata['serialization'] = value;
-        } else if (label.contains('posted')) {
-          metadata['posted_by'] = value;
-        }
+      final cells = row.querySelectorAll('td');
+      if (cells.length < 2) continue;
+
+      final label = cells[0].text.trim().toLowerCase();
+      final value = cells[1].text.trim();
+
+      if (label.contains('author')) {
+        metadata['author'] = value;
+      } else if (label.contains('artist')) {
+        metadata['artist'] = value;
+      } else if (label.contains('serialization')) {
+        metadata['serialization'] = value;
+      } else if (label.contains('posted by')) {
+        metadata['posted_by'] = value;
       }
     }
-    
+
     return metadata;
   }
 
   DateTime? _parseDate(String? dateText) {
     if (dateText == null || dateText.isEmpty) return null;
-    
+
     try {
       // Try direct ISO parse first
       final parsed = DateTime.tryParse(dateText);
       if (parsed != null) return parsed;
-      
+
       // Handle relative dates like "2 hours ago", "3 days ago"
-      final relativePattern = RegExp(r'(\d+)\s+(hour|day|week|month)s?\s+ago', caseSensitive: false);
+      final relativePattern = RegExp(r'(\d+)\s+(hour|day|week|month)s?\s+ago',
+          caseSensitive: false);
       final match = relativePattern.firstMatch(dateText);
-      
+
       if (match != null) {
         final amount = int.tryParse(match.group(1)!) ?? 0;
         final unit = match.group(2)!.toLowerCase();
-        
+
         final now = DateTime.now();
         switch (unit) {
           case 'hour':
@@ -415,7 +504,7 @@ class KomiktapScraper {
             return DateTime(now.year, now.month - amount, now.day);
         }
       }
-      
+
       return null;
     } catch (_) {
       return null;

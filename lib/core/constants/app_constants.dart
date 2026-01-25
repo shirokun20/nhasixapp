@@ -97,10 +97,21 @@ class AppStorage {
   static final String defaultSourceId = SourceType.nhentai.id;
  
   /// Known content sources for validation
-  static final List<String> knownSources = [
-    SourceType.nhentai.id,
-    SourceType.crotpedia.id,
-  ];
+  static List<String> get knownSources {
+    try {
+      final registry = getIt<ContentSourceRegistry>();
+      if (registry.isNotEmpty) {
+        return registry.sourceIds;
+      }
+    } catch (_) {
+      // Fallback if getIt not ready
+    }
+    return [
+      SourceType.nhentai.id,
+      SourceType.crotpedia.id,
+      SourceType.komiktap.id,
+    ];
+  }
  
   /// Metadata file name
   static const String metadataFileName = 'metadata.json';

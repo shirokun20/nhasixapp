@@ -1,12 +1,21 @@
 #!/bin/bash
 
+
 # Build optimized APK dengan ukuran minimal
 # Usage: ./build_optimized.sh [release|debug]
 
 BUILD_TYPE=${1:-release}
 
+APP_ID="id.nhasix.app"
+APP_NAME="Kuron"
+
+if [ "$BUILD_TYPE" = "debug" ]; then
+    APP_ID="${APP_ID}.debug"
+    APP_NAME="Kuron Dev"
+fi
+
 echo "🚀 Building OPTIMIZED $BUILD_TYPE APK..."
-echo "📱 App: Kuron"
+echo "📱 App: $APP_NAME ($APP_ID)"
 echo "📦 Version: $(grep 'version:' pubspec.yaml | sed 's/version: //')"
 echo "📅 Date: $(date +%Y%m%d)"
 echo ""

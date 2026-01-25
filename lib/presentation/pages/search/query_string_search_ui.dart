@@ -450,6 +450,14 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
   }
 
   Widget _buildAdvancedToggle(ColorScheme colorScheme) {
+    // Check if any filters are available
+    final hasFilters = _singleSelectFilters.isNotEmpty || 
+                       _multiSelectFilters2.isNotEmpty; // Use _multiSelectFilters2 from config getter
+
+    if (!hasFilters) {
+      return const SizedBox.shrink();
+    }
+
     return InkWell(
       onTap: () => setState(() => _showAdvancedFilters = !_showAdvancedFilters),
       borderRadius: BorderRadius.circular(8),

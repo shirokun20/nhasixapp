@@ -153,7 +153,7 @@ void _setupCore() {
   getIt.registerLazySingleton<TagDataManager>(
       () => TagDataManager(logger: getIt<Logger>(), dio: getIt<Dio>()));
 
-  // Remote Config Service
+  // Remote Config Service (Assets-based configs, Remote tags download)
   getIt.registerLazySingleton<RemoteConfigService>(() => RemoteConfigService(
         dio: getIt<Dio>(),
         logger: getIt<Logger>(),
@@ -378,12 +378,9 @@ void _setupDataSources() {
         scraper: getIt<KomiktapScraper>(),
         dio: getIt<Dio>(),
         logger: getIt<Logger>(),
-        baseUrl:
-            getIt<RemoteConfigService>().getConfig('komiktap')?.baseUrl,
-        displayName: getIt<RemoteConfigService>()
-            .getConfig('komiktap')
-            ?.ui
-            ?.displayName,
+        baseUrl: getIt<RemoteConfigService>().getConfig('komiktap')?.baseUrl,
+        displayName:
+            getIt<RemoteConfigService>().getConfig('komiktap')?.ui?.displayName,
       ));
 
   // Content Source Registry
@@ -526,6 +523,7 @@ void _setupBlocs() {
         logger: getIt<Logger>(),
         connectivity: getIt<Connectivity>(),
         tagDataManager: getIt<TagDataManager>(),
+        contentSourceRegistry: getIt<ContentSourceRegistry>(),
       ));
 
   // Home BLoC

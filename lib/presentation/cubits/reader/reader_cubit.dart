@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logger/logger.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -15,6 +16,7 @@ import '../../../core/models/image_metadata.dart';
 import '../../../services/image_metadata_service.dart';
 import '../../../services/local_image_preloader.dart';
 import '../network/network_cubit.dart';
+import '../../../core/utils/webtoon_detector.dart';
 
 part 'reader_state.dart';
 
@@ -42,6 +44,9 @@ class ReaderCubit extends Cubit<ReaderState> {
   Timer? _readingTimer;
   Timer? _autoHideTimer;
 
+  // Webtoon/manhwa auto-detection
+  bool _hasDetectedWebtoon = false;
+
   /// Load content for reading with offline support - OPTIMIZED VERSION
   Future<void> loadContent(String contentId,
       {int initialPage = 1,
@@ -56,8 +61,9 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       // 1. Check offline availability first (Fastest)
       // This uses the new caching in OfflineContentManager so it's very fast
-      final isOfflineAvailable = await offlineContentManager.isContentAvailableOffline(contentId);
-      
+      final isOfflineAvailable =
+          await offlineContentManager.isContentAvailableOffline(contentId);
+
       // 2. Load settings and restore position in parallel (Fast local DB ops)
       final localResults = await Future.wait([
         _loadReaderSettingsOptimized(),
@@ -66,7 +72,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         else
           _restoreReaderPosition(contentId),
       ]);
-      
+
       final savedSettings = localResults[0] as ReaderSettings;
       final restoredPage = localResults[1] as int;
 
@@ -80,15 +86,17 @@ class ReaderCubit extends Cubit<ReaderState> {
       bool isOfflineMode = false;
 
       // 3. Determine Loading Strategy
-      
+
       // Strategy A: Preloaded Content (Navigation from specialized screens)
-      bool shouldUsePreloaded = preloadedContent != null && preloadedContent.imageUrls.isNotEmpty;
-      
+      bool shouldUsePreloaded =
+          preloadedContent != null && preloadedContent.imageUrls.isNotEmpty;
+
       if (shouldUsePreloaded && isOfflineAvailable) {
         // Prefer offline path if available, even if we have preloaded content with remote URLs
-        final hasRemoteUrls = preloadedContent.imageUrls.any((url) => url.startsWith('http'));
+        final hasRemoteUrls =
+            preloadedContent.imageUrls.any((url) => url.startsWith('http'));
         if (hasRemoteUrls) {
-          shouldUsePreloaded = false; 
+          shouldUsePreloaded = false;
         }
       }
 
@@ -96,21 +104,23 @@ class ReaderCubit extends Cubit<ReaderState> {
         _logger.i("✅ Strategy A: Using preloaded content: $contentId");
         content = preloadedContent;
         // Check if it's local paths
-        final hasLocalPaths = content!.imageUrls.any((url) => url.startsWith('/'));
+        final hasLocalPaths =
+            content!.imageUrls.any((url) => url.startsWith('/'));
         isOfflineMode = hasLocalPaths || !isConnected;
-      } 
+      }
       // Strategy B: Offline Content (Primary Performance Path)
       else if (isOfflineAvailable) {
-        _logger.i("💾 Strategy B: Loading content from offline storage: $contentId");
+        _logger.i(
+            "💾 Strategy B: Loading content from offline storage: $contentId");
         content = await offlineContentManager.createOfflineContent(contentId);
         isOfflineMode = true;
-        
+
         // 🚀 OPTIONAL: Trigger background online update if connected
         // This updates metadata/details silently without blocking UI
         if (isConnected && !_isCrotpediaChapterId(contentId)) {
           _fetchOnlineDetailsInBackground(contentId);
         }
-      } 
+      }
       // Strategy C: Online Content (Fallback)
       else if (isConnected && !_isCrotpediaChapterId(contentId)) {
         _logger.i("🌐 Strategy C: Fetching online content: $contentId");
@@ -126,23 +136,24 @@ class ReaderCubit extends Cubit<ReaderState> {
       // Strategy D: Last Resort Fallback (Partial Preloaded or Offline Retry)
       if (content == null) {
         if (preloadedContent != null && preloadedContent.imageUrls.isNotEmpty) {
-           _logger.w("⚠️ Strategy D: Using preloaded content as fallback: $contentId");
-           content = preloadedContent;
-           isOfflineMode = !isConnected;
+          _logger.w(
+              "⚠️ Strategy D: Using preloaded content as fallback: $contentId");
+          content = preloadedContent;
+          isOfflineMode = !isConnected;
         } else {
-           // Try offline creation one last time (maybe cache missed?)
-           try {
-             content = await offlineContentManager.createOfflineContent(contentId);
-             if (content != null) isOfflineMode = true;
-           } catch (_) {}
+          // Try offline creation one last time (maybe cache missed?)
+          try {
+            content =
+                await offlineContentManager.createOfflineContent(contentId);
+            if (content != null) isOfflineMode = true;
+          } catch (_) {}
         }
       }
 
       if (content == null) {
         if (_isCrotpediaChapterId(contentId)) {
           throw Exception(
-            'Chapter not available offline. Please access this chapter from the series detail page to read online.'
-          );
+              'Chapter not available offline. Please access this chapter from the series detail page to read online.');
         }
         throw Exception('Content not available online or offline');
       }
@@ -164,7 +175,6 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       // 5. Post-load setup (Async)
       _handlePostLoadSetup(savedSettings);
-      
     } catch (e, stackTrace) {
       _logger.e("Reader Cubit Error: $e", error: e, stackTrace: stackTrace);
       _stopAutoHideTimer();
@@ -179,7 +189,8 @@ class ReaderCubit extends Cubit<ReaderState> {
   /// Fire-and-forget online fetch to update metadata or cache
   Future<void> _fetchOnlineDetailsInBackground(String contentId) async {
     try {
-      await getContentDetailUseCase(GetContentDetailParams.fromString(contentId));
+      await getContentDetailUseCase(
+          GetContentDetailParams.fromString(contentId));
       // Results are cached by repository, so next load handles it.
       // We don't update current UI to avoid jarring changes while reading.
     } catch (e) {
@@ -374,11 +385,47 @@ class ReaderCubit extends Cubit<ReaderState> {
     _stopAutoHideTimer();
   }
 
+  /// Handle image loaded and detect webtoon/manhwa format
+  /// Auto-switches to continuous scroll for vertical images
+  void onImageLoaded(int pageNumber, Size imageSize) {
+    // Only check first few images to avoid performance overhead
+    if (pageNumber > 3 || _hasDetectedWebtoon) return;
+
+    final isWebtoon = WebtoonDetector.isWebtoon(imageSize);
+    final aspectRatio = WebtoonDetector.getAspectRatio(imageSize);
+
+    if (isWebtoon) {
+      _hasDetectedWebtoon = true;
+      final currentMode = state.readingMode ?? ReadingMode.singlePage;
+
+      // Only auto-switch if not already in continuous scroll
+      if (currentMode != ReadingMode.continuousScroll) {
+        _logger.i('🎨 Webtoon/Manhwa detected on page $pageNumber! '
+            'AR=${aspectRatio?.toStringAsFixed(2)} (${imageSize.width.toInt()}x${imageSize.height.toInt()}px) '
+            '→ Auto-switching from ${currentMode.name} to continuousScroll');
+
+        // Switch to continuous scroll (best for vertical images)
+        if (!isClosed) {
+          emit(state.copyWith(readingMode: ReadingMode.continuousScroll));
+        }
+
+        // Note: We don't save this to preferences to preserve user's choice
+        // The auto-switch only applies to current reading session
+      }
+    } else {
+      _logger.d('📖 Normal image detected on page $pageNumber: '
+          'AR=${aspectRatio?.toStringAsFixed(2)} (${imageSize.width.toInt()}x${imageSize.height.toInt()}px)');
+    }
+  }
+
   /// Change reading mode
   Future<void> changeReadingMode(ReadingMode mode) async {
     if (!isClosed) {
       emit(state.copyWith(readingMode: mode));
     }
+
+    // Reset webtoon detection if user manually changes mode
+    _hasDetectedWebtoon = false;
 
     // Save to preferences with error handling
     try {
@@ -500,7 +547,8 @@ class ReaderCubit extends Cubit<ReaderState> {
       // Check if URL is accessible (basic validation)
       // Allow local file paths (start with /)
       if (url.startsWith('/')) {
-        _logger.d('✅ Local file path validation passed for page $expectedPage: $url');
+        _logger.d(
+            '✅ Local file path validation passed for page $expectedPage: $url');
         return;
       }
 
@@ -630,7 +678,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         _logger.d('Skipping history save for Crotpedia: ${state.content!.id}');
         return;
       }
-      
+
       final params = AddToHistoryParams.fromString(
         state.content!.id,
         state.currentPage ?? 1,
@@ -730,17 +778,17 @@ class ReaderCubit extends Cubit<ReaderState> {
   bool _isCrotpediaChapterId(String contentId) {
     // Nhentai IDs are pure numbers (e.g., "123456")
     // Crotpedia chapter IDs are slugs with "chapter" keyword or multiple dashes
-    
+
     // If it's purely numeric, it's definitely not a Crotpedia chapter
     if (RegExp(r'^\d+$').hasMatch(contentId)) {
       return false;
     }
-    
+
     // If it contains "chapter" or "ch-", it's likely a Crotpedia chapter
     if (contentId.contains('chapter') || contentId.contains('ch-')) {
       return true;
     }
-    
+
     // Additional check: Crotpedia slugs typically have multiple dashes
     // and contain language indicators like "bahasa-indonesia"
     final dashCount = '-'.allMatches(contentId).length;
