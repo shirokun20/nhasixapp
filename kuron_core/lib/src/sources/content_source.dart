@@ -75,4 +75,51 @@ abstract class ContentSource {
 
   /// Get referer header value for requests
   String get refererHeader;
+
+  // ============ NEW: Download & Display Customization ============
+
+  /// Get HTTP headers required for downloading images from this source.
+  ///
+  /// This method returns all necessary headers (Referer, User-Agent, cookies, etc.)
+  /// needed to successfully download images. Each source may have different
+  /// requirements.
+  ///
+  /// Example:
+  /// ```dart
+  /// // nhentai
+  /// {'Referer': 'https://nhentai.net/', 'User-Agent': 'Mozilla/5.0...'}
+  ///
+  /// // crotpedia with auth
+  /// {'Referer': 'https://crotpedia.com/', 'Cookie': 'session=...'}
+  /// ```
+  Map<String, String> getImageDownloadHeaders({
+    required String imageUrl,
+    Map<String, String>? cookies,
+  });
+
+  /// Brand color for this source, used in UI decorations.
+  ///
+  /// This color is used for:
+  /// - Download item progress bars
+  /// - Source badges
+  /// - Accent colors in source-specific screens
+  ///
+  /// Default returns null, which means use app's default theme color.
+  int? get brandColor => null;
+
+  /// Whether this source displays page counts in list/grid views.
+  ///
+  /// - nhentai: true (shows "123 pages")
+  /// - manga sources (crotpedia, komiktap): false (shows chapters instead)
+  bool get showsPageCountInList => true;
+
+  /// Whether this source supports user authentication.
+  ///
+  /// If true, the app will show login/logout menu items for this source.
+  bool get supportsAuthentication => false;
+
+  /// Whether this source supports bookmarking/favoriting content.
+  ///
+  /// If true, bookmark buttons will be shown in detail screens.
+  bool get supportsBookmarks => false;
 }
