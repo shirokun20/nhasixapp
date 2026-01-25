@@ -64,6 +64,41 @@ class CrotpediaSource implements ContentSource {
   @override
   String get refererHeader => baseUrlValue;
 
+  // ============ Download & Display Customization ============
+
+  @override
+  Map<String, String> getImageDownloadHeaders({
+    required String imageUrl,
+    Map<String, String>? cookies,
+  }) {
+    final headers = {
+      'Referer': baseUrlValue,
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    };
+
+    // Add authentication cookies if provided by caller
+    // Caller (download_service) is responsible for fetching cookies from auth manager
+    if (cookies != null && cookies.isNotEmpty) {
+      final cookieString = cookies.entries.map((e) => '${e.key}=${e.value}').join('; ');
+      headers['Cookie'] = cookieString;
+    }
+
+    return headers;
+  }
+
+  @override
+  int? get brandColor => 0xFF1E88E5; // Crotpedia blue
+
+  @override
+  bool get showsPageCountInList => false; // Manga source - shows chapters
+
+  @override
+  bool get supportsAuthentication => true; // Has login feature
+
+  @override
+  bool get supportsBookmarks => true; // Has bookmark feature (requires login)
+
+
   @override
   Future<ContentListResult> getList({
     int page = 1,
