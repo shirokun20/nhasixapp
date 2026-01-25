@@ -199,11 +199,8 @@ void _setupServices() {
 
   // PDF Conversion Service - High-level orchestration service for background PDF processing
   getIt.registerLazySingleton<PdfConversionService>(() => PdfConversionService(
-        pdfService: getIt<PdfService>(),
         notificationService: getIt<NotificationService>(),
-        userDataRepository: getIt<UserDataRepository>(),
         nativePdfService: getIt<NativePdfService>(),
-        remoteConfigService: getIt<RemoteConfigService>(),
         logger: getIt<Logger>(),
       ));
 

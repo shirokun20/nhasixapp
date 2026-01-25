@@ -6,32 +6,21 @@ import 'package:logger/logger.dart';
 import 'package:get_it/get_it.dart';
 
 import '../core/utils/directory_utils.dart';
-import 'pdf_service.dart';
 import 'notification_service.dart';
-import '../domain/repositories/repositories.dart';
 import 'native_pdf_service.dart';
-import '../core/config/remote_config_service.dart';
 
 /// Service yang menangani konversi PDF di background dengan fitur splitting dan notifikasi
 /// Handles background PDF conversion with splitting, progress tracking, and notifications
 class PdfConversionService {
   PdfConversionService({
-    required PdfService pdfService,
     required NotificationService notificationService,
-    required UserDataRepository userDataRepository,
     required NativePdfService nativePdfService,
-    required RemoteConfigService remoteConfigService,
     Logger? logger,
-  })  : _pdfService = pdfService,
-        _notificationService = notificationService,
-        _userDataRepository = userDataRepository,
+  })  : _notificationService = notificationService,
         _nativePdfService = nativePdfService,
         _logger = logger ?? Logger();
 
-  final PdfService _pdfService;
   final NotificationService _notificationService;
-  // ignore: unused_field
-  final UserDataRepository _userDataRepository;
   final NativePdfService _nativePdfService;
   final Logger _logger;
 
@@ -47,7 +36,7 @@ class PdfConversionService {
     try {
       debugPrint('PDF_NOTIFICATION: testPdfNotification - STARTING test');
       await _ensureNotificationServiceReady();
-      
+
       await _notificationService.showPdfConversionStarted(
         contentId: testContentId,
         title: testTitle,
@@ -81,48 +70,35 @@ class PdfConversionService {
     try {
       await _notificationService.initialize();
     } catch (e) {
-      _logger.w('PdfConversionService: Failed to re-initialize notification service', error: e);
+      _logger.w(
+          'PdfConversionService: Failed to re-initialize notification service',
+          error: e);
     }
   }
 
-  Future<int> _calculateTotalFileSize(List<String> pdfPaths) async {
-    int totalSize = 0;
-    for (final pdfPath in pdfPaths) {
-      try {
-        final file = File(pdfPath);
-        if (await file.exists()) {
-          totalSize += await file.length();
-        }
-      } catch (e) {
-        _logger.w('PdfConversionService: Error getting file size for $pdfPath', error: e);
-      }
-    }
-    return totalSize;
-  }
-
-  /// Mengkonversi images download menjadi PDF di background dengan splitting otomatis
-  /// Converts downloaded images to PDF in background with automatic splitting
+  /// Mengkonversi images download menjadi PDF di background menggunakan native generator
+  /// Converts downloaded images to PDF in background using native generator
   ///
   /// Parameters:
   /// - contentId: ID konten yang akan dikonversi
   /// - title: Judul konten untuk nama file PDF
   /// - imagePaths: List path gambar yang sudah di-download
   /// - outputDir: Direktori output (optional, default: nhasix-generate/pdf/)
-  /// - maxPagesPerFile: Maksimal halaman per file PDF (default: 50)
+  /// - maxPagesPerFile: Deprecated - native handles all pages in single file
   Future<void> convertToPdfInBackground({
     required String contentId,
     required String title,
     required List<String> imagePaths,
     String? sourceId,
     String? outputDir,
-    int maxPagesPerFile = 50,
+    int maxPagesPerFile = 50, // Deprecated parameter, kept for compatibility
   }) async {
     try {
       debugPrint(
           'PDF_NOTIFICATION: convertToPdfInBackground - STARTED for contentId=$contentId, title=$title, sourceId=$sourceId, images=${imagePaths.length}');
 
       _logger.i(
-          'PdfConversionService: Starting background PDF conversion for $contentId');
+          'PdfConversionService: Starting NATIVE PDF conversion for $contentId');
 
       // Validasi input parameters
       if (imagePaths.isEmpty) {
@@ -130,20 +106,14 @@ class PdfConversionService {
             fallback: 'No images provided for PDF conversion'));
       }
 
-      // Tampilkan notifikasi bahwa konversi PDF dimulai
-      // Show notification that PDF conversion has started
-      _logger.i(
-          'PdfConversionService: About to show PDF conversion started notification');
-      debugPrint(
-          'PDF_NOTIFICATION: convertToPdfInBackground - About to call showPdfConversionStarted');
-
-      // Ensure notification service is ready (especially important for release mode)
+      // Ensure notification service is ready
       await _ensureNotificationServiceReady();
 
-      _notificationService
-          .debugLogState('Before PDF conversion started notification');
+      // Show notification that PDF conversion has started
+      _logger.i(
+          'PdfConversionService: Showing PDF conversion started notification');
       debugPrint(
-          'PDF_NOTIFICATION: convertToPdfInBackground - Calling showPdfConversionStarted now');
+          'PDF_NOTIFICATION: convertToPdfInBackground - Calling showPdfConversionStarted');
 
       await _notificationService.showPdfConversionStarted(
         contentId: contentId,
@@ -153,179 +123,37 @@ class PdfConversionService {
       debugPrint(
           'PDF_NOTIFICATION: convertToPdfInBackground - showPdfConversionStarted completed');
 
-      // Buat direktori output untuk PDF
       // Create output directory for PDFs
       final pdfOutputDir = await _createPdfOutputDirectory(
         outputDir,
         contentId,
         sourceId,
       );
-      _logger.d(
-          'PdfConversionService: Output directory created: ${pdfOutputDir.path}');
 
       _logger.d(
           'PdfConversionService: Output directory created: ${pdfOutputDir.path}');
 
-      // Use Native PDF for large sets (>50 images) regardless of type
-      // This is much faster and prevents OOM issues on large sets
-      // Also avoids the expensive pre-scan operation
+      // Log strategy
       final int imageCount = imagePaths.length;
-      final bool useNative = imageCount >= 50;
-
       _logger.i('========================================');
-      _logger.i('PDF GENERATION STRATEGY');
+      _logger.i('🚀 PDF GENERATION - NATIVE ONLY');
       _logger.i('Total images: $imageCount');
-      if (useNative) {
-        _logger.i('🚀 STRATEGY: NATIVE (Count >= 50)');
-        _logger.i('   Reason: Large image set, native is faster/safer');
-      } else {
-        _logger.i('📱 STRATEGY: FLUTTER (Count < 50)');
-        _logger.i('   Reason: Small image set, Flutter is sufficient');
-      }
+      _logger.i('Engine: Android Native PDF Generator');
+      _logger.i('Performance: ~5x faster than Flutter');
       _logger.i('========================================');
 
-      // ✅ Route to appropriate implementation
-      if (useNative) {
-        try {
-          // Use native high-performance PDF generator
-          await _generatePdfNative(
-            contentId: contentId,
-            title: title,
-            imagePaths: imagePaths,
-            sourceId: sourceId,
-            pdfOutputDir: pdfOutputDir,
-          );
-          
-          // Native generation complete, exit early
-          return;
-        } catch (e) {
-          _logger.e('Native PDF generation failed, falling back to Flutter', error: e);
-          _logger.w('⚠️  Falling back to Flutter PDF generator...');
-          // Continue to Flutter implementation below
-        }
-      }
-
-      // Flutter PDF generation (original logic)
-      final totalPages = imagePaths.length;
-      final needsSplitting = totalPages > maxPagesPerFile;
-      final pdfPaths = <String>[];
-
-      if (needsSplitting) {
-        // Proses splitting - buat multiple PDF files
-        // Process splitting - create multiple PDF files
-        final totalParts = (totalPages / maxPagesPerFile).ceil();
-        _logger.i(
-            'PdfConversionService: Splitting into $totalParts parts ($totalPages pages)');
-
-        for (int part = 1; part <= totalParts; part++) {
-          final startIndex = (part - 1) * maxPagesPerFile;
-          final endIndex = (startIndex + maxPagesPerFile).clamp(0, totalPages);
-          final partImages = imagePaths.sublist(startIndex, endIndex);
-
-          // Update progress notification hanya di pertengahan proses (tidak setiap part)
-          // Update progress notification only in the middle of process (not every part)
-          if (part == 1 || part == (totalParts ~/ 2) || part == totalParts) {
-            final progressPercent = ((part - 1) / totalParts * 100).round();
-            await _notificationService.updatePdfConversionProgress(
-              contentId: contentId,
-              progress: progressPercent,
-              title: '$title (Part $part/$totalParts)',
-            );
-          }
-
-          // Konversi part ini ke PDF dengan part number di isolate terpisah
-          // Convert this part to PDF with part number in separate isolate
-          _logger
-              .d('PdfConversionService: Processing part $part in isolate...');
-
-          final result = await _pdfService.convertToPdfInIsolate(
-            contentId: contentId,
-            title: '$title (Part $part)',
-            imagePaths: partImages,
-            outputDir: pdfOutputDir.path,
-            partNumber: part, // Pass part number for unique filename
-          );
-
-          if (result.success && result.pdfPath != null) {
-            pdfPaths.add(result.pdfPath!);
-          } else {
-            throw Exception(_getLocalized('pdfFailedToCreatePart',
-                args: {'part': part, 'error': result.error ?? 'Unknown error'},
-                fallback: 'Failed to create PDF part $part: ${result.error}'));
-          }
-        }
-      } else {
-        // Single PDF file - tidak perlu splitting, gunakan isolate
-        // Single PDF file - no splitting needed, use isolate
-        await _notificationService.updatePdfConversionProgress(
-          contentId: contentId,
-          progress: 50,
-          title: title,
-        );
-
-        _logger.d('PdfConversionService: Processing single PDF in isolate...');
-
-        final result = await _pdfService.convertToPdfInIsolate(
-          contentId: contentId,
-          title: title,
-          imagePaths: imagePaths,
-          outputDir: pdfOutputDir.path,
-        );
-
-        if (result.success && result.pdfPath != null) {
-          pdfPaths.add(result.pdfPath!);
-        } else {
-          throw Exception(_getLocalized('pdfFailedToCreate',
-              args: {'error': result.error ?? 'Unknown error'},
-              fallback: 'Failed to create PDF: ${result.error}'));
-        }
-      }
-
-      // Konversi berhasil - buat result object untuk tracking
-      // Conversion successful - create result object for tracking
-      final conversionResult = PdfConversionResult(
-        success: true,
-        pdfPaths: pdfPaths,
-        pageCount: totalPages,
-        partsCount: pdfPaths.length,
-        fileSize: await _calculateTotalFileSize(pdfPaths),
-      );
-
-      // Simpan informasi PDF ke database (optional)
-      // Save PDF information to database (optional)
-      await _savePdfConversionInfo(contentId, conversionResult);
-
-      // Tampilkan notifikasi sukses dengan informasi file yang dibuat
-      // Show success notification with created file information
-      _logger.i(
-          'PdfConversionService: About to show PDF conversion completed notification');
-      debugPrint(
-          'PDF_NOTIFICATION: convertToPdfInBackground - About to call showPdfConversionCompleted');
-
-      // Ensure notification service is ready (especially important for release mode)
-      await _ensureNotificationServiceReady();
-
-      _notificationService
-          .debugLogState('Before PDF conversion completed notification');
-      debugPrint(
-          'PDF_NOTIFICATION: convertToPdfInBackground - Calling showPdfConversionCompleted now');
-
-      await _notificationService.showPdfConversionCompleted(
+      // Generate PDF using native implementation
+      await _generatePdfNative(
         contentId: contentId,
         title: title,
-        pdfPaths: conversionResult.pdfPaths,
-        partsCount: conversionResult.partsCount,
+        imagePaths: imagePaths,
+        sourceId: sourceId,
+        pdfOutputDir: pdfOutputDir,
       );
-
-      debugPrint(
-          'PDF_NOTIFICATION: convertToPdfInBackground - showPdfConversionCompleted completed');
 
       _logger.i(
           'PdfConversionService: PDF conversion completed successfully for $contentId');
-      _logger.i(
-          'PdfConversionService: Created ${conversionResult.partsCount} PDF file(s) with ${conversionResult.pageCount} total pages');
     } catch (e, stackTrace) {
-      // Handle unexpected errors selama proses konversi
       // Handle unexpected errors during conversion process
       _logger.e(
           'PdfConversionService: Unexpected error during PDF conversion for $contentId',
@@ -339,7 +167,7 @@ class PdfConversionService {
       await _ensureNotificationServiceReady();
 
       debugPrint(
-          'PDF_NOTIFICATION: convertToPdfInBackground - About to call showPdfConversionError');
+          'PDF_NOTIFICATION: convertToPdfInBackground - Calling showPdfConversionError');
 
       await _notificationService.showPdfConversionError(
         contentId: contentId,
@@ -353,7 +181,7 @@ class PdfConversionService {
   }
 
   /// Generate PDF using native high-performance implementation
-  /// 
+  ///
   /// Uses Android native PDF generator for ~5x speedup on large webtoon sets.
   /// This method handles progress updates and notification management.
   Future<void> _generatePdfNative({
@@ -409,15 +237,16 @@ class PdfConversionService {
         throw Exception('Native PDF generation returned unsuccessful result');
       }
     } catch (e, stackTrace) {
-      _logger.e('Native PDF generation error', error: e, stackTrace: stackTrace);
-      
+      _logger.e('Native PDF generation error',
+          error: e, stackTrace: stackTrace);
+
       // Show error notification
       await _notificationService.showPdfConversionError(
         contentId: contentId,
         title: title,
         error: 'Native generation failed: ${e.toString()}',
       );
-      
+
       rethrow; // Propagate to trigger fallback
     }
   }
@@ -490,47 +319,6 @@ class PdfConversionService {
           fallback:
               'PdfConversionService: Using fallback directory: ${fallbackDir.path}'));
       return fallbackDir;
-    }
-  }
-
-  /// Simpan informasi hasil konversi PDF ke database untuk tracking
-  /// Save PDF conversion result information to database for tracking
-  ///
-  /// Parameters:
-  /// - contentId: ID konten yang dikonversi
-  /// - result: Hasil konversi dari PdfService
-  Future<void> _savePdfConversionInfo(
-      String contentId, PdfConversionResult result) async {
-    try {
-      // Implementasi penyimpanan info PDF ke database
-      // Ini bisa digunakan untuk:
-      // - Track PDF yang sudah dibuat untuk konten tertentu
-      // - Menampilkan informasi PDF di UI
-      // - Cleanup PDF files yang sudah tidak diperlukan
-
-      // Example structure yang bisa disimpan:
-      // {
-      //   'contentId': contentId,
-      //   'pdfPaths': result.pdfPaths,
-      //   'partsCount': result.partsCount,
-      //   'totalPages': result.pageCount,
-      //   'totalFileSize': result.fileSize,
-      //   'createdAt': DateTime.now().toIso8601String(),
-      // }
-
-      _logger.d(_getLocalized('pdfInfoSaved',
-          args: {
-            'contentId': contentId,
-            'partsCount': result.partsCount,
-            'pageCount': result.pageCount
-          },
-          fallback:
-              'PdfConversionService: PDF info saved for $contentId (${result.partsCount} parts, ${result.pageCount} pages)'));
-    } catch (e) {
-      _logger.w('PdfConversionService: Failed to save PDF conversion info',
-          error: e);
-      // Non-critical error, tidak perlu throw exception
-      // Non-critical error, no need to throw exception
     }
   }
 
@@ -817,7 +605,6 @@ class PdfConversionService {
       return fallback ?? key;
     }
   }
-
 }
 
 /// Result object untuk tracking hasil konversi PDF dengan multiple parts
