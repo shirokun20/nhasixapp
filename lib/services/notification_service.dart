@@ -209,7 +209,8 @@ class NotificationService {
             args: {'title': _truncateTitle(title), 'progress': progress},
             fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
         NotificationDetailsBuilder.progress(
-          progress: 0,
+          progress:
+              progress, // Fixed: Use actual progress value instead of hardcoded 0
           highPriority: true,
           playSound: true,
           enableVibration: true,
@@ -883,7 +884,7 @@ class NotificationService {
   }
 
   /// Show verification started notification
-  /// This is called after download reaches 100%, before file verification begins
+  /// ThupdatePdfConversionProgressnload reaches 100%, before file verification begins
   Future<void> showVerificationStarted({
     required String contentId,
     required String title,
