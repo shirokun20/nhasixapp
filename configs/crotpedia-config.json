@@ -271,7 +271,7 @@
         "download": true,
         "favorite": true,
         "chapters": true,
-        "bookmark": false,
+        "bookmark": true,
         "supportsTagExclusion": false,
         "supportsAdvancedSearch": true
     },
