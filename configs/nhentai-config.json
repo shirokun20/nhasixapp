@@ -97,7 +97,7 @@
         }
     },
     "scraper": {
-        "enabled": false,
+        "enabled": true,
         "selectors": {
             "homepage": {
                 "container": ".index-container",
@@ -137,7 +137,7 @@
     },
     "features": {
         "search": true,
-        "random": false,
+        "random": true,
         "related": true,
         "download": true,
         "favorite": true,
