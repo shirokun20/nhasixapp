@@ -21,25 +21,24 @@
   "scraper": {
     "enabled": true,
     "selectors": {
-      "latest": {
-        "container": ".listupd",
-        "item": ".utao",
+      "home": {
+        "container": ".utao, .sveninner",
         "link": "a.series",
         "cover": "img.ts-post-image",
-        "title": ".luf h4",
+        "title": "h4",
         "status": ".statusind",
-        "latestChapter": ".luf ul li:first-child a .eggchap",
-        "chapterTime": ".luf ul li:first-child a .eggtime"
+        "latestChapter": ".eggchap",
+        "chapterTime": ".eggtime"
       },
       "search": {
-        "container": ".listupd",
+        "container": ".bsx",
         "item": ".bs",
-        "link": ".bsx > a",
-        "cover": ".limit img.ts-post-image",
-        "title": ".bigor .tt",
-        "latestChapter": ".adds .epxs",
+        "link": "a",
+        "cover": "img",
+        "title": ".tt",
+        "latestChapter": ".epxs",
         "rating": ".numscore",
-        "status": ".limit .status"
+        "status": ".status"
       },
       "detail": {
         "title": "h1.entry-title",
@@ -52,14 +51,15 @@
         "genres": ".seriestugenre a",
         "synopsis": ".entry-content-single",
         "rating": ".num[itemprop='ratingValue']",
-        "chapterList": ".eplister ul.clstyle li",
+        "chapterList": "#chapterlist li",
         "chapterLink": ".eph-num a",
         "chapterTitle": ".chapternum",
-        "chapterDate": ".chapterdate"
+        "chapterDate": ".chapterdate",
+        "status": ".tsinfo .imptdt i"
       },
       "reader": {
         "container": "#readerarea",
-        "images": "img.ts-main-image"
+        "images": "img"
       },
       "pagination": {
         "container": ".hpage",
