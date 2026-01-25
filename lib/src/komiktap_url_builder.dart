@@ -5,7 +5,7 @@ class KomiktapUrlBuilder {
   /// Build homepage URL with pagination
   /// Page 1: https://komiktap.info/
   /// Page 2+: https://komiktap.info/page/2/
-  static String buildHomeUrl({int page = 1}) {
+  static String buildHomeUrl({int page = 1, String baseUrl = baseUrl}) {
     if (page <= 1) {
       return baseUrl;
     }
@@ -15,7 +15,7 @@ class KomiktapUrlBuilder {
   /// Build search URL
   /// Page 1: https://komiktap.info/?s=query
   /// Page 2+: https://komiktap.info/page/2/?s=query
-  static String buildSearchUrl(String query, {int page = 1}) {
+  static String buildSearchUrl(String query, {int page = 1, String baseUrl = baseUrl}) {
     final encodedQuery = Uri.encodeComponent(query);
     if (page <= 1) {
       return '$baseUrl/?s=$encodedQuery';
@@ -25,26 +25,26 @@ class KomiktapUrlBuilder {
 
   /// Build series detail URL
   /// Format: https://komiktap.info/manga/{slug}/
-  static String buildSeriesDetailUrl(String slug) {
+  static String buildSeriesDetailUrl(String slug, {String baseUrl = baseUrl}) {
     return '$baseUrl/manga/$slug/';
   }
 
   /// Build chapter reader URL
   /// Format: https://komiktap.info/{slug}-chapter-{num}/
-  static String buildChapterUrl(String slug, int chapterNum) {
+  static String buildChapterUrl(String slug, int chapterNum, {String baseUrl = baseUrl}) {
     return '$baseUrl/$slug-chapter-$chapterNum/';
   }
 
   /// Build chapter URL from full slug
   /// For cases where we already have the full chapter slug
-  static String buildChapterUrlFromSlug(String chapterSlug) {
+  static String buildChapterUrlFromSlug(String chapterSlug, {String baseUrl = baseUrl}) {
     return '$baseUrl/$chapterSlug/';
   }
 
   /// Build genre/tag filtered URL
   /// Page 1: https://komiktap.info/genres/{slug}/
  /// Page 2+: https://komiktap.info/genres/{slug}/page/2/
-  static String buildGenreUrl(String genreSlug, {int page = 1}) {
+  static String buildGenreUrl(String genreSlug, {int page = 1, String baseUrl = baseUrl}) {
     if (page <= 1) {
       return '$baseUrl/genres/$genreSlug/';
     }
