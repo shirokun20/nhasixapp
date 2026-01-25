@@ -65,7 +65,8 @@ class KomiktapSource implements ContentSource {
   }) {
     return {
       'Referer': baseUrl,
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
     };
   }
 
@@ -81,14 +82,13 @@ class KomiktapSource implements ContentSource {
   @override
   bool get supportsBookmarks => false; // No bookmark feature
 
-
   @override
   Future<ContentListResult> getList({
     int page = 1,
     SortOption sort = SortOption.newest,
   }) async {
     try {
-      final url = KomiktapUrlBuilder.buildHomeUrl(page: page);
+      final url = KomiktapUrlBuilder.buildHomeUrl(page: page, baseUrl: baseUrl);
 
       _logger?.d('Fetching list from: $url');
 
@@ -108,7 +108,8 @@ class KomiktapSource implements ContentSource {
       // Convert KomiktapSeriesMetadata to Content
       final contents = metadataList.map<Content>(_convertToContent).toList();
 
-      _logger?.i('Parsed ${contents.length} series, page ${pagination.currentPage}/${pagination.totalPages}');
+      _logger?.i(
+          'Parsed ${contents.length} series, page ${pagination.currentPage}/${pagination.totalPages}');
 
       return ContentListResult(
         contents: contents,
@@ -145,12 +146,27 @@ class KomiktapSource implements ContentSource {
   @override
   Future<ContentListResult> search(SearchFilter filter) async {
     try {
-      final url = KomiktapUrlBuilder.buildSearchUrl(
-        filter.query,
-        page: filter.page,
-      );
+      // Detect if query is a genre slug (no spaces, lowercase, single word)
+      final isGenreQuery = _isLikelyGenreSlug(filter.query);
 
-      _logger?.d('Searching with query: ${filter.query}, page: ${filter.page}');
+      // Normalize genre slug to lowercase for URL
+      final normalizedQuery =
+          isGenreQuery ? filter.query.trim().toLowerCase() : filter.query;
+
+      final url = isGenreQuery
+          ? KomiktapUrlBuilder.buildGenreUrl(
+              normalizedQuery,
+              page: filter.page,
+              baseUrl: baseUrl,
+            )
+          : KomiktapUrlBuilder.buildSearchUrl(
+              normalizedQuery,
+              page: filter.page,
+              baseUrl: baseUrl,
+            );
+
+      _logger?.d(
+          'Searching with query: ${filter.query}, normalized: $normalizedQuery, page: ${filter.page}, isGenre: $isGenreQuery');
 
       final response = await _dio.get(
         url,
@@ -162,6 +178,7 @@ class KomiktapSource implements ContentSource {
         ),
       );
 
+      // Both genre pages and search results use .bsx structure
       final metadataList = _scraper.parseSearchResults(response.data);
       final pagination = _scraper.parsePagination(response.data);
 
@@ -194,7 +211,8 @@ class KomiktapSource implements ContentSource {
   @override
   Future<Content> getDetail(String contentId) async {
     try {
-      final url = KomiktapUrlBuilder.buildSeriesDetailUrl(contentId);
+      final url =
+          KomiktapUrlBuilder.buildSeriesDetailUrl(contentId, baseUrl: baseUrl);
 
       _logger?.d('Fetching detail for: $contentId');
 
@@ -210,7 +228,8 @@ class KomiktapSource implements ContentSource {
 
       final detail = _scraper.parseSeriesDetail(response.data, contentId);
 
-      _logger?.i('Parsed detail for "${detail.title}" with ${detail.chapters?.length ?? 0} chapters');
+      _logger?.i(
+          'Parsed detail for "${detail.title}" with ${detail.chapters?.length ?? 0} chapters');
 
       // Convert ContentDetail to Content
       return _convertDetailToContent(detail);
@@ -234,14 +253,16 @@ class KomiktapSource implements ContentSource {
     try {
       // Get detail to extract genres
       final detail = await getDetail(contentId);
-      
+
       // If has tags, search by first tag
       if (detail.tags.isNotEmpty) {
         final firstTag = detail.tags.first;
-        final genreSlug = firstTag.slug ?? firstTag.name.toLowerCase().replaceAll(' ', '-');
-        
-        final url = KomiktapUrlBuilder.buildGenreUrl(genreSlug);
-        
+        final genreSlug =
+            firstTag.slug ?? firstTag.name.toLowerCase().replaceAll(' ', '-');
+
+        final url =
+            KomiktapUrlBuilder.buildGenreUrl(genreSlug, baseUrl: baseUrl);
+
         final response = await _dio.get(
           url,
           options: Options(
@@ -251,17 +272,18 @@ class KomiktapSource implements ContentSource {
             },
           ),
         );
-        
+
         final metadataList = _scraper.parseSearchResults(response.data);
-        
+
         // Convert and filter out the current content, take top 10
         return metadataList
             .where((item) => item.id != contentId)
             .take(10)
             .map(_convertToContent)
-            .toList().cast<Content>();
+            .toList()
+            .cast<Content>();
       }
-      
+
       return [];
     } catch (e, stack) {
       _logger?.e('Failed to get related', error: e, stackTrace: stack);
@@ -299,8 +321,7 @@ class KomiktapSource implements ContentSource {
   @override
   bool isValidContentId(String contentId) {
     // Slug format validation: alphanumeric and hyphens
-    return contentId.isNotEmpty && 
-           RegExp(r'^[a-z0-9-]+$').hasMatch(contentId);
+    return contentId.isNotEmpty && RegExp(r'^[a-z0-9-]+$').hasMatch(contentId);
   }
 
   // ============ Helper Methods ============
@@ -308,7 +329,8 @@ class KomiktapSource implements ContentSource {
   /// Get images from a specific chapter
   Future<List<String>> getChapterImages(String chapterSlug) async {
     try {
-      final url = KomiktapUrlBuilder.buildChapterUrlFromSlug(chapterSlug);
+      final url = KomiktapUrlBuilder.buildChapterUrlFromSlug(chapterSlug,
+          baseUrl: baseUrl);
 
       _logger?.d('Fetching chapter pages: $chapterSlug');
 
@@ -335,12 +357,14 @@ class KomiktapSource implements ContentSource {
 
   /// Build chapter URL (for external opening)
   String buildChapterUrl(String chapterSlug) {
-    return KomiktapUrlBuilder.buildChapterUrlFromSlug(chapterSlug);
+    return KomiktapUrlBuilder.buildChapterUrlFromSlug(chapterSlug,
+        baseUrl: baseUrl);
   }
 
   /// Build series detail URL (for external opening)
   String buildSeriesUrl(String seriesSlug) {
-    return KomiktapUrlBuilder.buildSeriesDetailUrl(seriesSlug);
+    return KomiktapUrlBuilder.buildSeriesDetailUrl(seriesSlug,
+        baseUrl: baseUrl);
   }
 
   // ============ Private Converters ============
@@ -355,13 +379,15 @@ class KomiktapSource implements ContentSource {
       pageCount: 0, // Unknown until chapter detail
       imageUrls: const [], // Empty for series
       chapters: const [], // Will be loaded in detail
-      tags: metadata.tags.map((tag) => Tag(
-        id: tag.hashCode,
-        name: tag,
-        type: TagType.tag,
-        count: 0,
-        slug: tag.toLowerCase().replaceAll(' ', '-'),
-      )).toList(),
+      tags: metadata.tags
+          .map((tag) => Tag(
+                id: tag.hashCode,
+                name: tag,
+                type: TagType.tag,
+                count: 0,
+                slug: tag.toLowerCase().replaceAll(' ', '-'),
+              ))
+          .toList(),
       artists: [],
       characters: [],
       parodies: [],
@@ -369,7 +395,7 @@ class KomiktapSource implements ContentSource {
       language: 'indonesian',
       uploadDate: metadata.lastUpdate ?? DateTime.now(),
       favorites: 0,
-      englishTitle: metadata.subtitle,
+      subTitle: metadata.subtitle, // Latest chapter info as subtitle
     );
   }
 
@@ -380,7 +406,8 @@ class KomiktapSource implements ContentSource {
         .map((c) => Chapter(
               id: c.id,
               title: c.title,
-              url: KomiktapUrlBuilder.buildChapterUrlFromSlug(c.id),
+              url: KomiktapUrlBuilder.buildChapterUrlFromSlug(c.id,
+                  baseUrl: baseUrl),
               uploadDate: c.publishDate,
             ))
         .toList();
@@ -393,13 +420,15 @@ class KomiktapSource implements ContentSource {
       pageCount: 0, // Dynamic per chapter
       imageUrls: const [], // Empty initially
       chapters: chapters,
-      tags: detail.tags.map((tag) => Tag(
-        id: tag.hashCode,
-        name: tag,
-        type: TagType.tag,
-        count: 0,
-        slug: tag.toLowerCase().replaceAll(' ', '-'),
-      )).toList(),
+      tags: detail.tags
+          .map((tag) => Tag(
+                id: tag.hashCode,
+                name: tag,
+                type: TagType.tag,
+                count: 0,
+                slug: tag.toLowerCase().replaceAll(' ', '-'),
+              ))
+          .toList(),
       artists: detail.author != null ? [detail.author!] : [],
       characters: [],
       parodies: [],
@@ -409,5 +438,19 @@ class KomiktapSource implements ContentSource {
       favorites: 0,
       englishTitle: detail.alternativeTitle,
     );
+  }
+
+  /// Check if query looks like a genre slug (e.g., "anal", "sister", "story-arc")
+  /// Genre queries are typically: lowercase, no spaces or single-word, may have hyphens
+  bool _isLikelyGenreSlug(String query) {
+    final trimmed = query.trim().toLowerCase();
+
+    // Genre slugs don't have spaces (use hyphens instead)
+    // Examples: "anal", "sister", "story-arc", "big-breasts"
+    if (trimmed.contains(' ')) return false;
+
+    // Only alphanumeric and hyphens
+    final genrePattern = RegExp(r'^[a-z0-9-]+$');
+    return genrePattern.hasMatch(trimmed);
   }
 }
