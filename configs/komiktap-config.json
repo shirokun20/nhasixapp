@@ -25,9 +25,9 @@
         "container": ".utao, .sveninner",
         "link": "a.series",
         "cover": "img.ts-post-image",
-        "title": "h4",
+        "title": ".sveninfo .sventitle h4, .luf h4",
         "status": ".statusind",
-        "latestChapter": ".eggchap",
+        "chapter": ".eggchap",
         "chapterTime": ".eggtime"
       },
       "search": {
