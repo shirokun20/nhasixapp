@@ -1,7 +1,7 @@
 {
   "source": "komiktap",
-  "version": "1.0.0",
-  "lastUpdated": "2026-01-25T20:55:00+07:00",
+  "version": "1.0.1",
+  "lastUpdated": "2026-01-25T23:20:00+07:00",
   "baseUrl": "https://komiktap.info",
   "searchConfig": {
     "searchMode": "query-param",
@@ -25,7 +25,7 @@
         "container": ".utao, .sveninner",
         "link": "a.series",
         "cover": "img.ts-post-image",
-        "title": ".sveninfo .sventitle h4, .luf h4",
+        "title": ".sventitle h4, .luf h4",
         "status": ".statusind",
         "chapter": ".eggchap",
         "chapterTime": ".eggtime"
