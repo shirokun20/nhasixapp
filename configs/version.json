@@ -1,7 +1,7 @@
 {
-    "version": "1.0.0",
-    "lastUpdated": "2026-01-13T13:16:00+07:00",
-    "minimumAppVersion": "0.7.0",
+    "version": "1.1.0",
+    "lastUpdated": "2026-01-25T21:35:00+07:00",
+    "minimumAppVersion": "0.9.0",
     "forceUpdate": false,
     "configs": {
         "nhentai": {
@@ -12,6 +12,11 @@
         "crotpedia": {
             "version": "1.0.0",
             "url": "configs/crotpedia-config.json",
+            "checksum": ""
+        },
+        "komiktap": {
+            "version": "1.0.0",
+            "url": "configs/komiktap-config.json",
             "checksum": ""
         },
         "app": {
@@ -26,6 +31,17 @@
         }
     },
     "changelog": [
+        {
+            "version": "1.1.0",
+            "date": "2026-01-25",
+            "changes": [
+                "Added KomikTap source support",
+                "Implemented kuron_komiktap package with full HTML scraping",
+                "Extended ContentSource interface with download headers and UI customization",
+                "Refactored hardcoded source logic to use dynamic source methods",
+                "Added brand colors for all sources (nhentai red, crotpedia blue, komiktap green)"
+            ]
+        },
         {
             "version": "1.0.0",
             "date": "2026-01-13",
