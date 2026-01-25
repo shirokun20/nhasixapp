@@ -714,6 +714,13 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  kuron_komiktap:
+    dependency: "direct main"
+    description:
+      path: "packages/kuron_komiktap"
+      relative: true
+    source: path
+    version: "0.1.0"
   kuron_nhentai:
     dependency: "direct main"
     description:

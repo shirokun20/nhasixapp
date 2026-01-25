@@ -5,6 +5,7 @@ import 'package:path/path.dart' as path;
 import 'package:logger/logger.dart';
 
 import 'package:path_provider/path_provider.dart';
+import 'package:kuron_core/kuron_core.dart'; // NEW: For ContentSourceRegistry
 
 import '../domain/entities/entities.dart';
 import '../domain/value_objects/image_url.dart' as img;
@@ -17,13 +18,16 @@ class DownloadService {
   DownloadService({
     required Dio httpClient,
     required NotificationService notificationService,
+    required ContentSourceRegistry sourceRegistry, // NEW
     Logger? logger,
   })  : _httpClient = httpClient,
         _notificationService = notificationService,
+        _sourceRegistry = sourceRegistry, // NEW
         _logger = logger ?? Logger();
 
   final Dio _httpClient;
   final NotificationService _notificationService;
+  final ContentSourceRegistry _sourceRegistry; // NEW
   final Logger _logger;
 
   // Localization callback
@@ -38,7 +42,7 @@ class DownloadService {
     Duration? timeoutDuration, // Optional timeout override
     int? startPage, // NEW: Start page for range download (1-based)
     int? endPage, // NEW: End page for range download (1-based)
-    Map<String, String>? cookies,  // NEW: Optional cookies for authentication
+    Map<String, String>? cookies, // NEW: Optional cookies for authentication
   }) async {
     try {
       _logger.i('Starting download for content: ${content.id}');
@@ -78,26 +82,13 @@ class DownloadService {
       final existingFiles = await _getExistingDownloadedFiles(downloadDir);
       final totalImages =
           isRangeDownload ? pagesToDownload : content.imageUrls.length;
-      var downloadedCount = 0; // Reset for range downloads
 
-      // For range downloads, count only files in the specified range
-      if (isRangeDownload) {
-        for (int pageNum = actualStartPage;
-            pageNum <= actualEndPage;
-            pageNum++) {
-          final fileName = 'page_${pageNum.toString().padLeft(3, '0')}.jpg';
-          final filePath = path.join(downloadDir.path, fileName);
-          if (await File(filePath).exists()) {
-            downloadedCount++;
-          }
-        }
-      } else {
-        downloadedCount =
-            existingFiles.length; // Use existing count for full downloads
-      }
+      // ✅ FIX: Initialize to 0 to prevent double-counting
+      // The loop will count both existing and newly downloaded files
+      var downloadedCount = 0;
 
       _logger.i(
-          'Found $downloadedCount existing files in range, continuing download');
+          'Found ${existingFiles.length} existing files, will verify in loop');
 
       // Show start notification with range info
       final rangeText =
@@ -150,35 +141,36 @@ class DownloadService {
         // ✅ FIXED: Skip if file already exists (for proper resume)
         if (await File(filePath).exists()) {
           _logger.d('Skipping existing file: $fileName');
-          // For range downloads, add to list even if already exists
-          if (isRangeDownload && !downloadedFiles.contains(filePath)) {
+
+          // Add to downloaded files list if not already present
+          if (!downloadedFiles.contains(filePath)) {
             downloadedFiles.add(filePath);
           }
-          
-          // ✅ FIXED: Update progress even when skipping existing files
-          // This ensures notification shows correct progress during retry/resume
+
+          // ✅ FIX: Count existing files in the loop (no double-counting)
           downloadedCount++;
           final rawProgress = downloadedCount / totalImages;
           final progressPercentage = (rawProgress * 90).toInt(); // Cap at 90%
-          
+
           onProgress(DownloadProgress(
             contentId: content.id,
             downloadedPages: progressPercentage,
             totalPages: 100,
             currentFileName: '$fileName (cached)',
           ));
-          
+
           continue;
         }
 
         try {
           // Download single image with optimized URL
           await _downloadSingleImage(
+            sourceId: content.sourceId, // NEW: Pass source ID
             imageUrl: optimizedImageUrl,
             filePath: filePath,
             cancelToken: cancelToken,
             timeoutDuration: timeoutDuration,
-            cookies: cookies,  // NEW: Pass cookies for authentication
+            cookies: cookies, // NEW: Pass cookies for authentication
           );
 
           downloadedFiles.add(filePath);
@@ -189,7 +181,7 @@ class DownloadService {
           // Reserve 90-100% for verification, metadata, and completion phases
           final rawProgress = downloadedCount / totalImages;
           final progressPercentage = (rawProgress * 90).toInt(); // Cap at 90%
-          
+
           final progress = DownloadProgress(
             contentId: content.id,
             downloadedPages: progressPercentage,
@@ -198,7 +190,7 @@ class DownloadService {
           );
 
           onProgress(progress);
-          
+
           _logger.d(
               'Download progress: $progressPercentage% ($downloadedCount/$totalImages files)');
         } catch (e, stackTrace) {
@@ -209,10 +201,9 @@ class DownloadService {
         }
       }
 
-
-
       // ✅ Phase 2: File Verification (90-95%)
-      _logger.i('Starting file verification phase...');
+      // CRITICAL: Strict file-by-file existence check
+      _logger.i('Starting strict file verification phase...');
       onProgress(DownloadProgress(
         contentId: content.id,
         downloadedPages: 92,
@@ -220,20 +211,34 @@ class DownloadService {
         currentFileName: 'Verifying files...',
       ));
 
-      // Verify all files were downloaded
       // We expect (actualEndPage - actualStartPage + 1) images for this batch
       final expectedBatchCount = actualEndPage - actualStartPage + 1;
 
-      // Check if we downloaded enough files.
-      // downloadedCount tracks valid files (existing + newly downloaded)
-      if (downloadedCount < expectedBatchCount) {
-        _logger.e(
-            'Download incomplete: $downloadedCount/$expectedBatchCount files verification failed');
-        throw Exception(
-            'Download incomplete: $downloadedCount/$expectedBatchCount files verified');
+      // ✅ FIX: Explicit file-by-file verification
+      // Don't just compare counts - verify EVERY page exists
+      final missingPages = <int>[];
+      for (int pageNum = actualStartPage; pageNum <= actualEndPage; pageNum++) {
+        final fileName = 'page_${pageNum.toString().padLeft(3, '0')}.jpg';
+        final filePath = path.join(downloadDir.path, fileName);
+
+        if (!await File(filePath).exists()) {
+          missingPages.add(pageNum);
+          _logger.w('Missing file: $fileName (page $pageNum)');
+        }
       }
 
-      _logger.i('File verification complete: $downloadedCount/$expectedBatchCount files verified');
+      // If any pages are missing, throw explicit error with details
+      if (missingPages.isNotEmpty) {
+        final missingPagesStr = missingPages.join(', ');
+        final errorMsg =
+            'Download incomplete: ${missingPages.length} pages missing ($downloadedCount/$expectedBatchCount files downloaded). Missing pages: $missingPagesStr';
+
+        _logger.e(errorMsg);
+        throw Exception(errorMsg);
+      }
+
+      _logger.i(
+          'File verification complete: All $expectedBatchCount files verified (pages $actualStartPage-$actualEndPage)');
 
       // ✅ Phase 3: Metadata Generation (95-98%)
       _logger.i('Starting metadata generation phase...');
@@ -257,7 +262,6 @@ class DownloadService {
         totalPages: 100,
         currentFileName: 'Completed',
       ));
-
 
       // NOTE: Notification is handled by DownloadBloc._onStart() to avoid duplication
 
@@ -292,11 +296,12 @@ class DownloadService {
 
   /// Download single image file
   Future<void> _downloadSingleImage({
+    required String sourceId, // NEW: Source ID for header lookup
     required String imageUrl,
     required String filePath,
     CancelToken? cancelToken,
     Duration? timeoutDuration,
-    Map<String, String>? cookies,  // NEW: Optional cookies
+    Map<String, String>? cookies, // NEW: Optional cookies
   }) async {
     // Create dio instance with custom timeout if provided
     final dio = timeoutDuration != null
@@ -308,13 +313,13 @@ class DownloadService {
         : _httpClient;
 
     // Build headers with cookies if provided
-    final headers = _getHeadersForSource(imageUrl, cookies: cookies);
+    final headers = _getHeadersForSource(sourceId, imageUrl, cookies: cookies);
 
     final response = await dio.get<List<int>>(
       imageUrl,
       options: Options(
         responseType: ResponseType.bytes,
-        headers: headers,  // Use headers with cookies
+        headers: headers, // Use headers with cookies
       ),
       cancelToken: cancelToken,
     );
@@ -329,32 +334,38 @@ class DownloadService {
     }
   }
 
-  /// Get headers for source based on URL
-  Map<String, dynamic> _getHeadersForSource(String imageUrl, {Map<String, String>? cookies}) {
-    final headers = <String, dynamic>{};
-    
-    // Add source-specific headers
-    if (imageUrl.contains('nhentai')) {
-      headers['User-Agent'] = 'AppleWebKit/537.36';
-      headers['Referer'] = 'https://nhentai.net/';
-    } else if (imageUrl.contains('crotpedia')) {
-      headers['User-Agent'] = 'AppleWebKit/537.36';
-      headers['Referer'] = 'https://crotpedia.com/';
+  /// Get headers for source based on source ID
+  /// 
+  /// NEW: Uses ContentSource.getImageDownloadHeaders() instead of hardcoded logic
+  Map<String, dynamic> _getHeadersForSource(
+    String sourceId,
+    String imageUrl, {
+    Map<String, String>? cookies,
+  }) {
+    try {
+      // Get source from registry
+      final source = _sourceRegistry.getSource(sourceId);
       
-      // Add cookies for Crotpedia authentication
-      if (cookies != null && cookies.isNotEmpty) {
-        final cookieString = cookies.entries
-            .map((e) => '${e.key}=${e.value}')
-            .join('; ');
-        headers['Cookie'] = cookieString;
-        _logger.d('Added authentication cookies for Crotpedia download');
+      // Null check - should not happen but fallback if it does
+      if (source == null) {
+        throw Exception('Source $sourceId not found in registry');
       }
-    } else {
-      // Fallback for generic sources
-      headers['User-Agent'] = 'AppleWebKit/537.36';
+      
+      // Use source's method to get headers
+      final headers = source.getImageDownloadHeaders(
+        imageUrl: imageUrl,
+        cookies: cookies,
+      );
+      
+      _logger.d('Got headers from source $sourceId: ${headers.keys.join(", ")}');
+      return headers;
+    } catch (e) {
+      // Fallback if source not found
+      _logger.w('Failed to get headers from source $sourceId: $e');
+      return {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      };
     }
-    
-    return headers;
   }
 
   /// ✅ NEW: Get existing downloaded files for proper resume

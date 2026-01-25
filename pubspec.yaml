@@ -1,7 +1,7 @@
 name: nhasixapp
 description: "A new Flutter project."
 publish_to: "none"
-version: 0.8.0+15
+version: 0.9.0+16
 
 environment:
   sdk: ^3.5.4
@@ -29,6 +29,8 @@ dependencies:
     path: ./packages/kuron_nhentai
   kuron_crotpedia:
     path: ./packages/kuron_crotpedia
+  kuron_komiktap:
+    path: ./packages/kuron_komiktap
 
   # Code Generation & Immutability
   freezed_annotation: ^3.0.0

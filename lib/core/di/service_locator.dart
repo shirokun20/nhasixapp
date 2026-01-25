@@ -15,6 +15,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart'
 import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_nhentai/kuron_nhentai.dart';
 import 'package:kuron_crotpedia/kuron_crotpedia.dart';
+import 'package:kuron_komiktap/kuron_komiktap.dart';
 import 'package:nhasixapp/core/adapters/nhentai_scraper_adapter_impl.dart';
 
 // Core Network
@@ -210,6 +211,7 @@ void _setupServices() {
   getIt.registerLazySingleton<DownloadService>(() => DownloadService(
         httpClient: getIt<Dio>(),
         notificationService: getIt<NotificationService>(),
+        sourceRegistry: getIt<ContentSourceRegistry>(), // NEW
         logger: getIt<Logger>(),
       ));
 
@@ -363,11 +365,33 @@ void _setupDataSources() {
             ?.displayName,
       ));
 
+  // KomikTap Scraper
+  getIt.registerLazySingleton<KomiktapScraper>(() => KomiktapScraper(
+        customSelectors: getIt<RemoteConfigService>()
+            .getConfig('komiktap')
+            ?.scraper
+            ?.selectors,
+      ));
+
+  // KomikTap Source
+  getIt.registerLazySingleton<KomiktapSource>(() => KomiktapSource(
+        scraper: getIt<KomiktapScraper>(),
+        dio: getIt<Dio>(),
+        logger: getIt<Logger>(),
+        baseUrl:
+            getIt<RemoteConfigService>().getConfig('komiktap')?.baseUrl,
+        displayName: getIt<RemoteConfigService>()
+            .getConfig('komiktap')
+            ?.ui
+            ?.displayName,
+      ));
+
   // Content Source Registry
   getIt.registerLazySingleton<ContentSourceRegistry>(() {
     final registry = ContentSourceRegistry();
     registry.register(getIt<NhentaiSource>());
     registry.register(getIt<CrotpediaSource>());
+    registry.register(getIt<KomiktapSource>()); // NEW
     return registry;
   });
 
