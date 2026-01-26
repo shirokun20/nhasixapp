@@ -354,7 +354,7 @@ class KomiktapScraper {
 
     // Match /manga/{slug}/ or /{slug}-chapter-{num}/
     final mangaRegex = RegExp(r'/manga/([^/]+)');
-    final chapterRegex = RegExp(r'/([^/]+?-chapter-\d+)');
+    final chapterRegex = RegExp(r'/([^/]+?-chapter-[\d.-]+)');
 
     var match = mangaRegex.firstMatch(url);
     if (match != null) {
@@ -369,20 +369,27 @@ class KomiktapScraper {
     return '';
   }
 
-  int? _extractChapterNumber(String? text) {
+  double? _extractChapterNumber(String? text) {
     if (text == null || text.isEmpty) return null;
 
-    // Try patterns: "Chapter 123", "chapter-123", "Ch. 123"
+    // Try patterns: "Chapter 123", "chapter-123", "Ch. 123", "Chapter 67.5", "Chapter 67-5"
     final patterns = [
-      RegExp(r'chapter[- ](\d+)', caseSensitive: false),
-      RegExp(r'ch\.?\s*(\d+)', caseSensitive: false),
-      RegExp(r'#(\d+)'),
+      RegExp(r'chapter[- ]([\d.-]+)', caseSensitive: false),
+      RegExp(r'ch\.?\s*([\d.-]+)', caseSensitive: false),
+      RegExp(r'#([\d.-]+)'),
     ];
 
     for (final pattern in patterns) {
       final match = pattern.firstMatch(text);
       if (match != null) {
-        return int.tryParse(match.group(1)!);
+        String numStr = match.group(1)!;
+        // Fix common OCR/formatting issues or hyphenated decimals
+        if (numStr.contains('-')) {
+             // Only replace hyphen if it likely acts as a decimal separator (not a range)
+             // For single chapter context, we assume it's substitution
+             numStr = numStr.replaceAll('-', '.');
+        }
+        return double.tryParse(numStr);
       }
     }
 
