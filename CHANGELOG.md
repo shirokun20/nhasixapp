@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.0] - 2026-01-26
+
+### 🚀 New Features
+- **KomikTap Support**: Added full support for **KomikTap** source, including:
+  - Latest updates feed
+  - Search functionality
+  - Detail view with chapter list
+  - Reading capability
+- **Dynamic Offline Filters**: 
+  - Offline content filter chips are now dynamically generated from configuration.
+  - Added support for source-specific coloring (Purple for Crotpedia, Orange for KomikTap, Red for nHentai).
+- **Source Labels**: Added colored source labels to download items for easy identification.
+
+### 🛠 Improvements
+- **Configuration**: moved hardcoded UI elements to `assets/configs/` for flexibility.
+- **Search Logic**: Improved search result prioritization logic.
+- **Error Handling**: Enhanced error messages with localization support (EN, ID, ZH).
+
+---
+
 ## [0.8.0] - 2026-01-15
 
 ### 🚀 Features & UX

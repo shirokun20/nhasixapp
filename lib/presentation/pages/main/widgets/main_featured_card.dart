@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
@@ -175,6 +176,21 @@ class MainFeaturedCard extends StatelessWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
+                            // Subtitle (Chapter info)
+                            if (content.subTitle != null &&
+                                content.subTitle!.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                content.subTitle!,
+                                style: TextStyleConst.labelSmall.copyWith(
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.6),
+                                  fontSize: 10,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                             const SizedBox(height: 8),
                             // Artists
                             if (content.artists.isNotEmpty)
@@ -246,13 +262,12 @@ class MainFeaturedCard extends StatelessWidget {
                                     ),
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(3),
-                                      child: Image.asset(
-                                        'assets/images/${content.language.toLowerCase()}.gif',
+                                      child: SvgPicture.asset(
+                                        'assets/images/flags/${content.language.toLowerCase()}.svg',
                                         width: 28,
                                         height: 18,
                                         fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
+                                        placeholderBuilder: (context) {
                                           return Container(
                                             color: theme.colorScheme
                                                 .surfaceContainerHighest,

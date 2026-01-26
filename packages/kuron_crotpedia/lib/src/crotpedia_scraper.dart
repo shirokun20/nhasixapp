@@ -31,7 +31,8 @@ class CrotpediaScraper {
     'detail_title': '.series-titlex h2',
     'detail_cover': '.series-thumb img',
     'detail_status': '.series-infoz .status',
-    'detail_infoList': '.series-infolist li',
+    'detail_favorites': '.series-infoz.score span', // NEW
+    'detail_infoList': '.series-infolist li', // used for alt title, author etc
     'detail_genres': '.series-genres a',
     'detail_synopsis': '.series-synops p',
     // detail (chapters)
@@ -209,6 +210,8 @@ class CrotpediaScraper {
       year: _parseYear(document),
       genres: _parseGenres(document),
       synopsis: _parseSynopsis(document),
+      favorites: _parseFavorites(document),
+      alternativeTitle: _parseAlternativeTitle(document),
       chapters: _parseChapterList(document),
     );
   }
@@ -365,5 +368,17 @@ class CrotpediaScraper {
     } catch (_) {
       return null;
     }
+  }
+
+  int? _parseFavorites(Document doc) {
+    final scoreEl = doc.querySelector(_getSelector('detail_favorites'));
+    if (scoreEl != null) {
+      return int.tryParse(scoreEl.text.trim());
+    }
+    return null;
+  }
+
+  String? _parseAlternativeTitle(Document doc) {
+    return _parseInfoFromList(doc, 'Alternative');
   }
 }

@@ -81,6 +81,7 @@ class DownloadContentUseCase
           params.timeoutDuration,
           params.startPage,
           params.endPage,
+          params.cookies, // NEW
         );
       }
 
@@ -114,6 +115,7 @@ class DownloadContentUseCase
     Duration? timeoutDuration,
     int? startPage,
     int? endPage,
+    Map<String, String>? cookies, // NEW
   ) async {
     var currentStatus = initialStatus;
 
@@ -136,6 +138,7 @@ class DownloadContentUseCase
         timeoutDuration: timeoutDuration,
         startPage: startPage,
         endPage: endPage,
+        cookies: cookies, // NEW: Use local parameter
         onProgress: (progress) async {
           // ✅ FIXED: Only emit to stream, let DownloadBloc handle database saves
           // This prevents race condition between multiple save operations
@@ -150,12 +153,73 @@ class DownloadContentUseCase
       );
 
       if (downloadResult.success) {
-        // Update status to completed
+        // ============================================================
+        // VERIFICATION PHASE
+        // ============================================================
+        // After download reaches 100%, verify files and calculate size
+        // This uses SEPARATE verification progress updates (not download progress)
+        _logger.i('Starting verification phase for ${content.id}');
+
+        int totalFileSize = 0;
+        int verifiedFiles = 0;
+
+        if (downloadResult.downloadPath != null) {
+          try {
+            // Get all downloaded files for verification
+            final downloadedFiles =
+                await _downloadService.getDownloadedFiles(content.id);
+            final totalFilesToVerify = downloadedFiles.length;
+
+            _logger.i('Verifying $totalFilesToVerify files for ${content.id}');
+
+            // Verify each file and calculate size
+            for (int i = 0; i < downloadedFiles.length; i++) {
+              final filePath = downloadedFiles[i];
+              final file = File(filePath);
+
+              if (await file.exists()) {
+                final fileSize = await file.length();
+                totalFileSize += fileSize;
+                verifiedFiles++;
+
+                // Calculate verification progress (0% to 100%)
+                final verificationProgress =
+                    ((verifiedFiles / totalFilesToVerify) * 100).toInt();
+
+                // Emit verification progress with special marker
+                // downloadedPages = -2 signals this is VERIFICATION progress (not download)
+                // totalPages = verification percentage (0-100)
+                DownloadManager().emitProgress(DownloadProgressUpdate(
+                  contentId: content.id,
+                  downloadedPages: -2, // Special marker for verification
+                  totalPages: verificationProgress,
+                  downloadSpeed: 0.0,
+                  estimatedTimeRemaining: Duration(
+                    seconds:
+                        ((totalFilesToVerify - verifiedFiles) * 0.1).ceil(),
+                  ),
+                ));
+              } else {
+                _logger.w('File not found during verification: $filePath');
+              }
+            }
+
+            _logger.i('Verification complete for ${content.id}: '
+                '$verifiedFiles files verified, total size: $totalFileSize bytes');
+          } catch (e) {
+            _logger.w(
+                'Failed to calculate file size during verification for ${content.id}: $e');
+            // Continue with fileSize = 0 instead of failing the download
+          }
+        }
+
+        // Update status to completed with calculated file size
         currentStatus = currentStatus.copyWith(
           state: DownloadState.completed,
           endTime: DateTime.now(),
           downloadedPages: content.pageCount,
           downloadPath: downloadResult.downloadPath,
+          fileSize: totalFileSize, // Set the calculated file size
         );
 
         // Convert to PDF if requested
@@ -315,6 +379,7 @@ class DownloadContentParams extends UseCaseParams {
     this.timeoutDuration,
     this.startPage, // NEW: Start page for range download
     this.endPage, // NEW: End page for range download
+    this.cookies, // NEW: Cookies for authentication
   });
 
   final Content content;
@@ -327,6 +392,7 @@ class DownloadContentParams extends UseCaseParams {
   final Duration? timeoutDuration;
   final int? startPage; // NEW: Start page for range download (1-based)
   final int? endPage; // NEW: End page for range download (1-based)
+  final Map<String, String>? cookies; // NEW: Cookies for authentication
 
   /// Check if this is a range download
   bool get isRangeDownload => startPage != null || endPage != null;
@@ -349,6 +415,7 @@ class DownloadContentParams extends UseCaseParams {
         timeoutDuration,
         startPage,
         endPage,
+        cookies, // NEW
       ];
 
   DownloadContentParams copyWith({
@@ -362,6 +429,7 @@ class DownloadContentParams extends UseCaseParams {
     Duration? timeoutDuration,
     int? startPage,
     int? endPage,
+    Map<String, String>? cookies, // NEW
   }) {
     return DownloadContentParams(
       content: content ?? this.content,
@@ -374,6 +442,7 @@ class DownloadContentParams extends UseCaseParams {
       timeoutDuration: timeoutDuration ?? this.timeoutDuration,
       startPage: startPage ?? this.startPage,
       endPage: endPage ?? this.endPage,
+      cookies: cookies ?? this.cookies, // NEW
     );
   }
 
@@ -417,7 +486,9 @@ class DownloadContentParams extends UseCaseParams {
       String imageQuality = 'high',
       Duration? timeoutDuration,
       int? startPage,
-      int? endPage}) {
+      int? endPage,
+      Map<String, String>? cookies}) {
+    // NEW
     return DownloadContentParams(
       content: content,
       priority: 5,
@@ -427,6 +498,7 @@ class DownloadContentParams extends UseCaseParams {
       timeoutDuration: timeoutDuration,
       startPage: startPage,
       endPage: endPage,
+      cookies: cookies, // NEW
     );
   }
 

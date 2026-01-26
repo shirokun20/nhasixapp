@@ -138,15 +138,17 @@ class DetailError extends DetailState {
     required this.errorType,
     required this.canRetry,
     this.contentId,
+    this.error,
   });
 
   final String message;
   final String errorType;
   final bool canRetry;
   final String? contentId;
+  final dynamic error;
 
   @override
-  List<Object?> get props => [message, errorType, canRetry, contentId];
+  List<Object?> get props => [message, errorType, canRetry, contentId, error];
 
   /// Get user-friendly error message
   String get userFriendlyMessage {
@@ -224,11 +226,13 @@ class DetailActionFailure extends DetailLoaded {
     required super.lastUpdated,
     super.imageMetadata,
     this.needsLogin = false,
+    this.error,
   });
 
   final String message;
   final bool needsLogin;
+  final dynamic error;
 
   @override
-  List<Object?> get props => [...super.props, message, needsLogin];
+  List<Object?> get props => [...super.props, message, needsLogin, error];
 }

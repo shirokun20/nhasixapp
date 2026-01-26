@@ -15,6 +15,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart'
 import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_nhentai/kuron_nhentai.dart';
 import 'package:kuron_crotpedia/kuron_crotpedia.dart';
+import 'package:kuron_komiktap/kuron_komiktap.dart';
 import 'package:nhasixapp/core/adapters/nhentai_scraper_adapter_impl.dart';
 
 // Core Network
@@ -24,6 +25,8 @@ import 'package:nhasixapp/core/network/http_client_manager.dart';
 import 'package:nhasixapp/core/utils/tag_data_manager.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/network/dns_settings_service.dart';
+import 'package:nhasixapp/core/network/dns_resolver.dart'; // NEW
 
 // Data Sources
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
@@ -50,6 +53,7 @@ import 'package:nhasixapp/presentation/cubits/update/update_cubit.dart';
 import 'package:nhasixapp/domain/repositories/repositories.dart';
 import 'package:nhasixapp/data/repositories/content_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/user_data_repository_impl.dart';
+import 'package:nhasixapp/data/repositories/settings_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/reader_settings_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/reader_repository_impl.dart';
 
@@ -67,7 +71,12 @@ import 'package:nhasixapp/domain/usecases/settings/get_user_preferences_usecase.
 import 'package:nhasixapp/domain/usecases/settings/save_user_preferences_usecase.dart';
 
 // Services
+import 'package:nhasixapp/services/native_download_service.dart';
+import 'package:nhasixapp/services/native_pdf_service.dart';
+import 'package:nhasixapp/services/native_backup_service.dart';
+import 'package:nhasixapp/services/native_pdf_reader_service.dart';
 import 'package:nhasixapp/services/download_service.dart';
+
 import 'package:nhasixapp/core/services/update_service.dart';
 import 'package:nhasixapp/services/notification_service.dart';
 import 'package:nhasixapp/services/pdf_service.dart';
@@ -127,9 +136,14 @@ void _setupCore() {
         ),
       ));
 
-  // HTTP Client (Dio) - Using singleton manager to prevent disposal issues
+  // HTTP Client (Dio) - Using singleton manager
+  // DNS-over-HTTPS is DISABLED because it's incompatible with HTTPS/SSL
+  // (SNI and certificate validation fail when using IP addresses)
   getIt.registerLazySingleton<Dio>(() {
-    return HttpClientManager.initializeHttpClient(logger: getIt<Logger>());
+    return HttpClientManager.initializeHttpClient(
+      logger: getIt<Logger>(),
+      // dnsResolver: getIt<DnsResolver>(),  // DISABLED - incompatible with HTTPS
+    );
   });
 
   // Cache Manager
@@ -139,9 +153,21 @@ void _setupCore() {
   getIt.registerLazySingleton<TagDataManager>(
       () => TagDataManager(logger: getIt<Logger>(), dio: getIt<Dio>()));
 
-  // Remote Config Service
+  // Remote Config Service (Assets-based configs, Remote tags download)
   getIt.registerLazySingleton<RemoteConfigService>(() => RemoteConfigService(
         dio: getIt<Dio>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // DNS Settings Service
+  getIt.registerLazySingleton<DnsSettingsService>(() => DnsSettingsService(
+        prefs: getIt<SharedPreferences>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // DNS Resolver (NEW)
+  getIt.registerLazySingleton<DnsResolver>(() => DnsResolver(
+        settingsService: getIt<DnsSettingsService>(),
         logger: getIt<Logger>(),
       ));
 
@@ -162,20 +188,33 @@ void _setupServices() {
   getIt.registerLazySingleton<PdfService>(
       () => PdfService(logger: getIt<Logger>()));
 
+  // Native PDF Service
+  getIt.registerLazySingleton<NativePdfService>(() => NativePdfService());
+
+  // Native Services
+  getIt.registerLazySingleton<NativeBackupService>(() => NativeBackupService());
+  getIt.registerLazySingleton<NativePdfReaderService>(
+    () => NativePdfReaderService(),
+  );
+
   // PDF Conversion Service - High-level orchestration service for background PDF processing
   getIt.registerLazySingleton<PdfConversionService>(() => PdfConversionService(
-        pdfService: getIt<PdfService>(),
         notificationService: getIt<NotificationService>(),
-        userDataRepository: getIt<UserDataRepository>(),
+        nativePdfService: getIt<NativePdfService>(),
         logger: getIt<Logger>(),
       ));
 
-  // Download Service
+  // Download Service - Core download logic with MediaStore support
   getIt.registerLazySingleton<DownloadService>(() => DownloadService(
         httpClient: getIt<Dio>(),
         notificationService: getIt<NotificationService>(),
+        sourceRegistry: getIt<ContentSourceRegistry>(), // NEW
         logger: getIt<Logger>(),
       ));
+
+  // Native Download Service
+  getIt.registerLazySingleton<NativeDownloadService>(
+      () => NativeDownloadService());
 
   // History Cleanup Service
   getIt
@@ -287,6 +326,8 @@ void _setupDataSources() {
   // Nhentai Source
   getIt.registerLazySingleton<NhentaiSource>(() => NhentaiSource(
         scraper: getIt<NhentaiScraperAdapter>(),
+        displayName:
+            getIt<RemoteConfigService>().getConfig('nhentai')?.ui?.displayName,
       ));
 
   // Crotpedia Cookie Store
@@ -315,6 +356,28 @@ void _setupDataSources() {
         logger: getIt<Logger>(),
         baseUrl:
             getIt<RemoteConfigService>().getConfig('crotpedia')?.api?.baseUrl,
+        displayName: getIt<RemoteConfigService>()
+            .getConfig('crotpedia')
+            ?.ui
+            ?.displayName,
+      ));
+
+  // KomikTap Scraper
+  getIt.registerLazySingleton<KomiktapScraper>(() => KomiktapScraper(
+        customSelectors: getIt<RemoteConfigService>()
+            .getConfig('komiktap')
+            ?.scraper
+            ?.selectors,
+      ));
+
+  // KomikTap Source
+  getIt.registerLazySingleton<KomiktapSource>(() => KomiktapSource(
+        scraper: getIt<KomiktapScraper>(),
+        dio: getIt<Dio>(),
+        logger: getIt<Logger>(),
+        baseUrl: getIt<RemoteConfigService>().getConfig('komiktap')?.baseUrl,
+        displayName:
+            getIt<RemoteConfigService>().getConfig('komiktap')?.ui?.displayName,
       ));
 
   // Content Source Registry
@@ -322,6 +385,7 @@ void _setupDataSources() {
     final registry = ContentSourceRegistry();
     registry.register(getIt<NhentaiSource>());
     registry.register(getIt<CrotpediaSource>());
+    registry.register(getIt<KomiktapSource>()); // NEW
     return registry;
   });
 
@@ -370,10 +434,13 @@ void _setupRepositories() {
       ));
 
   // Settings Repository
-  // getIt.registerLazySingleton<SettingsRepository>(() => SettingsRepositoryImpl(
-  //   sharedPreferences: getIt(),
-  //   logger: getIt(),
-  // ));
+  // Settings Repository
+  getIt.registerLazySingleton<SettingsRepository>(() => SettingsRepositoryImpl(
+        sharedPreferences: getIt(),
+        nativeBackupService: getIt(),
+        databaseHelper: DatabaseHelper.instance,
+        logger: getIt(),
+      ));
 
   // Offline Content Manager (depends on UserDataRepository)
   getIt
@@ -453,13 +520,16 @@ void _setupBlocs() {
         logger: getIt<Logger>(),
         connectivity: getIt<Connectivity>(),
         tagDataManager: getIt<TagDataManager>(),
+        contentSourceRegistry: getIt<ContentSourceRegistry>(),
       ));
 
   // Home BLoC
   getIt.registerFactory<HomeBloc>(() => HomeBloc());
 
-  // Register ContentBloc when repositories and use cases are implemented
-  getIt.registerFactory<ContentBloc>(() => ContentBloc(
+  // Register ContentBloc as singleton to preserve state across widget rebuilds
+  // IMPORTANT: Changed from registerFactory to registerLazySingleton
+  // to fix pagination retry bug where state was reset on widget rebuild
+  getIt.registerLazySingleton<ContentBloc>(() => ContentBloc(
         getContentListUseCase: getIt<GetContentListUseCase>(),
         searchContentUseCase: getIt<SearchContentUseCase>(),
         getRandomContentUseCase: getIt<GetRandomContentUseCase>(),
@@ -487,6 +557,8 @@ void _setupBlocs() {
         pdfConversionService: getIt<PdfConversionService>(),
         remoteConfigService: getIt<RemoteConfigService>(),
         appLocalizations: null, // Initialized during main setup
+        crotpediaAuthManager:
+            getIt<CrotpediaAuthManager>(), // NEW: Inject for cookie extraction
       ));
 
   // Register other BLoCs when implemented

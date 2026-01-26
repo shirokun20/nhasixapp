@@ -6,6 +6,7 @@ import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/core/utils/permission_helper.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
+import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart'; // NEW: For download screen refresh
 import 'package:nhasixapp/services/export_service.dart';
 import 'package:nhasixapp/services/notification_service.dart';
 
@@ -32,15 +33,18 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       }
     }
 
+    // FIXED: Show loading state BEFORE starting sync operation
+    // This ensures users see loading shimmer immediately
+    if (context.mounted) {
+      context.read<OfflineSearchCubit>().setLoadingState();
+    }
+
     // Scan and sync backup folder
     if (context.mounted) {
       await _autoScanBackupFolder(context);
     }
 
-    // Refresh list from database
-    if (context.mounted) {
-      context.read<OfflineSearchCubit>().getAllOfflineContent();
-    }
+    // Note: forceRefresh() inside _autoScanBackupFolder already reloads from database
   }
 
   /// Export library with progress dialog
@@ -155,9 +159,7 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
 
     if (backupPath != null) {
       debugPrint(
-          'OFFLINE_AUTO_SCAN: Found backup path: $backupPath, starting scan...');
-      if (!context.mounted) return;
-      await _scanBackupFolder(context, backupPath, showSnackBar: false);
+          'OFFLINE_AUTO_SCAN: Found backup path: $backupPath, starting sync...');
 
       // Auto-sync backup content to database
       final offlineManager = getIt<OfflineContentManager>();
@@ -166,7 +168,16 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       final notificationService = getIt<NotificationService>();
       await notificationService.showSyncStarted();
 
-      final syncResult = await offlineManager.syncBackupToDatabase(backupPath);
+      final syncResult = await offlineManager.syncBackupToDatabase(
+        backupPath,
+        onProgress: (processed, total) {
+          final percentage = total > 0 ? ((processed / total) * 100).toInt() : 0;
+          notificationService.updateSyncProgress(
+            progress: percentage,
+            message: AppLocalizations.of(context)!.syncProgressMessage(processed, total),
+          );
+        },
+      );
       final synced = syncResult['synced'] ?? 0;
       final updated = syncResult['updated'] ?? 0;
 
@@ -183,39 +194,26 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
             duration: const Duration(seconds: 2),
           ),
         );
+      }
 
-        // Force refresh to reload from database
-        context.read<OfflineSearchCubit>().forceRefresh();
+      // Force refresh to reload from database AND clear loading state
+      // This must run unconditionally to stop the loading shimmer
+      context.read<OfflineSearchCubit>().forceRefresh();
+
+      // ✅ NEW: Refresh DownloadBloc to sync Downloads Screen with database
+      // This ensures Downloads Screen shows imported content immediately
+      // without requiring app restart
+      try {
+        context.read<DownloadBloc>().add(const DownloadRefreshEvent());
+        debugPrint('OFFLINE_AUTO_SCAN: Triggered DownloadBloc refresh after sync');
+      } catch (e) {
+        // DownloadBloc might not be available in all contexts (e.g., if Downloads Screen hasn't been visited)
+        // This is non-critical, so just log and continue
+        debugPrint('OFFLINE_AUTO_SCAN: Could not refresh DownloadBloc (not initialized yet): $e');
       }
     } else {
       debugPrint('OFFLINE_AUTO_SCAN: No backup folder found automatically');
     }
   }
 
-  /// Internal method to scan a specific backup folder
-  Future<void> _scanBackupFolder(BuildContext context, String backupPath,
-      {bool showSnackBar = true}) async {
-    try {
-      if (!context.mounted) return;
-
-      if (showSnackBar) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text(AppLocalizations.of(context)!.scanningBackupFolder)),
-        );
-      }
-
-      await context.read<OfflineSearchCubit>().scanBackupContent(backupPath);
-    } catch (e) {
-      if (!context.mounted) return;
-      if (showSnackBar) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(AppLocalizations.of(context)!
-                  .errorScanningBackup(e.toString()))),
-        );
-      }
-    }
-  }
 }

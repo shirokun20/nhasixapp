@@ -22,6 +22,12 @@ class DatabaseHelper {
     return _database!;
   }
 
+  /// Get database path
+  Future<String> getDatabasePath() async {
+    final documentsDirectory = await getApplicationDocumentsDirectory();
+    return '${documentsDirectory.path}/$_databaseName';
+  }
+
   /// Initialize database
   Future<Database> _initDatabase() async {
     try {
@@ -425,6 +431,8 @@ class DatabaseHelper {
     batch.execute('CREATE INDEX idx_downloads_state ON downloads (state)');
     batch.execute(
         'CREATE INDEX idx_downloads_start_time ON downloads (start_time DESC)');
+    batch.execute(
+        'CREATE INDEX idx_downloads_state_start_time ON downloads (state, start_time DESC)'); // NEW: For pagination
     batch.execute('CREATE INDEX idx_downloads_source ON downloads (source_id)');
 
     // History indexes

@@ -11,6 +11,8 @@ import 'package:nhasixapp/core/utils/directory_utils.dart';
 import 'package:nhasixapp/core/utils/tag_data_manager.dart';
 import 'package:nhasixapp/core/constants/app_constants.dart';
 
+import 'package:kuron_core/kuron_core.dart'; // For ContentSourceRegistry
+
 part 'splash_event.dart';
 part 'splash_state.dart';
 
@@ -27,12 +29,14 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
     required Logger logger,
     required Connectivity connectivity,
     required TagDataManager tagDataManager,
+    required ContentSourceRegistry contentSourceRegistry,
   })  : _remoteConfigService = remoteConfigService,
         _remoteDataSource = remoteDataSource,
         _userDataRepository = userDataRepository,
         _logger = logger,
         _connectivity = connectivity,
         _tagDataManager = tagDataManager,
+        _contentSourceRegistry = contentSourceRegistry,
         super(SplashInitial()) {
     on<SplashStartedEvent>(_onSplashStarted);
     on<SplashInitializeBypassEvent>(_onInitializeBypass);
@@ -49,6 +53,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
   final Logger _logger;
   final Connectivity _connectivity;
   final TagDataManager _tagDataManager;
+  final ContentSourceRegistry _contentSourceRegistry;
 
   // static const Duration _initialDelay = Duration(seconds: 1); // Removed for optimization
 
@@ -114,9 +119,16 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       emit(SplashInitializing(message: 'Initializing tags database...', progress: 1.0));
 
       // Initialize sources
-      final sources = ['nhentai', 'crotpedia'];
+      final sources = _contentSourceRegistry.sourceIds;
+      final tagsManifest = _remoteConfigService.tagsManifest;
 
       for (final source in sources) {
+        // Skip sources that don't have tag configuration
+        if (tagsManifest?.sources.containsKey(source) != true) {
+          _logger.d('SplashBloc: Skipping tag init for $source (no config)');
+          continue;
+        }
+
         await _tagDataManager.initialize(source: source);
 
         // Check for updates (Blocking if no tags, Background if has tags)

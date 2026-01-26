@@ -7,6 +7,7 @@ import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
 import 'app_localizations_id.dart';
+import 'app_localizations_zh.dart';
 
 // ignore_for_file: type=lint
 
@@ -95,7 +96,8 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('id')
+    Locale('id'),
+    Locale('zh')
   ];
 
   /// No description provided for @appTitle.
@@ -596,6 +598,48 @@ abstract class AppLocalizations {
   /// **'Retry Search'**
   String get retrySearch;
 
+  /// No description provided for @errorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Please check your connection and try again.'**
+  String get errorNetwork;
+
+  /// No description provided for @errorServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Server error. Please try again later.'**
+  String get errorServer;
+
+  /// No description provided for @errorCloudflare.
+  ///
+  /// In en, this message translates to:
+  /// **'Content is temporarily blocked (Cloudflare). Please try again in a moment.'**
+  String get errorCloudflare;
+
+  /// No description provided for @errorParsing.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load content data. The content may be unavailable.'**
+  String get errorParsing;
+
+  /// No description provided for @errorUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get errorUnknown;
+
+  /// No description provided for @errorConnectionTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection timed out. Please try again.'**
+  String get errorConnectionTimeout;
+
+  /// No description provided for @errorConnectionRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection refused. Server might be down.'**
+  String get errorConnectionRefused;
+
   /// No description provided for @networkErrorTitle.
   ///
   /// In en, this message translates to:
@@ -991,6 +1035,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Download Error'**
   String get downloadError;
+
+  /// No description provided for @verifyingFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying Files'**
+  String get verifyingFiles;
+
+  /// No description provided for @verifyingFilesWithTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying {title}...'**
+  String verifyingFilesWithTitle(String title);
+
+  /// No description provided for @verifyingProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying ({progress}%)'**
+  String verifyingProgress(int progress);
 
   /// No description provided for @initializingDownloads.
   ///
@@ -1465,6 +1527,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use broader search terms'**
   String get useBroaderSearchTerms;
+
+  /// No description provided for @welcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Kuron!'**
+  String get welcomeTitle;
+
+  /// No description provided for @welcomeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you for installing our app. Before you start, please note:'**
+  String get welcomeMessage;
+
+  /// No description provided for @ispBlockingInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'🚨 ISP Blocking Notice'**
+  String get ispBlockingInfo;
+
+  /// No description provided for @ispBlockingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'If this app is blocked by your ISP (Internet Service Provider), please use a VPN like Cloudflare WARP (1.1.1.1) to access content.'**
+  String get ispBlockingMessage;
+
+  /// No description provided for @downloadWarp.
+  ///
+  /// In en, this message translates to:
+  /// **'Download 1.1.1.1 VPN'**
+  String get downloadWarp;
+
+  /// No description provided for @permissionsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Required Permissions'**
+  String get permissionsRequired;
+
+  /// No description provided for @storagePermissionInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'📁 Storage: Required to download and save content offline'**
+  String get storagePermissionInfo;
+
+  /// No description provided for @notificationPermissionInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'🔔 Notifications: Required to show download progress and completion'**
+  String get notificationPermissionInfo;
+
+  /// No description provided for @grantStoragePermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Grant Storage Permission'**
+  String get grantStoragePermission;
+
+  /// No description provided for @grantNotificationPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Grant Notification Permission'**
+  String get grantNotificationPermission;
+
+  /// No description provided for @storageGranted.
+  ///
+  /// In en, this message translates to:
+  /// **'✅ Storage permission granted'**
+  String get storageGranted;
+
+  /// No description provided for @notificationGranted.
+  ///
+  /// In en, this message translates to:
+  /// **'✅ Notification permission granted'**
+  String get notificationGranted;
+
+  /// No description provided for @getStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
+  String get getStarted;
+
+  /// No description provided for @pleaseGrantAllPermissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Please grant all required permissions to continue'**
+  String get pleaseGrantAllPermissions;
+
+  /// No description provided for @permissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission denied. Some features may not work properly.'**
+  String get permissionDenied;
 
   /// No description provided for @loadingFavorites.
   ///
@@ -2114,6 +2266,18 @@ abstract class AppLocalizations {
   /// **'Indonesian'**
   String get indonesian;
 
+  /// No description provided for @chinese.
+  ///
+  /// In en, this message translates to:
+  /// **'Chinese (Simplified)'**
+  String get chinese;
+
+  /// No description provided for @comfortReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Comfortable Reading'**
+  String get comfortReading;
+
   /// No description provided for @sortBy.
   ///
   /// In en, this message translates to:
@@ -2624,6 +2788,54 @@ abstract class AppLocalizations {
   /// **'Download all galleries in this page'**
   String get downloadAllGalleries;
 
+  /// No description provided for @featureDisabledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature Not Available'**
+  String get featureDisabledTitle;
+
+  /// No description provided for @downloadFeatureDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Download feature is not available for this source'**
+  String get downloadFeatureDisabled;
+
+  /// No description provided for @favoriteFeatureDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorite feature is not available for this source'**
+  String get favoriteFeatureDisabled;
+
+  /// No description provided for @featureNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This feature is currently unavailable'**
+  String get featureNotAvailable;
+
+  /// No description provided for @chaptersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chapters'**
+  String get chaptersTitle;
+
+  /// No description provided for @chapterCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} chapters'**
+  String chapterCount(int count);
+
+  /// No description provided for @readChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get readChapter;
+
+  /// No description provided for @downloadChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Chapter'**
+  String get downloadChapter;
+
   /// No description provided for @enterPageNumber.
   ///
   /// In en, this message translates to:
@@ -2881,6 +3093,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Uploaded'**
   String get uploadedLabel;
+
+  /// No description provided for @viewAllChapters.
+  ///
+  /// In en, this message translates to:
+  /// **'View All Chapters'**
+  String get viewAllChapters;
+
+  /// No description provided for @searchChapters.
+  ///
+  /// In en, this message translates to:
+  /// **'Search chapters...'**
+  String get searchChapters;
+
+  /// No description provided for @noChaptersFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No chapters found'**
+  String get noChaptersFound;
 
   /// No description provided for @favoritesLabel.
   ///
@@ -5359,7 +5589,7 @@ abstract class AppLocalizations {
   /// No description provided for @syncResult.
   ///
   /// In en, this message translates to:
-  /// **'Synced: {synced} new, {updated} updated'**
+  /// **'Sync Result: {synced} imported, {updated} updated'**
   String syncResult(int synced, int updated);
 
   /// No description provided for @exportingLibrary.
@@ -5415,6 +5645,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'🚀 Cache Management (Debug)'**
   String get cacheManagementDebug;
+
+  /// No description provided for @syncStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing Backup...'**
+  String get syncStarted;
+
+  /// No description provided for @syncStartedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning and importing offline content'**
+  String get syncStartedMessage;
+
+  /// No description provided for @syncInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing Backup ({percent}%)'**
+  String syncInProgress(int percent);
+
+  /// No description provided for @syncProgressMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Processed {processed} of {total} items'**
+  String syncProgressMessage(int processed, int total);
+
+  /// No description provided for @syncCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Completed'**
+  String get syncCompleted;
+
+  /// No description provided for @syncCompletedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported: {synced}, Updated: {updated}'**
+  String syncCompletedMessage(int synced, int updated);
 }
 
 class _AppLocalizationsDelegate
@@ -5428,7 +5694,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'id'].contains(locale.languageCode);
+      <String>['en', 'id', 'zh'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -5441,6 +5707,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
       return AppLocalizationsEn();
     case 'id':
       return AppLocalizationsId();
+    case 'zh':
+      return AppLocalizationsZh();
   }
 
   throw FlutterError(

@@ -13,8 +13,8 @@ class GetAllDownloadsUseCase
   Future<List<DownloadStatus>> call(GetAllDownloadsParams params) async {
     try {
       // Validate parameters
-      if (params.page < 1) {
-        throw const ValidationException('Page number must be greater than 0');
+      if (params.offset < 0) {
+        throw const ValidationException('Offset must be >= 0');
       }
 
       if (params.limit < 1 || params.limit > 100) {
@@ -24,8 +24,10 @@ class GetAllDownloadsUseCase
       // Get downloads from repository
       final downloads = await _userDataRepository.getAllDownloads(
         state: params.state,
-        page: params.page,
         limit: params.limit,
+        offset: params.offset,
+        orderBy: params.orderBy,
+        descending: params.descending,
       );
 
       return downloads;
@@ -41,85 +43,93 @@ class GetAllDownloadsUseCase
 class GetAllDownloadsParams extends UseCaseParams {
   const GetAllDownloadsParams({
     this.state,
-    this.page = 1,
     this.limit = 20,
+    this.offset = 0,
+    this.orderBy = 'created_at',
+    this.descending = true,
   });
 
   final DownloadState? state;
-  final int page;
   final int limit;
+  final int offset;
+  final String orderBy;
+  final bool descending;
 
   @override
-  List<Object?> get props => [state, page, limit];
+  List<Object?> get props => [state, limit, offset, orderBy, descending];
 
   GetAllDownloadsParams copyWith({
     DownloadState? state,
-    int? page,
     int? limit,
+    int? offset,
+    String? orderBy,
+    bool? descending,
   }) {
     return GetAllDownloadsParams(
       state: state ?? this.state,
-      page: page ?? this.page,
       limit: limit ?? this.limit,
+      offset: offset ?? this.offset,
+      orderBy: orderBy ?? this.orderBy,
+      descending: descending ?? this.descending,
     );
   }
 
   /// Create params for all downloads
-  factory GetAllDownloadsParams.all({int page = 1, int limit = 20}) {
-    return GetAllDownloadsParams(page: page, limit: limit);
+  factory GetAllDownloadsParams.all({int limit = 20, int offset = 0}) {
+    return GetAllDownloadsParams(limit: limit, offset: offset);
   }
 
   /// Create params for active downloads only
-  factory GetAllDownloadsParams.active({int page = 1, int limit = 20}) {
+  factory GetAllDownloadsParams.active({int limit = 20, int offset = 0}) {
     return GetAllDownloadsParams(
       state: DownloadState.downloading,
-      page: page,
       limit: limit,
+      offset: offset,
     );
   }
 
   /// Create params for queued downloads only
-  factory GetAllDownloadsParams.queued({int page = 1, int limit = 20}) {
+  factory GetAllDownloadsParams.queued({int limit = 20, int offset = 0}) {
     return GetAllDownloadsParams(
       state: DownloadState.queued,
-      page: page,
       limit: limit,
+      offset: offset,
     );
   }
 
   /// Create params for completed downloads only
-  factory GetAllDownloadsParams.completed({int page = 1, int limit = 20}) {
+  factory GetAllDownloadsParams.completed({int limit = 20, int offset = 0}) {
     return GetAllDownloadsParams(
       state: DownloadState.completed,
-      page: page,
       limit: limit,
+      offset: offset,
     );
   }
 
   /// Create params for failed downloads only
-  factory GetAllDownloadsParams.failed({int page = 1, int limit = 20}) {
+  factory GetAllDownloadsParams.failed({int limit = 20, int offset = 0}) {
     return GetAllDownloadsParams(
       state: DownloadState.failed,
-      page: page,
       limit: limit,
+      offset: offset,
     );
   }
 
   /// Create params for paused downloads only
-  factory GetAllDownloadsParams.paused({int page = 1, int limit = 20}) {
+  factory GetAllDownloadsParams.paused({int limit = 20, int offset = 0}) {
     return GetAllDownloadsParams(
       state: DownloadState.paused,
-      page: page,
       limit: limit,
+      offset: offset,
     );
   }
 
   /// Create params for cancelled downloads only
-  factory GetAllDownloadsParams.cancelled({int page = 1, int limit = 20}) {
+  factory GetAllDownloadsParams.cancelled({int limit = 20, int offset = 0}) {
     return GetAllDownloadsParams(
       state: DownloadState.cancelled,
-      page: page,
       limit: limit,
+      offset: offset,
     );
   }
 }

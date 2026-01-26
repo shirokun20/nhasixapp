@@ -10,6 +10,38 @@ class NotificationPermissionHandler {
   NotificationPermissionHandler({Logger? logger})
       : _logger = logger ?? Logger();
 
+  /// Check if notification permission is already granted without requesting
+  Future<bool> checkPermission() async {
+    try {
+      // For Android, handle version-specific permission logic
+      if (Platform.isAndroid) {
+        final deviceInfo = DeviceInfoPlugin();
+        final androidInfo = await deviceInfo.androidInfo;
+        final sdkInt = androidInfo.version.sdkInt;
+
+        if (sdkInt >= 33) {
+          // Android 13+ requires explicit notification permission
+          final status = await Permission.notification.status;
+          return status.isGranted;
+        } else {
+          // Android 12 and below - notifications enabled by default
+          return true;
+        }
+      } else if (Platform.isIOS) {
+        // iOS permission handling
+        final status = await Permission.notification.status;
+        return status.isGranted;
+      }
+
+      // Fallback for other platforms
+      return true;
+    } catch (e, stackTrace) {
+      _logger.e('NotificationPermissionHandler: Error checking permission: $e',
+          error: e, stackTrace: stackTrace);
+      return false;
+    }
+  }
+
   /// Request notification permission from user
   /// Enhanced for Android 13+ and release mode compatibility
   Future<bool> requestPermission() async {

@@ -32,34 +32,70 @@ class OfflineContentManager {
   final Map<String, DateTime> _metadataCacheTime = {};
   static const Duration _metadataCacheDuration = Duration(minutes: 10);
 
+  // 🚀 OPTIMIZATION: Cache for content paths and image URLs to reduce I/O
+  final Map<String, String> _pathCache = {};
+  final Map<String, List<String>> _imageUrlsCache = {};
+  final Map<String, DateTime> _imageUrlsCacheTime = {};
+
+  static const Duration _urlCacheDuration = Duration(minutes: 5); 
+
+
   // Localization callback
   String Function(String key, {Map<String, dynamic>? args})? _localize;
 
   /// Check if content is available offline
   Future<bool> isContentAvailableOffline(String contentId) async {
+    // _logger.d("🔍 Checking offline availability for $contentId");
     try {
-      // Check if content is downloaded and completed
+      // 1. Check DB first (fastest)
       final downloadStatus =
           await _userDataRepository.getDownloadStatus(contentId);
 
-      if (downloadStatus?.state != DownloadState.completed) {
+      if (downloadStatus?.state == DownloadState.completed) {
+        // _logger.d("✅ Content $contentId is marked as COMPLETED in DB");
+        return true;
+      }
+      
+      // _logger.d("⚠️ Content $contentId not COMPLETED in DB (status: ${downloadStatus?.state}), checking filesystem...");
+
+      // 2. Fallback: Check filesystem directly
+      // This handles cases where DB might be out of sync or content was manually restored
+      final contentPath = await getOfflineContentPath(contentId);
+      if (contentPath == null) {
+        _logger.w("❌ No offline path found for $contentId");
         return false;
       }
 
-      // Verify files exist on disk
-      final contentPath = await getOfflineContentPath(contentId);
-      if (contentPath == null) return false;
-
       final contentDir = Directory(contentPath);
-      if (!await contentDir.exists()) return false;
+      if (!await contentDir.exists()) {
+         _logger.w("❌ Directory does not exist for $contentId: $contentPath");
+         return false;
+      }
 
       // Check if at least one image file exists
+      // Check images subdirectory first (new structure)
+      final imagesDir = Directory(path.join(contentPath, 'images'));
+      if (await imagesDir.exists() && (await imagesDir.list().isEmpty) == false) {
+         final files = await imagesDir.list().toList();
+         if (files.any((f) => f is File && _isImageFile(f.path))) {
+           // _logger.d("✅ Found images in subfolder for $contentId");
+           return true;
+         }
+      }
+
+      // Check root directory (legacy)
       final files = await contentDir.list().toList();
       final imageFiles = files
           .where((file) => file is File && _isImageFile(file.path))
           .toList();
-
-      return imageFiles.isNotEmpty;
+      
+      if (imageFiles.isNotEmpty) {
+        // _logger.d("✅ Found images in root folder for $contentId");
+        return true;
+      }
+      
+      _logger.w("❌ No images found in $contentPath for $contentId");
+      return false;
     } catch (e, stackTrace) {
       _logger.e('Error checking offline availability for $contentId',
           error: e, stackTrace: stackTrace);
@@ -69,25 +105,42 @@ class OfflineContentManager {
 
   /// Get offline content path for a specific content ID
   Future<String?> getOfflineContentPath(String contentId) async {
+    // 🚀 OPTIMIZATION: Check cache first
+    if (_pathCache.containsKey(contentId)) {
+      final cachedPath = _pathCache[contentId]!;
+      // verify it still exists occasionally? No, assume it persists for session to be fast.
+      // validation is expensive.
+      return cachedPath;
+    }
+
     try {
       final downloadStatus =
           await _userDataRepository.getDownloadStatus(contentId);
 
       // First, try to get path from database
       if (downloadStatus?.downloadPath != null) {
-        return downloadStatus!.downloadPath;
+        // Verify if the DB path actually exists
+        final dbPath = downloadStatus!.downloadPath!;
+        if (await Directory(dbPath).exists()) {
+           return dbPath;
+        }
+        _logger.w("⚠️ Path from DB does not exist: $dbPath. Searching alternatives...");
       }
 
       // Fallback: try to find the content in multiple possible locations
       final possiblePaths = await _getPossibleDownloadPaths(contentId);
+      // _logger.d("🔍 Scanning ${possiblePaths.length} possible paths for $contentId");
+      
       for (final contentPath in possiblePaths) {
         if (await Directory(contentPath).exists()) {
-          _logger.i('Found offline content path for $contentId: $contentPath');
+          _logger.i('✅ Found offline content path for $contentId: $contentPath');
+          // 🚀 OPTIMIZATION: Update cache
+          _pathCache[contentId] = contentPath;
           return contentPath;
         }
       }
 
-      // _logger.w('No offline content path found for $contentId');
+      _logger.w('❌ No offline content path found for $contentId after strict scan');
       return null;
     } catch (e, stackTrace) {
       _logger.e('Error getting offline content path for $contentId',
@@ -101,23 +154,33 @@ class OfflineContentManager {
   Future<List<String>> _getPossibleDownloadPaths(String contentId,
       {String? sourceId}) async {
     final paths = <String>[];
-    final effectiveSourceId = sourceId ?? AppStorage.defaultSourceId;
+    // final effectiveSourceId = sourceId ?? AppStorage.defaultSourceId; // Removed unused variable
 
     try {
       // Try the smart detection first
       final downloadsPath = await _getDownloadsDirectory();
 
-      // NEW: Source-based paths (nhasix/{source}/{contentId}/)
-      paths.add(
-          path.join(downloadsPath, 'nhasix', effectiveSourceId, contentId));
+      // List of source IDs to check: either specific one or all known ones
+      final sourcesToCheck = sourceId != null
+          ? [sourceId]
+          : [...AppStorage.knownSources, AppStorage.defaultSourceId];
+      // Deduplicate
+      final distinctSources = sourcesToCheck.toSet().toList();
+
+      for (final sId in distinctSources) {
+        // NEW: Source-based paths (nhasix/{source}/{contentId}/)
+        paths.add(path.join(downloadsPath, 'nhasix', sId, contentId));
+      }
 
       // LEGACY: Direct paths (nhasix/{contentId}/)
       paths.add(path.join(downloadsPath, 'nhasix', contentId));
 
       // Try app documents directory
       final documentsDir = await getApplicationDocumentsDirectory();
-      paths.add(path.join(documentsDir.path, 'downloads', 'nhasix',
-          effectiveSourceId, contentId));
+      for (final sId in distinctSources) {
+        paths.add(path.join(
+            documentsDir.path, 'downloads', 'nhasix', sId, contentId));
+      }
       paths.add(path.join(documentsDir.path, 'downloads', 'nhasix', contentId));
 
       // Try external storage directory directly
@@ -128,9 +191,11 @@ class OfflineContentManager {
           // Try common download folder names
           final folderNames = ['Download', 'Downloads', 'Unduhan', 'Descargas'];
           for (final folderName in folderNames) {
-            // NEW: Source-based paths
-            paths.add(path.join(externalRoot, folderName, 'nhasix',
-                effectiveSourceId, contentId));
+            for (final sId in distinctSources) {
+              // NEW: Source-based paths
+              paths.add(path.join(
+                  externalRoot, folderName, 'nhasix', sId, contentId));
+            }
             // LEGACY: Direct paths
             paths.add(path.join(externalRoot, folderName, 'nhasix', contentId));
           }
@@ -140,21 +205,23 @@ class OfflineContentManager {
       }
 
       // Try hardcoded paths
-      final hardcodedPaths = [
-        // NEW: Source-based paths
-        '/storage/emulated/0/Download/nhasix/$effectiveSourceId/$contentId',
-        '/storage/emulated/0/Downloads/nhasix/$effectiveSourceId/$contentId',
-        '/storage/emulated/0/Unduhan/nhasix/$effectiveSourceId/$contentId',
-        '/sdcard/Download/nhasix/$effectiveSourceId/$contentId',
-        '/sdcard/Downloads/nhasix/$effectiveSourceId/$contentId',
-        // LEGACY: Direct paths
+      for (final sId in distinctSources) {
+        paths.addAll([
+          '/storage/emulated/0/Download/nhasix/$sId/$contentId',
+          '/storage/emulated/0/Downloads/nhasix/$sId/$contentId',
+          '/storage/emulated/0/Unduhan/nhasix/$sId/$contentId',
+          '/sdcard/Download/nhasix/$sId/$contentId',
+          '/sdcard/Downloads/nhasix/$sId/$contentId',
+        ]);
+      }
+      
+      paths.addAll([
         '/storage/emulated/0/Download/nhasix/$contentId',
         '/storage/emulated/0/Downloads/nhasix/$contentId',
         '/storage/emulated/0/Unduhan/nhasix/$contentId',
         '/sdcard/Download/nhasix/$contentId',
         '/sdcard/Downloads/nhasix/$contentId',
-      ];
-      paths.addAll(hardcodedPaths);
+      ]);
     } catch (e) {
       _logger.w('Error getting possible download paths: $e');
     }
@@ -188,6 +255,13 @@ class OfflineContentManager {
   /// Get offline image URLs for content
   Future<List<String>> getOfflineImageUrls(String contentId) async {
     try {
+      // 🚀 OPTIMIZATION: Check cache first
+      if (_imageUrlsCache.containsKey(contentId) &&
+          _imageUrlsCacheTime.containsKey(contentId) &&
+          DateTime.now().difference(_imageUrlsCacheTime[contentId]!) < _urlCacheDuration) {
+        return _imageUrlsCache[contentId]!;
+      }
+
       final contentPath = await getOfflineContentPath(contentId);
       if (contentPath == null) return [];
 
@@ -223,11 +297,65 @@ class OfflineContentManager {
       imageFiles.sort((a, b) =>
           _extractPageNumber(a.path).compareTo(_extractPageNumber(b.path)));
 
-      return imageFiles.map((file) => file.path).toList();
+      final urls = imageFiles.map((file) => file.path).toList();
+      
+      // 🚀 OPTIMIZATION: Update cache
+      if (urls.isNotEmpty) {
+        _imageUrlsCache[contentId] = urls;
+        _imageUrlsCacheTime[contentId] = DateTime.now();
+      }
+
+      return urls;
     } catch (e, stackTrace) {
       _logger.e('Error getting offline image URLs for $contentId',
           error: e, stackTrace: stackTrace);
       return [];
+    }
+  }
+
+  /// Get offline first image path (fast, for cover display)
+  /// 
+  /// This method constructs the path to the first image without scanning
+  /// the entire directory, making it much faster for grid/list displays.
+  /// 
+  /// Tries common patterns: 001.jpg, 001.png, 001.webp, 1.jpg
+  Future<String?> getOfflineFirstImagePath(String contentId, {String? downloadPath}) async {
+    try {
+      final contentPath = downloadPath ?? await getOfflineContentPath(contentId);
+      if (contentPath == null) return null;
+
+      // Try images subdirectory first (new structure)
+      final imagesDir = path.join(contentPath, 'images');
+      
+      // Common first page patterns
+      final patterns = [
+        '001.jpg', '001.png', '001.webp', '001.jpeg',
+        '1.jpg', '1.png', '1.webp', '1.jpeg',
+        '0001.jpg', '0001.png', '0001.webp',
+      ];
+
+      // Try new structure first
+      for (final pattern in patterns) {
+        final imagePath = path.join(imagesDir, pattern);
+        if (await File(imagePath).exists()) {
+          return imagePath;
+        }
+      }
+
+      // Fallback: try old structure (images directly in content folder)
+      for (final pattern in patterns) {
+        final imagePath = path.join(contentPath, pattern);
+        if (await File(imagePath).exists()) {
+          return imagePath;
+        }
+      }
+
+      // Last resort: scan directory (but only return first)
+      final imageUrls = await getOfflineImageUrls(contentId);
+      return imageUrls.isNotEmpty ? imageUrls.first : null;
+    } catch (e) {
+      _logger.e('Error getting first offline image for $contentId: $e');
+      return null;
     }
   }
 
@@ -503,8 +631,20 @@ class OfflineContentManager {
   /// Get offline storage usage
   Future<int> getOfflineStorageUsage() async {
     try {
+      // 1. Try to get total size from DB (fastest)
+      final totalSize = await _userDataRepository.getTotalDownloadSize(
+        state: DownloadState.completed,
+      );
+      
+      if (totalSize > 0) {
+        return totalSize;
+      }
+
+      // 2. Fallback: Only iterate filesystem if DB returns 0 (e.g. migration needed or clean install)
+      // This is still slow but should rarely happen for existing users with data
+      _logger.w("⚠️ DB download size is 0, falling back to slow filesystem scan");
       final offlineIds = await getOfflineContentIds();
-      int totalSize = 0;
+      int fsTotalSize = 0;
 
       for (final contentId in offlineIds) {
         final contentPath = await getOfflineContentPath(contentId);
@@ -514,14 +654,14 @@ class OfflineContentManager {
             await for (final file in contentDir.list(recursive: true)) {
               if (file is File) {
                 final stat = await file.stat();
-                totalSize += stat.size;
+                fsTotalSize += stat.size;
               }
             }
           }
         }
       }
 
-      return totalSize;
+      return fsTotalSize;
     } catch (e, stackTrace) {
       _logger.e('Error calculating offline storage usage',
           error: e, stackTrace: stackTrace);
@@ -664,7 +804,7 @@ class OfflineContentManager {
       final queryLower = query.toLowerCase();
 
       // Known source identifiers to check for nested structure
-      final knownSources = [SourceType.nhentai.id, SourceType.crotpedia.id];
+      final knownSources = AppStorage.knownSources;
 
       await for (final entity in backupDir.list()) {
         if (entity is Directory) {
@@ -855,7 +995,7 @@ class OfflineContentManager {
       final contentWithTimes = <MapEntry<Content, DateTime>>[];
 
       // Known source identifiers to check for nested structure
-      const knownSources = ['nhentai', 'crotpedia'];
+      final knownSources = AppStorage.knownSources;
 
       await for (final entity in backupDir.list()) {
         if (entity is Directory) {
@@ -1268,7 +1408,11 @@ class OfflineContentManager {
 
   /// Sync backup folder content to database
   /// Returns map with 'synced' (new items) and 'updated' (fixed paths) counts
-  Future<Map<String, int>> syncBackupToDatabase(String backupPath) async {
+  /// [onProgress] - Optional callback (processed, total)
+  Future<Map<String, int>> syncBackupToDatabase(
+    String backupPath, {
+    void Function(int processed, int total)? onProgress,
+  }) async {
     // NEW: Auto-migrate legacy content before scanning
     try {
       final backupDir = Directory(backupPath);
@@ -1299,6 +1443,11 @@ class OfflineContentManager {
     final contents = await scanBackupFolder(backupPath);
     int syncedCount = 0;
     int updatedCount = 0;
+    int total = contents.length;
+    int processed = 0;
+
+    // Report initial progress (0/total)
+    onProgress?.call(0, total);
 
     for (final content in contents) {
       final existing = await _userDataRepository.getDownloadStatus(content.id);
@@ -1367,6 +1516,14 @@ class OfflineContentManager {
           updatedCount++;
           _logger.i('Updated existing entry metadata/path for: ${content.id}');
         }
+      }
+
+      processed++;
+      onProgress?.call(processed, total);
+      
+      // Small yield to not block UI/thread too much during heavy sync
+      if (processed % 10 == 0) {
+        await Future.delayed(Duration.zero);
       }
     }
 
@@ -1451,3 +1608,4 @@ class OfflineContentManager {
     }
   }
 }
+

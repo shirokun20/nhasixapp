@@ -22,7 +22,10 @@ class ContentModel extends Content {
     super.favorites = 0,
     super.englishTitle,
     super.japaneseTitle,
+    super.subTitle,
     super.relatedContent = const [],
+    super.chapters,
+    super.mediaId,
     this.cachedAt,
   });
 
@@ -296,14 +299,16 @@ class ContentModel extends Content {
       'upload_date': uploadDate.millisecondsSinceEpoch,
       'source_id': sourceId,
       'favorites': favorites,
-      'tags': tags.map((t) => {
-        'id': t.id,
-        'name': t.name,
-        'type': t.type,
-        'count': t.count,
-        'url': t.url,
-        'slug': t.slug,
-      }).toList(),
+      'tags': tags
+          .map((t) => {
+                'id': t.id,
+                'name': t.name,
+                'type': t.type,
+                'count': t.count,
+                'url': t.url,
+                'slug': t.slug,
+              })
+          .toList(),
       'cached_at': cachedAt?.millisecondsSinceEpoch ??
           DateTime.now().millisecondsSinceEpoch,
     };
@@ -330,6 +335,55 @@ class ContentModel extends Content {
     }).toList();
 
     return ContentModel.fromMap(json, tags);
+  }
+
+  @override
+  ContentModel copyWith({
+    String? id,
+    String? title,
+    String? englishTitle,
+    String? japaneseTitle,
+    String? subTitle,
+    String? coverUrl,
+    List<Tag>? tags,
+    List<String>? artists,
+    List<String>? characters,
+    List<String>? parodies,
+    List<String>? groups,
+    String? language,
+    int? pageCount,
+    List<String>? imageUrls,
+    DateTime? uploadDate,
+    String? sourceId,
+    int? favorites,
+    List<Content>? relatedContent,
+    DateTime? cachedAt,
+    String? mediaId,
+    List<Chapter>? chapters,
+  }) {
+    return ContentModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      englishTitle: englishTitle ?? this.englishTitle,
+      japaneseTitle: japaneseTitle ?? this.japaneseTitle,
+      subTitle: subTitle ?? this.subTitle,
+      coverUrl: coverUrl ?? this.coverUrl,
+      tags: tags ?? this.tags,
+      artists: artists ?? this.artists,
+      characters: characters ?? this.characters,
+      parodies: parodies ?? this.parodies,
+      groups: groups ?? this.groups,
+      language: language ?? this.language,
+      pageCount: pageCount ?? this.pageCount,
+      imageUrls: imageUrls ?? this.imageUrls,
+      uploadDate: uploadDate ?? this.uploadDate,
+      sourceId: sourceId ?? this.sourceId,
+      favorites: favorites ?? this.favorites,
+      relatedContent: relatedContent ?? this.relatedContent,
+      cachedAt: cachedAt ?? this.cachedAt,
+      chapters: chapters ?? this.chapters,
+      mediaId: mediaId ?? this.mediaId,
+    );
   }
 
   /// Create copy with updated cache time

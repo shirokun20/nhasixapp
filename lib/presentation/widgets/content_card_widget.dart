@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/text_style_const.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../l10n/app_localizations.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'progressive_image_widget.dart';
 
 /// Enhanced content card widget with image caching and improved UI
@@ -135,6 +136,11 @@ class ContentCard extends StatelessWidget {
                       _buildTitle(),
 
                       const SizedBox(height: 4),
+
+                      // Subtitle (chapter info for manga/webtoon)
+                      if (content.subTitle != null &&
+                          content.subTitle!.isNotEmpty)
+                        _buildSubtitle(),
 
                       // Offline size (if available) - below title
                       if (offlineSize != null) ...[
@@ -512,6 +518,21 @@ class ContentCard extends StatelessWidget {
     );
   }
 
+  Widget _buildSubtitle() {
+    return Builder(
+      builder: (context) => Text(
+        content.subTitle!,
+        style: TextStyleConst.contentSubtitle.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+
   Widget _buildArtist() {
     return Builder(
       builder: (context) => Text(
@@ -655,20 +676,24 @@ class ContentCard extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(2),
               border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
+                color: Theme.of(context)
+                    .colorScheme
+                    .outline
+                    .withValues(alpha: 0.5),
                 width: 0.5,
               ),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(2),
-              child: Image.asset(
-                'assets/images/${content.language.toLowerCase()}.gif',
+              child: SvgPicture.asset(
+                'assets/images/flags/${content.language.toLowerCase()}.svg',
                 width: 20,
                 height: 14,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
+                placeholderBuilder: (context) {
                   return Container(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
                     child: Center(
                       child: Text(
                         content.language.substring(0, 2).toUpperCase(),
@@ -685,13 +710,16 @@ class ContentCard extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            content.language.length > 1 
+            content.language.length > 1
                 ? '${content.language[0].toUpperCase()}${content.language.substring(1)}'
                 : content.language.toUpperCase(),
             style: TextStyleConst.caption.copyWith(
               fontSize: 10,
               fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.8),
             ),
           ),
         ],

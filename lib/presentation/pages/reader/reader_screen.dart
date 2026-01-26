@@ -162,23 +162,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
   }
 
-  /// Extract page number from image URL for validation
-  int? _extractPageNumberFromUrl(String url) {
-    // Try to extract page number from patterns like:
-    // https://i.nhentai.net/galleries/123456/22.jpg -> 22
-    final match = RegExp(r'/galleries/\d+/(\d+)\.[^/]+$').firstMatch(url);
-    if (match != null) {
-      return int.tryParse(match.group(1)!);
-    }
 
-    // Try other patterns if needed
-    final match2 = RegExp(r'/(\d+)\.[^/]*$').firstMatch(url);
-    if (match2 != null) {
-      return int.tryParse(match2.group(1)!);
-    }
-
-    return null;
-  }
 
   @override
   void dispose() {
@@ -223,23 +207,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
             }
           } else {
             // Fallback to URL validation if no metadata found
-            final urlPageNumber = _extractPageNumberFromUrl(imageUrl);
-            isValid = urlPageNumber == null || urlPageNumber == targetPage;
-            if (!isValid) {
-              debugPrint(
-                  '⚠️ URL MISMATCH (fallback): Expected page $targetPage but URL contains page $urlPageNumber');
-              debugPrint('   URL: $imageUrl');
-            }
+            // We TRUST the URL list from the source. Removing brittle filename parsing validation.
+            // checks that caused false positives (e.g. 0-indexed filenames).
+            isValid = true; 
           }
         } else {
-          // Fallback to URL validation if no metadata available
-          final urlPageNumber = _extractPageNumberFromUrl(imageUrl);
-          if (urlPageNumber != null && urlPageNumber != targetPage) {
-            debugPrint(
-                '⚠️ URL MISMATCH: Expected page $targetPage but URL contains page $urlPageNumber');
-            debugPrint('   URL: $imageUrl');
-            isValid = false;
-          }
+          // No metadata available. Trust the URL list order.
+          isValid = true;
         }
 
         if (!isValid) {
@@ -529,13 +503,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
           final imageUrl = state.content?.imageUrls[index] ?? '';
           final pageNumber = index + 1;
 
-          // 🔍 DEBUG: Validate URL-page mapping during viewing
-          final urlPageNumber = _extractPageNumberFromUrl(imageUrl);
-          if (urlPageNumber != null && urlPageNumber != pageNumber) {
-            debugPrint(
-                '🚨 VIEWING MISMATCH: Showing page $pageNumber but URL contains page $urlPageNumber');
-            debugPrint('   Index: $index, URL: $imageUrl');
-          }
+
+
+          // Debug logging removed to prevent false positives with 0-indexed filenames
 
           return _buildImageViewer(imageUrl, pageNumber);
         },
@@ -639,6 +609,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
           pageNumber: pageNumber,
           readingMode: ReadingMode.continuousScroll,
           enableZoom: zoom,
+          onImageLoaded:
+              _readerCubit.onImageLoaded, // 🎨 Auto-detect webtoon/manhwa
         ),
       );
     }
@@ -659,6 +631,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
             pageNumber: pageNumber,
             readingMode: state.readingMode ?? ReadingMode.singlePage,
             enableZoom: zoom,
+            onImageLoaded:
+                _readerCubit.onImageLoaded, // 🎨 Auto-detect webtoon/manhwa
           );
         }
 

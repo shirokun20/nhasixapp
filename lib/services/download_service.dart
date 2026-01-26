@@ -3,26 +3,31 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:path/path.dart' as path;
 import 'package:logger/logger.dart';
-import 'package:permission_handler/permission_handler.dart';
+
 import 'package:path_provider/path_provider.dart';
+import 'package:kuron_core/kuron_core.dart'; // NEW: For ContentSourceRegistry
 
 import '../domain/entities/entities.dart';
 import '../domain/value_objects/image_url.dart' as img;
 import 'notification_service.dart';
 import 'download_manager.dart';
+import '../core/utils/permission_helper.dart';
 
 /// Service untuk handle actual file download
 class DownloadService {
   DownloadService({
     required Dio httpClient,
     required NotificationService notificationService,
+    required ContentSourceRegistry sourceRegistry, // NEW
     Logger? logger,
   })  : _httpClient = httpClient,
         _notificationService = notificationService,
+        _sourceRegistry = sourceRegistry, // NEW
         _logger = logger ?? Logger();
 
   final Dio _httpClient;
   final NotificationService _notificationService;
+  final ContentSourceRegistry _sourceRegistry; // NEW
   final Logger _logger;
 
   // Localization callback
@@ -37,6 +42,7 @@ class DownloadService {
     Duration? timeoutDuration, // Optional timeout override
     int? startPage, // NEW: Start page for range download (1-based)
     int? endPage, // NEW: End page for range download (1-based)
+    Map<String, String>? cookies, // NEW: Optional cookies for authentication
   }) async {
     try {
       _logger.i('Starting download for content: ${content.id}');
@@ -76,26 +82,13 @@ class DownloadService {
       final existingFiles = await _getExistingDownloadedFiles(downloadDir);
       final totalImages =
           isRangeDownload ? pagesToDownload : content.imageUrls.length;
-      var downloadedCount = 0; // Reset for range downloads
 
-      // For range downloads, count only files in the specified range
-      if (isRangeDownload) {
-        for (int pageNum = actualStartPage;
-            pageNum <= actualEndPage;
-            pageNum++) {
-          final fileName = 'page_${pageNum.toString().padLeft(3, '0')}.jpg';
-          final filePath = path.join(downloadDir.path, fileName);
-          if (await File(filePath).exists()) {
-            downloadedCount++;
-          }
-        }
-      } else {
-        downloadedCount =
-            existingFiles.length; // Use existing count for full downloads
-      }
+      // ✅ FIX: Initialize to 0 to prevent double-counting
+      // The loop will count both existing and newly downloaded files
+      var downloadedCount = 0;
 
       _logger.i(
-          'Found $downloadedCount existing files in range, continuing download');
+          'Found ${existingFiles.length} existing files, will verify in loop');
 
       // Show start notification with range info
       final rangeText =
@@ -148,34 +141,58 @@ class DownloadService {
         // ✅ FIXED: Skip if file already exists (for proper resume)
         if (await File(filePath).exists()) {
           _logger.d('Skipping existing file: $fileName');
-          // For range downloads, add to list even if already exists
-          if (isRangeDownload && !downloadedFiles.contains(filePath)) {
+
+          // Add to downloaded files list if not already present
+          if (!downloadedFiles.contains(filePath)) {
             downloadedFiles.add(filePath);
           }
+
+          // ✅ FIX: Count existing files in the loop (no double-counting)
+          downloadedCount++;
+          final rawProgress = downloadedCount / totalImages;
+          final progressPercentage = (rawProgress * 90).toInt(); // Cap at 90%
+
+          onProgress(DownloadProgress(
+            contentId: content.id,
+            downloadedPages: progressPercentage,
+            totalPages: 100,
+            currentFileName: '$fileName (cached)',
+          ));
+
           continue;
         }
 
         try {
           // Download single image with optimized URL
           await _downloadSingleImage(
+            sourceId: content.sourceId, // NEW: Pass source ID
             imageUrl: optimizedImageUrl,
             filePath: filePath,
             cancelToken: cancelToken,
             timeoutDuration: timeoutDuration,
+            cookies: cookies, // NEW: Pass cookies for authentication
           );
 
           downloadedFiles.add(filePath);
           downloadedCount++;
 
-          // Update progress with proper calculation for range downloads
+          // ✅ FIXED: Phase 1 - File Downloads (0-90%)
+          // Progress is capped at 90% during file downloads
+          // Reserve 90-100% for verification, metadata, and completion phases
+          final rawProgress = downloadedCount / totalImages;
+          final progressPercentage = (rawProgress * 90).toInt(); // Cap at 90%
+
           final progress = DownloadProgress(
             contentId: content.id,
-            downloadedPages: downloadedCount,
-            totalPages: totalImages,
+            downloadedPages: progressPercentage,
+            totalPages: 100,
             currentFileName: fileName,
           );
 
           onProgress(progress);
+
+          _logger.d(
+              'Download progress: $progressPercentage% ($downloadedCount/$totalImages files)');
         } catch (e, stackTrace) {
           _logger.e('Failed to download page $pageNum: $e and $stackTrace');
           // Continue with next image instead of failing completely,
@@ -184,22 +201,67 @@ class DownloadService {
         }
       }
 
-      // Verify all files were downloaded
+      // ✅ Phase 2: File Verification (90-95%)
+      // CRITICAL: Strict file-by-file existence check
+      _logger.i('Starting strict file verification phase...');
+      onProgress(DownloadProgress(
+        contentId: content.id,
+        downloadedPages: 92,
+        totalPages: 100,
+        currentFileName: 'Verifying files...',
+      ));
+
       // We expect (actualEndPage - actualStartPage + 1) images for this batch
       final expectedBatchCount = actualEndPage - actualStartPage + 1;
 
-      // Check if we downloaded enough files.
-      // downloadedCount tracks valid files (existing + newly downloaded)
-      if (downloadedCount < expectedBatchCount) {
-        _logger.e(
-            'Download incomplete: $downloadedCount/$expectedBatchCount files verification failed');
-        throw Exception(
-            'Download incomplete: $downloadedCount/$expectedBatchCount files verified');
+      // ✅ FIX: Explicit file-by-file verification
+      // Don't just compare counts - verify EVERY page exists
+      final missingPages = <int>[];
+      for (int pageNum = actualStartPage; pageNum <= actualEndPage; pageNum++) {
+        final fileName = 'page_${pageNum.toString().padLeft(3, '0')}.jpg';
+        final filePath = path.join(downloadDir.path, fileName);
+
+        if (!await File(filePath).exists()) {
+          missingPages.add(pageNum);
+          _logger.w('Missing file: $fileName (page $pageNum)');
+        }
       }
+
+      // If any pages are missing, throw explicit error with details
+      if (missingPages.isNotEmpty) {
+        final missingPagesStr = missingPages.join(', ');
+        final errorMsg =
+            'Download incomplete: ${missingPages.length} pages missing ($downloadedCount/$expectedBatchCount files downloaded). Missing pages: $missingPagesStr';
+
+        _logger.e(errorMsg);
+        throw Exception(errorMsg);
+      }
+
+      _logger.i(
+          'File verification complete: All $expectedBatchCount files verified (pages $actualStartPage-$actualEndPage)');
+
+      // ✅ Phase 3: Metadata Generation (95-98%)
+      _logger.i('Starting metadata generation phase...');
+      onProgress(DownloadProgress(
+        contentId: content.id,
+        downloadedPages: 96,
+        totalPages: 100,
+        currentFileName: 'Saving metadata...',
+      ));
 
       // Save metadata with range information
       await _saveDownloadMetadata(content, downloadDir, downloadedFiles,
           actualStartPage, actualEndPage);
+
+      _logger.i('Metadata generation complete');
+
+      // ✅ Phase 4: Completion (100%)
+      onProgress(DownloadProgress(
+        contentId: content.id,
+        downloadedPages: 100,
+        totalPages: 100,
+        currentFileName: 'Completed',
+      ));
 
       // NOTE: Notification is handled by DownloadBloc._onStart() to avoid duplication
 
@@ -234,10 +296,12 @@ class DownloadService {
 
   /// Download single image file
   Future<void> _downloadSingleImage({
+    required String sourceId, // NEW: Source ID for header lookup
     required String imageUrl,
     required String filePath,
     CancelToken? cancelToken,
     Duration? timeoutDuration,
+    Map<String, String>? cookies, // NEW: Optional cookies
   }) async {
     // Create dio instance with custom timeout if provided
     final dio = timeoutDuration != null
@@ -248,11 +312,14 @@ class DownloadService {
           ))
         : _httpClient;
 
+    // Build headers with cookies if provided
+    final headers = _getHeadersForSource(sourceId, imageUrl, cookies: cookies);
+
     final response = await dio.get<List<int>>(
       imageUrl,
       options: Options(
         responseType: ResponseType.bytes,
-        headers: _getHeadersForSource(imageUrl),
+        headers: headers, // Use headers with cookies
       ),
       cancelToken: cancelToken,
     );
@@ -267,18 +334,38 @@ class DownloadService {
     }
   }
 
-  /// Get headers for source based on URL
-  Map<String, dynamic> _getHeadersForSource(String imageUrl) {
-    if (imageUrl.contains('nhentai')) {
+  /// Get headers for source based on source ID
+  /// 
+  /// NEW: Uses ContentSource.getImageDownloadHeaders() instead of hardcoded logic
+  Map<String, dynamic> _getHeadersForSource(
+    String sourceId,
+    String imageUrl, {
+    Map<String, String>? cookies,
+  }) {
+    try {
+      // Get source from registry
+      final source = _sourceRegistry.getSource(sourceId);
+      
+      // Null check - should not happen but fallback if it does
+      if (source == null) {
+        throw Exception('Source $sourceId not found in registry');
+      }
+      
+      // Use source's method to get headers
+      final headers = source.getImageDownloadHeaders(
+        imageUrl: imageUrl,
+        cookies: cookies,
+      );
+      
+      _logger.d('Got headers from source $sourceId: ${headers.keys.join(", ")}');
+      return headers;
+    } catch (e) {
+      // Fallback if source not found
+      _logger.w('Failed to get headers from source $sourceId: $e');
       return {
-        'User-Agent': 'AppleWebKit/537.36',
-        'Referer': 'https://nhentai.net/',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       };
     }
-    // Fallback for generic sources or other known sources
-    return {
-      'User-Agent': 'AppleWebKit/537.36',
-    };
   }
 
   /// ✅ NEW: Get existing downloaded files for proper resume
@@ -525,53 +612,11 @@ class DownloadService {
 
   /// Check and request necessary permissions
   Future<void> _checkPermissions() async {
-    try {
-      // For Android 13+ (API 33+), we need different permissions
-      // Check if we can write to the Downloads directory
-
-      // Get the Downloads directory path using smart detection
-      final downloadsPath = await _getDownloadsDirectory();
-      final testDir = Directory(path.join(downloadsPath, 'nhasix'));
-
-      // Try to create directory - this will fail if no permission
-      if (!await testDir.exists()) {
-        try {
-          await testDir.create(recursive: true);
-          _logger
-              .i('Successfully created download directory at: ${testDir.path}');
-        } catch (e) {
-          _logger.e('Failed to create download directory: $e');
-
-          // Try requesting storage permission
-          final storagePermission = await Permission.storage.status;
-          if (!storagePermission.isGranted) {
-            final result = await Permission.storage.request();
-            if (!result.isGranted) {
-              // Try manage external storage for Android 11+
-              final managePermission =
-                  await Permission.manageExternalStorage.status;
-              if (!managePermission.isGranted) {
-                final manageResult =
-                    await Permission.manageExternalStorage.request();
-                if (!manageResult.isGranted) {
-                  throw Exception(_getLocalized('storagePermissionRequired',
-                      fallback:
-                          'Storage permission is required for downloads. Please grant storage permission in app settings.'));
-                }
-              }
-            }
-          }
-
-          // Try creating directory again after permission
-          await testDir.create(recursive: true);
-        }
-      }
-
-      _logger.i('Storage permission check completed successfully');
-    } catch (e) {
-      _logger.e('Permission check failed: $e');
+    final hasPermission = await PermissionHelper.hasStoragePermission();
+    if (!hasPermission) {
       throw Exception(_getLocalized('storagePermissionRequired',
-          fallback: 'Storage permission is required for downloads. Error: $e'));
+          fallback:
+              'Storage permission is required for downloads. Please grant storage permission in app settings.'));
     }
   }
 

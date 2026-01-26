@@ -13,17 +13,21 @@ class NhentaiSource implements ContentSource {
   /// [scraper] - The scraper implementation for making HTTP requests
   /// This allows the main app to inject its existing scraper with
   /// all the cloudflare bypass logic.
+  /// [displayName] - Optional display name from config (defaults to 'NHentai')
   NhentaiSource({
     required NhentaiScraperAdapter scraper,
-  }) : _scraper = scraper;
+    String? displayName,
+  })  : _scraper = scraper,
+        _displayName = displayName ?? 'NHentai';
 
   final NhentaiScraperAdapter _scraper;
+  final String _displayName;
 
   @override
   String get id => 'nhentai';
 
   @override
-  String get displayName => 'nhentai';
+  String get displayName => _displayName;
 
   @override
   String get iconPath => 'assets/icons/nhentai.png';
@@ -39,6 +43,32 @@ class NhentaiSource implements ContentSource {
 
   @override
   String get refererHeader => NhentaiUrlBuilder.refererHeader;
+
+  // ============ Download & Display Customization ============
+
+  @override
+  Map<String, String> getImageDownloadHeaders({
+    required String imageUrl,
+    Map<String, String>? cookies,
+  }) {
+    return {
+      'Referer': NhentaiUrlBuilder.refererHeader,
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    };
+  }
+
+  @override
+  int? get brandColor => 0xFFEC2854; // nhentai signature red
+
+  @override
+  bool get showsPageCountInList => true; // nhentai shows page counts
+
+  @override
+  bool get supportsAuthentication => false; // No login feature
+
+  @override
+  bool get supportsBookmarks => false; // No bookmark feature
+
 
   @override
   Future<ContentListResult> search(SearchFilter filter) async {

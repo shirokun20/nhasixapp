@@ -191,6 +191,7 @@ FeatureConfig _$FeatureConfigFromJson(Map<String, dynamic> json) =>
       bookmark: json['bookmark'] as bool? ?? false,
       supportsTagExclusion: json['supportsTagExclusion'] as bool? ?? false,
       supportsAdvancedSearch: json['supportsAdvancedSearch'] as bool? ?? false,
+      generatePdf: json['generatePdf'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$FeatureConfigToJson(FeatureConfig instance) =>
@@ -204,6 +205,7 @@ Map<String, dynamic> _$FeatureConfigToJson(FeatureConfig instance) =>
       'bookmark': instance.bookmark,
       'supportsTagExclusion': instance.supportsTagExclusion,
       'supportsAdvancedSearch': instance.supportsAdvancedSearch,
+      'generatePdf': instance.generatePdf,
     };
 
 UiConfig _$UiConfigFromJson(Map<String, dynamic> json) => UiConfig(
@@ -351,6 +353,7 @@ AppConfig _$AppConfigFromJson(Map<String, dynamic> json) => AppConfig(
       privacy: json['privacy'] == null
           ? null
           : AppPrivacy.fromJson(json['privacy'] as Map<String, dynamic>),
+      featureFlags: json['featureFlags'] as Map<String, dynamic>?,
     );
 
 Map<String, dynamic> _$AppConfigToJson(AppConfig instance) => <String, dynamic>{
@@ -360,6 +363,7 @@ Map<String, dynamic> _$AppConfigToJson(AppConfig instance) => <String, dynamic>{
       'storage': instance.storage?.toJson(),
       'reader': instance.reader?.toJson(),
       'privacy': instance.privacy?.toJson(),
+      'featureFlags': instance.featureFlags,
     };
 
 AppLimits _$AppLimitsFromJson(Map<String, dynamic> json) => AppLimits(

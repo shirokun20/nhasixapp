@@ -15,6 +15,10 @@ class NotificationDetailsBuilder {
     int maxProgress = 100,
     bool ongoing = true,
     bool autoCancel = false,
+    bool indeterminate = false,
+    bool highPriority = false, // NEW: For initial notifications with sound
+    bool playSound = false, // NEW: Enable sound for initial notifications
+    bool enableVibration = false, // NEW: Enable vibration
     List<AndroidNotificationAction>? actions,
   }) {
     return NotificationDetails(
@@ -22,19 +26,17 @@ class NotificationDetailsBuilder {
         NotificationChannels.downloadChannelId,
         NotificationChannels.downloadChannelName,
         channelDescription: NotificationChannels.downloadChannelDescription,
-        importance: Importance.low,
-        priority: Priority.low,
+        importance: highPriority ? Importance.high : Importance.low,
+        priority: highPriority ? Priority.high : Priority.low,
         ongoing: ongoing,
         autoCancel: autoCancel,
         showProgress: true,
+        indeterminate: indeterminate,
         maxProgress: maxProgress,
         progress: progress,
+        playSound: playSound,
+        enableVibration: enableVibration,
         actions: actions,
-      ),
-      iOS: const DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: false,
       ),
     );
   }
@@ -65,11 +67,6 @@ class NotificationDetailsBuilder {
               )
             : null,
       ),
-      iOS: const DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true,
-      ),
     );
   }
 
@@ -98,11 +95,6 @@ class NotificationDetailsBuilder {
                 summaryText: summaryText,
               )
             : null,
-      ),
-      iOS: const DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true,
       ),
     );
   }

@@ -6,6 +6,7 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/blocs/content/content_bloc.dart';
+import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
@@ -77,7 +78,8 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
 
   @override
   void dispose() {
-    _contentBloc.close();
+    // Don't close ContentBloc - it's a singleton managed by DI container
+    // _contentBloc.close();
     super.dispose();
   }
 
@@ -201,8 +203,16 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
 
   /// Check if sorting should be shown
   bool _shouldShowSorting(ContentState state) {
+    // Check active source - only Nhentai supports sorting
+    final sourceCubit = getIt<SourceCubit>();
+    final activeSource = sourceCubit.state.activeSource;
+
+    // Only show sorting for Nhentai
+    if (activeSource?.id != 'nhentai') {
+      return false;
+    }
+
     // Hide sorting for Crotpedia genre browsing (genre: prefix)
-    // Sorting is currently only supported by Nhentai
     if (widget.tagQuery.startsWith('genre:')) {
       return false;
     }

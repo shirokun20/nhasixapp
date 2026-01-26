@@ -101,6 +101,14 @@
   "retryBypass": "Retry Bypass",
   "retryConnection": "Retry Connection",
   "retrySearch": "Retry Search",
+  "errorNetwork": "Network error. Please check your connection and try again.",
+  "errorServer": "Server error. Please try again later.",
+  "errorCloudflare": "Content is temporarily blocked (Cloudflare). Please try again in a moment.",
+  "errorParsing": "Failed to load content data. The content may be unavailable.",
+  "errorUnknown": "Something went wrong. Please try again.",
+  "errorConnectionTimeout": "Connection timed out. Please try again.",
+  "errorConnectionRefused": "Connection refused. Server might be down.",
+  
   "networkErrorTitle": "Network Error",
   "serverErrorTitle": "Server Error",
   "unknownErrorTitle": "Unknown Error",
@@ -197,6 +205,19 @@
   "downloadProgress": "Download Progress",
   "downloadComplete": "Download Complete",
   "downloadError": "Download Error",
+  "verifyingFiles": "Verifying Files",
+  "verifyingFilesWithTitle": "Verifying {title}...",
+  "@verifyingFilesWithTitle": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "verifyingProgress": "Verifying ({progress}%)",
+  "@verifyingProgress": {
+    "placeholders": {
+      "progress": {"type": "int"}
+    }
+  },
   "initializingDownloads": "Initializing downloads...",
   "loadingDownloads": "Loading downloads...",
   "pauseAll": "Pause All",
@@ -369,6 +390,22 @@
   "checkSpelling": "Check spelling",
   "useBroaderSearchTerms": "Use broader search terms",
   
+  "welcomeTitle": "Welcome to Kuron!",
+  "welcomeMessage": "Thank you for installing our app. Before you start, please note:",
+  "ispBlockingInfo": "🚨 ISP Blocking Notice",
+  "ispBlockingMessage": "If this app is blocked by your ISP (Internet Service Provider), please use a VPN like Cloudflare WARP (1.1.1.1) to access content.",
+  "downloadWarp": "Download 1.1.1.1 VPN",
+  "permissionsRequired": "Required Permissions",
+  "storagePermissionInfo": "📁 Storage: Required to download and save content offline",
+  "notificationPermissionInfo": "🔔 Notifications: Required to show download progress and completion",
+  "grantStoragePermission": "Grant Storage Permission",
+  "grantNotificationPermission": "Grant Notification Permission",
+  "storageGranted": "✅ Storage permission granted",
+  "notificationGranted": "✅ Notification permission granted",
+  "getStarted": "Get Started",
+  "pleaseGrantAllPermissions": "Please grant all required permissions to continue",
+  "permissionDenied": "Permission denied. Some features may not work properly.",
+  
   "loadingFavorites": "Loading favorites...",
   "errorLoadingFavorites": "Error Loading Favorites",
   "removeFavorite": "Remove Favorite",
@@ -525,6 +562,8 @@
   "english": "English",
   "japanese": "Japanese",
   "indonesian": "Indonesian",
+  "chinese": "Chinese (Simplified)",
+  "comfortReading": "Comfortable Reading",
   
   "sortBy": "Sort by",
   "filterBy": "Filter by",
@@ -668,6 +707,21 @@
   "openInBrowser": "Open in browser",
   "downloadAllGalleries": "Download all galleries in this page",
   
+  "featureDisabledTitle": "Feature Not Available",
+  "downloadFeatureDisabled": "Download feature is not available for this source",
+  "favoriteFeatureDisabled": "Favorite feature is not available for this source",
+  "featureNotAvailable": "This feature is currently unavailable",
+  
+  "chaptersTitle": "Chapters",
+  "chapterCount": "{count} chapters",
+  "@chapterCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "readChapter": "Read",
+  "downloadChapter": "Download Chapter",
+  
   "enterPageNumber": "Enter page number (1 - {totalPages})",
   "@enterPageNumber": {
     "placeholders": {
@@ -728,6 +782,9 @@
   "parodiesLabel": "Parodies",
   "groupsLabel": "Groups",
   "uploadedLabel": "Uploaded",
+  "viewAllChapters": "View All Chapters",
+  "searchChapters": "Search chapters...",
+  "noChaptersFound": "No chapters found",
   "favoritesLabel": "Favorites",
   "tagsLabel": "Tags",
   "artistsLabel": "Artists",
@@ -2222,6 +2279,36 @@
     "placeholders": {
       "title": {"type": "String"},
       "error": {"type": "String"}
+    }
+  },
+  "syncStarted": "Syncing Backup...",
+  "syncStartedMessage": "Scanning and importing offline content",
+  "syncInProgress": "Syncing Backup ({percent}%)",
+  "@syncInProgress": {
+    "placeholders": {
+      "percent": {"type": "int"}
+    }
+  },
+  "syncProgressMessage": "Processed {processed} of {total} items",
+  "@syncProgressMessage": {
+    "placeholders": {
+      "processed": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "syncCompleted": "Sync Completed",
+  "syncCompletedMessage": "Imported: {synced}, Updated: {updated}",
+  "@syncCompletedMessage": {
+    "placeholders": {
+      "synced": {"type": "int"},
+      "updated": {"type": "int"}
+    }
+  },
+  "syncResult": "Sync Result: {synced} imported, {updated} updated",
+  "@syncResult": {
+    "placeholders": {
+      "synced": {"type": "int"},
+      "updated": {"type": "int"}
     }
   }
 }

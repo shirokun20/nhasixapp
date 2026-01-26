@@ -15,9 +15,12 @@ import 'package:nhasixapp/core/utils/app_state_manager.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:kuron_core/kuron_core.dart';
+import '../../../../core/utils/error_message_utils.dart';
 import '../../widgets/download_button_widget.dart';
 import '../../widgets/progressive_image_widget.dart';
 import '../../widgets/shimmer_loading_widgets.dart';
+import '../../widgets/permission_request_sheet.dart';
+import 'widgets/chapter_list_bottom_sheet.dart';
 
 class DetailScreen extends StatefulWidget {
   final String contentId;
@@ -119,21 +122,21 @@ class _DetailScreenState extends State<DetailScreen> {
         // SPECIAL HANDLING FOR NHENTAI
         // User requested strict slug format: lowercase + hyphens
         // e.g. "Big Breasts" -> "big-breasts", "Lucy Heartfilia" -> "lucy-heartfilia"
-        
+
         // Prioritize explicit slug/tagId if it's text (not numeric ID)
         String value = tagName.toLowerCase().replaceAll(' ', '-');
         if (tagId != null && int.tryParse(tagId) == null) {
-           value = tagId;
+          value = tagId;
         }
 
         if (tagType != null &&
             !['tag', 'category'].contains(tagType.toLowerCase())) {
-           // type:slug syntax (e.g. artist:shidou, character:lucy-heartfilia)
-           query = '${tagType.toLowerCase()}:$value';
+          // type:slug syntax (e.g. artist:shidou, character:lucy-heartfilia)
+          query = '${tagType.toLowerCase()}:$value';
         } else {
-           // General tags: just the slug (e.g. big-breasts)
-           // This will map to "q=big-breasts" in search
-           query = value;
+          // General tags: just the slug (e.g. big-breasts)
+          // This will map to "q=big-breasts" in search
+          query = value;
         }
       }
 
@@ -204,9 +207,11 @@ class _DetailScreenState extends State<DetailScreen> {
                         ),
                       );
                     } else {
+                      final message = ErrorMessageUtils.getFriendlyErrorMessage(
+                          state.error, AppLocalizations.of(context));
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(state.message),
+                          content: Text(message),
                           backgroundColor: Theme.of(context).colorScheme.error,
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -359,17 +364,45 @@ class _DetailScreenState extends State<DetailScreen> {
                           .youAreOfflineTapToGoOnline,
                     ),
                   ),
-                // Favorite button
-                IconButton(
-                  icon: Icon(
-                    state.isFavorited ? Icons.favorite : Icons.favorite_border,
-                    color: state.isFavorited
-                        ? Theme.of(context).colorScheme.error
-                        : Theme.of(context).colorScheme.onSurface,
-                  ),
-                  onPressed: state.isTogglingFavorite
-                      ? null
-                      : () => _detailCubit.toggleFavorite(),
+                // Favorite button with feature flag check
+                BlocBuilder<DetailCubit, DetailState>(
+                  builder: (context, detailState) {
+                    if (detailState is! DetailLoaded) {
+                      return const SizedBox.shrink();
+                    }
+
+                    final remoteConfig = getIt<RemoteConfigService>();
+                    final favoriteEnabled = remoteConfig.isFeatureEnabled(
+                      detailState.content.sourceId,
+                      (f) => f.favorite,
+                    );
+
+                    return IconButton(
+                      icon: Icon(
+                        detailState.isFavorited
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color: detailState.isFavorited
+                            ? Theme.of(context).colorScheme.error
+                            : (favoriteEnabled
+                                ? Theme.of(context).colorScheme.onSurface
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.3)),
+                      ),
+                      onPressed:
+                          (detailState.isTogglingFavorite || !favoriteEnabled)
+                              ? null
+                              : () {
+                                  if (!favoriteEnabled) {
+                                    _showFeatureDisabledDialog('favorite');
+                                    return;
+                                  }
+                                  _detailCubit.toggleFavorite();
+                                },
+                    );
+                  },
                 ),
                 // Share button
                 IconButton(
@@ -738,10 +771,13 @@ class _DetailScreenState extends State<DetailScreen> {
   Widget _buildActionButtons(Content content) {
     // Check if chapters feature is enabled for this source
     final remoteConfig = getIt<RemoteConfigService>();
-    final hasChaptersFeature = remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.chapters);
+    final hasChaptersFeature =
+        remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.chapters);
 
     // If content has chapters AND feature is enabled, show chapter list
-    if (hasChaptersFeature && content.chapters != null && content.chapters!.isNotEmpty) {
+    if (hasChaptersFeature &&
+        content.chapters != null &&
+        content.chapters!.isNotEmpty) {
       return _buildChapterList(content);
     }
 
@@ -810,40 +846,119 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Widget _buildChapterList(Content content) {
     final chapters = content.chapters!;
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context)
+                .colorScheme
+                .primaryContainer
+                .withValues(alpha: 0.15),
+            Theme.of(context).colorScheme.surfaceContainer,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color:
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.list, color: Theme.of(context).colorScheme.onSurface),
-              const SizedBox(width: 8),
-              Text(
-                'Chapters (${chapters.length})',
-                style: TextStyleConst.headingMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
+          // Modern header with gradient background
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+                ],
               ),
-            ],
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(18)),
+            ),
+            child: Row(
+              children: [
+                // Icon with gradient container
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context).colorScheme.primary,
+                        Theme.of(context).colorScheme.secondary,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.menu_book,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Title and count
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.chaptersTitle,
+                      style: TextStyleConst.headingMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      l10n.chapterCount(chapters.length),
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          ListView.separated(
+
+          // Modern interactive chapter cards
+          ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: chapters.length,
-            separatorBuilder: (context, index) =>
-                const Divider(height: 1, indent: 16, endIndent: 16),
+            padding: const EdgeInsets.all(12),
+            // Show max 5 chapters initially
+            itemCount: chapters.length > 5 ? 5 : chapters.length,
             itemBuilder: (context, index) {
               final chapter = chapters[index];
 
-              // Create a Content object for the chapter to use with DownloadButtonWidget
+              // Create Content object for download widget
               final chapterContent = Content(
                 id: chapter.id,
                 title: '${content.title} - ${chapter.title}',
@@ -862,47 +977,231 @@ class _DetailScreenState extends State<DetailScreen> {
                 favorites: 0,
               );
 
-              return ListTile(
-                title: Text(
-                  chapter.title,
-                  style: TextStyleConst.bodyLarge.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .outline
+                        .withValues(alpha: 0.2),
                   ),
-                ),
-                subtitle: chapter.uploadDate != null
-                    ? Text(
-                        _formatDate(chapter.uploadDate!),
-                        style: TextStyleConst.bodySmall.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      )
-                    : null,
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: DownloadButtonWidget(
-                        content: chapterContent,
-                        size: DownloadButtonSize.small,
-                        showText: false,
-                        showProgress: true,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(
-                      Icons.chevron_right,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .shadow
+                          .withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-                onTap: () => _detailCubit.openChapter(chapter),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _detailCubit.openChapter(chapter),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          // Chapter number badge with gradient
+                          Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Theme.of(context).colorScheme.primary,
+                                  Theme.of(context).colorScheme.secondary,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withValues(alpha: 0.25),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${index + 1}',
+                                style: TextStyleConst.headingSmall.copyWith(
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+
+                          // Chapter info
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  chapter.title,
+                                  style: TextStyleConst.bodyLarge.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (chapter.uploadDate != null) ...[
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.schedule,
+                                        size: 14,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _formatDate(chapter.uploadDate!),
+                                        style:
+                                            TextStyleConst.bodySmall.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+
+                          // Action buttons
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Download button (if feature enabled)
+                              if (getIt<RemoteConfigService>().isFeatureEnabled(
+                                  content.sourceId, (f) => f.download)) ...[
+                                SizedBox(
+                                  width: 40,
+                                  height: 40,
+                                  child: DownloadButtonWidget(
+                                    content: chapterContent,
+                                    size: DownloadButtonSize.small,
+                                    showText: false,
+                                    showProgress: true,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+
+                              // Read button with modern styling
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Theme.of(context).colorScheme.primary,
+                                      Theme.of(context)
+                                          .colorScheme
+                                          .primary
+                                          .withValues(alpha: 0.8),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary
+                                          .withValues(alpha: 0.3),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      l10n.readChapter,
+                                      style:
+                                          TextStyleConst.labelMedium.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onPrimary,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      Icons.arrow_forward,
+                                      size: 16,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               );
             },
           ),
+          
+          if (chapters.length > 5)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => ChapterListBottomSheet(
+                        content: content,
+                        detailCubit: _detailCubit,
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.list),
+                  label: Text(l10n.viewAllChapters),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -988,7 +1287,8 @@ class _DetailScreenState extends State<DetailScreen> {
   Widget _buildRelatedContentSection(Content content) {
     // Check if related content feature is enabled for this source
     final remoteConfig = getIt<RemoteConfigService>();
-    final hasRelatedFeature = remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.related);
+    final hasRelatedFeature =
+        remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.related);
 
     if (!hasRelatedFeature || content.relatedContent.isEmpty) {
       return const SizedBox.shrink();
@@ -1194,7 +1494,8 @@ class _DetailScreenState extends State<DetailScreen> {
                     ),
                   ),
                   child: Text(
-                    state.message,
+                    ErrorMessageUtils.getFriendlyErrorMessage(
+                        state.error, AppLocalizations.of(context)),
                     style: TextStyleConst.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
@@ -1340,11 +1641,7 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  /// Get active content source from SourceCubit
-  String _getActiveSourceId() {
-    final sourceState = context.read<SourceCubit>().state;
-    return sourceState.activeSource?.id ?? 'nhentai';
-  }
+
 
   /// Get base URL for active source
   String _getSourceBaseUrl() {
@@ -1353,23 +1650,26 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   /// Build source-aware content URL
-  String _buildContentUrl(String contentId) {
+  String _buildContentUrl(Content content) {
+    // Helper to get base URL for a specific source
     final baseUrl = _getSourceBaseUrl();
-    final sourceId = _getActiveSourceId();
-
-    if (sourceId == SourceType.crotpedia.id) {
-      // Crotpedia uses slug-based URLs: /baca/series/{slug}/
-      return '$baseUrl/baca/series/$contentId/';
+    
+    if (content.sourceId == SourceType.komiktap.id) {
+      // KomikTap uses /manga/{slug}/
+      return '$baseUrl/manga/${content.id}/';
+    } else if (content.sourceId == SourceType.crotpedia.id) {
+      // Crotpedia uses /baca/series/{slug}/
+      return '$baseUrl/baca/series/${content.id}/';
     } else {
       // nhentai uses numeric IDs: /g/{id}/
-      return '$baseUrl/g/$contentId/';
+      return '$baseUrl/g/${content.id}/';
     }
   }
 
   void _shareContent(Content content) async {
     try {
       // Create shareable link and message (source-aware)
-      final contentUrl = _buildContentUrl(content.id);
+      final contentUrl = _buildContentUrl(content);
       final shareText = _buildShareMessage(content, contentUrl);
 
       // Share using share_plus package
@@ -1410,7 +1710,7 @@ class _DetailScreenState extends State<DetailScreen> {
       Logger().e('Error sharing content: $e');
 
       // Fallback: copy to clipboard if sharing fails
-      final contentUrl = _buildContentUrl(content.id);
+      final contentUrl = _buildContentUrl(content);
       await Clipboard.setData(ClipboardData(text: contentUrl));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1473,20 +1773,71 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   void _handleMenuAction(String action, Content content) {
+    final remoteConfig = getIt<RemoteConfigService>();
+
     switch (action) {
       case 'download':
-        // Trigger download using DownloadBloc
+        // Check feature flag before downloading
+        if (!remoteConfig.isFeatureEnabled(
+            content.sourceId, (f) => f.download)) {
+          _showFeatureDisabledDialog('download');
+          return;
+        }
         _startDownload(content);
         break;
       case 'copy_link':
-        // Copy content link to clipboard
         _copyContentLink(content);
         break;
     }
   }
 
   /// Start download for the content
-  void _startDownload(Content content) {
+  Future<void> _startDownload(Content content) async {
+    // Check if download feature is enabled
+    final remoteConfig = getIt<RemoteConfigService>();
+    if (!remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.download)) {
+      _showFeatureDisabledDialog('download');
+      return;
+    }
+
+    // Check permissions before starting download
+    if (!mounted) return;
+
+    final hasPermissions = await showPermissionRequestSheet(
+      context,
+      requireStorage: true,
+      requireNotification: true,
+    );
+
+    if (!mounted || !hasPermissions) {
+      if (mounted && !hasPermissions) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  Icons.error,
+                  color: Theme.of(context).colorScheme.onError,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    AppLocalizations.of(context)!.permissionDenied,
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onError,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+      return;
+    }
+
     try {
       // Get download bloc and add download queue event
       final downloadBloc = context.read<DownloadBloc>();
@@ -1519,7 +1870,6 @@ class _DetailScreenState extends State<DetailScreen> {
             label: AppLocalizations.of(context)!.viewDownloadsAction,
             textColor: Theme.of(context).colorScheme.onSecondary,
             onPressed: () {
-              // Navigate to downloads screen
               context.go('/downloads');
             },
           ),
@@ -1528,7 +1878,6 @@ class _DetailScreenState extends State<DetailScreen> {
     } catch (e) {
       Logger().e('Error starting download: $e');
 
-      // Show error feedback
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -1556,11 +1905,32 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
+  void _showFeatureDisabledDialog(String feature) {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.featureDisabledTitle),
+        content: Text(
+          feature == 'download'
+              ? l10n.downloadFeatureDisabled
+              : l10n.favoriteFeatureDisabled,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Copy content link to clipboard
   void _copyContentLink(Content content) {
     try {
       // Generate shareable link - source-aware URL
-      final contentLink = _buildContentUrl(content.id);
+      final contentLink = _buildContentUrl(content);
 
       // Copy to clipboard
       Clipboard.setData(ClipboardData(text: contentLink));

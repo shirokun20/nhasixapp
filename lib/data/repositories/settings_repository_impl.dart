@@ -1,18 +1,28 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path/path.dart' as path;
 
 import '../../domain/entities/entities.dart' hide ThemeOption;
 import '../../domain/repositories/settings_repository.dart';
+
+import 'package:nhasixapp/services/native_backup_service.dart';
+import 'package:nhasixapp/data/datasources/local/database_helper.dart';
 
 /// Implementation of SettingsRepository using SharedPreferences
 class SettingsRepositoryImpl implements SettingsRepository {
   SettingsRepositoryImpl({
     required this.sharedPreferences,
+    required this.nativeBackupService,
+    required this.databaseHelper,
     Logger? logger,
   }) : _logger = logger ?? Logger();
 
   final SharedPreferences sharedPreferences;
+  final NativeBackupService nativeBackupService;
+  final DatabaseHelper databaseHelper;
   final Logger _logger;
 
   // Keys for SharedPreferences
@@ -873,11 +883,36 @@ class SettingsRepositoryImpl implements SettingsRepository {
     try {
       _logger.i('Creating backup');
 
-      // This would typically create an actual backup
-      return const BackupResult(
+      // 1. Export Settings
+      final settingsJson = await exportSettings();
+      
+      // 2. Get DB Path
+      final dbPath = await databaseHelper.getDatabasePath();
+      
+      // 3. Create Backup Zip
+      final zipPath = await nativeBackupService.createBackup(
+        dbPath: dbPath,
+        settingsJson: settingsJson,
+      );
+      
+      if (zipPath.isEmpty) {
+        throw Exception("Native backup failed to return a path");
+      }
+      
+      // 4. Share/Save
+      final xFile = XFile(zipPath);
+      // Use shareXFiles to let user save/share the backup file
+      await SharePlus.instance.share(ShareParams(
+        files: [xFile], 
+        text: 'Kuron Backup ${DateTime.now()}'
+      ));
+      
+      final size = await File(zipPath).length();
+      
+      return BackupResult(
         success: true,
-        backupId: 'backup_123',
-        size: 1024000, // 1MB
+        backupId: path.basename(zipPath),
+        size: size, // You might want to convert to appropriate unit or keep as bytes
       );
     } catch (e, stackTrace) {
       _logger.e('Failed to create backup', error: e, stackTrace: stackTrace);
@@ -893,12 +928,49 @@ class SettingsRepositoryImpl implements SettingsRepository {
   @override
   Future<RestoreResult> restoreFromBackup(String backupId) async {
     try {
-      _logger.i('Restoring from backup: $backupId');
+      _logger.i('Restoring from backup request (id: $backupId)');
 
-      // This would typically restore from an actual backup
+      // 1. Pick file (Native)
+      // We ignore backupId for now and always trigger picker because the UI 
+      // typically calls this when user clicks "Restore".
+      // If we wanted to support restoring from a known path, we'd check if backupId is a path.
+      
+      // Trigger Native Picker
+      final contentUri = await nativeBackupService.pickBackupFile();
+      if (contentUri == null) {
+          _logger.i('Restore cancelled by user');
+          return const RestoreResult(success: false, restoredItems: 0, error: 'Cancelled');
+      }
+      
+      // 2. Extract Data
+      final data = await nativeBackupService.extractBackupData(contentUri);
+      final settingsJson = data['settingsJson'];
+      final dbPath = data['dbPath'];
+      
+      if (settingsJson == null || dbPath == null) {
+         throw Exception("Failed to extract backup data");
+      }
+      
+      // 3. Import Settings
+      await importSettings(jsonData: settingsJson as String);
+      
+      // 4. Restore DB
+      // Close current DB
+      await databaseHelper.close();
+      
+      // Get target DB path
+      final targetPath = await databaseHelper.getDatabasePath();
+      
+      // Force overwrite 
+      final sourceFile = File(dbPath as String);
+      await sourceFile.copy(targetPath);
+      
+      // Re-initialize DB (will be done automatically on next access, but good to verify)
+      await databaseHelper.database; // Open it to verify
+      
       return const RestoreResult(
         success: true,
-        restoredItems: 100,
+        restoredItems: 1, // Represents "1 backup restored"
       );
     } catch (e, stackTrace) {
       _logger.e('Failed to restore from backup',

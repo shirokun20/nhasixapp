@@ -12,6 +12,7 @@ import '../datasources/remote/exceptions.dart';
 import '../../services/request_deduplication_service.dart';
 import 'package:kuron_core/kuron_core.dart' as core;
 import 'package:kuron_crotpedia/kuron_crotpedia.dart' as crotpedia;
+import 'package:kuron_komiktap/kuron_komiktap.dart';
 
 /// Implementation of ContentRepository with caching strategy and offline-first architecture
 class ContentRepositoryImpl implements ContentRepository {
@@ -337,11 +338,14 @@ class ContentRepositoryImpl implements ContentRepository {
       // Since `getChapterImages` is likely specific to Crotpedia/Manga sources:
       if (source is crotpedia.CrotpediaSource) {
         return await source.getChapterImages(chapterId.value);
+      } else if (source is KomiktapSource) {
+        // KomikTap support for chapter downloads
+        return await source.getChapterImages(chapterId.value);
       }
 
       // If source doesn't support it or is standard source without chapters
       // We could try getDetail as fallback? No, chapter images are specific.
-      _logger.w('Source ${source.displayName} is not a CrotpediaSource');
+      _logger.w('Source ${source.displayName} does not support chapter images');
       return [];
     } catch (e) {
       _logger.e('Failed to get chapter images: $e');

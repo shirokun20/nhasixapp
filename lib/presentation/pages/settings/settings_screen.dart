@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
-import '../../../core/di/service_locator.dart';
 import '../../../domain/entities/user_preferences.dart';
-import '../../../services/analytics_service.dart';
+
 import '../../cubits/settings/settings_cubit.dart';
 import '../../../core/utils/app_update_test.dart';
 import '../../widgets/app_main_drawer_widget.dart';
@@ -17,11 +16,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  Future<bool> _getAnalyticsStatus() async {
-    final analytics = getIt<AnalyticsService>();
-    await analytics.initialize();
-    return analytics.isAnalyticsEnabled;
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -104,6 +99,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 DropdownMenuItem(value: 'english', child: Text(l10n.english)),
                 DropdownMenuItem(
                     value: 'indonesian', child: Text(l10n.indonesian)),
+                DropdownMenuItem(value: 'chinese', child: Text(l10n.chinese)),
               ],
               onChanged: (v) =>
                   context.read<SettingsCubit>().updateDefaultLanguage(v!),
@@ -237,17 +233,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ],
           ], theme),
-
-          const SizedBox(height: 24),
-
-          // Privacy & Data Card
-          _buildSectionHeader(Icons.shield_outlined, 'PRIVACY & DATA', theme),
-          const SizedBox(height: 12),
-          _buildSettingsCard([
-            _buildAnalyticsTile(theme, l10n),
-          ], theme),
-          const SizedBox(height: 12),
-          _buildPrivacyInfoCard(theme, l10n),
 
           const SizedBox(height: 24),
 
@@ -547,85 +532,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildAnalyticsTile(ThemeData theme, AppLocalizations l10n) {
-    return FutureBuilder<bool>(
-      future: _getAnalyticsStatus(),
-      builder: (context, snapshot) {
-        final isEnabled = snapshot.data ?? false;
-        return SwitchListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          title: Text(
-            l10n.allowAnalytics,
-            style: TextStyleConst.bodyLarge.copyWith(
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          subtitle: Text(
-            l10n.analyticsSubtitle,
-            style: TextStyleConst.bodySmall.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          value: isEnabled,
-          onChanged: (value) async {
-            final analytics = getIt<AnalyticsService>();
-            await analytics.setAnalyticsEnabled(value);
-            if (context.mounted) setState(() {});
-          },
-          activeThumbColor: theme.colorScheme.primary,
-        );
-      },
-    );
-  }
 
-  Widget _buildPrivacyInfoCard(ThemeData theme, AppLocalizations l10n) {
-    return Card(
-      elevation: 0,
-      color: theme.colorScheme.surfaceContainer,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(Icons.privacy_tip_outlined,
-                  size: 20, color: theme.colorScheme.primary),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.privacyAnalytics,
-                    style: TextStyleConst.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    l10n.privacyInfoText,
-                    style: TextStyleConst.bodySmall.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildDisguiseModeTile(
       UserPreferences prefs, ThemeData theme, AppLocalizations l10n) {

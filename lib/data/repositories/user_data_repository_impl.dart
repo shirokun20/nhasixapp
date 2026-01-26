@@ -126,20 +126,26 @@ class UserDataRepositoryImpl implements UserDataRepository {
   @override
   Future<List<DownloadStatus>> getAllDownloads({
     DownloadState? state,
-    int page = 1,
+    String? sourceId,
     int limit = 20,
+    int offset = 0,
+    String orderBy = 'created_at',
+    bool descending = true,
   }) async {
     try {
-      _logger.i('Getting all downloads - state: $state, page: $page');
+      // _logger.i('Getting all downloads - state: $state, limit: $limit, offset: $offset, orderBy: $orderBy');
 
       final statusModels = await localDataSource.getAllDownloads(
         state: state,
-        page: page,
+        sourceId: sourceId,
         limit: limit,
+        offset: offset,
+        orderBy: orderBy,
+        descending: descending,
       );
 
       final downloads = statusModels.map((model) => model.toEntity()).toList();
-      _logger.d('Retrieved ${downloads.length} downloads');
+      // _logger.d('Retrieved ${downloads.length} downloads');
       return downloads;
     } catch (e, stackTrace) {
       _logger.e('Failed to get all downloads',
@@ -162,11 +168,22 @@ class UserDataRepositoryImpl implements UserDataRepository {
   }
 
   @override
-  Future<int> getDownloadsCount({DownloadState? state}) async {
+  Future<int> getDownloadsCount({DownloadState? state, String? sourceId}) async {
     try {
-      return await localDataSource.getDownloadsCount(state: state);
+      return await localDataSource.getDownloadsCount(state: state, sourceId: sourceId);
     } catch (e, stackTrace) {
       _logger.e('Failed to get downloads count',
+          error: e, stackTrace: stackTrace);
+      return 0;
+    }
+  }
+
+  @override
+  Future<int> getTotalDownloadSize({DownloadState? state, String? sourceId}) async {
+    try {
+      return await localDataSource.getTotalDownloadSize(state: state, sourceId: sourceId);
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get total download size',
           error: e, stackTrace: stackTrace);
       return 0;
     }
@@ -176,18 +193,58 @@ class UserDataRepositoryImpl implements UserDataRepository {
   Future<List<Map<String, dynamic>>> searchDownloads({
     required String query,
     DownloadState? state,
-    int limit = 100,
+    String? sourceId,
+    int limit = 20,
+    int offset = 0,
   }) async {
     try {
-      _logger.i('Searching downloads for query: $query');
+      _logger.i('Searching downloads for query: $query, limit: $limit, offset: $offset');
       return await localDataSource.searchDownloads(
         query: query,
         state: state,
+        sourceId: sourceId,
         limit: limit,
+        offset: offset,
       );
     } catch (e, stackTrace) {
       _logger.e('Failed to search downloads', error: e, stackTrace: stackTrace);
       return [];
+    }
+  }
+  
+  @override
+  Future<int> getSearchCount({
+    required String query,
+    DownloadState? state,
+    String? sourceId,
+  }) async {
+    try {
+      return await localDataSource.getSearchCount(
+        query: query,
+        state: state,
+        sourceId: sourceId,
+      );
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get search count', error: e, stackTrace: stackTrace);
+      return 0;
+    }
+  }
+
+  @override
+  Future<int> getSearchDownloadSize({
+    required String query,
+    DownloadState? state,
+    String? sourceId,
+  }) async {
+    try {
+      return await localDataSource.getSearchDownloadSize(
+        query: query,
+        state: state,
+        sourceId: sourceId,
+      );
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get search download size', error: e, stackTrace: stackTrace);
+      return 0;
     }
   }
 

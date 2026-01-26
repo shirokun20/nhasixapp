@@ -271,6 +271,32 @@ class AppLocalizationsId extends AppLocalizations {
   String get retrySearch => 'Coba Cari Lagi';
 
   @override
+  String get errorNetwork =>
+      'Kesalahan jaringan. Silakan periksa koneksi Anda dan coba lagi.';
+
+  @override
+  String get errorServer => 'Kesalahan server. Silakan coba lagi nanti.';
+
+  @override
+  String get errorCloudflare =>
+      'Konten diblokir sementara (Cloudflare). Silakan coba lagi sebentar lagi.';
+
+  @override
+  String get errorParsing =>
+      'Gagal memuat data konten. Konten mungkin tidak tersedia.';
+
+  @override
+  String get errorUnknown => 'Terjadi kesalahan. Silakan coba lagi.';
+
+  @override
+  String get errorConnectionTimeout =>
+      'Koneksi habis waktu. Silakan coba lagi.';
+
+  @override
+  String get errorConnectionRefused =>
+      'Koneksi ditolak. Server mungkin sedang down.';
+
+  @override
   String get networkErrorTitle => 'Error Jaringan';
 
   @override
@@ -484,6 +510,19 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get downloadError => 'Error Unduhan';
+
+  @override
+  String get verifyingFiles => 'Memverifikasi File';
+
+  @override
+  String verifyingFilesWithTitle(String title) {
+    return 'Memverifikasi $title...';
+  }
+
+  @override
+  String verifyingProgress(int progress) {
+    return 'Memverifikasi ($progress%)';
+  }
 
   @override
   String get initializingDownloads => 'Memulai unduhan...';
@@ -753,6 +792,57 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get useBroaderSearchTerms =>
       'Gunakan istilah pencarian yang lebih luas';
+
+  @override
+  String get welcomeTitle => 'Selamat Datang di Kuron!';
+
+  @override
+  String get welcomeMessage =>
+      'Terima kasih telah menginstal aplikasi kami. Sebelum memulai, harap perhatikan:';
+
+  @override
+  String get ispBlockingInfo => '🚨 Pemberitahuan Pemblokiran ISP';
+
+  @override
+  String get ispBlockingMessage =>
+      'Jika aplikasi ini diblokir oleh ISP (Penyedia Layanan Internet) Anda, silakan gunakan VPN seperti Cloudflare WARP (1.1.1.1) untuk mengakses konten.';
+
+  @override
+  String get downloadWarp => 'Unduh VPN 1.1.1.1';
+
+  @override
+  String get permissionsRequired => 'Izin yang Diperlukan';
+
+  @override
+  String get storagePermissionInfo =>
+      '📁 Penyimpanan: Diperlukan untuk mengunduh dan menyimpan konten offline';
+
+  @override
+  String get notificationPermissionInfo =>
+      '🔔 Notifikasi: Diperlukan untuk menampilkan progress dan penyelesaian unduhan';
+
+  @override
+  String get grantStoragePermission => 'Berikan Izin Penyimpanan';
+
+  @override
+  String get grantNotificationPermission => 'Berikan Izin Notifikasi';
+
+  @override
+  String get storageGranted => '✅ Izin penyimpanan diberikan';
+
+  @override
+  String get notificationGranted => '✅ Izin notifikasi diberikan';
+
+  @override
+  String get getStarted => 'Mulai';
+
+  @override
+  String get pleaseGrantAllPermissions =>
+      'Harap berikan semua izin yang diperlukan untuk melanjutkan';
+
+  @override
+  String get permissionDenied =>
+      'Izin ditolak. Beberapa fitur mungkin tidak berfungsi dengan baik.';
 
   @override
   String get loadingFavorites => 'Memuat favorit...';
@@ -1105,6 +1195,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get indonesian => 'Bahasa Indonesia';
 
   @override
+  String get chinese => 'Bahasa Tionghoa (Sederhana)';
+
+  @override
+  String get comfortReading => 'Pembacaan yang Nyaman';
+
+  @override
   String get sortBy => 'Urutkan berdasarkan';
 
   @override
@@ -1386,6 +1482,34 @@ class AppLocalizationsId extends AppLocalizations {
   String get downloadAllGalleries => 'Unduh semua galeri di halaman ini';
 
   @override
+  String get featureDisabledTitle => 'Fitur Tidak Tersedia';
+
+  @override
+  String get downloadFeatureDisabled =>
+      'Fitur download tidak tersedia untuk source ini';
+
+  @override
+  String get favoriteFeatureDisabled =>
+      'Fitur favorit tidak tersedia untuk source ini';
+
+  @override
+  String get featureNotAvailable => 'Fitur ini saat ini tidak tersedia';
+
+  @override
+  String get chaptersTitle => 'Chapter';
+
+  @override
+  String chapterCount(int count) {
+    return '$count chapter';
+  }
+
+  @override
+  String get readChapter => 'Baca';
+
+  @override
+  String get downloadChapter => 'Download Chapter';
+
+  @override
   String enterPageNumber(int totalPages) {
     return 'Masukkan nomor halaman (1 - $totalPages)';
   }
@@ -1526,6 +1650,15 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get uploadedLabel => 'Diunggah';
+
+  @override
+  String get viewAllChapters => 'Lihat Semua Chapter';
+
+  @override
+  String get searchChapters => 'Cari chapter...';
+
+  @override
+  String get noChaptersFound => 'Tidak ada chapter ditemukan';
 
   @override
   String get favoritesLabel => 'Favorit';
@@ -3119,7 +3252,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String syncResult(int synced, int updated) {
-    return 'Disinkronkan: $synced baru, $updated diperbarui';
+    return 'Hasil Sinkronisasi: $synced diimpor, $updated diperbarui';
   }
 
   @override
@@ -3156,4 +3289,28 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get cacheManagementDebug => '🚀 Manajemen Cache (Debug)';
+
+  @override
+  String get syncStarted => 'Menyingkronkan Cadangan...';
+
+  @override
+  String get syncStartedMessage => 'Memindai dan mengimpor konten offline';
+
+  @override
+  String syncInProgress(int percent) {
+    return 'Menyingkronkan Cadangan ($percent%)';
+  }
+
+  @override
+  String syncProgressMessage(int processed, int total) {
+    return 'Diproses $processed dari $total item';
+  }
+
+  @override
+  String get syncCompleted => 'Sinkronisasi Selesai';
+
+  @override
+  String syncCompletedMessage(int synced, int updated) {
+    return 'Diimpor: $synced, Diperbarui: $updated';
+  }
 }

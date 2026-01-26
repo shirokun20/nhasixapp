@@ -340,6 +340,7 @@ class FeatureConfig {
   final bool bookmark;
   final bool supportsTagExclusion;
   final bool supportsAdvancedSearch;
+  final bool generatePdf;
 
   FeatureConfig({
     this.search = false,
@@ -351,6 +352,7 @@ class FeatureConfig {
     this.bookmark = false,
     this.supportsTagExclusion = false,
     this.supportsAdvancedSearch = false,
+    this.generatePdf = false,
   });
 
   factory FeatureConfig.fromJson(Map<String, dynamic> json) =>
@@ -501,6 +503,7 @@ class AppConfig {
   final AppStorage? storage;
   final AppReader? reader;
   final AppPrivacy? privacy;
+  final Map<String, dynamic>? featureFlags;
 
   AppConfig({
     this.limits,
@@ -509,6 +512,7 @@ class AppConfig {
     this.storage,
     this.reader,
     this.privacy,
+    this.featureFlags,
   });
 
   factory AppConfig.fromJson(Map<String, dynamic> json) =>

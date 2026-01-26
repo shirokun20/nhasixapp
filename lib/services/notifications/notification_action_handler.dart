@@ -1,9 +1,10 @@
 import 'dart:io';
 
 import 'package:logger/logger.dart';
-import 'package:open_file/open_file.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../core/di/service_locator.dart';
+import '../native_pdf_reader_service.dart';
 import 'notification_constants.dart';
 
 /// Handles notification action responses
@@ -228,7 +229,7 @@ class NotificationActionHandler {
     return false;
   }
 
-  /// Open PDF file using system default app
+  /// Open PDF file using native in-app reader
   Future<void> _openPdfFile(String? filePath) async {
     _logger.i('🔍 _openPdfFile called with: "$filePath"');
 
@@ -246,26 +247,13 @@ class NotificationActionHandler {
         return;
       }
 
-      _logger.i('✅ File exists, attempting to open: $filePath');
-      final result = await OpenFile.open(filePath);
-
-      switch (result.type) {
-        case ResultType.done:
-          _logger.i('✅ PDF opened successfully: $filePath');
-          break;
-        case ResultType.fileNotFound:
-          _logger.w('❌ PDF file not found: $filePath');
-          break;
-        case ResultType.noAppToOpen:
-          _logger.w('❌ No app available to open PDF: $filePath');
-          break;
-        case ResultType.permissionDenied:
-          _logger.w('❌ Permission denied to open PDF: $filePath');
-          break;
-        case ResultType.error:
-          _logger.e('❌ Error opening PDF: ${result.message}');
-          break;
-      }
+      _logger.i('✅ File exists, opening in native PDF reader: $filePath');
+      
+      // Use native PDF reader
+      final pdfReaderService = getIt<NativePdfReaderService>();
+      await pdfReaderService.openPdf(filePath);
+      
+      _logger.i('✅ PDF opened successfully in native reader');
     } catch (e) {
       _logger.e('💥 Exception opening PDF file: $e');
     }

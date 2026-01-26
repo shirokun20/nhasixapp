@@ -1,5 +1,13 @@
 {
   "@@locale": "id",
+  
+  "errorNetwork": "Kesalahan jaringan. Silakan periksa koneksi Anda dan coba lagi.",
+  "errorServer": "Kesalahan server. Silakan coba lagi nanti.",
+  "errorCloudflare": "Konten diblokir sementara (Cloudflare). Silakan coba lagi sebentar lagi.",
+  "errorParsing": "Gagal memuat data konten. Konten mungkin tidak tersedia.",
+  "errorUnknown": "Terjadi kesalahan. Silakan coba lagi.",
+  "errorConnectionTimeout": "Koneksi habis waktu. Silakan coba lagi.",
+  "errorConnectionRefused": "Koneksi ditolak. Server mungkin sedang down.",
   "appTitle": "Kuron",
   "appSubtitle": "NHentai",
   
@@ -207,6 +215,19 @@
   "downloadProgress": "Progres Unduhan",
   "downloadComplete": "Unduhan Selesai",
   "downloadError": "Error Unduhan",
+  "verifyingFiles": "Memverifikasi File",
+  "verifyingFilesWithTitle": "Memverifikasi {title}...",
+  "@verifyingFilesWithTitle": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "verifyingProgress": "Memverifikasi ({progress}%)",
+  "@verifyingProgress": {
+    "placeholders": {
+      "progress": {"type": "int"}
+    }
+  },
   "initializingDownloads": "Memulai unduhan...",
   "loadingDownloads": "Memuat unduhan...",
   "pauseAll": "Pause Semua",
@@ -300,6 +321,22 @@
   "removeSomeFilters": "Hapus beberapa filter",
   "checkSpelling": "Periksa ejaan",
   "useBroaderSearchTerms": "Gunakan istilah pencarian yang lebih luas",
+  
+  "welcomeTitle": "Selamat Datang di Kuron!",
+  "welcomeMessage": "Terima kasih telah menginstal aplikasi kami. Sebelum memulai, harap perhatikan:",
+  "ispBlockingInfo": "🚨 Pemberitahuan Pemblokiran ISP",
+  "ispBlockingMessage": "Jika aplikasi ini diblokir oleh ISP (Penyedia Layanan Internet) Anda, silakan gunakan VPN seperti Cloudflare WARP (1.1.1.1) untuk mengakses konten.",
+  "downloadWarp": "Unduh VPN 1.1.1.1",
+  "permissionsRequired": "Izin yang Diperlukan",
+  "storagePermissionInfo": "📁 Penyimpanan: Diperlukan untuk mengunduh dan menyimpan konten offline",
+  "notificationPermissionInfo": "🔔 Notifikasi: Diperlukan untuk menampilkan progress dan penyelesaian unduhan",
+  "grantStoragePermission": "Berikan Izin Penyimpanan",
+  "grantNotificationPermission": "Berikan Izin Notifikasi",
+  "storageGranted": "✅ Izin penyimpanan diberikan",
+  "notificationGranted": "✅ Izin notifikasi diberikan",
+  "getStarted": "Mulai",
+  "pleaseGrantAllPermissions": "Harap berikan semua izin yang diperlukan untuk melanjutkan",
+  "permissionDenied": "Izin ditolak. Beberapa fitur mungkin tidak berfungsi dengan baik.",
   
   "loadingFavorites": "Memuat favorit...",
   "errorLoadingFavorites": "Error Memuat Favorit",
@@ -421,6 +458,8 @@
   "english": "Bahasa Inggris",
   "japanese": "Bahasa Jepang",
   "indonesian": "Bahasa Indonesia",
+  "chinese": "Bahasa Tionghoa (Sederhana)",
+  "comfortReading": "Pembacaan yang Nyaman",
   
   "sortBy": "Urutkan berdasarkan",
   "filterBy": "Filter berdasarkan",
@@ -659,6 +698,21 @@
   "openInBrowser": "Buka di browser",
   "downloadAllGalleries": "Unduh semua galeri di halaman ini",
   
+  "featureDisabledTitle": "Fitur Tidak Tersedia",
+  "downloadFeatureDisabled": "Fitur download tidak tersedia untuk source ini",
+  "favoriteFeatureDisabled": "Fitur favorit tidak tersedia untuk source ini",
+  "featureNotAvailable": "Fitur ini saat ini tidak tersedia",
+  
+  "chaptersTitle": "Chapter",
+  "chapterCount": "{count} chapter",
+  "@chapterCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "readChapter": "Baca",
+  "downloadChapter": "Download Chapter",
+  
   "enterPageNumber": "Masukkan nomor halaman (1 - {totalPages})",
   "pageNumber": "Nomor halaman",
   "go": "Pergi",
@@ -700,6 +754,9 @@
   "parodiesLabel": "Parodi",
   "groupsLabel": "Grup",
   "uploadedLabel": "Diunggah",
+  "viewAllChapters": "Lihat Semua Chapter",
+  "searchChapters": "Cari chapter...",
+  "noChaptersFound": "Tidak ada chapter ditemukan",
   "favoritesLabel": "Favorit",
   "tagsLabel": "Tag",
   "artistsLabel": "Artis",
@@ -1867,6 +1924,36 @@
     "placeholders": {
       "title": {"type": "String"},
       "error": {"type": "String"}
+    }
+  },
+  "syncStarted": "Menyingkronkan Cadangan...",
+  "syncStartedMessage": "Memindai dan mengimpor konten offline",
+  "syncInProgress": "Menyingkronkan Cadangan ({percent}%)",
+  "@syncInProgress": {
+    "placeholders": {
+      "percent": {"type": "int"}
+    }
+  },
+  "syncProgressMessage": "Diproses {processed} dari {total} item",
+  "@syncProgressMessage": {
+    "placeholders": {
+      "processed": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "syncCompleted": "Sinkronisasi Selesai",
+  "syncCompletedMessage": "Diimpor: {synced}, Diperbarui: {updated}",
+  "@syncCompletedMessage": {
+    "placeholders": {
+      "synced": {"type": "int"},
+      "updated": {"type": "int"}
+    }
+  },
+  "syncResult": "Hasil Sinkronisasi: {synced} diimpor, {updated} diperbarui",
+  "@syncResult": {
+    "placeholders": {
+      "synced": {"type": "int"},
+      "updated": {"type": "int"}
     }
   }
  }

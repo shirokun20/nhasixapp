@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/constants/text_style_const.dart';
+import '../../core/config/remote_config_service.dart';
+import '../../core/di/service_locator.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/routing/app_router.dart';
 import '../../domain/entities/entities.dart';
@@ -382,6 +384,13 @@ class DownloadButtonWidget extends StatelessWidget {
   }
 
   void _startDownload(BuildContext context) {
+    // Check if download feature is enabled
+    final remoteConfig = getIt<RemoteConfigService>();
+    if (!remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.download)) {
+      _showFeatureDisabledDialog(context);
+      return;
+    }
+
     context.read<DownloadBloc>().add(DownloadQueueEvent(content: content));
     context.read<DownloadBloc>().add(DownloadStartEvent(content.id));
 
@@ -389,6 +398,23 @@ class DownloadButtonWidget extends StatelessWidget {
       SnackBar(
         content: Text(AppLocalizations.of(context)!.downloadStarted(content.title)),
         duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _showFeatureDisabledDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.featureDisabledTitle),
+        content: Text(l10n.downloadFeatureDisabled),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('OK'),
+          ),
+        ],
       ),
     );
   }

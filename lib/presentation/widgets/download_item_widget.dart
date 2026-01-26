@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 import 'package:kuron_core/kuron_core.dart';
 
 import '../../core/constants/text_style_const.dart';
+import '../../core/config/remote_config_service.dart';
 import '../../domain/entities/entities.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/download_service.dart';
@@ -409,14 +410,7 @@ class DownloadItemWidget extends StatelessWidget {
             // Add PDF conversion option for completed downloads
             // This allows users to convert downloaded images to PDF
             if (download.state == DownloadState.completed)
-              _buildActionTile(
-                context,
-                icon: Icons.picture_as_pdf,
-                title:
-                    AppLocalizations.of(context)?.downloadActionConvertToPdf ??
-                        'Convert to PDF',
-                action: 'convert_pdf',
-              ),
+              _buildPdfActionTileIfEnabled(context),
 
             _buildActionTile(
               context,
@@ -469,6 +463,34 @@ class DownloadItemWidget extends StatelessWidget {
     );
   }
 
+  Widget _buildPdfActionTileIfEnabled(BuildContext context) {
+    try {
+      final remoteConfig = GetIt.I<RemoteConfigService>();
+      // Use sourceId from download, fallback to 'nhentai' if null
+      final source = download.sourceId ?? SourceType.nhentai.id;
+
+      final isEnabled = remoteConfig.isFeatureEnabled(
+        source,
+        (f) => f.generatePdf
+      );
+
+      if (!isEnabled) {
+        return const SizedBox.shrink();
+      }
+
+      return _buildActionTile(
+        context,
+        icon: Icons.picture_as_pdf,
+        title: AppLocalizations.of(context)?.downloadActionConvertToPdf ??
+            'Convert to PDF',
+        action: 'convert_pdf',
+      );
+    } catch (e) {
+      // If config service not found or error, default to hidden for safety
+      return const SizedBox.shrink();
+    }
+  }
+
   Color _getStatusColor(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -493,13 +515,19 @@ class DownloadItemWidget extends StatelessWidget {
   }
 
   Color _getSourceColor(String sourceId, ColorScheme colorScheme) {
-    if (sourceId.toLowerCase() == SourceType.nhentai.id) {
-      return const Color(0xFFEC2854); // nhentai red
-    } else if (sourceId.toLowerCase() == SourceType.crotpedia.id) {
-      return const Color(0xFF1E88E5); // crotpedia blue
-    } else {
-      return colorScheme.secondary;
+    try {
+      final remoteConfig = GetIt.I<RemoteConfigService>();
+      final config = remoteConfig.getConfig(sourceId.toLowerCase());
+      
+      if (config?.ui?.themeColor != null) {
+        final hexColor = config!.ui!.themeColor.replaceFirst('#', '0xFF');
+        return Color(int.parse(hexColor));
+      }
+    } catch (e) {
+      // Fallback to default
     }
+    
+    return colorScheme.secondary;
   }
 
   /// Build title widget - title is stored in database during download

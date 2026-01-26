@@ -238,6 +238,14 @@ class ContentError extends ContentState {
     this.previousContents,
     this.errorType = ContentErrorType.network,
     this.stackTrace,
+    // Context preservation
+    this.currentPage,
+    this.totalPages,
+    this.totalCount,
+    this.sortBy,
+    this.searchFilter,
+    this.tag,
+    this.timeframe,
   });
 
   final String message;
@@ -245,6 +253,15 @@ class ContentError extends ContentState {
   final List<Content>? previousContents;
   final ContentErrorType errorType;
   final StackTrace? stackTrace;
+  
+  // Context fields
+  final int? currentPage;
+  final int? totalPages;
+  final int? totalCount;
+  final SortOption? sortBy;
+  final SearchFilter? searchFilter;
+  final Tag? tag;
+  final PopularTimeframe? timeframe;
 
   @override
   List<Object?> get props => [
@@ -253,6 +270,13 @@ class ContentError extends ContentState {
         previousContents,
         errorType,
         stackTrace,
+        currentPage,
+        totalPages,
+        totalCount,
+        sortBy,
+        searchFilter,
+        tag,
+        timeframe,
       ];
 
   /// Check if has previous content to show
@@ -303,15 +327,38 @@ class ContentEmpty extends ContentState {
     this.searchFilter,
     this.tag,
     this.canRetry = true,
+    // Context preservation
+    this.currentPage,
+    this.totalPages,
+    this.totalCount,
+    this.sortBy,
+    this.timeframe,
   });
 
   final String message;
   final SearchFilter? searchFilter;
   final Tag? tag;
   final bool canRetry;
+  
+  // Context fields
+  final int? currentPage;
+  final int? totalPages;
+  final int? totalCount;
+  final SortOption? sortBy;
+  final PopularTimeframe? timeframe;
 
   @override
-  List<Object?> get props => [message, searchFilter, tag, canRetry];
+  List<Object?> get props => [
+        message, 
+        searchFilter, 
+        tag, 
+        canRetry,
+        currentPage,
+        totalPages,
+        totalCount,
+        sortBy,
+        timeframe,
+      ];
 
   /// Get appropriate empty message based on context
   String get contextualMessage {

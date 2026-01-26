@@ -90,12 +90,31 @@ class NotificationService {
 
   // Channel IDs imported from NotificationChannels in notification_constants.dart
 
+  // ============================================================
+  // PERMISSION MANAGEMENT
+  // ============================================================
+
   /// Request notification permission from user
   /// Enhanced for Android 13+ and release mode compatibility
-  /// Request notification permission from user
   Future<bool> requestNotificationPermission() async {
-    return _permissionHandler.requestPermission();
+    final granted = await _permissionHandler.requestPermission();
+
+    // Update internal state
+    _permissionGranted = granted;
+
+    // If permission granted and not yet initialized, initialize now
+    if (granted && !_initialized) {
+      // Use _initializePlugin directly to avoid race condition
+      // Don't call initialize() which re-checks permission
+      await _initializePlugin();
+    }
+
+    return granted;
   }
+
+  // ============================================================
+  // PDF CONVERSION NOTIFICATIONS
+  // ============================================================
 
   /// Show PDF conversion started notification
   /// Displays a notification when PDF conversion begins
@@ -143,7 +162,12 @@ class NotificationService {
         _getLocalized('convertingToPdfWithTitle',
             args: {'title': _truncateTitle(title)},
             fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
-        NotificationDetailsBuilder.progress(progress: 0),
+        NotificationDetailsBuilder.progress(
+          progress: 0,
+          highPriority: true,
+          playSound: true,
+          enableVibration: true,
+        ),
         payload: contentId,
       );
 
@@ -184,7 +208,13 @@ class NotificationService {
         _getLocalized('convertingToPdfProgressWithTitle',
             args: {'title': _truncateTitle(title), 'progress': progress},
             fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
-        NotificationDetailsBuilder.progress(progress: progress),
+        NotificationDetailsBuilder.progress(
+          progress:
+              progress, // Fixed: Use actual progress value instead of hardcoded 0
+          highPriority: true,
+          playSound: true,
+          enableVibration: true,
+        ),
         payload: contentId,
       );
 
@@ -306,6 +336,31 @@ class NotificationService {
   /// Check if notifications are enabled
   bool get isEnabled => _permissionGranted && _initialized;
 
+  /// Get permission status
+  bool get hasPermission => _permissionGranted;
+
+  /// Wait for notification service to be fully initialized
+  /// This prevents race conditions when requesting permission and immediately showing notifications
+  Future<bool> waitForInitialization(
+      {Duration timeout = const Duration(seconds: 5)}) async {
+    if (isEnabled) return true;
+
+    _logger.i('NotificationService: Waiting for initialization...');
+    final startTime = DateTime.now();
+
+    while (!isEnabled) {
+      if (DateTime.now().difference(startTime) > timeout) {
+        _logger.w(
+            'NotificationService: Initialization timeout after ${timeout.inSeconds}s');
+        return false;
+      }
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+
+    _logger.i('NotificationService: Initialization complete');
+    return true;
+  }
+
   /// Debug method to log current notification service state
   void debugLogState([String? context]) {
     final contextStr = context != null ? ' ($context)' : '';
@@ -316,50 +371,18 @@ class NotificationService {
     _logger.i('  - Platform: ${Platform.operatingSystem}');
   }
 
-  /// Initialize notification service
-  /// Enhanced initialization for debug and release mode compatibility
-  Future<void> initialize() async {
+  /// Initialize the notification plugin without checking permission
+  /// Used internally after permission is already granted
+  Future<void> _initializePlugin() async {
     try {
-      _logger.i('NotificationService: Starting initialization...');
-
-      // Request notification permission first
-      final permissionStatus = await requestNotificationPermission();
-
-      if (!permissionStatus) {
-        _logger.w(
-            'NotificationService: Permission denied, notifications will be disabled');
-        _permissionGranted = false;
-        _initialized = false;
-        return;
-      }
-
-      _permissionGranted = true;
-      _logger.i(
-          'NotificationService: Permission granted, proceeding with initialization');
+      _logger.i('NotificationService: Initializing plugin...');
 
       // Android initialization
       const androidSettings =
           AndroidInitializationSettings('@mipmap/ic_launcher');
 
-      // iOS initialization - request permissions during init for iOS
-      final DarwinInitializationSettings iosSettings;
-      if (Platform.isIOS) {
-        iosSettings = const DarwinInitializationSettings(
-          requestAlertPermission: true,
-          requestBadgePermission: true,
-          requestSoundPermission: true,
-        );
-      } else {
-        iosSettings = const DarwinInitializationSettings(
-          requestAlertPermission: false, // Already requested above for non-iOS
-          requestBadgePermission: false,
-          requestSoundPermission: false,
-        );
-      }
-
-      final initSettings = InitializationSettings(
+      const initSettings = InitializationSettings(
         android: androidSettings,
-        iOS: iosSettings,
       );
 
       final initResult = await _notificationsPlugin.initialize(
@@ -379,31 +402,46 @@ class NotificationService {
 
       _initialized = true;
       _logger.i(
-          'NotificationService initialized successfully (Permission: $_permissionGranted, Initialized: $_initialized)');
+          'NotificationService plugin initialized (Permission: $_permissionGranted, Initialized: $_initialized)');
+    } catch (e, stackTrace) {
+      _logger.e('Failed to initialize NotificationService plugin: $e',
+          error: e, stackTrace: stackTrace);
+      _initialized = false;
+    }
+  }
+
+  /// Initialize notification service
+  /// Enhanced initialization for debug and release mode compatibility
+  /// NOTE: This only checks existing permission, does NOT request it
+  /// Use requestNotificationPermission() explicitly when needed
+  Future<void> initialize() async {
+    try {
+      _logger.i('NotificationService: Starting initialization...');
+
+      // Check if permission is already granted (don't request)
+      final permissionStatus = await _permissionHandler.checkPermission();
+
+      if (!permissionStatus) {
+        _logger.w(
+            'NotificationService: Permission not yet granted, notifications will be disabled until permission is granted');
+        _permissionGranted = false;
+        // ✅ FIX: DON'T mark as initialized if permission not granted
+        // This allows requestNotificationPermission() to initialize the plugin later
+        _initialized = false;
+        return;
+      }
+
+      _permissionGranted = true;
+      _logger.i(
+          'NotificationService: Permission already granted, proceeding with initialization');
+
+      // Initialize the plugin
+      await _initializePlugin();
     } catch (e, stackTrace) {
       _initialized = false;
       _permissionGranted = false;
       _logger.e('Failed to initialize NotificationService: $e',
           error: e, stackTrace: stackTrace);
-
-      // Try a simplified initialization as fallback
-      try {
-        _logger.i('NotificationService: Attempting fallback initialization...');
-        const simpleSettings = InitializationSettings(
-          android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-          iOS: DarwinInitializationSettings(),
-        );
-
-        await _notificationsPlugin.initialize(simpleSettings);
-        _initialized = true;
-        _permissionGranted = true; // Assume granted for fallback
-        _logger.w('NotificationService: Fallback initialization completed');
-      } catch (fallbackError) {
-        _logger.e(
-            'NotificationService: Fallback initialization also failed: $fallbackError');
-        _initialized = false;
-        _permissionGranted = false;
-      }
     }
   }
 
@@ -435,6 +473,10 @@ class NotificationService {
     );
   }
 
+  // ============================================================
+  // DOWNLOAD NOTIFICATIONS
+  // ============================================================
+
   /// Show download started notification
   Future<void> showDownloadStarted({
     required String contentId,
@@ -449,13 +491,19 @@ class NotificationService {
     try {
       final notificationId = _getNotificationId(contentId);
 
+      // Use high priority builder with sound and vibration for initial notification
       await _notificationsPlugin.show(
         notificationId,
         _getLocalized('downloadStarted', fallback: 'Download Started'),
         _getLocalized('downloadingWithTitle',
             args: {'title': _truncateTitle(title)},
             fallback: 'Downloading: ${_truncateTitle(title)}'),
-        NotificationDetailsBuilder.progress(progress: 0),
+        NotificationDetailsBuilder.progress(
+          progress: 0,
+          highPriority: true, // Enable high priority for initial notification
+          playSound: true, // Enable sound
+          enableVibration: true, // Enable vibration
+        ),
         payload: contentId,
       );
 
@@ -530,11 +578,6 @@ class NotificationService {
                       showsUserInterface: true,
                     ),
                   ],
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: false,
-            presentBadge: false,
-            presentSound: false,
           ),
         ),
         payload: contentId,
@@ -828,6 +871,107 @@ class NotificationService {
   }
 
   // ============================================================
+  // DOWNLOAD VERIFICATION NOTIFICATIONS
+  // ============================================================
+
+  /// Fixed notification ID base for verification operations
+  static const int _verificationNotificationIdBase = 777777;
+
+  /// Get verification notification ID from content ID
+  int _getVerificationNotificationId(String contentId) {
+    // Use different ID from download notification to avoid conflicts
+    return _verificationNotificationIdBase + contentId.hashCode.abs() % 100000;
+  }
+
+  /// Show verification started notification
+  /// ThupdatePdfConversionProgressnload reaches 100%, before file verification begins
+  Future<void> showVerificationStarted({
+    required String contentId,
+    required String title,
+  }) async {
+    if (!isEnabled) {
+      _logger.d(
+          'NotificationService: Notifications disabled, skipping verification started');
+      return;
+    }
+
+    try {
+      final notificationId = _getVerificationNotificationId(contentId);
+
+      await _notificationsPlugin.show(
+        notificationId,
+        _getLocalized('verifyingFiles', fallback: 'Verifying Files'),
+        _getLocalized('verifyingFilesWithTitle',
+            args: {'title': _truncateTitle(title)},
+            fallback: 'Verifying ${_truncateTitle(title)}...'),
+        NotificationDetailsBuilder.progress(
+          progress: 0,
+          highPriority: false, // Low priority - silent notification
+          playSound: false, // No sound for verification
+          enableVibration: false, // No vibration
+        ),
+        payload: contentId,
+      );
+
+      _logger.d('Verification started notification shown for: $contentId');
+    } catch (e) {
+      _logger.e('Failed to show verification started notification: $e');
+    }
+  }
+
+  /// Update verification progress notification
+  /// Shows progress of file verification (0-100%)
+  Future<void> updateVerificationProgress({
+    required String contentId,
+    required int progress,
+    required String title,
+  }) async {
+    if (!isEnabled) {
+      _logger.d(
+          'NotificationService: Notifications disabled, skipping verification progress');
+      return;
+    }
+
+    try {
+      final notificationId = _getVerificationNotificationId(contentId);
+
+      await _notificationsPlugin.show(
+        notificationId,
+        _getLocalized('verifyingProgress',
+            args: {'progress': progress}, fallback: 'Verifying ($progress%)'),
+        _truncateTitle(title),
+        NotificationDetailsBuilder.progress(
+          progress: progress,
+          highPriority: false,
+          playSound: false,
+          enableVibration: false,
+        ),
+        payload: contentId,
+      );
+
+      // Log progress every 20% to reduce spam
+      if (progress % 20 == 0) {
+        _logger.d('Verification progress updated: $contentId - $progress%');
+      }
+    } catch (e) {
+      _logger.e('Failed to update verification progress notification: $e');
+    }
+  }
+
+  /// Cancel verification notification
+  /// Called when verification is complete or cancelled
+  Future<void> cancelVerificationNotification(String contentId) async {
+    try {
+      final notificationId = _getVerificationNotificationId(contentId);
+      await _notificationsPlugin.cancel(notificationId);
+
+      _logger.d('Verification notification cancelled for: $contentId');
+    } catch (e) {
+      _logger.e('Failed to cancel verification notification: $e');
+    }
+  }
+
+  // ============================================================
   // SYNC NOTIFICATIONS
   // ============================================================
 
@@ -836,7 +980,17 @@ class NotificationService {
 
   /// Show sync started notification
   Future<void> showSyncStarted({String? message}) async {
-    if (!isEnabled) return;
+    // Wait for initialization if needed (handles race condition after permission grant)
+    if (!isEnabled) {
+      _logger.i(
+          'NotificationService: Not initialized, waiting for initialization...');
+      final ready = await waitForInitialization();
+      if (!ready) {
+        _logger.w(
+            'NotificationService: Sync notification skipped - initialization failed');
+        return;
+      }
+    }
 
     try {
       await _notificationsPlugin.show(
@@ -845,7 +999,12 @@ class NotificationService {
         message ??
             _getLocalized('syncingOfflineContent',
                 fallback: 'Loading offline content...'),
-        NotificationDetailsBuilder.progress(progress: 0),
+        NotificationDetailsBuilder.progress(
+          progress: 0,
+          highPriority: true,
+          playSound: true,
+          enableVibration: true,
+        ),
         payload: 'sync',
       );
 
@@ -860,7 +1019,11 @@ class NotificationService {
     required int progress,
     required String message,
   }) async {
-    if (!isEnabled) return;
+    // Wait for initialization if needed
+    if (!isEnabled) {
+      final ready = await waitForInitialization();
+      if (!ready) return;
+    }
 
     try {
       await _notificationsPlugin.show(
@@ -868,7 +1031,13 @@ class NotificationService {
         _getLocalized('syncingProgress',
             args: {'progress': progress}, fallback: 'Syncing ($progress%)'),
         message,
-        NotificationDetailsBuilder.progress(progress: progress),
+        NotificationDetailsBuilder.progress(
+          progress:
+              progress, // ✅ FIX: Use actual progress value, not hardcoded 0
+          highPriority: true,
+          playSound: true,
+          enableVibration: true,
+        ),
         payload: 'sync',
       );
 
@@ -880,7 +1049,11 @@ class NotificationService {
 
   /// Show sync completed notification
   Future<void> showSyncCompleted({required int itemCount}) async {
-    if (!isEnabled) return;
+    // Wait for initialization if needed
+    if (!isEnabled) {
+      final ready = await waitForInitialization();
+      if (!ready) return;
+    }
 
     try {
       await _notificationsPlugin.show(

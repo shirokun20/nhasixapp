@@ -40,6 +40,8 @@ import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_state.dart';
 import 'package:kuron_core/kuron_core.dart' hide SearchFilter, SortOption;
+import 'package:nhasixapp/presentation/widgets/welcome_onboarding_sheet.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // New imports for dynamic sorting
 import 'package:nhasixapp/core/config/config_models.dart';
@@ -93,6 +95,32 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     });
 
     _initializeContent();
+
+    // Show welcome onboarding sheet on first launch
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndShowWelcomeSheet();
+    });
+  }
+
+  /// Check if this is first launch and show welcome sheet
+  Future<void> _checkAndShowWelcomeSheet() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenWelcome = prefs.getBool('has_seen_welcome_v1') ?? false;
+
+    if (!hasSeenWelcome && mounted) {
+      showModalBottomSheet(
+        context: context,
+        isDismissible: false,
+        enableDrag: false,
+        isScrollControlled: true,
+        builder: (context) => WelcomeOnboardingSheet(
+          onComplete: () async {
+            // Mark as seen
+            await prefs.setBool('has_seen_welcome_v1', true);
+          },
+        ),
+      );
+    }
   }
 
   Future<void> _checkConnectivity() async {
@@ -200,7 +228,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   @override
   void dispose() {
     _homeBloc.close();
-    _contentBloc.close();
+    // Don't close ContentBloc - it's a singleton managed by DI container
+    // _contentBloc.close();
     _searchBloc.close();
     _updateCubit.close();
     super.dispose();
@@ -280,8 +309,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             ),
           ],
           child: BlocBuilder<HomeBloc, HomeState>(
-            // ... rest of child
-
             buildWhen: (previous, current) => true,
             builder: (context, homeState) {
               // Show full screen loading during home initialization
@@ -367,11 +394,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                     ? SnackBarAction(
                         label: AppLocalizations.of(context)!.retry,
                         onPressed: () {
-                          // Use same pattern as error screen retry button
-                          _contentBloc.add(ContentLoadEvent(
-                            sortBy: _currentSortOption,
-                            forceRefresh: true,
-                          ));
+                          // Use smart retry that preserves pagination context
+                          _contentBloc.add(const ContentRetryEvent());
                         },
                       )
                     : null,
@@ -539,8 +563,9 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           if (state.canRetry) ...[
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () async {
-                await _initializeContent();
+              onPressed: () {
+                // Use smart retry to preserve context (page, filter, etc.)
+                context.read<ContentBloc>().add(const ContentRetryEvent());
               },
               child:
                   Text(AppLocalizations.of(context)?.tryAgain ?? 'Try Again'),
@@ -577,8 +602,9 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           if (state.canRetry) ...[
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () async {
-                await _initializeContent();
+              onPressed: () {
+                // Use smart retry to preserve context (page, filter, etc.)
+                context.read<ContentBloc>().add(const ContentRetryEvent());
               },
               child: Text(AppLocalizations.of(context)!.retry),
             ),

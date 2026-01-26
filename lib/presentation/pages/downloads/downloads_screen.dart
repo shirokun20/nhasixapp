@@ -8,7 +8,7 @@ import '../../../domain/entities/entities.dart';
 import '../../blocs/download/download_bloc.dart';
 import '../../widgets/widgets.dart';
 import '../../widgets/app_scaffold_with_offline.dart';
-import '../../../core/utils/offline_content_manager.dart';
+import '../../widgets/permission_request_sheet.dart';
 
 /// Screen for managing downloads with status tracking and progress indicators
 class DownloadsScreen extends StatefulWidget {
@@ -21,16 +21,49 @@ class DownloadsScreen extends StatefulWidget {
 class _DownloadsScreenState extends State<DownloadsScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
+  bool _permissionsChecked = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
 
-    // Initialize download manager if not already initialized
-    final downloadBloc = context.read<DownloadBloc>();
-    if (downloadBloc.state is DownloadInitial) {
-      downloadBloc.add(const DownloadInitializeEvent());
+    // Check permissions before initializing downloads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkPermissionsAndInitialize();
+    });
+  }
+
+  Future<void> _checkPermissionsAndInitialize() async {
+    if (!mounted || _permissionsChecked) return;
+
+    final hasPermissions = await showPermissionRequestSheet(
+      context,
+      requireStorage: true,
+      requireNotification: true,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _permissionsChecked = true;
+    });
+
+    if (hasPermissions) {
+      // Initialize download manager if not already initialized
+      final downloadBloc = context.read<DownloadBloc>();
+      if (downloadBloc.state is DownloadInitial) {
+        downloadBloc.add(const DownloadInitializeEvent());
+      }
+    } else {
+      // Permission denied, navigate back
+      context.pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.permissionDenied),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
     }
   }
 
@@ -176,6 +209,20 @@ class _DownloadsScreenState extends State<DownloadsScreen>
               ),
             ),
             actions: [
+              // ✅ NEW: Manual Refresh Button
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: () {
+                  context.read<DownloadBloc>().add(const DownloadRefreshEvent());
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Refreshing downloads...'),
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
+                },
+                tooltip: 'Refresh',
+              ),
               IconButton(
                 icon: const Icon(Icons.checklist),
                 onPressed: () => context
@@ -464,7 +511,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       if (download.isCompleted) {
         // Navigate to reader if download is completed
         // Create Content object from offline data asynchronously
-        _navigateToReader(download.contentId);
+        _navigateToReader(download);
       } else {
         // Show download details
         _showDownloadDetails(download);
@@ -472,24 +519,31 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     }
   }
 
-  void _navigateToReader(String contentId) async {
-    try {
-      final offlineContentManager = context.read<OfflineContentManager>();
-      final content =
-          await offlineContentManager.createOfflineContent(contentId);
-      if (!mounted) return;
-      if (content != null) {
-        context.push('/reader/$contentId', extra: content);
-      } else {
-        // Fallback to navigation without extra if content creation fails
-        context.push('/reader/$contentId');
-      }
-    } catch (e) {
-      // If content creation fails, navigate without extra
-      if (mounted) {
-        context.push('/reader/$contentId');
-      }
-    }
+  void _navigateToReader(DownloadStatus download) {
+    // 🚀 OPTIMIZATION: Non-blocking navigation
+    // Construct lightweight content directly from download status
+    // ReaderCubit will handle the actual loading/verification
+
+    final content = Content(
+      id: download.contentId,
+      title: download.title ?? download.contentId,
+      coverUrl: download.coverUrl ?? '',
+      pageCount: download.totalPages,
+      imageUrls: [], // Empty initially, ReaderCubit will load
+      sourceId: download.sourceId ?? 'nhentai', // Default fallback
+
+      // Default empty values for required fields
+      uploadDate: DateTime.now(),
+      tags: [],
+      artists: [],
+      characters: [],
+      groups: [],
+      parodies: [],
+      language: '',
+      favorites: 0,
+    );
+
+    context.push('/reader/${download.contentId}', extra: content);
   }
 
   void _handleDownloadAction(String action, DownloadStatus download) {
@@ -515,17 +569,44 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         _showDownloadDetails(download);
         break;
       case 'convert_pdf':
-        // Handle PDF conversion request
-        // This triggers the PDF conversion process in background
-        downloadBloc.add(DownloadConvertToPdfEvent(download.contentId));
+        // Check permissions before PDF conversion
+        _handlePdfConversion(download);
+        break;
+    }
+  }
+
+  Future<void> _handlePdfConversion(DownloadStatus download) async {
+    // Check permissions before starting PDF conversion
+    final hasPermissions = await showPermissionRequestSheet(
+      context,
+      requireStorage: true,
+      requireNotification: true,
+    );
+
+    if (!mounted || !hasPermissions) {
+      if (mounted && !hasPermissions) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!
-                .pdfConversionStarted(download.contentId)),
-            duration: Duration(seconds: 2),
+            content: Text(AppLocalizations.of(context)!.permissionDenied),
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
-        break;
+      }
+      return;
+    }
+
+    // Trigger PDF conversion
+    final downloadBloc = context.read<DownloadBloc>();
+    downloadBloc.add(DownloadConvertToPdfEvent(download.contentId));
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!
+              .pdfConversionStarted(download.contentId)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
     }
   }
 

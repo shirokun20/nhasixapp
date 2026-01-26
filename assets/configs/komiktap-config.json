@@ -1,0 +1,179 @@
+{
+  "source": "komiktap",
+  "version": "1.0.1",
+  "lastUpdated": "2026-01-25T23:20:00+07:00",
+  "baseUrl": "https://komiktap.info",
+  "searchConfig": {
+    "searchMode": "query-string",
+    "endpoint": "/",
+    "paramName": "s",
+    "placeholder": "Search comics by title, author, or keyword...",
+    "sortingConfig": {
+      "allowDynamicReSort": false,
+      "widgetType": "readonly",
+      "defaultSort": "latest",
+      "options": [
+        {
+          "value": "latest",
+          "apiValue": "",
+          "label": "Latest Update",
+          "displayLabel": "Sorted by: Latest Update",
+          "icon": "update",
+          "isDefault": true
+        }
+      ],
+      "messages": {
+        "dropdownLabel": "Sort by:",
+        "noOptionsAvailable": "No sorting options available"
+      }
+    },
+    "pagination": {
+      "urlPattern": "/page/{page}/",
+      "paramName": "page"
+    }
+  },
+  "scraper": {
+    "enabled": true,
+    "selectors": {
+      "home": {
+        "container": ".utao",
+        "link": "a.series",
+        "cover": "img.ts-post-image",
+        "title": ".luf > a > h4",
+        "status": ".statusind",
+        "chapter": ".eggchap",
+        "chapterTime": ".eggtime"
+      },
+      "search": {
+        "container": ".bsx",
+        "item": ".bs",
+        "link": "a",
+        "cover": "img",
+        "title": ".tt",
+        "latestChapter": ".epxs",
+        "rating": ".numscore",
+        "status": ".status"
+      },
+      "detail": {
+        "title": "h1.entry-title",
+        "alternativeTitles": ".seriestualt",
+        "cover": ".thumb img",
+        "infoTable": ".infotable",
+        "infoRow": "tr",
+        "infoLabel": "td:first-child",
+        "infoValue": "td:last-child",
+        "genres": ".seriestugenre a",
+        "synopsis": ".entry-content-single",
+        "rating": ".num[itemprop='ratingValue']",
+        "chapterList": "#chapterlist li",
+        "chapterLink": ".eph-num a",
+        "chapterTitle": ".chapternum",
+        "chapterDate": ".chapterdate",
+        "status": ".tsinfo .imptdt i"
+      },
+      "reader": {
+        "container": "#readerarea",
+        "images": "img"
+      },
+      "pagination": {
+        "container": ".hpage",
+        "next": "a.r",
+        "previous": "a.l",
+        "standardContainer": ".pagination",
+        "standardCurrent": ".page-numbers.current",
+        "standardLinks": "a.page-numbers",
+        "standardNext": "a.next.page-numbers"
+      }
+    },
+    "urlPatterns": {
+      "home": "/",
+      "page": "/page/{num}/",
+      "seriesDetail": "/manga/{slug}/",
+      "chapterReader": "/{slug}-chapter-{num}/",
+      "genre": "/genres/{slug}/",
+      "genrePaginated": "/genres/{slug}/page/{num}/",
+      "search": "/?s={query}",
+      "searchPaginated": "/page/{num}/?s={query}"
+    }
+  },
+  "auth": {
+    "enabled": false,
+    "loginEndpoint": null,
+    "registerEndpoint": null,
+    "sessionCookies": [],
+    "sessionDurationSeconds": null
+  },
+  "network": {
+    "timeout": 30000,
+    "retry": {
+      "maxAttempts": 3,
+      "delayMs": 1000,
+      "exponentialBackoff": true
+    },
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+  },
+  "features": {
+    "search": true,
+    "random": false,
+    "related": false,
+    "download": true,
+    "favorite": true,
+    "chapters": true,
+    "bookmark": false,
+    "supportsTagExclusion": false,
+    "supportsAdvancedSearch": false,
+    "generatePdf": true
+  },
+  "ui": {
+    "displayName": "KomikTap",
+    "iconPath": "assets/icons/komiktap.png",
+    "themeColor": "#FF7900",
+    "cardStyle": "chapters"
+  },
+  "_notes": {
+    "version": "1.0.0",
+    "created": "2026-01-25",
+    "purpose": "Configuration template for KomikTap data extraction",
+    "instructions": [
+      "All selectors marked with [TO_BE_DETERMINED] MUST be filled with actual CSS selectors after inspecting komiktap.info HTML structure",
+      "Selectors marked with [OPTIONAL] can be set to null or empty string if the element doesn't exist on the website",
+      "URL patterns in 'urlPatterns' section are based on observed pattern from BRD - verify against actual website",
+      "Update 'lastUpdated' timestamp when making changes to this configuration",
+      "Increment 'version' following semantic versioning when making breaking changes",
+      "Test all selectors thoroughly before deploying to production"
+    ],
+    "updated": "2026-01-25T20:55:00+07:00",
+    "selector_source": "Extracted from HTML samples in docs/assets/html/komiktap/",
+    "html_samples_analyzed": [
+      "halaman_utama.html - Homepage/Latest updates",
+      "halaman_search.html - Search results page",
+      "halaman_detail.html - Series detail page",
+      "halaman_baca.html - Chapter reader page",
+      "halaman_next_page.html - Pagination example",
+      "halaman_tag_clicked.html - Genre/tag filtered page"
+    ],
+    "key_patterns_identified": {
+      "homepage_layout": "Uses .listupd container with .utao items for vertical card layout",
+      "search_layout": "Uses .listupd container with .bs items for grid card layout",
+      "detail_layout": "Uses .infotable for structured info, .seriestugenre for tags",
+      "reader_layout": "Simple #readerarea container with all images having .ts-main-image class",
+      "pagination": "Two patterns: .hpage for prev/next only, .pagination for full page numbers"
+    },
+    "implementation_notes": [
+      "Status extraction: Parse from .statusind class name (e.g., 'statusind Ongoing' -> 'Ongoing')",
+      "Rating extraction: Numeric value from .numscore div",
+      "Detail page info: Iterate through .infotable tr rows, match label to extract specific fields",
+      "Chapter order: Chapters are listed from newest to oldest (data-num attribute available)",
+      "Image loading: Reader page loads all images at once with data-index attributes",
+      "Type detection: Can be extracted from .type class (e.g., 'type Manga', 'type Manhwa')"
+    ],
+    "differences_from_crotpedia": [
+      "Search is simple query-param based, not form-based advanced search",
+      "No textFields, radioGroups, or checkboxGroups in searchConfig",
+      "Chapter URL pattern uses '{slug}-chapter-{num}/' instead of '/baca/{slug}/'",
+      "Series detail URL uses '/manga/{slug}/' instead of '/baca/series/{slug}/'"
+    ]
+  }
+}

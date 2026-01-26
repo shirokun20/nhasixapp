@@ -272,6 +272,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retrySearch => 'Retry Search';
 
   @override
+  String get errorNetwork =>
+      'Network error. Please check your connection and try again.';
+
+  @override
+  String get errorServer => 'Server error. Please try again later.';
+
+  @override
+  String get errorCloudflare =>
+      'Content is temporarily blocked (Cloudflare). Please try again in a moment.';
+
+  @override
+  String get errorParsing =>
+      'Failed to load content data. The content may be unavailable.';
+
+  @override
+  String get errorUnknown => 'Something went wrong. Please try again.';
+
+  @override
+  String get errorConnectionTimeout =>
+      'Connection timed out. Please try again.';
+
+  @override
+  String get errorConnectionRefused =>
+      'Connection refused. Server might be down.';
+
+  @override
   String get networkErrorTitle => 'Network Error';
 
   @override
@@ -484,6 +510,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get downloadError => 'Download Error';
+
+  @override
+  String get verifyingFiles => 'Verifying Files';
+
+  @override
+  String verifyingFilesWithTitle(String title) {
+    return 'Verifying $title...';
+  }
+
+  @override
+  String verifyingProgress(int progress) {
+    return 'Verifying ($progress%)';
+  }
 
   @override
   String get initializingDownloads => 'Initializing downloads...';
@@ -751,6 +790,57 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get useBroaderSearchTerms => 'Use broader search terms';
+
+  @override
+  String get welcomeTitle => 'Welcome to Kuron!';
+
+  @override
+  String get welcomeMessage =>
+      'Thank you for installing our app. Before you start, please note:';
+
+  @override
+  String get ispBlockingInfo => '🚨 ISP Blocking Notice';
+
+  @override
+  String get ispBlockingMessage =>
+      'If this app is blocked by your ISP (Internet Service Provider), please use a VPN like Cloudflare WARP (1.1.1.1) to access content.';
+
+  @override
+  String get downloadWarp => 'Download 1.1.1.1 VPN';
+
+  @override
+  String get permissionsRequired => 'Required Permissions';
+
+  @override
+  String get storagePermissionInfo =>
+      '📁 Storage: Required to download and save content offline';
+
+  @override
+  String get notificationPermissionInfo =>
+      '🔔 Notifications: Required to show download progress and completion';
+
+  @override
+  String get grantStoragePermission => 'Grant Storage Permission';
+
+  @override
+  String get grantNotificationPermission => 'Grant Notification Permission';
+
+  @override
+  String get storageGranted => '✅ Storage permission granted';
+
+  @override
+  String get notificationGranted => '✅ Notification permission granted';
+
+  @override
+  String get getStarted => 'Get Started';
+
+  @override
+  String get pleaseGrantAllPermissions =>
+      'Please grant all required permissions to continue';
+
+  @override
+  String get permissionDenied =>
+      'Permission denied. Some features may not work properly.';
 
   @override
   String get loadingFavorites => 'Loading favorites...';
@@ -1104,6 +1194,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get indonesian => 'Indonesian';
 
   @override
+  String get chinese => 'Chinese (Simplified)';
+
+  @override
+  String get comfortReading => 'Comfortable Reading';
+
+  @override
   String get sortBy => 'Sort by';
 
   @override
@@ -1386,6 +1482,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get downloadAllGalleries => 'Download all galleries in this page';
 
   @override
+  String get featureDisabledTitle => 'Feature Not Available';
+
+  @override
+  String get downloadFeatureDisabled =>
+      'Download feature is not available for this source';
+
+  @override
+  String get favoriteFeatureDisabled =>
+      'Favorite feature is not available for this source';
+
+  @override
+  String get featureNotAvailable => 'This feature is currently unavailable';
+
+  @override
+  String get chaptersTitle => 'Chapters';
+
+  @override
+  String chapterCount(int count) {
+    return '$count chapters';
+  }
+
+  @override
+  String get readChapter => 'Read';
+
+  @override
+  String get downloadChapter => 'Download Chapter';
+
+  @override
   String enterPageNumber(int totalPages) {
     return 'Enter page number (1 - $totalPages)';
   }
@@ -1523,6 +1647,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get uploadedLabel => 'Uploaded';
+
+  @override
+  String get viewAllChapters => 'View All Chapters';
+
+  @override
+  String get searchChapters => 'Search chapters...';
+
+  @override
+  String get noChaptersFound => 'No chapters found';
 
   @override
   String get favoritesLabel => 'Favorites';
@@ -3105,7 +3238,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String syncResult(int synced, int updated) {
-    return 'Synced: $synced new, $updated updated';
+    return 'Sync Result: $synced imported, $updated updated';
   }
 
   @override
@@ -3142,4 +3275,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cacheManagementDebug => '🚀 Cache Management (Debug)';
+
+  @override
+  String get syncStarted => 'Syncing Backup...';
+
+  @override
+  String get syncStartedMessage => 'Scanning and importing offline content';
+
+  @override
+  String syncInProgress(int percent) {
+    return 'Syncing Backup ($percent%)';
+  }
+
+  @override
+  String syncProgressMessage(int processed, int total) {
+    return 'Processed $processed of $total items';
+  }
+
+  @override
+  String get syncCompleted => 'Sync Completed';
+
+  @override
+  String syncCompletedMessage(int synced, int updated) {
+    return 'Imported: $synced, Updated: $updated';
+  }
 }

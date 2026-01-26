@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:path/path.dart' as p;
+import 'package:nhasixapp/core/routing/app_router.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/utils/offline_content_manager.dart';
@@ -14,10 +15,13 @@ import '../../l10n/app_localizations.dart';
 import '../../services/pdf_conversion_service.dart';
 import '../blocs/download/download_bloc.dart';
 import '../cubits/offline_search/offline_search_cubit.dart';
+import '../../core/config/remote_config_service.dart';
 import '../cubits/settings/settings_cubit.dart';
 import 'content_card_widget.dart';
 import 'error_widget.dart';
 import 'offline_content_shimmer.dart';
+import '../mixins/offline_management_mixin.dart';
+import 'permission_request_sheet.dart';
 
 /// Reusable widget that displays offline content with search and filtering
 /// Used by OfflineContentScreen and OfflineMode in MainScreen
@@ -28,7 +32,8 @@ class OfflineContentBody extends StatefulWidget {
   State<OfflineContentBody> createState() => _OfflineContentBodyState();
 }
 
-class _OfflineContentBodyState extends State<OfflineContentBody> {
+class _OfflineContentBodyState extends State<OfflineContentBody>
+    with OfflineManagementMixin<OfflineContentBody> {
   late OfflineSearchCubit _offlineSearchCubit;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -75,6 +80,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
     return Column(
       children: [
         _buildSearchBar(),
+        _buildFilterChips(),
         Expanded(
           child: BlocListener<DownloadBloc, DownloadBlocState>(
             listenWhen: (previous, current) {
@@ -211,6 +217,104 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
     );
   }
 
+  Widget _buildFilterChips() {
+    return BlocBuilder<OfflineSearchCubit, OfflineSearchState>(
+      builder: (context, state) {
+        String? selectedSourceId;
+        if (state is OfflineSearchLoaded) {
+          selectedSourceId = state.selectedSourceId;
+        }
+
+        final remoteConfig = getIt<RemoteConfigService>();
+        final sourceConfigs = remoteConfig.getAllSourceConfigs();
+
+        return Container(
+          height: 50,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              _buildFilterChip(
+                context,
+                label: AppLocalizations.of(context)?.all ?? 'All',
+                isSelected: selectedSourceId == null,
+                onSelected: (selected) {
+                  if (selected) _offlineSearchCubit.filterBySource(null);
+                },
+              ),
+              const SizedBox(width: 8),
+              ...sourceConfigs.map((config) {
+                final sourceId = config.source;
+                final displayName = config.ui?.displayName ?? sourceId;
+                final themeColor = config.ui?.themeColor;
+                
+                Color? chipColor;
+                if (themeColor != null) {
+                  try {
+                    chipColor = Color(int.parse(themeColor.replaceFirst('#', '0xFF')));
+                  } catch (e) {
+                    // Fallback if color parsing fails
+                  }
+                }
+
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: _buildFilterChip(
+                    context,
+                    label: displayName,
+                    isSelected: selectedSourceId == sourceId,
+                    onSelected: (selected) {
+                      if (selected) _offlineSearchCubit.filterBySource(sourceId);
+                    },
+                    color: chipColor?.withValues(alpha: 0.2),
+                    selectedColor: chipColor,
+                    textColor: (selectedSourceId == sourceId && chipColor != null) 
+                        ? Colors.white 
+                        : null,
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFilterChip(
+    BuildContext context, {
+    required String label,
+    required bool isSelected,
+    required Function(bool) onSelected,
+    Color? color,
+    Color? selectedColor,
+    Color? textColor,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return FilterChip(
+      label: Text(
+        label.toUpperCase(),
+        style: TextStyle(
+          color: textColor ?? (isSelected ? colorScheme.onPrimary : colorScheme.onSurface),
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          fontSize: 12,
+        ),
+      ),
+      selected: isSelected,
+      onSelected: onSelected,
+      backgroundColor: color ?? colorScheme.surfaceContainerHighest,
+      selectedColor: selectedColor ?? colorScheme.primary,
+      checkmarkColor: textColor ?? colorScheme.onPrimary,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      visualDensity: VisualDensity.compact,
+      side: BorderSide.none,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+    );
+  }
+
   Widget _buildContent(OfflineSearchState state) {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -249,70 +353,96 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
               ),
               const SizedBox(height: 24),
               Text(
-                'No Offline Content',
-                style: TextStyleConst.headingMedium.copyWith(
+                state.query.isEmpty
+                    ? 'No offline content'
+                    : AppLocalizations.of(context)!
+                        .noResultsFoundFor(state.query),
+                textAlign: TextAlign.center,
+                style: TextStyleConst.titleMedium.copyWith(
                   color: colorScheme.onSurface,
                 ),
-                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
-              Text(
-                state.emptyMessage,
-                style: TextStyleConst.bodyMedium.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.lightbulb_outline,
-                          size: 20,
-                          color: colorScheme.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'How to get started',
-                          style: TextStyleConst.titleSmall.copyWith(
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTipRow(colorScheme, '1. Browse comics you like'),
-                    const SizedBox(height: 8),
-                    _buildTipRow(colorScheme, '2. Tap the download button'),
-                    const SizedBox(height: 8),
-                    _buildTipRow(colorScheme,
-                        '3. Access them here anytime, even offline!'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: () => context.go('/downloads'),
-                icon: const Icon(Icons.download_rounded),
-                label: Text(AppLocalizations.of(context)!.browseDownloads),
-                style: FilledButton.styleFrom(
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
+              if (state.query.isEmpty) ...[
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    // Explicit Import Action for Empty State
+                    await importFromBackup(context);
+                  },
+                  icon: const Icon(Icons.restore_page),
+                  label: const Text('Import from Backup'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
                   ),
                 ),
-              ),
+              ],
+              if (state.query.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  AppLocalizations.of(context)!.noResultsFound,
+                  style: TextStyleConst.bodyMedium.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+              const SizedBox(height: 32),
+              if (state.query.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.lightbulb_outline,
+                            size: 20,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'How to get started',
+                            style: TextStyleConst.titleSmall.copyWith(
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTipRow(colorScheme, '1. Browse comics you like'),
+                      const SizedBox(height: 8),
+                      _buildTipRow(colorScheme, '2. Tap the download button'),
+                      const SizedBox(height: 8),
+                      _buildTipRow(colorScheme,
+                          '3. Access them here anytime, even offline!'),
+                    ],
+                  ),
+                ),
+              if (state.query.isEmpty) ...[
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: () => context.go('/downloads'),
+                  icon: const Icon(Icons.download_rounded),
+                  label: Text(
+                      'Browse Downloads'), // Hardcoded to avoid key guessing
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -345,28 +475,69 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
           Expanded(
             child: BlocBuilder<SettingsCubit, SettingsState>(
               builder: (context, settingsState) {
-                return GridView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  gridDelegate:
-                      ResponsiveGridDelegate.createStandardGridDelegate(
-                    context,
-                    context.read<SettingsCubit>(),
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
-                  itemCount: state.results.length,
-                  itemBuilder: (context, index) {
-                    final content = state.results[index];
-                    return ContentCard(
-                      content: content,
-                      onTap: () =>
-                          context.push('/reader/${content.id}', extra: content),
-                      onLongPress: () => _showContentActions(context, content),
-                      showOfflineIndicator: true,
-                      isHighlighted: false,
-                      offlineSize: state.offlineSizes[content.id],
-                    );
+                // Wrap GridView with NotificationListener for infinite scroll
+                return NotificationListener<ScrollNotification>(
+                  onNotification: (scrollInfo) {
+                    // Trigger load more when user scrolls to 80% of content
+                    if (scrollInfo.metrics.pixels >=
+                        scrollInfo.metrics.maxScrollExtent * 0.8) {
+                      if (state.hasMore && !state.isLoadingMore) {
+                        _offlineSearchCubit.loadMoreContent();
+                      }
+                    }
+                    return false;
                   },
+                  child: GridView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    gridDelegate:
+                        ResponsiveGridDelegate.createStandardGridDelegate(
+                      context,
+                      context.read<SettingsCubit>(),
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    // Add 1 for loading indicator if loading more
+                    itemCount:
+                        state.results.length + (state.isLoadingMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      // Show loading indicator at bottom if loading more
+                      if (index == state.results.length) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 24),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircularProgressIndicator(
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Loading more...',
+                                  style: TextStyleConst.bodySmall.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
+                      final content = state.results[index];
+                      return ContentCard(
+                        content: content,
+                        onTap: () => _openReader(context, content),
+                        onLongPress: () =>
+                            _showContentActions(context, content),
+                        showOfflineIndicator: true,
+                        isHighlighted: false,
+                        offlineSize: state.offlineSizes[content.id],
+                      );
+                    },
+                  ),
                 );
               },
             ),
@@ -510,22 +681,48 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
                 ),
               ),
               const Divider(),
-              ListTile(
-                leading: const Icon(Icons.remove_red_eye),
-                title: Text(l10n.readNow),
-                onTap: () {
-                  Navigator.pop(bottomSheetContext);
-                  parentContext.push('/reader/${content.id}', extra: content);
+              FutureBuilder<bool>(
+                future: _checkPdfExists(content.id),
+                builder: (context, snapshot) {
+                  final isPdf = snapshot.data ?? false;
+                  return ListTile(
+                    leading: Icon(
+                        isPdf ? Icons.picture_as_pdf : Icons.remove_red_eye,
+                        color:
+                            isPdf ? colorScheme.tertiary : colorScheme.primary),
+                    title: Text(isPdf ? '${l10n.readNow} (PDF)' : l10n.readNow),
+                    onTap: () {
+                      Navigator.pop(bottomSheetContext);
+                      _openReader(parentContext, content);
+                    },
+                  );
                 },
               ),
-              ListTile(
-                leading:
-                    Icon(Icons.picture_as_pdf, color: colorScheme.tertiary),
-                title: Text(l10n.convertToPdf),
-                subtitle: Text('${content.pageCount} pages'),
-                onTap: () {
-                  Navigator.pop(bottomSheetContext);
-                  _generatePdf(parentContext, content);
+
+              Builder(
+                builder: (context) {
+                  try {
+                    // Check feature flag
+                    final remoteConfig = getIt<RemoteConfigService>();
+                    // Offline content always has sourceId
+                    final isEnabled = remoteConfig.isFeatureEnabled(
+                        content.sourceId, (f) => f.generatePdf);
+
+                    if (!isEnabled) return const SizedBox.shrink();
+
+                    return ListTile(
+                      leading: Icon(Icons.picture_as_pdf,
+                          color: colorScheme.tertiary),
+                      title: Text(l10n.convertToPdf),
+                      subtitle: Text('${content.pageCount} pages'),
+                      onTap: () {
+                        Navigator.pop(bottomSheetContext);
+                        _generatePdf(parentContext, content);
+                      },
+                    );
+                  } catch (e) {
+                    return const SizedBox.shrink();
+                  }
                 },
               ),
               ListTile(
@@ -554,6 +751,27 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
     final pdfService = getIt<PdfConversionService>();
 
     try {
+      // Check permissions before starting PDF conversion
+      if (!context.mounted) return;
+
+      final hasPermissions = await showPermissionRequestSheet(
+        context,
+        requireStorage: true,
+        requireNotification: true,
+      );
+
+      if (!context.mounted || !hasPermissions) {
+        if (context.mounted && !hasPermissions) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.permissionDenied),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+        return;
+      }
+
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -582,6 +800,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
         contentId: content.id,
         title: content.title,
         imagePaths: imagePaths,
+        sourceId: content.sourceId, // ← FIX: Use sourceId property
         maxPagesPerFile: 50,
       );
     } catch (e) {
@@ -707,5 +926,65 @@ class _OfflineContentBodyState extends State<OfflineContentBody> {
         ),
       );
     }
+  }
+
+  Future<void> _openReader(BuildContext context, Content content) async {
+    final offlineManager = getIt<OfflineContentManager>();
+    // Try to find PDF
+    try {
+      final firstImagePath =
+          await offlineManager.getOfflineFirstImagePath(content.id);
+      if (firstImagePath != null) {
+        final contentDir = File(firstImagePath).parent.parent.path;
+        final pdfDir = Directory(p.join(contentDir, 'pdf'));
+
+        if (await pdfDir.exists()) {
+          final files = await pdfDir.list().toList();
+          final pdfs = files
+              .where((f) => f.path.toLowerCase().endsWith('.pdf'))
+              .toList();
+          if (pdfs.isNotEmpty) {
+            // Found PDF!
+            final pdfFile = pdfs.first;
+            if (context.mounted) {
+              AppRouter.goToReaderPdf(context,
+                  filePath: pdfFile.path,
+                  contentId: content.id,
+                  title: content.title);
+              return;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking for PDF: $e');
+    }
+
+    // Fallback to Image Reader
+    if (context.mounted) {
+      AppRouter.goToReader(context, content.id, content: content);
+    }
+  }
+
+  Future<bool> _checkPdfExists(String contentId) async {
+    final offlineManager = getIt<OfflineContentManager>();
+    try {
+      final firstImagePath =
+          await offlineManager.getOfflineFirstImagePath(contentId);
+      debugPrint('First image path: $firstImagePath');
+      if (firstImagePath != null) {
+        final contentDir = File(firstImagePath).parent.parent.path;
+        debugPrint('contentDir: $contentDir');
+        final pdfDir = Directory(p.join(contentDir, 'pdf'));
+        debugPrint('pdfDir: $pdfDir');
+        if (await pdfDir.exists()) {
+          final files = await pdfDir.list().toList();
+          return files.any((f) => f.path.toLowerCase().endsWith('.pdf'));
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking PDF existence: $e');
+    }
+    return false;
   }
 }

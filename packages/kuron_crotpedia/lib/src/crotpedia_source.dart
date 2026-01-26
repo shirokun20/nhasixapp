@@ -21,6 +21,7 @@ class CrotpediaSource implements ContentSource {
   final Dio _dio;
   final Logger? _logger;
   final String _overriddenBaseUrl;
+  final String _displayName;
 
   CrotpediaSource({
     required CrotpediaScraper scraper,
@@ -28,11 +29,13 @@ class CrotpediaSource implements ContentSource {
     required Dio dio,
     Logger? logger,
     String? baseUrl,
+    String? displayName,
   })  : _scraper = scraper,
         _authManager = authManager,
         _dio = dio,
         _logger = logger,
-        _overriddenBaseUrl = baseUrl ?? baseUrlValue {
+        _overriddenBaseUrl = baseUrl ?? baseUrlValue,
+        _displayName = displayName ?? displayNameValue {
     if (baseUrl != null) {
       CrotpediaUrlBuilder.setBaseUrl(baseUrl);
     }
@@ -44,7 +47,7 @@ class CrotpediaSource implements ContentSource {
   String get id => sourceIdValue;
 
   @override
-  String get displayName => displayNameValue;
+  String get displayName => _displayName;
 
   @override
   String get iconPath => 'assets/icons/crotpedia.png';
@@ -60,6 +63,41 @@ class CrotpediaSource implements ContentSource {
 
   @override
   String get refererHeader => baseUrlValue;
+
+  // ============ Download & Display Customization ============
+
+  @override
+  Map<String, String> getImageDownloadHeaders({
+    required String imageUrl,
+    Map<String, String>? cookies,
+  }) {
+    final headers = {
+      'Referer': baseUrlValue,
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    };
+
+    // Add authentication cookies if provided by caller
+    // Caller (download_service) is responsible for fetching cookies from auth manager
+    if (cookies != null && cookies.isNotEmpty) {
+      final cookieString = cookies.entries.map((e) => '${e.key}=${e.value}').join('; ');
+      headers['Cookie'] = cookieString;
+    }
+
+    return headers;
+  }
+
+  @override
+  int? get brandColor => 0xFF1E88E5; // Crotpedia blue
+
+  @override
+  bool get showsPageCountInList => false; // Manga source - shows chapters
+
+  @override
+  bool get supportsAuthentication => true; // Has login feature
+
+  @override
+  bool get supportsBookmarks => true; // Has bookmark feature (requires login)
+
 
   @override
   Future<ContentListResult> getList({
@@ -216,13 +254,13 @@ class CrotpediaSource implements ContentSource {
                   slug: e.key,
                 ))
             .toList(),
-        artists: seriesDetail.artist != null ? [seriesDetail.artist!] : [],
+        artists: seriesDetail.artist != null ? [seriesDetail.artist!] : seriesDetail.author != null ? [seriesDetail.author!] : [],
         characters: const [],
         parodies: const [],
         groups: const [],
         language: 'indonesian',
         uploadDate: DateTime.now(), // Use latest chapter date if available
-        favorites: 0,
+        favorites: seriesDetail.favorites ?? 0,
       );
     } catch (e) {
       _logger?.e('Failed to get detail: $e');
@@ -511,8 +549,11 @@ class CrotpediaSource implements ContentSource {
       parodies: const [],
       groups: const [],
       language: 'indonesian',
-      uploadDate: DateTime.now(),
-      favorites: 0,
+      uploadDate: series.year != null 
+          ? DateTime(series.year!, 1, 1) // Default to Jan 1st of year
+          : DateTime.now(),
+      favorites: series is CrotpediaSeriesDetail ? (series.favorites ?? 0) : 0,
+      englishTitle: series is CrotpediaSeriesDetail ? series.alternativeTitle : null,
     );
   }
 }
