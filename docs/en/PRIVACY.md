@@ -44,6 +44,8 @@ The following data is stored **only on your device**:
 The App connects to:
 
 - **nhentai.net** - To fetch content and images
+- **crotpedia.net** - To fetch content and images
+- **komiktapex.com** - To fetch content and images
 - **GitHub** - To check for app updates and load legal documents
 - **No other connections**
 
