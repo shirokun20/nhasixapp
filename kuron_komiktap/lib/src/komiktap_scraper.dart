@@ -38,9 +38,9 @@ class KomiktapScraper {
     // series detail
     'detail_title': '.entry-title',
     'detail_cover': '.thumb img',
-    'detail_status': '.imptdt',
-    'detail_type': '.imptdt',
-    'detail_infoList': '.fmed',
+    'detail_status': '.infotable tr',
+    'detail_type': '.infotable tr',
+    'detail_infoList': '.infotable tr',
     'detail_genres': '.seriestugenre a',
     'detail_synopsis': '[itemprop="description"]',
 
@@ -250,6 +250,9 @@ class KomiktapScraper {
 
     // Parse chapters
     final chapters = _parseChapterList(document);
+    
+    // Parse favorites
+    final favorites = _parseFavorites(document);
 
     return KomiktapSeriesDetail(
       id: slug,
@@ -259,10 +262,99 @@ class KomiktapScraper {
       status: status,
       type: contentType,
       tags: genres,
-      author: metadata['author'] as String?,
+      author: (metadata['author'] ?? metadata['artist'] ?? metadata['posted_by']) as String?,
+      lastUpdate: (metadata['updated_on'] ?? metadata['posted_on']) as DateTime?,
       chapters: chapters,
+      favorites: favorites,
     );
   }
+
+  // ... (keep existing methods)
+
+  Map<String, dynamic> _parseMetadata(Document doc) {
+    final metadata = <String, dynamic>{};
+
+    // Parse all .infotable rows
+    final infoRows = doc.querySelectorAll(_getSelector('detail_infoList'));
+
+    for (final row in infoRows) {
+      final cells = row.querySelectorAll('td');
+      if (cells.length < 2) continue;
+
+      final label = cells[0].text.trim().toLowerCase();
+      final value = cells[1].text.trim();
+
+      if (label.contains('author')) {
+        metadata['author'] = value;
+      } else if (label.contains('artist')) {
+        metadata['artist'] = value;
+      } else if (label.contains('serialization')) {
+        metadata['serialization'] = value;
+      } else if (label.contains('posted by')) {
+        metadata['posted_by'] = value;
+      } else if (label.contains('updated on') || label.contains('posted on')) {
+        // Extract date from time tag or text
+        DateTime? date;
+        final timeEl = cells[1].querySelector('time');
+        if (timeEl != null) {
+          final datetime = timeEl.attributes['datetime'];
+          if (datetime != null) {
+            date = DateTime.tryParse(datetime);
+          }
+        }
+        
+        // Fallback to text parsing
+        date ??= _parseDate(value);
+
+        if (date != null) {
+          if (label.contains('updated')) {
+            metadata['updated_on'] = date;
+          } else {
+            metadata['posted_on'] = date;
+          }
+        }
+      }
+    }
+
+    return metadata;
+  }
+
+  DateTime? _parseDate(String? dateText) {
+    if (dateText == null || dateText.isEmpty) return null;
+
+    try {
+      // Try direct ISO parse first
+      final parsed = DateTime.tryParse(dateText);
+      if (parsed != null) return parsed;
+
+      // Handle relative dates like "2 hours ago", "3 days ago"
+      final relativePattern = RegExp(r'(\d+)\s+(hour|day|week|month)s?\s+ago',
+          caseSensitive: false);
+      final match = relativePattern.firstMatch(dateText);
+
+      if (match != null) {
+        final amount = int.tryParse(match.group(1)!) ?? 0;
+        final unit = match.group(2)!.toLowerCase();
+
+        final now = DateTime.now();
+        switch (unit) {
+          case 'hour':
+            return now.subtract(Duration(hours: amount));
+          case 'day':
+            return now.subtract(Duration(days: amount));
+          case 'week':
+            return now.subtract(Duration(days: amount * 7));
+          case 'month':
+            return DateTime(now.year, now.month - amount, now.day);
+        }
+      }
+
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+  
 
   List<KomiktapChapterInfo> _parseChapterList(Document document) {
     final items = document.querySelectorAll(_getSelector('detail_chapterList'));
@@ -455,66 +547,19 @@ class KomiktapScraper {
         .toList();
   }
 
-  Map<String, dynamic> _parseMetadata(Document doc) {
-    final metadata = <String, dynamic>{};
-
-    // Parse all .infotable rows
-    final infoRows = doc.querySelectorAll(_getSelector('detail_infoList'));
-
-    for (final row in infoRows) {
-      final cells = row.querySelectorAll('td');
-      if (cells.length < 2) continue;
-
-      final label = cells[0].text.trim().toLowerCase();
-      final value = cells[1].text.trim();
-
-      if (label.contains('author')) {
-        metadata['author'] = value;
-      } else if (label.contains('artist')) {
-        metadata['artist'] = value;
-      } else if (label.contains('serialization')) {
-        metadata['serialization'] = value;
-      } else if (label.contains('posted by')) {
-        metadata['posted_by'] = value;
-      }
-    }
-
-    return metadata;
-  }
-
-  DateTime? _parseDate(String? dateText) {
-    if (dateText == null || dateText.isEmpty) return null;
-
+  int? _parseFavorites(Document doc) {
     try {
-      // Try direct ISO parse first
-      final parsed = DateTime.tryParse(dateText);
-      if (parsed != null) return parsed;
-
-      // Handle relative dates like "2 hours ago", "3 days ago"
-      final relativePattern = RegExp(r'(\d+)\s+(hour|day|week|month)s?\s+ago',
-          caseSensitive: false);
-      final match = relativePattern.firstMatch(dateText);
-
-      if (match != null) {
-        final amount = int.tryParse(match.group(1)!) ?? 0;
-        final unit = match.group(2)!.toLowerCase();
-
-        final now = DateTime.now();
-        switch (unit) {
-          case 'hour':
-            return now.subtract(Duration(hours: amount));
-          case 'day':
-            return now.subtract(Duration(days: amount));
-          case 'week':
-            return now.subtract(Duration(days: amount * 7));
-          case 'month':
-            return DateTime(now.year, now.month - amount, now.day);
+      // <div class="bmc">Followed by 21 people</div>
+      final bmcEl = doc.querySelector('.bmc');
+      if (bmcEl != null) {
+        final text = bmcEl.text.trim();
+        // Extract number from "Followed by 21 people"
+        final match = RegExp(r'(\d+)').firstMatch(text);
+        if (match != null) {
+          return int.tryParse(match.group(1)!);
         }
       }
-
-      return null;
-    } catch (_) {
-      return null;
-    }
+    } catch (_) {}
+    return null;
   }
 }
