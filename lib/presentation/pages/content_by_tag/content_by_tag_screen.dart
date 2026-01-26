@@ -15,6 +15,8 @@ import 'package:nhasixapp/presentation/widgets/sorting_widget.dart';
 import 'package:nhasixapp/presentation/widgets/offline_indicator_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progress_indicator_widget.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
+import 'package:nhasixapp/domain/repositories/content_repository.dart';
+import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
 
 /// Screen for browsing content by specific tag
 ///
@@ -41,7 +43,15 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
   @override
   void initState() {
     super.initState();
-    _contentBloc = getIt<ContentBloc>();
+    // Use a fresh ContentBloc instance to avoid polluting the global/home ContentBloc state
+    // This fixes the bug where returning to Home shows the tag search results
+    _contentBloc = ContentBloc(
+      getContentListUseCase: getIt<GetContentListUseCase>(),
+      searchContentUseCase: getIt<SearchContentUseCase>(),
+      getRandomContentUseCase: getIt<GetRandomContentUseCase>(),
+      contentRepository: getIt<ContentRepository>(),
+      logger: getIt<Logger>(),
+    );
     _initializeContent();
   }
 
@@ -78,8 +88,8 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
 
   @override
   void dispose() {
-    // Don't close ContentBloc - it's a singleton managed by DI container
-    // _contentBloc.close();
+    // Close the local ContentBloc instance
+    _contentBloc.close();
     super.dispose();
   }
 

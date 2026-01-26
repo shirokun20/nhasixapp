@@ -330,8 +330,8 @@ class KomiktapSource implements ContentSource {
 
   @override
   bool isValidContentId(String contentId) {
-    // Slug format validation: alphanumeric and hyphens
-    return contentId.isNotEmpty && RegExp(r'^[a-z0-9-]+$').hasMatch(contentId);
+    // Slug format validation: alphanumeric, hyphens, and dots (for decimals)
+    return contentId.isNotEmpty && RegExp(r'^[a-z0-9-.]+$').hasMatch(contentId);
   }
 
   // ============ Helper Methods ============
@@ -445,7 +445,7 @@ class KomiktapSource implements ContentSource {
       groups: [],
       language: 'indonesian',
       uploadDate: detail.lastUpdate ?? DateTime.now(),
-      favorites: 0,
+      favorites: detail.favorites ?? 0,
       englishTitle: detail.alternativeTitle,
     );
   }
