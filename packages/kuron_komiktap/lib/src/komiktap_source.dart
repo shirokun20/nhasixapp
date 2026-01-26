@@ -330,8 +330,8 @@ class KomiktapSource implements ContentSource {
 
   @override
   bool isValidContentId(String contentId) {
-    // Slug format validation: alphanumeric and hyphens
-    return contentId.isNotEmpty && RegExp(r'^[a-z0-9-]+$').hasMatch(contentId);
+    // Slug format validation: alphanumeric, hyphens, and dots (for decimals)
+    return contentId.isNotEmpty && RegExp(r'^[a-z0-9-.]+$').hasMatch(contentId);
   }
 
   // ============ Helper Methods ============

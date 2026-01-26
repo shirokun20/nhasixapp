@@ -327,17 +327,21 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       await readerRepository.saveReaderPosition(position);
 
-      // Also update history
-      final params = AddToHistoryParams.fromString(
-        state.content!.id,
-        validPage,
-        totalPages,
-        timeSpent: state.readingTimer ?? Duration.zero,
-        title: state.content!.title,
-        coverUrl: state.content!.coverUrl,
-        sourceId: state.content!.sourceId,
-      );
-      await addToHistoryUseCase(params);
+      await readerRepository.saveReaderPosition(position);
+      
+      // Also update history - ONLY for nhentai
+      if (state.content!.sourceId == SourceType.nhentai.id) {
+        final params = AddToHistoryParams.fromString(
+          state.content!.id,
+          validPage,
+          totalPages,
+          timeSpent: state.readingTimer ?? Duration.zero,
+          title: state.content!.title,
+          coverUrl: state.content!.coverUrl,
+          sourceId: state.content!.sourceId,
+        );
+        await addToHistoryUseCase(params);
+      }
     } catch (e, stackTrace) {
       _logger.e('Failed to save silent page update to history',
           error: e, stackTrace: stackTrace);
@@ -669,13 +673,12 @@ class ReaderCubit extends Cubit<ReaderState> {
   }
 
   /// Save current reading progress to history
-  /// Skip for Crotpedia chapters as they cannot be reloaded from history
+  /// Only save history for nhentai source (as requested)
   Future<void> _saveToHistory() async {
     try {
-      // Skip saving Crotpedia to history
-      // Crotpedia chapters don't have detail API and cannot be reloaded
-      if (state.content != null && state.content!.sourceId == 'crotpedia') {
-        _logger.d('Skipping history save for Crotpedia: ${state.content!.id}');
+      // Only allow nhentai source to be saved in history
+      if (state.content != null && state.content!.sourceId != SourceType.nhentai.id) {
+        _logger.d('Skipping history save for non-nhentai source: ${state.content!.sourceId}');
         return;
       }
 
