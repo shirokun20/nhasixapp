@@ -272,6 +272,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retrySearch => 'Retry Search';
 
   @override
+  String get errorNetwork =>
+      'Network error. Please check your connection and try again.';
+
+  @override
+  String get errorServer => 'Server error. Please try again later.';
+
+  @override
+  String get errorCloudflare =>
+      'Content is temporarily blocked (Cloudflare). Please try again in a moment.';
+
+  @override
+  String get errorParsing =>
+      'Failed to load content data. The content may be unavailable.';
+
+  @override
+  String get errorUnknown => 'Something went wrong. Please try again.';
+
+  @override
+  String get errorConnectionTimeout =>
+      'Connection timed out. Please try again.';
+
+  @override
+  String get errorConnectionRefused =>
+      'Connection refused. Server might be down.';
+
+  @override
   String get networkErrorTitle => 'Network Error';
 
   @override
@@ -1621,6 +1647,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get uploadedLabel => 'Uploaded';
+
+  @override
+  String get viewAllChapters => 'View All Chapters';
+
+  @override
+  String get searchChapters => 'Search chapters...';
+
+  @override
+  String get noChaptersFound => 'No chapters found';
 
   @override
   String get favoritesLabel => 'Favorites';

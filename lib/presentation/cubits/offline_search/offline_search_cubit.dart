@@ -68,21 +68,71 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     return sizes;
   }
 
+  /// Apply source filter
+  Future<void> filterBySource(String? sourceId) async {
+    logInfo('Filtering offline content by source: $sourceId');
+    
+    // Update state with new filter immediately
+    var currentState = state;
+    String currentQuery = '';
+    
+    if (currentState is OfflineSearchLoaded) {
+      currentQuery = currentState.query;
+      emit(currentState.copyWith(
+        selectedSourceId: sourceId,
+        clearSourceId: sourceId == null,
+        // Reset pagination when filter changes
+        results: [],
+        totalResults: 0,
+        offlineSizes: {},
+        storageUsage: 0,
+        formattedStorageUsage: '0 B',
+        currentPage: 1,
+        totalPages: 1,
+        hasMore: false,
+      ));
+    } else if (currentState is OfflineSearchEmpty) {
+      currentQuery = currentState.query;
+    } else if (currentState is OfflineSearchError) {
+      currentQuery = currentState.query;
+    }
+
+    // Refresh content with new filter
+    if (currentQuery.isNotEmpty) {
+      await searchOfflineContent(currentQuery, sourceId: sourceId);
+    } else {
+      await getAllOfflineContent(sourceId: sourceId);
+    }
+  }
+
   /// Search in offline content - DATABASE ONLY (optimized)
   /// 
   /// [query] - Search query string
   /// [loadMore] - If true, appends to existing search results (pagination)
+  /// [sourceId] - Optional source filter override (if null, uses state)
   Future<void> searchOfflineContent(
     String query, {
     bool loadMore = false,
+    String? sourceId,
   }) async {
     try {
       if (query.trim().isEmpty) {
-        emit(const OfflineSearchInitial());
+        // preserve filter if any
+        if (state is OfflineSearchLoaded) {
+           await getAllOfflineContent(sourceId: (state as OfflineSearchLoaded).selectedSourceId);
+        } else {
+           emit(const OfflineSearchInitial());
+        }
         return;
       }
 
       const pageSize = 20;
+      
+      // Determine effective source ID
+      String? effectiveSourceId = sourceId;
+      if (effectiveSourceId == null && state is OfflineSearchLoaded) {
+        effectiveSourceId = (state as OfflineSearchLoaded).selectedSourceId;
+      }
 
       // If loading more, check current state
       if (loadMore) {
@@ -110,7 +160,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         emit(currentState.copyWith(isLoadingMore: true));
       } else {
         // Initial search
-        logInfo('Searching offline content for: $query');
+        logInfo('Searching offline content for: $query (source: $effectiveSourceId)');
         emit(const OfflineSearchLoading());
       }
 
@@ -123,6 +173,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       final dbResults = await _userDataRepository.searchDownloads(
         query: query,
         state: DownloadState.completed,
+        sourceId: effectiveSourceId,
         limit: pageSize,
         offset: offset,
       );
@@ -133,6 +184,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       final totalCount = await _userDataRepository.getSearchCount(
         query: query,
         state: DownloadState.completed,
+        sourceId: effectiveSourceId,
       );
 
       // Convert database results to Content objects
@@ -208,6 +260,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       final hasMore = finalResults.length < totalCount;
 
       if (finalResults.isEmpty && offset == 0) {
+        // Keep sourceId in empty state if we want to show filtered empty state
         emit(OfflineSearchEmpty(query: query));
         return;
       }
@@ -224,10 +277,11 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         totalPages: totalPages,
         hasMore: hasMore,
         isLoadingMore: false,
+        selectedSourceId: effectiveSourceId,
       ));
 
       logInfo(
-        'Search complete: ${finalResults.length}/$totalCount results for "$query" '
+        'Search complete: ${finalResults.length}/$totalCount results for "$query" (source: $effectiveSourceId) '
         '(page $currentPage/$totalPages, hasMore: $hasMore)'
       );
     } catch (e, stackTrace) {
@@ -288,13 +342,21 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   /// 
   /// [loadMore] - If true, appends to existing results (pagination)
   /// [backupPath] - Optional custom backup path
+  /// [sourceId] - Optional source filter override (if null, uses state)
   Future<void> getAllOfflineContent({
     String? backupPath,
     bool loadMore = false,
+    String? sourceId,
   }) async {
     try {
       // Page size constant (20 items per page)
       const pageSize = 20;
+      
+      // Determine effective source ID
+      String? effectiveSourceId = sourceId;
+      if (effectiveSourceId == null && state is OfflineSearchLoaded) {
+        effectiveSourceId = (state as OfflineSearchLoaded).selectedSourceId;
+      }
       
       // If loading more, check current state
       if (loadMore) {
@@ -316,7 +378,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         emit(currentState.copyWith(isLoadingMore: true));
       } else {
         // Initial load
-        logInfo('Loading all offline content from database (page 1)');
+        logInfo('Loading all offline content from database (page 1) source: $effectiveSourceId');
         emit(const OfflineSearchLoading());
       }
 
@@ -328,6 +390,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       // Load page from database
       final downloads = await _userDataRepository.getAllDownloads(
         state: DownloadState.completed,
+        sourceId: effectiveSourceId,
         limit: pageSize,
         offset: offset,
       );
@@ -337,14 +400,19 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       // Get total count for pagination
       final totalCount = await _userDataRepository.getDownloadsCount(
         state: DownloadState.completed,
+        sourceId: effectiveSourceId,
       );
 
       if (downloads.isEmpty && offset == 0) {
-        // Enforce DB First: Do NOT auto-scan filesystem.
-        // If DB is empty, user must explicitly trigger "Sync" or "Import".
-        logInfo('No downloads in database. Waiting for user to sync/import.');
-        emit(const OfflineSearchEmpty(query: ''));
-        return;
+        // Only trigger empty if NO source filter is applied. 
+        // If filter is applied, just show empty (filtered) state, don't fallback to FS
+        if (effectiveSourceId == null) {
+            // Enforce DB First: Do NOT auto-scan filesystem.
+            // If DB is empty, user must explicitly trigger "Sync" or "Import".
+            logInfo('No downloads in database. Waiting for user to sync/import.');
+            emit(const OfflineSearchEmpty(query: ''));
+            return;
+        }
       }
 
       // Convert DownloadStatus to Content objects
@@ -412,7 +480,20 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       final hasMore = finalResults.length < totalCount;
 
       if (finalResults.isEmpty) {
-        emit(const OfflineSearchEmpty(query: ''));
+        // If filtered and empty, we should still show the filtered state, not generic empty
+         emit(OfflineSearchLoaded(
+          query: '',
+          results: [],
+          totalResults: 0,
+          offlineSizes: {},
+          storageUsage: 0,
+          formattedStorageUsage: '0 B',
+          currentPage: 1,
+          totalPages: 1,
+          hasMore: false,
+          isLoadingMore: false,
+          selectedSourceId: effectiveSourceId,
+        ));
         return;
       }
 
@@ -428,10 +509,11 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         totalPages: totalPages,
         hasMore: hasMore,
         isLoadingMore: false,
+        selectedSourceId: effectiveSourceId,
       ));
 
       logInfo(
-        'Loaded ${finalResults.length}/$totalCount offline content items '
+        'Loaded ${finalResults.length}/$totalCount offline content items (source: $effectiveSourceId) '
         '(page $currentPage/$totalPages, hasMore: $hasMore)'
       );
     } catch (e, stackTrace) {

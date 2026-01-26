@@ -598,6 +598,48 @@ abstract class AppLocalizations {
   /// **'Retry Search'**
   String get retrySearch;
 
+  /// No description provided for @errorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Please check your connection and try again.'**
+  String get errorNetwork;
+
+  /// No description provided for @errorServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Server error. Please try again later.'**
+  String get errorServer;
+
+  /// No description provided for @errorCloudflare.
+  ///
+  /// In en, this message translates to:
+  /// **'Content is temporarily blocked (Cloudflare). Please try again in a moment.'**
+  String get errorCloudflare;
+
+  /// No description provided for @errorParsing.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load content data. The content may be unavailable.'**
+  String get errorParsing;
+
+  /// No description provided for @errorUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get errorUnknown;
+
+  /// No description provided for @errorConnectionTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection timed out. Please try again.'**
+  String get errorConnectionTimeout;
+
+  /// No description provided for @errorConnectionRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection refused. Server might be down.'**
+  String get errorConnectionRefused;
+
   /// No description provided for @networkErrorTitle.
   ///
   /// In en, this message translates to:
@@ -3051,6 +3093,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Uploaded'**
   String get uploadedLabel;
+
+  /// No description provided for @viewAllChapters.
+  ///
+  /// In en, this message translates to:
+  /// **'View All Chapters'**
+  String get viewAllChapters;
+
+  /// No description provided for @searchChapters.
+  ///
+  /// In en, this message translates to:
+  /// **'Search chapters...'**
+  String get searchChapters;
+
+  /// No description provided for @noChaptersFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No chapters found'**
+  String get noChaptersFound;
 
   /// No description provided for @favoritesLabel.
   ///

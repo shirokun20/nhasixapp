@@ -15,10 +15,12 @@ import 'package:nhasixapp/core/utils/app_state_manager.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:kuron_core/kuron_core.dart';
+import '../../../../core/utils/error_message_utils.dart';
 import '../../widgets/download_button_widget.dart';
 import '../../widgets/progressive_image_widget.dart';
 import '../../widgets/shimmer_loading_widgets.dart';
 import '../../widgets/permission_request_sheet.dart';
+import 'widgets/chapter_list_bottom_sheet.dart';
 
 class DetailScreen extends StatefulWidget {
   final String contentId;
@@ -205,9 +207,11 @@ class _DetailScreenState extends State<DetailScreen> {
                         ),
                       );
                     } else {
+                      final message = ErrorMessageUtils.getFriendlyErrorMessage(
+                          state.error, AppLocalizations.of(context));
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(state.message),
+                          content: Text(message),
                           backgroundColor: Theme.of(context).colorScheme.error,
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -949,7 +953,8 @@ class _DetailScreenState extends State<DetailScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.all(12),
-            itemCount: chapters.length,
+            // Show max 5 chapters initially
+            itemCount: chapters.length > 5 ? 5 : chapters.length,
             itemBuilder: (context, index) {
               final chapter = chapters[index];
 
@@ -1168,6 +1173,35 @@ class _DetailScreenState extends State<DetailScreen> {
               );
             },
           ),
+          
+          if (chapters.length > 5)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => ChapterListBottomSheet(
+                        content: content,
+                        detailCubit: _detailCubit,
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.list),
+                  label: Text(l10n.viewAllChapters),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -1460,7 +1494,8 @@ class _DetailScreenState extends State<DetailScreen> {
                     ),
                   ),
                   child: Text(
-                    state.message,
+                    ErrorMessageUtils.getFriendlyErrorMessage(
+                        state.error, AppLocalizations.of(context)),
                     style: TextStyleConst.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
@@ -1606,11 +1641,7 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  /// Get active content source from SourceCubit
-  String _getActiveSourceId() {
-    final sourceState = context.read<SourceCubit>().state;
-    return sourceState.activeSource?.id ?? 'nhentai';
-  }
+
 
   /// Get base URL for active source
   String _getSourceBaseUrl() {
@@ -1619,23 +1650,26 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   /// Build source-aware content URL
-  String _buildContentUrl(String contentId) {
+  String _buildContentUrl(Content content) {
+    // Helper to get base URL for a specific source
     final baseUrl = _getSourceBaseUrl();
-    final sourceId = _getActiveSourceId();
-
-    if (sourceId == SourceType.crotpedia.id) {
-      // Crotpedia uses slug-based URLs: /baca/series/{slug}/
-      return '$baseUrl/baca/series/$contentId/';
+    
+    if (content.sourceId == SourceType.komiktap.id) {
+      // KomikTap uses /manga/{slug}/
+      return '$baseUrl/manga/${content.id}/';
+    } else if (content.sourceId == SourceType.crotpedia.id) {
+      // Crotpedia uses /baca/series/{slug}/
+      return '$baseUrl/baca/series/${content.id}/';
     } else {
       // nhentai uses numeric IDs: /g/{id}/
-      return '$baseUrl/g/$contentId/';
+      return '$baseUrl/g/${content.id}/';
     }
   }
 
   void _shareContent(Content content) async {
     try {
       // Create shareable link and message (source-aware)
-      final contentUrl = _buildContentUrl(content.id);
+      final contentUrl = _buildContentUrl(content);
       final shareText = _buildShareMessage(content, contentUrl);
 
       // Share using share_plus package
@@ -1676,7 +1710,7 @@ class _DetailScreenState extends State<DetailScreen> {
       Logger().e('Error sharing content: $e');
 
       // Fallback: copy to clipboard if sharing fails
-      final contentUrl = _buildContentUrl(content.id);
+      final contentUrl = _buildContentUrl(content);
       await Clipboard.setData(ClipboardData(text: contentUrl));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1896,7 +1930,7 @@ class _DetailScreenState extends State<DetailScreen> {
   void _copyContentLink(Content content) {
     try {
       // Generate shareable link - source-aware URL
-      final contentLink = _buildContentUrl(content.id);
+      final contentLink = _buildContentUrl(content);
 
       // Copy to clipboard
       Clipboard.setData(ClipboardData(text: contentLink));

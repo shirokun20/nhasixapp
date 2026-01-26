@@ -142,14 +142,15 @@
         "download": true,
         "favorite": true,
         "chapters": false,
-        "bookmark": true,
+        "bookmark": false,
         "supportsTagExclusion": true,
-        "supportsAdvancedSearch": true
+        "supportsAdvancedSearch": true,
+        "generatePdf": true
     },
     "ui": {
         "displayName": "NHentai",
         "iconPath": "assets/icons/nhentai.png",
-        "themeColor": "#EC2C79",
+        "themeColor": "#d43726",
         "cardStyle": "standard"
     }
 }

@@ -35,6 +35,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
     this.totalPages = 1,
     this.hasMore = false,
     this.isLoadingMore = false,
+    this.selectedSourceId,
   });
 
   final String query;
@@ -50,6 +51,9 @@ class OfflineSearchLoaded extends OfflineSearchState {
   final bool hasMore;
   final bool isLoadingMore;
 
+  // NEW: Filter field
+  final String? selectedSourceId;
+
   @override
   List<Object?> get props => [
         query,
@@ -62,6 +66,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
         totalPages,
         hasMore,
         isLoadingMore,
+        selectedSourceId,
       ];
 
   /// Check if this is a search result or all content
@@ -70,8 +75,14 @@ class OfflineSearchLoaded extends OfflineSearchState {
   /// Get display title for the results
   String get displayTitle {
     if (isSearchResult) {
+      if (selectedSourceId != null) {
+        return 'Results for "$query" in $selectedSourceId';
+      }
       return 'Search Results for "$query"';
     } else {
+      if (selectedSourceId != null) {
+        return 'Offline Content ($selectedSourceId)';
+      }
       return 'Offline Content';
     }
   }
@@ -99,6 +110,8 @@ class OfflineSearchLoaded extends OfflineSearchState {
     int? totalPages,
     bool? hasMore,
     bool? isLoadingMore,
+    String? selectedSourceId,
+    bool clearSourceId = false,
   }) {
     return OfflineSearchLoaded(
       query: query ?? this.query,
@@ -111,6 +124,9 @@ class OfflineSearchLoaded extends OfflineSearchState {
       totalPages: totalPages ?? this.totalPages,
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      selectedSourceId: clearSourceId 
+          ? null 
+          : (selectedSourceId ?? this.selectedSourceId),
     );
   }
 }

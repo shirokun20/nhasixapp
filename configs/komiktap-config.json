@@ -121,14 +121,15 @@
     "download": true,
     "favorite": true,
     "chapters": true,
-    "bookmark": true,
+    "bookmark": false,
     "supportsTagExclusion": false,
-    "supportsAdvancedSearch": false
+    "supportsAdvancedSearch": false,
+    "generatePdf": true
   },
   "ui": {
     "displayName": "KomikTap",
     "iconPath": "assets/icons/komiktap.png",
-    "themeColor": "#FF6B35",
+    "themeColor": "#FF7900",
     "cardStyle": "chapters"
   },
   "_notes": {

@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/text_style_const.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../l10n/app_localizations.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'progressive_image_widget.dart';
 
 /// Enhanced content card widget with image caching and improved UI
@@ -684,12 +685,12 @@ class ContentCard extends StatelessWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(2),
-              child: Image.asset(
-                'assets/images/${content.language.toLowerCase()}.gif',
+              child: SvgPicture.asset(
+                'assets/images/flags/${content.language.toLowerCase()}.svg',
                 width: 20,
                 height: 14,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
+                placeholderBuilder: (context) {
                   return Container(
                     color:
                         Theme.of(context).colorScheme.surfaceContainerHighest,

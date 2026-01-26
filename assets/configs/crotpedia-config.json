@@ -271,14 +271,15 @@
         "download": true,
         "favorite": true,
         "chapters": true,
-        "bookmark": true,
+        "bookmark": false,
         "supportsTagExclusion": false,
-        "supportsAdvancedSearch": true
+        "supportsAdvancedSearch": true,
+        "generatePdf": true
     },
     "ui": {
         "displayName": "Crotpedia",
         "iconPath": "assets/icons/crotpedia.png",
-        "themeColor": "#FF5722",
+        "themeColor": "#9A51E0",
         "cardStyle": "chapters"
     }
 }

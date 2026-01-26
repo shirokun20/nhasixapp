@@ -225,9 +225,10 @@ class LocalDataSource {
     }
   }
 
-  /// Get all downloads with optional state filtering
+  /// Get all downloads with optional state and source filtering
   Future<List<DownloadStatusModel>> getAllDownloads({
     DownloadState? state,
+    String? sourceId,
     int limit = 20,
     int offset = 0,
     String orderBy = 'created_at',
@@ -246,6 +247,11 @@ class LocalDataSource {
       if (state != null) {
         whereClause += ' AND state = ?';
         whereArgs.add(state.name);
+      }
+
+      if (sourceId != null) {
+        whereClause += ' AND LOWER(source_id) = ?';
+        whereArgs.add(sourceId.toLowerCase());
       }
 
       // Map orderBy field names to actual column names
@@ -304,8 +310,8 @@ class LocalDataSource {
     }
   }
 
-  /// Get downloads count by state
-  Future<int> getDownloadsCount({DownloadState? state}) async {
+  /// Get downloads count by state and source
+  Future<int> getDownloadsCount({DownloadState? state, String? sourceId}) async {
     try {
       final db = await _getSafeDatabase();
       if (db == null) return 0;
@@ -316,6 +322,11 @@ class LocalDataSource {
       if (state != null) {
         whereClause += ' AND state = ?';
         whereArgs.add(state.name);
+      }
+
+      if (sourceId != null) {
+        whereClause += ' AND LOWER(source_id) = ?';
+        whereArgs.add(sourceId.toLowerCase());
       }
 
       final result = await db.rawQuery(
@@ -330,7 +341,7 @@ class LocalDataSource {
   }
 
   /// Get total download size
-  Future<int> getTotalDownloadSize({DownloadState? state}) async {
+  Future<int> getTotalDownloadSize({DownloadState? state, String? sourceId}) async {
     try {
       final db = await _getSafeDatabase();
       if (db == null) return 0;
@@ -341,6 +352,11 @@ class LocalDataSource {
       if (state != null) {
         whereClause += ' AND state = ?';
         whereArgs.add(state.name);
+      }
+
+      if (sourceId != null) {
+        whereClause += ' AND LOWER(source_id) = ?';
+        whereArgs.add(sourceId.toLowerCase());
       }
 
       final result = await db.rawQuery(
@@ -363,6 +379,7 @@ class LocalDataSource {
   Future<List<Map<String, dynamic>>> searchDownloads({
     required String query,
     DownloadState? state,
+    String? sourceId,
     int limit = 20,
     int offset = 0,
   }) async {
@@ -382,6 +399,11 @@ class LocalDataSource {
       if (state != null) {
         whereClause = '$whereClause AND state = ?';
         whereArgs.add(state.name);
+      }
+
+      if (sourceId != null) {
+        whereClause = '$whereClause AND LOWER(source_id) = ?';
+        whereArgs.add(sourceId.toLowerCase());
       }
 
       final result = await db.query(
@@ -405,6 +427,7 @@ class LocalDataSource {
   Future<int> getSearchDownloadSize({
     required String query,
     DownloadState? state,
+    String? sourceId,
   }) async {
     try {
       final db = await _getSafeDatabase();
@@ -419,6 +442,11 @@ class LocalDataSource {
       if (state != null) {
         whereClause = '$whereClause AND state = ?';
         whereArgs.add(state.name);
+      }
+
+      if (sourceId != null) {
+        whereClause = '$whereClause AND LOWER(source_id) = ?';
+        whereArgs.add(sourceId.toLowerCase());
       }
 
       final result = await db.rawQuery(
@@ -441,6 +469,7 @@ class LocalDataSource {
   Future<int> getSearchCount({
     required String query,
     DownloadState? state,
+    String? sourceId,
   }) async {
     try {
       final db = await _getSafeDatabase();
@@ -455,6 +484,11 @@ class LocalDataSource {
       if (state != null) {
         whereClause = '$whereClause AND state = ?';
         whereArgs.add(state.name);
+      }
+
+      if (sourceId != null) {
+        whereClause = '$whereClause AND LOWER(source_id) = ?';
+        whereArgs.add(sourceId.toLowerCase());
       }
 
       final result = await db.rawQuery(

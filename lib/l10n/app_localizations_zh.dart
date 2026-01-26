@@ -262,6 +262,27 @@ class AppLocalizationsZh extends AppLocalizations {
   String get retrySearch => '重试 搜索';
 
   @override
+  String get errorNetwork => '网络错误。请检查您的连接并重试。';
+
+  @override
+  String get errorServer => '服务器错误。请稍后再试。';
+
+  @override
+  String get errorCloudflare => '内容暂时被阻止 (Cloudflare)。请稍后再试。';
+
+  @override
+  String get errorParsing => '加载内容数据失败。内容可能不可用。';
+
+  @override
+  String get errorUnknown => '发生错误。请重试。';
+
+  @override
+  String get errorConnectionTimeout => '连接超时。请重试。';
+
+  @override
+  String get errorConnectionRefused => '连接被拒绝。服务器可能已关闭。';
+
+  @override
   String get networkErrorTitle => '网络 错误';
 
   @override
@@ -1598,6 +1619,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get uploadedLabel => 'Uploaded';
+
+  @override
+  String get viewAllChapters => '查看所有章节';
+
+  @override
+  String get searchChapters => '搜索章节...';
+
+  @override
+  String get noChaptersFound => '未找到章节';
 
   @override
   String get favoritesLabel => '收藏';

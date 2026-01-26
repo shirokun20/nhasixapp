@@ -146,27 +146,37 @@ class KomiktapSource implements ContentSource {
   @override
   Future<ContentListResult> search(SearchFilter filter) async {
     try {
-      // Detect if query is a genre slug (no spaces, lowercase, single word)
-      final isGenreQuery = _isLikelyGenreSlug(filter.query);
+      String url;
 
-      // Normalize genre slug to lowercase for URL
-      final normalizedQuery =
-          isGenreQuery ? filter.query.trim().toLowerCase() : filter.query;
+      // Priority 1: Tag/Genre-based filter
+      // If tags are present, use the first tag as genre filter
+      if (filter.includeTags.isNotEmpty) {
+        final firstTag = filter.includeTags.first;
+        final genreSlug = firstTag.name.toLowerCase().replaceAll(' ', '-');
+        
+        url = KomiktapUrlBuilder.buildGenreUrl(
+          genreSlug,
+          page: filter.page,
+          baseUrl: baseUrl,
+        );
+        
+        _logger?.d(
+          'Searching by genre slug: $genreSlug, page: ${filter.page}');
+      } 
+      // Priority 2: Text-based search
+      else {
+        // Use standard search for any query
+        final query = filter.query.trim();
+        
+        url = KomiktapUrlBuilder.buildSearchUrl(
+          query,
+          page: filter.page,
+          baseUrl: baseUrl,
+        );
 
-      final url = isGenreQuery
-          ? KomiktapUrlBuilder.buildGenreUrl(
-              normalizedQuery,
-              page: filter.page,
-              baseUrl: baseUrl,
-            )
-          : KomiktapUrlBuilder.buildSearchUrl(
-              normalizedQuery,
-              page: filter.page,
-              baseUrl: baseUrl,
-            );
-
-      _logger?.d(
-          'Searching with query: ${filter.query}, normalized: $normalizedQuery, page: ${filter.page}, isGenre: $isGenreQuery');
+        _logger?.d(
+          'Searching with query: "$query", page: ${filter.page}');
+      }
 
       final response = await _dio.get(
         url,
@@ -440,17 +450,5 @@ class KomiktapSource implements ContentSource {
     );
   }
 
-  /// Check if query looks like a genre slug (e.g., "anal", "sister", "story-arc")
-  /// Genre queries are typically: lowercase, no spaces or single-word, may have hyphens
-  bool _isLikelyGenreSlug(String query) {
-    final trimmed = query.trim().toLowerCase();
 
-    // Genre slugs don't have spaces (use hyphens instead)
-    // Examples: "anal", "sister", "story-arc", "big-breasts"
-    if (trimmed.contains(' ')) return false;
-
-    // Only alphanumeric and hyphens
-    final genrePattern = RegExp(r'^[a-z0-9-]+$');
-    return genrePattern.hasMatch(trimmed);
-  }
 }

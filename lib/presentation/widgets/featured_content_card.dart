@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../core/constants/text_style_const.dart';
@@ -310,12 +311,12 @@ class FeaturedContentCard extends StatelessWidget {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(3),
-            child: Image.asset(
-              'assets/images/${content.language.toLowerCase()}.gif',
+            child: SvgPicture.asset(
+              'assets/images/flags/${content.language.toLowerCase()}.svg',
               width: 28,
               height: 18,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
+              placeholderBuilder: (context) {
                 return Container(
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   child: Center(

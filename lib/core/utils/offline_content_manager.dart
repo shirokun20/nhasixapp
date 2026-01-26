@@ -804,7 +804,7 @@ class OfflineContentManager {
       final queryLower = query.toLowerCase();
 
       // Known source identifiers to check for nested structure
-      final knownSources = [SourceType.nhentai.id, SourceType.crotpedia.id];
+      final knownSources = AppStorage.knownSources;
 
       await for (final entity in backupDir.list()) {
         if (entity is Directory) {
@@ -995,7 +995,7 @@ class OfflineContentManager {
       final contentWithTimes = <MapEntry<Content, DateTime>>[];
 
       // Known source identifiers to check for nested structure
-      const knownSources = ['nhentai', 'crotpedia'];
+      final knownSources = AppStorage.knownSources;
 
       await for (final entity in backupDir.list()) {
         if (entity is Directory) {

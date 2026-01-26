@@ -200,6 +200,11 @@ class RemoteConfigService {
     return _sourceConfigs[source];
   }
 
+  /// Get all available source configurations
+  List<SourceConfig> getAllSourceConfigs() {
+    return _sourceConfigs.values.toList();
+  }
+
   AppConfig? get appConfig => _appConfig;
   TagsManifest? get tagsManifest => _tagsManifest;
 

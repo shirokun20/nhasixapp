@@ -59,6 +59,7 @@ abstract class UserDataRepository {
   /// Get all download statuses
   ///
   /// [state] - Filter by download state (all states if null)
+  /// [sourceId] - Filter by source ID (optional)
   /// [limit] - Maximum items to return (default: 20)
   /// [offset] - Number of items to skip for pagination (default: 0)
   /// [orderBy] - Field to sort by: 'created_at', 'updated_at', 'content_id' (default: 'created_at')
@@ -66,6 +67,7 @@ abstract class UserDataRepository {
   /// Returns list of download statuses
   Future<List<DownloadStatus>> getAllDownloads({
     DownloadState? state,
+    String? sourceId,
     int limit = 20,
     int offset = 0,
     String orderBy = 'created_at',
@@ -80,25 +82,35 @@ abstract class UserDataRepository {
   /// Get downloads count (for pagination)
   ///
   /// [state] - Filter by download state (all states if null)
+  /// [sourceId] - Filter by source ID (optional)
   /// Returns total number of downloads matching the state filter
-  Future<int> getDownloadsCount({DownloadState? state});
+  Future<int> getDownloadsCount({
+    DownloadState? state,
+    String? sourceId,
+  });
 
   /// Get total download size
   ///
   /// [state] - Filter by download state (all states if null)
+  /// [sourceId] - Filter by source ID (optional)
   /// Returns total size in bytes of matching downloads
-  Future<int> getTotalDownloadSize({DownloadState? state});
+  Future<int> getTotalDownloadSize({
+    DownloadState? state,
+    String? sourceId,
+  });
 
   /// Search downloads by query
   ///
   /// [query] - Search query to match against content ID, title, or source ID
   /// [state] - Filter by download state (completed by default for offline search)
+  /// [sourceId] - Filter by source ID (optional)
   /// [limit] - Maximum items to return (default: 20)
   /// [offset] - Number of items to skip for pagination (default: 0)
   /// Returns list of matching download records as maps with id, title, source_id, etc.
   Future<List<Map<String, dynamic>>> searchDownloads({
     required String query,
     DownloadState? state,
+    String? sourceId,
     int limit = 20,
     int offset = 0,
   });
@@ -107,20 +119,24 @@ abstract class UserDataRepository {
   ///
   /// [query] - Search query to match against content ID, title, or source ID
   /// [state] - Filter by download state
+  /// [sourceId] - Filter by source ID (optional)
   /// Returns total number of downloads matching the search query
   Future<int> getSearchCount({
     required String query,
     DownloadState? state,
+    String? sourceId,
   });
 
   /// Get total size of search results
   ///
   /// [query] - Search query
   /// [state] - Filter by download state
+  /// [sourceId] - Filter by source ID (optional)
   /// Returns total size in bytes
   Future<int> getSearchDownloadSize({
     required String query,
     DownloadState? state,
+    String? sourceId,
   });
 
   // ==================== HISTORY ====================

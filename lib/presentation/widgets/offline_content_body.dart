@@ -15,6 +15,7 @@ import '../../l10n/app_localizations.dart';
 import '../../services/pdf_conversion_service.dart';
 import '../blocs/download/download_bloc.dart';
 import '../cubits/offline_search/offline_search_cubit.dart';
+import '../../core/config/remote_config_service.dart';
 import '../cubits/settings/settings_cubit.dart';
 import 'content_card_widget.dart';
 import 'error_widget.dart';
@@ -79,6 +80,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
     return Column(
       children: [
         _buildSearchBar(),
+        _buildFilterChips(),
         Expanded(
           child: BlocListener<DownloadBloc, DownloadBlocState>(
             listenWhen: (previous, current) {
@@ -211,6 +213,104 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChips() {
+    return BlocBuilder<OfflineSearchCubit, OfflineSearchState>(
+      builder: (context, state) {
+        String? selectedSourceId;
+        if (state is OfflineSearchLoaded) {
+          selectedSourceId = state.selectedSourceId;
+        }
+
+        final remoteConfig = getIt<RemoteConfigService>();
+        final sourceConfigs = remoteConfig.getAllSourceConfigs();
+
+        return Container(
+          height: 50,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              _buildFilterChip(
+                context,
+                label: AppLocalizations.of(context)?.all ?? 'All',
+                isSelected: selectedSourceId == null,
+                onSelected: (selected) {
+                  if (selected) _offlineSearchCubit.filterBySource(null);
+                },
+              ),
+              const SizedBox(width: 8),
+              ...sourceConfigs.map((config) {
+                final sourceId = config.source;
+                final displayName = config.ui?.displayName ?? sourceId;
+                final themeColor = config.ui?.themeColor;
+                
+                Color? chipColor;
+                if (themeColor != null) {
+                  try {
+                    chipColor = Color(int.parse(themeColor.replaceFirst('#', '0xFF')));
+                  } catch (e) {
+                    // Fallback if color parsing fails
+                  }
+                }
+
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: _buildFilterChip(
+                    context,
+                    label: displayName,
+                    isSelected: selectedSourceId == sourceId,
+                    onSelected: (selected) {
+                      if (selected) _offlineSearchCubit.filterBySource(sourceId);
+                    },
+                    color: chipColor?.withValues(alpha: 0.2),
+                    selectedColor: chipColor,
+                    textColor: (selectedSourceId == sourceId && chipColor != null) 
+                        ? Colors.white 
+                        : null,
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFilterChip(
+    BuildContext context, {
+    required String label,
+    required bool isSelected,
+    required Function(bool) onSelected,
+    Color? color,
+    Color? selectedColor,
+    Color? textColor,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return FilterChip(
+      label: Text(
+        label.toUpperCase(),
+        style: TextStyle(
+          color: textColor ?? (isSelected ? colorScheme.onPrimary : colorScheme.onSurface),
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          fontSize: 12,
+        ),
+      ),
+      selected: isSelected,
+      onSelected: onSelected,
+      backgroundColor: color ?? colorScheme.surfaceContainerHighest,
+      selectedColor: selectedColor ?? colorScheme.primary,
+      checkmarkColor: textColor ?? colorScheme.onPrimary,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      visualDensity: VisualDensity.compact,
+      side: BorderSide.none,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
       ),
     );
   }
@@ -598,14 +698,31 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                   );
                 },
               ),
-              ListTile(
-                leading:
-                    Icon(Icons.picture_as_pdf, color: colorScheme.tertiary),
-                title: Text(l10n.convertToPdf),
-                subtitle: Text('${content.pageCount} pages'),
-                onTap: () {
-                  Navigator.pop(bottomSheetContext);
-                  _generatePdf(parentContext, content);
+
+              Builder(
+                builder: (context) {
+                  try {
+                    // Check feature flag
+                    final remoteConfig = getIt<RemoteConfigService>();
+                    // Offline content always has sourceId
+                    final isEnabled = remoteConfig.isFeatureEnabled(
+                        content.sourceId, (f) => f.generatePdf);
+
+                    if (!isEnabled) return const SizedBox.shrink();
+
+                    return ListTile(
+                      leading: Icon(Icons.picture_as_pdf,
+                          color: colorScheme.tertiary),
+                      title: Text(l10n.convertToPdf),
+                      subtitle: Text('${content.pageCount} pages'),
+                      onTap: () {
+                        Navigator.pop(bottomSheetContext);
+                        _generatePdf(parentContext, content);
+                      },
+                    );
+                  } catch (e) {
+                    return const SizedBox.shrink();
+                  }
                 },
               ),
               ListTile(

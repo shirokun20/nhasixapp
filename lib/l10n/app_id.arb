@@ -1,5 +1,13 @@
 {
   "@@locale": "id",
+  
+  "errorNetwork": "Kesalahan jaringan. Silakan periksa koneksi Anda dan coba lagi.",
+  "errorServer": "Kesalahan server. Silakan coba lagi nanti.",
+  "errorCloudflare": "Konten diblokir sementara (Cloudflare). Silakan coba lagi sebentar lagi.",
+  "errorParsing": "Gagal memuat data konten. Konten mungkin tidak tersedia.",
+  "errorUnknown": "Terjadi kesalahan. Silakan coba lagi.",
+  "errorConnectionTimeout": "Koneksi habis waktu. Silakan coba lagi.",
+  "errorConnectionRefused": "Koneksi ditolak. Server mungkin sedang down.",
   "appTitle": "Kuron",
   "appSubtitle": "NHentai",
   
@@ -746,6 +754,9 @@
   "parodiesLabel": "Parodi",
   "groupsLabel": "Grup",
   "uploadedLabel": "Diunggah",
+  "viewAllChapters": "Lihat Semua Chapter",
+  "searchChapters": "Cari chapter...",
+  "noChaptersFound": "Tidak ada chapter ditemukan",
   "favoritesLabel": "Favorit",
   "tagsLabel": "Tag",
   "artistsLabel": "Artis",

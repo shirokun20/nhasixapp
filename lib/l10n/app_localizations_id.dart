@@ -271,6 +271,32 @@ class AppLocalizationsId extends AppLocalizations {
   String get retrySearch => 'Coba Cari Lagi';
 
   @override
+  String get errorNetwork =>
+      'Kesalahan jaringan. Silakan periksa koneksi Anda dan coba lagi.';
+
+  @override
+  String get errorServer => 'Kesalahan server. Silakan coba lagi nanti.';
+
+  @override
+  String get errorCloudflare =>
+      'Konten diblokir sementara (Cloudflare). Silakan coba lagi sebentar lagi.';
+
+  @override
+  String get errorParsing =>
+      'Gagal memuat data konten. Konten mungkin tidak tersedia.';
+
+  @override
+  String get errorUnknown => 'Terjadi kesalahan. Silakan coba lagi.';
+
+  @override
+  String get errorConnectionTimeout =>
+      'Koneksi habis waktu. Silakan coba lagi.';
+
+  @override
+  String get errorConnectionRefused =>
+      'Koneksi ditolak. Server mungkin sedang down.';
+
+  @override
   String get networkErrorTitle => 'Error Jaringan';
 
   @override
@@ -1624,6 +1650,15 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get uploadedLabel => 'Diunggah';
+
+  @override
+  String get viewAllChapters => 'Lihat Semua Chapter';
+
+  @override
+  String get searchChapters => 'Cari chapter...';
+
+  @override
+  String get noChaptersFound => 'Tidak ada chapter ditemukan';
 
   @override
   String get favoritesLabel => 'Favorit';

@@ -10,6 +10,7 @@ import '../../../services/image_metadata_service.dart';
 import '../base/base_cubit.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_crotpedia/kuron_crotpedia.dart';
+import '../../../../core/utils/error_message_utils.dart';
 
 part 'detail_state.dart';
 
@@ -104,11 +105,14 @@ class DetailCubit extends BaseCubit<DetailState> {
       handleError(e, stackTrace, 'load content detail');
 
       final errorType = determineErrorType(e);
+      final message = ErrorMessageUtils.getFriendlyErrorMessage(e);
+      
       emit(DetailError(
-        message: 'Failed to load content detail: ${e.toString()}',
+        message: message,
         errorType: errorType,
         canRetry: isRetryableError(errorType),
         contentId: contentId,
+        error: e,
       ));
     }
   }
@@ -424,12 +428,15 @@ class DetailCubit extends BaseCubit<DetailState> {
       ));
     } catch (e) {
       logger.e('Failed to open chapter: $e');
+      final message = ErrorMessageUtils.getFriendlyErrorMessage(e);
+      
       emit(DetailActionFailure(
-        message: 'Failed to open chapter: ${e.toString()}',
+        message: 'Failed to open chapter: $message',
         content: currentState.content,
         isFavorited: currentState.isFavorited,
         lastUpdated: currentState.lastUpdated,
         imageMetadata: currentState.imageMetadata,
+        error: e,
       ));
     }
   }

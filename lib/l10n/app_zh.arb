@@ -1,5 +1,13 @@
 {
   "@@locale": "zh",
+
+  "errorNetwork": "网络错误。请检查您的连接并重试。",
+  "errorServer": "服务器错误。请稍后再试。",
+  "errorCloudflare": "内容暂时被阻止 (Cloudflare)。请稍后再试。",
+  "errorParsing": "加载内容数据失败。内容可能不可用。",
+  "errorUnknown": "发生错误。请重试。",
+  "errorConnectionTimeout": "连接超时。请重试。",
+  "errorConnectionRefused": "连接被拒绝。服务器可能已关闭。",
   "appTitle": "Kuron",
   "appSubtitle": "Enhanced Reading Experience",
   "home": "首页",
@@ -789,6 +797,9 @@
   "goOnlineDialogTitle": "前往 在线",
   "goOnlineDialogContent": "You are currently in offline模式. Would you like to go online to access the latest 内容?",
   "goingOnline": "前往ing online...",
+  "viewAllChapters": "查看所有章节",
+  "searchChapters": "搜索章节...",
+  "noChaptersFound": "未找到章节",
   "idLabel": "ID",
   "pagesLabel": "页数",
   "languageLabel": "语言",
