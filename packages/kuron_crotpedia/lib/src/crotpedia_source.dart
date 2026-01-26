@@ -1,11 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
+import 'package:native_dio_adapter/native_dio_adapter.dart';
 import 'crotpedia_scraper.dart';
 import 'crotpedia_url_builder.dart';
 import 'crotpedia_search_capabilities.dart';
+import 'crotpedia_cloudflare_bypass.dart';
 import 'auth/crotpedia_auth_manager.dart';
 import 'models/crotpedia_series.dart';
+import 'package:flutter/material.dart';
 
 /// Crotpedia ContentSource implementation.
 ///
@@ -22,11 +25,13 @@ class CrotpediaSource implements ContentSource {
   final Logger? _logger;
   final String _overriddenBaseUrl;
   final String _displayName;
+  final CrotpediaCloudflareBypass? _cloudflareBypass;
 
   CrotpediaSource({
     required CrotpediaScraper scraper,
     required CrotpediaAuthManager authManager,
     required Dio dio,
+    GlobalKey<NavigatorState>? navigatorKey,
     Logger? logger,
     String? baseUrl,
     String? displayName,
@@ -35,7 +40,20 @@ class CrotpediaSource implements ContentSource {
         _dio = dio,
         _logger = logger,
         _overriddenBaseUrl = baseUrl ?? baseUrlValue,
-        _displayName = displayName ?? displayNameValue {
+        _displayName = displayName ?? displayNameValue,
+        _cloudflareBypass = navigatorKey != null
+            ? CrotpediaCloudflareBypass(
+                httpClient: dio,
+                navigatorKey: navigatorKey,
+                logger: logger,
+              )
+            : null {
+    // Configure NativeAdapter to fix Cloudflare 403 (TLS Fingerprint)
+    _dio.httpClientAdapter = NativeAdapter(
+      createCupertinoConfiguration: () =>
+          URLSessionConfiguration.ephemeralSessionConfiguration(),
+    );
+
     if (baseUrl != null) {
       CrotpediaUrlBuilder.setBaseUrl(baseUrl);
     }
@@ -73,13 +91,15 @@ class CrotpediaSource implements ContentSource {
   }) {
     final headers = {
       'Referer': baseUrlValue,
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
     };
 
     // Add authentication cookies if provided by caller
     // Caller (download_service) is responsible for fetching cookies from auth manager
     if (cookies != null && cookies.isNotEmpty) {
-      final cookieString = cookies.entries.map((e) => '${e.key}=${e.value}').join('; ');
+      final cookieString =
+          cookies.entries.map((e) => '${e.key}=${e.value}').join('; ');
       headers['Cookie'] = cookieString;
     }
 
@@ -98,6 +118,98 @@ class CrotpediaSource implements ContentSource {
   @override
   bool get supportsBookmarks => true; // Has bookmark feature (requires login)
 
+  /// Helper method untuk HTTP GET dengan Cloudflare bypass detection
+  Future<Response<T>> _getWithBypass<T>(
+    String url, {
+    Options? options,
+  }) async {
+    try {
+      // Try normal request first
+      // NativeAdapter will handle standard headers.
+      // If we have a stored dynamic UA from previous bypass, use it.
+      if (_cloudflareBypass?.currentUserAgent != null) {
+         options ??= Options();
+         options.headers ??= {};
+         options.headers!['user-agent'] = _cloudflareBypass!.currentUserAgent;
+      }
+
+      return await _dio.get<T>(url, options: options);
+    } on DioException catch (e) {
+      // Check if this is a Cloudflare 403 challenge
+      final isCloudflare = e.response?.statusCode == 403 &&
+          (e.response?.headers.value('cf-mitigated') != null ||
+              (e.response?.data is String &&
+                  _isCloudflareChallenge(e.response!.data as String)));
+
+      if (isCloudflare) {
+        _logger?.w('🔒 Cloudflare 403 challenge detected for: $url');
+        _logger?.d(
+            '   Header cf-mitigated: ${e.response?.headers.value('cf-mitigated')}');
+
+        // Attempt bypass if available
+        if (_cloudflareBypass != null) {
+          _logger?.i('🚀 Launching visible WebView bypass dialog for $url');
+          final bypassSuccess = await _cloudflareBypass.attemptBypass(targetUrl: url);
+
+          if (bypassSuccess) {
+            _logger?.i('✅ Cloudflare bypass successful');
+            
+            // OPTIMIZATION: Check if we have the content directly from the bypass
+            if (_cloudflareBypass.lastBypassedHtml != null) {
+              _logger?.i('💡 Using bypassed HTML content directly to avoid re-triggering block');
+              // Create RequestOptions matching what would have been sent
+              final requestOptions = RequestOptions(
+                  path: url,
+                  headers: options?.headers,
+              );
+              
+              return Response(
+                 requestOptions: requestOptions,
+                 data: _cloudflareBypass.lastBypassedHtml as T,
+                 statusCode: 200,
+                 statusMessage: 'OK (Bypassed)',
+              );
+            }
+            
+            _logger?.i('✅ Retrying request via Dio...');
+            // Retry request after successful bypass
+            // Ensure the new Dynamic UA is used
+            options?.headers?['user-agent'] = _cloudflareBypass.currentUserAgent;
+
+            return await _dio.get<T>(url, options: options);
+          } else {
+            _logger?.e('❌ Cloudflare bypass failed');
+            rethrow; // Re-throw original exception
+          }
+        } else {
+          _logger?.w('⚠️ Cloudflare bypass not configured');
+          rethrow; // Re-throw original exception
+        }
+      }
+
+      // Not a Cloudflare error or bypass not needed
+      rethrow;
+    } catch (e) {
+      _logger?.e('Failed to get with bypass: $url - $e');
+      rethrow;
+    }
+  }
+
+  /// Check if response contains Cloudflare challenge
+  bool _isCloudflareChallenge(String html) {
+    final indicators = [
+      'Checking your browser',
+      'cf-challenge-form',
+      'challenge-platform',
+      '__cf_chl_',
+      'cf-mitigated',
+      'Ray ID:',
+    ];
+
+    final lowerHtml = html.toLowerCase();
+    return indicators
+        .any((indicator) => lowerHtml.contains(indicator.toLowerCase()));
+  }
 
   @override
   Future<ContentListResult> getList({
@@ -109,7 +221,7 @@ class CrotpediaSource implements ContentSource {
           ? CrotpediaUrlBuilder.home()
           : CrotpediaUrlBuilder.page(page);
 
-      final response = await _dio.get(
+      final response = await _getWithBypass(
         url,
         options: Options(headers: {'Referer': '$baseUrlValue/'}),
       );
@@ -148,7 +260,7 @@ class CrotpediaSource implements ContentSource {
         order: 'popular',
       );
 
-      final response = await _dio.get(
+      final response = await _getWithBypass(
         url,
         options: Options(headers: {'Referer': '$baseUrlValue/'}),
       );
@@ -182,7 +294,7 @@ class CrotpediaSource implements ContentSource {
     try {
       final url = _buildSearchUrl(filter);
 
-      final response = await _dio.get(
+      final response = await _getWithBypass(
         url,
         options: Options(headers: {'Referer': '$baseUrlValue/'}),
       );
@@ -216,7 +328,7 @@ class CrotpediaSource implements ContentSource {
     try {
       // Fetch series detail
       final seriesUrl = CrotpediaUrlBuilder.seriesDetail(contentId);
-      final response = await _dio.get(
+      final response = await _getWithBypass(
         seriesUrl,
         options: Options(headers: {'Referer': '$baseUrlValue/'}),
       );
@@ -254,7 +366,11 @@ class CrotpediaSource implements ContentSource {
                   slug: e.key,
                 ))
             .toList(),
-        artists: seriesDetail.artist != null ? [seriesDetail.artist!] : seriesDetail.author != null ? [seriesDetail.author!] : [],
+        artists: seriesDetail.artist != null
+            ? [seriesDetail.artist!]
+            : seriesDetail.author != null
+                ? [seriesDetail.author!]
+                : [],
         characters: const [],
         parodies: const [],
         groups: const [],
@@ -341,7 +457,7 @@ class CrotpediaSource implements ContentSource {
   Future<List<String>> getChapterImages(String chapterSlug) async {
     try {
       final url = CrotpediaUrlBuilder.chapterReader(chapterSlug);
-      final response = await _dio.get(
+      final response = await _getWithBypass(
         url,
         options: Options(headers: {'Referer': '$baseUrlValue/'}),
       );
@@ -549,11 +665,12 @@ class CrotpediaSource implements ContentSource {
       parodies: const [],
       groups: const [],
       language: 'indonesian',
-      uploadDate: series.year != null 
+      uploadDate: series.year != null
           ? DateTime(series.year!, 1, 1) // Default to Jan 1st of year
           : DateTime.now(),
       favorites: series is CrotpediaSeriesDetail ? (series.favorites ?? 0) : 0,
-      englishTitle: series is CrotpediaSeriesDetail ? series.alternativeTitle : null,
+      englishTitle:
+          series is CrotpediaSeriesDetail ? series.alternativeTitle : null,
     );
   }
 }
