@@ -31,6 +31,7 @@ class KomiktapSeriesDetail {
   final DateTime? lastUpdate;
   final List<String> tags; // genre names
   final List<KomiktapChapterInfo>? chapters;
+  final int? favorites;
 
   const KomiktapSeriesDetail({
     required this.id,
@@ -45,6 +46,7 @@ class KomiktapSeriesDetail {
     this.lastUpdate,
     this.tags = const [],
     this.chapters,
+    this.favorites,
   });
 }
 

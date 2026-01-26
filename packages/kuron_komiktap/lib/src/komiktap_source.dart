@@ -445,7 +445,7 @@ class KomiktapSource implements ContentSource {
       groups: [],
       language: 'indonesian',
       uploadDate: detail.lastUpdate ?? DateTime.now(),
-      favorites: 0,
+      favorites: detail.favorites ?? 0,
       englishTitle: detail.alternativeTitle,
     );
   }

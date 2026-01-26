@@ -418,22 +418,6 @@ class _DetailScreenState extends State<DetailScreen> {
                   onSelected: (value) => _handleMenuAction(value, content),
                   itemBuilder: (context) => [
                     PopupMenuItem(
-                      value: 'download',
-                      child: Row(
-                        children: [
-                          Icon(Icons.download,
-                              color: Theme.of(context).colorScheme.onSurface),
-                          const SizedBox(width: 12),
-                          Text(
-                            AppLocalizations.of(context)!.download,
-                            style: TextStyleConst.bodyMedium.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
                       value: 'copy_link',
                       child: Row(
                         children: [
