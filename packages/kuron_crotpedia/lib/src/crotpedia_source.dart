@@ -9,6 +9,7 @@ import 'crotpedia_cloudflare_bypass.dart';
 import 'auth/crotpedia_auth_manager.dart';
 import 'models/crotpedia_series.dart';
 import 'package:flutter/material.dart';
+import 'dart:io';
 
 /// Crotpedia ContentSource implementation.
 ///
@@ -487,11 +488,43 @@ class CrotpediaSource implements ContentSource {
     required String password,
     bool rememberMe = true,
   }) async {
-    return _authManager.login(
+    // 1. Try standard programmatic login first
+    final result = await _authManager.login(
       email: email,
       password: password,
       rememberMe: rememberMe,
     );
+    
+    // 2. If failure is due to Cloudflare/403, try WebView Auto-Login
+    if (!result.success && _cloudflareBypass != null) {
+       _logger?.w('Standard login failed, attempting WebView Auto-Login...');
+       
+       final cookies = await _cloudflareBypass.attemptLogin(
+         email: email, 
+         password: password
+       );
+       
+       if (cookies != null && cookies.isNotEmpty) {
+         _logger?.i('✅ WebView Auto-Login successful!');
+         await _authManager.setExternalLogin(email: email, cookies: cookies);
+         
+         // Extract username from email
+         final username = email.split('@').first;
+         return CrotpediaAuthResult.success(username);
+       }
+    }
+    
+    return result;
+  }
+
+  /// Manually set session from external source (e.g. WebView)
+  Future<void> setExternalSession({
+    required String username,
+    required List<Cookie> cookies,
+  }) async {
+    // Use username as email placeholder if not a real email
+    final email = username.contains('@') ? username : '$username@crotpedia.net';
+    await _authManager.setExternalLogin(email: email, cookies: cookies);
   }
 
   /// Try to restore session from saved credentials

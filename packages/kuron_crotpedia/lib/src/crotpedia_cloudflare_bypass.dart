@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' as io;
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -49,10 +50,6 @@ class CrotpediaCloudflareBypass {
     _isRunning = true;
 
     try {
-      // 1. Reset logic: Use the REAL device User-Agent.
-      // We cannot force the WebView to look like Cronet (Chrome 115) because Cloudflare
-      // detects the capabilities mismatch (Engine is Chrome 143 vs UA text Chrome 115).
-      // So we must let WebView be itself, and then force NativeAdapter to mimic WebView.
       if (_userAgent == null) {
         _userAgent = await InAppWebViewController.getDefaultUserAgent();
         _logger.i('📱 Device User-Agent: $_userAgent');
@@ -73,7 +70,6 @@ class CrotpediaCloudflareBypass {
           logger: _logger,
           userAgent: _userAgent!,
           onSuccess: (cookies, hints, html) async {
-            // Save the bypassed content directly!
             _lastBypassedHtml = html;
             
             final cookieHeader =
@@ -84,10 +80,8 @@ class CrotpediaCloudflareBypass {
                _logger.i('🕵️ Client Hints extracted: ${hints.keys.join(", ")}');
             }
 
-            // Apply identity/cookie to Dio (best effort)
             _applyIdentityToClient(_httpClient, cookieHeader, _userAgent!, hints);
 
-             // Verifikasi (Opsional - log only)
             _verifyCookies(cookieHeader, _userAgent!, hints).then((verified) {
                if (verified) {
                  _logger.i('✅ Dio verification passed');
@@ -113,14 +107,60 @@ class CrotpediaCloudflareBypass {
       _isRunning = false;
     }
   }
+
+  /// Attempt Auto Login via WebView
+  Future<List<io.Cookie>?> attemptLogin({
+    required String email, 
+    required String password
+  }) async {
+     if (_isRunning) return null;
+     
+     final context = _navigatorKey.currentContext;
+     if (context == null) return null;
+     
+     _isRunning = true;
+     
+     try {
+       _userAgent ??= await InAppWebViewController.getDefaultUserAgent();
+       
+       if (!context.mounted) return null;
+       
+       final result = await showDialog<List<Cookie>>(
+         context: context,
+         barrierDismissible: false,
+         builder: (ctx) => _CloudflareLoginDialog(
+            logger: _logger,
+            userAgent: _userAgent!,
+            email: email,
+            password: password,
+            onSuccess: (cookies) {
+              Navigator.of(ctx).pop(cookies);
+            },
+         ),
+       );
+       
+       if (result != null) {
+         return result.map((c) => io.Cookie(c.name, c.value)
+           ..domain = c.domain
+           ..path = c.path
+           ..secure = c.isSecure ?? false
+           ..httpOnly = c.isHttpOnly ?? false
+         ).toList();
+       }
+       
+       return null;
+     } catch (e) {
+       _logger.e('Login bypass failed: $e');
+       return null;
+     } finally {
+       _isRunning = false;
+     }
+  }
   
   void _applyIdentityToClient(Dio client, String cookie, String ua, Map<String, String> hints) {
     client.options.headers['cookie'] = cookie;
     client.options.headers['user-agent'] = ua;
-    // client.options.headers['referer'] = baseUrl;
     
-    // Explicitly set Client Hints to override NativeAdapter's defaults
-    // This allows Dio (Chrome 115) to masquerade as WebView (Chrome 143)
     if (hints.isNotEmpty) {
       client.options.headers.addAll(hints);
     }
@@ -135,11 +175,6 @@ class CrotpediaCloudflareBypass {
         validateStatus: (status) => status != null && status < 500,
       ));
 
-      // Use standard Dio adapter (IOHttpClientAdapter)
-      // This corresponds to "http biasa" requested by user.
-      // testDio.httpClientAdapter = NativeAdapter(...); // Removed
-      
-      // Apply exact same identity for verification
       _applyIdentityToClient(testDio, cookieHeader, userAgent, hints);
 
       final response = await testDio.get(baseUrl);
@@ -158,7 +193,6 @@ class CrotpediaCloudflareBypass {
     }
   }
   
-  // Getter for Source to use
   String? get currentUserAgent => _userAgent;
 
   bool _isCloudflareChallenge(String html) {
@@ -222,8 +256,6 @@ class _CloudflareBypassDialog extends StatefulWidget {
 class _CloudflareBypassDialogState extends State<_CloudflareBypassDialog> {
   double _progress = 0.0;
   bool _isVerifying = false;
-  // Keep reference to controller
-  // InAppWebViewController? _webViewController; // Unused
 
   @override
   Widget build(BuildContext context) {
@@ -232,7 +264,6 @@ class _CloudflareBypassDialogState extends State<_CloudflareBypassDialog> {
       insetPadding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // Header
           Container(
             color: Colors.grey[900],
             padding: const EdgeInsets.all(16),
@@ -272,7 +303,6 @@ class _CloudflareBypassDialogState extends State<_CloudflareBypassDialog> {
             ),
           ),
 
-          // Progress bar
           if (_progress < 1.0)
             LinearProgressIndicator(
               value: _progress,
@@ -280,7 +310,6 @@ class _CloudflareBypassDialogState extends State<_CloudflareBypassDialog> {
               valueColor: const AlwaysStoppedAnimation(Colors.orange),
             ),
 
-          // WebView
           Expanded(
             child: InAppWebView(
               initialUrlRequest: URLRequest(url: WebUri(widget.baseUrl)),
@@ -292,9 +321,6 @@ class _CloudflareBypassDialogState extends State<_CloudflareBypassDialog> {
                 useHybridComposition: true,
                 domStorageEnabled: true, 
               ),
-              onWebViewCreated: (controller) {
-                // _webViewController = controller;
-              },
               onProgressChanged: (controller, progress) {
                 setState(() {
                   _progress = progress / 100;
@@ -318,7 +344,6 @@ class _CloudflareBypassDialogState extends State<_CloudflareBypassDialog> {
                       _isVerifying = true;
                     });
 
-                    // Extract Data + HTML
                     await _extractData(controller, url, html);
                   }
                 }
@@ -326,7 +351,6 @@ class _CloudflareBypassDialogState extends State<_CloudflareBypassDialog> {
             ),
           ),
 
-          // Footer
           Container(
             color: Colors.grey[900],
             padding: const EdgeInsets.all(12),
@@ -376,7 +400,6 @@ class _CloudflareBypassDialogState extends State<_CloudflareBypassDialog> {
 
   Future<void> _extractData(InAppWebViewController controller, WebUri? url, String? html) async {
     try {
-      // 1. Extract Cookies
       final cookieManager = CookieManager.instance();
       final cookies = await cookieManager.getCookies(
         url: url ?? WebUri(widget.baseUrl),
@@ -387,7 +410,6 @@ class _CloudflareBypassDialogState extends State<_CloudflareBypassDialog> {
         return;
       }
       
-      // 2. Extract Client Hints via JS
       final hints = <String, String>{};
       try {
         final jsResult = await controller.evaluateJavascript(source: """
@@ -438,7 +460,7 @@ class _CloudflareBypassDialogState extends State<_CloudflareBypassDialog> {
           }
         }
       } catch (e) {
-         // Ignore JS errors, defaults
+        // 
       }
       
       widget.onSuccess(cookies, hints, html);
@@ -448,5 +470,150 @@ class _CloudflareBypassDialogState extends State<_CloudflareBypassDialog> {
         Navigator.of(context).pop(false);
       }
     }
+  }
+}
+
+class _CloudflareLoginDialog extends StatefulWidget {
+  const _CloudflareLoginDialog({
+    required this.logger,
+    required this.userAgent,
+    required this.email,
+    required this.password,
+    required this.onSuccess,
+  });
+  
+  final Logger logger;
+  final String userAgent;
+  final String email;
+  final String password;
+  final Function(List<Cookie>) onSuccess;
+
+  @override
+  State<_CloudflareLoginDialog> createState() => _CloudflareLoginDialogState();
+}
+
+class _CloudflareLoginDialogState extends State<_CloudflareLoginDialog> {
+  double _progress = 0.0;
+  bool _isAutoFilling = false;
+  String _status = 'Loading login page...';
+  
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+       backgroundColor: Colors.black,
+       child: Column(
+         children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              color: Colors.grey[900],
+               child: Row(
+               children: [
+                 const Icon(Icons.login, color: Colors.blueAccent),
+                 const SizedBox(width: 12),
+                 Expanded(child: Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                     const Text('Secure Auto-Login', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                     Text(_status, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                   ],
+                 )),
+                 if (_isAutoFilling) const CircularProgressIndicator(color: Colors.blueAccent)
+               ],
+             ),
+            ),
+            if (_progress < 1.0)
+               LinearProgressIndicator(value: _progress, color: Colors.blueAccent, backgroundColor: Colors.grey[800]),
+            Expanded(
+              child: InAppWebView(
+                initialUrlRequest: URLRequest(url: WebUri('https://crotpedia.net/login/')),
+                initialSettings: InAppWebViewSettings(
+                   userAgent: widget.userAgent,
+                   javaScriptEnabled: true,
+                ),
+                onProgressChanged: (_, p) => setState(() => _progress = p / 100),
+                onLoadStop: (controller, url) async {
+                  widget.logger.d("Login WebView Load: $url");
+                  
+                  // Check if we are home or dashboard (success!)
+                  final urlStr = url.toString();
+                  if (urlStr == 'https://crotpedia.net/' || urlStr.contains('/wp-admin') || urlStr.contains('dev.crotpedia.net')) {
+                     setState(() {
+                       _status = 'Login Success! Extracting session...';
+                     });
+                     
+                     // Helper extraction
+                     final cookieManager = CookieManager.instance();
+                     final cookies = await cookieManager.getCookies(url: url!);
+                     widget.onSuccess(cookies);
+                     return;
+                  }
+                  
+                  // If on login page, inject credentials
+                  if (urlStr.contains('/login') || urlStr.contains('wp-login')) {
+                     setState(() {
+                       _status = 'Auto-filling credentials...';
+                       _isAutoFilling = true;
+                     });
+
+                     // Inject JS with robust retry logic
+                     await controller.evaluateJavascript(source: """
+                        (function() {
+                            var attempts = 0;
+                            var maxAttempts = 10;
+                            
+                            var tryAutoFill = function() {
+                                attempts++;
+                                
+                                // Priority 1: Crotpedia specific fields
+                                // Priority 2: Standard WP fields
+                                var userField = document.querySelector('input[name="koi_user_login"]') || 
+                                                document.getElementById('user_login') || 
+                                                document.querySelector('input[name="log"]');
+                                                
+                                var passField = document.querySelector('input[name="koi_user_pass"]') || 
+                                                document.getElementById('user_pass') || 
+                                                document.querySelector('input[name="pwd"]');
+                                                
+                                var submitBtn = document.querySelector('input[name="wp-submit"]') || 
+                                                document.getElementById('wp-submit') || 
+                                                document.querySelector('input[type="submit"]') ||
+                                                document.querySelector('button[type="submit"]');
+                                
+                                if (userField && passField) {
+                                   userField.value = "${widget.email}";
+                                   passField.value = "${widget.password}";
+                                   
+                                   // Dispatch input events
+                                   userField.dispatchEvent(new Event('input', { bubbles: true }));
+                                   userField.dispatchEvent(new Event('change', { bubbles: true }));
+                                   passField.dispatchEvent(new Event('input', { bubbles: true }));
+                                   passField.dispatchEvent(new Event('change', { bubbles: true }));
+                                   
+                                   if (submitBtn) {
+                                      submitBtn.click();
+                                   } else {
+                                      // Fallback: try to submit the form directly
+                                      var form = userField.closest('form');
+                                      if (form) form.submit();
+                                   }
+                                   
+                                   return true; // Success
+                                }
+                                
+                                if (attempts < maxAttempts) {
+                                   setTimeout(tryAutoFill, 500); // Retry every 500ms
+                                }
+                            };
+                            
+                            tryAutoFill();
+                        })();
+                     """);
+                  }
+                },
+              ),
+            ),
+         ],
+       ),
+    );
   }
 }

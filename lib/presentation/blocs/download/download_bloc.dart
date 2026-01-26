@@ -1290,12 +1290,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
           // Cancel verification notification when complete
           if (verificationPercentage >= 100) {
-            _notificationService
-                .cancelVerificationNotification(event.contentId)
-                .catchError((e) {
-              _logger.w(
-                  'DownloadBloc: Failed to cancel verification notification: $e');
-            });
+            // Don't cancel here - let the completion notification overwrite it
+            // This prevents the notification from disappearing before "Download Complete" appears
+            _logger.d(
+                'DownloadBloc: Verification complete, waiting for completion notification');
           }
         }
 

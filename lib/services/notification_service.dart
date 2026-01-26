@@ -875,12 +875,15 @@ class NotificationService {
   // ============================================================
 
   /// Fixed notification ID base for verification operations
-  static const int _verificationNotificationIdBase = 777777;
+
 
   /// Get verification notification ID from content ID
   int _getVerificationNotificationId(String contentId) {
-    // Use different ID from download notification to avoid conflicts
-    return _verificationNotificationIdBase + contentId.hashCode.abs() % 100000;
+    // Use SAME ID as download notification to update the existing notification
+    // instead of creating a new one. This prevents the "stuck at 90%" issue
+    // where the download notification notification remains while verification
+    // shows up as a separate notification.
+    return _getNotificationId(contentId);
   }
 
   /// Show verification started notification

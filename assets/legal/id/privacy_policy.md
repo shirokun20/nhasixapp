@@ -44,8 +44,10 @@ Data berikut disimpan **hanya di perangkat Anda**:
 Aplikasi terhubung ke:
 
 - **nhentai.net** - Untuk mengambil konten dan gambar
-- **GitHub** - Untuk memeriksa pembaruan aplikasi dan memuat dokumen legal
-- **Tidak ada koneksi lainnya**
+- **crotpedia.net** - Untuk mengambil konten dan gambar
+- **komiktap.info** - Untuk mengambil konten dan gambar
+- **GitHub** - Untuk memeriksa pembaruan aplikasi dan memuat dokumen hukum
+- **Tidak ada koneksi lain**
 
 ## Keamanan Data
 

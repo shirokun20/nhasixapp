@@ -609,7 +609,7 @@ void _setupCubits() {
 
   // CrotpediaAuthCubit - Crotpedia login management
   getIt.registerLazySingleton<CrotpediaAuthCubit>(() => CrotpediaAuthCubit(
-        authManager: getIt<CrotpediaAuthManager>(),
+        source: getIt<CrotpediaSource>(),
         logger: getIt<Logger>(),
       ));
 
