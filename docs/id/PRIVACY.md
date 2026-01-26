@@ -45,7 +45,7 @@ Aplikasi terhubung ke:
 
 - **nhentai.net** - Untuk mengambil konten dan gambar
 - **crotpedia.net** - Untuk mengambil konten dan gambar
-- **komiktapex.com** - Untuk mengambil konten dan gambar
+- **komiktap.info** - Untuk mengambil konten dan gambar
 - **GitHub** - Untuk memeriksa pembaruan aplikasi dan memuat dokumen hukum
 - **Tidak ada koneksi lain**
 
