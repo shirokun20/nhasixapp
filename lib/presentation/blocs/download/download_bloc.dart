@@ -233,6 +233,33 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       _logger.i('DownloadBloc: Initialized with ${downloads.length} downloads');
 
+      // 1. ZOMBIE STATE FIX: Reset any downloads stuck in "downloading" state
+      // This happens if the app was killed while downloading.
+      final correctedDownloads = <DownloadStatus>[];
+      for (final download in downloads) {
+        if (download.state == DownloadState.downloading) {
+          _logger.w(
+              'DownloadBloc: Found zombie download stuck in downloading state: ${download.contentId}. Resetting to Paused.');
+          // Reset to paused so user can resume later
+          final fixedDownload = download.copyWith(
+            state: DownloadState.paused,
+            error: 'Download interrupted (App Restart)',
+          );
+          // Save correction to DB
+          await _userDataRepository.saveDownloadStatus(fixedDownload);
+          correctedDownloads.add(fixedDownload);
+        } else {
+          correctedDownloads.add(download);
+        }
+      }
+
+      // Re-emit loaded state with corrected list
+      emit(DownloadLoaded(
+        downloads: correctedDownloads,
+        settings: _settings,
+        lastUpdated: DateTime.now(),
+      ));
+
       // Process queue - auto-start any queued downloads if needed
       _processQueue();
     } catch (e, stackTrace) {
@@ -1003,13 +1030,16 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // ✅ FIXED: Reset notification when retrying
       // This prevents the notification from being stuck at the last progress (e.g., 92%)
       if (currentState.settings.enableNotifications) {
-        _notificationService.showDownloadStarted(
+        _notificationService
+            .showDownloadStarted(
           contentId: event.contentId,
           title: download.title ?? download.contentId,
-        ).catchError((e) {
+        )
+            .catchError((e) {
           _logger.w('DownloadBloc: Failed to reset notification on retry: $e');
         });
-        _logger.i('DownloadBloc: Reset notification for retry ${event.contentId}');
+        _logger
+            .i('DownloadBloc: Reset notification for retry ${event.contentId}');
       }
 
       // Refresh downloads
@@ -1290,10 +1320,27 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
           // Cancel verification notification when complete
           if (verificationPercentage >= 100) {
-            // Don't cancel here - let the completion notification overwrite it
-            // This prevents the notification from disappearing before "Download Complete" appears
-            _logger.d(
-                'DownloadBloc: Verification complete, waiting for completion notification');
+            // Explicitly show completion notification here
+            // This fixes the issue where notification gets stuck at "Verifying 100%"
+            // because the normal completion event might have been processed or missed
+            if (currentState.settings.enableNotifications) {
+              _notificationService
+                  .showDownloadCompleted(
+                contentId: event.contentId,
+                title: currentDownload.title ?? currentDownload.contentId,
+                downloadPath: currentDownload.downloadPath ?? '',
+              )
+                  .catchError((e) {
+                _logger.w(
+                    'DownloadBloc: Failed to show completion notification after verification: $e');
+              });
+            }
+
+            _logger.i(
+                'DownloadBloc: Verification complete, forced completion notification for ${event.contentId}');
+
+            // Trigger refresh to ensure UI is up to date
+            add(const DownloadRefreshEvent());
           }
         }
 
@@ -1334,7 +1381,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           event.estimatedTimeRemaining == Duration.zero) {
         _logger.i(
             'DownloadBloc: Download appears completed, refreshing status for ${event.contentId}');
-        
+
         // ✅ FIXED: Show completion notification BEFORE returning
         // This fixes the issue where notification was stuck at ~90%
         if (currentState.settings.enableNotifications) {
@@ -1351,7 +1398,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           _logger.i(
               'DownloadBloc: Triggered completion notification for ${event.contentId} (early complete)');
         }
-        
+
         add(const DownloadRefreshEvent());
         return;
       }
@@ -1400,8 +1447,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             downloadPath: updatedDownload.downloadPath ?? '',
           )
               .catchError((e) {
-            _logger.w(
-                'DownloadBloc: Failed to show completion notification: $e');
+            _logger
+                .w('DownloadBloc: Failed to show completion notification: $e');
           });
           _logger.i(
               'DownloadBloc: Triggered completion notification for ${event.contentId}');
@@ -1411,7 +1458,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
               .updateDownloadProgress(
             contentId: event.contentId,
             progress: progressPercentage,
-            title: updatedDownload.contentId, // Use contentId as fallback for title
+            title: updatedDownload
+                .contentId, // Use contentId as fallback for title
             isPaused: false,
           )
               .catchError((e) {
