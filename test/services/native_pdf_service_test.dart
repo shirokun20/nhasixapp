@@ -14,7 +14,5 @@ void main() {
     test('service can be instantiated', () {
       expect(service, isNotNull);
     });
-    
-    // TODO: Add tests for generatePdfNative when KuronNative mocking is established
   });
 }

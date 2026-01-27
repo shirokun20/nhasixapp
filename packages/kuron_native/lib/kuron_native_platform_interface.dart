@@ -77,6 +77,7 @@ abstract class KuronNativePlatform extends PlatformInterface {
   /// [initialCookie] Optional initial cookie string to sync session.
   /// [userAgent] Optional user agent string.
   ///
+  // ignore: unintended_html_in_doc_comment
   /// Returns a Map with 'cookies' (List<String>), 'userAgent' (String), and 'success' (bool).
   Future<Map<String, dynamic>?> showLoginWebView({
     required String url,

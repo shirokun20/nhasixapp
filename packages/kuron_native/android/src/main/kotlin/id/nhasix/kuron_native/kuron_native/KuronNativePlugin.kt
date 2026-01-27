@@ -9,6 +9,9 @@ import android.graphics.Rect
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import android.os.Environment
+import java.io.File
+import java.io.FileOutputStream
+import java.util.concurrent.Executors
 import androidx.browser.customtabs.CustomTabsIntent
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
@@ -350,7 +353,11 @@ class KuronNativePlugin :
                 pendingResult = null
             }
             return true
-            private fun handleClearCookies(result: Result) {
+        }
+        return false
+    }
+
+    private fun handleClearCookies(result: Result) {
         try {
             val cookieManager = android.webkit.CookieManager.getInstance()
             cookieManager.removeAllCookies { success ->
@@ -361,8 +368,5 @@ class KuronNativePlugin :
         } catch (e: Exception) {
             result.error("CLEAR_COOKIES_FAILED", e.message, null)
         }
-    }
-}
-        return false
     }
 }
