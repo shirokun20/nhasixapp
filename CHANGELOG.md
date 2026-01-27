@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.9] - 2026-01-28
+
+### 🚀 Pre-Release Polish
+- **Git Migration**: Migrated local packages (`kuron_core`, etc.) to proper git structure.
+- **Cleanup**: Removed legacy documentation and unused assets.
+- **Stability**: Repository restructuring in preparation for v1.0.0.
+
 ## [0.9.0] - 2026-01-26
 
 ### 🚀 New Features
