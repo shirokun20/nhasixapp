@@ -4,7 +4,7 @@ import 'package:kuron_crotpedia/kuron_crotpedia.dart';
 import 'package:logger/logger.dart';
 import 'dart:io';
 
-import 'package:flutter_inappwebview/flutter_inappwebview.dart' show CookieManager;
+import 'package:kuron_native/kuron_native.dart';
 
 part 'crotpedia_auth_state.dart';
 
@@ -76,8 +76,8 @@ class CrotpediaAuthCubit extends Cubit<CrotpediaAuthState> {
 
   Future<void> logout() async {
     try {
-      // Clear WebView cookies to ensure fresh login state next time
-      await CookieManager.instance().deleteAllCookies();
+      // Clear Native WebView cookies (replacing CookieManager)
+      await KuronNative.instance.clearCookies();
       
       await _source.logout();
       emit(CrotpediaAuthInitial());

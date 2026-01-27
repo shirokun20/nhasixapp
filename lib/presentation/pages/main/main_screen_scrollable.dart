@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:kuron_native/kuron_native.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 import 'package:nhasixapp/core/di/service_locator.dart';
@@ -1309,62 +1309,13 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         throw 'Generated URL is empty';
       }
 
-      final uri = Uri.parse(url);
-
-      // Additional validation
-      if (uri.scheme.isEmpty || uri.host.isEmpty) {
-        throw 'Invalid URL format: $url';
-      }
-
-      // Try to launch the URL
-      bool launched = false;
-      String lastError = '';
-
-      // First try with canLaunchUrl check
-      try {
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-          launched = true;
-        } else {
-          Logger().w('canLaunchUrl returned false for: $url');
-          lastError = 'canLaunchUrl returned false';
-        }
-      } catch (e) {
-        Logger().e('canLaunchUrl failed: $e');
-        lastError = 'canLaunchUrl failed: $e';
-      }
-
-      // Fallback: try launching directly for https URLs
-      if (!launched && uri.scheme == 'https') {
-        try {
-          Logger().i('Attempting direct launch for: $url');
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-          launched = true;
-        } catch (e) {
-          Logger().e('Direct launch failed: $e');
-          lastError = 'Direct launch failed: $e';
-        }
-      }
-
-      if (launched) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.open_in_browser, color: Colors.white),
-                  SizedBox(width: 8),
-                  Text(AppLocalizations.of(context)!.openedInBrowser),
-                ],
-              ),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
-      } else {
-        throw 'Could not launch $url - $lastError';
-      }
+      // Use KuronNative to open WebView/Custom Tabs
+      Logger().i('Opening URL via KuronNative: $url');
+      await KuronNative.instance.openWebView(
+        url: url,
+        enableJavaScript: true,
+      );
+      
     } catch (e) {
       Logger().e('Error opening in browser: $e');
       if (mounted) {
@@ -1372,8 +1323,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.error, color: Colors.white),
-                SizedBox(width: 8),
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                       '${AppLocalizations.of(context)?.failedToOpenBrowser ?? 'Failed to open browser'}: ${e.toString().replaceAll('Exception: ', '')}'),
@@ -1381,7 +1332,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
               ],
             ),
             backgroundColor: Colors.red,
-            duration: Duration(seconds: 4),
+            duration: const Duration(seconds: 4),
             action: SnackBarAction(
               label: AppLocalizations.of(context)?.retry ?? 'Retry',
               textColor: Colors.white,

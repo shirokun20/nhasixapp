@@ -155,22 +155,8 @@ class CrotpediaSource implements ContentSource {
           if (bypassSuccess) {
             _logger?.i('✅ Cloudflare bypass successful');
             
-            // OPTIMIZATION: Check if we have the content directly from the bypass
-            if (_cloudflareBypass.lastBypassedHtml != null) {
-              _logger?.i('💡 Using bypassed HTML content directly to avoid re-triggering block');
-              // Create RequestOptions matching what would have been sent
-              final requestOptions = RequestOptions(
-                  path: url,
-                  headers: options?.headers,
-              );
-              
-              return Response(
-                 requestOptions: requestOptions,
-                 data: _cloudflareBypass.lastBypassedHtml as T,
-                 statusCode: 200,
-                 statusMessage: 'OK (Bypassed)',
-              );
-            }
+            // Optimization removed as native WebView doesn't return HTML content currently
+            _logger?.i('✅ Retrying request via Dio...');
             
             _logger?.i('✅ Retrying request via Dio...');
             // Retry request after successful bypass
