@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
+import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/data/datasources/local/database_helper.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass_no_webview.dart';
@@ -353,6 +354,7 @@ void _setupDataSources() {
         scraper: getIt<CrotpediaScraper>(),
         authManager: getIt<CrotpediaAuthManager>(),
         dio: getIt<Dio>(),
+        navigatorKey: AppRouter.navigatorKey,
         logger: getIt<Logger>(),
         baseUrl:
             getIt<RemoteConfigService>().getConfig('crotpedia')?.api?.baseUrl,
@@ -607,7 +609,7 @@ void _setupCubits() {
 
   // CrotpediaAuthCubit - Crotpedia login management
   getIt.registerLazySingleton<CrotpediaAuthCubit>(() => CrotpediaAuthCubit(
-        authManager: getIt<CrotpediaAuthManager>(),
+        source: getIt<CrotpediaSource>(),
         logger: getIt<Logger>(),
       ));
 

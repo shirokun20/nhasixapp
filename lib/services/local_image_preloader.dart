@@ -97,7 +97,7 @@ class LocalImagePreloader {
           final downloadsDir = Directory(path.join(externalRoot, folderName));
           if (await downloadsDir.exists()) {
             downloadPaths.add(downloadsDir.path);
-            _logger.d('🐛 Found Downloads directory: ${downloadsDir.path}');
+            // _logger.d('🐛 Found Downloads directory: ${downloadsDir.path}');
           }
         }
       }
@@ -281,8 +281,8 @@ class LocalImagePreloader {
         final downloadDir = Directory(path.join(downloadPath, _baseLocalPath));
         if (await downloadDir.exists()) {
           externalPaths.add(path.join(downloadPath, _baseLocalPath));
-          _logger.d(
-              '🐛 External download path: ${path.join(downloadPath, _baseLocalPath)}');
+          // _logger.d(
+          //     '🐛 External download path: ${path.join(downloadPath, _baseLocalPath)}');
         }
       }
     } catch (e) {

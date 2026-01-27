@@ -73,24 +73,22 @@ class CrotpediaAuthManager {
   bool get isLoggedIn => _state == CrotpediaAuthState.loggedIn;
   String? get username => _username;
   String? get email => _email;
-  
+
   /// Get cookies for specific domain as Map for MethodChannel
   /// Used to pass authentication cookies to native download layer
   Future<Map<String, String>> getCookiesForDomain(String baseUrl) async {
     try {
-      
       final uri = Uri.parse(baseUrl);
-      
+
       final cookies = await _cookieJar.loadForRequest(uri);
-      
+
       if (cookies.isEmpty) {
         return {};
       }
-      
+
       final cookieMap = Map.fromEntries(
-        cookies.map((cookie) => MapEntry(cookie.name, cookie.value))
-      );
-      
+          cookies.map((cookie) => MapEntry(cookie.name, cookie.value)));
+
       return cookieMap;
     } catch (e) {
       // Log error but don't throw - return empty map to allow graceful fallback
@@ -113,8 +111,8 @@ class CrotpediaAuthManager {
       // Step 1: GET login page to extract nonce
       final loginPageResponse = await _dio.get(
         CrotpediaUrlBuilder.login(),
-        options:
-            Options(headers: {'Referer': '${CrotpediaUrlBuilder.baseUrl}/'}),
+        options: Options(
+            headers: _buildEnhancedHeaders(CrotpediaUrlBuilder.login())),
       );
 
       final nonce = _extractNonce(loginPageResponse.data);
@@ -124,8 +122,9 @@ class CrotpediaAuthManager {
       }
 
       // Step 2: POST login with user credentials
+      final loginUrl = CrotpediaUrlBuilder.login();
       final response = await _dio.post(
-        CrotpediaUrlBuilder.login(),
+        loginUrl,
         data: {
           'koi_user_login': email,
           'koi_user_pass': password,
@@ -135,9 +134,7 @@ class CrotpediaAuthManager {
           contentType: Headers.formUrlEncodedContentType,
           followRedirects: false,
           validateStatus: (status) => status! < 400 || status == 302,
-          headers: {
-            'Referer': '${CrotpediaUrlBuilder.baseUrl}/',
-          },
+          headers: _buildEnhancedHeaders(loginUrl),
         ),
       );
 
@@ -180,11 +177,12 @@ class CrotpediaAuthManager {
   /// Verify login by checking bookmark page (requires auth)
   Future<bool> _verifyLogin() async {
     try {
+      final bookmarkUrl = CrotpediaUrlBuilder.bookmark();
       final response = await _dio.get(
-        CrotpediaUrlBuilder.bookmark(),
+        bookmarkUrl,
         options: Options(
           followRedirects: false,
-          headers: {'Referer': '${CrotpediaUrlBuilder.baseUrl}/'},
+          headers: _buildEnhancedHeaders(bookmarkUrl),
         ),
       );
       // If redirected to login, not authenticated
@@ -236,21 +234,42 @@ class CrotpediaAuthManager {
     if (cookies.isEmpty) return false;
     return await _verifyLogin();
   }
+  
+  /// Manually set logged in state (e.g. after WebView login)
+  Future<void> setExternalLogin({
+    required String email, 
+    required List<Cookie> cookies
+  }) async {
+    // 1. Save cookies to jar
+    final uri = Uri.parse(CrotpediaUrlBuilder.baseUrl);
+    await _cookieJar.saveFromResponse(uri, cookies);
+    
+    // 2. Verify (double check)
+    // If we just got these from WebView, they should be valid.
+    // But verification requires a request, which might fail 403 if using Dio.
+    // So we assume valid if passed here, or do a lightweight check.
+    
+    _state = CrotpediaAuthState.loggedIn;
+    _email = email;
+    _username = email.split('@').first;
+    
+    await _saveCredentials(email, 'external'); // Password unknown or hidden
+  }
 
   // ============ Bookmark Interaction ============
 
   Future<bool> toggleBookmark(String postId, bool setActive) async {
     try {
+      const ajaxUrl = 'https://crotpedia.net/wp-admin/admin-ajax.php';
       final response = await _dio.post(
-        'https://crotpedia.net/wp-admin/admin-ajax.php',
+        ajaxUrl,
         data: FormData.fromMap({
           'action': 'favorites_favorite',
           'postid': postId,
           'siteid': '1',
           'status': setActive ? 'active' : 'inactive',
         }),
-        options:
-            Options(headers: {'Referer': '${CrotpediaUrlBuilder.baseUrl}/'}),
+        options: Options(headers: _buildEnhancedHeaders(ajaxUrl)),
       );
 
       return response.statusCode == 200;
@@ -306,5 +325,30 @@ class CrotpediaAuthManager {
   String _extractNonce(String html) {
     final regex = RegExp(r'name="koi_login_nonce"\s+value="([^"]+)"');
     return regex.firstMatch(html)?.group(1) ?? '';
+  }
+
+  /// Build enhanced headers to bypass Cloudflare bot detection
+  Map<String, String> _buildEnhancedHeaders(String url) {
+    return {
+      'User-Agent':
+          'Mozilla/5.0 (Linux; Android 13; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+      'Accept':
+          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+      'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Referer': '${CrotpediaUrlBuilder.baseUrl}/',
+      'DNT': '1',
+      'Connection': 'keep-alive',
+      'Upgrade-Insecure-Requests': '1',
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'same-origin',
+      'Sec-Fetch-User': '?1',
+      'sec-ch-ua':
+          '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+      'sec-ch-ua-mobile': '?1',
+      'sec-ch-ua-platform': '"Android"',
+      'Cache-Control': 'max-age=0',
+    };
   }
 }

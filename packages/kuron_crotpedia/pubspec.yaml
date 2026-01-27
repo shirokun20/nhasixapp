@@ -16,8 +16,12 @@ dependencies:
   cookie_jar: ^4.0.8
   path_provider: ^2.1.5
   flutter_secure_storage: ^9.2.2
+  kuron_native:
+    path: ../kuron_native
   html: ^0.15.4
   logger: ^2.6.2
+  native_dio_adapter: ^1.3.0
+  cronet_http: ^1.1.0
 
 dev_dependencies:
   flutter_test:
@@ -26,3 +30,4 @@ dev_dependencies:
   test: ^1.25.8
   mockito: ^5.4.4
   build_runner: ^2.4.13
+  plugin_platform_interface: ^2.1.8

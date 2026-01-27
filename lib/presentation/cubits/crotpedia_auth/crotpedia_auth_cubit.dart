@@ -2,17 +2,20 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:kuron_crotpedia/kuron_crotpedia.dart';
 import 'package:logger/logger.dart';
+import 'dart:io';
+
+import 'package:kuron_native/kuron_native.dart';
 
 part 'crotpedia_auth_state.dart';
 
 class CrotpediaAuthCubit extends Cubit<CrotpediaAuthState> {
-  final CrotpediaAuthManager _authManager;
+  final CrotpediaSource _source;
   final Logger _logger;
 
   CrotpediaAuthCubit({
-    required CrotpediaAuthManager authManager,
+    required CrotpediaSource source,
     required Logger logger,
-  })  : _authManager = authManager,
+  })  : _source = source,
         _logger = logger,
         super(CrotpediaAuthInitial()) {
     checkLoginStatus();
@@ -20,15 +23,15 @@ class CrotpediaAuthCubit extends Cubit<CrotpediaAuthState> {
 
   Future<void> checkLoginStatus() async {
     try {
-      if (_authManager.isLoggedIn) {
+      if (_source.isLoggedIn) {
         // CrotpediaAuthManager might need to expose username or profile info
         // Assuming username is available or just using a placeholder/email if not
-        emit(CrotpediaAuthSuccess(_authManager.username ?? 'User'));
+        emit(CrotpediaAuthSuccess(_source.username ?? 'User'));
       } else {
         // Attempt auto-login
-        final success = await _authManager.tryAutoLogin();
+        final success = await _source.tryAutoLogin();
         if (success) {
-          emit(CrotpediaAuthSuccess(_authManager.username ?? 'User'));
+          emit(CrotpediaAuthSuccess(_source.username ?? 'User'));
         } else {
           emit(CrotpediaAuthInitial());
         }
@@ -42,7 +45,7 @@ class CrotpediaAuthCubit extends Cubit<CrotpediaAuthState> {
   Future<void> login(String email, String password, bool rememberMe) async {
     emit(CrotpediaAuthLoading());
     try {
-      final result = await _authManager.login(
+      final result = await _source.login(
         email: email,
         password: password,
         rememberMe: rememberMe,
@@ -60,9 +63,23 @@ class CrotpediaAuthCubit extends Cubit<CrotpediaAuthState> {
     }
   }
 
+  Future<void> externalLogin(String username, List<Cookie> cookies) async {
+    emit(CrotpediaAuthLoading());
+    try {
+      await _source.setExternalSession(username: username, cookies: cookies);
+      emit(CrotpediaAuthSuccess(username));
+    } catch (e) {
+      _logger.e('External login error', error: e);
+      emit(const CrotpediaAuthError('Failed to capture session'));
+    }
+  }
+
   Future<void> logout() async {
     try {
-      await _authManager.logout();
+      // Clear Native WebView cookies (replacing CookieManager)
+      await KuronNative.instance.clearCookies();
+      
+      await _source.logout();
       emit(CrotpediaAuthInitial());
     } catch (e) {
       _logger.e('Logout error', error: e);

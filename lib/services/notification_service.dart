@@ -195,6 +195,7 @@ class NotificationService {
     required String contentId,
     required int progress,
     required String title,
+    String? message,
   }) async {
     if (!isEnabled) return;
 
@@ -605,6 +606,11 @@ class NotificationService {
     }
 
     try {
+      // ✅ SAFETY FIX: Ensure verification notification is cleared
+      // This handles cases where verification finishes but cleanup was missed
+      // or when skipping verification (e.g. metadata only update)
+      await cancelVerificationNotification(contentId);
+
       final notificationId = _getNotificationId(contentId);
 
       await _notificationsPlugin.show(
@@ -638,6 +644,10 @@ class NotificationService {
     }
 
     try {
+      // ✅ SAFETY FIX: Ensure verification notification is cleared on error
+      // This prevents "Verifying 96%" from sticking if an error occurs during verification
+      await cancelVerificationNotification(contentId);
+
       final notificationId = _getNotificationId(contentId);
 
       await _notificationsPlugin.show(
@@ -875,16 +885,17 @@ class NotificationService {
   // ============================================================
 
   /// Fixed notification ID base for verification operations
-  static const int _verificationNotificationIdBase = 777777;
+
 
   /// Get verification notification ID from content ID
   int _getVerificationNotificationId(String contentId) {
-    // Use different ID from download notification to avoid conflicts
-    return _verificationNotificationIdBase + contentId.hashCode.abs() % 100000;
+    // FIXED: Use a DIFFERENT ID for verification to separate it from active download
+    // This allows us to clear the "Downloading" notification and show a distinct "Verifying" one
+    return _idManager.getNotificationId('verify_$contentId');
   }
 
   /// Show verification started notification
-  /// ThupdatePdfConversionProgressnload reaches 100%, before file verification begins
+  /// Called when download reaches 100%, before file verification begins
   Future<void> showVerificationStarted({
     required String contentId,
     required String title,
@@ -896,6 +907,10 @@ class NotificationService {
     }
 
     try {
+      // ✅ FIXED: Explicitly cancel the "Downloading" notification first
+      // This ensures we don't have two notifications for the same content
+      await cancelDownloadNotification(contentId);
+      
       final notificationId = _getVerificationNotificationId(contentId);
 
       await _notificationsPlugin.show(

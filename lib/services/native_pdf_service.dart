@@ -1,28 +1,10 @@
-import 'package:flutter/services.dart';
+
 import 'package:logger/logger.dart';
+import 'package:kuron_native/kuron_native.dart';
 
 class NativePdfService {
-  static const MethodChannel _channel = MethodChannel('id.nhasix.app/pdf_conversion');
-  static const MethodChannel _readerChannel = MethodChannel('id.nhasix.app/pdf_reader');
   final Logger _logger = Logger();
 
-  /// Start PDF generation via native layer (WorkManager)
-  Future<String> generatePdf({
-    required String contentId,
-    required List<String> imagePaths,
-    int maxPagesPerFile = 50,
-  }) async {
-    try {
-      final workId = await _channel.invokeMethod<String>('generatePdf', {
-        'contentId': contentId,
-        'imagePaths': imagePaths,
-        'maxPagesPerFile': maxPagesPerFile,
-      });
-      return workId ?? '';
-    } on PlatformException catch (e) {
-      throw Exception('Failed to start native PDF generation: ${e.message}');
-    }
-  }
 
   /// Generate PDF using native high-performance implementation
   ///
@@ -42,35 +24,26 @@ class NativePdfService {
     required String title,
     required Function(int progress, String message) onProgress,
   }) async {
-    // Setup progress listener
-    _channel.setMethodCallHandler((call) async {
-      if (call.method == 'onProgress') {
-        final progress = call.arguments['progress'] as int;
-        final message = call.arguments['message'] as String;
-        onProgress(progress, message);
-      }
-    });
-
     try {
-      _logger.i('🚀 Calling native PDF generator (high-performance)...');
+      _logger.i('🚀 Calling native PDF generator (via KuronNative)...');
       _logger.i('Images: ${imagePaths.length} files');
 
-      final result = await _channel.invokeMethod('generatePdfNative', {
-        'imagePaths': imagePaths,
-        'outputPath': outputPath,
-        'title': title,
-      });
+      final result = await KuronNative.instance.convertImagesToPdf(
+        imagePaths: imagePaths,
+        outputPath: outputPath,
+        onProgress: onProgress,
+      );
 
-      final resultMap = Map<String, dynamic>.from(result as Map);
+      if (result == null) {
+        throw Exception('Native PDF generation returned null');
+      }
       
-      _logger.i('✅ Native PDF completed: ${resultMap['pageCount']} pages');
+      _logger.i('✅ Native PDF completed: ${result['pageCount']} pages');
       
-      return resultMap;
-    } on PlatformException catch (e) {
-      _logger.e('Native PDF failed: ${e.message}');
-      throw Exception('Native PDF generation failed: ${e.message}');
-    } finally {
-      _channel.setMethodCallHandler(null);
+      return result;
+    } catch (e) {
+      _logger.e('Native PDF generation failed: $e');
+      throw Exception('Native PDF generation failed: $e');
     }
   }
 
@@ -83,14 +56,13 @@ class NativePdfService {
     int startPage = 0,
   }) async {
     try {
-      await _readerChannel.invokeMethod('openPdf', {
-        'filePath': path,
-        'title': title,
-        'startPage': startPage,
-      });
-    } on PlatformException catch (e) {
-      _logger.e('Failed to open PDF: ${e.message}');
-      throw Exception('Failed to open PDF: ${e.message}');
+      await KuronNative.instance.openPdf(
+        filePath: path,
+        title: title,
+      );
+    } catch (e) {
+      _logger.e('Failed to open PDF via KuronNative: $e');
+      throw Exception('Failed to open PDF: $e');
     }
   }
 }

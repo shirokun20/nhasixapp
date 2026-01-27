@@ -23,9 +23,13 @@ import 'package:nhasixapp/core/models/image_metadata.dart';
 import 'package:nhasixapp/core/utils/app_animations.dart';
 
 class AppRouter {
+  /// Global navigator key untuk Cloudflare bypass dialog
+  static final navigatorKey = GlobalKey<NavigatorState>();
+
   static final GoRouter router = GoRouter(
     initialLocation: AppRoute.defaultRoute,
     debugLogDiagnostics: true,
+    navigatorKey: navigatorKey,
     routes: [
       // Splash Screen
       GoRoute(
@@ -386,11 +390,8 @@ class AppRouter {
       {required String filePath,
       required String contentId,
       required String title}) {
-    context.push('/reader_pdf', extra: {
-      'filePath': filePath,
-      'contentId': contentId,
-      'title': title
-    });
+    context.push('/reader_pdf',
+        extra: {'filePath': filePath, 'contentId': contentId, 'title': title});
   }
 
   static void goToFavorites(BuildContext context) {

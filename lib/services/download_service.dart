@@ -204,10 +204,12 @@ class DownloadService {
       // ✅ Phase 2: File Verification (90-95%)
       // CRITICAL: Strict file-by-file existence check
       _logger.i('Starting strict file verification phase...');
+      
+      // Emit -2 to signal verification start to DownloadBloc
       onProgress(DownloadProgress(
         contentId: content.id,
-        downloadedPages: 92,
-        totalPages: 100,
+        downloadedPages: -2, // SIGNAL: Verification Start
+        totalPages: 0, // 0% verification progress
         currentFileName: 'Verifying files...',
       ));
 
@@ -225,6 +227,17 @@ class DownloadService {
           missingPages.add(pageNum);
           _logger.w('Missing file: $fileName (page $pageNum)');
         }
+        
+        // Report verification progress every 20 files or so to avoid spamming
+        if (pageNum % 20 == 0) {
+           final verifyProgress = ((pageNum - actualStartPage) / expectedBatchCount * 100).toInt();
+           onProgress(DownloadProgress(
+            contentId: content.id,
+            downloadedPages: -2, // SIGNAL: Verification Progress
+            totalPages: verifyProgress, // 0-100% verification
+            currentFileName: 'Verifying files...',
+          ));
+        }
       }
 
       // If any pages are missing, throw explicit error with details
@@ -236,19 +249,22 @@ class DownloadService {
         _logger.e(errorMsg);
         throw Exception(errorMsg);
       }
+      
+      // Update verification to 100%
+      onProgress(DownloadProgress(
+        contentId: content.id,
+        downloadedPages: -2,
+        totalPages: 100, // 100% verification
+        currentFileName: 'Verifying files...',
+      ));
 
       _logger.i(
           'File verification complete: All $expectedBatchCount files verified (pages $actualStartPage-$actualEndPage)');
 
       // ✅ Phase 3: Metadata Generation (95-98%)
       _logger.i('Starting metadata generation phase...');
-      onProgress(DownloadProgress(
-        contentId: content.id,
-        downloadedPages: 96,
-        totalPages: 100,
-        currentFileName: 'Saving metadata...',
-      ));
-
+      // No specific notification for metadata, just log it
+      
       // Save metadata with range information
       await _saveDownloadMetadata(content, downloadDir, downloadedFiles,
           actualStartPage, actualEndPage);
@@ -256,6 +272,7 @@ class DownloadService {
       _logger.i('Metadata generation complete');
 
       // ✅ Phase 4: Completion (100%)
+      // Emit normal completion event
       onProgress(DownloadProgress(
         contentId: content.id,
         downloadedPages: 100,

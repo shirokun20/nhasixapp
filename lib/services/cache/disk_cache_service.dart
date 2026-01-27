@@ -152,8 +152,8 @@ class DiskCacheService<T> implements CacheService<T> {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
-      _logger.d(
-          'Cached to disk: $key (${(sizeBytes / 1024).toStringAsFixed(1)}KB, TTL: ${effectiveTTL.inHours}h)');
+      // _logger.d(
+      //     'Cached to disk: $key (${(sizeBytes / 1024).toStringAsFixed(1)}KB, TTL: ${effectiveTTL.inHours}h)');
 
       // Cleanup if needed
       await _cleanupIfNeeded();
