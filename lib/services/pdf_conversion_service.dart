@@ -9,6 +9,7 @@ import '../core/utils/directory_utils.dart';
 import 'notification_service.dart';
 import 'native_pdf_service.dart';
 
+
 /// Service yang menangani konversi PDF di background dengan fitur splitting dan notifikasi
 /// Handles background PDF conversion with splitting, progress tracking, and notifications
 class PdfConversionService {
@@ -142,6 +143,7 @@ class PdfConversionService {
       _logger.i('Performance: ~5x faster than Flutter');
       _logger.i('========================================');
 
+
       // Generate PDF using native implementation
       await _generatePdfNative(
         contentId: contentId,
@@ -150,6 +152,7 @@ class PdfConversionService {
         sourceId: sourceId,
         pdfOutputDir: pdfOutputDir,
       );
+
 
       _logger.i(
           'PdfConversionService: PDF conversion completed successfully for $contentId');
@@ -196,21 +199,38 @@ class PdfConversionService {
     // Create output path (use simple sanitization here)
     final safeTitle = title.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
     final pdfPath = path.join(pdfOutputDir.path, '${contentId}_$safeTitle.pdf');
-
     try {
+      // Track last update to throttle notifications
+      int lastProgress = -1;
+      DateTime lastUpdateTime = DateTime.fromMillisecondsSinceEpoch(0);
+
       // Call native service with progress callbacks
       final result = await _nativePdfService.generatePdfNative(
         imagePaths: imagePaths,
         outputPath: pdfPath,
         title: title,
         onProgress: (progress, message) async {
-          // Update notification with real-time progress from native
-          await _notificationService.updatePdfConversionProgress(
-            contentId: contentId,
-            progress: progress,
-            title: message,
-          );
-          _logger.d('Native progress: $progress% - $message');
+            final now = DateTime.now();
+            // Update if:
+            // 1. Progress changed significantly (>= 5%)
+            // 2. OR enough time passed (>= 500ms)
+            // 3. OR it's start (0%) or completion (100%)
+            if (progress == 0 || 
+                progress == 100 || 
+                (progress - lastProgress).abs() >= 5 || 
+                now.difference(lastUpdateTime).inMilliseconds >= 500) {
+              
+              lastProgress = progress;
+              lastUpdateTime = now;
+
+              // Update notification with real-time progress from native
+              await _notificationService.updatePdfConversionProgress(
+                contentId: contentId,
+                progress: progress,
+                title: message,
+              );
+              _logger.d('Native progress: $progress% - $message');
+            }
         },
       );
 
@@ -605,6 +625,8 @@ class PdfConversionService {
       return fallback ?? key;
     }
   }
+
+
 }
 
 /// Result object untuk tracking hasil konversi PDF dengan multiple parts

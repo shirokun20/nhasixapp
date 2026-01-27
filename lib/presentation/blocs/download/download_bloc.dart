@@ -1304,8 +1304,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           }
 
           // Update verification progress (only every 20% to reduce spam)
-          if (verificationPercentage % 20 == 0 ||
-              verificationPercentage >= 95) {
+          // ✅ FIXED: Don't update at 100% to avoid race condition with showDownloadCompleted
+          if ((verificationPercentage % 20 == 0 ||
+                  verificationPercentage >= 95) &&
+              verificationPercentage < 100) {
             _notificationService
                 .updateVerificationProgress(
               contentId: event.contentId,
@@ -1320,6 +1322,12 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
           // Cancel verification notification when complete
           if (verificationPercentage >= 100) {
+            // ✅ FIXED: Explicitly cancel the verification notification first
+            // This prevents "Verifying 100%" from sticking around
+            if (currentState.settings.enableNotifications) {
+               _notificationService.cancelVerificationNotification(event.contentId);
+            }
+
             // Explicitly show completion notification here
             // This fixes the issue where notification gets stuck at "Verifying 100%"
             // because the normal completion event might have been processed or missed

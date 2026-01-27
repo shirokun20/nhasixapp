@@ -35,18 +35,19 @@ class CrotpediaCloudflareBypass {
       final urlToLoad = targetUrl ?? baseUrl;
       _logger.i('🚀 Memulai Cloudflare bypass Native untuk: $urlToLoad');
 
-      // 1. Get Initial Cookies to sync session
-      final initialCookieStr = await _getFormattedCookies(urlToLoad);
-      _logger.d('Sending Initial Cookies: $initialCookieStr');
-
+      // 1. Clear cookies to ensure fresh start
+      await _clearCookies(urlToLoad); 
+      
       // 2. Launch Native WebView
-      // We look for success when URL matches base or dashboard, 
-      // or simply wait for user to close it (implicitly valid if they think so)
-      // But adding filters helps auto-close.
+      // User instruction: context/UA must MATCH EXACTLY. 
+      // We let Native WebView use its default System UA, and we sync it back to Dio.
       final result = await KuronNative.instance.showLoginWebView(
         url: urlToLoad,
-        successUrlFilters: ['crotpedia', 'doujinshi', 'hentai manga'], // Loose match for success content
-        initialCookie: initialCookieStr,
+        successUrlFilters: [], 
+        initialCookie: null, // Force clean start
+        userAgent: null,     // Let WebView decide (System Default)
+        autoCloseOnCookie: 'cf_clearance', // Auto-close when bypass succeeds
+        clearCookies: true, // ✅ FORCE CLEAR COOKIES to avoid stale cf_clearance
       );
 
       if (result != null && result['success'] == true) {
@@ -54,15 +55,30 @@ class CrotpediaCloudflareBypass {
         final userAgent = result['userAgent'] as String?;
 
         _logger.i('✅ Native WebView Selesai. Extracted ${cookies.length} cookies.');
-        
-        // 3. Save Cookies & UA
+        if (cookies.isNotEmpty) {
+           _logger.d('Cookies: ${cookies.join('; ')}');
+        }
+
+        // 3. Sync UserAgent & Cookies (CRITICAL: Must match exactly)
         if (userAgent != null) {
+          _logger.i('🔄 Syncing User-Agent: $userAgent');
           _updateUserAgent(userAgent);
+        } else {
+          _logger.w('⚠️ No User-Agent returned from Native!');
         }
         await _saveCookies(cookies, urlToLoad);
 
-        // 4. Verify
-        return await areCookiesValid();
+        // 4. Verify with Retry (3 attempts)
+        for (int i = 0; i < 3; i++) {
+           _logger.i('⏳ Verification attempt ${i + 1}/3...');
+           if (await areCookiesValid()) {
+             return true;
+           }
+           await Future.delayed(const Duration(seconds: 1));
+        }
+
+        _logger.e('❌ Verification failed after 3 attempts.');
+        return false;
       }
 
       return false;
@@ -91,7 +107,9 @@ class CrotpediaCloudflareBypass {
 
        final result = await KuronNative.instance.showLoginWebView(
          url: loginUrl,
-         successUrlFilters: ['/wp-admin', '/dashboard', 'crotpedia.net/'], 
+         // We only auto-close if we detect a dashboard redirect.
+         // 'crotpedia.net/' is too risky if it matches the login page itself.
+         successUrlFilters: ['/wp-admin', '/dashboard'], 
          initialCookie: initialCookieStr, // Critical for user session consistency
        );
 
@@ -134,19 +152,38 @@ class CrotpediaCloudflareBypass {
     return null;
   }
 
+  Future<void> _clearCookies(String url) async {
+    try {
+      final cookieJar = _getCookieJar();
+      if (cookieJar != null) {
+        await cookieJar.delete(Uri.parse(url));
+      }
+    } catch (_) {}
+  }
+
   Future<void> _saveCookies(List<String> rawCookies, String url) async {
      final cookieJar = _getCookieJar();
      if (cookieJar == null || rawCookies.isEmpty) return;
      
      final uri = Uri.parse(url);
      
-     // Parse "key=value" strings to Cookies
+     // 1. Clear existing cookies for this domain to prevent conflicts
+     try {
+       await cookieJar.delete(uri);
+     } catch (_) {}
+
+     // 2. Parse "key=value" strings to Cookies
      final cookies = rawCookies.map((s) {
         final parts = s.split('=');
         final key = parts[0].trim();
         final value = parts.length > 1 ? parts.sublist(1).join('=') : '';
-        return io.Cookie(key, value)..domain = uri.host; // Basic assumption
+        // Explicitly set domain and path to ensure wide coverage for the site
+        return io.Cookie(key, value)
+          ..domain = uri.host
+          ..path = '/'; 
      }).toList();
+     
+     _logger.d('Saving ${cookies.length} cookies for ${uri.host} (Path: /)');
 
      await cookieJar.saveFromResponse(uri, cookies);
   }
@@ -164,11 +201,19 @@ class CrotpediaCloudflareBypass {
 
   Future<bool> areCookiesValid() async {
     final cookieJar = _getCookieJar();
-    if (cookieJar == null) return false;
+    if (cookieJar == null) {
+      _logger.w('⚠️ CookieJar is null');
+      return false;
+    }
     
     // Check if we have cookies
     final cookies = await cookieJar.loadForRequest(Uri.parse(baseUrl));
-    if (cookies.isEmpty) return false;
+    if (cookies.isEmpty) {
+      _logger.w('⚠️ No cookies found in CookieJar for $baseUrl');
+      return false;
+    }
+    
+    _logger.d('🔍 Verifying with ${cookies.length} cookies: ${cookies.map((c) => "${c.name}=${c.value}").join('; ')}');
 
     try {
       final response = await _httpClient.get(
@@ -178,21 +223,32 @@ class CrotpediaCloudflareBypass {
           validateStatus: (status) => status != null && status < 500,
         ),
       );
-
-      return !_isCloudflareChallenge(response.data.toString());
+      
+      // Log response headers/status for debugging
+      _logger.d('Verification Response: ${response.statusCode} - Headers: ${response.headers.map}');
+      
+      final isChallenge = _isCloudflareChallenge(response.data.toString());
+      if (isChallenge) {
+        _logger.w('⚠️ Verification failed: Response still looks like Cloudflare challenge.');
+      } else {
+        _logger.i('✅ Verification success: Cookies are valid.');
+      }
+      return !isChallenge;
     } catch (e) {
+      _logger.e('Verification request failed: $e');
       return false;
     }
   }
 
   bool _isCloudflareChallenge(String html) {
+    // Specific title/text usually found in the challenge page
     final indicators = [
       'Checking your browser before accessing',
-      'DDoS protection by Cloudflare',
       'cf-challenge-form',
-      'challenge-platform',
-      '__cf_chl_',
-      'Cloudflare Ray ID',
+      // 'challenge-platform' and '__cf_chl_' often appear in script tags of valid pages
+      '<title>Just a moment...</title>',
+      '<title>Attention Required! | Cloudflare</title>',
+      '<div id="cf-please-wait">',
     ];
 
     final lowerHtml = html.toLowerCase();

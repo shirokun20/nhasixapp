@@ -15,6 +15,8 @@ class MockKuronNativePlatform extends Mock
     List<String>? successUrlFilters,
     String? initialCookie,
     String? userAgent,
+    String? autoCloseOnCookie,
+    bool clearCookies = false,
   }) {
     return super.noSuchMethod(
       Invocation.method(#showLoginWebView, null, {
@@ -22,6 +24,8 @@ class MockKuronNativePlatform extends Mock
         #successUrlFilters: successUrlFilters,
         #initialCookie: initialCookie,
         #userAgent: userAgent,
+        #autoCloseOnCookie: autoCloseOnCookie,
+        #clearCookies: clearCookies,
       }),
       returnValue: Future.value(null),
     );
@@ -62,6 +66,7 @@ void main() {
         successUrlFilters: anyNamed('successUrlFilters'),
         initialCookie: anyNamed('initialCookie'),
         userAgent: anyNamed('userAgent'),
+        autoCloseOnCookie: anyNamed('autoCloseOnCookie'),
       )).thenAnswer((_) async => successResult);
 
       // Act
@@ -75,6 +80,8 @@ void main() {
         successUrlFilters: anyNamed('successUrlFilters'),
         initialCookie: anyNamed('initialCookie'),
         userAgent: anyNamed('userAgent'),
+        autoCloseOnCookie: anyNamed('autoCloseOnCookie'), 
+        clearCookies: true, // Expect true for bypass
       )).called(1);
     });
 

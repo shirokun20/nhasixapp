@@ -19,8 +19,11 @@ class MethodChannelKuronNative extends KuronNativePlatform {
 
   Future<void> _handleMethodCall(MethodCall call) async {
     if (call.method == 'onProgress' && _onPdfProgress != null) {
-      final progress = call.arguments['progress'] as int;
-      final message = call.arguments['message'] as String;
+      // Safely handle types from different platforms
+      final args = call.arguments as Map;
+      final progress = (args['progress'] as num).toInt();
+      final message = args['message'] as String;
+      
       _onPdfProgress!(progress, message);
     }
   }
@@ -106,12 +109,16 @@ class MethodChannelKuronNative extends KuronNativePlatform {
     List<String>? successUrlFilters,
     String? initialCookie,
     String? userAgent,
+    String? autoCloseOnCookie,
+    bool clearCookies = false,
   }) async {
     final result = await methodChannel.invokeMapMethod<String, dynamic>('showLoginWebView', {
       'url': url,
       'successUrlFilters': successUrlFilters,
       'initialCookie': initialCookie,
       'userAgent': userAgent,
+      'autoCloseOnCookie': autoCloseOnCookie,
+      'clearCookies': clearCookies,
     });
     return result;
   }

@@ -84,6 +84,8 @@ abstract class KuronNativePlatform extends PlatformInterface {
     List<String>? successUrlFilters,
     String? initialCookie,
     String? userAgent,
+    String? autoCloseOnCookie,
+    bool clearCookies = false, // NEW
   }) {
     throw UnimplementedError('showLoginWebView() has not been implemented.');
   }

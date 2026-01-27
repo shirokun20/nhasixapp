@@ -95,7 +95,7 @@ class CrotpediaLoginPage extends StatelessWidget {
     try {
       final result = await KuronNative.instance.showLoginWebView(
         url: 'https://crotpedia.net/login/',
-        successUrlFilters: ['/wp-admin', '/dashboard', 'crotpedia.net/'],
+        successUrlFilters: ['/wp-admin', '/dashboard'],
       );
 
       if (!context.mounted) return;
@@ -109,7 +109,19 @@ class CrotpediaLoginPage extends StatelessWidget {
             return io.Cookie(parts[0].trim(), parts.length > 1 ? parts.sublist(1).join('=') : '');
          }).toList();
 
-        context.read<CrotpediaAuthCubit>().externalLogin('User', cookies);
+        // 🔍 Verification: Check if we actually have a session cookie
+        final hasSession = cookies.any((c) => c.name.contains('wordpress_logged_in'));
+        
+        if (hasSession) {
+           final username = cookies.firstWhere((c) => c.name.contains('wordpress_logged_in')).value.split('%7C').firstOrNull ?? 'User';
+           context.read<CrotpediaAuthCubit>().externalLogin(username, cookies);
+        } else {
+           if (context.mounted) {
+             ScaffoldMessenger.of(context).showSnackBar(
+               const SnackBar(content: Text('Login incomplete. Please try again.')),
+             );
+           }
+        }
       }
     } catch (e) {
       if (context.mounted) {

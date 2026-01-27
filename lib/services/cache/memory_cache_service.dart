@@ -68,7 +68,7 @@ class MemoryCacheService<T> implements CacheService<T> {
       _logger.d('Evicted oldest entry from memory cache: $oldestKey');
     }
 
-    _logger.d('Cached in memory: $key (TTL: ${effectiveTTL.inMinutes}min)');
+    // _logger.d('Cached in memory: $key (TTL: ${effectiveTTL.inMinutes}min)');
   }
 
   @override

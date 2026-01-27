@@ -3,7 +3,7 @@
   <application>
       <activity
           android:name=".WebViewActivity"
-          android:theme="@style/Theme.AppCompat.Light.DarkActionBar"
+          android:theme="@style/Theme.AppCompat.Light.NoActionBar"
           android:windowSoftInputMode="adjustResize"/>
       <activity
           android:name=".pdf.PdfReaderActivity"

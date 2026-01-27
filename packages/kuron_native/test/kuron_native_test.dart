@@ -55,6 +55,8 @@ class MockKuronNativePlatform
     List<String>? successUrlFilters,
     String? initialCookie,
     String? userAgent,
+    String? autoCloseOnCookie,
+    bool clearCookies = false,
   }) async {
     return {'success': true, 'cookies': [], 'userAgent': 'MOCK_UA'};
   }

@@ -64,12 +64,16 @@ class KuronNative {
     List<String>? successUrlFilters,
     String? initialCookie,
     String? userAgent,
+    String? autoCloseOnCookie,
+    bool clearCookies = false,
   }) {
     return KuronNativePlatform.instance.showLoginWebView(
         url: url,
         successUrlFilters: successUrlFilters,
         initialCookie: initialCookie,
-        userAgent: userAgent);
+        userAgent: userAgent,
+        autoCloseOnCookie: autoCloseOnCookie,
+        clearCookies: clearCookies);
   }
 
   Future<void> openPdf({

@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
+import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
@@ -38,6 +39,16 @@ class KuronNativePlugin :
     
     private val WEBVIEW_REQUEST_CODE = 1001
     
+    companion object {
+        const val TAG = "KuronNativePlugin"
+        
+        // Webtoon detection threshold (matches Flutter's WebtoonDetector)
+        private const val WEBTOON_ASPECT_RATIO_THRESHOLD = 2.5f
+
+        // Maximum chunk height for splitting webtoons (matches Flutter's ImageSplitter)
+        private const val MAX_CHUNK_HEIGHT = 3000
+    }
+
     private val executor = Executors.newSingleThreadExecutor() // For background PDF work
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -164,30 +175,49 @@ class KuronNativePlugin :
 
         // Run on background thread to avoid blocking UI
         executor.execute {
+            var totalPages = 0
+            val document = PdfDocument()
             try {
-                val pdfDocument = PdfDocument()
+                // Ensure parent exists
+                val file = File(outputPath)
+                file.parentFile?.mkdirs()
 
                 val total = imagePaths.size
                 for ((index, path) in imagePaths.withIndex()) {
-                    val bitmap = BitmapFactory.decodeFile(path)
+                    // Load bitmap with error handling and optimization
+                    val bitmap = loadBitmap(path)
+                    
                     if (bitmap != null) {
-                        // Create a page logic
-                        val pageInfo = PdfDocument.PageInfo.Builder(bitmap.width, bitmap.height, index + 1).create()
-                        val page = pdfDocument.startPage(pageInfo)
+                        // Check if webtoon (extreme aspect ratio)
+                        val aspectRatio = bitmap.height.toFloat() / bitmap.width
+                        val isWebtoon = aspectRatio > WEBTOON_ASPECT_RATIO_THRESHOLD
+
+                        if (isWebtoon) {
+                            // Split webtoon into chunks
+                            val chunks = splitBitmap(bitmap, MAX_CHUNK_HEIGHT)
+                            
+                            chunks.forEach { chunk ->
+                                if (addPageToPdf(document, chunk, totalPages)) {
+                                    totalPages++
+                                }
+                                chunk.recycle() // Free memory immediately
+                            }
+                        } else {
+                             // Normal image, add as single page
+                             if (addPageToPdf(document, bitmap, totalPages)) {
+                                 totalPages++
+                             }
+                        }
                         
-                        val canvas = page.canvas
-                        canvas.drawBitmap(bitmap, 0f, 0f, null)
-                        
-                        pdfDocument.finishPage(page)
-                        bitmap.recycle() // Free memory immediately
-                        
-                        // Report Progress
+                        bitmap.recycle() // Free memory for original bitmap
+
+                         // Report Progress
                         val progress = ((index + 1).toFloat() / total * 100).toInt()
                         android.os.Handler(android.os.Looper.getMainLooper()).post {
                             try {
                                 channel.invokeMethod("onProgress", mapOf(
                                     "progress" to progress,
-                                    "message" to "Processing page ${index + 1}/$total"
+                                    "message" to "Processing page $totalPages (Image ${index + 1}/$total)"
                                 ))
                             } catch (e: Exception) {
                                 // Ignore if channel closed or ui gone
@@ -196,15 +226,11 @@ class KuronNativePlugin :
                     }
                 }
 
-                val file = File(outputPath)
-                // Ensure parent exists
-                file.parentFile?.mkdirs()
-                
+                // Write to file
                 val outputStream = FileOutputStream(file)
-                pdfDocument.writeTo(outputStream)
-                
+                document.writeTo(outputStream)
                 outputStream.close()
-                pdfDocument.close()
+                document.close()
                 
                 // Switch back to main thread for result
                 android.os.Handler(android.os.Looper.getMainLooper()).post {
@@ -212,15 +238,123 @@ class KuronNativePlugin :
                     val resultMap = mapOf(
                         "success" to true,
                         "pdfPath" to outputPath,
-                        "pageCount" to total,
+                        "pageCount" to totalPages,
                         "fileSize" to fileSize
                     )
                     result.success(resultMap)
                 }
 
             } catch (e: Exception) {
+                try { document.close() } catch (ignored: Exception) {}
                 android.os.Handler(android.os.Looper.getMainLooper()).post {
                      result.error("PDF_CONVERSION_FAILED", e.message, null)
+                }
+            }
+        }
+    }
+
+    /**
+     * Load bitmap from file with proper error handling and optimization
+     */
+    private fun loadBitmap(imagePath: String): Bitmap? {
+        return try {
+            val options = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            BitmapFactory.decodeFile(imagePath, options)
+
+            // OPTIMIZATION 1: Calculate sample size to downscale huge images
+            // Target width ~900px is usually enough for phones/tablets reading
+            val targetWidth = 900
+            var sampleSize = 1
+            if (options.outWidth > targetWidth) {
+                sampleSize = Math.round(options.outWidth.toFloat() / targetWidth.toFloat())
+            }
+
+            // Perform actual decode with optimizations
+            val decodeOptions = BitmapFactory.Options().apply {
+                inJustDecodeBounds = false
+                inSampleSize = sampleSize
+                // OPTIMIZATION 2: Use RGB_565 for 50% memory/size reduction (no alpha needed)
+                inPreferredConfig = Bitmap.Config.RGB_565
+            }
+
+            var bitmap = BitmapFactory.decodeFile(imagePath, decodeOptions)
+
+            if (bitmap != null) {
+                // Ensure width consistency if sampleSize didn't get us exactly to target
+                if (bitmap.width > targetWidth + 100) { // Tolerance +100px
+                    val scaledHeight = (bitmap.height * targetWidth.toFloat() / bitmap.width).toInt()
+                    val scaledBitmap = Bitmap.createScaledBitmap(bitmap, targetWidth, scaledHeight, true)
+                    if (scaledBitmap != bitmap) {
+                        bitmap.recycle()
+                        bitmap = scaledBitmap
+                    }
+                }
+            }
+            bitmap
+        } catch (e: OutOfMemoryError) {
+            System.gc() // Suggest garbage collection
+            null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Split a bitmap into vertical chunks
+     */
+    private fun splitBitmap(bitmap: Bitmap, maxHeight: Int): List<Bitmap> {
+        val chunks = mutableListOf<Bitmap>()
+        val width = bitmap.width
+        val height = bitmap.height
+
+        var y = 0
+        while (y < height) {
+            val chunkHeight = Integer.min(maxHeight, height - y)
+
+            try {
+                // Create chunk using Bitmap.createBitmap (memory-efficient)
+                val chunk = Bitmap.createBitmap(bitmap, 0, y, width, chunkHeight)
+                chunks.add(chunk)
+            } catch (e: OutOfMemoryError) {
+                System.gc()
+                break
+            }
+
+            y += maxHeight
+        }
+
+        return chunks
+    }
+
+    /**
+     * Add a bitmap as a page to the PDF document
+     */
+    private fun addPageToPdf(document: PdfDocument, bitmap: Bitmap, pageNumber: Int): Boolean {
+        var page: PdfDocument.Page? = null
+        return try {
+            val pageInfo = PdfDocument.PageInfo.Builder(
+                bitmap.width,
+                bitmap.height,
+                pageNumber
+            ).create()
+
+            page = document.startPage(pageInfo)
+            val canvas: Canvas = page.canvas
+
+            // Draw bitmap on canvas (no scaling, preserves quality)
+            canvas.drawBitmap(bitmap, 0f, 0f, Paint())
+            
+            true
+        } catch (e: Exception) {
+            false
+        } finally {
+            // CRITICAL: Must always finish the page if it was started
+            if (page != null) {
+                try {
+                    document.finishPage(page)
+                } catch (e: Exception) {
                 }
             }
         }
@@ -302,7 +436,8 @@ class KuronNativePlugin :
         val url = call.argument<String>("url")
         val successFilters = call.argument<List<String>>("successUrlFilters")
         val userAgent = call.argument<String>("userAgent")
-        val initialCookie = call.argument<String>("initialCookie") // New argument
+        val initialCookie = call.argument<String>("initialCookie")
+        val autoCloseOnCookie = call.argument<String>("autoCloseOnCookie")
 
         if (url == null) {
             result.error("INVALID_ARGS", "Url is required", null)
@@ -323,7 +458,15 @@ class KuronNativePlugin :
         pendingResult = result
         
         try {
-            val intent = id.nhasix.kuron_native.kuron_native.WebViewActivity.createIntent(context, url, userAgent, successFilters, initialCookie)
+            val intent = id.nhasix.kuron_native.kuron_native.WebViewActivity.createIntent(
+                context, 
+                url, 
+                userAgent, 
+                successFilters, 
+                initialCookie,
+                autoCloseOnCookie,
+                call.argument<Boolean>("clearCookies") ?: false
+            )
             activity.startActivityForResult(intent, WEBVIEW_REQUEST_CODE)
         } catch (e: Exception) {
              pendingResult = null
