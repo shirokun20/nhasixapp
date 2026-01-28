@@ -242,6 +242,16 @@ class DownloadConvertToPdfEvent extends DownloadEvent {
   List<Object?> get props => [contentId, sourceId];
 }
 
+/// Event to open downloaded content (PDF or images)
+class DownloadOpenContentEvent extends DownloadEvent {
+  const DownloadOpenContentEvent(this.contentId);
+
+  final String contentId;
+
+  @override
+  List<Object?> get props => [contentId];
+}
+
 /// Event to toggle selection mode for bulk operations
 class DownloadToggleSelectionModeEvent extends DownloadEvent {
   const DownloadToggleSelectionModeEvent();

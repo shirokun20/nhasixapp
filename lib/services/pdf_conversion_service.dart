@@ -350,12 +350,15 @@ class PdfConversionService {
   ///
   /// Returns: true jika PDF sudah ada, false jika belum
   Future<bool> isPdfExistForContent(String contentId,
-      {String? outputDir}) async {
+      {String? outputDir, String? sourceId}) async {
     try {
-      final pdfDir = await _createPdfOutputDirectory(outputDir, contentId);
+      final pdfDir =
+          await _createPdfOutputDirectory(outputDir, contentId, sourceId);
 
       // Cek apakah ada file PDF dengan prefix contentId
       // Check if PDF files with contentId prefix exist
+      if (!await pdfDir.exists()) return false;
+
       final files = await pdfDir.list().toList();
       final pdfExists = files.any((file) =>
           file is File &&

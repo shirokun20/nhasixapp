@@ -572,6 +572,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         // Check permissions before PDF conversion
         _handlePdfConversion(download);
         break;
+      case 'open_pdf':
+        downloadBloc.add(DownloadOpenContentEvent(download.contentId));
+        break;
     }
   }
 

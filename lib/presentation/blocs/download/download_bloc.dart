@@ -82,6 +82,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     on<DownloadCancelAllEvent>(_onCancelAll);
     on<DownloadClearCompletedEvent>(_onClearCompleted);
     on<DownloadConvertToPdfEvent>(_onConvertToPdf);
+    on<DownloadOpenContentEvent>(_onOpenContent);
     on<DownloadCleanupStorageEvent>(_onCleanupStorage);
     on<DownloadExportEvent>(_onExport);
     on<DownloadToggleSelectionModeEvent>(_onToggleSelectionMode);
@@ -2013,6 +2014,14 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         error: e.toString(),
       );
     }
+  }
+
+  /// Handle open downloaded content event
+  Future<void> _onOpenContent(
+    DownloadOpenContentEvent event,
+    Emitter<DownloadBlocState> emit,
+  ) async {
+    await _openDownloadedContent(event.contentId);
   }
 
   /// Handle cleanup storage event
