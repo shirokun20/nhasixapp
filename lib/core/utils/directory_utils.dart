@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
+
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/utils/storage_settings.dart';
 
@@ -30,6 +30,7 @@ class DirectoryUtils {
         }
       }
 
+      /*
       // First, try to get external storage directory
       Directory? externalDir;
       try {
@@ -120,9 +121,12 @@ class DirectoryUtils {
       _logger.i(
           'DirectoryUtils: Using app documents downloads directory: ${documentsDownloadsDir.path}');
       return documentsDownloadsDir.path;
+      */
+      throw Exception('No custom storage root selected. Please select a storage location in settings.');
     } catch (e) {
       _logger.e('DirectoryUtils: Error detecting Downloads directory: $e');
 
+      /*
       // Emergency fallback: use app documents
       final documentsDir = await getApplicationDocumentsDirectory();
       final emergencyDir = Directory(path.join(documentsDir.path, 'downloads'));
@@ -132,6 +136,8 @@ class DirectoryUtils {
       _logger.w(
           'DirectoryUtils: Using emergency fallback directory: ${emergencyDir.path}');
       return emergencyDir.path;
+      */
+      rethrow;
     }
   }
 
@@ -153,8 +159,17 @@ class DirectoryUtils {
         debugPrint('DIRECTORY_UTILS: Custom storage exists: $customExists');
         
         if (customExists) {
-          _logger.d('DirectoryUtils: Using custom storage root: $customRoot');
-          debugPrint('DIRECTORY_UTILS: Using custom storage root: $customRoot');
+          // Check if 'nhasix' subfolder exists inside custom root (Standard structure)
+          final nhasixInCustom = Directory(path.join(customRoot, 'nhasix'));
+          if (await nhasixInCustom.exists()) {
+             _logger.d('DirectoryUtils: Found nhasix folder in custom root: ${nhasixInCustom.path}');
+             debugPrint('DIRECTORY_UTILS: Found nhasix folder in custom root: ${nhasixInCustom.path}');
+             return nhasixInCustom.path;
+          }
+
+          // If 'nhasix' subfolder doesn't exist, assume custom root IS the backup folder (User selected the 'nhasix' folder itself or a custom named folder)
+          _logger.d('DirectoryUtils: nhasix subfolder not found, using custom root as base: $customRoot');
+          debugPrint('DIRECTORY_UTILS: nhasix subfolder not found, using custom root as base: $customRoot');
           return customRoot;
         } else {
           debugPrint('DIRECTORY_UTILS: Custom storage root does not exist, falling back to Downloads/nhasix');

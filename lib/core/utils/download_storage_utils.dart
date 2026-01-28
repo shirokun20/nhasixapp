@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
+
 
 import '../constants/app_constants.dart';
 import 'package:kuron_core/kuron_core.dart'; // Import ContentMetadata
@@ -37,6 +37,7 @@ class DownloadStorageUtils {
         }
       }
       
+      /*
       // PRIORITY 2: Fallback to Downloads folder for backward compatibility
       // First, try to get external storage directory
       Directory? externalDir;
@@ -104,14 +105,19 @@ class DownloadStorageUtils {
       _logger.d(
           'Using app documents downloads directory: ${documentsDownloadsDir.path}');
       return documentsDownloadsDir.path;
+      */
+      throw Exception('No custom storage root selected. Please select a storage location in settings.');
     } catch (e) {
       _logger.e('Error detecting Downloads directory: $e');
 
+      /*
       // Emergency fallback: use app documents
       final documentsDir = await getApplicationDocumentsDirectory();
       final emergencyDir = Directory(path.join(documentsDir.path, 'downloads'));
       _logger.w('Using emergency fallback directory: ${emergencyDir.path}');
       return emergencyDir.path;
+      */
+      rethrow;
     }
   }
 

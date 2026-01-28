@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
+
 
 import '../base_usecase.dart';
 import '../../entities/entities.dart';
@@ -340,6 +340,8 @@ class DownloadContentUseCase
       final contentPath = await _downloadService.getDownloadPath(contentId);
 
       if (contentPath == null) {
+        // Fallback intentionally disabled to enforce picker path
+        /*
         // Fallback to documents directory if path not found
         final appDocDir = await getApplicationDocumentsDirectory();
         final fallbackDir = Directory(
@@ -351,6 +353,8 @@ class DownloadContentUseCase
           await fallbackDir.create(recursive: true);
         }
         return fallbackDir.path;
+        */
+        throw Exception('Content path not found and fallback is disabled');
       }
 
       // Create pdf folder inside content folder

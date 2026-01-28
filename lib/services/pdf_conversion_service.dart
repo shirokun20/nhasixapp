@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
+
 import 'package:logger/logger.dart';
 import 'package:get_it/get_it.dart';
 
@@ -325,6 +325,7 @@ class PdfConversionService {
       _logger.e('PdfConversionService: Failed to create PDF output directory',
           error: e);
 
+      /*
       // Fallback ke app documents directory jika gagal akses external storage
       // Fallback to app documents directory if external storage access fails
       final documentsDir = await getApplicationDocumentsDirectory();
@@ -339,6 +340,8 @@ class PdfConversionService {
           fallback:
               'PdfConversionService: Using fallback directory: ${fallbackDir.path}'));
       return fallbackDir;
+      */
+      throw Exception('Failed to create PDF output directory in custom storage. Please check storage permissions and settings.');
     }
   }
 
