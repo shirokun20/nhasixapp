@@ -32,11 +32,17 @@ abstract class KuronNativePlatform extends PlatformInterface {
     throw UnimplementedError('getSystemInfo() has not been implemented.');
   }
 
+  /// Pick local directory with native picker
+  Future<String?> pickDirectory() {
+    throw UnimplementedError('pickDirectory() has not been implemented.');
+  }
+
   /// Start a system download
   Future<String?> startDownload({
     required String url,
     required String fileName,
     String? destinationDir, // Optional: Subdirectory in Downloads
+    String? savePath, // Optional: Absolute path
     String? title,
     String? description,
     String? mimeType,

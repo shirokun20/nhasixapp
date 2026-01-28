@@ -18,10 +18,17 @@ class KuronNative {
     return KuronNativePlatform.instance.getSystemInfo(type);
   }
 
+  /// Pick a directory using the native system picker.
+  /// Returns the path if selected, or null if cancelled.
+  Future<String?> pickDirectory() {
+    return KuronNativePlatform.instance.pickDirectory();
+  }
+
   Future<String?> startDownload({
     required String url,
     required String fileName,
     String? destinationDir, // Optional: Subdirectory in Downloads
+    String? savePath,
     String? title,
     String? description,
     String? mimeType,
@@ -32,6 +39,7 @@ class KuronNative {
       url: url,
       fileName: fileName,
       destinationDir: destinationDir,
+      savePath: savePath,
       title: title,
       description: description,
       mimeType: mimeType,

@@ -3313,4 +3313,26 @@ class AppLocalizationsId extends AppLocalizations {
   String syncCompletedMessage(int synced, int updated) {
     return 'Diimpor: $synced, Diperbarui: $updated';
   }
+
+  @override
+  String get storageSection => 'Lokasi Penyimpanan';
+
+  @override
+  String get storageLocation => 'Folder Unduhan Kustom';
+
+  @override
+  String get defaultStorage => 'Default (Internal)';
+
+  @override
+  String get storageDescription => 'Pilih folder untuk menyimpan unduhan';
+
+  @override
+  String get backupNotFound => 'Cadangan Tidak Ditemukan';
+
+  @override
+  String get backupNotFoundMessage =>
+      'Folder cadangan \'nhasix\' tidak ditemukan di lokasi default. Apakah Anda ingin memilih folder kustom yang berisi cadangan Anda?';
+
+  @override
+  String get selectFolder => 'Pilih Folder';
 }

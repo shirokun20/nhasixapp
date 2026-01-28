@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -31,20 +30,9 @@ class BackupUtils {
 
   /// Pick a JSON file and return its content.
   static Future<String?> importJson() async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['json'],
-      );
-
-      if (result != null && result.files.single.path != null) {
-        final file = File(result.files.single.path!);
-        return await file.readAsString();
-      }
-      return null;
-    } catch (e) {
-      debugPrint('Import Error: $e');
-      return null;
-    }
+    // Deprecated: Moving to native picker or KuronNative based implementation.
+    // FilePicker dependency has been removed.
+    debugPrint('BackupUtils.importJson is deprecated and non-functional without file_picker.');
+    return null;
   }
 }

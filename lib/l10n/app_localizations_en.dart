@@ -3299,4 +3299,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String syncCompletedMessage(int synced, int updated) {
     return 'Imported: $synced, Updated: $updated';
   }
+
+  @override
+  String get storageSection => 'Storage Location';
+
+  @override
+  String get storageLocation => 'Custom Download Folder';
+
+  @override
+  String get defaultStorage => 'Default (Internal)';
+
+  @override
+  String get storageDescription => 'Choose a folder to save downloads';
+
+  @override
+  String get backupNotFound => 'Backup Not Found';
+
+  @override
+  String get backupNotFoundMessage =>
+      'No \'nhasix\' backup folder was found in the default location. Would you like to select a custom folder containing your backup?';
+
+  @override
+  String get selectFolder => 'Select Folder';
 }

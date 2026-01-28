@@ -12,6 +12,7 @@ import '../domain/value_objects/image_url.dart' as img;
 import 'notification_service.dart';
 import 'download_manager.dart';
 import '../core/utils/permission_helper.dart';
+import '../core/utils/storage_settings.dart';
 
 /// Service untuk handle actual file download
 class DownloadService {
@@ -43,6 +44,7 @@ class DownloadService {
     int? startPage, // NEW: Start page for range download (1-based)
     int? endPage, // NEW: End page for range download (1-based)
     Map<String, String>? cookies, // NEW: Optional cookies for authentication
+    String? savePath, // NEW: Explicit save path
   }) async {
     try {
       _logger.i('Starting download for content: ${content.id}');
@@ -51,8 +53,17 @@ class DownloadService {
       await _checkPermissions();
 
       // Create download directory
-      final downloadDir =
-          await _createDownloadDirectory(content.id, content.source);
+      Directory downloadDir;
+      if (savePath != null && savePath.isNotEmpty) {
+        // Appending 'images' for consistency with _createDownloadDirectory structure
+        downloadDir = Directory(path.join(savePath, 'images'));
+        if (!await downloadDir.exists()) {
+          await downloadDir.create(recursive: true);
+        }
+      } else {
+        downloadDir =
+            await _createDownloadDirectory(content.id, content.source);
+      }
 
       // Calculate actual page range to download
       final actualStartPage = startPage ?? 1;
@@ -480,6 +491,18 @@ class DownloadService {
   /// Tries multiple possible Downloads folder names and locations
   Future<String> _getDownloadsDirectory() async {
     try {
+      // 0. Check for custom storage root first
+      if (await StorageSettings.hasCustomRoot()) {
+        final customPath = await StorageSettings.getCustomRootPath();
+        if (customPath != null) {
+          final dir = Directory(customPath);
+          if (await dir.exists()) {
+             _logger.i('Using custom storage root: $customPath');
+             return customPath;
+          }
+        }
+      }
+
       // First, try to get external storage directory
       Directory? externalDir;
       try {

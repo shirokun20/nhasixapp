@@ -173,6 +173,7 @@ class DownloadSettingsUpdateEvent extends DownloadEvent {
     this.timeoutDuration,
     this.enableNotifications,
     this.wifiOnly,
+    this.customStorageRoot,
   });
 
   final int? maxConcurrentDownloads;
@@ -183,6 +184,7 @@ class DownloadSettingsUpdateEvent extends DownloadEvent {
   final Duration? timeoutDuration;
   final bool? enableNotifications;
   final bool? wifiOnly;
+  final String? customStorageRoot;
 
   @override
   List<Object?> get props => [
@@ -194,6 +196,7 @@ class DownloadSettingsUpdateEvent extends DownloadEvent {
         timeoutDuration,
         enableNotifications,
         wifiOnly,
+        customStorageRoot,
       ];
 }
 

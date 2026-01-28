@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
+import '../../core/utils/storage_settings.dart';
 import '../blocs/download/download_bloc.dart';
 
 /// Widget for configuring download settings
@@ -97,6 +98,11 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
                     // Notifications
                     _buildSectionTitle(AppLocalizations.of(context)?.notificationsSection ?? 'Notifications'),
                     _buildNotificationsSwitch(),
+                    const SizedBox(height: 24),
+
+                    // Storage
+                    _buildSectionTitle(AppLocalizations.of(context)?.storageSection ?? 'Storage Location'),
+                    _buildStorageSection(),
                     const SizedBox(height: 32),
                   ],
                 ),
@@ -449,6 +455,74 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
     if (_formKey.currentState?.validate() ?? false) {
       widget.onSettingsChanged(_settings);
       Navigator.of(context).pop();
+    }
+  }
+
+  Widget _buildStorageSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          AppLocalizations.of(context)?.storageSection ?? 'Storage Location',
+          style: TextStyleConst.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: _pickCustomStorage,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Theme.of(context).colorScheme.outline),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.folder_open,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    (_settings.customStorageRoot != null && _settings.customStorageRoot!.isNotEmpty)
+                        ? _settings.customStorageRoot!
+                        : (AppLocalizations.of(context)?.defaultStorage ?? 'Default (Internal)'),
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Icon(
+                  Icons.edit,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          AppLocalizations.of(context)?.storageDescription ?? 'Select a custom folder for downloads',
+          style: TextStyleConst.bodySmall.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _pickCustomStorage() async {
+    final path = await StorageSettings.pickAndSaveCustomRoot(context);
+    if (path != null) {
+      setState(() {
+        _settings = _settings.copyWith(customStorageRoot: path);
+      });
     }
   }
 }

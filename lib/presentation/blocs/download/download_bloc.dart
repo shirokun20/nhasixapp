@@ -26,6 +26,7 @@ import '../../../services/notification_service.dart';
 import '../../../services/download_manager.dart';
 import '../../../services/pdf_conversion_service.dart';
 import '../../../core/utils/download_storage_utils.dart';
+import '../../../core/utils/storage_settings.dart';
 import '../../widgets/content_list_widget.dart';
 
 import 'package:nhasixapp/services/workers/background_download_utils.dart';
@@ -214,6 +215,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       final remoteMaxConcurrent =
           _remoteConfigService.appConfig?.limits?.maxConcurrentDownloads ?? 3;
 
+      final customRoot = await StorageSettings.getCustomRootPath();
+
       _settings = DownloadSettings(
         maxConcurrentDownloads: userPrefs.maxConcurrentDownloads != 3
             ? userPrefs.maxConcurrentDownloads
@@ -223,6 +226,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         retryAttempts: 3, // Default to 3
         enableNotifications: true, // Default to true
         wifiOnly: false, // Default to false
+        customStorageRoot: customRoot,
       );
 
       emit(DownloadLoaded(
@@ -699,10 +703,20 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         );
       }
 
-      // Prepare background worker state
+      // Prepare download path
+      String? savePath;
       try {
-        final appDir = await getApplicationDocumentsDirectory();
-        final savePath = path.join(appDir.path, 'Downloads', event.contentId);
+        String baseDownloadPath;
+        if (currentState.settings.customStorageRoot != null && 
+            currentState.settings.customStorageRoot!.isNotEmpty) {
+          baseDownloadPath = currentState.settings.customStorageRoot!;
+        } else {
+          final appDir = await getApplicationDocumentsDirectory();
+          baseDownloadPath = path.join(appDir.path, 'Downloads');
+        }
+        
+        // Match DownloadService structure: [Root]/nhasix/[sourceId]/[contentId]
+        savePath = path.join(baseDownloadPath, 'nhasix', content.sourceId, event.contentId);
 
         await BackgroundDownloadUtils.saveResumeState(
           event.contentId,
@@ -753,6 +767,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         startPage: updatedDownload.startPage,
         endPage: updatedDownload.endPage,
         cookies: cookies, // NEW: Pass cookies
+        savePath: savePath, // NEW: Pass savePath
       );
       final result = await _downloadContentUseCase.call(downloadParams);
 
@@ -1507,13 +1522,34 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         timeoutDuration: event.timeoutDuration,
         enableNotifications: event.enableNotifications,
         wifiOnly: event.wifiOnly,
+        customStorageRoot: event.customStorageRoot,
       );
 
       // Update state
       emit(currentState.copyWith(settings: _settings));
 
+      // Updated user preferences
+      final currentUserPrefs = await _userDataRepository.getUserPreferences();
+      final updatedUserPrefs = currentUserPrefs.copyWith(
+        maxConcurrentDownloads: event.maxConcurrentDownloads,
+        imageQuality: event.imageQuality,
+        // autoRetry, retryAttempts, retryDelay are not in UserPreferences yet, assuming handled internally or default
+        // timeoutDuration also not in UserPreferences
+        // enableNotifications, wifiOnly are not clearly mapped in UserPreferences snippet I saw, need to check.
+        // Wait, UserPreferences has:
+        // imageQuality, maxConcurrentDownloads, 
+        // Let's check UserPreferences definition again.
+        // It has autoDownload, showTitles, etc.
+        // Does it have wifiOnly? No. enableNotifications? No.
+        // It has customStorageRoot.
+        customStorageRoot: event.customStorageRoot,
+      );
+
+      // Save to repository (only supported fields)
+      await _userDataRepository.saveUserPreferences(updatedUserPrefs);
+
       _logger.i(
-          'DownloadBloc: Updated download settings - concurrent: ${_settings.maxConcurrentDownloads}, quality: ${_settings.imageQuality}, wifiOnly: ${_settings.wifiOnly}, notifications: ${_settings.enableNotifications}');
+          'DownloadBloc: Updated download settings - concurrent: ${_settings.maxConcurrentDownloads}, quality: ${_settings.imageQuality}, wifiOnly: ${_settings.wifiOnly}, notifications: ${_settings.enableNotifications}, customRoot: ${_settings.customStorageRoot}');
     } catch (e, stackTrace) {
       _logger.e('DownloadBloc: Error updating settings',
           error: e, stackTrace: stackTrace);

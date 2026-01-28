@@ -15,10 +15,14 @@ class MockKuronNativePlatform
   Future<Map<Object?, Object?>?> getSystemInfo(String type) => Future.value({'ram': 100});
 
   @override
+  Future<String?> pickDirectory() => Future.value('picked_path');
+
+  @override
   Future<String?> startDownload({
     required String url,
     required String fileName,
     String? destinationDir,
+    String? savePath,
     String? title,
     String? description,
     String? mimeType,

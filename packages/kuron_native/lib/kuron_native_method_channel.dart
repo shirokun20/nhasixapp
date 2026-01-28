@@ -41,10 +41,17 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }
 
   @override
+  Future<String?> pickDirectory() async {
+    final path = await methodChannel.invokeMethod<String>('pickDirectory');
+    return path;
+  }
+
+  @override
   Future<String?> startDownload({
     required String url,
     required String fileName,
     String? destinationDir,
+    String? savePath,
     String? title,
     String? description,
     String? mimeType,
@@ -55,6 +62,7 @@ class MethodChannelKuronNative extends KuronNativePlatform {
       'url': url,
       'fileName': fileName,
       'destinationDir': destinationDir,
+      'savePath': savePath,
       'title': title,
       'description': description,
       'mimeType': mimeType,

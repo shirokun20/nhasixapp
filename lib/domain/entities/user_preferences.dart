@@ -41,6 +41,7 @@ class UserPreferences extends Equatable {
     this.lastAppAccess,
     this.lastHistoryCleanup,
     this.disguiseMode = 'default',
+    this.customStorageRoot = '', // NEW
   })  : columnsPortrait = columnsPortrait ?? AppUI.gridColumnsPortrait,
         columnsLandscape = columnsLandscape ?? AppUI.gridColumnsLandscape,
         maxConcurrentDownloads =
@@ -87,6 +88,7 @@ class UserPreferences extends Equatable {
   final DateTime? lastHistoryCleanup; // Track last cleanup
   final String
       disguiseMode; // App disguise mode: default, calculator, notes, weather
+  final String customStorageRoot; // NEW
 
   @override
   List<Object?> get props => [
@@ -125,6 +127,7 @@ class UserPreferences extends Equatable {
         lastAppAccess,
         lastHistoryCleanup,
         disguiseMode,
+        customStorageRoot, // NEW
       ];
 
   UserPreferences copyWith({
@@ -164,6 +167,7 @@ class UserPreferences extends Equatable {
     DateTime? lastAppAccess,
     DateTime? lastHistoryCleanup,
     String? disguiseMode,
+    String? customStorageRoot, // NEW
   }) {
     return UserPreferences(
       theme: theme ?? this.theme,
@@ -207,6 +211,7 @@ class UserPreferences extends Equatable {
       lastAppAccess: lastAppAccess ?? this.lastAppAccess,
       lastHistoryCleanup: lastHistoryCleanup ?? this.lastHistoryCleanup,
       disguiseMode: disguiseMode ?? this.disguiseMode,
+      customStorageRoot: customStorageRoot ?? this.customStorageRoot, // NEW
     );
   }
 
@@ -314,6 +319,7 @@ class UserPreferences extends Equatable {
       'lastAppAccess': lastAppAccess?.millisecondsSinceEpoch,
       'lastHistoryCleanup': lastHistoryCleanup?.millisecondsSinceEpoch,
       'disguiseMode': disguiseMode,
+      'customStorageRoot': customStorageRoot, // NEW
     };
   }
 
@@ -368,6 +374,7 @@ class UserPreferences extends Equatable {
               _safeParseInt(json['lastHistoryCleanup'], 0))
           : null,
       disguiseMode: json['disguiseMode'] ?? 'default',
+      customStorageRoot: json['customStorageRoot'] ?? '', // NEW
     );
   }
 
