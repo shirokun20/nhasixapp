@@ -417,8 +417,8 @@ class ReaderCubit extends Cubit<ReaderState> {
         // The auto-switch only applies to current reading session
       }
     } else {
-      _logger.d('📖 Normal image detected on page $pageNumber: '
-          'AR=${aspectRatio?.toStringAsFixed(2)} (${imageSize.width.toInt()}x${imageSize.height.toInt()}px)');
+      // _logger.d('📖 Normal image detected on page $pageNumber: '
+      //     'AR=${aspectRatio?.toStringAsFixed(2)} (${imageSize.width.toInt()}x${imageSize.height.toInt()}px)');
     }
   }
 

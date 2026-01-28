@@ -520,9 +520,17 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
   Future<void> _pickCustomStorage() async {
     final path = await StorageSettings.pickAndSaveCustomRoot(context);
     if (path != null) {
-      setState(() {
-        _settings = _settings.copyWith(customStorageRoot: path);
-      });
+      // Reload the ACTUAL saved path from SharedPreferences to ensure consistency
+      final savedPath = await StorageSettings.getCustomRootPath();
+      if (mounted) {
+        setState(() {
+          _settings = _settings.copyWith(customStorageRoot: savedPath);
+        });
+        
+        // 🚀 AUTO-APPLY: Immediately notify parent to update DownloadBloc
+        // This ensures custom storage is active right away without requiring "Save" button click
+        widget.onSettingsChanged(_settings);
+      }
     }
   }
 }

@@ -89,14 +89,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.1"
-  file_picker:
-    dependency: transitive
-    description:
-      name: file_picker
-      sha256: "1bbf65dd997458a08b531042ec3794112a6c39c07c37ff22113d2e7e4f81d4e4"
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.2.1"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -115,14 +107,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.0"
-  flutter_plugin_android_lifecycle:
-    dependency: transitive
-    description:
-      name: flutter_plugin_android_lifecycle
-      sha256: ee8068e0e1cd16c4a82714119918efdeed33b3ba7772c54b5d094ab53f9b7fd1
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.33"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -306,18 +290,18 @@ packages:
     dependency: transitive
     description:
       name: permission_handler
-      sha256: "59adad729136f01ea9e35a48f5d1395e25cba6cea552249ddbe9cf950f5d7849"
+      sha256: bc917da36261b00137bbc8896bf1482169cd76f866282368948f032c8c1caae1
       url: "https://pub.dev"
     source: hosted
-    version: "11.4.0"
+    version: "12.0.1"
   permission_handler_android:
     dependency: transitive
     description:
       name: permission_handler_android
-      sha256: d3971dcdd76182a0c198c096b5db2f0884b0d4196723d21a866fc4cdea057ebc
+      sha256: "1e3bc410ca1bf84662104b100eb126e066cb55791b7451307f9708d4007350e6"
       url: "https://pub.dev"
     source: hosted
-    version: "12.1.0"
+    version: "13.0.1"
   permission_handler_apple:
     dependency: transitive
     description:
@@ -483,14 +467,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.0"
-  win32:
-    dependency: transitive
-    description:
-      name: win32
-      sha256: d7cb55e04cd34096cd3a79b3330245f54cb96a370a1c27adb3c84b917de8b08e
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.15.0"
   xdg_directories:
     dependency: transitive
     description:

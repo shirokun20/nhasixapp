@@ -222,10 +222,13 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             ? userPrefs.maxConcurrentDownloads
             : remoteMaxConcurrent,
         imageQuality: userPrefs.imageQuality,
-        autoRetry: true, // Default to true
-        retryAttempts: 3, // Default to 3
-        enableNotifications: true, // Default to true
-        wifiOnly: false, // Default to false
+        // Load from UserPreferences (with fallback to defaults)
+        autoRetry: userPrefs.autoRetry,
+        retryAttempts: userPrefs.retryAttempts,
+        retryDelay: userPrefs.retryDelay,
+        timeoutDuration: userPrefs.timeoutDuration,
+        enableNotifications: userPrefs.enableNotifications,
+        wifiOnly: userPrefs.wifiOnly,
         customStorageRoot: customRoot,
       );
 
@@ -1533,16 +1536,14 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       final updatedUserPrefs = currentUserPrefs.copyWith(
         maxConcurrentDownloads: event.maxConcurrentDownloads,
         imageQuality: event.imageQuality,
-        // autoRetry, retryAttempts, retryDelay are not in UserPreferences yet, assuming handled internally or default
-        // timeoutDuration also not in UserPreferences
-        // enableNotifications, wifiOnly are not clearly mapped in UserPreferences snippet I saw, need to check.
-        // Wait, UserPreferences has:
-        // imageQuality, maxConcurrentDownloads, 
-        // Let's check UserPreferences definition again.
-        // It has autoDownload, showTitles, etc.
-        // Does it have wifiOnly? No. enableNotifications? No.
-        // It has customStorageRoot.
         customStorageRoot: event.customStorageRoot,
+        // NEW: Save all download settings to UserPreferences
+        autoRetry: event.autoRetry,
+        retryAttempts: event.retryAttempts,
+        retryDelaySeconds: event.retryDelay?.inSeconds,
+        timeoutDurationSeconds: event.timeoutDuration?.inSeconds,
+        enableNotifications: event.enableNotifications,
+        wifiOnly: event.wifiOnly,
       );
 
       // Save to repository (only supported fields)

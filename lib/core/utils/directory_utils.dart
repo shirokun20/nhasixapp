@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/utils/storage_settings.dart';
 
 /// Utility class for smart directory detection across different Android devices
 /// Handles various Download folder names and storage configurations
@@ -119,11 +120,35 @@ class DirectoryUtils {
     }
   }
 
-  /// Find nhasix backup folder automatically in Downloads directory
+  /// Find nhasix backup folder automatically
+  /// Priority:
+  /// 1. Check custom storage root (from StorageSettings) first
+  /// 2. Fallback to Downloads/nhasix for backward compatibility
   /// Used by offline content screen for automatic backup detection
   static Future<String?> findNhasixBackupFolder() async {
     try {
       debugPrint('DIRECTORY_UTILS: Starting findNhasixBackupFolder...');
+      
+      // PRIORITY 1: Check custom storage root first
+      final customRoot = await StorageSettings.getCustomRootPath();
+      if (customRoot != null && customRoot.isNotEmpty) {
+        debugPrint('DIRECTORY_UTILS: Found custom storage root: $customRoot');
+        final customDir = Directory(customRoot);
+        final customExists = await customDir.exists();
+        debugPrint('DIRECTORY_UTILS: Custom storage exists: $customExists');
+        
+        if (customExists) {
+          _logger.d('DirectoryUtils: Using custom storage root: $customRoot');
+          debugPrint('DIRECTORY_UTILS: Using custom storage root: $customRoot');
+          return customRoot;
+        } else {
+          debugPrint('DIRECTORY_UTILS: Custom storage root does not exist, falling back to Downloads/nhasix');
+        }
+      } else {
+        debugPrint('DIRECTORY_UTILS: No custom storage root set, checking Downloads/nhasix');
+      }
+      
+      // PRIORITY 2: Fallback to Downloads/nhasix for backward compatibility
       final downloadsPath = await getDownloadsDirectory();
       debugPrint(
           'DIRECTORY_UTILS: getDownloadsDirectory() returned: $downloadsPath');
@@ -133,17 +158,17 @@ class DirectoryUtils {
 
       final nhasixDir = Directory(nhasixPath);
       final exists = await nhasixDir.exists();
-      debugPrint('DIRECTORY_UTILS: nhasix directory exists: $exists');
+      debugPrint('DIRECTORY_UTILS: Downloads/nhasix directory exists: $exists');
 
       if (exists) {
-        _logger.d('DirectoryUtils: Found nhasix backup folder: $nhasixPath');
-        debugPrint('DIRECTORY_UTILS: Found nhasix backup folder: $nhasixPath');
+        _logger.d('DirectoryUtils: Found nhasix backup folder in Downloads: $nhasixPath');
+        debugPrint('DIRECTORY_UTILS: Found nhasix backup folder in Downloads: $nhasixPath');
         return nhasixPath;
       }
 
       debugPrint(
-          'DIRECTORY_UTILS: nhasix backup folder not found in Downloads');
-      _logger.d('DirectoryUtils: nhasix backup folder not found in Downloads');
+          'DIRECTORY_UTILS: nhasix backup folder not found anywhere');
+      _logger.d('DirectoryUtils: nhasix backup folder not found');
       return null;
     } catch (e) {
       debugPrint('DIRECTORY_UTILS: Error finding nhasix backup folder: $e');

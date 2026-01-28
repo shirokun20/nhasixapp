@@ -778,6 +778,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   timeoutDuration: newSettings.timeoutDuration,
                   enableNotifications: newSettings.enableNotifications,
                   wifiOnly: newSettings.wifiOnly,
+                  customStorageRoot: newSettings.customStorageRoot,
                 ));
           },
         ),
