@@ -27,6 +27,11 @@ abstract class KuronNativePlatform extends PlatformInterface {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 
+  /// Get System Info (RAM, Storage, Battery)
+  Future<Map<Object?, Object?>?> getSystemInfo(String type) {
+    throw UnimplementedError('getSystemInfo() has not been implemented.');
+  }
+
   /// Start a system download
   Future<String?> startDownload({
     required String url,
@@ -85,7 +90,9 @@ abstract class KuronNativePlatform extends PlatformInterface {
     String? initialCookie,
     String? userAgent,
     String? autoCloseOnCookie,
-    bool clearCookies = false, // NEW
+    String? ssoRedirectUrl, // NEW
+    bool enableAdBlock = false, // NEW
+    bool clearCookies = false,
   }) {
     throw UnimplementedError('showLoginWebView() has not been implemented.');
   }

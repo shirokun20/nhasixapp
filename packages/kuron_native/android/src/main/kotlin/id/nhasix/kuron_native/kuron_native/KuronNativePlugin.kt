@@ -74,9 +74,6 @@ class KuronNativePlugin :
             "openWebView" -> {
                 handleOpenWebView(call, result)
             }
-            "openWebView" -> {
-                handleOpenWebView(call, result)
-            }
             "openPdf" -> {
                 handleOpenPdf(call, result)
             }
@@ -85,6 +82,9 @@ class KuronNativePlugin :
             }
             "clearCookies" -> {
                 handleClearCookies(result)
+            }
+            "getSystemInfo" -> {
+                handleGetSystemInfo(call, result)
             }
             else -> {
                 result.notImplemented()
@@ -437,7 +437,10 @@ class KuronNativePlugin :
         val successFilters = call.argument<List<String>>("successUrlFilters")
         val userAgent = call.argument<String>("userAgent")
         val initialCookie = call.argument<String>("initialCookie")
+
         val autoCloseOnCookie = call.argument<String>("autoCloseOnCookie")
+        val ssoRedirectUrl = call.argument<String>("ssoRedirectUrl")
+        val enableAdBlock = call.argument<Boolean>("enableAdBlock") ?: false
 
         if (url == null) {
             result.error("INVALID_ARGS", "Url is required", null)
@@ -465,6 +468,8 @@ class KuronNativePlugin :
                 successFilters, 
                 initialCookie,
                 autoCloseOnCookie,
+                ssoRedirectUrl,
+                enableAdBlock,
                 call.argument<Boolean>("clearCookies") ?: false
             )
             activity.startActivityForResult(intent, WEBVIEW_REQUEST_CODE)
@@ -509,7 +514,28 @@ class KuronNativePlugin :
                 }
             }
         } catch (e: Exception) {
+
             result.error("CLEAR_COOKIES_FAILED", e.message, null)
+        }
+    }
+
+    private fun handleGetSystemInfo(call: MethodCall, result: Result) {
+        val type = call.argument<String>("type")
+        try {
+            val data = when (type) {
+                "ram" -> SystemInfoUtils.getMemoryInfo(context)
+                "storage" -> SystemInfoUtils.getStorageInfo()
+                "battery" -> SystemInfoUtils.getBatteryInfo(context)
+                else -> null
+            }
+            
+            if (data != null) {
+                result.success(data)
+            } else {
+                result.error("INVALID_TYPE", "Unknown info type: $type", null)
+            }
+        } catch (e: Exception) {
+            result.error("SYSTEM_INFO_FAILED", e.message, null)
         }
     }
 }

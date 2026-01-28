@@ -24,8 +24,11 @@ class WebViewActivity : AppCompatActivity() {
         const val EXTRA_SUCCESS_FILTERS = "extra_success_filters"
         const val EXTRA_INITIAL_COOKIE = "extra_initial_cookie"
         const val EXTRA_AUTO_CLOSE_ON_COOKIE = "extra_auto_close_on_cookie"
+        const val EXTRA_SSO_REDIRECT_URL = "extra_sso_redirect_url"
+        const val EXTRA_ENABLE_AD_BLOCK = "extra_enable_ad_block"
 
         const val EXTRA_CLEAR_COOKIES = "extra_clear_cookies"
+
 
         const val RESULT_COOKIES = "result_cookies" // ArrayList<String>
         const val RESULT_USER_AGENT = "result_user_agent"
@@ -37,6 +40,8 @@ class WebViewActivity : AppCompatActivity() {
             successFilters: List<String>?,
             initialCookie: String?,
             autoCloseOnCookie: String? = null,
+            ssoRedirectUrl: String? = null,
+            enableAdBlock: Boolean = false,
             clearCookies: Boolean = false
         ): Intent {
             return Intent(context, WebViewActivity::class.java).apply {
@@ -45,6 +50,8 @@ class WebViewActivity : AppCompatActivity() {
                 if (successFilters != null) putStringArrayListExtra(EXTRA_SUCCESS_FILTERS, ArrayList(successFilters))
                 if (initialCookie != null) putExtra(EXTRA_INITIAL_COOKIE, initialCookie)
                 if (autoCloseOnCookie != null) putExtra(EXTRA_AUTO_CLOSE_ON_COOKIE, autoCloseOnCookie)
+                if (ssoRedirectUrl != null) putExtra(EXTRA_SSO_REDIRECT_URL, ssoRedirectUrl)
+                putExtra(EXTRA_ENABLE_AD_BLOCK, enableAdBlock)
                 if (clearCookies) putExtra(EXTRA_CLEAR_COOKIES, true)
             }
         }
@@ -53,6 +60,8 @@ class WebViewActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     private var successFilters: List<String> = emptyList()
     private var autoCloseOnCookie: String? = null
+    private var ssoRedirectUrl: String? = null
+    private var enableAdBlock: Boolean = false
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -119,6 +128,8 @@ class WebViewActivity : AppCompatActivity() {
         val initialCookie = intent.getStringExtra(EXTRA_INITIAL_COOKIE)
         successFilters = intent.getStringArrayListExtra(EXTRA_SUCCESS_FILTERS) ?: emptyList()
         autoCloseOnCookie = intent.getStringExtra(EXTRA_AUTO_CLOSE_ON_COOKIE)
+        ssoRedirectUrl = intent.getStringExtra(EXTRA_SSO_REDIRECT_URL)
+        enableAdBlock = intent.getBooleanExtra(EXTRA_ENABLE_AD_BLOCK, false)
 
         // Sync Initial Cookies if provided
         val cookieManager = CookieManager.getInstance()
@@ -150,14 +161,22 @@ class WebViewActivity : AppCompatActivity() {
             }
         }
 
+
+
         webView.webViewClient = object : WebViewClient() {
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
+                // SSO Check on Start
+                if (checkSsoRedirect(url)) return
+                
                 checkForSuccess(url)
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
+                // SSO Check on Finish
+                if (checkSsoRedirect(url)) return
+                
                 checkForSuccess(url)
                 
                 // Update title
@@ -177,8 +196,28 @@ class WebViewActivity : AppCompatActivity() {
                     }
                 }
             }
-        }
 
+            // AdBlock Implementation
+            override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): android.webkit.WebResourceResponse? {
+                if (enableAdBlock && request != null) {
+                    val url = request.url.toString()
+                    if (AdBlocker.isAd(url)) {
+                        android.util.Log.d("KuronNative", "🚫 Blocked Ad: $url")
+                        // Return empty response to block
+                        return android.webkit.WebResourceResponse("text/plain", "utf-8", null)
+                    }
+                }
+                return super.shouldInterceptRequest(view, request)
+            }
+
+            // SSO Redirect Interception
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                val url = request?.url?.toString()
+                if (checkSsoRedirect(url)) return true
+                return super.shouldOverrideUrlLoading(view, request)
+            }
+        }
+        
         webView.loadUrl(url)
     }
     
@@ -207,6 +246,18 @@ class WebViewActivity : AppCompatActivity() {
         // 2. Fallback or specific logic could go here
         // For Crotpedia, we might just rely on the user closing the activity 
         // OR the flutter side passing specific success URLs (like 'wp-admin').
+    }
+
+    private fun checkSsoRedirect(url: String?): Boolean {
+        if (url == null || ssoRedirectUrl == null) return false
+        
+        // Exact match or starts with (for query params)
+        if (url.startsWith(ssoRedirectUrl!!)) {
+             android.util.Log.i("KuronNative", "🔐 SSO Redirect Captured: $url")
+             finishWithSuccess(url)
+             return true
+        }
+        return false
     }
 
     private fun finishWithSuccess(currentUrl: String) {

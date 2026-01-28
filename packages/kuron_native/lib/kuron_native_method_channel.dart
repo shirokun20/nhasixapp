@@ -35,6 +35,12 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }
 
   @override
+  Future<Map<Object?, Object?>?> getSystemInfo(String type) async {
+    final result = await methodChannel.invokeMethod('getSystemInfo', {'type': type});
+    return result as Map<Object?, Object?>?;
+  }
+
+  @override
   Future<String?> startDownload({
     required String url,
     required String fileName,
@@ -110,6 +116,8 @@ class MethodChannelKuronNative extends KuronNativePlatform {
     String? initialCookie,
     String? userAgent,
     String? autoCloseOnCookie,
+    String? ssoRedirectUrl,
+    bool enableAdBlock = false,
     bool clearCookies = false,
   }) async {
     final result = await methodChannel.invokeMapMethod<String, dynamic>('showLoginWebView', {
@@ -118,6 +126,8 @@ class MethodChannelKuronNative extends KuronNativePlatform {
       'initialCookie': initialCookie,
       'userAgent': userAgent,
       'autoCloseOnCookie': autoCloseOnCookie,
+      'ssoRedirectUrl': ssoRedirectUrl,
+      'enableAdBlock': enableAdBlock,
       'clearCookies': clearCookies,
     });
     return result;

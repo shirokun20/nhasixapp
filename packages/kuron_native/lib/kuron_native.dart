@@ -1,12 +1,21 @@
 
 import 'kuron_native_platform_interface.dart';
 
+
+export 'utils/backup_utils.dart'; // Export for users
+export 'widgets/kuron_widgets.dart'; // Export Widgets
+
 class KuronNative {
   /// Singleton instance
   static final KuronNative instance = KuronNative();
   
   Future<String?> getPlatformVersion() {
     return KuronNativePlatform.instance.getPlatformVersion();
+  }
+
+  /// Get System Info. Types: 'ram', 'storage', 'battery'
+  Future<Map<Object?, Object?>?> getSystemInfo(String type) {
+    return KuronNativePlatform.instance.getSystemInfo(type);
   }
 
   Future<String?> startDownload({
@@ -65,6 +74,8 @@ class KuronNative {
     String? initialCookie,
     String? userAgent,
     String? autoCloseOnCookie,
+    String? ssoRedirectUrl,
+    bool enableAdBlock = false,
     bool clearCookies = false,
   }) {
     return KuronNativePlatform.instance.showLoginWebView(
@@ -73,6 +84,8 @@ class KuronNative {
         initialCookie: initialCookie,
         userAgent: userAgent,
         autoCloseOnCookie: autoCloseOnCookie,
+        ssoRedirectUrl: ssoRedirectUrl,
+        enableAdBlock: enableAdBlock,
         clearCookies: clearCookies);
   }
 

@@ -12,6 +12,9 @@ class MockKuronNativePlatform
   Future<String?> getPlatformVersion() => Future.value('42');
 
   @override
+  Future<Map<Object?, Object?>?> getSystemInfo(String type) => Future.value({'ram': 100});
+
+  @override
   Future<String?> startDownload({
     required String url,
     required String fileName,
@@ -56,9 +59,11 @@ class MockKuronNativePlatform
     String? initialCookie,
     String? userAgent,
     String? autoCloseOnCookie,
+    String? ssoRedirectUrl,
+    bool enableAdBlock = false,
     bool clearCookies = false,
-  }) async {
-    return {'success': true, 'cookies': [], 'userAgent': 'MOCK_UA'};
+  }) {
+    return Future.value({'cookies': ['cookie'], 'userAgent': 'ua', 'success': true});
   }
 
   @override
