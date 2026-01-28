@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:path/path.dart' as path;
@@ -645,7 +646,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           language: '',
           uploadDate: DateTime.now(),
           favorites: 0,
-          sourceId: updatedDownload.sourceId ?? 'crotpedia',
+          sourceId: updatedDownload.sourceId ?? SourceType.crotpedia.id,
         );
       }
 
@@ -667,7 +668,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             // Update total pages
             updatedDownload = updatedDownload.copyWith(
               totalPages: chapterImages.length,
-              sourceId: updatedDownload.sourceId ?? 'crotpedia',
+              sourceId: updatedDownload.sourceId ?? SourceType.crotpedia.id,
             );
             await _userDataRepository.saveDownloadStatus(updatedDownload);
 
@@ -698,7 +699,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Register task with DownloadManager
       DownloadManager().registerTask(task);
 
-      // Show notification
       if (currentState.settings.enableNotifications) {
         _notificationService.showDownloadStarted(
           contentId: event.contentId,
@@ -710,16 +710,17 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       String? savePath;
       try {
         String baseDownloadPath;
-        if (currentState.settings.customStorageRoot != null && 
+        if (currentState.settings.customStorageRoot != null &&
             currentState.settings.customStorageRoot!.isNotEmpty) {
           baseDownloadPath = currentState.settings.customStorageRoot!;
         } else {
           final appDir = await getApplicationDocumentsDirectory();
           baseDownloadPath = path.join(appDir.path, 'Downloads');
         }
-        
+
         // Match DownloadService structure: [Root]/nhasix/[sourceId]/[contentId]
-        savePath = path.join(baseDownloadPath, 'nhasix', content.sourceId, event.contentId);
+        savePath = path.join(
+            baseDownloadPath, 'nhasix', content.sourceId, event.contentId);
 
         await BackgroundDownloadUtils.saveResumeState(
           event.contentId,
@@ -740,7 +741,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _logger.i('🔍 Download sourceId: ${content.sourceId}');
       _logger.i('🔍 AuthManager null?: ${_crotpediaAuthManager == null}');
 
-      if (content.sourceId == 'crotpedia' && _crotpediaAuthManager != null) {
+      if (content.sourceId == SourceType.crotpedia.id && _crotpediaAuthManager != null) {
         _logger.i('✅ Entering cookie extraction block');
         try {
           cookies = await _crotpediaAuthManager.getCookiesForDomain(
@@ -812,6 +813,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             currentDownload.retryCount < currentState.settings.retryAttempts) {
           _logger.i(
               'DownloadBloc: Auto-retrying download ${event.contentId} (attempt ${currentDownload.retryCount + 1}/${currentState.settings.retryAttempts})');
+
+          // Wait regarding to retryDelay setting
+          // await Future.delayed(currentState.settings.retryDelay); // REMOVED: Redundant and blocks UI update
 
           final retryDownload = currentDownload.copyWith(
             retryCount: currentDownload.retryCount + 1,
@@ -1343,7 +1347,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             // ✅ FIXED: Explicitly cancel the verification notification first
             // This prevents "Verifying 100%" from sticking around
             if (currentState.settings.enableNotifications) {
-               _notificationService.cancelVerificationNotification(event.contentId);
+              _notificationService
+                  .cancelVerificationNotification(event.contentId);
             }
 
             // Explicitly show completion notification here
