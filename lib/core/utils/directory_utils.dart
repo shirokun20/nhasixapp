@@ -15,6 +15,21 @@ class DirectoryUtils {
   /// Handles different Android device configurations and languages
   static Future<String> getDownloadsDirectory() async {
     try {
+      // PRIORITY 1: Check custom storage root first
+      if (await StorageSettings.hasCustomRoot()) {
+        final customPath = await StorageSettings.getCustomRootPath();
+        if (customPath != null && customPath.isNotEmpty) {
+          final customDir = Directory(customPath);
+          // Trust the setting regardless of immediate existence check (similar to DownloadService fix)
+          if (!await customDir.exists()) {
+             _logger.w('DirectoryUtils: Custom storage root set but does not exist: $customPath. Using it anyway.');
+          } else {
+             _logger.i('DirectoryUtils: Using custom storage root: $customPath');
+          }
+          return customPath;
+        }
+      }
+
       // First, try to get external storage directory
       Directory? externalDir;
       try {

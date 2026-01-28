@@ -494,12 +494,15 @@ class DownloadService {
       // 0. Check for custom storage root first
       if (await StorageSettings.hasCustomRoot()) {
         final customPath = await StorageSettings.getCustomRootPath();
-        if (customPath != null) {
+        if (customPath != null && customPath.isNotEmpty) {
           final dir = Directory(customPath);
-          if (await dir.exists()) {
+          if (!await dir.exists()) {
+             _logger.w('Custom storage root set but does not exist: $customPath. Using it anyway as per user setting.');
+             // Attempt to verify/create if possible, but return it regardless
+          } else {
              _logger.i('Using custom storage root: $customPath');
-             return customPath;
           }
+          return customPath;
         }
       }
 

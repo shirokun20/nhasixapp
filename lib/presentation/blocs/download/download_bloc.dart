@@ -741,7 +741,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _logger.i('🔍 Download sourceId: ${content.sourceId}');
       _logger.i('🔍 AuthManager null?: ${_crotpediaAuthManager == null}');
 
-      if (content.sourceId == SourceType.crotpedia.id && _crotpediaAuthManager != null) {
+      if (content.sourceId == SourceType.crotpedia.id &&
+          _crotpediaAuthManager != null) {
         _logger.i('✅ Entering cookie extraction block');
         try {
           cookies = await _crotpediaAuthManager.getCookiesForDomain(
@@ -779,6 +780,14 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _activeTasks.remove(event.contentId);
       DownloadManager().unregisterTask(event.contentId);
 
+      // Check for explicit failure from UseCase (captured exception)
+      if (result.isFailed) {
+        _logger.w('Download failed in UseCase: ${result.error}');
+        await _handleDownloadFailure(
+            event.contentId, result.error ?? 'Unknown error', null, emit);
+        return;
+      }
+
       // Notification
       if (currentState.settings.enableNotifications && result.isCompleted) {
         _notificationService.showDownloadCompleted(
@@ -801,77 +810,56 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _activeTasks.remove(event.contentId);
       DownloadManager().unregisterTask(event.contentId);
 
-      // Handle failure (copy existing failure logic here or simplify)
-      if (currentState.getDownload(event.contentId) != null) {
-        // ... Simplified fallback for brevity, relying on user to improve if needed ...
-        // OR copy the original complex retry logic.
-        // Let's copy the original retry logic to be safe.
-        final currentDownload = currentState.getDownload(event.contentId)!;
+      // Handle failure via helper
+      await _handleDownloadFailure(event.contentId, e, stackTrace, emit);
+    }
+  }
 
-        // Check if auto retry is enabled and we haven't exceeded retry attempts
-        if (currentState.settings.autoRetry &&
-            currentDownload.retryCount < currentState.settings.retryAttempts) {
-          _logger.i(
-              'DownloadBloc: Auto-retrying download ${event.contentId} (attempt ${currentDownload.retryCount + 1}/${currentState.settings.retryAttempts})');
+  /// Handle download failure with auto-retry logic
+  Future<void> _handleDownloadFailure(
+    String contentId,
+    Object error,
+    StackTrace? stackTrace,
+    Emitter<DownloadBlocState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! DownloadLoaded) {
+      if (error is! Exception) {
+        emit(DownloadError(
+          message: 'Failed to start download: ${error.toString()}',
+          errorType: _determineErrorType(error),
+          previousState: null,
+          stackTrace: stackTrace,
+        ));
+      }
+      return;
+    }
 
-          // Wait regarding to retryDelay setting
-          // await Future.delayed(currentState.settings.retryDelay); // REMOVED: Redundant and blocks UI update
+    final currentDownload = currentState.getDownload(contentId);
 
-          final retryDownload = currentDownload.copyWith(
-            retryCount: currentDownload.retryCount + 1,
-            state: DownloadState.queued,
-            error: _getLocalizedString(
-              (l10n) => l10n.retryingDownload(currentDownload.retryCount + 1,
-                  currentState.settings.retryAttempts),
-              'Retrying download (attempt ${currentDownload.retryCount + 1}/${currentState.settings.retryAttempts})',
-            ),
-            endTime: null, // Reset end time for retry
-          );
+    if (currentDownload != null) {
+      // Check if auto retry is enabled and we haven't exceeded retry attempts
+      if (currentState.settings.autoRetry &&
+          currentDownload.retryCount < currentState.settings.retryAttempts) {
+        _logger.i(
+            'DownloadBloc: Auto-retrying download $contentId (attempt ${currentDownload.retryCount + 1}/${currentState.settings.retryAttempts})');
 
-          await _userDataRepository.saveDownloadStatus(retryDownload);
-
-          // Update state with retry download
-          final updatedDownloads = currentState.downloads
-              .map((d) => d.contentId == event.contentId ? retryDownload : d)
-              .toList();
-
-          emit(currentState.copyWith(
-            downloads: updatedDownloads,
-            lastUpdated: DateTime.now(),
-          ));
-
-          // Schedule retry with delay
-          Timer(
-              Duration(
-                  milliseconds:
-                      currentState.settings.retryDelay.inMilliseconds), () {
-            if (!isClosed) {
-              add(DownloadStartEvent(event.contentId));
-            }
-          });
-          return;
-        }
-
-        // Mark as failed
-        final failedDownload = currentDownload.copyWith(
-          state: DownloadState.failed,
-          error: e.toString(),
-          endTime: DateTime.now(),
+        final retryDownload = currentDownload.copyWith(
+          retryCount: currentDownload.retryCount + 1,
+          state: DownloadState.queued,
+          error: _getLocalizedString(
+            (l10n) => l10n.retryingDownload(currentDownload.retryCount + 1,
+                currentState.settings.retryAttempts),
+            'Retrying download (attempt ${currentDownload.retryCount + 1}/${currentState.settings.retryAttempts})',
+          ),
+          endTime: null, // Reset end time for retry
         );
 
-        await _userDataRepository.saveDownloadStatus(failedDownload);
+        await _userDataRepository.saveDownloadStatus(retryDownload);
 
-        // Show error notification
-        if (currentState.settings.enableNotifications) {
-          _notificationService.showDownloadError(
-            contentId: event.contentId,
-            title: failedDownload.contentId,
-            error: e.toString(),
-          );
-        }
-
+        // Update state with retry download
         final updatedDownloads = currentState.downloads
-            .map((d) => d.contentId == event.contentId ? failedDownload : d)
+            .map((d) => d.contentId == contentId ? retryDownload : d)
             .toList();
 
         emit(currentState.copyWith(
@@ -879,15 +867,55 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           lastUpdated: DateTime.now(),
         ));
 
-        _processQueue();
-      } else {
-        emit(DownloadError(
-          message: 'Failed to start download: ${e.toString()}',
-          errorType: _determineErrorType(e),
-          previousState: currentState,
-          stackTrace: stackTrace,
-        ));
+        // Schedule retry with delay
+        Timer(
+          Duration(
+            milliseconds: currentState.settings.retryDelay.inMilliseconds,
+          ),
+          () {
+            if (!isClosed) {
+              add(DownloadStartEvent(contentId));
+            }
+          },
+        );
+        return;
       }
+
+      // Mark as failed
+      final failedDownload = currentDownload.copyWith(
+        state: DownloadState.failed,
+        error: error.toString(),
+        endTime: DateTime.now(),
+      );
+
+      await _userDataRepository.saveDownloadStatus(failedDownload);
+
+      // Show error notification
+      if (currentState.settings.enableNotifications) {
+        _notificationService.showDownloadError(
+          contentId: contentId,
+          title: failedDownload.title ?? contentId,
+          error: error.toString(),
+        );
+      }
+
+      final updatedDownloads = currentState.downloads
+          .map((d) => d.contentId == contentId ? failedDownload : d)
+          .toList();
+
+      emit(currentState.copyWith(
+        downloads: updatedDownloads,
+        lastUpdated: DateTime.now(),
+      ));
+
+      _processQueue();
+    } else {
+      emit(DownloadError(
+        message: 'Failed to start download: ${error.toString()}',
+        errorType: _determineErrorType(error),
+        previousState: currentState,
+        stackTrace: stackTrace,
+      ));
     }
   }
 
