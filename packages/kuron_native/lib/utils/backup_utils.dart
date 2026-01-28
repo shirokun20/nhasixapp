@@ -1,14 +1,28 @@
 import 'dart:io';
 import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
+import '../kuron_native.dart'; // Access KuronNative singleton
 
 class BackupUtils {
-  /// Save JSON string to a file in the user's Downloads or Documents directory.
+  /// Save JSON string to a file in the specified directory or user's Downloads.
   /// Returns the path if successful, null otherwise.
-  static Future<String?> exportJson(String jsonContent, String fileName) async {
+  /// 
+  /// [jsonContent] - The JSON string to save
+  /// [fileName] - Name of the file to create
+  /// [customDirectory] - Optional custom directory path. If null, uses default Downloads folder
+  static Future<String?> exportJson(
+    String jsonContent, 
+    String fileName, {
+    String? customDirectory,
+  }) async {
     try {
       Directory? directory;
-      if (Platform.isAndroid) {
+      
+      if (customDirectory != null && customDirectory.isNotEmpty) {
+        // Use custom directory if provided (e.g., from StorageSettings)
+        directory = Directory(customDirectory);
+      } else if (Platform.isAndroid) {
+        // Fallback to default Downloads folder
         directory = Directory('/storage/emulated/0/Download');
         // Fallback if Download folder is not accessible (though typically it is)
         if (!directory.existsSync()) {
@@ -21,6 +35,7 @@ class BackupUtils {
       final path = '${directory?.path}/$fileName';
       final file = File(path);
       await file.writeAsString(jsonContent);
+      debugPrint('Export Success: Saved $fileName to ${directory?.path}');
       return path;
     } catch (e) {
       debugPrint('Export Error: $e');
@@ -28,11 +43,34 @@ class BackupUtils {
     }
   }
 
-  /// Pick a JSON file and return its content.
-  static Future<String?> importJson() async {
-    // Deprecated: Moving to native picker or KuronNative based implementation.
-    // FilePicker dependency has been removed.
-    debugPrint('BackupUtils.importJson is deprecated and non-functional without file_picker.');
-    return null;
+  /// Pick a directory using native picker and read a JSON backup file from it.
+  /// Returns the JSON content as string if successful, null otherwise.
+  /// 
+  /// [fileName] - Name of the backup file to read (default: 'backup.json')
+  static Future<String?> importJson({String fileName = 'backup.json'}) async {
+    try {
+      // Use native directory picker (Android SAF compatible)
+      final directoryPath = await KuronNative.instance.pickDirectory();
+      
+      if (directoryPath == null) {
+        debugPrint('Import cancelled by user');
+        return null;
+      }
+
+      // Read the backup file from selected directory
+      final file = File('$directoryPath/$fileName');
+      
+      if (!await file.exists()) {
+        debugPrint('Import Error: $fileName not found in selected directory');
+        return null;
+      }
+
+      final content = await file.readAsString();
+      debugPrint('Import Success: Read $fileName from $directoryPath');
+      return content;
+    } catch (e) {
+      debugPrint('Import Error: $e');
+      return null;
+    }
   }
 }

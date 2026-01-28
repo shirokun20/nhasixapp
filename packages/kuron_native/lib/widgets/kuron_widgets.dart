@@ -289,18 +289,32 @@ class KuronInfoCard extends StatelessWidget {
 
 // --- Backup Buttons ---
 
+/// Export button for backing up JSON data.
+/// 
+/// If [customDirectory] is provided, the backup will be saved there.
+/// Otherwise, falls back to default Downloads folder.
 class KuronExportButton extends StatelessWidget {
   final String data; // JSON string
   final String fileName;
+  final String? customDirectory; // Optional custom storage root
 
-  const KuronExportButton({super.key, required this.data, required this.fileName});
+  const KuronExportButton({
+    super.key, 
+    required this.data, 
+    required this.fileName,
+    this.customDirectory,
+  });
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
       icon: const Icon(Icons.save_alt),
       onPressed: () async {
-        final path = await BackupUtils.exportJson(data, fileName);
+        final path = await BackupUtils.exportJson(
+          data, 
+          fileName, 
+          customDirectory: customDirectory,
+        );
         if (context.mounted) {
            ScaffoldMessenger.of(context).showSnackBar(
              SnackBar(content: Text(path != null ? 'Saved to $path' : 'Export Failed')),
