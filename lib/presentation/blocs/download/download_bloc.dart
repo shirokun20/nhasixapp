@@ -9,6 +9,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:path/path.dart' as path;
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
+import 'package:flutter/foundation.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/config/remote_config_service.dart';
@@ -247,6 +248,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           _remoteConfigService.appConfig?.limits?.maxConcurrentDownloads ?? 3;
 
       final customRoot = await StorageSettings.getCustomRootPath();
+      _logger.i('DownloadBloc: Custom storage root loaded: $customRoot');
+      debugPrint('📁 DOWNLOAD_BLOC: Loading customStorageRoot from StorageSettings');
+      debugPrint('📁 DOWNLOAD_BLOC: customRoot value: $customRoot');
 
       _settings = DownloadSettings(
         maxConcurrentDownloads: userPrefs.maxConcurrentDownloads != 3
@@ -262,6 +266,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         wifiOnly: userPrefs.wifiOnly,
         customStorageRoot: customRoot,
       );
+      debugPrint('📁 DOWNLOAD_BLOC: DownloadSettings created with customStorageRoot: ${_settings.customStorageRoot}');
 
       emit(DownloadLoaded(
         downloads: downloads,
@@ -1347,11 +1352,23 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     final currentState = state;
 
     try {
-      _logger.i('DownloadBloc: Refreshing download list');
+    _logger.i('DownloadBloc: Refreshing download list');
 
-      // Reload downloads from database
-      final downloads = await _userDataRepository.getAllDownloads(
-          limit: AppLimits.maxBatchSize);
+    // 🔄 CRITICAL: Reload customStorageRoot from StorageSettings
+    // This ensures UI always shows correct storage location even if:
+    // 1. DownloadBloc was initialized before storage location was set
+    // 2. User changed storage location via settings dialog
+    final customRoot = await StorageSettings.getCustomRootPath();
+    debugPrint('📁 DOWNLOAD_BLOC: Refreshing customStorageRoot from StorageSettings');
+    debugPrint('📁 DOWNLOAD_BLOC: customRoot value on refresh: $customRoot');
+    
+    // Update settings with latest customStorageRoot
+    _settings = _settings.copyWith(customStorageRoot: customRoot);
+    debugPrint('📁 DOWNLOAD_BLOC: Updated _settings.customStorageRoot: ${_settings.customStorageRoot}');
+
+    // Reload downloads from database
+    final downloads = await _userDataRepository.getAllDownloads(
+        limit: AppLimits.maxBatchSize);
 
       if (currentState is DownloadLoaded) {
         // Update existing state with new downloads

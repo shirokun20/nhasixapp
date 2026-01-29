@@ -6,6 +6,10 @@ import 'package:kuron_native/kuron_native.dart';
 
 class StorageSettings {
   static const String _prefKey = 'custom_storage_root';
+  
+  // Memory cache to prevent repeated SharedPreferences reads
+  // and ensure persistence even if SharedPreferences has issues
+  static String? _cachedCustomRoot;
 
   /// Pick a custom folder and save it.
   /// Returns the path if successful, null otherwise.
@@ -34,7 +38,19 @@ class StorageSettings {
 
     // Save to Preferences
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefKey, selectedDirectory);
+    final success = await prefs.setString(_prefKey, selectedDirectory);
+    
+    debugPrint('📁 STORAGE_SETTINGS: Saving custom root: $selectedDirectory');
+    debugPrint('📁 STORAGE_SETTINGS: Save result: $success');
+    
+    // Verify it was saved
+    final verified = prefs.getString(_prefKey);
+    debugPrint('📁 STORAGE_SETTINGS: Verification read: $verified');
+    debugPrint('📁 STORAGE_SETTINGS: Match: ${verified == selectedDirectory}');
+    
+    // Cache in memory for faster subsequent access
+    _cachedCustomRoot = selectedDirectory;
+    debugPrint('📁 STORAGE_SETTINGS: Cached in memory: $_cachedCustomRoot');
 
     return selectedDirectory;
   }
@@ -42,19 +58,40 @@ class StorageSettings {
 
   /// Get the currently saved custom root path.
   static Future<String?> getCustomRootPath() async {
+    // Return cache if available
+    if (_cachedCustomRoot != null) {
+      debugPrint('📁 STORAGE_SETTINGS: returning cached path: $_cachedCustomRoot');
+      return _cachedCustomRoot;
+    }
+    
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_prefKey);
+    final path = prefs.getString(_prefKey);
+    debugPrint('📁 STORAGE_SETTINGS: getCustomRootPath called');
+    debugPrint('📁 STORAGE_SETTINGS: Retrieved path: $path');
+    debugPrint('📁 STORAGE_SETTINGS: All keys: ${prefs.getKeys()}');
+    
+    // Cache for subsequent calls
+    if (path != null) {
+      _cachedCustomRoot = path;
+      debugPrint('📁 STORAGE_SETTINGS: Cached path in memory: $_cachedCustomRoot');
+    }
+    
+    return path;
   }
 
   /// Check if a custom root is set.
   static Future<bool> hasCustomRoot() async {
     final path = await getCustomRootPath();
-    return path != null && path.isNotEmpty;
+    final result = path != null && path.isNotEmpty;
+    debugPrint('📁 STORAGE_SETTINGS: hasCustomRoot = $result (path: $path)');
+    return result;
   }
 
   /// Clear the custom root setting.
   static Future<void> clearCustomRoot() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_prefKey);
+    _cachedCustomRoot = null; // Clear cache
+    debugPrint('📁 STORAGE_SETTINGS: Cleared custom root and cache');
   }
 }

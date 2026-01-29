@@ -122,6 +122,9 @@ class DirectoryUtils {
           'DirectoryUtils: Using app documents downloads directory: ${documentsDownloadsDir.path}');
       return documentsDownloadsDir.path;
       */
+      _logger.e('DirectoryUtils: No custom storage root found!');
+      debugPrint('📁 DIRECTORY_UTILS: CRITICAL - No custom storage root selected');
+      debugPrint('📁 DIRECTORY_UTILS: This should not happen if user previously set storage location');
       throw Exception('No custom storage root selected. Please select a storage location in settings.');
     } catch (e) {
       _logger.e('DirectoryUtils: Error detecting Downloads directory: $e');
