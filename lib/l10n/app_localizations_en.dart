@@ -3322,4 +3322,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectFolder => 'Select Folder';
+
+  @override
+  String get premiumFeature => 'Premium Feature';
 }

@@ -3336,4 +3336,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get selectFolder => 'Pilih Folder';
+
+  @override
+  String get premiumFeature => 'Fitur Premium';
 }

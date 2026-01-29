@@ -1966,5 +1966,6 @@
   "storageDescription": "Pilih folder untuk menyimpan unduhan",
   "backupNotFound": "Cadangan Tidak Ditemukan",
   "backupNotFoundMessage": "Folder cadangan 'nhasix' tidak ditemukan di lokasi default. Apakah Anda ingin memilih folder kustom yang berisi cadangan Anda?",
-  "selectFolder": "Pilih Folder"
+  "selectFolder": "Pilih Folder",
+  "premiumFeature": "Fitur Premium"
 }

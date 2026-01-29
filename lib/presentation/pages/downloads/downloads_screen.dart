@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:kuron_core/kuron_core.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 
 import '../../../core/constants/text_style_const.dart';
 import '../../../l10n/app_localizations.dart';
@@ -119,7 +121,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             }
             // If no previous loaded state, show error widget
             if (state.previousState == null) {
-               return AppErrorWidget(
+              return AppErrorWidget(
                 title: AppLocalizations.of(context)!.downloadError,
                 message: state.message,
                 onRetry: state.canRetry
@@ -220,7 +222,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
               IconButton(
                 icon: const Icon(Icons.refresh),
                 onPressed: () {
-                  context.read<DownloadBloc>().add(const DownloadRefreshEvent());
+                  context
+                      .read<DownloadBloc>()
+                      .add(const DownloadRefreshEvent());
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Refreshing downloads...'),
@@ -515,7 +519,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
               return DownloadItemWidget(
                 download: download,
                 onTap: () => _handleDownloadTap(download),
-                onAction: (action) => _handleDownloadAction(action, download),
+                onAction: (action) => _handleDownloadAction(action, download, ),
                 isSelectionMode: isSelectionMode,
                 isSelected: isSelected,
               );
@@ -609,7 +613,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     context.push('/reader/${download.contentId}', extra: content);
   }
 
-  void _handleDownloadAction(String action, DownloadStatus download) {
+  void _handleDownloadAction(String action, DownloadStatus download, {
+    String? sourceId,
+  }) {
     final downloadBloc = context.read<DownloadBloc>();
 
     switch (action) {
@@ -636,6 +642,21 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         _handlePdfConversion(download);
         break;
       case 'open_pdf':
+        // Check feature flag
+        final remoteConfig = getIt<RemoteConfigService>();
+        // Offline content always has sourceId
+        final isEnabled = remoteConfig.isFeatureEnabled(
+            sourceId ?? SourceType.nhentai.id, (f) => f.generatePdf);
+
+        if (!isEnabled) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.premiumFeature),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+          break;
+        }
         downloadBloc.add(DownloadOpenContentEvent(download.contentId));
         break;
     }
