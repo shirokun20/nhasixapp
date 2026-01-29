@@ -53,6 +53,7 @@ class MockKuronNativePlatform
   Future<void> openPdf({
     required String filePath,
     String? title,
+    int? startPage,
   }) async {
     return;
   }

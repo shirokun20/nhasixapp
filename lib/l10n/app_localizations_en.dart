@@ -197,7 +197,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get soleMale => 'sole male';
 
   @override
-  String get fullColor => 'full color';
+  String get pleaseSetStorageLocation =>
+      'Please set download storage location in settings first.';
 
   @override
   String get schoolgirlUniform => 'schoolgirl uniform';

@@ -623,26 +623,15 @@ class DownloadService {
   ) async {
     final isRangeDownload = startPage > 1 || endPage < content.pageCount;
     final metadata = {
-      'schemaVersion': '2.0', // V2 Schema
+      'schemaVersion': '2.1', // V2.1 Schema (simplified, added URL)
       'source': content.source,
       'content_id': content.id,
       'title': content.title,
+      'url': content.url, // NEW: For reader navigation
       'download_date': DateTime.now().toIso8601String(),
       'total_pages': content.pageCount,
       'downloaded_files': downloadedFiles.length,
       'files': downloadedFiles.map((f) => path.basename(f)).toList(),
-      // Use map for tags to support restoration
-      'tags': content.tags
-          .map((t) => {
-                'id': t.id,
-                'name': t.name,
-                'type': t.type,
-                'count': t.count,
-                'url': t.url
-              })
-          .toList(),
-      // Keep legacy string list for backward compatibility if needed, though V2 mainly uses 'tags'
-      'artists': content.artists,
       'language': content.language,
       'cover_url': content.coverUrl,
       // Range download information

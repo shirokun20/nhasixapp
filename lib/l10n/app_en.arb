@@ -75,7 +75,10 @@
   "bigBreasts": "big breasts",
   "soleFemale": "sole female",
   "soleMale": "sole male",
-  "fullColor": "full color",
+  "pleaseSetStorageLocation": "Please set download storage location in settings first.",
+  "@pleaseSetStorageLocation": {
+    "description": "Error message when custom storage location is not set"
+  },
   "schoolgirlUniform": "schoolgirl uniform",
   
   "tryADifferentSearchTerm": "Try a different search term",

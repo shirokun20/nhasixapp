@@ -99,6 +99,10 @@
   "soleFemale": "sole female",
   "soleMale": "sole male",
   "fullColor": "full color",
+  "pleaseSetStorageLocation": "Silahkan atur lokasi penyimpanan unduhan di pengaturan terlebih dahulu.",
+  "@pleaseSetStorageLocation": {
+    "description": "Pesan error ketika lokasi penyimpanan khusus belum diatur"
+  },
   "schoolgirlUniform": "schoolgirl uniform",
   
   "tryADifferentSearchTerm": "Coba istilah pencarian yang berbeda",

@@ -9,6 +9,7 @@ import '../../core/routing/app_router.dart';
 import '../../domain/entities/entities.dart';
 import '../blocs/download/download_bloc.dart';
 import 'download_range_selector.dart';
+import 'download_settings_widget.dart';
 
 /// Widget untuk tombol download dengan status dan progress
 class DownloadButtonWidget extends StatelessWidget {
@@ -384,6 +385,8 @@ class DownloadButtonWidget extends StatelessWidget {
   }
 
   void _startDownload(BuildContext context) {
+    if (!_checkStorageAndProceed(context)) return;
+
     // Check if download feature is enabled
     final remoteConfig = getIt<RemoteConfigService>();
     if (!remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.download)) {
@@ -396,8 +399,76 @@ class DownloadButtonWidget extends StatelessWidget {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(AppLocalizations.of(context)!.downloadStarted(content.title)),
+        content:
+            Text(AppLocalizations.of(context)!.downloadStarted(content.title)),
         duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  bool _checkStorageAndProceed(BuildContext context) {
+    final downloadBloc = context.read<DownloadBloc>();
+    final state = downloadBloc.state;
+
+    if (state is DownloadLoaded) {
+      if (state.settings.customStorageRoot == null ||
+          state.settings.customStorageRoot!.isEmpty) {
+        _showStorageMissingPopup(context);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  void _showStorageMissingPopup(BuildContext context) {
+    final downloadBloc = context.read<DownloadBloc>();
+    final state = downloadBloc.state;
+
+    if (state is! DownloadLoaded) return;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(AppLocalizations.of(context)!.downloadError),
+        content: Text(AppLocalizations.of(context)!.pleaseSetStorageLocation),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _showSettingsDialog(context, state.settings);
+            },
+            child: Text(AppLocalizations.of(context)!.settings),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSettingsDialog(BuildContext context, DownloadSettings settings) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        child: DownloadSettingsWidget(
+          settings: settings,
+          onSettingsChanged: (newSettings) {
+            context.read<DownloadBloc>().add(DownloadSettingsUpdateEvent(
+                  maxConcurrentDownloads: newSettings.maxConcurrentDownloads,
+                  imageQuality: newSettings.imageQuality,
+                  autoRetry: newSettings.autoRetry,
+                  retryAttempts: newSettings.retryAttempts,
+                  retryDelay: newSettings.retryDelay,
+                  timeoutDuration: newSettings.timeoutDuration,
+                  enableNotifications: newSettings.enableNotifications,
+                  wifiOnly: newSettings.wifiOnly,
+                  customStorageRoot: newSettings.customStorageRoot,
+                ));
+          },
+        ),
       ),
     );
   }
@@ -476,11 +547,13 @@ class DownloadButtonWidget extends StatelessWidget {
   }
 
   void _startRangeDownload(BuildContext context, int startPage, int endPage) {
+    if (!_checkStorageAndProceed(context)) return;
+
     context.read<DownloadBloc>().add(DownloadRangeEvent(
-      content: content,
-      startPage: startPage,
-      endPage: endPage,
-    ));
+          content: content,
+          startPage: startPage,
+          endPage: endPage,
+        ));
     context.read<DownloadBloc>().add(DownloadStartEvent(content.id));
 
     final pageText = startPage == endPage 

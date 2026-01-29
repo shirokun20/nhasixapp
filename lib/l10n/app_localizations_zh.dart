@@ -193,7 +193,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get soleMale => '单男主';
 
   @override
-  String get fullColor => '全彩';
+  String get pleaseSetStorageLocation => '请先在设置中设置下载存储位置。';
 
   @override
   String get schoolgirlUniform => '女学生制服';

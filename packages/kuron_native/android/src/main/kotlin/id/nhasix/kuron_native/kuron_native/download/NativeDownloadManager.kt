@@ -1,4 +1,4 @@
-package id.nhasix.app.download
+package id.nhasix.kuron_native.kuron_native.download
 
 import android.content.Context
 import androidx.work.Constraints
@@ -7,7 +7,6 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import kotlinx.coroutines.runBlocking
 import java.util.concurrent.TimeUnit
 
 class NativeDownloadManager(private val context: Context) {
@@ -17,9 +16,15 @@ class NativeDownloadManager(private val context: Context) {
         sourceId: String,
         imageUrls: List<String>,
         destinationPath: String,
-        cookies: Map<String, String>? = null  // NEW: Optional cookies for authentication
+        cookies: Map<String, String>? = null,  // Optional cookies for authentication
+        // Metadata for v2.1
+        title: String = "Unknown",
+        url: String = "",
+        coverUrl: String = "",
+        language: String = "unknown",
+        enableNotifications: Boolean = true // NEW
     ): String {
-        // NEW: Convert cookies Map to JSON string for WorkManager Data
+        // Convert cookies Map to JSON string for WorkManager Data
         val cookiesJson = cookies?.let { map ->
             map.entries.joinToString(",", "{", "}") { (key, value) ->
                 "\"$key\":\"$value\""
@@ -32,12 +37,17 @@ class NativeDownloadManager(private val context: Context) {
                 DownloadWorker.KEY_SOURCE_ID to sourceId,
                 DownloadWorker.KEY_IMAGE_URLS to imageUrls.toTypedArray(),
                 DownloadWorker.KEY_DESTINATION_PATH to destinationPath,
-                DownloadWorker.KEY_COOKIES to cookiesJson  // NEW: Pass cookies as JSON
+                DownloadWorker.KEY_COOKIES to cookiesJson,
+                // Pass metadata
+                DownloadWorker.KEY_TITLE to title,
+                DownloadWorker.KEY_URL to url,
+                DownloadWorker.KEY_COVER_URL to coverUrl,
+                DownloadWorker.KEY_LANGUAGE to language,
+                "enableNotifications" to enableNotifications // NEW
             ))
             .setConstraints(Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build())
-            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .addTag("content_$contentId")
             .addTag("native_download")
             .build()

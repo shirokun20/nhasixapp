@@ -8,6 +8,7 @@ import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
 
 import 'package:nhasixapp/presentation/widgets/app_drawer_content.dart';
+import 'package:nhasixapp/presentation/widgets/global_download_progress_widget.dart'; // NEW
 
 /// Reusable scaffold widget that shows offline indicators and "Go Online" functionality
 /// This widget wraps around any page content to provide consistent offline mode UI
@@ -125,6 +126,9 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
                   bottomNavigationBar: widget.bottomNavigationBar,
                   body: Column(
                     children: [
+                      // GLOBAL DOWNLOAD HEADER
+                      const GlobalDownloadProgressWidget(),
+                      
                       // Show offline banner when in offline mode
                       if (isOfflineMode) _buildOfflineBanner(context),
                       Expanded(

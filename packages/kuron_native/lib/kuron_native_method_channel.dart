@@ -106,10 +106,12 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   Future<void> openPdf({
     required String filePath,
     String? title,
+    int? startPage,
   }) async {
     await methodChannel.invokeMethod('openPdf', {
       'filePath': filePath,
       'title': title,
+      'startPage': startPage,
     });
   }
   @override

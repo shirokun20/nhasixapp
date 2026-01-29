@@ -460,11 +460,11 @@ abstract class AppLocalizations {
   /// **'sole male'**
   String get soleMale;
 
-  /// No description provided for @fullColor.
+  /// Error message when custom storage location is not set
   ///
   /// In en, this message translates to:
-  /// **'full color'**
-  String get fullColor;
+  /// **'Please set download storage location in settings first.'**
+  String get pleaseSetStorageLocation;
 
   /// No description provided for @schoolgirlUniform.
   ///

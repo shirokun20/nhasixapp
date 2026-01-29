@@ -38,9 +38,11 @@ class KuronNativePlugin :
     PluginRegistry.ActivityResultListener {
     
     private lateinit var channel: MethodChannel
+    private lateinit var downloadEventChannel: io.flutter.plugin.common.EventChannel
     private lateinit var context: Context
     private var activityBinding: ActivityPluginBinding? = null
     private var pendingResult: Result? = null
+    private lateinit var downloadHandler: id.nhasix.kuron_native.kuron_native.download.DownloadHandler
     
     private val WEBVIEW_REQUEST_CODE = 1001
     private val PICK_DIRECTORY_REQUEST_CODE = 1002
@@ -61,6 +63,10 @@ class KuronNativePlugin :
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "kuron_native")
         channel.setMethodCallHandler(this)
         context = flutterPluginBinding.applicationContext
+        
+        // Initialize download event channel and handler
+        downloadEventChannel = io.flutter.plugin.common.EventChannel(flutterPluginBinding.binaryMessenger, "kuron_native/download_progress")
+        downloadHandler = id.nhasix.kuron_native.kuron_native.download.DownloadHandler(context, downloadEventChannel)
     }
 
     override fun onMethodCall(
@@ -94,6 +100,17 @@ class KuronNativePlugin :
             }
             "pickDirectory" -> {
                 handlePickDirectory(result)
+            }
+            // Delegate native download methods to handler
+            "kuronNativeStartDownload", 
+            "kuronNativeCancelDownload",
+            "kuronNativePauseDownload", 
+            "kuronNativeGetDownloadStatus",
+            "kuronNativeGetDownloadedFiles",
+            "kuronNativeGetDownloadPath",
+            "kuronNativeDeleteDownloadedContent",
+            "kuronNativeCountDownloadedFiles" -> {
+                downloadHandler.handleMethodCall(call, result)
             }
             else -> {
                 result.notImplemented()
@@ -418,6 +435,7 @@ class KuronNativePlugin :
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
+        downloadHandler.dispose()
     }
 
     // ActivityAware Implementation

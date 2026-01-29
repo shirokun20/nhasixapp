@@ -78,6 +78,7 @@ abstract class KuronNativePlatform extends PlatformInterface {
   Future<void> openPdf({
     required String filePath,
     String? title,
+    int? startPage,
   }) {
     throw UnimplementedError('openPdf() has not been implemented.');
   }

@@ -100,10 +100,12 @@ class KuronNative {
   Future<void> openPdf({
     required String filePath,
     String? title,
+    int? startPage,
   }) {
     return KuronNativePlatform.instance.openPdf(
       filePath: filePath,
       title: title,
+      startPage: startPage,
     );
   }
 }

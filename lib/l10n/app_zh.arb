@@ -83,6 +83,10 @@
   "soleFemale": "单女主",
   "soleMale": "单男主",
   "fullColor": "全彩",
+  "pleaseSetStorageLocation": "请先在设置中设置下载存储位置。",
+  "@pleaseSetStorageLocation": {
+    "description": "下载存储位置未设置时的错误消息"
+  },
   "schoolgirlUniform": "女学生制服",
   "tryADifferentSearchTerm": "尝试不同的搜索词",
   "unknownError": "未知错误",

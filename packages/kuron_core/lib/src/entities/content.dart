@@ -21,6 +21,7 @@ class Content extends Equatable {
     required this.pageCount,
     required this.imageUrls,
     required this.uploadDate,
+    this.url, // NEW: For reader navigation and history
     this.favorites = 0,
     this.englishTitle,
     this.japaneseTitle,
@@ -90,6 +91,9 @@ class Content extends Equatable {
   /// List of chapters (for multi-chapter content like manga/webtoon)
   final List<Chapter>? chapters;
 
+  /// URL to content page (for navigation and history tracking)
+  final String? url;
+
   @override
   List<Object?> get props => [
         id,
@@ -105,6 +109,7 @@ class Content extends Equatable {
         pageCount,
         imageUrls,
         uploadDate,
+        url,
         favorites,
         englishTitle,
         japaneseTitle,
@@ -128,6 +133,7 @@ class Content extends Equatable {
     int? pageCount,
     List<String>? imageUrls,
     DateTime? uploadDate,
+    String? url,
     int? favorites,
     String? englishTitle,
     String? japaneseTitle,
@@ -150,6 +156,7 @@ class Content extends Equatable {
       pageCount: pageCount ?? this.pageCount,
       imageUrls: imageUrls ?? this.imageUrls,
       uploadDate: uploadDate ?? this.uploadDate,
+      url: url ?? this.url,
       favorites: favorites ?? this.favorites,
       englishTitle: englishTitle ?? this.englishTitle,
       japaneseTitle: japaneseTitle ?? this.japaneseTitle,

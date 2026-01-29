@@ -42,7 +42,11 @@ class MockKuronNativePlatform with MockPlatformInterfaceMixin implements KuronNa
   Future<void> openWebView({required String url, bool enableJavaScript = true}) async {}
   
   @override
-  Future<void> openPdf({required String filePath, String? title}) async {}
+  Future<void> openPdf({
+    required String filePath,
+    String? title,
+    int? startPage,
+  }) async {}
   
   @override
   Future<Map<String, dynamic>?> showLoginWebView({

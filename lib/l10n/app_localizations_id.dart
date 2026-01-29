@@ -196,7 +196,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get soleMale => 'sole male';
 
   @override
-  String get fullColor => 'full color';
+  String get pleaseSetStorageLocation =>
+      'Silahkan atur lokasi penyimpanan unduhan di pengaturan terlebih dahulu.';
 
   @override
   String get schoolgirlUniform => 'schoolgirl uniform';

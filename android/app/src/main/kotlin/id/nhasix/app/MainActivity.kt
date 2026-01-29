@@ -9,18 +9,10 @@ import androidx.annotation.NonNull
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-import id.nhasix.app.download.DownloadMethodChannel
-import id.nhasix.app.pdf.PdfMethodChannel
-import id.nhasix.app.backup.BackupMethodChannel
-import id.nhasix.app.pdf.PdfReaderMethodChannel
-import id.nhasix.app.network.DnsMethodChannel  // NEW
 
 class MainActivity: FlutterActivity() {
     private val CHANNEL = "app_disguise"
-    private lateinit var downloadChannel: DownloadMethodChannel
-    private lateinit var pdfChannel: PdfMethodChannel
-    private lateinit var backupChannel: BackupMethodChannel
-    private lateinit var pdfReaderChannel: PdfReaderMethodChannel
+    private val NAVIGATION_CHANNEL = "app.navigation"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,65 +20,31 @@ class MainActivity: FlutterActivity() {
         Log.d("AppDisguise", "MainActivity onCreate called")
         Log.d("AppDisguise", "Intent action: ${intent?.action}")
         Log.d("AppDisguise", "Component: ${intent?.component}")
+        
+        // Check for notification tap intent
+        handleNotificationIntent(intent)
+    }
+    
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleNotificationIntent(intent)
+    }
+    
+    private fun handleNotificationIntent(intent: Intent?) {
+        val route = intent?.getStringExtra("route")
+        val contentId = intent?.getStringExtra("contentId")
+        
+        if (route != null) {
+            Log.d("Navigation", "Notification tapped - route: $route, contentId: $contentId")
+            // Flutter will handle this via MethodChannel callback
+        }
     }
     
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         Log.d("AppDisguise", "configureFlutterEngine called")
 
-        // 1. Setup Download Channel
-        try {
-            downloadChannel = DownloadMethodChannel(
-                context = applicationContext,
-                messenger = flutterEngine.dartExecutor.binaryMessenger
-            )
-            Log.d("DownloadService", "DownloadMethodChannel setup completed")
-        } catch (e: Exception) {
-            Log.e("DownloadService", "Error setting up DownloadMethodChannel", e)
-        }
-
-        // 2. Setup PDF Channel
-        try {
-            pdfChannel = PdfMethodChannel(
-                context = applicationContext,
-                messenger = flutterEngine.dartExecutor.binaryMessenger
-            )
-            Log.d("PdfService", "PdfMethodChannel setup completed")
-        } catch (e: Exception) {
-            Log.e("PdfService", "Error setting up PdfMethodChannel", e)
-        }
-
-        // 3. Setup Backup Channel
-        try {
-            backupChannel = BackupMethodChannel(
-                activity = this,
-                messenger = flutterEngine.dartExecutor.binaryMessenger
-            )
-            Log.d("BackupService", "BackupMethodChannel setup completed")
-        } catch (e: Exception) {
-            Log.e("BackupService", "Error setting up BackupMethodChannel", e)
-        }
-
-        // 4. Setup PDF Reader Channel
-        try {
-            pdfReaderChannel = PdfReaderMethodChannel(
-                activity = this,
-                messenger = flutterEngine.dartExecutor.binaryMessenger
-            )
-            Log.d("PdfReaderService", "PdfReaderMethodChannel setup completed")
-        } catch (e: Exception) {
-            Log.e("PdfReaderService", "Error setting up PdfReaderMethodChannel", e)
-        }
-
-        // 5. Setup DNS Channel (NEW)
-        try {
-            DnsMethodChannel(flutterEngine.dartExecutor.binaryMessenger)
-            Log.d("DnsService", "DnsMethodChannel setup completed")
-        } catch (e: Exception) {
-            Log.e("DnsService", "Error setting up DnsMethodChannel", e)
-        }
-
-        // 6. Setup App Disguise Channel
+        // Setup App Disguise Channel
         try {
             val methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             Log.d("AppDisguise", "MethodChannel created successfully")
@@ -130,23 +88,12 @@ class MainActivity: FlutterActivity() {
     }
     
     override fun onDestroy() {
-        if (::downloadChannel.isInitialized) {
-            downloadChannel.dispose()
-        }
-        if (::pdfChannel.isInitialized) {
-            pdfChannel.dispose()
-        }
-        if (::backupChannel.isInitialized) {
-            backupChannel.dispose()
-        }
         super.onDestroy()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (::backupChannel.isInitialized) {
-            backupChannel.onActivityResult(requestCode, resultCode, data)
-        }
+        // No longer needed - backup moved to kuron_native
     }
 
     private fun setAppDisguise(mode: String) {

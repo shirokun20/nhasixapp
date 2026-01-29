@@ -490,7 +490,7 @@ void _setupUseCases() {
   getIt.registerLazySingleton<DownloadContentUseCase>(
       () => DownloadContentUseCase(
             getIt<UserDataRepository>(),
-            getIt<DownloadService>(),
+            getIt<NativeDownloadService>(),
             getIt<PdfService>(),
             logger: getIt<Logger>(),
           ));

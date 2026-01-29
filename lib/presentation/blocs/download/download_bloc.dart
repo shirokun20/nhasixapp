@@ -13,7 +13,9 @@ import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/config/remote_config_service.dart';
 
-import 'package:kuron_crotpedia/kuron_crotpedia.dart'; // NEW: For CrotpediaAuthManager
+import 'package:kuron_crotpedia/kuron_crotpedia.dart';
+import 'package:kuron_nhentai/kuron_nhentai.dart';
+import 'package:kuron_komiktap/kuron_komiktap.dart';
 
 import '../../../domain/entities/entities.dart';
 import '../../../domain/entities/download_task.dart';
@@ -31,8 +33,9 @@ import '../../../core/utils/storage_settings.dart';
 import '../../widgets/content_list_widget.dart';
 
 import 'package:nhasixapp/services/workers/background_download_utils.dart';
-import 'package:nhasixapp/services/workers/download_worker.dart';
-import 'package:path_provider/path_provider.dart';
+// import 'package:nhasixapp/services/workers/download_worker.dart'; // REMOVED
+import '../../../services/native_download_service.dart';
+
 
 part 'download_event.dart';
 part 'download_state.dart';
@@ -114,6 +117,26 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   final AppLocalizations? _appLocalizations;
   final CrotpediaAuthManager?
       _crotpediaAuthManager; // NEW: For cookie extraction
+
+  /// Helper to generate fallback URL based on source
+  String _generateFallbackUrl(String? sourceId, String contentId) {
+     if (sourceId == SourceType.nhentai.id || (sourceId == null && contentId.length <= 6)) {
+       return NhentaiUrlBuilder.buildContentUrl(contentId);
+     } else if (sourceId == SourceType.crotpedia.id) {
+       // Check if it's a chapter slug
+       if (contentId.contains('chapter')) {
+         return CrotpediaUrlBuilder.chapterReader(contentId);
+       }
+       return CrotpediaUrlBuilder.seriesDetail(contentId);
+     } else if (sourceId == SourceType.komiktap.id) {
+       // Check if it's a chapter slug
+       if (contentId.contains('chapter')) {
+         return KomiktapUrlBuilder.buildChapterUrlFromSlug(contentId);
+       }
+       return KomiktapUrlBuilder.buildSeriesDetailUrl(contentId);
+     }
+     return ''; // Unknown source
+  }
 
   /// Helper method to get localized string with fallback
   String _getLocalizedString(
@@ -424,7 +447,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         lastUpdated: DateTime.now(),
       ));
 
-      // Send notification
+      // Send notification (Flutter-side)
       if (currentState.settings.enableNotifications) {
         final title = event.content.title;
         final rangeText = downloadStatus.isRangeDownload
@@ -517,7 +540,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         lastUpdated: DateTime.now(),
       ));
 
-      // Send notification with range info
+      // Send notification with range info (Flutter-side)
       if (currentState.settings.enableNotifications) {
         final title = event.content.title;
         final rangeText = ' (Pages ${event.startPage}-${event.endPage})';
@@ -633,6 +656,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         // getContentDetail failed - fallback
         _logger.w(
             'DownloadBloc: getContentDetail failed for ${event.contentId}, will try getChapterImages fallback: $e');
+        // Generate fallback URL based on source
+        final fallbackUrl = _generateFallbackUrl(updatedDownload.sourceId, event.contentId);
+
         content = Content(
           id: event.contentId,
           title: event.contentId, // simplified title
@@ -644,7 +670,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           characters: const [],
           parodies: const [],
           groups: const [],
-          language: '',
+          language: '', // Default to likely language
+          url: fallbackUrl,     // Populate URL
           uploadDate: DateTime.now(),
           favorites: 0,
           sourceId: updatedDownload.sourceId ?? SourceType.crotpedia.id,
@@ -664,6 +691,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             content = content.copyWith(
               imageUrls: chapterImages,
               pageCount: chapterImages.length,
+              // If URL is still empty after chapter fetch (unlikely but possible), try again
+              url: (content.url?.isEmpty ?? true)
+                  ? _generateFallbackUrl(updatedDownload.sourceId, event.contentId)
+                  : content.url,
             );
 
             // Update total pages
@@ -710,27 +741,46 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Prepare download path
       String? savePath;
       try {
-        String baseDownloadPath;
-        if (currentState.settings.customStorageRoot != null &&
+        // Check if we already have a path for this download (e.g. retry/resume)
+        if (updatedDownload.downloadPath != null && updatedDownload.downloadPath!.isNotEmpty) {
+           savePath = updatedDownload.downloadPath;
+           _logger.d('Using existing download path: $savePath');
+        } else if (currentState.settings.customStorageRoot != null &&
             currentState.settings.customStorageRoot!.isNotEmpty) {
-          baseDownloadPath = currentState.settings.customStorageRoot!;
+          final baseDownloadPath = currentState.settings.customStorageRoot!;
+          
+          // Match DownloadService structure: [Root]/nhasix/[sourceId]/[contentId]
+          savePath = path.join(
+              baseDownloadPath, 'nhasix', content.sourceId, event.contentId);
         } else {
-          final appDir = await getApplicationDocumentsDirectory();
-          baseDownloadPath = path.join(appDir.path, 'Downloads');
+           // STRICT REQUIREMENT: If customStorageRoot is empty, DO NOT ALLOW DOWNLOAD.
+           _logger.e('❌ Download blocked: No custom storage root selected.');
+           
+           // Remove from active tasks and cleanup immediately
+           _activeTasks.remove(event.contentId);
+           DownloadManager().unregisterTask(event.contentId); // Ensure manager knows
+           
+           emit(DownloadError(
+             message: 'Storage location not set. Please select a folder in Settings.',
+             // You might want a specific error type here if you have one, 
+             // or check string in UI to show DownloadStorageErrorWidget
+             errorType: DownloadErrorType.storage, 
+             previousState: currentState, 
+           ));
+           return;
         }
 
-        // Match DownloadService structure: [Root]/nhasix/[sourceId]/[contentId]
-        savePath = path.join(
-            baseDownloadPath, 'nhasix', content.sourceId, event.contentId);
-
-        await BackgroundDownloadUtils.saveResumeState(
-          event.contentId,
-          downloadUrl:
-              content.imageUrls.isNotEmpty ? content.imageUrls.first : '',
-          savePath: savePath,
-          title: content.title,
-          totalImages: content.pageCount,
-        );
+        // Only save resume state if we have a path, or rely on native worker's own resume capability
+        if (savePath != null) {
+          await BackgroundDownloadUtils.saveResumeState(
+            event.contentId,
+            downloadUrl:
+                content.imageUrls.isNotEmpty ? content.imageUrls.first : '',
+            savePath: savePath,
+            title: content.title,
+            totalImages: content.pageCount,
+          );
+        }
       } catch (e) {
         _logger.w('Failed to save resume state for worker: $e');
       }
@@ -774,35 +824,28 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         endPage: updatedDownload.endPage,
         cookies: cookies, // NEW: Pass cookies
         savePath: savePath, // NEW: Pass savePath
+        enableNotifications: currentState.settings.enableNotifications, // NEW: Pass settings
       );
+      
+      // Call use case (Fire and Forget)
+      // The result returned is just the initial status (Downloading), or Failed if immediate error
       final result = await _downloadContentUseCase.call(downloadParams);
 
-      // Cleanup
-      _activeTasks.remove(event.contentId);
-      DownloadManager().unregisterTask(event.contentId);
-
-      // Check for explicit failure from UseCase (captured exception)
+      // Check for immediate failure during start
       if (result.isFailed) {
-        _logger.w('Download failed in UseCase: ${result.error}');
+        _logger.w('Download failed immediately to start: ${result.error}');
         await _handleDownloadFailure(
             event.contentId, result.error ?? 'Unknown error', null, emit);
         return;
       }
+      
+      // If successful, the native download is running in background.
+      // Progress/Completion will be handled by _onProgressUpdate via DownloadManager stream.
+      
+      // Cleanup task references (since we rely on stream)
+      _activeTasks.remove(event.contentId);
+      DownloadManager().unregisterTask(event.contentId);
 
-      // Notification
-      if (currentState.settings.enableNotifications && result.isCompleted) {
-        _notificationService.showDownloadCompleted(
-          contentId: event.contentId,
-          title: content.title,
-          downloadPath: result.downloadPath ?? '',
-        );
-      }
-
-      if (result.isCompleted) {
-        add(const DownloadRefreshEvent());
-      }
-
-      ContentDownloadCache.invalidateCache(event.contentId);
       _processQueue();
     } catch (e, stackTrace) {
       _logger.e('DownloadBloc: Error starting download',
@@ -892,6 +935,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       await _userDataRepository.saveDownloadStatus(failedDownload);
 
       // Show error notification
+      // DISABLED: Using Native Notifications exclusively
+      /*
       if (currentState.settings.enableNotifications) {
         _notificationService.showDownloadError(
           contentId: contentId,
@@ -899,6 +944,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           error: error.toString(),
         );
       }
+      */
 
       final updatedDownloads = currentState.downloads
           .map((d) => d.contentId == contentId ? failedDownload : d)
@@ -947,8 +993,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _logger.i('DownloadBloc: Paused task for ${event.contentId}');
       }
 
-      // Cancel background worker if scheduled (Legacy)
-      await DownloadWorkerManager.cancelDownload(event.contentId);
+      // Call Native Service to pause
+      await NativeDownloadService().pauseDownload(event.contentId);
 
       // Update status to paused
       final updatedDownload = download.copyWith(
@@ -959,15 +1005,13 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       await _userDataRepository.saveDownloadStatus(updatedDownload);
 
       // Immediately update notification to show paused status with current progress
-      // Only if NOT using native
       if (currentState.settings.enableNotifications) {
         final progressPercentage = updatedDownload.progressPercentage.round();
         _notificationService
             .updateDownloadProgress(
           contentId: event.contentId,
           progress: progressPercentage,
-          title:
-              updatedDownload.contentId, // Use contentId as fallback for title
+          title: updatedDownload.title ?? updatedDownload.contentId,
           isPaused: true,
         )
             .catchError((e) {
@@ -1017,8 +1061,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Cancel the download task (Dart side)
       _cancelDownloadTask(event.contentId);
 
-      // Cancel background worker if scheduled (Legacy)
-      await DownloadWorkerManager.cancelDownload(event.contentId);
+      // Call Native Service to cancel
+       await NativeDownloadService().cancelDownload(event.contentId);
 
       // Update status to cancelled
       final updatedDownload = download.copyWith(
@@ -1080,6 +1124,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // ✅ FIXED: Reset notification when retrying
       // This prevents the notification from being stuck at the last progress (e.g., 92%)
+      /*
       if (currentState.settings.enableNotifications) {
         _notificationService
             .showDownloadStarted(
@@ -1092,6 +1137,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _logger
             .i('DownloadBloc: Reset notification for retry ${event.contentId}');
       }
+      */
 
       // Refresh downloads
       add(const DownloadRefreshEvent());
@@ -1150,15 +1196,13 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       await _userDataRepository.saveDownloadStatus(updatedDownload);
 
       // Update notification to show resumed status with current progress
-      // Only if NOT using native
       if (currentState.settings.enableNotifications) {
         final progressPercentage = updatedDownload.progressPercentage.round();
         _notificationService
             .updateDownloadProgress(
           contentId: event.contentId,
           progress: progressPercentage,
-          title:
-              updatedDownload.contentId, // Use contentId as fallback for title
+          title: updatedDownload.title ?? updatedDownload.contentId,
           isPaused: false, // Resume means no longer paused
         )
             .catchError((e) {
@@ -1210,6 +1254,17 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       if (download.isInProgress) {
         _cancelDownloadTask(event.contentId);
       }
+
+      // Optimistic update: Remove from state immediately to prevent race conditions
+      // if user tries to re-download while deletion is in progress
+      final updatedDownloads = currentState.downloads
+          .where((d) => d.contentId != event.contentId)
+          .toList();
+
+      emit(currentState.copyWith(
+        downloads: updatedDownloads,
+        lastUpdated: DateTime.now(),
+      ));
 
       // Remove from database
       await _userDataRepository.deleteDownloadStatus(event.contentId);
@@ -1338,6 +1393,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             'DownloadBloc: Verification progress update for ${event.contentId}: ${event.totalPages}%');
 
         // Show verification notification
+        // DISABLED: Using Native Notifications exclusively
+        /*
         if (currentState.settings.enableNotifications) {
           final verificationPercentage = event.totalPages;
 
@@ -1403,6 +1460,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             add(const DownloadRefreshEvent());
           }
         }
+        */
 
         // Don't update download status for verification progress
         return;
@@ -1442,23 +1500,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _logger.i(
             'DownloadBloc: Download appears completed, refreshing status for ${event.contentId}');
 
-        // ✅ FIXED: Show completion notification BEFORE returning
-        // This fixes the issue where notification was stuck at ~90%
-        if (currentState.settings.enableNotifications) {
-          _notificationService
-              .showDownloadCompleted(
-            contentId: event.contentId,
-            title: currentDownload.title ?? currentDownload.contentId,
-            downloadPath: currentDownload.downloadPath ?? '',
-          )
-              .catchError((e) {
-            _logger.w(
-                'DownloadBloc: Failed to show completion notification on early complete: $e');
-          });
-          _logger.i(
-              'DownloadBloc: Triggered completion notification for ${event.contentId} (early complete)');
-        }
-
+        // REVAMP: If PDF conversion was part of the original request, we would trigger it here.
+        // For now, we ensure the UI updates and the status is finalized.
+        
         add(const DownloadRefreshEvent());
         return;
       }
@@ -1500,6 +1544,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         // because when progress = 100%, download may already be marked as completed
         if (progressPercentage >= 100) {
           // Show completion notification
+          // Show completion notification (Flutter-side)
           _notificationService
               .showDownloadCompleted(
             contentId: event.contentId,
@@ -1514,12 +1559,12 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
               'DownloadBloc: Triggered completion notification for ${event.contentId}');
         } else if (updatedDownload.isInProgress) {
           // Update progress notification only if still in progress (< 100%)
+          // (Flutter-side notification)
           _notificationService
               .updateDownloadProgress(
             contentId: event.contentId,
             progress: progressPercentage,
-            title: updatedDownload
-                .contentId, // Use contentId as fallback for title
+            title: updatedDownload.title ?? updatedDownload.contentId, // Use title or fallback
             isPaused: false,
           )
               .catchError((e) {
