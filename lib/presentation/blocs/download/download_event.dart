@@ -173,6 +173,7 @@ class DownloadSettingsUpdateEvent extends DownloadEvent {
     this.timeoutDuration,
     this.enableNotifications,
     this.wifiOnly,
+    this.customStorageRoot,
   });
 
   final int? maxConcurrentDownloads;
@@ -183,6 +184,7 @@ class DownloadSettingsUpdateEvent extends DownloadEvent {
   final Duration? timeoutDuration;
   final bool? enableNotifications;
   final bool? wifiOnly;
+  final String? customStorageRoot;
 
   @override
   List<Object?> get props => [
@@ -194,6 +196,7 @@ class DownloadSettingsUpdateEvent extends DownloadEvent {
         timeoutDuration,
         enableNotifications,
         wifiOnly,
+        customStorageRoot,
       ];
 }
 
@@ -210,6 +213,16 @@ class DownloadResumeAllEvent extends DownloadEvent {
 /// Event to cancel all downloads
 class DownloadCancelAllEvent extends DownloadEvent {
   const DownloadCancelAllEvent();
+}
+
+/// Event to mark a download as completed
+class DownloadCompletedEvent extends DownloadEvent {
+  const DownloadCompletedEvent(this.contentId);
+
+  final String contentId;
+
+  @override
+  List<Object?> get props => [contentId];
 }
 
 /// Event to clear completed downloads
@@ -237,6 +250,16 @@ class DownloadConvertToPdfEvent extends DownloadEvent {
 
   @override
   List<Object?> get props => [contentId, sourceId];
+}
+
+/// Event to open downloaded content (PDF or images)
+class DownloadOpenContentEvent extends DownloadEvent {
+  const DownloadOpenContentEvent(this.contentId);
+
+  final String contentId;
+
+  @override
+  List<Object?> get props => [contentId];
 }
 
 /// Event to toggle selection mode for bulk operations

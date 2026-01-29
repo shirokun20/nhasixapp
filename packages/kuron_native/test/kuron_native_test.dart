@@ -12,10 +12,17 @@ class MockKuronNativePlatform
   Future<String?> getPlatformVersion() => Future.value('42');
 
   @override
+  Future<Map<Object?, Object?>?> getSystemInfo(String type) => Future.value({'ram': 100});
+
+  @override
+  Future<String?> pickDirectory() => Future.value('picked_path');
+
+  @override
   Future<String?> startDownload({
     required String url,
     required String fileName,
     String? destinationDir,
+    String? savePath,
     String? title,
     String? description,
     String? mimeType,
@@ -46,6 +53,7 @@ class MockKuronNativePlatform
   Future<void> openPdf({
     required String filePath,
     String? title,
+    int? startPage,
   }) async {
     return;
   }
@@ -56,9 +64,11 @@ class MockKuronNativePlatform
     String? initialCookie,
     String? userAgent,
     String? autoCloseOnCookie,
+    String? ssoRedirectUrl,
+    bool enableAdBlock = false,
     bool clearCookies = false,
-  }) async {
-    return {'success': true, 'cookies': [], 'userAgent': 'MOCK_UA'};
+  }) {
+    return Future.value({'cookies': ['cookie'], 'userAgent': 'ua', 'success': true});
   }
 
   @override

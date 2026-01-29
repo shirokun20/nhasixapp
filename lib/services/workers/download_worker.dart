@@ -270,8 +270,11 @@ Future<bool> _handleDownloadContent(Map<String, dynamic>? inputData) async {
     );
 
     // Create download directory
-    final downloadPath =
-        await BackgroundDownloadUtils.createContentDirectory(contentId);
+    final downloadPath = savePath;
+    final downloadDir = Directory(downloadPath);
+    if (!await downloadDir.exists()) {
+      await downloadDir.create(recursive: true);
+    }
 
     // Generate image URLs based on downloadUrl pattern
     // Format: https://i.nhentai.net/galleries/{galleryId}/{page}.jpg

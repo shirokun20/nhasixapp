@@ -460,11 +460,11 @@ abstract class AppLocalizations {
   /// **'sole male'**
   String get soleMale;
 
-  /// No description provided for @fullColor.
+  /// Error message when custom storage location is not set
   ///
   /// In en, this message translates to:
-  /// **'full color'**
-  String get fullColor;
+  /// **'Please set download storage location in settings first.'**
+  String get pleaseSetStorageLocation;
 
   /// No description provided for @schoolgirlUniform.
   ///
@@ -5681,6 +5681,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Imported: {synced}, Updated: {updated}'**
   String syncCompletedMessage(int synced, int updated);
+
+  /// No description provided for @storageSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage Location'**
+  String get storageSection;
+
+  /// No description provided for @storageLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Download Folder'**
+  String get storageLocation;
+
+  /// No description provided for @defaultStorage.
+  ///
+  /// In en, this message translates to:
+  /// **'Default (Internal)'**
+  String get defaultStorage;
+
+  /// No description provided for @storageDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a folder to save downloads'**
+  String get storageDescription;
+
+  /// No description provided for @backupNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup Not Found'**
+  String get backupNotFound;
+
+  /// No description provided for @backupNotFoundMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No \'nhasix\' backup folder was found in the default location. Would you like to select a custom folder containing your backup?'**
+  String get backupNotFoundMessage;
+
+  /// No description provided for @selectFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Folder'**
+  String get selectFolder;
 }
 
 class _AppLocalizationsDelegate

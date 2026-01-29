@@ -41,12 +41,22 @@ class UserPreferences extends Equatable {
     this.lastAppAccess,
     this.lastHistoryCleanup,
     this.disguiseMode = 'default',
+    this.customStorageRoot = '',
+    // Download settings
+    this.autoRetry = true,
+    this.retryAttempts = 3,
+    int? retryDelaySeconds,
+    int? timeoutDurationSeconds,
+    this.enableNotifications = true,
+    this.wifiOnly = false,
   })  : columnsPortrait = columnsPortrait ?? AppUI.gridColumnsPortrait,
         columnsLandscape = columnsLandscape ?? AppUI.gridColumnsLandscape,
         maxConcurrentDownloads =
             maxConcurrentDownloads ?? AppLimits.maxConcurrentDownloads,
         readerAutoHideDelay =
-            readerAutoHideDelay ?? AppDurations.readerAutoHideDelay.inSeconds;
+            readerAutoHideDelay ?? AppDurations.readerAutoHideDelay.inSeconds,
+        retryDelaySeconds = retryDelaySeconds ?? 5,
+        timeoutDurationSeconds = timeoutDurationSeconds ?? 300;
 
   final String theme; // light, dark, amoled
   final String defaultLanguage;
@@ -87,6 +97,15 @@ class UserPreferences extends Equatable {
   final DateTime? lastHistoryCleanup; // Track last cleanup
   final String
       disguiseMode; // App disguise mode: default, calculator, notes, weather
+  final String customStorageRoot;
+  
+  // Download settings
+  final bool autoRetry;
+  final int retryAttempts;
+  final int retryDelaySeconds; // Duration stored as seconds
+  final int timeoutDurationSeconds; // Duration stored as seconds
+  final bool enableNotifications;
+  final bool wifiOnly;
 
   @override
   List<Object?> get props => [
@@ -125,6 +144,13 @@ class UserPreferences extends Equatable {
         lastAppAccess,
         lastHistoryCleanup,
         disguiseMode,
+        customStorageRoot,
+        autoRetry,
+        retryAttempts,
+        retryDelaySeconds,
+        timeoutDurationSeconds,
+        enableNotifications,
+        wifiOnly,
       ];
 
   UserPreferences copyWith({
@@ -164,6 +190,14 @@ class UserPreferences extends Equatable {
     DateTime? lastAppAccess,
     DateTime? lastHistoryCleanup,
     String? disguiseMode,
+    String? customStorageRoot,
+    // Download settings
+    bool? autoRetry,
+    int? retryAttempts,
+    int? retryDelaySeconds,
+    int? timeoutDurationSeconds,
+    bool? enableNotifications,
+    bool? wifiOnly,
   }) {
     return UserPreferences(
       theme: theme ?? this.theme,
@@ -207,6 +241,14 @@ class UserPreferences extends Equatable {
       lastAppAccess: lastAppAccess ?? this.lastAppAccess,
       lastHistoryCleanup: lastHistoryCleanup ?? this.lastHistoryCleanup,
       disguiseMode: disguiseMode ?? this.disguiseMode,
+      customStorageRoot: customStorageRoot ?? this.customStorageRoot,
+      // Download settings
+      autoRetry: autoRetry ?? this.autoRetry,
+      retryAttempts: retryAttempts ?? this.retryAttempts,
+      retryDelaySeconds: retryDelaySeconds ?? this.retryDelaySeconds,
+      timeoutDurationSeconds: timeoutDurationSeconds ?? this.timeoutDurationSeconds,
+      enableNotifications: enableNotifications ?? this.enableNotifications,
+      wifiOnly: wifiOnly ?? this.wifiOnly,
     );
   }
 
@@ -275,6 +317,13 @@ class UserPreferences extends Equatable {
     }
   }
 
+  /// Get retry delay as Duration
+  Duration get retryDelay => Duration(seconds: retryDelaySeconds);
+
+  /// Get timeout duration as Duration
+  Duration get timeoutDuration => Duration(seconds: timeoutDurationSeconds);
+
+
   /// Convert to JSON map
   Map<String, dynamic> toJson() {
     return {
@@ -314,6 +363,14 @@ class UserPreferences extends Equatable {
       'lastAppAccess': lastAppAccess?.millisecondsSinceEpoch,
       'lastHistoryCleanup': lastHistoryCleanup?.millisecondsSinceEpoch,
       'disguiseMode': disguiseMode,
+      'customStorageRoot': customStorageRoot,
+      // Download settings
+      'autoRetry': autoRetry,
+      'retryAttempts': retryAttempts,
+      'retryDelaySeconds': retryDelaySeconds,
+      'timeoutDurationSeconds': timeoutDurationSeconds,
+      'enableNotifications': enableNotifications,
+      'wifiOnly': wifiOnly,
     };
   }
 
@@ -368,6 +425,14 @@ class UserPreferences extends Equatable {
               _safeParseInt(json['lastHistoryCleanup'], 0))
           : null,
       disguiseMode: json['disguiseMode'] ?? 'default',
+      customStorageRoot: json['customStorageRoot'] ?? '',
+      // Download settings
+      autoRetry: _safeParseBool(json['autoRetry'], true),
+      retryAttempts: _safeParseInt(json['retryAttempts'], 3),
+      retryDelaySeconds: _safeParseInt(json['retryDelaySeconds'], 5),
+      timeoutDurationSeconds: _safeParseInt(json['timeoutDurationSeconds'], 300),
+      enableNotifications: _safeParseBool(json['enableNotifications'], true),
+      wifiOnly: _safeParseBool(json['wifiOnly'], false),
     );
   }
 

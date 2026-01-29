@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+
 import '../../../core/constants/text_style_const.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../domain/entities/entities.dart';
@@ -112,16 +113,22 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             );
           }
 
-          if (state is DownloadError && state.previousState == null) {
-            return AppErrorWidget(
-              title: AppLocalizations.of(context)!.downloadError,
-              message: state.message,
-              onRetry: state.canRetry
-                  ? () => context
-                      .read<DownloadBloc>()
-                      .add(const DownloadInitializeEvent())
-                  : null,
-            );
+          if (state is DownloadError) {
+            if (state.previousState is DownloadLoaded) {
+              return _buildLoadedContent(state.previousState as DownloadLoaded);
+            }
+            // If no previous loaded state, show error widget
+            if (state.previousState == null) {
+               return AppErrorWidget(
+                title: AppLocalizations.of(context)!.downloadError,
+                message: state.message,
+                onRetry: state.canRetry
+                    ? () => context
+                        .read<DownloadBloc>()
+                        .add(const DownloadInitializeEvent())
+                    : null,
+              );
+            }
           }
 
           if (state is DownloadLoaded) {
@@ -381,8 +388,13 @@ class _DownloadsScreenState extends State<DownloadsScreen>
   }
 
   Widget _buildLoadedContent(DownloadLoaded state) {
+    final hasStorageRoot = state.settings.customStorageRoot != null &&
+        state.settings.customStorageRoot!.isNotEmpty;
+
     return Column(
       children: [
+        if (!hasStorageRoot) _buildStorageWarning(state),
+
         // Download stats
         DownloadStatsWidget(state: state),
 
@@ -405,6 +417,57 @@ class _DownloadsScreenState extends State<DownloadsScreen>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildStorageWarning(DownloadLoaded state) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color:
+            Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context)!.pleaseSetStorageLocation,
+                  style: TextStyleConst.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _showSettingsDialog(state.settings),
+              icon: const Icon(Icons.settings, size: 18),
+              label: Text(AppLocalizations.of(context)!.settings),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+                foregroundColor: Theme.of(context).colorScheme.onError,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -571,6 +634,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       case 'convert_pdf':
         // Check permissions before PDF conversion
         _handlePdfConversion(download);
+        break;
+      case 'open_pdf':
+        downloadBloc.add(DownloadOpenContentEvent(download.contentId));
         break;
     }
   }
@@ -778,6 +844,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   timeoutDuration: newSettings.timeoutDuration,
                   enableNotifications: newSettings.enableNotifications,
                   wifiOnly: newSettings.wifiOnly,
+                  customStorageRoot: newSettings.customStorageRoot,
                 ));
           },
         ),

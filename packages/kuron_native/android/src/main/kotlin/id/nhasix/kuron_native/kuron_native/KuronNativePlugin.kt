@@ -24,6 +24,11 @@ import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import android.app.Activity
 import android.content.Intent
+import android.provider.DocumentsContract
+import androidx.documentfile.provider.DocumentFile
+import android.webkit.CookieManager
+import android.webkit.MimeTypeMap
+import android.os.Build
 
 /** KuronNativePlugin */
 class KuronNativePlugin :
@@ -33,11 +38,14 @@ class KuronNativePlugin :
     PluginRegistry.ActivityResultListener {
     
     private lateinit var channel: MethodChannel
+    private lateinit var downloadEventChannel: io.flutter.plugin.common.EventChannel
     private lateinit var context: Context
     private var activityBinding: ActivityPluginBinding? = null
     private var pendingResult: Result? = null
+    private lateinit var downloadHandler: id.nhasix.kuron_native.kuron_native.download.DownloadHandler
     
     private val WEBVIEW_REQUEST_CODE = 1001
+    private val PICK_DIRECTORY_REQUEST_CODE = 1002
     
     companion object {
         const val TAG = "KuronNativePlugin"
@@ -55,6 +63,10 @@ class KuronNativePlugin :
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "kuron_native")
         channel.setMethodCallHandler(this)
         context = flutterPluginBinding.applicationContext
+        
+        // Initialize download event channel and handler
+        downloadEventChannel = io.flutter.plugin.common.EventChannel(flutterPluginBinding.binaryMessenger, "kuron_native/download_progress")
+        downloadHandler = id.nhasix.kuron_native.kuron_native.download.DownloadHandler(context, downloadEventChannel)
     }
 
     override fun onMethodCall(
@@ -74,9 +86,6 @@ class KuronNativePlugin :
             "openWebView" -> {
                 handleOpenWebView(call, result)
             }
-            "openWebView" -> {
-                handleOpenWebView(call, result)
-            }
             "openPdf" -> {
                 handleOpenPdf(call, result)
             }
@@ -85,6 +94,23 @@ class KuronNativePlugin :
             }
             "clearCookies" -> {
                 handleClearCookies(result)
+            }
+            "getSystemInfo" -> {
+                handleGetSystemInfo(call, result)
+            }
+            "pickDirectory" -> {
+                handlePickDirectory(result)
+            }
+            // Delegate native download methods to handler
+            "kuronNativeStartDownload", 
+            "kuronNativeCancelDownload",
+            "kuronNativePauseDownload", 
+            "kuronNativeGetDownloadStatus",
+            "kuronNativeGetDownloadedFiles",
+            "kuronNativeGetDownloadPath",
+            "kuronNativeDeleteDownloadedContent",
+            "kuronNativeCountDownloadedFiles" -> {
+                downloadHandler.handleMethodCall(call, result)
             }
             else -> {
                 result.notImplemented()
@@ -144,7 +170,7 @@ class KuronNativePlugin :
                 )
             }
             
-            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            // request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             
             val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             val downloadId = manager.enqueue(request)
@@ -211,17 +237,20 @@ class KuronNativePlugin :
                         
                         bitmap.recycle() // Free memory for original bitmap
 
-                         // Report Progress
-                        val progress = ((index + 1).toFloat() / total * 100).toInt()
-                        android.os.Handler(android.os.Looper.getMainLooper()).post {
-                            try {
-                                channel.invokeMethod("onProgress", mapOf(
-                                    "progress" to progress,
-                                    "message" to "Processing page $totalPages (Image ${index + 1}/$total)"
-                                ))
-                            } catch (e: Exception) {
-                                // Ignore if channel closed or ui gone
-                            }
+                    } else {
+                         android.util.Log.w("KuronNative", "Failed to load bitmap: $path");
+                    }
+                    
+                    // Report Progress (Always report, even if failed)
+                    val progress = ((index + 1).toFloat() / total * 100).toInt()
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        try {
+                            channel.invokeMethod("onProgress", mapOf(
+                                "progress" to progress,
+                                "message" to "Processing page $totalPages (Image ${index + 1}/$total)"
+                            ))
+                        } catch (e: Exception) {
+                            // Ignore if channel closed or ui gone
                         }
                     }
                 }
@@ -409,6 +438,7 @@ class KuronNativePlugin :
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
+        downloadHandler.dispose()
     }
 
     // ActivityAware Implementation
@@ -437,7 +467,10 @@ class KuronNativePlugin :
         val successFilters = call.argument<List<String>>("successUrlFilters")
         val userAgent = call.argument<String>("userAgent")
         val initialCookie = call.argument<String>("initialCookie")
+
         val autoCloseOnCookie = call.argument<String>("autoCloseOnCookie")
+        val ssoRedirectUrl = call.argument<String>("ssoRedirectUrl")
+        val enableAdBlock = call.argument<Boolean>("enableAdBlock") ?: false
 
         if (url == null) {
             result.error("INVALID_ARGS", "Url is required", null)
@@ -465,6 +498,8 @@ class KuronNativePlugin :
                 successFilters, 
                 initialCookie,
                 autoCloseOnCookie,
+                ssoRedirectUrl,
+                enableAdBlock,
                 call.argument<Boolean>("clearCookies") ?: false
             )
             activity.startActivityForResult(intent, WEBVIEW_REQUEST_CODE)
@@ -497,6 +532,50 @@ class KuronNativePlugin :
             }
             return true
         }
+        
+        if (requestCode == PICK_DIRECTORY_REQUEST_CODE) {
+            if (pendingResult != null) {
+                if (resultCode == Activity.RESULT_OK && data != null) {
+                    val uri = data.data
+                    if (uri != null) {
+                        // Persist permissions (optional but good practice)
+                        try {
+                            val takeFlags: Int = data.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                            context.contentResolver.takePersistableUriPermission(uri, takeFlags)
+                        } catch (e: Exception) {
+                            // Ignore
+                        }
+
+                        // Extract Absolute Path if possible (since we have MANAGE_EXTERNAL_STORAGE)
+                        var path = uri.path
+                        if (path != null && path.contains("primary:")) {
+                            path = "/storage/emulated/0/" + path.substringAfter("primary:")
+                        } else if (path != null && path.contains("tree/")) {
+                             // Fallback attempts
+                             if (path.contains("primary%3A")) {
+                                  path = "/storage/emulated/0/" + path.substringAfter("primary%3A")
+                             }
+                        }
+                        
+                        // Clean up path if needed
+                        if (path != null && path.startsWith("/tree/")) {
+                             // Some devices return /tree/primary:Folder
+                             if (path.contains("primary:")) {
+                                  path = "/storage/emulated/0/" + path.substringAfter("primary:")
+                             }
+                        }
+
+                        pendingResult?.success(path ?: uri.toString())
+                    } else {
+                         pendingResult?.error("NO_URI", "No directory selected", null)
+                    }
+                } else {
+                     pendingResult?.success(null) // Cancelled
+                }
+                pendingResult = null
+            }
+            return true
+        }
         return false
     }
 
@@ -509,7 +588,52 @@ class KuronNativePlugin :
                 }
             }
         } catch (e: Exception) {
+
             result.error("CLEAR_COOKIES_FAILED", e.message, null)
+        }
+    }
+
+    private fun handleGetSystemInfo(call: MethodCall, result: Result) {
+        val type = call.argument<String>("type")
+        try {
+            val data = when (type) {
+                "ram" -> SystemInfoUtils.getMemoryInfo(context)
+                "storage" -> SystemInfoUtils.getStorageInfo()
+                "battery" -> SystemInfoUtils.getBatteryInfo(context)
+                else -> null
+            }
+            
+            if (data != null) {
+                result.success(data)
+            } else {
+                result.error("INVALID_TYPE", "Unknown info type: $type", null)
+            }
+        } catch (e: Exception) {
+            result.error("SYSTEM_INFO_FAILED", e.message, null)
+        }
+    }
+
+    private fun handlePickDirectory(result: Result) {
+        val activity = activityBinding?.activity
+        if (activity == null) {
+             result.error("NO_ACTIVITY", "Activity is not available", null)
+             return
+        }
+
+        if (pendingResult != null) {
+            result.error("BUSY", "Another operation is in progress", null)
+            return
+        }
+
+        pendingResult = result
+
+        try {
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+            activity.startActivityForResult(intent, PICK_DIRECTORY_REQUEST_CODE)
+        } catch (e: Exception) {
+            pendingResult = null
+            result.error("LAUNCH_FAILED", e.message, null)
         }
     }
 }

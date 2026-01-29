@@ -334,6 +334,118 @@ class NotificationService {
     }
   }
 
+  // ============================================================
+  // PDF QUEUE NOTIFICATIONS
+  // ============================================================
+
+  /// Fixed notification ID for PDF queue status
+  static const int _pdfQueueNotificationId = 777777;
+
+  /// Show PDF conversion with queue position
+  /// Displays current position in queue and total items
+  Future<void> showPdfConversionQueued({
+    required String contentId,
+    required String title,
+    required int currentIndex,
+    required int totalCount,
+  }) async {
+    if (!isEnabled) return;
+
+    try {
+      final notificationId = _getNotificationId('pdf_$contentId');
+      await _notificationsPlugin.show(
+        notificationId,
+        _getLocalized('convertingPdfQueued',
+            args: {'current': currentIndex, 'total': totalCount},
+            fallback: 'Converting PDF $currentIndex of $totalCount'),
+        _getLocalized('convertingToPdfWithTitle',
+            args: {'title': _truncateTitle(title)},
+            fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
+        NotificationDetailsBuilder.progress(
+          progress: 0,
+          highPriority: true,
+          playSound: false,  // Only play sound for first item
+          enableVibration: false,
+        ),
+        payload: contentId,
+      );
+
+      _logger.i(
+          'PDF queued notification shown for $contentId ($currentIndex/$totalCount)');
+    } catch (e) {
+      _logger.e('Failed to show PDF queued notification: $e');
+    }
+  }
+
+  /// Show queue status for waiting PDF conversions
+  /// Displays how many items are waiting in queue
+  Future<void> showPdfQueueStatus({
+    required int queuedCount,
+    required String queuedTitles,
+  }) async {
+    if (!isEnabled) return;
+
+    try {
+      await _notificationsPlugin.show(
+        _pdfQueueNotificationId,
+        _getLocalized('pdfQueueWaiting',
+            args: {'count': queuedCount},
+            fallback: 'PDF Queue: $queuedCount items waiting'),
+        _getLocalized('pdfQueueNext',
+            args: {'titles': queuedTitles},
+            fallback: 'Next: $queuedTitles'),
+        NotificationDetailsBuilder.progress(
+          progress: 0,
+          highPriority: false,
+          playSound: false,
+          enableVibration: false,
+        ),
+        payload: 'pdf_queue',
+      );
+
+      _logger.d('PDF queue status notification shown: $queuedCount items');
+    } catch (e) {
+      _logger.e('Failed to show PDF queue status notification: $e');
+    }
+  }
+
+  /// Clear PDF queue notification
+  Future<void> clearPdfQueueNotification() async {
+    try {
+      await _notificationsPlugin.cancel(_pdfQueueNotificationId);
+      _logger.d('PDF queue notification cleared');
+    } catch (e) {
+      _logger.e('Failed to clear PDF queue notification: $e');
+    }
+  }
+
+  /// Show batch completion summary for multiple PDFs
+  Future<void> showPdfBatchCompleted({required int count}) async {
+    if (!isEnabled) return;
+
+    try {
+      await _notificationsPlugin.show(
+        _pdfQueueNotificationId,
+        _getLocalized('pdfBatchCompleted',
+            fallback: 'PDF Batch Completed'),
+        _getLocalized('pdfBatchCompletedCount',
+            args: {'count': count},
+            fallback: '✅ $count PDFs created successfully'),
+        NotificationDetailsBuilder.success(),
+        payload: 'pdf_batch',
+      );
+
+      _logger.i('PDF batch completion notification shown: $count items');
+
+      // Auto-dismiss after 5 seconds
+      Future.delayed(const Duration(seconds: 5), () {
+        clearPdfQueueNotification();
+      });
+    } catch (e) {
+      _logger.e('Failed to show PDF batch completed notification: $e');
+    }
+  }
+
   /// Check if notifications are enabled
   bool get isEnabled => _permissionGranted && _initialized;
 

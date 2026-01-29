@@ -7,6 +7,7 @@ import '../../core/config/remote_config_service.dart';
 import '../../domain/entities/entities.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/download_service.dart';
+import '../../services/pdf_conversion_service.dart';
 
 /// Widget for displaying individual download item with progress and actions
 class DownloadItemWidget extends StatelessWidget {
@@ -478,12 +479,32 @@ class DownloadItemWidget extends StatelessWidget {
         return const SizedBox.shrink();
       }
 
-      return _buildActionTile(
-        context,
-        icon: Icons.picture_as_pdf,
-        title: AppLocalizations.of(context)?.downloadActionConvertToPdf ??
-            'Convert to PDF',
-        action: 'convert_pdf',
+      // Check if PDF already exists using FutureBuilder
+      return FutureBuilder<bool>(
+        future: GetIt.I<PdfConversionService>().isPdfExistForContent(
+          download.contentId,
+          sourceId: source,
+        ),
+        builder: (context, snapshot) {
+          final pdfExists = snapshot.data ?? false;
+
+          if (pdfExists) {
+            return _buildActionTile(
+              context,
+              icon: Icons.picture_as_pdf,
+              title: 'Open PDF',
+              action: 'open_pdf', // New action for opening PDF
+            );
+          }
+
+          return _buildActionTile(
+            context,
+            icon: Icons.picture_as_pdf,
+            title: AppLocalizations.of(context)?.downloadActionConvertToPdf ??
+                'Convert to PDF',
+            action: 'convert_pdf',
+          );
+        },
       );
     } catch (e) {
       // If config service not found or error, default to hidden for safety

@@ -1,10 +1,9 @@
-import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
+import 'package:kuron_native/kuron_native.dart';
 
 /// Service for opening PDFs using native Android PDF reader
+/// Now wraps KuronNative plugin for compatibility
 class NativePdfReaderService {
-  static const MethodChannel _channel = MethodChannel('id.nhasix.app/pdf_reader');
-  
   final Logger _logger;
 
   NativePdfReaderService({Logger? logger}) 
@@ -14,7 +13,7 @@ class NativePdfReaderService {
   /// 
   /// [filePath] - Absolute path to PDF file
   /// [title] - Optional title for the reader
-  /// [startPage] - Optional starting page number (0-indexed)
+  /// [startPage] - Optional starting page number (NOT SUPPORTED by current KuronNative but kept for API compatibility)
   Future<void> openPdf(
     String filePath, {
     String? title,
@@ -23,16 +22,13 @@ class NativePdfReaderService {
     try {
       _logger.i('📄 Opening PDF with native reader: $filePath');
       
-      await _channel.invokeMethod('openPdf', {
-        'filePath': filePath,
-        'title': title ?? '',
-        'startPage': startPage,
-      });
+      await KuronNative.instance.openPdf(
+        filePath: filePath,
+        title: title ?? '',
+        startPage: startPage,
+      );
       
       _logger.i('✅ PDF opened successfully');
-    } on PlatformException catch (e) {
-      _logger.e('❌ Failed to open PDF: ${e.message}', error: e);
-      rethrow;
     } catch (e) {
       _logger.e('❌ Unexpected error opening PDF: $e', error: e);
       rethrow;
@@ -42,10 +38,9 @@ class NativePdfReaderService {
   /// Close PDF reader (if needed)
   /// Note: PDF reader auto-closes when user presses back
   Future<void> closePdf() async {
-    try {
-      await _channel.invokeMethod('closePdf');
-    } catch (e) {
-      _logger.w('⚠️ Error closing PDF: $e');
-    }
+    // Current native implementation doesn't expose closePdf
+    // but the reader is managed by a separate Activity that closes on back press
+    _logger.d('closePdf called (no action needed for KuronNative reader)');
   }
 }
+

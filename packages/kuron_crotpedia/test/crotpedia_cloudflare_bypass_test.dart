@@ -16,20 +16,27 @@ class MockKuronNativePlatform extends Mock
     String? initialCookie,
     String? userAgent,
     String? autoCloseOnCookie,
+    String? ssoRedirectUrl,
+    bool enableAdBlock = false,
     bool clearCookies = false,
   }) {
     return super.noSuchMethod(
-      Invocation.method(#showLoginWebView, null, {
+      Invocation.method(#showLoginWebView, [], {
         #url: url,
         #successUrlFilters: successUrlFilters,
         #initialCookie: initialCookie,
         #userAgent: userAgent,
         #autoCloseOnCookie: autoCloseOnCookie,
+        #ssoRedirectUrl: ssoRedirectUrl,
+        #enableAdBlock: enableAdBlock,
         #clearCookies: clearCookies,
       }),
       returnValue: Future.value(null),
     );
   }
+
+  @override
+  Future<Map<Object?, Object?>?> getSystemInfo(String type) => Future.value(null);
 }
 
 void main() {

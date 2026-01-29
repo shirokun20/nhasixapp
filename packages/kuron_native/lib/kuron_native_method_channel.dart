@@ -18,13 +18,19 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }
 
   Future<void> _handleMethodCall(MethodCall call) async {
-    if (call.method == 'onProgress' && _onPdfProgress != null) {
-      // Safely handle types from different platforms
-      final args = call.arguments as Map;
-      final progress = (args['progress'] as num).toInt();
-      final message = args['message'] as String;
-      
-      _onPdfProgress!(progress, message);
+    if (call.method == 'onProgress') {
+       if (_onPdfProgress != null) {
+          try {
+            final args = call.arguments as Map;
+            final progress = (args['progress'] as num).toInt();
+            final message = args['message'] as String;
+            
+            _onPdfProgress!(progress, message);
+          } catch (e) {
+            // Silently ignore or log if needed
+            // print('Error handling onProgress: $e');
+          }
+       }
     }
   }
 
@@ -35,10 +41,23 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }
 
   @override
+  Future<Map<Object?, Object?>?> getSystemInfo(String type) async {
+    final result = await methodChannel.invokeMethod('getSystemInfo', {'type': type});
+    return result as Map<Object?, Object?>?;
+  }
+
+  @override
+  Future<String?> pickDirectory() async {
+    final path = await methodChannel.invokeMethod<String>('pickDirectory');
+    return path;
+  }
+
+  @override
   Future<String?> startDownload({
     required String url,
     required String fileName,
     String? destinationDir,
+    String? savePath,
     String? title,
     String? description,
     String? mimeType,
@@ -49,6 +68,7 @@ class MethodChannelKuronNative extends KuronNativePlatform {
       'url': url,
       'fileName': fileName,
       'destinationDir': destinationDir,
+      'savePath': savePath,
       'title': title,
       'description': description,
       'mimeType': mimeType,
@@ -92,10 +112,12 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   Future<void> openPdf({
     required String filePath,
     String? title,
+    int? startPage,
   }) async {
     await methodChannel.invokeMethod('openPdf', {
       'filePath': filePath,
       'title': title,
+      'startPage': startPage,
     });
   }
   @override
@@ -110,6 +132,8 @@ class MethodChannelKuronNative extends KuronNativePlatform {
     String? initialCookie,
     String? userAgent,
     String? autoCloseOnCookie,
+    String? ssoRedirectUrl,
+    bool enableAdBlock = false,
     bool clearCookies = false,
   }) async {
     final result = await methodChannel.invokeMapMethod<String, dynamic>('showLoginWebView', {
@@ -118,6 +142,8 @@ class MethodChannelKuronNative extends KuronNativePlatform {
       'initialCookie': initialCookie,
       'userAgent': userAgent,
       'autoCloseOnCookie': autoCloseOnCookie,
+      'ssoRedirectUrl': ssoRedirectUrl,
+      'enableAdBlock': enableAdBlock,
       'clearCookies': clearCookies,
     });
     return result;

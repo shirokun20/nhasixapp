@@ -1,7 +1,64 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nhasixapp/core/constants/app_constants.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/config/config_models.dart' as cfg;
+import 'package:get_it/get_it.dart';
+import 'package:dio/dio.dart';
+import 'package:logger/logger.dart';
+
+// Mock RemoteConfigService for testing
+class MockRemoteConfigService extends RemoteConfigService {
+  MockRemoteConfigService() : super(dio: Dio(), logger: Logger());
+
+  @override
+  cfg.AppConfig? get appConfig => cfg.AppConfig(
+    limits: cfg.AppLimits(
+      defaultPageSize: 20,
+      maxBatchSize: 1000,
+      maxConcurrentDownloads: 3,
+      searchHistoryLimit: 50,
+      imagePreloadBuffer: 5,
+    ),
+    durations: cfg.AppDurations(
+      splashDelayMs: 1000,
+      snackbarShortMs: 2000,
+      snackbarLongMs: 4000,
+      pageTransitionMs: 300,
+      searchDebounceMs: 300,
+      networkTimeoutMs: 30000,
+      cacheExpirationHours: 24,
+      readerAutoHideDelaySeconds: 3,
+      progressUpdateIntervalMs: 100,
+    ),
+    storage: cfg.AppStorage(
+      backupFolderName: 'nhasix',
+      maxImageSizeKb: 200,
+      pdfPartsSizePages: 100,
+    ),
+    ui: cfg.AppUiConfig(
+      gridColumnsPortrait: 2,
+      gridColumnsLandscape: 3,
+      minCardWidth: 150.0,
+      cardAspectRatio: 0.65,
+      cardBorderRadius: 12.0,
+      defaultPadding: 16.0,
+      titleMaxLength: 40,
+    ),
+  );
+}
 
 void main() {
+  setUpAll(() {
+    // Initialize GetIt with mock RemoteConfigService
+    final mockService = MockRemoteConfigService();
+    GetIt.I.registerSingleton<RemoteConfigService>(mockService);
+  });
+
+  tearDownAll(() {
+    // Clear GetIt after all tests
+    GetIt.I.reset();
+  });
+
   group('AppLimits', () {
     test('defaultPageSize is reasonable', () {
       expect(AppLimits.defaultPageSize, greaterThan(0));

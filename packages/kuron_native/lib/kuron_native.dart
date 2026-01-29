@@ -1,6 +1,10 @@
 
 import 'kuron_native_platform_interface.dart';
 
+
+export 'utils/backup_utils.dart'; // Export for users
+export 'widgets/kuron_widgets.dart'; // Export Widgets
+
 class KuronNative {
   /// Singleton instance
   static final KuronNative instance = KuronNative();
@@ -9,10 +13,22 @@ class KuronNative {
     return KuronNativePlatform.instance.getPlatformVersion();
   }
 
+  /// Get System Info. Types: 'ram', 'storage', 'battery'
+  Future<Map<Object?, Object?>?> getSystemInfo(String type) {
+    return KuronNativePlatform.instance.getSystemInfo(type);
+  }
+
+  /// Pick a directory using the native system picker.
+  /// Returns the path if selected, or null if cancelled.
+  Future<String?> pickDirectory() {
+    return KuronNativePlatform.instance.pickDirectory();
+  }
+
   Future<String?> startDownload({
     required String url,
     required String fileName,
     String? destinationDir, // Optional: Subdirectory in Downloads
+    String? savePath,
     String? title,
     String? description,
     String? mimeType,
@@ -23,6 +39,7 @@ class KuronNative {
       url: url,
       fileName: fileName,
       destinationDir: destinationDir,
+      savePath: savePath,
       title: title,
       description: description,
       mimeType: mimeType,
@@ -65,6 +82,8 @@ class KuronNative {
     String? initialCookie,
     String? userAgent,
     String? autoCloseOnCookie,
+    String? ssoRedirectUrl,
+    bool enableAdBlock = false,
     bool clearCookies = false,
   }) {
     return KuronNativePlatform.instance.showLoginWebView(
@@ -73,16 +92,20 @@ class KuronNative {
         initialCookie: initialCookie,
         userAgent: userAgent,
         autoCloseOnCookie: autoCloseOnCookie,
+        ssoRedirectUrl: ssoRedirectUrl,
+        enableAdBlock: enableAdBlock,
         clearCookies: clearCookies);
   }
 
   Future<void> openPdf({
     required String filePath,
     String? title,
+    int? startPage,
   }) {
     return KuronNativePlatform.instance.openPdf(
       filePath: filePath,
       title: title,
+      startPage: startPage,
     );
   }
 }

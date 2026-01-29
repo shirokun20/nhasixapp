@@ -354,6 +354,7 @@ class ContentModel extends Content {
     int? pageCount,
     List<String>? imageUrls,
     DateTime? uploadDate,
+    String? url, // NEW: Added to match Content.copyWith
     String? sourceId,
     int? favorites,
     List<Content>? relatedContent,

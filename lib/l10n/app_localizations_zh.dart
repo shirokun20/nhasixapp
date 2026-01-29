@@ -193,7 +193,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get soleMale => '单男主';
 
   @override
-  String get fullColor => '全彩';
+  String get pleaseSetStorageLocation => '请先在设置中设置下载存储位置。';
 
   @override
   String get schoolgirlUniform => '女学生制服';
@@ -3262,4 +3262,26 @@ class AppLocalizationsZh extends AppLocalizations {
   String syncCompletedMessage(int synced, int updated) {
     return 'Imported: $synced,已更新: $updated';
   }
+
+  @override
+  String get storageSection => '存储位置';
+
+  @override
+  String get storageLocation => '自定义下载文件夹';
+
+  @override
+  String get defaultStorage => '默认（内部存储）';
+
+  @override
+  String get storageDescription => '选择保存下载的文件夹';
+
+  @override
+  String get backupNotFound => '未找到备份';
+
+  @override
+  String get backupNotFoundMessage =>
+      '在默认位置未找到\'nhasix\'备份文件夹。您想选择包含备份的自定义文件夹吗？';
+
+  @override
+  String get selectFolder => '选择文件夹';
 }

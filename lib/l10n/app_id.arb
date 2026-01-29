@@ -99,6 +99,10 @@
   "soleFemale": "sole female",
   "soleMale": "sole male",
   "fullColor": "full color",
+  "pleaseSetStorageLocation": "Silahkan atur lokasi penyimpanan unduhan di pengaturan terlebih dahulu.",
+  "@pleaseSetStorageLocation": {
+    "description": "Pesan error ketika lokasi penyimpanan khusus belum diatur"
+  },
   "schoolgirlUniform": "schoolgirl uniform",
   
   "tryADifferentSearchTerm": "Coba istilah pencarian yang berbeda",
@@ -1955,5 +1959,12 @@
       "synced": {"type": "int"},
       "updated": {"type": "int"}
     }
-  }
- }
+  },
+  "storageSection": "Lokasi Penyimpanan",
+  "storageLocation": "Folder Unduhan Kustom",
+  "defaultStorage": "Default (Internal)",
+  "storageDescription": "Pilih folder untuk menyimpan unduhan",
+  "backupNotFound": "Cadangan Tidak Ditemukan",
+  "backupNotFoundMessage": "Folder cadangan 'nhasix' tidak ditemukan di lokasi default. Apakah Anda ingin memilih folder kustom yang berisi cadangan Anda?",
+  "selectFolder": "Pilih Folder"
+}

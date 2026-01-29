@@ -109,6 +109,8 @@ dev_dependencies:
   
   # Launcher Icons
   flutter_launcher_icons: ^0.14.3
+  mocktail: ^1.0.4
+  bloc_test: ^10.0.0
 
 flutter:
   uses-material-design: true

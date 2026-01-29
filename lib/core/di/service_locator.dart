@@ -82,6 +82,7 @@ import 'package:nhasixapp/core/services/update_service.dart';
 import 'package:nhasixapp/services/notification_service.dart';
 import 'package:nhasixapp/services/pdf_service.dart';
 import 'package:nhasixapp/services/pdf_conversion_service.dart';
+import 'package:nhasixapp/services/pdf_conversion_queue_manager.dart';
 import 'package:nhasixapp/services/history_cleanup_service.dart';
 import 'package:nhasixapp/services/preferences_service.dart';
 import 'package:nhasixapp/services/analytics_service.dart';
@@ -204,6 +205,16 @@ void _setupServices() {
         nativePdfService: getIt<NativePdfService>(),
         logger: getIt<Logger>(),
       ));
+
+  // PDF Conversion Queue Manager - Sequential queue for PDF conversions
+  getIt.registerLazySingleton<PdfConversionQueueManager>(
+    () => PdfConversionQueueManager()
+      ..initialize(
+        conversionService: getIt<PdfConversionService>(),
+        notificationService: getIt<NotificationService>(),
+        logger: getIt<Logger>(),
+      ),
+  );
 
   // Download Service - Core download logic with MediaStore support
   getIt.registerLazySingleton<DownloadService>(() => DownloadService(
@@ -490,7 +501,7 @@ void _setupUseCases() {
   getIt.registerLazySingleton<DownloadContentUseCase>(
       () => DownloadContentUseCase(
             getIt<UserDataRepository>(),
-            getIt<DownloadService>(),
+            getIt<NativeDownloadService>(),
             getIt<PdfService>(),
             logger: getIt<Logger>(),
           ));
@@ -557,6 +568,7 @@ void _setupBlocs() {
         connectivity: getIt<Connectivity>(),
         notificationService: getIt<NotificationService>(),
         pdfConversionService: getIt<PdfConversionService>(),
+        pdfConversionQueueManager: getIt<PdfConversionQueueManager>(),
         remoteConfigService: getIt<RemoteConfigService>(),
         appLocalizations: null, // Initialized during main setup
         crotpediaAuthManager:

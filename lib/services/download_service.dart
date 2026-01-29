@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:path/path.dart' as path;
 import 'package:logger/logger.dart';
 
-import 'package:path_provider/path_provider.dart';
+
 import 'package:kuron_core/kuron_core.dart'; // NEW: For ContentSourceRegistry
 
 import '../domain/entities/entities.dart';
@@ -12,6 +12,7 @@ import '../domain/value_objects/image_url.dart' as img;
 import 'notification_service.dart';
 import 'download_manager.dart';
 import '../core/utils/permission_helper.dart';
+import '../core/utils/storage_settings.dart';
 
 /// Service untuk handle actual file download
 class DownloadService {
@@ -43,6 +44,7 @@ class DownloadService {
     int? startPage, // NEW: Start page for range download (1-based)
     int? endPage, // NEW: End page for range download (1-based)
     Map<String, String>? cookies, // NEW: Optional cookies for authentication
+    String? savePath, // NEW: Explicit save path
   }) async {
     try {
       _logger.i('Starting download for content: ${content.id}');
@@ -51,8 +53,17 @@ class DownloadService {
       await _checkPermissions();
 
       // Create download directory
-      final downloadDir =
-          await _createDownloadDirectory(content.id, content.source);
+      Directory downloadDir;
+      if (savePath != null && savePath.isNotEmpty) {
+        // Appending 'images' for consistency with _createDownloadDirectory structure
+        downloadDir = Directory(path.join(savePath, 'images'));
+        if (!await downloadDir.exists()) {
+          await downloadDir.create(recursive: true);
+        }
+      } else {
+        downloadDir =
+            await _createDownloadDirectory(content.id, content.source);
+      }
 
       // Calculate actual page range to download
       final actualStartPage = startPage ?? 1;
@@ -480,6 +491,22 @@ class DownloadService {
   /// Tries multiple possible Downloads folder names and locations
   Future<String> _getDownloadsDirectory() async {
     try {
+      // 0. Check for custom storage root first
+      if (await StorageSettings.hasCustomRoot()) {
+        final customPath = await StorageSettings.getCustomRootPath();
+        if (customPath != null && customPath.isNotEmpty) {
+          final dir = Directory(customPath);
+          if (!await dir.exists()) {
+             _logger.w('Custom storage root set but does not exist: $customPath. Using it anyway as per user setting.');
+             // Attempt to verify/create if possible, but return it regardless
+          } else {
+             _logger.i('Using custom storage root: $customPath');
+          }
+          return customPath;
+        }
+      }
+
+      /*
       // First, try to get external storage directory
       Directory? externalDir;
       try {
@@ -567,9 +594,12 @@ class DownloadService {
       _logger.i(
           'Using app documents downloads directory: ${documentsDownloadsDir.path}');
       return documentsDownloadsDir.path;
+      */
+      throw Exception('No custom storage root selected. Please select a storage location in settings.');
     } catch (e) {
       _logger.e('Error detecting Downloads directory: $e');
 
+      /*
       // Emergency fallback: use app documents
       final documentsDir = await getApplicationDocumentsDirectory();
       final emergencyDir = Directory(path.join(documentsDir.path, 'downloads'));
@@ -578,6 +608,8 @@ class DownloadService {
       }
       _logger.w('Using emergency fallback directory: ${emergencyDir.path}');
       return emergencyDir.path;
+      */
+      rethrow;
     }
   }
 
@@ -591,26 +623,15 @@ class DownloadService {
   ) async {
     final isRangeDownload = startPage > 1 || endPage < content.pageCount;
     final metadata = {
-      'schemaVersion': '2.0', // V2 Schema
+      'schemaVersion': '2.1', // V2.1 Schema (simplified, added URL)
       'source': content.source,
       'content_id': content.id,
       'title': content.title,
+      'url': content.url, // NEW: For reader navigation
       'download_date': DateTime.now().toIso8601String(),
       'total_pages': content.pageCount,
       'downloaded_files': downloadedFiles.length,
       'files': downloadedFiles.map((f) => path.basename(f)).toList(),
-      // Use map for tags to support restoration
-      'tags': content.tags
-          .map((t) => {
-                'id': t.id,
-                'name': t.name,
-                'type': t.type,
-                'count': t.count,
-                'url': t.url
-              })
-          .toList(),
-      // Keep legacy string list for backward compatibility if needed, though V2 mainly uses 'tags'
-      'artists': content.artists,
       'language': content.language,
       'cover_url': content.coverUrl,
       // Range download information

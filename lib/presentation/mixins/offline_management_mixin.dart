@@ -4,6 +4,7 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/utils/directory_utils.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/core/utils/permission_helper.dart';
+import 'package:nhasixapp/core/utils/storage_settings.dart'; // NEW
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart'; // NEW: For download screen refresh
@@ -213,6 +214,41 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       }
     } else {
       debugPrint('OFFLINE_AUTO_SCAN: No backup folder found automatically');
+      
+      if (!context.mounted) return;
+
+      // Prompt user to pick manually
+      final shouldPick = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(AppLocalizations.of(context)!.backupNotFound),
+          content: Text(AppLocalizations.of(context)!.backupNotFoundMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(AppLocalizations.of(context)!.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(AppLocalizations.of(context)!.selectFolder),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldPick == true && context.mounted) {
+         final pickedPath = await StorageSettings.pickAndSaveCustomRoot(context);
+         if (pickedPath != null && context.mounted) {
+             // Recursive call to try again with new path
+             await _autoScanBackupFolder(context);
+             return;
+         }
+      }
+
+      // Ensure we clear loading state if we didn't recurse
+      if (context.mounted) {
+         context.read<OfflineSearchCubit>().forceRefresh();
+      }
     }
   }
 

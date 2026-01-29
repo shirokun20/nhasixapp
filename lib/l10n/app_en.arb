@@ -75,7 +75,10 @@
   "bigBreasts": "big breasts",
   "soleFemale": "sole female",
   "soleMale": "sole male",
-  "fullColor": "full color",
+  "pleaseSetStorageLocation": "Please set download storage location in settings first.",
+  "@pleaseSetStorageLocation": {
+    "description": "Error message when custom storage location is not set"
+  },
   "schoolgirlUniform": "schoolgirl uniform",
   
   "tryADifferentSearchTerm": "Try a different search term",
@@ -2310,5 +2313,12 @@
       "synced": {"type": "int"},
       "updated": {"type": "int"}
     }
-  }
+  },
+  "storageSection": "Storage Location",
+  "storageLocation": "Custom Download Folder",
+  "defaultStorage": "Default (Internal)",
+  "storageDescription": "Choose a folder to save downloads",
+  "backupNotFound": "Backup Not Found",
+  "backupNotFoundMessage": "No 'nhasix' backup folder was found in the default location. Would you like to select a custom folder containing your backup?",
+  "selectFolder": "Select Folder"
 }

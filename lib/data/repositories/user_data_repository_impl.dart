@@ -5,6 +5,7 @@ import '../../domain/repositories/user_data_repository.dart';
 import '../datasources/local/local_data_source.dart';
 import '../models/download_status_model.dart';
 import '../models/history_model.dart';
+import '../../core/utils/storage_settings.dart';
 
 /// Implementation of UserDataRepository for local data management (simplified)
 class UserDataRepositoryImpl implements UserDataRepository {
@@ -358,7 +359,26 @@ class UserDataRepositoryImpl implements UserDataRepository {
   @override
   Future<UserPreferences> getUserPreferences() async {
     try {
-      return await localDataSource.getUserPreferences();
+      // Get preferences from local DB
+      var userPrefs = await localDataSource.getUserPreferences();
+      
+      // Ensure customStorageRoot is synced with StorageSettings (Source of Truth)
+      try {
+        final customRoot = await StorageSettings.getCustomRootPath();
+        if (customRoot != null && customRoot.isNotEmpty) {
+          if (userPrefs.customStorageRoot != customRoot) {
+            _logger.d('Syncing customStorageRoot from StorageSettings: $customRoot');
+            userPrefs = userPrefs.copyWith(customStorageRoot: customRoot);
+            
+            // Optional: Sync back to DB if needed, but for now just returning correct value is enough
+            // saveUserPreferences(userPrefs); 
+          }
+        }
+      } catch (e) {
+        _logger.w('Failed to sync customStorageRoot from StorageSettings: $e');
+      }
+      
+      return userPrefs;
     } catch (e, stackTrace) {
       _logger.e('Failed to get user preferences',
           error: e, stackTrace: stackTrace);
