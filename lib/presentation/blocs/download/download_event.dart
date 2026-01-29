@@ -215,6 +215,16 @@ class DownloadCancelAllEvent extends DownloadEvent {
   const DownloadCancelAllEvent();
 }
 
+/// Event to mark a download as completed
+class DownloadCompletedEvent extends DownloadEvent {
+  const DownloadCompletedEvent(this.contentId);
+
+  final String contentId;
+
+  @override
+  List<Object?> get props => [contentId];
+}
+
 /// Event to clear completed downloads
 class DownloadClearCompletedEvent extends DownloadEvent {
   const DownloadClearCompletedEvent();

@@ -26,6 +26,8 @@ class DownloadHandler(
     private var eventSink: EventChannel.EventSink? = null
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var progressJob: Job? = null
+    // Cache for deduplication: contentId -> fingerprint
+    private val lastEmittedStates = java.util.concurrent.ConcurrentHashMap<String, String>()
 
     companion object {
         private const val TAG = "DownloadHandler"
@@ -54,43 +56,80 @@ class DownloadHandler(
                 .getWorkInfosByTagFlow("native_download")
                 .collect { workInfos ->
                     Log.d(TAG, "WorkManager flow: Received ${workInfos.size} work items")
-                    for (workInfo in workInfos) {
-                        val progress = workInfo.progress
-                        val contentId = progress.getString("content_id") ?: 
-                                        workInfo.outputData.getString("content_id")
-                        
-                        if (contentId != null) {
+                    
+                     // Group by contentId to handle multiple different downloads separately
+                    val grouped = workInfos.groupBy { 
+                        it.progress.getString("content_id") ?: it.outputData.getString("content_id") 
+                    }
+
+                    for ((contentId, items) in grouped) {
+                        if (contentId == null) continue
+
+                        // Find the most relevant work info for this contentId
+                        // Priority: RUNNING > ENQUEUED > SUCCEEDED > FAILED > CANCELLED
+                        val activeWork = items.firstOrNull { it.state == WorkInfo.State.RUNNING }
+                            ?: items.firstOrNull { it.state == WorkInfo.State.ENQUEUED }
+                            ?: items.firstOrNull { it.state == WorkInfo.State.SUCCEEDED }
+                            ?: items.firstOrNull { it.state == WorkInfo.State.FAILED }
+                            ?: items.firstOrNull()
+
+                        if (activeWork != null) {
+                            val workInfo = activeWork
                             val state = when (workInfo.state) {
                                 WorkInfo.State.RUNNING -> "RUNNING"
                                 WorkInfo.State.SUCCEEDED -> "COMPLETED"
                                 WorkInfo.State.FAILED -> "FAILED"
-                                else -> "PENDING"
+                                WorkInfo.State.ENQUEUED -> "PENDING"
+                                WorkInfo.State.BLOCKED -> "PENDING"
+                                WorkInfo.State.CANCELLED -> "CANCELLED"
                             }
                             
-                            val src = if (workInfo.state == WorkInfo.State.SUCCEEDED) workInfo.outputData else progress
+                            val src = if (workInfo.state == WorkInfo.State.SUCCEEDED) workInfo.outputData else workInfo.progress
                             val downloaded = src.getInt("downloadedCount", 0)
                             val total = src.getInt("totalCount", 0)
                             
-                            Log.d(TAG, "Processing: contentId=$contentId state=$state downloaded=$downloaded total=$total")
-                            
-                            if (total > 0 || state == "COMPLETED") {
-                                val data = mapOf(
-                                    "contentId" to contentId,
-                                    "downloadedPages" to downloaded,
-                                    "totalPages" to total,
-                                    "status" to state
-                                )
-                                if (eventSink != null) {
-                                    eventSink?.success(data)
-                                    Log.d(TAG, "EventChannel: Sent progress to Flutter: $data")
+                            if (total > 0 || state == "COMPLETED" || state == "FAILED") {
+                                // Calculate progress percentage for smarter deduplication
+                                val progressPercent = if (total > 0) (downloaded * 100 / total) else 0
+                                
+                                // Create fingerprint using percentage tiers (5% intervals) for better deduplication
+                                // This prevents flooding with events but ensures progress updates visible to user
+                                val progressTier = (progressPercent / 5) * 5
+                                val stateFingerprint = "$state:tier_$progressTier:$total"
+                                val lastFingerprint = lastEmittedStates[contentId]
+
+                                // CRITICAL: ALWAYS emit COMPLETED/FAILED states regardless of deduplication
+                                // This ensures completion events always reach Flutter layer
+                                val isTerminalState = state == "COMPLETED" || state == "FAILED"
+                                val shouldEmit = isTerminalState || stateFingerprint != lastFingerprint
+
+                                if (shouldEmit) {
+                                    val data = mapOf(
+                                        "contentId" to contentId,
+                                        "downloadedPages" to downloaded,
+                                        "totalPages" to total,
+                                        "status" to state
+                                    )
+                                    
+                                    if (eventSink != null) {
+                                        eventSink?.success(data)
+                                        lastEmittedStates[contentId] = stateFingerprint
+                                        
+                                        if (isTerminalState) {
+                                            Log.i(TAG, "✅ TERMINAL STATE emitted for $contentId: $state ($downloaded/$total)")
+                                        } else {
+                                            Log.d(TAG, "Progress update for $contentId: $progressPercent% ($downloaded/$total)")
+                                        }
+                                    } else {
+                                        Log.w(TAG, "EventSink is null, cannot emit for $contentId")
+                                    }
                                 } else {
-                                    Log.w(TAG, "EventChannel: eventSink is null, cannot send progress data")
+                                    // Log skipped updates only occasionally to avoid log spam
+                                    if (progressPercent % 20 == 0) {
+                                        Log.v(TAG, "Skipped duplicate for $contentId at $progressPercent%")
+                                    }
                                 }
-                            } else {
-                                Log.d(TAG, "Skipping event emission: total=$total state=$state")
                             }
-                        } else {
-                            Log.w(TAG, "WorkInfo has no content_id, skipping")
                         }
                     }
                 }
@@ -133,7 +172,6 @@ class DownloadHandler(
             val url = call.argument<String>("url") ?: ""
             val coverUrl = call.argument<String>("coverUrl") ?: ""
             val language = call.argument<String>("language") ?: "unknown"
-            val enableNotifications = call.argument<Boolean>("enableNotifications") ?: true
 
             val workId = downloadManager.queueDownload(
                 contentId, 
@@ -144,8 +182,7 @@ class DownloadHandler(
                 title,
                 url,
                 coverUrl,
-                language,
-                enableNotifications // NEW
+                language
             )
             result.success(workId)
         } catch (e: Exception) {
@@ -232,6 +269,7 @@ class DownloadHandler(
 
     private fun handleDeleteDownloadedContent(call: MethodCall, result: MethodChannel.Result) {
         val contentId = call.argument<String>("contentId")
+        val dirPath = call.argument<String>("dirPath")
         if (contentId == null) {
             result.error("INVALID_ARGUMENT", "contentId required", null)
             return
@@ -239,7 +277,7 @@ class DownloadHandler(
 
         scope.launch(Dispatchers.IO) {
             try {
-                deleteContent(contentId)
+                deleteContent(contentId, dirPath)
                 launch(Dispatchers.Main) {
                     result.success(null)
                 }
@@ -347,8 +385,12 @@ class DownloadHandler(
         return path
     }
 
-    private fun deleteContent(contentId: String) {
-        val path = getDownloadPathForContent(contentId)
+    private fun deleteContent(contentId: String, explicitPath: String? = null) {
+        var path = explicitPath
+        if (path.isNullOrEmpty()) {
+            path = getDownloadPathForContent(contentId)
+        }
+
         if (path == null) {
             Log.e(TAG, "deleteContent: Path not found for $contentId")
             return

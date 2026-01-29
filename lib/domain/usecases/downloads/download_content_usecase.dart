@@ -119,13 +119,13 @@ class DownloadContentUseCase
   }
 
   // make features for delete folder by content id
-  Future<void> deleteCall(String contentId) async {
+  Future<void> deleteCall(String contentId, {String? dirPath}) async {
     try {
       // Remove download status from repository
       await _userDataRepository.deleteDownloadStatus(contentId);
 
       // Remove downloaded files from storage
-      await _nativeDownloadService.deleteDownloadedContent(contentId);
+      await _nativeDownloadService.deleteDownloadedContent(contentId, dirPath: dirPath);
     } catch (e) {
       _logger.e('Failed to delete downloaded content: $contentId', error: e);
     }

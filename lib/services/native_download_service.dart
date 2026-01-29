@@ -105,10 +105,11 @@ class NativeDownloadService {
   }
 
   /// Delete downloaded content by content ID
-  Future<void> deleteDownloadedContent(String contentId) async {
+  Future<void> deleteDownloadedContent(String contentId, {String? dirPath}) async {
     try {
       await _channel.invokeMethod('kuronNativeDeleteDownloadedContent', {
         'contentId': contentId,
+        'dirPath': dirPath,
       });
     } on PlatformException catch (e) {
       throw Exception('Failed to delete downloaded content: ${e.message}');

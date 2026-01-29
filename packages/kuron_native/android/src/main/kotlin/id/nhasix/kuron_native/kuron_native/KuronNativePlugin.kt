@@ -170,7 +170,7 @@ class KuronNativePlugin :
                 )
             }
             
-            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            // request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             
             val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             val downloadId = manager.enqueue(request)
@@ -237,17 +237,20 @@ class KuronNativePlugin :
                         
                         bitmap.recycle() // Free memory for original bitmap
 
-                         // Report Progress
-                        val progress = ((index + 1).toFloat() / total * 100).toInt()
-                        android.os.Handler(android.os.Looper.getMainLooper()).post {
-                            try {
-                                channel.invokeMethod("onProgress", mapOf(
-                                    "progress" to progress,
-                                    "message" to "Processing page $totalPages (Image ${index + 1}/$total)"
-                                ))
-                            } catch (e: Exception) {
-                                // Ignore if channel closed or ui gone
-                            }
+                    } else {
+                         android.util.Log.w("KuronNative", "Failed to load bitmap: $path");
+                    }
+                    
+                    // Report Progress (Always report, even if failed)
+                    val progress = ((index + 1).toFloat() / total * 100).toInt()
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        try {
+                            channel.invokeMethod("onProgress", mapOf(
+                                "progress" to progress,
+                                "message" to "Processing page $totalPages (Image ${index + 1}/$total)"
+                            ))
+                        } catch (e: Exception) {
+                            // Ignore if channel closed or ui gone
                         }
                     }
                 }

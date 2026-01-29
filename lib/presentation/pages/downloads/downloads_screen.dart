@@ -113,16 +113,22 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             );
           }
 
-          if (state is DownloadError && state.previousState == null) {
-            return AppErrorWidget(
-              title: AppLocalizations.of(context)!.downloadError,
-              message: state.message,
-              onRetry: state.canRetry
-                  ? () => context
-                      .read<DownloadBloc>()
-                      .add(const DownloadInitializeEvent())
-                  : null,
-            );
+          if (state is DownloadError) {
+            if (state.previousState is DownloadLoaded) {
+              return _buildLoadedContent(state.previousState as DownloadLoaded);
+            }
+            // If no previous loaded state, show error widget
+            if (state.previousState == null) {
+               return AppErrorWidget(
+                title: AppLocalizations.of(context)!.downloadError,
+                message: state.message,
+                onRetry: state.canRetry
+                    ? () => context
+                        .read<DownloadBloc>()
+                        .add(const DownloadInitializeEvent())
+                    : null,
+              );
+            }
           }
 
           if (state is DownloadLoaded) {

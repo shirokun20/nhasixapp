@@ -12,8 +12,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
 import androidx.work.ForegroundInfo
-import androidx.work.ListenableWorker
-import androidx.work.WorkerParameters
+
 import androidx.work.workDataOf
 import android.content.pm.ServiceInfo
 import id.nhasix.kuron_native.kuron_native.R
@@ -44,7 +43,6 @@ class DownloadWorker(
         const val KEY_COVER_URL = "cover_url"
         const val KEY_LANGUAGE = "language"
         const val KEY_PROGRESS = "progress"
-        const val KEY_ENABLE_NOTIFICATIONS = "enableNotifications" // NEW (Ignored now)
         
         private const val TAG = "DownloadWorker"
         private const val ALLOWED_COOKIE_DOMAIN = "crotpedia.com"  // Security - only allow crotpedia.com

@@ -17,6 +17,8 @@ import 'package:nhasixapp/domain/usecases/content/get_chapter_images_usecase.dar
 import 'package:nhasixapp/core/config/remote_config_service.dart'; // Was network/
 import 'package:nhasixapp/services/pdf_conversion_service.dart';
 import 'package:logger/logger.dart';
+
+import '../../../presentation/blocs/download/download_bloc_test.dart';
 // For ContentModel if needed, but imported above too.
 
 // Manual Mocks
@@ -26,7 +28,7 @@ class MockUserDataRepository extends Fake implements UserDataRepository {
     return UserPreferences(
       autoRetry: true,
       retryAttempts: 3,
-      retryDelaySeconds: 2, 
+      retryDelaySeconds: 2,
     );
   }
 
@@ -55,7 +57,8 @@ class MockUserDataRepository extends Fake implements UserDataRepository {
   Future<void> saveDownloadStatus(DownloadStatus status) async {}
 }
 
-class MockDownloadContentUseCase extends Fake implements DownloadContentUseCase {
+class MockDownloadContentUseCase extends Fake
+    implements DownloadContentUseCase {
   @override
   Future<DownloadStatus> call(DownloadContentParams params) async {
     throw Exception('Simulated Network Error');
@@ -64,12 +67,16 @@ class MockDownloadContentUseCase extends Fake implements DownloadContentUseCase 
 
 class MockConnectivity extends Fake implements Connectivity {
   @override
-  Future<List<ConnectivityResult>> checkConnectivity() async => [ConnectivityResult.wifi];
+  Future<List<ConnectivityResult>> checkConnectivity() async =>
+      [ConnectivityResult.wifi];
 }
 
 class MockNotificationService extends Fake implements NotificationService {
   @override
-  Future<void> showDownloadError({required String contentId, required String title, required String error}) async {}
+  Future<void> showDownloadError(
+      {required String contentId,
+      required String title,
+      required String error}) async {}
 
   @override
   Future<void> initialize() async {
@@ -95,20 +102,28 @@ class MockRemoteConfigService extends Fake implements RemoteConfigService {
   get appConfig => null;
 }
 
-class MockGetContentDetailUseCase extends Fake implements GetContentDetailUseCase {}
-class MockGetChapterImagesUseCase extends Fake implements GetChapterImagesUseCase {}
+class MockGetContentDetailUseCase extends Fake
+    implements GetContentDetailUseCase {}
+
+class MockGetChapterImagesUseCase extends Fake
+    implements GetChapterImagesUseCase {}
+
 class MockPdfConversionService extends Fake implements PdfConversionService {}
+
 class MockLogger extends Fake implements Logger {
   @override
-  void i(dynamic message, {DateTime? time, Object? error, StackTrace? stackTrace}) {}
+  void i(dynamic message,
+      {DateTime? time, Object? error, StackTrace? stackTrace}) {}
   @override
-  void e(dynamic message, {DateTime? time, Object? error, StackTrace? stackTrace}) {}
+  void e(dynamic message,
+      {DateTime? time, Object? error, StackTrace? stackTrace}) {}
   @override
-  void w(dynamic message, {DateTime? time, Object? error, StackTrace? stackTrace}) {}
+  void w(dynamic message,
+      {DateTime? time, Object? error, StackTrace? stackTrace}) {}
   @override
-  void d(dynamic message, {DateTime? time, Object? error, StackTrace? stackTrace}) {}
+  void d(dynamic message,
+      {DateTime? time, Object? error, StackTrace? stackTrace}) {}
 }
-
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -136,6 +151,7 @@ void main() {
       remoteConfigService: MockRemoteConfigService(),
       pdfConversionService: MockPdfConversionService(),
       logger: MockLogger(),
+      pdfConversionQueueManager: MockPdfConversionQueueManager(),
     );
 
     // Listen to changes immediately
@@ -148,19 +164,21 @@ void main() {
         debugPrint('DOWNLOAD ERROR STACKTRACE: ${state.stackTrace}');
       }
       if (state is DownloadLoaded) {
-         try {
-           final download = state.downloads.firstWhere((d) => d.contentId == 'test-id');
-           debugPrint('Download Item State: ${download.state} - Error: ${download.error}');
-           states.add(download.state);
-         } catch (e) {
-           debugPrint('Download item test-id not found in state');
-         }
+        try {
+          final download =
+              state.downloads.firstWhere((d) => d.contentId == 'test-id');
+          debugPrint(
+              'Download Item State: ${download.state} - Error: ${download.error}');
+          states.add(download.state);
+        } catch (e) {
+          debugPrint('Download item test-id not found in state');
+        }
       }
     });
 
     debugPrint('Initializing Bloc...');
     bloc.add(DownloadInitializeEvent());
-    
+
     // Wait for initial load
     await Future.delayed(Duration(milliseconds: 200));
 
@@ -173,7 +191,7 @@ void main() {
 
     await subscription.cancel();
     await bloc.close();
-    
+
     // We expect the state to have gone: Downloading -> Queued (Retrying) -> ...
     expect(states, contains(DownloadState.queued));
   });

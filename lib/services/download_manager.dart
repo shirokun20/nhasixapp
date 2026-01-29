@@ -61,19 +61,35 @@ class DownloadManager {
             // Native sends int, but safety cast is good
             final int downloaded = (data['downloadedPages'] as num).toInt();
             final int total = (data['totalPages'] as num).toInt();
+            
+            _logger.d('Native event: $contentId -> $status ($downloaded/$total)');
 
             if (status == 'COMPLETED') {
-               emitCompletion(contentId, DownloadState.completed);
-               // Also emit 100% progress just in case
+               _logger.i('🎯 COMPLETION EVENT received for $contentId');
+               
+               // CRITICAL: Ensure we emit 100% progress FIRST
+               // This ensures UI shows full progress bar before notification disappears
+               final finalDownloaded = total > 0 ? total : downloaded;
+               
+               _logger.d('Emitting final progress: $finalDownloaded/$total');
                emitProgress(DownloadProgressUpdate(
                  contentId: contentId,
-                 downloadedPages: total > 0 ? total : downloaded, // Ensure full
+                 downloadedPages: finalDownloaded,
                  totalPages: total,
                ));
+               
+               // Small delay to ensure UI updates before completion
+               // This prevents race condition where notification disappears before 100% shown
+               Future.delayed(const Duration(milliseconds: 100), () {
+                 _logger.i('✅ Emitting COMPLETION for $contentId');
+                 emitCompletion(contentId, DownloadState.completed);
+               });
+               
             } else if (status == 'FAILED') {
+               _logger.e('❌ FAILED EVENT received for $contentId');
                emitCompletion(contentId, DownloadState.failed);
             } else {
-               // Progress
+               // Progress update
                emitProgress(DownloadProgressUpdate(
                   contentId: contentId,
                   downloadedPages: downloaded,

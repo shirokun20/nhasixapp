@@ -12,7 +12,7 @@ import '../../core/utils/offline_content_manager.dart';
 import '../../core/utils/responsive_grid_delegate.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../l10n/app_localizations.dart';
-import '../../services/pdf_conversion_service.dart';
+import '../../services/pdf_conversion_queue_manager.dart';
 import '../blocs/download/download_bloc.dart';
 import '../cubits/offline_search/offline_search_cubit.dart';
 import '../../core/config/remote_config_service.dart';
@@ -748,7 +748,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
   Future<void> _generatePdf(BuildContext context, Content content) async {
     final l10n = AppLocalizations.of(context)!;
     final offlineManager = getIt<OfflineContentManager>();
-    final pdfService = getIt<PdfConversionService>();
+    // Queue manager will handle conversion sequentially
 
     try {
       // Check permissions before starting PDF conversion
@@ -796,12 +796,13 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
         return;
       }
 
-      await pdfService.convertToPdfInBackground(
+      // Queue PDF conversion instead of converting immediately
+      final queueManager = getIt<PdfConversionQueueManager>();
+      await queueManager.queueConversion(
         contentId: content.id,
         title: content.title,
         imagePaths: imagePaths,
-        sourceId: content.sourceId, // ← FIX: Use sourceId property
-        maxPagesPerFile: 50,
+        sourceId: content.sourceId,
       );
     } catch (e) {
       if (!context.mounted) return;

@@ -22,12 +22,7 @@ class BackupUtils {
         // Use custom directory if provided (e.g., from StorageSettings)
         directory = Directory(customDirectory);
       } else if (Platform.isAndroid) {
-        // Fallback to default Downloads folder
-        directory = Directory('/storage/emulated/0/Download');
-        // Fallback if Download folder is not accessible (though typically it is)
-        if (!directory.existsSync()) {
-             directory = await getExternalStorageDirectory();
-        }
+         directory = await getExternalStorageDirectory();
       } else {
         directory = await getApplicationDocumentsDirectory();
       }

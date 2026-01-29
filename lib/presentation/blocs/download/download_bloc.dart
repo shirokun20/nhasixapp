@@ -28,6 +28,7 @@ import '../../../core/di/service_locator.dart';
 import '../../../services/notification_service.dart';
 import '../../../services/download_manager.dart';
 import '../../../services/pdf_conversion_service.dart';
+import '../../../services/pdf_conversion_queue_manager.dart';
 import '../../../core/utils/download_storage_utils.dart';
 import '../../../core/utils/storage_settings.dart';
 import '../../widgets/content_list_widget.dart';
@@ -51,10 +52,11 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     required Connectivity connectivity,
     required NotificationService notificationService,
     required PdfConversionService pdfConversionService,
+    required PdfConversionQueueManager pdfConversionQueueManager,
     required RemoteConfigService remoteConfigService,
     AppLocalizations? appLocalizations,
-    CrotpediaAuthManager?
-        crotpediaAuthManager, // NEW: Optional for cookie extraction
+    CrotpediaAuthManager? crotpediaAuthManager, // NEW: Optional for cookie extraction
+    DownloadManager? downloadManager, // NEW: Optional for testing
   })  : _downloadContentUseCase = downloadContentUseCase,
         _getContentDetailUseCase = getContentDetailUseCase,
         _getChapterImagesUseCase = getChapterImagesUseCase,
@@ -62,10 +64,12 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _logger = logger,
         _connectivity = connectivity,
         _notificationService = notificationService,
-        _pdfConversionService = pdfConversionService,
+        // _pdfConversionService = pdfConversionService,
+        _pdfConversionQueueManager = pdfConversionQueueManager,
         _remoteConfigService = remoteConfigService,
         _appLocalizations = appLocalizations,
-        _crotpediaAuthManager = crotpediaAuthManager, // NEW: Store auth manager
+        _crotpediaAuthManager = crotpediaAuthManager,
+        _downloadManager = downloadManager ?? DownloadManager(), // Use injected or default singleton
         super(const DownloadInitial()) {
     // Register event handlers
     on<DownloadInitializeEvent>(_onInitialize);
@@ -93,6 +97,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     on<DownloadSelectAllEvent>(_onSelectAll);
     on<DownloadClearSelectionEvent>(_onClearSelection);
     on<DownloadBulkDeleteEvent>(_onBulkDelete);
+    on<DownloadCompletedEvent>(_onCompleted);
 
     // Initialize notifications (checks existing permission, doesn't request)
     // If permission not granted, service will be initialized later when user grants permission
@@ -112,11 +117,12 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   final Logger _logger;
   final Connectivity _connectivity;
   final NotificationService _notificationService;
-  final PdfConversionService _pdfConversionService;
+  // final PdfConversionService _pdfConversionService;
+  final PdfConversionQueueManager _pdfConversionQueueManager;
   final RemoteConfigService _remoteConfigService;
   final AppLocalizations? _appLocalizations;
-  final CrotpediaAuthManager?
-      _crotpediaAuthManager; // NEW: For cookie extraction
+  final CrotpediaAuthManager? _crotpediaAuthManager;
+  final DownloadManager _downloadManager; // Use instance variable instead of singleton directly
 
   /// Helper to generate fallback URL based on source
   String _generateFallbackUrl(String? sourceId, String contentId) {
@@ -154,7 +160,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
   /// Initialize progress stream subscription for real-time updates
   void _initializeProgressStream() {
-    _progressSubscription = DownloadManager().progressStream.listen(
+    _progressSubscription = _downloadManager.progressStream.listen(
       (update) {
         _logger.d('DownloadBloc: Received progress update: $update');
 
@@ -162,7 +168,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         if (update.downloadedPages == -1 && update.totalPages == -1) {
           _logger.d(
               'DownloadBloc: Received completion event for ${update.contentId}');
-          add(DownloadRefreshEvent());
+          add(DownloadCompletedEvent(update.contentId));
         } else {
           // Regular progress update
           add(DownloadProgressUpdateEvent(
@@ -367,6 +373,18 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
     try {
       _logger.i('DownloadBloc: Queuing download for ${event.content.id}');
+      
+      // STRICT CHECK: Verify storage root is set before queuing
+      if (currentState.settings.customStorageRoot == null || 
+          currentState.settings.customStorageRoot!.isEmpty) {
+         _logger.e('❌ Download blocked: No custom storage root selected.');
+         emit(DownloadError(
+           message: 'Storage location not set. Please select a folder in Settings.',
+           errorType: DownloadErrorType.storage, 
+           previousState: currentState, 
+         ));
+         return;
+      }
 
       // Check if this is chapter-based content (Crotpedia manga)
       // We now ALLOW this, but we need to ensure the UI handles it correctly
@@ -493,6 +511,18 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     try {
       _logger.i(
           'DownloadBloc: Queuing range download for ${event.content.id} (pages ${event.startPage}-${event.endPage})');
+
+      // STRICT CHECK: Verify storage root is set before queuing
+      if (currentState.settings.customStorageRoot == null || 
+          currentState.settings.customStorageRoot!.isEmpty) {
+         _logger.e('❌ Range download blocked: No custom storage root selected.');
+         emit(DownloadError(
+           message: 'Storage location not set. Please select a folder in Settings.',
+           errorType: DownloadErrorType.storage, 
+           previousState: currentState, 
+         ));
+         return;
+      }
 
       // Validate page range
       if (!event.isValidRange) {
@@ -844,7 +874,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       
       // Cleanup task references (since we rely on stream)
       _activeTasks.remove(event.contentId);
-      DownloadManager().unregisterTask(event.contentId);
+      _downloadManager.unregisterTask(event.contentId);
 
       _processQueue();
     } catch (e, stackTrace) {
@@ -852,7 +882,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           error: e, stackTrace: stackTrace);
 
       _activeTasks.remove(event.contentId);
-      DownloadManager().unregisterTask(event.contentId);
+      _downloadManager.unregisterTask(event.contentId);
 
       // Handle failure via helper
       await _handleDownloadFailure(event.contentId, e, stackTrace, emit);
@@ -1267,8 +1297,25 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       ));
 
       // Remove from database
-      await _userDataRepository.deleteDownloadStatus(event.contentId);
-      await _downloadContentUseCase.deleteCall(event.contentId);
+    await _userDataRepository.deleteDownloadStatus(event.contentId);
+    
+    // Resolve path for deletion if missing
+    String? pathToDelete = download.downloadPath;
+    if (pathToDelete == null || pathToDelete.isEmpty) {
+       // Try to resolve based on settings and ID
+       if (currentState.settings.customStorageRoot != null) {
+          // Best guess reconstruction: root/nhasix/[source]/[id]
+          // We might need sourceId, hopefully it's in the download object or we guess
+          final sourceId = download.sourceId ?? 'unknown'; // Fallback might fail but worth a try or iterate sources
+          pathToDelete = path.join(currentState.settings.customStorageRoot!, 'nhasix', sourceId, event.contentId);
+       }
+    }
+
+    // Pass download path if available to ensure accurate deletion
+    await _downloadContentUseCase.deleteCall(
+      event.contentId, 
+      dirPath: pathToDelete
+    );
 
       // Invalidate download status cache to ensure UI reflects removal
       ContentDownloadCache.invalidateCache(event.contentId);
@@ -1532,8 +1579,16 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           _logger.w('DownloadBloc: Failed to save progress to database: $e');
         });
       } else {
+        // If progress is 100%, we should consider it complete
+        // But we wait for the explicit completion event or the next check
         _logger.d(
-            'DownloadBloc: Skipping DB save for 100% progress to avoid overwriting completion status');
+            'DownloadBloc: 100% progress reached for ${event.contentId}, waiting for completion event or triggering it now');
+            
+        // Trigger completion event if we strictly reached 100%
+        if (updatedDownload.progressPercentage >= 100) {
+           add(DownloadCompletedEvent(event.contentId));
+           return; 
+        }
       }
 
       // Update notification progress through DownloadBloc
@@ -1580,6 +1635,146 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _logger.e('DownloadBloc: Error updating progress',
           error: e, stackTrace: stackTrace);
       // Don't emit error state for progress updates to avoid disrupting downloads
+    }
+  }
+
+  /// Handle download completion
+  Future<void> _onCompleted(
+    DownloadCompletedEvent event,
+    Emitter<DownloadBlocState> emit,
+  ) async {
+    final currentState = state;
+    
+    // We need to be in a loaded state to process this, or at least have access to the lists
+    // If state is not loaded, we might just want to refresh to get latest state from DB
+    // But importantly, we MUST update the DB to say "completed" first.
+    
+    try {
+      _logger.i('🎯 DownloadBloc: Handling completion for ${event.contentId}');
+      
+      // 1. Mark as completed in Database
+      // We need to fetch current status to preserve other fields (like title, etc)
+      // If we are in Loaded state, use that. Otherwise fetch from DB.
+      
+      DownloadStatus? currentDownload;
+      
+      if (currentState is DownloadLoaded) {
+        currentDownload = currentState.getDownload(event.contentId);
+        _logger.d('Found download in state: ${currentDownload != null}');
+      }
+      
+      // If not found in state or state not loaded, fetch from DB
+      if (currentDownload == null) {
+        _logger.d('Fetching download from database...');
+        currentDownload = await _userDataRepository.getDownloadStatus(event.contentId);
+      }
+      
+      if (currentDownload == null) {
+        _logger.w('DownloadBloc: Completing unknown download ${event.contentId}');
+        // Even if unknown, we should probably run refresh to sync up
+        add(const DownloadRefreshEvent());
+        return;
+      }
+      
+      // Update status to completed
+      int totalSize = currentDownload.fileSize;
+      String? downloadPath = currentDownload.downloadPath;
+      
+      // FALLBACK: If downloadPath is missing, try to get it from NativeDownloadService
+      if (downloadPath == null || downloadPath.isEmpty) {
+        _logger.w('⚠️ Download path is missing, attempting fallback via NativeDownloadService');
+        try {
+          downloadPath = await NativeDownloadService().getDownloadPath(event.contentId);
+          _logger.i('✅ Retrieved path from native: $downloadPath');
+        } catch (e) {
+          _logger.e('Failed to get download path from native', error: e);
+        }
+      }
+      
+      // Calculate final size if path exists
+      if (downloadPath != null && downloadPath.isNotEmpty) {
+        _logger.d('Calculating file size for path: $downloadPath');
+        
+        // Try multiple times with delays in case filesystem is still syncing
+        for (int attempt = 1; attempt <= 3; attempt++) {
+          try {
+            final dir = Directory(downloadPath);
+            if (!dir.existsSync()) {
+              _logger.w('Directory does not exist (attempt $attempt): $downloadPath');
+              if (attempt < 3) {
+                await Future.delayed(Duration(milliseconds: 100 * attempt));
+                continue;
+              }
+            }
+            
+            totalSize = await DownloadStorageUtils.getDirectorySize(dir);
+            _logger.i('💾 Calculated final size for ${event.contentId}: ${DownloadStorageUtils.formatBytes(totalSize)} ($totalSize bytes)');
+            break; // Success, exit retry loop
+          } catch (e) {
+            _logger.w('Failed to calculate size (attempt $attempt/3): $e');
+            if (attempt < 3) {
+              await Future.delayed(Duration(milliseconds: 100 * attempt));
+            }
+          }
+        }
+      } else {
+        _logger.e('❌ Cannot calculate file size: downloadPath is null or empty');
+      }
+
+      final completedDownload = currentDownload.copyWith(
+        state: DownloadState.completed,
+        endTime: DateTime.now(),
+        downloadedPages: currentDownload.totalPages, // Ensure full count
+        fileSize: totalSize, // ✅ Save calculated size
+        downloadPath: downloadPath, // Update path if we retrieved it via fallback
+        error: null,
+      );
+      
+      _logger.d('Saving completed download to database...');
+      await _userDataRepository.saveDownloadStatus(completedDownload);
+      _logger.i('✅ Saved "completed" status to DB for ${event.contentId} with size: ${DownloadStorageUtils.formatBytes(totalSize)}');
+      
+      // 2. Remove from active tasks
+      _activeTasks.remove(event.contentId);
+      _downloadManager.unregisterTask(event.contentId);
+      _logger.d('Removed ${event.contentId} from active tasks');
+      
+      // 3. Update State
+      if (currentState is DownloadLoaded) {
+         final updatedDownloads = currentState.downloads
+            .map((d) => d.contentId == event.contentId ? completedDownload : d)
+            .toList();
+            
+         emit(currentState.copyWith(
+           downloads: updatedDownloads,
+           lastUpdated: DateTime.now(),
+         ));
+         _logger.d('Updated state with completed download');
+      }
+      
+      // 4. Trigger Notifications
+      if (currentState is DownloadLoaded && currentState.settings.enableNotifications) {
+          _logger.d('Showing completion notification');
+          _notificationService.showDownloadCompleted(
+            contentId: event.contentId,
+            title: completedDownload.title ?? event.contentId,
+            downloadPath: completedDownload.downloadPath ?? '',
+          );
+      }
+      
+      // 5. Force refresh to update offline content screen with correct file sizes
+      _logger.d('Triggering refresh to sync offline content...');
+      add(const DownloadRefreshEvent());
+      
+      // 6. Check if we need to process queue (free slot opened up)
+      _processQueue();
+      
+      _logger.i('🎉 Completion handling finished for ${event.contentId}');
+      
+    } catch (e, stackTrace) {
+       _logger.e('❌ DownloadBloc: Error handling completion', error: e, stackTrace: stackTrace);
+       // Ensure we at least leave a consistent state
+       add(const DownloadRefreshEvent());
     }
   }
 
@@ -2033,16 +2228,17 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         return;
       }
 
-      // Start PDF conversion in background using PdfConversionService
-      await _pdfConversionService.convertToPdfInBackground(
+      // Start PDF conversion in background using PdfConversionQueueManager
+      // This queues the conversion instead of starting it immediately
+      // Queue manager will process conversions sequentially to avoid resource contention
+      await _pdfConversionQueueManager.queueConversion(
         contentId: event.contentId,
         title: contentTitle,
         imagePaths: imagePaths,
         sourceId: sourceId,
-        maxPagesPerFile: 50, // Split into 50-page chunks
       );
 
-      _logger.i('DownloadBloc: PDF conversion started for ${event.contentId}');
+      _logger.i('DownloadBloc: PDF conversion queued for ${event.contentId}');
 
       // The actual conversion happens in background via PdfConversionService
       // User will be notified via notifications about progress and completion
@@ -2253,21 +2449,36 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     try {
       final downloads = await _userDataRepository.getAllDownloads(
           limit: AppLimits.maxBatchSize);
-      final download = downloads.firstWhere(
-        (d) => d.contentId == contentId,
-        orElse: () =>
-            throw Exception('Download not found for content: $contentId'),
-      );
+      
+      final download = downloads
+          .where((d) => d.contentId == contentId)
+          .firstOrNull;
 
-      if (download.state == DownloadState.completed &&
-          download.downloadPath != null) {
-        final directory = Directory(download.downloadPath!);
+      if (download == null) {
+        _logger.w('DownloadBloc: Download not found for content: $contentId');
+        return;
+      }
+
+      // Robust path resolution
+      String? downloadPath = download.downloadPath;
+      if (downloadPath == null || downloadPath.isEmpty) {
+        // Try to reconstruct path
+         if (_settings.customStorageRoot != null && _settings.customStorageRoot!.isNotEmpty) {
+             final sourceId = download.sourceId ?? SourceType.crotpedia.id;
+             downloadPath = path.join(_settings.customStorageRoot!, 'nhasix', sourceId, contentId);
+             _logger.d('DownloadBloc: Reconstructed path for open: $downloadPath');
+         }
+      }
+
+      if (downloadPath != null) {
+        final directory = Directory(downloadPath);
+        // Relaxed check: Exist on disk is enough, even if state is not "Completed"
         if (await directory.exists()) {
           _logger.i(
-              'DownloadBloc: Opening download directory: ${download.downloadPath}');
+              'DownloadBloc: Opening download directory: $downloadPath');
 
           // Check if this is a PDF file (has pdf/ subdirectory with .pdf files)
-          final pdfDir = Directory(path.join(download.downloadPath!, 'pdf'));
+          final pdfDir = Directory(path.join(downloadPath, 'pdf'));
           if (await pdfDir.exists()) {
             try {
               final pdfFiles = await pdfDir
@@ -2279,7 +2490,11 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
                 _logger.i(
                     'DownloadBloc: Found PDF file, opening with native reader');
                 final pdfReaderService = getIt<NativePdfReaderService>();
-                await pdfReaderService.openPdf(pdfFiles.first.path);
+                 // Sort by name to get the latest/main one if multiple
+                final sortedFiles = pdfFiles.toList()
+                  ..sort((a, b) => b.path.compareTo(a.path));
+                
+                await pdfReaderService.openPdf(sortedFiles.first.path);
                 return;
               }
             } catch (e) {
@@ -2292,7 +2507,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
           // Strategy 1: Try to open the main download directory
           try {
-            final result = await OpenFile.open(download.downloadPath!);
+            final result = await OpenFile.open(downloadPath);
             if (result.type == ResultType.done) {
               _logger.i('DownloadBloc: Successfully opened download directory');
               opened = true;
@@ -2308,7 +2523,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           if (!opened) {
             try {
               final imagesDir =
-                  Directory(path.join(download.downloadPath!, 'images'));
+                  Directory(path.join(downloadPath, 'images'));
               if (await imagesDir.exists()) {
                 final result = await OpenFile.open(imagesDir.path);
                 if (result.type == ResultType.done) {
@@ -2354,11 +2569,11 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           }
         } else {
           _logger.w(
-              'DownloadBloc: Download directory not found: ${download.downloadPath}');
+              'DownloadBloc: Download directory not found: $downloadPath');
         }
       } else {
         _logger.w(
-            'DownloadBloc: Cannot open - download not completed or path missing for $contentId');
+            'DownloadBloc: Cannot open - path missing and could not be reconstructed for $contentId');
       }
     } catch (e) {
       _logger.e('DownloadBloc: Error opening downloaded content: $e');

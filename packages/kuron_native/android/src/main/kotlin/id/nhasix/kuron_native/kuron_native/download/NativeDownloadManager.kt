@@ -21,8 +21,7 @@ class NativeDownloadManager(private val context: Context) {
         title: String = "Unknown",
         url: String = "",
         coverUrl: String = "",
-        language: String = "unknown",
-        enableNotifications: Boolean = true // NEW
+        language: String = "unknown"
     ): String {
         // Convert cookies Map to JSON string for WorkManager Data
         val cookiesJson = cookies?.let { map ->
@@ -42,8 +41,7 @@ class NativeDownloadManager(private val context: Context) {
                 DownloadWorker.KEY_TITLE to title,
                 DownloadWorker.KEY_URL to url,
                 DownloadWorker.KEY_COVER_URL to coverUrl,
-                DownloadWorker.KEY_LANGUAGE to language,
-                "enableNotifications" to enableNotifications // NEW
+                DownloadWorker.KEY_LANGUAGE to language
             ))
             .setConstraints(Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -52,7 +50,17 @@ class NativeDownloadManager(private val context: Context) {
             .addTag("native_download")
             .build()
         
-        WorkManager.getInstance(context).enqueue(workRequest)
+        // CRITICAL: Explicitly cancel any old work with this tag (including anonymous work from previous versions)
+        // enqueueUniqueWork only handles work with the same UNIQUE NAME, not just the same tag.
+        WorkManager.getInstance(context).cancelAllWorkByTag("content_$contentId")
+        WorkManager.getInstance(context).pruneWork() // Clean up cancelled/finished work
+        
+        // Use enqueueUniqueWork with REPLACE policy to ensure new download starts fresh
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            "content_$contentId",
+            androidx.work.ExistingWorkPolicy.REPLACE,
+            workRequest
+        )
         return workRequest.id.toString()
     }
 
@@ -73,7 +81,12 @@ class NativeDownloadManager(private val context: Context) {
                 .getWorkInfosByTag("content_$contentId")
                 .get(1, TimeUnit.SECONDS)
             
-            val workInfo = workInfos.firstOrNull() ?: return null
+            // Priority: RUNNING > ENQUEUED > SUCCEEDED > FAILED > CANCELLED
+            val workInfo = workInfos.firstOrNull { it.state == androidx.work.WorkInfo.State.RUNNING }
+                ?: workInfos.firstOrNull { it.state == androidx.work.WorkInfo.State.ENQUEUED }
+                ?: workInfos.firstOrNull { it.state == androidx.work.WorkInfo.State.SUCCEEDED }
+                ?: workInfos.firstOrNull { it.state == androidx.work.WorkInfo.State.FAILED }
+                ?: workInfos.firstOrNull() ?: return null
             
             val state = when (workInfo.state) {
                 androidx.work.WorkInfo.State.RUNNING -> "RUNNING"

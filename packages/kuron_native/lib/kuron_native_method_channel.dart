@@ -18,13 +18,19 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }
 
   Future<void> _handleMethodCall(MethodCall call) async {
-    if (call.method == 'onProgress' && _onPdfProgress != null) {
-      // Safely handle types from different platforms
-      final args = call.arguments as Map;
-      final progress = (args['progress'] as num).toInt();
-      final message = args['message'] as String;
-      
-      _onPdfProgress!(progress, message);
+    if (call.method == 'onProgress') {
+       if (_onPdfProgress != null) {
+          try {
+            final args = call.arguments as Map;
+            final progress = (args['progress'] as num).toInt();
+            final message = args['message'] as String;
+            
+            _onPdfProgress!(progress, message);
+          } catch (e) {
+            // Silently ignore or log if needed
+            // print('Error handling onProgress: $e');
+          }
+       }
     }
   }
 
