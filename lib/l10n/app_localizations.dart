@@ -5723,6 +5723,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select Folder'**
   String get selectFolder;
+
+  /// No description provided for @premiumFeature.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium Feature'**
+  String get premiumFeature;
 }
 
 class _AppLocalizationsDelegate
