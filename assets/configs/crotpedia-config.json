@@ -265,16 +265,56 @@
         }
     },
     "features": {
-        "search": true,
-        "random": false,
-        "related": false,
-        "download": true,
-        "favorite": true,
-        "chapters": true,
-        "bookmark": false,
-        "supportsTagExclusion": false,
-        "supportsAdvancedSearch": true,
-        "generatePdf": true
+        "search": {
+            "enabled": true,
+            "requiresPremium": false
+        },
+        "random": {
+            "enabled": false,
+            "requiresPremium": false
+        },
+        "related": {
+            "enabled": false,
+            "requiresPremium": false
+        },
+        "download": {
+            "enabled": true,
+            "requiresPremium": true
+        },
+        "favorite": {
+            "enabled": true,
+            "requiresPremium": false
+        },
+        "chapters": {
+            "enabled": true,
+            "requiresPremium": false
+        },
+        "supportsTagExclusion": {
+            "enabled": false,
+            "requiresPremium": false
+        },
+        "supportsAdvancedSearch": {
+            "enabled": true,
+            "requiresPremium": false
+        },
+        "generatePdf": {
+            "enabled": true,
+            "requiresPremium": true
+        }
+    },
+    "ads": {
+        "provider": "start.io",
+        "enabled": false,
+        "androidAppId": "YOUR_ANDROID_APP_ID",
+        "banner": {
+            "enabled": false,
+            "showInDetail": false,
+            "showInHome": false
+        },
+        "interstitial": {
+            "enabled": false,
+            "frequency": 3
+        }
     },
     "ui": {
         "displayName": "Crotpedia",

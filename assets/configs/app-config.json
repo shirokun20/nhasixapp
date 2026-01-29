@@ -86,5 +86,14 @@
             "autoClean": true,
             "cleanAfterDays": 30
         }
+    },
+    "premium": {
+        "enabled": true,
+        "activation": {
+            "type": "license_key",
+            "validateEndpoint": "https://api.nhasix.com/validate-license",
+            "maxDevices": 3,
+            "deviceLimitMessage": "License limit reached. Unlink other devices to continue."
+        }
     }
 }

@@ -136,16 +136,56 @@
         }
     },
     "features": {
-        "search": true,
-        "random": true,
-        "related": true,
-        "download": true,
-        "favorite": true,
-        "chapters": false,
-        "bookmark": false,
-        "supportsTagExclusion": true,
-        "supportsAdvancedSearch": true,
-        "generatePdf": true
+        "search": {
+            "enabled": true,
+            "requiresPremium": false
+        },
+        "random": {
+            "enabled": true,
+            "requiresPremium": false
+        },
+        "related": {
+            "enabled": true,
+            "requiresPremium": false
+        },
+        "download": {
+            "enabled": true,
+            "requiresPremium": true
+        },
+        "favorite": {
+            "enabled": true,
+            "requiresPremium": false
+        },
+        "chapters": {
+            "enabled": false,
+            "requiresPremium": false
+        },
+        "supportsTagExclusion": {
+            "enabled": true,
+            "requiresPremium": false
+        },
+        "supportsAdvancedSearch": {
+            "enabled": true,
+            "requiresPremium": false
+        },
+        "generatePdf": {
+            "enabled": true,
+            "requiresPremium": true
+        }
+    },
+    "ads": {
+        "provider": "start.io",
+        "enabled": false,
+        "androidAppId": "YOUR_ANDROID_APP_ID",
+        "banner": {
+            "enabled": false,
+            "showInDetail": false,
+            "showInHome": false
+        },
+        "interstitial": {
+            "enabled": false,
+            "frequency": 3
+        }
     },
     "ui": {
         "displayName": "NHentai",
