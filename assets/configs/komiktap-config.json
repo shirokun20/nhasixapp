@@ -114,58 +114,58 @@
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
   },
-    "features": {
-        "search": {
-            "enabled": true,
-            "requiresPremium": false
-        },
-        "random": {
-            "enabled": false,
-            "requiresPremium": false
-        },
-        "related": {
-            "enabled": false,
-            "requiresPremium": false
-        },
-        "download": {
-            "enabled": true,
-            "requiresPremium": true
-        },
-        "favorite": {
-            "enabled": true,
-            "requiresPremium": false
-        },
-        "chapters": {
-            "enabled": true,
-            "requiresPremium": false
-        },
-        "supportsTagExclusion": {
-            "enabled": false,
-            "requiresPremium": false
-        },
-        "supportsAdvancedSearch": {
-            "enabled": false,
-            "requiresPremium": false
-        },
-        "generatePdf": {
-            "enabled": true,
-            "requiresPremium": true
-        }
+  "features": {
+    "search": {
+      "enabled": true,
+      "requiresPremium": false
     },
-    "ads": {
-        "provider": "start.io",
-        "enabled": true,
-        "androidAppId": "YOUR_ANDROID_APP_ID",
-        "banner": {
-            "enabled": true,
-            "showInDetail": true,
-            "showInHome": false
-        },
-        "interstitial": {
-            "enabled": true,
-            "frequency": 3
-        }
+    "random": {
+      "enabled": false,
+      "requiresPremium": false
     },
+    "related": {
+      "enabled": false,
+      "requiresPremium": false
+    },
+    "download": {
+      "enabled": true,
+      "requiresPremium": true
+    },
+    "favorite": {
+      "enabled": true,
+      "requiresPremium": false
+    },
+    "chapters": {
+      "enabled": true,
+      "requiresPremium": false
+    },
+    "supportsTagExclusion": {
+      "enabled": false,
+      "requiresPremium": false
+    },
+    "supportsAdvancedSearch": {
+      "enabled": false,
+      "requiresPremium": false
+    },
+    "generatePdf": {
+      "enabled": true,
+      "requiresPremium": true
+    }
+  },
+  "ads": {
+    "provider": "start.io",
+    "enabled": true,
+    "androidAppId": "YOUR_ANDROID_APP_ID",
+    "banner": {
+      "enabled": true,
+      "showInDetail": true,
+      "showInHome": false
+    },
+    "interstitial": {
+      "enabled": true,
+      "frequency": 3
+    }
+  },
   "ui": {
     "displayName": "KomikTap",
     "iconPath": "assets/icons/komiktap.png",
