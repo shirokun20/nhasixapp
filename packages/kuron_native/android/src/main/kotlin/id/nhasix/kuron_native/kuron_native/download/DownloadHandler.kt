@@ -28,6 +28,8 @@ class DownloadHandler(
     private var progressJob: Job? = null
     // Cache for deduplication: contentId -> fingerprint
     private val lastEmittedStates = java.util.concurrent.ConcurrentHashMap<String, String>()
+    // FIX: Track terminal states to prevent spam when multiple downloads active
+    private val terminalStatesEmitted = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
 
     companion object {
         private const val TAG = "DownloadHandler"
@@ -98,10 +100,15 @@ class DownloadHandler(
                                 val stateFingerprint = "$state:tier_$progressTier:$total"
                                 val lastFingerprint = lastEmittedStates[contentId]
 
-                                // CRITICAL: ALWAYS emit COMPLETED/FAILED states regardless of deduplication
-                                // This ensures completion events always reach Flutter layer
+                                // FIX: Only emit terminal states ONCE per contentId to prevent spam
+                                // Previously, COMPLETED was always emitted, causing spam when multiple downloads active
                                 val isTerminalState = state == "COMPLETED" || state == "FAILED"
-                                val shouldEmit = isTerminalState || stateFingerprint != lastFingerprint
+                                val alreadyEmittedTerminal = terminalStatesEmitted.contains(contentId)
+                                val shouldEmit = when {
+                                    isTerminalState && alreadyEmittedTerminal -> false  // Skip - already sent
+                                    isTerminalState -> true  // First terminal state - emit it
+                                    else -> stateFingerprint != lastFingerprint  // Normal dedup for progress
+                                }
 
                                 if (shouldEmit) {
                                     val data = mapOf(
@@ -116,7 +123,8 @@ class DownloadHandler(
                                         lastEmittedStates[contentId] = stateFingerprint
                                         
                                         if (isTerminalState) {
-                                            Log.i(TAG, "✅ TERMINAL STATE emitted for $contentId: $state ($downloaded/$total)")
+                                            terminalStatesEmitted.add(contentId)
+                                            Log.i(TAG, "✅ TERMINAL STATE emitted for $contentId: $state ($downloaded/$total) - tracking to prevent spam")
                                         } else {
                                             Log.d(TAG, "Progress update for $contentId: $progressPercent% ($downloaded/$total)")
                                         }
@@ -158,6 +166,11 @@ class DownloadHandler(
         try {
             val contentId = call.argument<String>("contentId")
                 ?: throw IllegalArgumentException("contentId is required")
+            
+            // FIX: Clear terminal tracking for fresh download to allow re-downloading
+            terminalStatesEmitted.remove(contentId)
+            lastEmittedStates.remove(contentId)
+            
             val sourceId = call.argument<String>("sourceId") ?: "unknown"
             val imageUrls = call.argument<List<String>>("imageUrls")
                 ?: throw IllegalArgumentException("imageUrls is required")
