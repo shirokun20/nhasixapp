@@ -30,6 +30,9 @@ class DownloadHandler(
     private val lastEmittedStates = java.util.concurrent.ConcurrentHashMap<String, String>()
     // FIX: Track terminal states to prevent spam when multiple downloads active
     private val terminalStatesEmitted = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+    
+    // Speed calculation: ContentId -> Pair(LastBytes, LastTimestamp)
+    private val lastSpeedData = java.util.concurrent.ConcurrentHashMap<String, Pair<Long, Long>>()
 
     companion object {
         private const val TAG = "DownloadHandler"
@@ -99,6 +102,27 @@ class DownloadHandler(
                             val downloaded = src.getInt("downloadedCount", 0)
                             val total = src.getInt("totalCount", 0)
                             
+                            // Speed Calculation logic
+                            val currentBytes = src.getLong("downloadedBytes", 0L)
+                            var downloadSpeed = 0.0
+                            val currentTime = System.currentTimeMillis()
+
+                            if (currentBytes > 0) {
+                                val lastData = lastSpeedData[contentId]
+                                if (lastData != null) {
+                                    val (lastBytes, lastTime) = lastData
+                                    val deltaBytes = currentBytes - lastBytes
+                                    val deltaTime = currentTime - lastTime
+
+                                    if (deltaTime > 0 && deltaBytes >= 0) {
+                                        // Speed in bytes/second
+                                        downloadSpeed = (deltaBytes * 1000.0) / deltaTime
+                                    }
+                                }
+                                // Update cache
+                                lastSpeedData[contentId] = Pair(currentBytes, currentTime)
+                            }
+                            
                             if (total > 0 || state == "COMPLETED" || state == "FAILED") {
                                 // Calculate progress percentage for smarter deduplication
                                 val progressPercent = if (total > 0) (downloaded * 100 / total) else 0
@@ -124,7 +148,8 @@ class DownloadHandler(
                                         "contentId" to contentId,
                                         "downloadedPages" to downloaded,
                                         "totalPages" to total,
-                                        "status" to state
+                                        "status" to state,
+                                        "downloadSpeed" to downloadSpeed
                                     )
                                     
                                     if (eventSink != null) {
@@ -179,6 +204,7 @@ class DownloadHandler(
             // FIX: Clear terminal tracking for fresh download to allow re-downloading
             terminalStatesEmitted.remove(contentId)
             lastEmittedStates.remove(contentId)
+            lastSpeedData.remove(contentId)
             
             val sourceId = call.argument<String>("sourceId") ?: "unknown"
             val imageUrls = call.argument<List<String>>("imageUrls")

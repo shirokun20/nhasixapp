@@ -61,8 +61,9 @@ class DownloadManager {
             // Native sends int, but safety cast is good
             final int downloaded = (data['downloadedPages'] as num).toInt();
             final int total = (data['totalPages'] as num).toInt();
+            final double speed = (data['downloadSpeed'] as num?)?.toDouble() ?? 0.0;
             
-            _logger.d('Native event: $contentId -> $status ($downloaded/$total)');
+            _logger.d('Native event: $contentId -> $status ($downloaded/$total) @ $speed B/s');
 
             if (status == 'COMPLETED') {
                _logger.i('🎯 COMPLETION EVENT received for $contentId');
@@ -76,6 +77,7 @@ class DownloadManager {
                  contentId: contentId,
                  downloadedPages: finalDownloaded,
                  totalPages: total,
+                 downloadSpeed: speed,
                ));
                
                // Small delay to ensure UI updates before completion
@@ -94,6 +96,7 @@ class DownloadManager {
                   contentId: contentId,
                   downloadedPages: downloaded,
                   totalPages: total,
+                  downloadSpeed: speed,
                ));
             }
           } catch (e) {

@@ -66,6 +66,9 @@ class DownloadWorker(
         builder.build()
     }
 
+    // Track total bytes for speed calculation
+    private var totalBytesDownloaded: Long = 0L
+
     override suspend fun doWork(): ListenableWorker.Result = withContext(Dispatchers.IO) {
         val contentId = inputData.getString(KEY_CONTENT_ID) ?: return@withContext Result.failure()
         val sourceId = inputData.getString(KEY_SOURCE_ID) ?: "unknown"
@@ -155,11 +158,19 @@ class DownloadWorker(
                  if (index == 0) Log.d(TAG, "Skipping first file (already exists): ${destFile.absolutePath}")
             }
             
+            
             val progress = ((index + 1).toFloat() / imageUrls.size * 100).toInt()
+            
+            // Add current file size to total for speed calculation
+            if (destFile.exists()) {
+                totalBytesDownloaded += destFile.length()
+            }
+            
             setProgress(workDataOf(
                 KEY_PROGRESS to progress,
                 "downloadedCount" to (index + 1),
                 "totalCount" to imageUrls.size,
+                "downloadedBytes" to totalBytesDownloaded,
                 KEY_CONTENT_ID to contentId
             ))
         }
