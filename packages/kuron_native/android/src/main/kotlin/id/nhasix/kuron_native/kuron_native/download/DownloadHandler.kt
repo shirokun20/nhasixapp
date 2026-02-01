@@ -54,6 +54,15 @@ class DownloadHandler(
         Log.d(TAG, "startObservingProgress: Starting to observe WorkManager flow for tag 'native_download'")
         progressJob?.cancel()
         progressJob = scope.launch {
+            // FIX: Prune old completed work to prevent notification spam on app restart/update
+            // This ensures we don't get 'SUCCEEDED' events for downloads finished in previous sessions
+            try {
+                WorkManager.getInstance(context).pruneWork()
+                Log.d(TAG, "Pruned old WorkManager history")
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to prune WorkManager history: ${e.message}")
+            }
+
             WorkManager.getInstance(context)
                 .getWorkInfosByTagFlow("native_download")
                 .collect { workInfos ->
