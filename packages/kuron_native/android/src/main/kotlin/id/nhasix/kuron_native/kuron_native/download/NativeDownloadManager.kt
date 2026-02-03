@@ -16,6 +16,7 @@ class NativeDownloadManager(private val context: Context) {
         sourceId: String,
         imageUrls: List<String>,
         destinationPath: String,
+        backupFolderName: String = "komikTapXKuron", // NEW: Configurable folder name
         cookies: Map<String, String>? = null,  // Optional cookies for authentication
         // Metadata for v2.1
         title: String = "Unknown",
@@ -48,6 +49,7 @@ class NativeDownloadManager(private val context: Context) {
                 // Pass file path instead of raw list
                 DownloadWorker.KEY_IMAGE_URLS_FILE to urlsFile.absolutePath,
                 DownloadWorker.KEY_DESTINATION_PATH to destinationPath,
+                DownloadWorker.KEY_BACKUP_FOLDER_NAME to backupFolderName, // NEW
                 DownloadWorker.KEY_COOKIES to cookiesJson,
                 // Pass metadata
                 DownloadWorker.KEY_TITLE to title,

@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "id.nhasix.app"
+    namespace = "id.komiktap.mobile"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +21,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "id.nhasix.app"
+        applicationId = "id.komiktap.mobile"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -62,7 +62,7 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix ".debug"
-            resValue "string", "app_name", "Kuron Dev"
+            resValue "string", "app_name", "Komik Tap mobile Dev"
         }
         release {
             // Fallback to debug signing if release keys are missing
@@ -74,7 +74,7 @@ android {
             }
             minifyEnabled true
             shrinkResources true
-            resValue "string", "app_name", "Kuron"
+            resValue "string", "app_name", "Komik Tap mobile"
         }
     }
 
@@ -89,8 +89,8 @@ android {
             def date = new Date().format('yyyyMMdd')
             def abi = output.getFilter(com.android.build.OutputFile.ABI) ?: 'universal'
             
-            // Custom filename format: kuron_[version]_[date]_[buildType]_[abi].apk
-            def fileName = "kuron_${versionName}_${date}_${buildType}_${abi}.apk"
+            // Custom filename format: komiktap_[version]_[date]_[buildType]_[abi].apk
+            def fileName = "komiktap_${versionName}_${date}_${buildType}_${abi}.apk"
             outputFileName = fileName
         }
     }

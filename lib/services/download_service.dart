@@ -13,6 +13,7 @@ import 'notification_service.dart';
 import 'download_manager.dart';
 import '../core/utils/permission_helper.dart';
 import '../core/utils/storage_settings.dart';
+import '../core/constants/app_constants.dart';
 
 /// Service untuk handle actual file download
 class DownloadService {
@@ -429,10 +430,10 @@ class DownloadService {
       String contentId, String sourceId) async {
     // Use smart Downloads directory detection
     final downloadsPath = await _getDownloadsDirectory();
-    final nhasixDir = Directory(path.join(downloadsPath, 'nhasix'));
+    final backupDir = Directory(path.join(downloadsPath, AppStorage.backupFolderName));
 
     // Use source-based path
-    final sourceDir = Directory(path.join(nhasixDir.path, sourceId));
+    final sourceDir = Directory(path.join(backupDir.path, sourceId));
 
     final contentDir = Directory(path.join(sourceDir.path, contentId));
     final imagesDir = Directory(path.join(contentDir.path, 'images'));
@@ -443,7 +444,7 @@ class DownloadService {
     }
 
     // 🔒 PRIVACY: Create .nomedia file
-    await _createNoMediaFile(nhasixDir);
+    await _createNoMediaFile(backupDir);
 
     return imagesDir;
   }
@@ -475,10 +476,10 @@ class DownloadService {
   Future<void> ensurePrivacyProtection() async {
     try {
       final downloadsPath = await _getDownloadsDirectory();
-      final nhasixDir = Directory(path.join(downloadsPath, 'nhasix'));
+      final backupDir = Directory(path.join(downloadsPath, AppStorage.backupFolderName));
 
-      if (await nhasixDir.exists()) {
-        await _createNoMediaFile(nhasixDir);
+      if (await backupDir.exists()) {
+        await _createNoMediaFile(backupDir);
         _logger.i(_getLocalized('privacyProtectionEnsured',
             fallback: 'Privacy protection ensured for existing downloads'));
       }
@@ -662,19 +663,19 @@ class DownloadService {
   Future<String?> getDownloadPath(String contentId) async {
     try {
       final downloadsPath = await _getDownloadsDirectory();
-      final nhasixDir = Directory(path.join(downloadsPath, 'nhasix'));
+      final backupDir = Directory(path.join(downloadsPath, AppStorage.backupFolderName));
 
-      if (!await nhasixDir.exists()) return null;
+      if (!await backupDir.exists()) return null;
 
-      // 1. Check legacy path first (nhasix/{id})
-      final legacyDir = Directory(path.join(nhasixDir.path, contentId));
+      // 1. Check legacy path first (backup/{id})
+      final legacyDir = Directory(path.join(backupDir.path, contentId));
       if (await legacyDir.exists()) {
         return legacyDir.path;
       }
 
       // 2. Scan all subdirectories (sources) for the contentId
       try {
-        await for (final entity in nhasixDir.list()) {
+        await for (final entity in backupDir.list()) {
           if (entity is Directory) {
             // Check if this source directory contains the contentId
             final contentDir = Directory(path.join(entity.path, contentId));

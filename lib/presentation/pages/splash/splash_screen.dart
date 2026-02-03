@@ -147,7 +147,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                   child: const Image(
                     height: 200,
                     width: 200,
-                    image: AssetImage('assets/icons/logo_app.png'),
+                    image: AssetImage('assets/icons/komiktap.png'),
                   ),
                 ),
 
@@ -155,7 +155,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
 
                 // App title
                 Text(
-                  AppLocalizations.of(context)?.appTitle ?? 'Kuron',
+                  AppLocalizations.of(context)?.appTitle ?? 'KomikTap',
                   style: TextStyleConst.headingLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                     letterSpacing: 1.2,

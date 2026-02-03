@@ -20,6 +20,7 @@ import '../../widgets/download_button_widget.dart';
 import '../../widgets/progressive_image_widget.dart';
 import '../../widgets/shimmer_loading_widgets.dart';
 import '../../widgets/permission_request_sheet.dart';
+import '../../widgets/premium_required_dialog.dart';
 import 'widgets/chapter_list_bottom_sheet.dart';
 
 class DetailScreen extends StatefulWidget {
@@ -374,7 +375,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     final remoteConfig = getIt<RemoteConfigService>();
                     final favoriteEnabled = remoteConfig.isFeatureEnabled(
                       detailState.content.sourceId,
-                      (f) => f.favorite,
+                      (f) => f.favorite?.enabled ?? false,
                     );
 
                     return IconButton(
@@ -756,7 +757,7 @@ class _DetailScreenState extends State<DetailScreen> {
     // Check if chapters feature is enabled for this source
     final remoteConfig = getIt<RemoteConfigService>();
     final hasChaptersFeature =
-        remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.chapters);
+        remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.chapters?.enabled ?? false);
 
     // If content has chapters AND feature is enabled, show chapter list
     if (hasChaptersFeature &&
@@ -807,22 +808,34 @@ class _DetailScreenState extends State<DetailScreen> {
             ),
           ),
 
-          // Download button - conditional
-          if (getIt<RemoteConfigService>()
-              .isFeatureEnabled(content.sourceId, (f) => f.download)) ...[
-            const SizedBox(width: 8),
-            Expanded(
-              child: SizedBox(
-                height: 48,
-                child: DownloadButtonWidget(
-                  content: content,
-                  size: DownloadButtonSize.large,
-                  showText: true,
-                  showProgress: true,
-                ),
-              ),
+          // Download button - show locked if not premium
+          const SizedBox(width: 8),
+          Expanded(
+            child: SizedBox(
+              height: 48,
+              child: getIt<RemoteConfigService>()
+                      .isContentFeatureAccessible(content.sourceId, 'download')
+                  ? DownloadButtonWidget(
+                      content: content,
+                      size: DownloadButtonSize.large,
+                      showText: true,
+                      showProgress: true,
+                    )
+                  : ElevatedButton.icon(
+                      onPressed: () async {
+                        await PremiumRequiredDialog.show(context);
+                        if (mounted) setState(() {});
+                      },
+                      icon: const Icon(Icons.lock, size: 20),
+                      label: Text(AppLocalizations.of(context)!.download),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                      ),
+                    ),
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -1079,21 +1092,33 @@ class _DetailScreenState extends State<DetailScreen> {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Download button (if feature enabled)
-                              if (getIt<RemoteConfigService>().isFeatureEnabled(
-                                  content.sourceId, (f) => f.download)) ...[
-                                SizedBox(
-                                  width: 40,
-                                  height: 40,
-                                  child: DownloadButtonWidget(
-                                    content: chapterContent,
-                                    size: DownloadButtonSize.small,
-                                    showText: false,
-                                    showProgress: true,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                              ],
+                              // Download button - show locked if not premium
+                              SizedBox(
+                                width: 40,
+                                height: 40,
+                                child: getIt<RemoteConfigService>()
+                                        .isContentFeatureAccessible(
+                                            content.sourceId, 'download')
+                                    ? DownloadButtonWidget(
+                                        content: chapterContent,
+                                        size: DownloadButtonSize.small,
+                                        showText: false,
+                                        showProgress: true,
+                                      )
+                                    : IconButton(
+                                        onPressed: () async {
+                                          await PremiumRequiredDialog.show(context);
+                                          if (mounted) setState(() {});
+                                        },
+                                        icon: const Icon(Icons.lock, size: 18),
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant
+                                            .withValues(alpha: 0.5),
+                                        tooltip: 'Premium Required',
+                                      ),
+                              ),
+                              const SizedBox(width: 8),
 
                               // Read button with modern styling
                               Container(
@@ -1272,7 +1297,7 @@ class _DetailScreenState extends State<DetailScreen> {
     // Check if related content feature is enabled for this source
     final remoteConfig = getIt<RemoteConfigService>();
     final hasRelatedFeature =
-        remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.related);
+        remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.related?.enabled ?? false);
 
     if (!hasRelatedFeature || content.relatedContent.isEmpty) {
       return const SizedBox.shrink();
@@ -1762,9 +1787,9 @@ class _DetailScreenState extends State<DetailScreen> {
     switch (action) {
       case 'download':
         // Check feature flag before downloading
-        if (!remoteConfig.isFeatureEnabled(
-            content.sourceId, (f) => f.download)) {
-          _showFeatureDisabledDialog('download');
+        if (!remoteConfig.isContentFeatureAccessible(
+            content.sourceId, 'download')) {
+          PremiumRequiredDialog.show(context);
           return;
         }
         _startDownload(content);
@@ -1779,8 +1804,8 @@ class _DetailScreenState extends State<DetailScreen> {
   Future<void> _startDownload(Content content) async {
     // Check if download feature is enabled
     final remoteConfig = getIt<RemoteConfigService>();
-    if (!remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.download)) {
-      _showFeatureDisabledDialog('download');
+    if (!remoteConfig.isContentFeatureAccessible(content.sourceId, 'download')) {
+      PremiumRequiredDialog.show(context);
       return;
     }
 

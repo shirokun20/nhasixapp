@@ -21,7 +21,7 @@ class ApiConfig {
   static int get apiTimeout => _nhentaiConfig?.api?.timeout ?? 30000;
  
   /// Enable automatic fallback to HTML scraper if API fails
-  static bool get enableApiFallback => _nhentaiConfig?.features?.related ?? true;
+  static bool get enableApiFallback => _nhentaiConfig?.features?.related?.enabled ?? true;
  
   /// Maximum retry attempts for API requests
   static int get maxRetryAttempts => _nhentaiConfig?.network?.retry?.maxAttempts ?? 3;

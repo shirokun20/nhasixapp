@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
+// import 'package:url_launcher/url_launcher.dart'; // Commented out - no longer needed
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/presentation/cubits/update/update_cubit.dart';
@@ -142,7 +142,7 @@ class _AboutContentState extends State<_AboutContent>
                             ],
                           ),
                           child: const Image(
-                            image: AssetImage('assets/icons/logo_app.png'),
+                            image: AssetImage('assets/icons/komiktap.png'),
                           ),
                         ),
                       );
@@ -152,7 +152,7 @@ class _AboutContentState extends State<_AboutContent>
                 const SizedBox(height: 24),
 
                 Text(
-                  l10n.appTitle,
+                  "Komik Tap mobile",
                   style: TextStyleConst.headingLarge.copyWith(fontSize: 32),
                   textAlign: TextAlign.center,
                 ),
@@ -188,16 +188,17 @@ class _AboutContentState extends State<_AboutContent>
                 _buildSectionTitle('Community & Info'),
                 const SizedBox(height: 8),
                 _buildMenuCard([
-                  _buildMenuItem(
-                    context,
-                    icon: Icons.code,
-                    title: 'GitHub Repository',
-                    subtitle: 'View source code & contribute',
-                    onTap: () =>
-                        _launchURL('https://github.com/shirokun20/nhasixapp'),
-                    isExternal: true,
-                  ),
-                  _buildDivider(),
+                  // GitHub Repository - Commented out for KomikTap branding
+                  // _buildMenuItem(
+                  //   context,
+                  //   icon: Icons.code,
+                  //   title: 'GitHub Repository',
+                  //   subtitle: 'View source code & contribute',
+                  //   onTap: () =>
+                  //       _launchURL('https://github.com/shirokun20/nhasixapp'),
+                  //   isExternal: true,
+                  // ),
+                  // _buildDivider(),
                   _buildMenuItem(
                     context,
                     icon: Icons.description_outlined,
@@ -282,7 +283,7 @@ class _AboutContentState extends State<_AboutContent>
                   textAlign: TextAlign.center,
                 ),
                 Text(
-                  '© 2025 All Rights Reserved',
+                  '© 2026 All Rights Reserved',
                   style: TextStyleConst.caption.copyWith(
                     fontSize: 10,
                     color: theme.textTheme.bodySmall?.color
@@ -466,14 +467,15 @@ class _AboutContentState extends State<_AboutContent>
     );
   }
 
-  Future<void> _launchURL(String urlString) async {
-    final Uri url = Uri.parse(urlString);
-    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not launch $urlString')),
-        );
-      }
-    }
-  }
+  // Commented out - no longer needed after removing GitHub Repository link
+  // Future<void> _launchURL(String urlString) async {
+  //   final Uri url = Uri.parse(urlString);
+  //   if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text('Could not launch $urlString')),
+  //       );
+  //     }
+  //   }
+  // }
 }

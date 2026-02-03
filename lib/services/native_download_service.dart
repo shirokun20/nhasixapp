@@ -17,6 +17,7 @@ class NativeDownloadService {
     required String sourceId,
     required List<String> imageUrls,
     required String destinationPath,
+    String? backupFolderName, // NEW: Configurable folder name
     Map<String, String>? cookies,
     // Metadata v2.1 fields
     String? title,
@@ -31,6 +32,7 @@ class NativeDownloadService {
         'sourceId': sourceId,
         'imageUrls': imageUrls,
         'destinationPath': destinationPath,
+        'backupFolderName': backupFolderName, // NEW
         'cookies': cookies,
         // Metadata v2.1
         'title': title,

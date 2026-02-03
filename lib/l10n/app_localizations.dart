@@ -103,7 +103,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'Kuron'**
+  /// **'KomikTap'**
   String get appTitle;
 
   /// No description provided for @appSubtitle.
@@ -1531,7 +1531,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeTitle.
   ///
   /// In en, this message translates to:
-  /// **'Welcome to Kuron!'**
+  /// **'Welcome to KomikTap!'**
   String get welcomeTitle;
 
   /// No description provided for @welcomeMessage.
@@ -2683,7 +2683,7 @@ abstract class AppLocalizations {
   /// No description provided for @platformNotSupportedBody.
   ///
   /// In en, this message translates to:
-  /// **'Kuron is designed exclusively for Android devices.'**
+  /// **'KomikTap is designed exclusively for Android devices.'**
   String get platformNotSupportedBody;
 
   /// No description provided for @platformNotSupportedInstall.
@@ -2755,7 +2755,7 @@ abstract class AppLocalizations {
   /// No description provided for @appSubtitleDescription.
   ///
   /// In en, this message translates to:
-  /// **'Nhentai unofficial client'**
+  /// **'KomikTap Mobile Client'**
   String get appSubtitleDescription;
 
   /// No description provided for @downloadedGalleries.
@@ -5729,6 +5729,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Premium Feature'**
   String get premiumFeature;
+
+  /// No description provided for @premiumRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium Required'**
+  String get premiumRequired;
+
+  /// No description provided for @premiumRequiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This feature is only available for premium users. Upgrade now to unlock all features!'**
+  String get premiumRequiredMessage;
+
+  /// No description provided for @upgradeToPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade to Premium'**
+  String get upgradeToPremium;
+
+  /// No description provided for @currentSubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'You are currently using {planName} with validity until {expiryDate}'**
+  String currentSubscription(String planName, String expiryDate);
+
+  /// No description provided for @currentSubscriptionLifetime.
+  ///
+  /// In en, this message translates to:
+  /// **'You are currently using {planName} with lifetime validity'**
+  String currentSubscriptionLifetime(String planName);
 }
 
 class _AppLocalizationsDelegate

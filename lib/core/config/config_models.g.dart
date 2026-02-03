@@ -180,18 +180,51 @@ Map<String, dynamic> _$CloudflareConfigToJson(CloudflareConfig instance) =>
       'antiDetection': instance.antiDetection,
     };
 
+FeatureFlag _$FeatureFlagFromJson(Map<String, dynamic> json) => FeatureFlag(
+      enabled: json['enabled'] as bool? ?? false,
+      requiresPremium: json['requiresPremium'] as bool? ?? false,
+    );
+
+Map<String, dynamic> _$FeatureFlagToJson(FeatureFlag instance) =>
+    <String, dynamic>{
+      'enabled': instance.enabled,
+      'requiresPremium': instance.requiresPremium,
+    };
+
 FeatureConfig _$FeatureConfigFromJson(Map<String, dynamic> json) =>
     FeatureConfig(
-      search: json['search'] as bool? ?? false,
-      random: json['random'] as bool? ?? false,
-      related: json['related'] as bool? ?? false,
-      download: json['download'] as bool? ?? false,
-      favorite: json['favorite'] as bool? ?? false,
-      chapters: json['chapters'] as bool? ?? false,
-      bookmark: json['bookmark'] as bool? ?? false,
-      supportsTagExclusion: json['supportsTagExclusion'] as bool? ?? false,
-      supportsAdvancedSearch: json['supportsAdvancedSearch'] as bool? ?? false,
-      generatePdf: json['generatePdf'] as bool? ?? false,
+      search: json['search'] == null
+          ? null
+          : FeatureFlag.fromJson(json['search'] as Map<String, dynamic>),
+      random: json['random'] == null
+          ? null
+          : FeatureFlag.fromJson(json['random'] as Map<String, dynamic>),
+      related: json['related'] == null
+          ? null
+          : FeatureFlag.fromJson(json['related'] as Map<String, dynamic>),
+      download: json['download'] == null
+          ? null
+          : FeatureFlag.fromJson(json['download'] as Map<String, dynamic>),
+      favorite: json['favorite'] == null
+          ? null
+          : FeatureFlag.fromJson(json['favorite'] as Map<String, dynamic>),
+      chapters: json['chapters'] == null
+          ? null
+          : FeatureFlag.fromJson(json['chapters'] as Map<String, dynamic>),
+      bookmark: json['bookmark'] == null
+          ? null
+          : FeatureFlag.fromJson(json['bookmark'] as Map<String, dynamic>),
+      supportsTagExclusion: json['supportsTagExclusion'] == null
+          ? null
+          : FeatureFlag.fromJson(
+              json['supportsTagExclusion'] as Map<String, dynamic>),
+      supportsAdvancedSearch: json['supportsAdvancedSearch'] == null
+          ? null
+          : FeatureFlag.fromJson(
+              json['supportsAdvancedSearch'] as Map<String, dynamic>),
+      generatePdf: json['generatePdf'] == null
+          ? null
+          : FeatureFlag.fromJson(json['generatePdf'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$FeatureConfigToJson(FeatureConfig instance) =>

@@ -153,7 +153,7 @@ class AppMainHeaderWidget extends StatelessWidget
                       // Check feature flag before downloading
                       if (sourceId != null) {
                         final remoteConfig = getIt<RemoteConfigService>();
-                        if (!remoteConfig.isFeatureEnabled(sourceId!, (f) => f.download)) {
+                        if (!remoteConfig.isContentFeatureAccessible(sourceId!, 'download')) {
                           _showFeatureDisabledDialog(context);
                           return;
                         }

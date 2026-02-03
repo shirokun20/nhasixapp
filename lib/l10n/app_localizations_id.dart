@@ -9,7 +9,7 @@ class AppLocalizationsId extends AppLocalizations {
   AppLocalizationsId([String locale = 'id']) : super(locale);
 
   @override
-  String get appTitle => 'Kuron';
+  String get appTitle => 'KomikTap';
 
   @override
   String get appSubtitle => 'Pengalaman Membaca yang Ditingkatkan';
@@ -795,7 +795,7 @@ class AppLocalizationsId extends AppLocalizations {
       'Gunakan istilah pencarian yang lebih luas';
 
   @override
-  String get welcomeTitle => 'Selamat Datang di Kuron!';
+  String get welcomeTitle => 'Selamat Datang di KomikTap!';
 
   @override
   String get welcomeMessage =>
@@ -1424,7 +1424,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get platformNotSupportedBody =>
-      'Kuron dirancang khusus untuk perangkat Android.';
+      'KomikTap dirancang khusus untuk perangkat Android.';
 
   @override
   String get platformNotSupportedInstall =>
@@ -1465,7 +1465,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get checkOutFeaturedItems => 'Lihat item unggulan';
 
   @override
-  String get appSubtitleDescription => 'Klien tidak resmi Nhentai';
+  String get appSubtitleDescription => 'Klien KomikTap Mobile';
 
   @override
   String get downloadedGalleries => 'Galeri yang diunduh';
@@ -3339,4 +3339,24 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get premiumFeature => 'Fitur Premium';
+
+  @override
+  String get premiumRequired => 'Memerlukan Premium';
+
+  @override
+  String get premiumRequiredMessage =>
+      'Fitur ini hanya tersedia untuk pengguna premium. Upgrade sekarang untuk membuka semua fitur!';
+
+  @override
+  String get upgradeToPremium => 'Upgrade ke Premium';
+
+  @override
+  String currentSubscription(String planName, String expiryDate) {
+    return 'Kamu sedang menggunakan paket $planName dengan masa aktif sampai $expiryDate';
+  }
+
+  @override
+  String currentSubscriptionLifetime(String planName) {
+    return 'Kamu sedang menggunakan paket $planName dengan masa aktif selamanya';
+  }
 }

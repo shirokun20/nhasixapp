@@ -211,6 +211,7 @@ class DownloadHandler(
                 ?: throw IllegalArgumentException("imageUrls is required")
             val destinationPath = call.argument<String>("destinationPath")
                 ?: throw IllegalArgumentException("destinationPath is required")
+            val backupFolderName = call.argument<String>("backupFolderName") ?: "komikTapXKuron" // NEW
             
             @Suppress("UNCHECKED_CAST")
             val cookies = call.argument<Map<String, String>>("cookies")
@@ -226,6 +227,7 @@ class DownloadHandler(
                 sourceId, 
                 imageUrls, 
                 destinationPath,
+                backupFolderName, // NEW: Pass folder name
                 cookies,
                 title,
                 url,

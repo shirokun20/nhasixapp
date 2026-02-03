@@ -23,6 +23,7 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true"
+        android:usesCleartextTraffic="true"
         android:requestLegacyExternalStorage="true">
         <activity
             android:name=".MainActivity"
@@ -49,11 +50,11 @@
         </activity>
 
         <activity-alias
-            android:name="id.nhasix.app.CalculatorActivity"
-            android:targetActivity="id.nhasix.app.MainActivity"
+            android:name="id.komiktap.mobile.CalculatorActivity"
+            android:targetActivity="id.komiktap.mobile.MainActivity"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_calculator"
+            android:icon="@mipmap/ic_launcher"
             android:label="Calculator">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -62,11 +63,11 @@
         </activity-alias>
 
         <activity-alias
-            android:name="id.nhasix.app.NotesActivity"
-            android:targetActivity="id.nhasix.app.MainActivity"
+            android:name="id.komiktap.mobile.NotesActivity"
+            android:targetActivity="id.komiktap.mobile.MainActivity"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_notes"
+            android:icon="@mipmap/ic_launcher"
             android:label="Notes">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -75,11 +76,11 @@
         </activity-alias>
 
         <activity-alias
-            android:name="id.nhasix.app.WeatherActivity"
-            android:targetActivity="id.nhasix.app.MainActivity"
+            android:name="id.komiktap.mobile.WeatherActivity"
+            android:targetActivity="id.komiktap.mobile.MainActivity"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_weather"
+            android:icon="@mipmap/ic_launcher"
             android:label="Weather">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

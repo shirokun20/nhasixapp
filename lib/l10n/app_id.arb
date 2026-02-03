@@ -8,8 +8,8 @@
   "errorUnknown": "Terjadi kesalahan. Silakan coba lagi.",
   "errorConnectionTimeout": "Koneksi habis waktu. Silakan coba lagi.",
   "errorConnectionRefused": "Koneksi ditolak. Server mungkin sedang down.",
-  "appTitle": "Kuron",
-  "appSubtitle": "NHentai",
+  "appTitle": "KomikTap",
+  "appSubtitle": "KomikTap Mobile",
   
   "home": "Beranda",
   "search": "Cari",
@@ -326,7 +326,7 @@
   "checkSpelling": "Periksa ejaan",
   "useBroaderSearchTerms": "Gunakan istilah pencarian yang lebih luas",
   
-  "welcomeTitle": "Selamat Datang di Kuron!",
+  "welcomeTitle": "Selamat Datang di KomikTap!",
   "welcomeMessage": "Terima kasih telah menginstal aplikasi kami. Sebelum memulai, harap perhatikan:",
   "ispBlockingInfo": "🚨 Pemberitahuan Pemblokiran ISP",
   "ispBlockingMessage": "Jika aplikasi ini diblokir oleh ISP (Penyedia Layanan Internet) Anda, silakan gunakan VPN seperti Cloudflare WARP (1.1.1.1) untuk mengakses konten.",
@@ -678,7 +678,7 @@
   "keepScreenOn": "Jaga Layar Hidup",
   "keepScreenOnDescription": "Mencegah layar mati saat membaca",
   "platformNotSupported": "Platform Tidak Didukung",
-  "platformNotSupportedBody": "Kuron dirancang khusus untuk perangkat Android.",
+  "platformNotSupportedBody": "KomikTap dirancang khusus untuk perangkat Android.",
   "platformNotSupportedInstall": "Silakan pasang dan jalankan aplikasi ini di perangkat Android.",
   "storagePermissionRequired": "Izin Penyimpanan Diperlukan",
   "storagePermissionExplanation": "Aplikasi ini membutuhkan izin penyimpanan untuk mengunduh file ke perangkat Anda. File akan disimpan di folder Downloads/nhasix.",
@@ -694,7 +694,7 @@
   "searchSomethingInteresting": "Cari sesuatu yang menarik",
   "checkOutFeaturedItems": "Lihat item unggulan",
   
-  "appSubtitleDescription": "Klien tidak resmi Nhentai",
+  "appSubtitleDescription": "Klien KomikTap Mobile",
   "downloadedGalleries": "Galeri yang diunduh",
   "favoriteGalleries": "Galeri favorit",
   "viewHistory": "Lihat riwayat",
@@ -1967,5 +1967,21 @@
   "backupNotFound": "Cadangan Tidak Ditemukan",
   "backupNotFoundMessage": "Folder cadangan 'nhasix' tidak ditemukan di lokasi default. Apakah Anda ingin memilih folder kustom yang berisi cadangan Anda?",
   "selectFolder": "Pilih Folder",
-  "premiumFeature": "Fitur Premium"
+  "premiumFeature": "Fitur Premium",
+  "premiumRequired": "Memerlukan Premium",
+  "premiumRequiredMessage": "Fitur ini hanya tersedia untuk pengguna premium. Upgrade sekarang untuk membuka semua fitur!",
+  "upgradeToPremium": "Upgrade ke Premium",
+  "currentSubscription": "Kamu sedang menggunakan paket {planName} dengan masa aktif sampai {expiryDate}",
+  "@currentSubscription": {
+    "placeholders": {
+      "planName": {"type": "String"},
+      "expiryDate": {"type": "String"}
+    }
+  },
+  "currentSubscriptionLifetime": "Kamu sedang menggunakan paket {planName} dengan masa aktif selamanya",
+  "@currentSubscriptionLifetime": {
+    "placeholders": {
+      "planName": {"type": "String"}
+    }
+  }
 }

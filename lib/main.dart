@@ -15,45 +15,64 @@ import 'package:nhasixapp/services/analytics_service.dart';
 import 'package:nhasixapp/services/history_cleanup_service.dart';
 import 'package:nhasixapp/services/app_update_service.dart';
 import 'package:nhasixapp/services/workers/download_worker.dart';
+import 'package:nhasixapp/services/license_service.dart';
 import 'package:nhasixapp/core/utils/performance_monitor.dart';
 import 'dart:io';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await setupLocator();
+  // Catch platform-level errors early
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+    
+    // Setup error handlers to prevent app crashes (especially Impeller/Vulkan issues)
+    FlutterError.onError = (FlutterErrorDetails details) {
+      debugPrint('🔥 Flutter Error: ${details.exception}');
+      debugPrint('Stack: ${details.stack}');
+    };
 
-  // Initialize Performance Monitoring
-  await PerformanceMonitor.initialize();
+    PlatformDispatcher.instance.onError = (error, stack) {
+      debugPrint('🔥 Platform Error: $error');
+      debugPrint('Stack: $stack');
+      return true; // Prevent crash
+    };
 
-  // Initialize Analytics Service
-  final analyticsService = getIt<AnalyticsService>();
-  await analyticsService.initialize();
+    await setupLocator();
 
-  // Initialize History Cleanup Service
-  final historyCleanupService = getIt<HistoryCleanupService>();
-  await historyCleanupService.initialize();
+    // Initialize Performance Monitoring
+    await PerformanceMonitor.initialize().timeout(
+      const Duration(seconds: 1),
+      onTimeout: () => debugPrint('⚠️ PerformanceMonitor init timed out'),
+    );
 
-  // Initialize App Update Service (clears cache on app updates)
-  await AppUpdateService.initialize();
+    // Initialize Analytics Service
+    final analyticsService = getIt<AnalyticsService>();
+    await analyticsService.initialize();
 
-  // Initialize WorkManager for background downloads
-  await initializeWorkManager(isDebugMode: kDebugMode);
+    // Initialize License Service (Security & Revalidation)
+    // CRITICAL: Timeout to prevent blank screen if storage hangs
+    await getIt<LicenseService>().initialize().timeout(
+      const Duration(seconds: 2),
+      onTimeout: () => debugPrint('⚠️ LicenseService init timed out - proceeding'),
+    ).catchError((e) {
+      debugPrint('⚠️ LicenseService init failed: $e');
+      return; // Continue startup
+    });
 
-  // _setupAllServiceLocalizationCallbacks();
+    // Initialize History Cleanup Service
+    final historyCleanupService = getIt<HistoryCleanupService>();
+    await historyCleanupService.initialize();
 
-  // Setup error handlers to prevent app crashes (especially Impeller/Vulkan issues)
-  FlutterError.onError = (FlutterErrorDetails details) {
-    // Log the error instead of crashing
-    debugPrint('🔥 Flutter Error: ${details.exception}');
-    debugPrint('Stack: ${details.stack}');
-  };
+    // Initialize App Update Service (clears cache on app updates)
+    await AppUpdateService.initialize();
 
-  // Catch errors from platform (including Impeller/Vulkan)
-  PlatformDispatcher.instance.onError = (error, stack) {
-    debugPrint('🔥 Platform Error: $error');
+    // Initialize WorkManager for background downloads
+    await initializeWorkManager(isDebugMode: kDebugMode);
+
+  } catch (e, stack) {
+    debugPrint('🔥 CRITICAL STARTUP ERROR: $e');
     debugPrint('Stack: $stack');
-    return true; // Prevent crash
-  };
+    // We continue to runApp even if init fails to show error UI or degraded app
+  }
 
   // Custom error widget instead of red screen
   ErrorWidget.builder = (FlutterErrorDetails details) {
@@ -71,9 +90,9 @@ void main() async {
                 size: 48,
               ),
               const SizedBox(height: 16),
-              Text(
-                'Rendering Error',
-                style: const TextStyle(
+              const Text(
+                'KomikTap Error',
+                style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -118,7 +137,7 @@ class MyApp extends StatelessWidget {
                     '🌐 MaterialApp rebuilt with locale: ${locale.languageCode}');
 
                 return MaterialApp.router(
-                  title: "Kuron",
+                  title: "KomikTap",
                   debugShowCheckedModeBanner: false,
                   routerConfig: AppRouter.router,
                   theme: themeState.themeData,

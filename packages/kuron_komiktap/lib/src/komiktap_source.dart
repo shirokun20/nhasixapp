@@ -416,8 +416,7 @@ class KomiktapSource implements ContentSource {
         .map((c) => Chapter(
               id: c.id,
               title: c.title,
-              url: KomiktapUrlBuilder.buildChapterUrlFromSlug(c.id,
-                  baseUrl: baseUrl),
+              url: c.url, // Use original URL from HTML
               uploadDate: c.publishDate,
             ))
         .toList();

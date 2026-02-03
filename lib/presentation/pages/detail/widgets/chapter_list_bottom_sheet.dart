@@ -6,6 +6,7 @@ import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/presentation/widgets/download_button_widget.dart';
+import 'package:nhasixapp/presentation/widgets/premium_required_dialog.dart';
 import 'package:intl/intl.dart';
 
 class ChapterListBottomSheet extends StatefulWidget {
@@ -199,18 +200,34 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    if (getIt<RemoteConfigService>().isFeatureEnabled(
-                                        widget.content.sourceId, (f) => f.download))
-                                      SizedBox(
-                                        width: 36,
-                                        height: 36,
-                                        child: DownloadButtonWidget(
-                                          content: chapterContent,
-                                          size: DownloadButtonSize.small,
-                                          showText: false,
-                                          showProgress: true,
-                                        ),
-                                      ),
+                                    // Download button - show locked if not premium
+                                    SizedBox(
+                                      width: 36,
+                                      height: 36,
+                                      child: getIt<RemoteConfigService>()
+                                              .isContentFeatureAccessible(
+                                                  widget.content.sourceId, 'download')
+                                          ? DownloadButtonWidget(
+                                              content: chapterContent,
+                                              size: DownloadButtonSize.small,
+                                              showText: false,
+                                              showProgress: true,
+                                            )
+                                          : IconButton(
+                                              onPressed: () async {
+                                                Navigator.pop(context);
+                                                await PremiumRequiredDialog.show(context);
+                                                // Trigger parent refresh by rebuilding
+                                                widget.detailCubit.refreshContent();
+                                              },
+                                              icon: const Icon(Icons.lock, size: 18),
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurfaceVariant
+                                                  .withValues(alpha: 0.5),
+                                              tooltip: 'Premium Required',
+                                            ),
+                                    ),
                                     const SizedBox(width: 8),
                                     Icon(
                                       Icons.arrow_forward_ios,

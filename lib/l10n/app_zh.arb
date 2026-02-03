@@ -8,7 +8,7 @@
   "errorUnknown": "发生错误。请重试。",
   "errorConnectionTimeout": "连接超时。请重试。",
   "errorConnectionRefused": "连接被拒绝。服务器可能已关闭。",
-  "appTitle": "Kuron",
+  "appTitle": "KomikTap",
   "appSubtitle": "Enhanced Reading Experience",
   "home": "首页",
   "search": "搜索",
@@ -396,7 +396,7 @@
   "serverUnavailable": "The 服务器 is currently不可用. Please try again later.",
   "useBroaderSearchTerms": "Use broader 搜索terms",
   
-  "welcomeTitle": "欢迎使用 Kuron！",
+  "welcomeTitle": "欢迎使用 KomikTap！",
   "welcomeMessage": "感谢您安装我们的应用。在开始之前，请注意：",
   "ispBlockingInfo": "🚨 ISP 封锁通知",
   "ispBlockingMessage": "如果此应用被您的 ISP（互联网服务提供商）封锁，请使用 VPN（如 Cloudflare WARP 1.1.1.1）来访问内容。",
@@ -712,7 +712,7 @@
   "keepScreenOn": "保持屏幕常亮",
   "keepScreenOnDescription": "Prevent 屏幕 from turning 关闭 while reading",
   "platformNotSupported": "Platform 否t Supported",
-  "platformNotSupportedBody": "Kuron is designed exclusively for Android devices.",
+  "platformNotSupportedBody": "KomikTap is designed exclusively for Android devices.",
   "platformNotSupportedInstall": "Please 安装 and run this 应用开启 an Android device.",
   "storagePermissionRequired": "需要Storage 权限 is for downloads. Please grant 存储权限 in app设置.",
   "storagePermissionExplanation": "This 应用 needs 存储权限 to 下载 files to your device. Files will be已保存 to the Downloads/nhasix folder.",
@@ -724,7 +724,7 @@
   "startReading": "开始阅读",
   "searchSomethingInteresting": "搜索for something interesting",
   "checkOutFeaturedItems": "Check out featured items",
-  "appSubtitleDescription": "Nhentai unofficial 客户端",
+  "appSubtitleDescription": "KomikTap Mobile 客户端",
   "downloadedGalleries": "Downloaded galleries",
   "favoriteGalleries": "Favorite galleries",
   "viewHistory": "查看历史",
@@ -2528,5 +2528,21 @@
   "backupNotFound": "未找到备份",
   "backupNotFoundMessage": "在默认位置未找到'nhasix'备份文件夹。您想选择包含备份的自定义文件夹吗？",
   "selectFolder": "选择文件夹",
-  "premiumFeature": "Premium Feature"
+  "premiumFeature": "Premium Feature",
+  "premiumRequired": "需要高级版",
+  "premiumRequiredMessage": "此功能仅适用于高级用户。立即升级以解锁所有功能！",
+  "upgradeToPremium": "升级到高级版",
+  "currentSubscription": "您目前正在使用 {planName}，有效期至 {expiryDate}",
+  "@currentSubscription": {
+    "placeholders": {
+      "planName": {"type": "String"},
+      "expiryDate": {"type": "String"}
+    }
+  },
+  "currentSubscriptionLifetime": "您目前正在使用 {planName}，终身有效",
+  "@currentSubscriptionLifetime": {
+    "placeholders": {
+      "planName": {"type": "String"}
+    }
+  }
 }

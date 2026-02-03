@@ -9,18 +9,22 @@ import 'remote_data_source.dart';
 import 'nhentai_scraper.dart';
 import 'anti_detection.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 /// Factory class for creating RemoteDataSource with all dependencies
 class RemoteDataSourceFactory {
-  static RemoteDataSource create({Logger? logger}) {
+  static Future<RemoteDataSource> create({Logger? logger}) async {
     final log = logger ?? Logger();
 
     // Create HTTP client
     final httpClient = Dio();
+    final prefs = await SharedPreferences.getInstance();
 
     // Create RemoteConfigService (configs from assets, tags from remote)
     final remoteConfigService = RemoteConfigService(
       dio: httpClient,
       logger: log,
+      prefs: prefs,
     );
 
     // Create dependencies

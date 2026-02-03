@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nhasixapp/presentation/widgets/premium_required_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as p;
 import 'package:nhasixapp/core/routing/app_router.dart';
@@ -705,10 +706,25 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                     // Check feature flag
                     final remoteConfig = getIt<RemoteConfigService>();
                     // Offline content always has sourceId
-                    final isEnabled = remoteConfig.isFeatureEnabled(
-                        content.sourceId, (f) => f.generatePdf);
+                    final isEnabled = remoteConfig.isContentFeatureAccessible(
+                        content.sourceId, 'generatePdf');
 
-                    if (!isEnabled) return const SizedBox.shrink();
+                    if (!isEnabled) {
+                      // Show premium dialog instead of hiding button
+                      return ListTile(
+                        leading: Icon(Icons.picture_as_pdf,
+                            color: colorScheme.tertiary.withValues(alpha: 0.5)),
+                        title: Text(l10n.convertToPdf),
+                        subtitle: Text('${content.pageCount} pages'),
+                        trailing: Icon(Icons.lock, 
+                            color: colorScheme.tertiary.withValues(alpha: 0.5)),
+                        onTap: () {
+                          Navigator.pop(bottomSheetContext);
+                          // Import needed at top: import 'package:nhasixapp/presentation/widgets/premium_required_dialog.dart';
+                          PremiumRequiredDialog.show(parentContext);
+                        },
+                      );
+                    }
 
                     return ListTile(
                       leading: Icon(Icons.picture_as_pdf,

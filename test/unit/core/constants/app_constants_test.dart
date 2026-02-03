@@ -6,9 +6,14 @@ import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mocktail/mocktail.dart';
+
+class MockSharedPreferences extends Mock implements SharedPreferences {}
+
 // Mock RemoteConfigService for testing
 class MockRemoteConfigService extends RemoteConfigService {
-  MockRemoteConfigService() : super(dio: Dio(), logger: Logger());
+  MockRemoteConfigService() : super(dio: Dio(), logger: Logger(), prefs: MockSharedPreferences());
 
   @override
   cfg.AppConfig? get appConfig => cfg.AppConfig(

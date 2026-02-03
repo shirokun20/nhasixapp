@@ -389,7 +389,7 @@ class DownloadButtonWidget extends StatelessWidget {
 
     // Check if download feature is enabled
     final remoteConfig = getIt<RemoteConfigService>();
-    if (!remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.download)) {
+    if (!remoteConfig.isContentFeatureAccessible(content.sourceId, 'download')) {
       _showFeatureDisabledDialog(context);
       return;
     }

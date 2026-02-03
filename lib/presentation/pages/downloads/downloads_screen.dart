@@ -12,6 +12,7 @@ import '../../blocs/download/download_bloc.dart';
 import '../../widgets/widgets.dart';
 import '../../widgets/app_scaffold_with_offline.dart';
 import '../../widgets/permission_request_sheet.dart';
+import '../../widgets/premium_required_dialog.dart';
 
 /// Screen for managing downloads with status tracking and progress indicators
 class DownloadsScreen extends StatefulWidget {
@@ -645,16 +646,11 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         // Check feature flag
         final remoteConfig = getIt<RemoteConfigService>();
         // Offline content always has sourceId
-        final isEnabled = remoteConfig.isFeatureEnabled(
-            sourceId ?? SourceType.nhentai.id, (f) => f.generatePdf);
+        final isEnabled = remoteConfig.isContentFeatureAccessible(
+            sourceId ?? SourceType.nhentai.id, 'generatePdf');
 
         if (!isEnabled) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.premiumFeature),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
+          PremiumRequiredDialog.show(context);
           break;
         }
         downloadBloc.add(DownloadOpenContentEvent(download.contentId));

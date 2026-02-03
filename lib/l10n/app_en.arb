@@ -1,7 +1,7 @@
 {
   "@@locale": "en",
-  "appTitle": "Kuron",
-  "appSubtitle": "NHentai",
+  "appTitle": "KomikTap",
+  "appSubtitle": "KomikTap Mobile",
   
   "home": "Home",
   "search": "Search",
@@ -393,7 +393,7 @@
   "checkSpelling": "Check spelling",
   "useBroaderSearchTerms": "Use broader search terms",
   
-  "welcomeTitle": "Welcome to Kuron!",
+  "welcomeTitle": "Welcome to KomikTap!",
   "welcomeMessage": "Thank you for installing our app. Before you start, please note:",
   "ispBlockingInfo": "🚨 ISP Blocking Notice",
   "ispBlockingMessage": "If this app is blocked by your ISP (Internet Service Provider), please use a VPN like Cloudflare WARP (1.1.1.1) to access content.",
@@ -686,7 +686,7 @@
   "keepScreenOn": "Keep Screen On",
   "keepScreenOnDescription": "Prevent screen from turning off while reading",
   "platformNotSupported": "Platform Not Supported",
-  "platformNotSupportedBody": "Kuron is designed exclusively for Android devices.",
+  "platformNotSupportedBody": "KomikTap is designed exclusively for Android devices.",
   "platformNotSupportedInstall": "Please install and run this app on an Android device.",
   "storagePermissionRequired": "Storage Permission Required",
   "storagePermissionExplanation": "This app needs storage permission to download files to your device. Files will be saved to the Downloads/nhasix folder.",
@@ -702,7 +702,7 @@
   "searchSomethingInteresting": "Search for something interesting", 
   "checkOutFeaturedItems": "Check out featured items",
   
-  "appSubtitleDescription": "Nhentai unofficial client",
+  "appSubtitleDescription": "KomikTap Mobile Client",
   "downloadedGalleries": "Downloaded galleries",
   "favoriteGalleries": "Favorite galleries",
   "viewHistory": "View history",
@@ -2321,5 +2321,21 @@
   "backupNotFound": "Backup Not Found",
   "backupNotFoundMessage": "No 'nhasix' backup folder was found in the default location. Would you like to select a custom folder containing your backup?",
   "selectFolder": "Select Folder",
-  "premiumFeature": "Premium Feature"
+  "premiumFeature": "Premium Feature",
+  "premiumRequired": "Premium Required",
+  "premiumRequiredMessage": "This feature is only available for premium users. Upgrade now to unlock all features!",
+  "upgradeToPremium": "Upgrade to Premium",
+  "currentSubscription": "You are currently using {planName} with validity until {expiryDate}",
+  "@currentSubscription": {
+    "placeholders": {
+      "planName": {"type": "String"},
+      "expiryDate": {"type": "String"}
+    }
+  },
+  "currentSubscriptionLifetime": "You are currently using {planName} with lifetime validity",
+  "@currentSubscriptionLifetime": {
+    "placeholders": {
+      "planName": {"type": "String"}
+    }
+  }
 }

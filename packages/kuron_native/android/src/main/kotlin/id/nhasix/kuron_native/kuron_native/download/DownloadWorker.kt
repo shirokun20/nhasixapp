@@ -37,6 +37,7 @@ class DownloadWorker(
         const val KEY_IMAGE_URLS = "image_urls"
         const val KEY_IMAGE_URLS_FILE = "image_urls_file" // New key for file path
         const val KEY_DESTINATION_PATH = "destination_path"
+        const val KEY_BACKUP_FOLDER_NAME = "backup_folder_name" // NEW: Configurable folder
         const val KEY_COOKIES = "cookies"  // Cookies as JSON string
         // Metadata fields for v2.1
         const val KEY_TITLE = "title"
@@ -74,6 +75,7 @@ class DownloadWorker(
         val contentId = inputData.getString(KEY_CONTENT_ID) ?: return@withContext Result.failure()
         val sourceId = inputData.getString(KEY_SOURCE_ID) ?: "unknown"
         val destinationPath = inputData.getString(KEY_DESTINATION_PATH)
+        val backupFolderName = inputData.getString(KEY_BACKUP_FOLDER_NAME) ?: "komikTapXKuron" // NEW
         
         // RESOLVE IMAGE URLs: Check file first (large lists), then Data (small lists/legacy)
         val imageUrlsFile = inputData.getString(KEY_IMAGE_URLS_FILE)
@@ -101,8 +103,8 @@ class DownloadWorker(
         Log.d(TAG, "Starting download for $contentId from $sourceId with ${imageUrls.size} images (Native Notifications Disabled)")
         
         try {
-            val downloadDir = getDownloadDirectory(sourceId, contentId, destinationPath)
-            downloadImages(contentId, sourceId, imageUrls, destinationPath)
+            val downloadDir = getDownloadDirectory(sourceId, contentId, destinationPath, backupFolderName)
+            downloadImages(contentId, sourceId, imageUrls, destinationPath, backupFolderName)
             
             // Create metadata and .nomedia after successful download
             val title = inputData.getString(KEY_TITLE) ?: "Unknown"
@@ -151,9 +153,10 @@ class DownloadWorker(
         contentId: String, 
         sourceId: String, 
         imageUrls: List<String>, 
-        destinationPath: String?
+        destinationPath: String?,
+        backupFolderName: String
     ) {
-        val downloadDir = getDownloadDirectory(sourceId, contentId, destinationPath)
+        val downloadDir = getDownloadDirectory(sourceId, contentId, destinationPath, backupFolderName)
         // Create /images/ subfolder to match Flutter pattern
         val imagesDir = File(downloadDir, "images")
         
@@ -207,15 +210,20 @@ class DownloadWorker(
         }
     }
     
-    private fun getDownloadDirectory(sourceId: String, contentId: String, destinationPath: String?): File {
+    private fun getDownloadDirectory(
+        sourceId: String, 
+        contentId: String, 
+        destinationPath: String?,
+        backupFolderName: String
+    ): File {
         // If destinationPath is provided by Flutter, use it
         if (!destinationPath.isNullOrEmpty()) {
             return File(destinationPath)
         }
         
-        // Fallback: /storage/emulated/0/Download/nhasix/{source}/{contentId}
+        // Fallback: /storage/emulated/0/Download/{backupFolderName}/{source}/{contentId}
         val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        return File(downloadsDir, "nhasix${File.separator}$sourceId${File.separator}$contentId")
+        return File(downloadsDir, "$backupFolderName${File.separator}$sourceId${File.separator}$contentId")
     }
     
     private fun downloadImage(url: String, destFile: File) {

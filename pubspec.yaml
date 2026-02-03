@@ -130,7 +130,7 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: false  # iOS platform not configured
-  image_path: "assets/icons/logo_app.png"
+  image_path: "assets/icons/komiktap.png"
   min_sdk_android: 21
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/icons/logo_app.png"
+  adaptive_icon_foreground: "assets/icons/komiktap.png"

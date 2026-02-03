@@ -469,11 +469,7 @@ class DownloadItemWidget extends StatelessWidget {
       final remoteConfig = GetIt.I<RemoteConfigService>();
       // Use sourceId from download, fallback to 'nhentai' if null
       final source = download.sourceId ?? SourceType.nhentai.id;
-
-      final isEnabled = remoteConfig.isFeatureEnabled(
-        source,
-        (f) => f.generatePdf
-      );
+      final isEnabled = remoteConfig.isContentFeatureAccessible(source, 'generatePdf');
 
       if (!isEnabled) {
         return const SizedBox.shrink();

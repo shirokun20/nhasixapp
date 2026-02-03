@@ -44,7 +44,7 @@
     },
     "storage": {
         "folders": {
-            "backup": "nhasix",
+            "backup": "komikTapXKuron",
             "images": "images",
             "pdf": "pdf"
         },
@@ -91,7 +91,7 @@
         "enabled": true,
         "activation": {
             "type": "license_key",
-            "validateEndpoint": "https://api.nhasix.com/validate-license",
+            "validateEndpoint": "http://192.168.0.7:8000/api/check-license",
             "maxDevices": 3,
             "deviceLimitMessage": "License limit reached. Unlink other devices to continue."
         }

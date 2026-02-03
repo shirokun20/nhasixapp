@@ -904,7 +904,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
       // Use shareXFiles to let user save/share the backup file
       await SharePlus.instance.share(ShareParams(
         files: [xFile], 
-        text: 'Kuron Backup ${DateTime.now()}'
+        text: 'KomikTap Backup ${DateTime.now()}'
       ));
       
       final size = await File(zipPath).length();

@@ -1,6 +1,7 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -12,6 +13,8 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import '../../core/routing/app_route.dart';
 import 'common/source_selector.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/presentation/widgets/license_check_dialog.dart';
+import 'package:nhasixapp/services/license_service.dart';
 
 class AppDrawerContent extends StatefulWidget {
   const AppDrawerContent({
@@ -84,6 +87,17 @@ class _AppDrawerContentState extends State<AppDrawerContent>
   void _handleNavigation(BuildContext context, String route) {
     if (widget.isDrawer) {
       Navigator.pop(context); // Close drawer first
+    }
+
+    if (route == 'license_check') {
+      showDialog(
+        context: context,
+        builder: (context) => const LicenseCheckDialog(),
+      ).then((_) {
+        // Refresh drawer state (e.g. premium status)
+        if (mounted) setState(() {});
+      });
+      return;
     }
 
     if (route == AppRoute.crotpediaLogin) {
@@ -205,7 +219,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                           'nhentai';
                       final config = getIt<RemoteConfigService>();
                       if (config.isFeatureEnabled(
-                          sourceId, (f) => f.download)) {
+                          sourceId, (f) => f.download?.enabled ?? false)) {
                         return _buildNavItem(
                           context,
                           icon: Icons.download_rounded,
@@ -227,7 +241,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                           'nhentai';
                       final config = getIt<RemoteConfigService>();
                       if (config.isFeatureEnabled(
-                          sourceId, (f) => f.download)) {
+                          sourceId, (f) => f.download?.enabled ?? false)) {
                         return _buildNavItem(
                           context,
                           icon: Icons.offline_bolt_rounded,
@@ -254,7 +268,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                             'nhentai';
                         final config = getIt<RemoteConfigService>();
                         if (config.isFeatureEnabled(
-                            sourceId, (f) => f.random)) {
+                            sourceId, (f) => f.random?.enabled ?? false)) {
                           return _buildNavItem(
                             context,
                             icon: Icons.shuffle_rounded,
@@ -285,7 +299,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                         // But favorites are local. Even if source disables LOOKING UP favorites, local DB still exists.
                         // Let's safe-guard it anyway with the flag if desired, but primarily Random is the one that breaks if API missing.
                         if (config.isFeatureEnabled(
-                            sourceId, (f) => f.favorite)) {
+                            sourceId, (f) => f.favorite?.enabled ?? false)) {
                           return _buildNavItem(
                             context,
                             icon: Icons.favorite_rounded,
@@ -309,6 +323,14 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                     const SizedBox(height: 16),
                     _buildSectionLabel('MORE', theme),
                     const SizedBox(height: 8),
+                    _buildNavItem(
+                      context,
+                      icon: Icons.verified_user_outlined,
+                      label: 'Cek Lisensi',
+                      route: 'license_check',
+                      isSelected: false,
+                      theme: theme,
+                    ),
                     _buildNavItem(
                       context,
                       icon: Icons.settings_rounded,
@@ -405,7 +427,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                     backgroundColor: theme.colorScheme.surface,
                     child: const CircleAvatar(
                       radius: 38,
-                      backgroundImage: AssetImage('assets/icons/logo_app.png'),
+                      backgroundImage: AssetImage('assets/icons/komiktap.png'),
                     ),
                   ),
                 ),
@@ -434,25 +456,85 @@ class _AppDrawerContentState extends State<AppDrawerContent>
           ),
           const SizedBox(height: 6),
 
-          // Subtitle badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: theme.colorScheme.outline.withValues(alpha: 0.2),
+        // Subtitle / Premium Badge
+        Builder(
+          builder: (context) {
+            final licenseService = getIt<LicenseService>();
+            final isPremium = licenseService.isPremiumActive;
+            final expiry = licenseService.expiresAt;
+            final planName = licenseService.planName ?? 'PREMIUM ACTIVE';
+
+            if (isPremium) {
+              final activeDate = expiry != null 
+                  ? DateFormat('dd MMM yyyy').format(expiry) 
+                  : 'Lifetime';
+              
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFFFFF8E1), // Pale Gold
+                      const Color(0xFFFFECB3), // Lighter Orange
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFFFFA000).withValues(alpha: 0.5),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.workspace_premium, size: 14, color: Color(0xFFE65100)),
+                        const SizedBox(width: 4),
+                        Text(
+                          planName.toUpperCase(),
+                          style: TextStyleConst.bodySmall.copyWith(
+                            color: const Color(0xFFE65100),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Masa Aktif: $activeDate',
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: const Color(0xFFBF360C),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                ),
               ),
-            ),
-            child: Text(
-              l10n.appSubtitleDescription,
-              style: TextStyleConst.bodySmall.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
+              child: Text(
+                l10n.appSubtitleDescription,
+                style: TextStyleConst.bodySmall.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-          ),
+            );
+          }
+        ),
         ],
       ),
     );

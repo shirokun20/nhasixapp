@@ -330,29 +330,44 @@ class CloudflareConfig {
 }
 
 @JsonSerializable()
+class FeatureFlag {
+  final bool enabled;
+  final bool requiresPremium;
+
+  FeatureFlag({
+    this.enabled = false,
+    this.requiresPremium = false,
+  });
+
+  factory FeatureFlag.fromJson(Map<String, dynamic> json) =>
+      _$FeatureFlagFromJson(json);
+  Map<String, dynamic> toJson() => _$FeatureFlagToJson(this);
+}
+
+@JsonSerializable()
 class FeatureConfig {
-  final bool search;
-  final bool random;
-  final bool related;
-  final bool download;
-  final bool favorite;
-  final bool chapters;
-  final bool bookmark;
-  final bool supportsTagExclusion;
-  final bool supportsAdvancedSearch;
-  final bool generatePdf;
+  final FeatureFlag? search;
+  final FeatureFlag? random;
+  final FeatureFlag? related;
+  final FeatureFlag? download;
+  final FeatureFlag? favorite;
+  final FeatureFlag? chapters;
+  final FeatureFlag? bookmark;
+  final FeatureFlag? supportsTagExclusion;
+  final FeatureFlag? supportsAdvancedSearch;
+  final FeatureFlag? generatePdf;
 
   FeatureConfig({
-    this.search = false,
-    this.random = false,
-    this.related = false,
-    this.download = false,
-    this.favorite = false,
-    this.chapters = false,
-    this.bookmark = false,
-    this.supportsTagExclusion = false,
-    this.supportsAdvancedSearch = false,
-    this.generatePdf = false,
+    this.search,
+    this.random,
+    this.related,
+    this.download,
+    this.favorite,
+    this.chapters,
+    this.bookmark,
+    this.supportsTagExclusion,
+    this.supportsAdvancedSearch,
+    this.generatePdf,
   });
 
   factory FeatureConfig.fromJson(Map<String, dynamic> json) =>

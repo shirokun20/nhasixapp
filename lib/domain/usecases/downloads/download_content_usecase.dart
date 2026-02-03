@@ -11,6 +11,7 @@ import '../../repositories/user_data_repository.dart';
 import '../../../services/native_download_service.dart';
 import '../../../services/pdf_service.dart';
 import '../../../services/download_manager.dart';
+import '../../../core/constants/app_constants.dart';
 
 /// Use case for downloading content for offline reading
 class DownloadContentUseCase
@@ -169,6 +170,7 @@ class DownloadContentUseCase
         sourceId: content.sourceId,
         imageUrls: fullImageUrls,
         destinationPath: destination,
+        backupFolderName: AppStorage.backupFolderName, // NEW: Pass from config
         cookies: cookies,
         title: content.title,
         url: content.url,

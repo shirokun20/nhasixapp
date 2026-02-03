@@ -12,6 +12,7 @@ import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart'
     hide ImageCacheManager;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_nhentai/kuron_nhentai.dart';
@@ -93,6 +94,7 @@ import 'package:nhasixapp/services/image_cache_service.dart';
 import 'package:nhasixapp/services/image_metadata_service.dart';
 import 'package:nhasixapp/services/export_service.dart';
 import 'package:nhasixapp/services/legal_content_service.dart';
+import 'package:nhasixapp/services/license_service.dart'; // NEW
 import 'package:nhasixapp/services/cache/cache_manager.dart' as multi_cache;
 
 final getIt = GetIt.instance;
@@ -114,6 +116,10 @@ Future<void> _setupExternalDependencies() async {
   // SharedPreferences
   final sharedPreferences = await SharedPreferences.getInstance();
   getIt.registerSingleton<SharedPreferences>(sharedPreferences);
+
+  // FlutterSecureStorage
+  const secureStorage = FlutterSecureStorage();
+  getIt.registerSingleton<FlutterSecureStorage>(secureStorage);
 
   // PreferencesService - Wrapper for SharedPreferences
   getIt.registerLazySingleton<PreferencesService>(() => PreferencesService(
@@ -159,6 +165,7 @@ void _setupCore() {
   getIt.registerLazySingleton<RemoteConfigService>(() => RemoteConfigService(
         dio: getIt<Dio>(),
         logger: getIt<Logger>(),
+        prefs: getIt<SharedPreferences>(),
       ));
 
   // DNS Settings Service
@@ -291,6 +298,15 @@ void _setupServices() {
         dio: getIt<Dio>(),
         prefs: getIt<SharedPreferences>(),
       ));
+
+  // License Service
+  getIt.registerLazySingleton<LicenseService>(() => LicenseService(
+        dio: getIt<Dio>(),
+        logger: getIt<Logger>(),
+        remoteConfigService: getIt<RemoteConfigService>(),
+        prefs: getIt<SharedPreferences>(),
+        secureStorage: getIt<FlutterSecureStorage>(),
+      ));
 }
 
 /// Setup data sources (Remote and Local)
@@ -396,8 +412,8 @@ void _setupDataSources() {
   // Content Source Registry
   getIt.registerLazySingleton<ContentSourceRegistry>(() {
     final registry = ContentSourceRegistry();
-    registry.register(getIt<NhentaiSource>());
-    registry.register(getIt<CrotpediaSource>());
+    // registry.register(getIt<NhentaiSource>());
+    // registry.register(getIt<CrotpediaSource>());
     registry.register(getIt<KomiktapSource>()); // NEW
     return registry;
   });

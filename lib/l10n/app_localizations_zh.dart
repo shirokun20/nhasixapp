@@ -9,7 +9,7 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get appTitle => 'Kuron';
+  String get appTitle => 'KomikTap';
 
   @override
   String get appSubtitle => 'Enhanced Reading Experience';
@@ -775,7 +775,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get useBroaderSearchTerms => 'Use broader 搜索terms';
 
   @override
-  String get welcomeTitle => '欢迎使用 Kuron！';
+  String get welcomeTitle => '欢迎使用 KomikTap！';
 
   @override
   String get welcomeMessage => '感谢您安装我们的应用。在开始之前，请注意：';
@@ -1397,7 +1397,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get platformNotSupportedBody =>
-      'Kuron is designed exclusively for Android devices.';
+      'KomikTap is designed exclusively for Android devices.';
 
   @override
   String get platformNotSupportedInstall =>
@@ -1438,7 +1438,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get checkOutFeaturedItems => 'Check out featured items';
 
   @override
-  String get appSubtitleDescription => 'Nhentai unofficial 客户端';
+  String get appSubtitleDescription => 'KomikTap Mobile 客户端';
 
   @override
   String get downloadedGalleries => 'Downloaded galleries';
@@ -3287,4 +3287,23 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get premiumFeature => 'Premium Feature';
+
+  @override
+  String get premiumRequired => '需要高级版';
+
+  @override
+  String get premiumRequiredMessage => '此功能仅适用于高级用户。立即升级以解锁所有功能！';
+
+  @override
+  String get upgradeToPremium => '升级到高级版';
+
+  @override
+  String currentSubscription(String planName, String expiryDate) {
+    return '您目前正在使用 $planName，有效期至 $expiryDate';
+  }
+
+  @override
+  String currentSubscriptionLifetime(String planName) {
+    return '您目前正在使用 $planName，终身有效';
+  }
 }

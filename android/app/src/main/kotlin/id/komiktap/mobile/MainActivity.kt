@@ -1,4 +1,4 @@
-package id.nhasix.app
+package id.komiktap.mobile
 
 import android.content.ComponentName
 import android.content.Intent
@@ -104,7 +104,7 @@ class MainActivity: FlutterActivity() {
             val aliases = listOf("CalculatorActivity", "NotesActivity", "WeatherActivity")
             aliases.forEach { alias ->
                 try {
-                    val componentName = ComponentName(packageName, "id.nhasix.app.$alias")
+                    val componentName = ComponentName(packageName, "id.komiktap.mobile.$alias")
                     packageManager.setComponentEnabledSetting(
                         componentName,
                         PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
@@ -143,7 +143,7 @@ class MainActivity: FlutterActivity() {
 
     private fun disableMainActivity() {
         try {
-            val mainComponent = ComponentName(packageName, "id.nhasix.app.MainActivity")
+            val mainComponent = ComponentName(packageName, "id.komiktap.mobile.MainActivity")
             packageManager.setComponentEnabledSetting(
                 mainComponent,
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
@@ -157,7 +157,7 @@ class MainActivity: FlutterActivity() {
 
     private fun enableMainActivity() {
         try {
-            val mainComponent = ComponentName(packageName, "id.nhasix.app.MainActivity")
+            val mainComponent = ComponentName(packageName, "id.komiktap.mobile.MainActivity")
             packageManager.setComponentEnabledSetting(
                 mainComponent,
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
@@ -171,7 +171,7 @@ class MainActivity: FlutterActivity() {
     
     private fun enableAlias(aliasName: String) {
         try {
-            val componentName = ComponentName(packageName, "id.nhasix.app.$aliasName")
+            val componentName = ComponentName(packageName, "id.komiktap.mobile.$aliasName")
             packageManager.setComponentEnabledSetting(
                 componentName,
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
@@ -190,7 +190,7 @@ class MainActivity: FlutterActivity() {
         val aliases = listOf("CalculatorActivity", "NotesActivity", "WeatherActivity")
         for (alias in aliases) {
             try {
-                val componentName = ComponentName(packageName, "id.nhasix.app.$alias")
+                val componentName = ComponentName(packageName, "id.komiktap.mobile.$alias")
                 val state = packageManager.getComponentEnabledSetting(componentName)
                 if (state == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
                     val mode = when (alias) {
