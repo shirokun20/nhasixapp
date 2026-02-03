@@ -28,6 +28,11 @@ class DownloadHandler(
     private var progressJob: Job? = null
     // Cache for deduplication: contentId -> fingerprint
     private val lastEmittedStates = java.util.concurrent.ConcurrentHashMap<String, String>()
+    // FIX: Track terminal states to prevent spam when multiple downloads active
+    private val terminalStatesEmitted = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+    
+    // Speed calculation: ContentId -> Pair(LastBytes, LastTimestamp)
+    private val lastSpeedData = java.util.concurrent.ConcurrentHashMap<String, Pair<Long, Long>>()
 
     companion object {
         private const val TAG = "DownloadHandler"
@@ -52,6 +57,15 @@ class DownloadHandler(
         Log.d(TAG, "startObservingProgress: Starting to observe WorkManager flow for tag 'native_download'")
         progressJob?.cancel()
         progressJob = scope.launch {
+            // FIX: Prune old completed work to prevent notification spam on app restart/update
+            // This ensures we don't get 'SUCCEEDED' events for downloads finished in previous sessions
+            try {
+                WorkManager.getInstance(context).pruneWork()
+                Log.d(TAG, "Pruned old WorkManager history")
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to prune WorkManager history: ${e.message}")
+            }
+
             WorkManager.getInstance(context)
                 .getWorkInfosByTagFlow("native_download")
                 .collect { workInfos ->
@@ -88,6 +102,27 @@ class DownloadHandler(
                             val downloaded = src.getInt("downloadedCount", 0)
                             val total = src.getInt("totalCount", 0)
                             
+                            // Speed Calculation logic
+                            val currentBytes = src.getLong("downloadedBytes", 0L)
+                            var downloadSpeed = 0.0
+                            val currentTime = System.currentTimeMillis()
+
+                            if (currentBytes > 0) {
+                                val lastData = lastSpeedData[contentId]
+                                if (lastData != null) {
+                                    val (lastBytes, lastTime) = lastData
+                                    val deltaBytes = currentBytes - lastBytes
+                                    val deltaTime = currentTime - lastTime
+
+                                    if (deltaTime > 0 && deltaBytes >= 0) {
+                                        // Speed in bytes/second
+                                        downloadSpeed = (deltaBytes * 1000.0) / deltaTime
+                                    }
+                                }
+                                // Update cache
+                                lastSpeedData[contentId] = Pair(currentBytes, currentTime)
+                            }
+                            
                             if (total > 0 || state == "COMPLETED" || state == "FAILED") {
                                 // Calculate progress percentage for smarter deduplication
                                 val progressPercent = if (total > 0) (downloaded * 100 / total) else 0
@@ -98,17 +133,23 @@ class DownloadHandler(
                                 val stateFingerprint = "$state:tier_$progressTier:$total"
                                 val lastFingerprint = lastEmittedStates[contentId]
 
-                                // CRITICAL: ALWAYS emit COMPLETED/FAILED states regardless of deduplication
-                                // This ensures completion events always reach Flutter layer
+                                // FIX: Only emit terminal states ONCE per contentId to prevent spam
+                                // Previously, COMPLETED was always emitted, causing spam when multiple downloads active
                                 val isTerminalState = state == "COMPLETED" || state == "FAILED"
-                                val shouldEmit = isTerminalState || stateFingerprint != lastFingerprint
+                                val alreadyEmittedTerminal = terminalStatesEmitted.contains(contentId)
+                                val shouldEmit = when {
+                                    isTerminalState && alreadyEmittedTerminal -> false  // Skip - already sent
+                                    isTerminalState -> true  // First terminal state - emit it
+                                    else -> stateFingerprint != lastFingerprint  // Normal dedup for progress
+                                }
 
                                 if (shouldEmit) {
                                     val data = mapOf(
                                         "contentId" to contentId,
                                         "downloadedPages" to downloaded,
                                         "totalPages" to total,
-                                        "status" to state
+                                        "status" to state,
+                                        "downloadSpeed" to downloadSpeed
                                     )
                                     
                                     if (eventSink != null) {
@@ -116,7 +157,8 @@ class DownloadHandler(
                                         lastEmittedStates[contentId] = stateFingerprint
                                         
                                         if (isTerminalState) {
-                                            Log.i(TAG, "✅ TERMINAL STATE emitted for $contentId: $state ($downloaded/$total)")
+                                            terminalStatesEmitted.add(contentId)
+                                            Log.i(TAG, "✅ TERMINAL STATE emitted for $contentId: $state ($downloaded/$total) - tracking to prevent spam")
                                         } else {
                                             Log.d(TAG, "Progress update for $contentId: $progressPercent% ($downloaded/$total)")
                                         }
@@ -158,6 +200,12 @@ class DownloadHandler(
         try {
             val contentId = call.argument<String>("contentId")
                 ?: throw IllegalArgumentException("contentId is required")
+            
+            // FIX: Clear terminal tracking for fresh download to allow re-downloading
+            terminalStatesEmitted.remove(contentId)
+            lastEmittedStates.remove(contentId)
+            lastSpeedData.remove(contentId)
+            
             val sourceId = call.argument<String>("sourceId") ?: "unknown"
             val imageUrls = call.argument<List<String>>("imageUrls")
                 ?: throw IllegalArgumentException("imageUrls is required")

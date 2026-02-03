@@ -30,11 +30,23 @@ class NativeDownloadManager(private val context: Context) {
             }
         }
         
+        // FIX: WorkManager has 10KB Data limit. Large lists (>200 items) cause crash.
+        // Solution: Write URLs to a temporary file and pass file path to Worker.
+        val urlsFile = java.io.File(context.cacheDir, "download_urls_$contentId.json")
+        try {
+            val jsonArray = org.json.JSONArray(imageUrls)
+            urlsFile.writeText(jsonArray.toString())
+        } catch (e: Exception) {
+            // Fallback to empty file or log error, but we can't really proceed if this fails
+            e.printStackTrace()
+        }
+
         val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
             .setInputData(workDataOf(
                 DownloadWorker.KEY_CONTENT_ID to contentId,
                 DownloadWorker.KEY_SOURCE_ID to sourceId,
-                DownloadWorker.KEY_IMAGE_URLS to imageUrls.toTypedArray(),
+                // Pass file path instead of raw list
+                DownloadWorker.KEY_IMAGE_URLS_FILE to urlsFile.absolutePath,
                 DownloadWorker.KEY_DESTINATION_PATH to destinationPath,
                 DownloadWorker.KEY_COOKIES to cookiesJson,
                 // Pass metadata

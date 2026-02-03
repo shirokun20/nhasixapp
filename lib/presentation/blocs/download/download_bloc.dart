@@ -660,10 +660,23 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       }
 
       // Update status to downloading
-      var updatedDownload = download.copyWith(
+      var updatedDownload = DownloadStatus(
+        contentId: download.contentId,
         state: DownloadState.downloading,
-        startTime: DateTime.now(),
-        error: null,
+        downloadedPages: download.downloadedPages,
+        totalPages: download.totalPages,
+        startTime: DateTime.now(), // New start time
+        endTime: download.endTime,
+        error: null, // Clear error
+        downloadPath: download.downloadPath,
+        fileSize: download.fileSize,
+        speed: download.speed,
+        retryCount: download.retryCount,
+        startPage: download.startPage,
+        endPage: download.endPage,
+        title: download.title,
+        sourceId: download.sourceId,
+        coverUrl: download.coverUrl,
       );
 
       await _userDataRepository.saveDownloadStatus(updatedDownload);
@@ -1150,9 +1163,23 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       }
 
       // Update status to queued for retry
-      final updatedDownload = download.copyWith(
+      final updatedDownload = DownloadStatus(
+        contentId: download.contentId,
         state: DownloadState.queued,
-        error: null,
+        downloadedPages: download.downloadedPages,
+        totalPages: download.totalPages,
+        startTime: download.startTime,
+        endTime: download.endTime,
+        error: null, // Clear error
+        downloadPath: download.downloadPath,
+        fileSize: download.fileSize,
+        speed: download.speed,
+        retryCount: download.retryCount,
+        startPage: download.startPage,
+        endPage: download.endPage,
+        title: download.title,
+        sourceId: download.sourceId,
+        coverUrl: download.coverUrl,
       );
 
       await _userDataRepository.saveDownloadStatus(updatedDownload);
@@ -1222,10 +1249,23 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       }
 
       // Update status to queued for resume
-      final updatedDownload = download.copyWith(
+      final updatedDownload = DownloadStatus(
+        contentId: download.contentId,
         state: DownloadState.queued,
-        startTime: DateTime.now(),
-        endTime: null,
+        downloadedPages: download.downloadedPages,
+        totalPages: download.totalPages,
+        startTime: DateTime.now(), // New start time
+        endTime: null, // Clear end time
+        error: null, // Clear error
+        downloadPath: download.downloadPath,
+        fileSize: download.fileSize,
+        speed: download.speed,
+        retryCount: download.retryCount,
+        startPage: download.startPage,
+        endPage: download.endPage,
+        title: download.title,
+        sourceId: download.sourceId,
+        coverUrl: download.coverUrl,
       );
 
       await _userDataRepository.saveDownloadStatus(updatedDownload);
@@ -1738,13 +1778,23 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _logger.e('❌ Cannot calculate file size: downloadPath is null or empty');
       }
 
-      final completedDownload = currentDownload.copyWith(
+      final completedDownload = DownloadStatus(
+        contentId: currentDownload.contentId,
         state: DownloadState.completed,
-        endTime: DateTime.now(),
         downloadedPages: currentDownload.totalPages, // Ensure full count
-        fileSize: totalSize, // ✅ Save calculated size
-        downloadPath: downloadPath, // Update path if we retrieved it via fallback
-        error: null,
+        totalPages: currentDownload.totalPages,
+        startTime: currentDownload.startTime,
+        endTime: DateTime.now(),
+        error: null, // Clear error explicitly
+        downloadPath: downloadPath, // Update path if retrieved
+        fileSize: totalSize, // Save calculated size
+        speed: currentDownload.speed,
+        retryCount: currentDownload.retryCount,
+        startPage: currentDownload.startPage,
+        endPage: currentDownload.endPage,
+        title: currentDownload.title,
+        sourceId: currentDownload.sourceId,
+        coverUrl: currentDownload.coverUrl,
       );
       
       _logger.d('Saving completed download to database...');

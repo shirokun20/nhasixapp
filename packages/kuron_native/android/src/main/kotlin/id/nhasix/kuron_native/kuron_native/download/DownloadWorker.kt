@@ -35,6 +35,7 @@ class DownloadWorker(
         const val KEY_CONTENT_ID = "content_id"
         const val KEY_SOURCE_ID = "source_id"
         const val KEY_IMAGE_URLS = "image_urls"
+        const val KEY_IMAGE_URLS_FILE = "image_urls_file" // New key for file path
         const val KEY_DESTINATION_PATH = "destination_path"
         const val KEY_COOKIES = "cookies"  // Cookies as JSON string
         // Metadata fields for v2.1
@@ -66,24 +67,48 @@ class DownloadWorker(
         builder.build()
     }
 
+    // Track total bytes for speed calculation
+    private var totalBytesDownloaded: Long = 0L
+
     override suspend fun doWork(): ListenableWorker.Result = withContext(Dispatchers.IO) {
         val contentId = inputData.getString(KEY_CONTENT_ID) ?: return@withContext Result.failure()
         val sourceId = inputData.getString(KEY_SOURCE_ID) ?: "unknown"
-        val imageUrls = inputData.getStringArray(KEY_IMAGE_URLS) ?: return@withContext Result.failure()
         val destinationPath = inputData.getString(KEY_DESTINATION_PATH)
+        
+        // RESOLVE IMAGE URLs: Check file first (large lists), then Data (small lists/legacy)
+        val imageUrlsFile = inputData.getString(KEY_IMAGE_URLS_FILE)
+        val imageUrls: List<String> = if (!imageUrlsFile.isNullOrEmpty()) {
+            try {
+                val file = File(imageUrlsFile)
+                if (file.exists()) {
+                    val json = file.readText()
+                    // Parse simple JSON array of strings
+                    org.json.JSONArray(json).let { jsonArray ->
+                        List(jsonArray.length()) { i -> jsonArray.getString(i) }
+                    }
+                } else {
+                    Log.e(TAG, "Image URLs file not found at: $imageUrlsFile")
+                    return@withContext Result.failure()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to read image URLs from file", e)
+                return@withContext Result.failure()
+            }
+        } else {
+            inputData.getStringArray(KEY_IMAGE_URLS)?.toList() ?: return@withContext Result.failure()
+        }
         
         Log.d(TAG, "Starting download for $contentId from $sourceId with ${imageUrls.size} images (Native Notifications Disabled)")
         
         try {
             val downloadDir = getDownloadDirectory(sourceId, contentId, destinationPath)
-            downloadImages(contentId, sourceId, imageUrls.toList(), destinationPath)
+            downloadImages(contentId, sourceId, imageUrls, destinationPath)
             
             // Create metadata and .nomedia after successful download
             val title = inputData.getString(KEY_TITLE) ?: "Unknown"
             val url = inputData.getString(KEY_URL) ?: ""
             val coverUrl = inputData.getString(KEY_COVER_URL) ?: ""
             val language = inputData.getString(KEY_LANGUAGE) ?: "unknown"
-            val downloadedFiles = imageUrls.toList()
             
             createMetadataFile(
                 downloadDir, 
@@ -93,9 +118,18 @@ class DownloadWorker(
                 url,
                 coverUrl,
                 language,
-                downloadedFiles
+                imageUrls
             )
             createNoMediaFile(downloadDir)
+            
+            // Clean up the temp file if it was used
+            if (!imageUrlsFile.isNullOrEmpty()) {
+                try {
+                    File(imageUrlsFile).delete()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to delete temp urls file: $imageUrlsFile")
+                }
+            }
             
             Log.d(TAG, "Download complete for $contentId.")
             
@@ -155,11 +189,19 @@ class DownloadWorker(
                  if (index == 0) Log.d(TAG, "Skipping first file (already exists): ${destFile.absolutePath}")
             }
             
+            
             val progress = ((index + 1).toFloat() / imageUrls.size * 100).toInt()
+            
+            // Add current file size to total for speed calculation
+            if (destFile.exists()) {
+                totalBytesDownloaded += destFile.length()
+            }
+            
             setProgress(workDataOf(
                 KEY_PROGRESS to progress,
                 "downloadedCount" to (index + 1),
                 "totalCount" to imageUrls.size,
+                "downloadedBytes" to totalBytesDownloaded,
                 KEY_CONTENT_ID to contentId
             ))
         }

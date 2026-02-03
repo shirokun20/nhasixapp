@@ -28,8 +28,8 @@ class DownloadStatsWidget extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Overall progress
-          if (state.downloads.isNotEmpty) ...[
+          // Overall progress - ONLY show if there are active downloads
+          if (state.activeDownloads.isNotEmpty) ...[
             Row(
               children: [
                 Expanded(

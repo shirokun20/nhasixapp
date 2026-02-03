@@ -134,11 +134,11 @@ class DownloadLoaded extends DownloadBlocState {
 
   /// Get total progress percentage
   double get totalProgress {
-    if (downloads.isEmpty) return 0.0;
+    if (activeDownloads.isEmpty) return 0.0;
 
-    final totalPages = downloads.fold<int>(0, (sum, d) => sum + d.totalPages);
+    final totalPages = activeDownloads.fold<int>(0, (sum, d) => sum + d.totalPages);
     final downloadedPages =
-        downloads.fold<int>(0, (sum, d) => sum + d.downloadedPages);
+        activeDownloads.fold<int>(0, (sum, d) => sum + d.downloadedPages);
 
     if (totalPages == 0) return 0.0;
     return downloadedPages / totalPages;
