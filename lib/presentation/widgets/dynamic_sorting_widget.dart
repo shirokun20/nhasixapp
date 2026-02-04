@@ -35,7 +35,9 @@ class DynamicSortingWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (config.options.isEmpty) return const SizedBox.shrink();
+    if (config.options.isEmpty || !config.allowDynamicReSort) {
+      return const SizedBox.shrink();
+    }
 
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
