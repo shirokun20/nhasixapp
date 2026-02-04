@@ -234,6 +234,7 @@ class CrotpediaScraper {
         title: title.trim(),
         publishedDate: _parseDate(date),
         seriesSlug: '', // Will be filled by caller
+        url: link?.attributes['href'],
       );
     }).toList();
   }
@@ -263,11 +264,40 @@ class CrotpediaScraper {
   // ============ Helper Methods ============
 
   String _extractSlug(String? url) {
-    if (url == null) return '';
-    // Extract slug from URL like /baca/series/slug-name/ or /baca/slug-name/
+    if (url == null || url.isEmpty) return '';
+
+    try {
+      final uri = Uri.parse(url);
+      final pathSegments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+
+      if (pathSegments.isNotEmpty) {
+        // If it's a series URL: /baca/series/slug/
+        final seriesIndex = pathSegments.indexOf('series');
+        if (seriesIndex != -1 && seriesIndex + 1 < pathSegments.length) {
+          return _finalizeSlug(pathSegments[seriesIndex + 1]);
+        }
+        
+        // Also check for /baca/slug/ (older/alternate structure)
+        final bacaIndex = pathSegments.indexOf('baca');
+        if (bacaIndex != -1 && bacaIndex + 1 < pathSegments.length && pathSegments[bacaIndex + 1] != 'series') {
+             return _finalizeSlug(pathSegments[bacaIndex + 1]);
+        }
+
+        // Otherwise assume it's a chapter URL or other resource where the ID is the last segment
+        return _finalizeSlug(pathSegments.last);
+      }
+    } catch (_) {
+      // Ignore parsing errors and fall through to regex fallback
+    }
+
+    // Fallback: Legacy regex matching
     final regex = RegExp(r'/baca/(?:series/)?([^/]+)/?$');
     final slug = regex.firstMatch(url)?.group(1) ?? '';
+    
+    return _finalizeSlug(slug);
+  }
 
+  String _finalizeSlug(String slug) {
     // HTML parser decodes URL-encoded characters (e.g., %e2%99%a5 → ❤️)
     // We need to re-encode them for ContentId validation
     // Use Uri.encodeComponent but preserve existing hyphens and underscores

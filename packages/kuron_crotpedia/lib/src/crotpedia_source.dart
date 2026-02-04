@@ -327,7 +327,7 @@ class CrotpediaSource implements ContentSource {
           .map((c) => Chapter(
                 id: c.slug,
                 title: c.title,
-                url: CrotpediaUrlBuilder.chapterReader(c.slug),
+                url: c.url ?? CrotpediaUrlBuilder.chapterReader(c.slug),
                 uploadDate: c.publishedDate,
               ))
           .toList();

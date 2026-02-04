@@ -65,6 +65,7 @@ class CrotpediaChapter {
   final int? chapterNumber;
   final DateTime? publishedDate;
   final String seriesSlug;
+  final String? url; // Real URL from scraper
 
   const CrotpediaChapter({
     required this.slug,
@@ -72,6 +73,7 @@ class CrotpediaChapter {
     this.chapterNumber,
     this.publishedDate,
     required this.seriesSlug,
+    this.url,
   });
 
   @override
