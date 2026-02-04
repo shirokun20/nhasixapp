@@ -227,7 +227,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                           'nhentai';
                       final config = getIt<RemoteConfigService>();
                       if (config.isFeatureEnabled(
-                          sourceId, (f) => f.download)) {
+                          sourceId, (f) => f.offlineMode)) {
                         return _buildNavItem(
                           context,
                           icon: Icons.offline_bolt_rounded,
