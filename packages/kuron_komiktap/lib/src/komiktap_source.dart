@@ -418,8 +418,7 @@ Content _convertDetailToContent(KomiktapSeriesDetail detail) {
             title: c.title,
             // ✅ FIX: Use real URL from scraper instead of reconstructing
             // This fixes irregular URLs like "chapter-1.5" or "special-chapter"
-            url: c.url ?? 
-                 KomiktapUrlBuilder.buildChapterUrlFromSlug(c.id, baseUrl: baseUrl),
+            url: c.url,
             uploadDate: c.publishDate,
           ))
       .toList();

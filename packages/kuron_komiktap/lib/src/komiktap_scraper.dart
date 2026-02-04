@@ -446,8 +446,29 @@ class KomiktapScraper {
   String _extractSlugFromUrl(String? url) {
     if (url == null || url.isEmpty) return '';
 
-    // Match /manga/{slug}/ or /{slug}-chapter-{num}/
+    try {
+      final uri = Uri.parse(url);
+      final pathSegments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+
+      if (pathSegments.isNotEmpty) {
+        // If it's a manga URL: /manga/slug/
+        final mangaIndex = pathSegments.indexOf('manga');
+        if (mangaIndex != -1 && mangaIndex + 1 < pathSegments.length) {
+          return pathSegments[mangaIndex + 1];
+        }
+
+        // Otherwise assume it's a chapter URL or other resource where the ID is the last segment
+        // e.g. /slug-chapter-1/ or /slug-chaper-1/ (typo)
+        return pathSegments.last;
+      }
+    } catch (_) {
+      // Ignore parsing errors and fall through to regex fallback
+    }
+
+    // Fallback: Legacy regex matching
     final mangaRegex = RegExp(r'/manga/([^/]+)');
+    // Match any segment that looks like a chapter slug (ends with digit)
+    // or simply the last segment if we can't be precise
     final chapterRegex = RegExp(r'/([^/]+?-chapter-[\d.-]+)');
 
     var match = mangaRegex.firstMatch(url);
