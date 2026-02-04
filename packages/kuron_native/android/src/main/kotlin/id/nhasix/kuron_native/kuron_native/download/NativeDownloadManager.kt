@@ -21,7 +21,8 @@ class NativeDownloadManager(private val context: Context) {
         title: String = "Unknown",
         url: String = "",
         coverUrl: String = "",
-        language: String = "unknown"
+        language: String = "unknown",
+        backupFolderName: String = "nhasix"  // ✅ NEW: Configurable backup folder name
     ): String {
         // Convert cookies Map to JSON string for WorkManager Data
         val cookiesJson = cookies?.let { map ->
@@ -53,7 +54,9 @@ class NativeDownloadManager(private val context: Context) {
                 DownloadWorker.KEY_TITLE to title,
                 DownloadWorker.KEY_URL to url,
                 DownloadWorker.KEY_COVER_URL to coverUrl,
-                DownloadWorker.KEY_LANGUAGE to language
+                DownloadWorker.KEY_LANGUAGE to language,
+                // ✅ NEW: Pass backup folder name for fallback path construction
+                DownloadWorker.KEY_BACKUP_FOLDER to backupFolderName
             ))
             .setConstraints(Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)

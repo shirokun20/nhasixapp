@@ -1,7 +1,7 @@
 {
     "source": "crotpedia",
-    "version": "1.0.0",
-    "lastUpdated": "2026-01-13T13:16:00+07:00",
+    "version": "1.1.0",
+    "lastUpdated": "2026-02-04T20:55:00+07:00",
     "baseUrl": "https://crotpedia.net",
     "searchConfig": {
         "searchMode": "form-based",
@@ -268,13 +268,14 @@
         "search": true,
         "random": false,
         "related": false,
-        "download": true,
+        "download": false,
         "favorite": true,
         "chapters": true,
         "bookmark": false,
         "supportsTagExclusion": false,
         "supportsAdvancedSearch": true,
-        "generatePdf": true
+        "generatePdf": false,
+        "offlineMode": true
     },
     "ui": {
         "displayName": "Crotpedia",

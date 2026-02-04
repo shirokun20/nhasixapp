@@ -91,7 +91,7 @@ class AppStorage {
  
   /// Backup folder name
   static String get backupFolderName =>
-      _remoteConfig.appConfig?.storage?.backupFolderName ?? 'nhasix';
+      _remoteConfig.appConfig?.storage?.folders?.backup ?? 'nhasix';
  
   /// Default source ID for backward compatibility with existing downloads
   static final String defaultSourceId = SourceType.nhentai.id;
@@ -121,11 +121,11 @@ class AppStorage {
  
   /// Maximum image file size (for compression threshold)
   static int get maxImageSizeKb =>
-      _remoteConfig.appConfig?.storage?.maxImageSizeKb ?? 200;
+      _remoteConfig.appConfig?.storage?.limits?.maxImageSizeKb ?? 200;
  
   /// PDF parts size limit in pages
   static int get pdfPartsSizePages =>
-      _remoteConfig.appConfig?.storage?.pdfPartsSizePages ?? 100;
+      _remoteConfig.appConfig?.storage?.limits?.pdfPartsSizePages ?? 100;
 }
 
 /// UI related constants

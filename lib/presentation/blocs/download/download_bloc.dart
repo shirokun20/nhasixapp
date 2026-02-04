@@ -797,9 +797,13 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             currentState.settings.customStorageRoot!.isNotEmpty) {
           final baseDownloadPath = currentState.settings.customStorageRoot!;
           
-          // Match DownloadService structure: [Root]/nhasix/[sourceId]/[contentId]
+          // Get backup folder name from AppConfig via RemoteConfigService (default: "nhasix")
+          final remoteConfigService = getIt<RemoteConfigService>();
+          final backupFolderName = remoteConfigService.appConfig?.storage?.folders?.backup ?? 'nhasix';
+          
+          // Build path: [Root]/[backupFolderName]/[sourceId]/[contentId]
           savePath = path.join(
-              baseDownloadPath, 'nhasix', content.sourceId, event.contentId);
+              baseDownloadPath, backupFolderName, content.sourceId, event.contentId);
         } else {
            // STRICT REQUIREMENT: If customStorageRoot is empty, DO NOT ALLOW DOWNLOAD.
            _logger.e('❌ Download blocked: No custom storage root selected.');

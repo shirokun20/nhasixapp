@@ -31,9 +31,19 @@ class MockRemoteConfigService extends RemoteConfigService {
       progressUpdateIntervalMs: 100,
     ),
     storage: cfg.AppStorage(
-      backupFolderName: 'nhasix',
-      maxImageSizeKb: 200,
-      pdfPartsSizePages: 100,
+      folders: cfg.StorageFolders(
+        backup: 'nhasix',
+        images: 'images',
+        pdf: 'pdf',
+      ),
+      files: cfg.StorageFiles(
+        metadata: 'metadata.json',
+        config: 'config.json',
+      ),
+      limits: cfg.StorageLimits(
+        maxImageSizeKb: 200,
+        pdfPartsSizePages: 100,
+      ),
     ),
     ui: cfg.AppUiConfig(
       gridColumnsPortrait: 2,

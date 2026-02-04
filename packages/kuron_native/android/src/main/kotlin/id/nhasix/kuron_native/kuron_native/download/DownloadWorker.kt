@@ -43,6 +43,7 @@ class DownloadWorker(
         const val KEY_URL = "url"
         const val KEY_COVER_URL = "cover_url"
         const val KEY_LANGUAGE = "language"
+        const val KEY_BACKUP_FOLDER = "backup_folder" // ✅ NEW: Configurable folder name
         const val KEY_PROGRESS = "progress"
         
         private const val TAG = "DownloadWorker"
@@ -213,9 +214,12 @@ class DownloadWorker(
             return File(destinationPath)
         }
         
-        // Fallback: /storage/emulated/0/Download/nhasix/{source}/{contentId}
+        // Get backup folder name from inputData (default: "nhasix")
+        val backupFolderName = inputData.getString(KEY_BACKUP_FOLDER) ?: "nhasix"
+        
+        // Fallback: /storage/emulated/0/Download/[backupFolderName]/{source}/{contentId}
         val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        return File(downloadsDir, "nhasix${File.separator}$sourceId${File.separator}$contentId")
+        return File(downloadsDir, "$backupFolderName${File.separator}$sourceId${File.separator}$contentId")
     }
     
     private fun downloadImage(url: String, destFile: File) {

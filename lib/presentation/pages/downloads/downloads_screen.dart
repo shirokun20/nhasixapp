@@ -663,6 +663,23 @@ class _DownloadsScreenState extends State<DownloadsScreen>
   }
 
   Future<void> _handlePdfConversion(DownloadStatus download) async {
+    // Check feature flag first
+    final remoteConfig = getIt<RemoteConfigService>();
+    final isEnabled = remoteConfig.isFeatureEnabled(
+        download.sourceId ?? SourceType.nhentai.id, (f) => f.generatePdf);
+
+    if (!isEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.premiumFeature),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+      return;
+    }
+
     // Check permissions before starting PDF conversion
     final hasPermissions = await showPermissionRequestSheet(
       context,
@@ -683,6 +700,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     }
 
     // Trigger PDF conversion
+    if (!mounted) return;
     final downloadBloc = context.read<DownloadBloc>();
     downloadBloc.add(DownloadConvertToPdfEvent(download.contentId));
 

@@ -63,6 +63,22 @@ class KomiktapUrlBuilder {
   /// https://komiktap.info/wireless-onahole-chapter-67-5/ -> wireless-onahole-chapter-67-5
   static String? extractSlugFromUrl(String? url) {
     if (url == null || url.isEmpty) return null;
+
+    try {
+      final uri = Uri.parse(url);
+      final pathSegments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+      
+      if (pathSegments.isNotEmpty) {
+        // If it's a manga URL: /manga/slug/
+        final mangaIndex = pathSegments.indexOf('manga');
+        if (mangaIndex != -1 && mangaIndex + 1 < pathSegments.length) {
+          return pathSegments[mangaIndex + 1];
+        }
+        
+        // Return latest segment as fallback for chapter or other resources
+        return pathSegments.last;
+      }
+    } catch (_) {}
     
     // Match /manga/{slug}/ or /{slug}-chapter-{num}/
     final mangaRegex = RegExp(r'/manga/([^/]+)');

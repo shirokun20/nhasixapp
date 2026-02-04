@@ -11,6 +11,8 @@ import '../../repositories/user_data_repository.dart';
 import '../../../services/native_download_service.dart';
 import '../../../services/pdf_service.dart';
 import '../../../services/download_manager.dart';
+import '../../../core/constants/app_constants.dart';
+
 
 /// Use case for downloading content for offline reading
 class DownloadContentUseCase
@@ -174,7 +176,8 @@ class DownloadContentUseCase
         url: content.url,
         coverUrl: content.coverUrl,
         language: content.language,
-        enableNotifications: enableNotifications, // This will now be false
+        enableNotifications: enableNotifications,
+        backupFolderName: AppStorage.backupFolderName, // ✅ Pass from config
       );
 
       // We do NOT wait for completion here anymore. 

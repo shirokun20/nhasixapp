@@ -341,6 +341,7 @@ class FeatureConfig {
   final bool supportsTagExclusion;
   final bool supportsAdvancedSearch;
   final bool generatePdf;
+  final bool offlineMode;
 
   FeatureConfig({
     this.search = false,
@@ -353,6 +354,7 @@ class FeatureConfig {
     this.supportsTagExclusion = false,
     this.supportsAdvancedSearch = false,
     this.generatePdf = false,
+    this.offlineMode = false,
   });
 
   factory FeatureConfig.fromJson(Map<String, dynamic> json) =>
@@ -596,22 +598,70 @@ class AppUiConfig {
   Map<String, dynamic> toJson() => _$AppUiConfigToJson(this);
 }
 
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class AppStorage {
-  final String backupFolderName;
-  final int maxImageSizeKb;
-  final int pdfPartsSizePages;
+  final StorageFolders? folders;
+  final StorageFiles? files;
+  final StorageLimits? limits;
 
   AppStorage({
-    this.backupFolderName = 'nhasix',
-    this.maxImageSizeKb = 200,
-    this.pdfPartsSizePages = 100,
+    this.folders,
+    this.files,
+    this.limits,
   });
 
   factory AppStorage.fromJson(Map<String, dynamic> json) =>
       _$AppStorageFromJson(json);
   Map<String, dynamic> toJson() => _$AppStorageToJson(this);
 }
+
+@JsonSerializable()
+class StorageFolders {
+  final String backup;
+  final String images;
+  final String pdf;
+
+  StorageFolders({
+    this.backup = 'nhasix',
+    this.images = 'images',
+    this.pdf = 'pdf',
+  });
+
+  factory StorageFolders.fromJson(Map<String, dynamic> json) =>
+      _$StorageFoldersFromJson(json);
+  Map<String, dynamic> toJson() => _$StorageFoldersToJson(this);
+}
+
+@JsonSerializable()
+class StorageFiles {
+  final String metadata;
+  final String config;
+
+  StorageFiles({
+    this.metadata = 'metadata.json',
+    this.config = 'config.json',
+  });
+
+  factory StorageFiles.fromJson(Map<String, dynamic> json) =>
+      _$StorageFilesFromJson(json);
+  Map<String, dynamic> toJson() => _$StorageFilesToJson(this);
+}
+
+@JsonSerializable()
+class StorageLimits {
+  final int maxImageSizeKb;
+  final int pdfPartsSizePages;
+
+  StorageLimits({
+    this.maxImageSizeKb = 200,
+    this.pdfPartsSizePages = 100,
+  });
+
+  factory StorageLimits.fromJson(Map<String, dynamic> json) =>
+      _$StorageLimitsFromJson(json);
+  Map<String, dynamic> toJson() => _$StorageLimitsToJson(this);
+}
+
 
 @JsonSerializable()
 class AppReader {

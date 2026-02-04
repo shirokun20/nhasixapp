@@ -220,6 +220,8 @@ class DownloadHandler(
             val url = call.argument<String>("url") ?: ""
             val coverUrl = call.argument<String>("coverUrl") ?: ""
             val language = call.argument<String>("language") ?: "unknown"
+            // ✅ NEW: Extract backup folder name from Flutter (default: "nhasix")
+            val backupFolderName = call.argument<String>("backupFolderName") ?: "nhasix"
 
             val workId = downloadManager.queueDownload(
                 contentId, 
@@ -230,7 +232,8 @@ class DownloadHandler(
                 title,
                 url,
                 coverUrl,
-                language
+                language,
+                backupFolderName  // ✅ NEW: Pass to download manager
             )
             result.success(workId)
         } catch (e: Exception) {

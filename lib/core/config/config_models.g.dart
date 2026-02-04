@@ -192,6 +192,7 @@ FeatureConfig _$FeatureConfigFromJson(Map<String, dynamic> json) =>
       supportsTagExclusion: json['supportsTagExclusion'] as bool? ?? false,
       supportsAdvancedSearch: json['supportsAdvancedSearch'] as bool? ?? false,
       generatePdf: json['generatePdf'] as bool? ?? false,
+      offlineMode: json['offlineMode'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$FeatureConfigToJson(FeatureConfig instance) =>
@@ -206,6 +207,7 @@ Map<String, dynamic> _$FeatureConfigToJson(FeatureConfig instance) =>
       'supportsTagExclusion': instance.supportsTagExclusion,
       'supportsAdvancedSearch': instance.supportsAdvancedSearch,
       'generatePdf': instance.generatePdf,
+      'offlineMode': instance.offlineMode,
     };
 
 UiConfig _$UiConfigFromJson(Map<String, dynamic> json) => UiConfig(
@@ -434,14 +436,57 @@ Map<String, dynamic> _$AppUiConfigToJson(AppUiConfig instance) =>
     };
 
 AppStorage _$AppStorageFromJson(Map<String, dynamic> json) => AppStorage(
-      backupFolderName: json['backupFolderName'] as String? ?? 'nhasix',
-      maxImageSizeKb: (json['maxImageSizeKb'] as num?)?.toInt() ?? 200,
-      pdfPartsSizePages: (json['pdfPartsSizePages'] as num?)?.toInt() ?? 100,
+      folders: json['folders'] == null
+          ? null
+          : StorageFolders.fromJson(json['folders'] as Map<String, dynamic>),
+      files: json['files'] == null
+          ? null
+          : StorageFiles.fromJson(json['files'] as Map<String, dynamic>),
+      limits: json['limits'] == null
+          ? null
+          : StorageLimits.fromJson(json['limits'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$AppStorageToJson(AppStorage instance) =>
     <String, dynamic>{
-      'backupFolderName': instance.backupFolderName,
+      'folders': instance.folders?.toJson(),
+      'files': instance.files?.toJson(),
+      'limits': instance.limits?.toJson(),
+    };
+
+StorageFolders _$StorageFoldersFromJson(Map<String, dynamic> json) =>
+    StorageFolders(
+      backup: json['backup'] as String? ?? 'nhasix',
+      images: json['images'] as String? ?? 'images',
+      pdf: json['pdf'] as String? ?? 'pdf',
+    );
+
+Map<String, dynamic> _$StorageFoldersToJson(StorageFolders instance) =>
+    <String, dynamic>{
+      'backup': instance.backup,
+      'images': instance.images,
+      'pdf': instance.pdf,
+    };
+
+StorageFiles _$StorageFilesFromJson(Map<String, dynamic> json) => StorageFiles(
+      metadata: json['metadata'] as String? ?? 'metadata.json',
+      config: json['config'] as String? ?? 'config.json',
+    );
+
+Map<String, dynamic> _$StorageFilesToJson(StorageFiles instance) =>
+    <String, dynamic>{
+      'metadata': instance.metadata,
+      'config': instance.config,
+    };
+
+StorageLimits _$StorageLimitsFromJson(Map<String, dynamic> json) =>
+    StorageLimits(
+      maxImageSizeKb: (json['maxImageSizeKb'] as num?)?.toInt() ?? 200,
+      pdfPartsSizePages: (json['pdfPartsSizePages'] as num?)?.toInt() ?? 100,
+    );
+
+Map<String, dynamic> _$StorageLimitsToJson(StorageLimits instance) =>
+    <String, dynamic>{
       'maxImageSizeKb': instance.maxImageSizeKb,
       'pdfPartsSizePages': instance.pdfPartsSizePages,
     };

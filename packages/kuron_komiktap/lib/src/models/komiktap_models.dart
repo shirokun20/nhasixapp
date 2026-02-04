@@ -54,11 +54,13 @@ class KomiktapSeriesDetail {
 class KomiktapChapterInfo {
   final String id; // chapter slug
   final String title;
+  final String? url; // Real URL from href attribute
   final DateTime? publishDate;
 
   const KomiktapChapterInfo({
     required this.id,
     required this.title,
+    this.url,
     this.publishDate,
   });
 }

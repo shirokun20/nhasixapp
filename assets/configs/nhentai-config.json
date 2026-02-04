@@ -145,7 +145,8 @@
         "bookmark": false,
         "supportsTagExclusion": true,
         "supportsAdvancedSearch": true,
-        "generatePdf": true
+        "generatePdf": true,
+        "offlineMode": true
     },
     "ui": {
         "displayName": "NHentai",

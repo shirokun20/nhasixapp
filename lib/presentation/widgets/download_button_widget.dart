@@ -47,6 +47,13 @@ class DownloadButtonWidget extends StatelessWidget {
             state.downloads.where((d) => d.contentId == content.id).firstOrNull;
 
         if (download == null) {
+          // Check if download feature is enabled for this source
+          final remoteConfig = getIt<RemoteConfigService>();
+          if (!remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.download)) {
+            // Feature disabled and not downloaded -> Hide button
+            return const SizedBox.shrink();
+          }
+
           // Not downloaded, show download options with dropdown
           return _buildDownloadOptionsButton(context);
         }

@@ -410,45 +410,46 @@ class KomiktapSource implements ContentSource {
   }
 
   /// Convert KomiktapSeriesDetail to Content (for detail view)
-  Content _convertDetailToContent(KomiktapSeriesDetail detail) {
-    // Map chapters
-    final chapters = (detail.chapters ?? [])
-        .map((c) => Chapter(
-              id: c.id,
-              title: c.title,
-              url: KomiktapUrlBuilder.buildChapterUrlFromSlug(c.id,
-                  baseUrl: baseUrl),
-              uploadDate: c.publishDate,
+Content _convertDetailToContent(KomiktapSeriesDetail detail) {
+  // Map chapters
+  final chapters = (detail.chapters ?? [])
+      .map((c) => Chapter(
+            id: c.id,
+            title: c.title,
+            // ✅ FIX: Use real URL from scraper instead of reconstructing
+            // This fixes irregular URLs like "chapter-1.5" or "special-chapter"
+            url: c.url ?? 
+                 KomiktapUrlBuilder.buildChapterUrlFromSlug(c.id, baseUrl: baseUrl),
+            uploadDate: c.publishDate,
+          ))
+      .toList();
+
+  return Content(
+    id: detail.id,
+    sourceId: id,
+    title: detail.title,
+    coverUrl: detail.coverImageUrl,
+    pageCount: 0, // Dynamic per chapter
+    imageUrls: const [], // Empty initially
+    chapters: chapters,
+    tags: detail.tags
+        .map((tag) => Tag(
+              id: tag.hashCode,
+              name: tag,
+              type: TagType.tag,
+              count: 0,
+              slug: tag.toLowerCase().replaceAll(' ', '-'),
             ))
-        .toList();
-
-    return Content(
-      id: detail.id,
-      sourceId: id,
-      title: detail.title,
-      coverUrl: detail.coverImageUrl,
-      pageCount: 0, // Dynamic per chapter
-      imageUrls: const [], // Empty initially
-      chapters: chapters,
-      tags: detail.tags
-          .map((tag) => Tag(
-                id: tag.hashCode,
-                name: tag,
-                type: TagType.tag,
-                count: 0,
-                slug: tag.toLowerCase().replaceAll(' ', '-'),
-              ))
-          .toList(),
-      artists: detail.author != null ? [detail.author!] : [],
-      characters: [],
-      parodies: [],
-      groups: [],
-      language: 'indonesian',
-      uploadDate: detail.lastUpdate ?? DateTime.now(),
-      favorites: detail.favorites ?? 0,
-      englishTitle: detail.alternativeTitle,
-    );
-  }
-
+        .toList(),
+    artists: detail.author != null ? [detail.author!] : [],
+    characters: [],
+    parodies: [],
+    groups: [],
+    language: 'indonesian',
+    uploadDate: detail.lastUpdate ?? DateTime.now(),
+    favorites: detail.favorites ?? 0,
+    englishTitle: detail.alternativeTitle,
+  );
+}
 
 }

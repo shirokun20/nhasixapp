@@ -364,6 +364,7 @@ class KomiktapScraper {
       final dateEl = item.querySelector(_getSelector('detail_chapterDate'));
       final titleEl = item.querySelector(_getSelector('detail_chapterTitle'));
 
+      // Extract the REAL URL from href attribute (CRITICAL FIX)
       final url = link?.attributes['href'] ?? '';
       final chapterSlug = _extractSlugFromUrl(url);
 
@@ -374,6 +375,7 @@ class KomiktapScraper {
       return KomiktapChapterInfo(
         id: chapterSlug,
         title: titleEl?.text.trim() ?? 'Chapter $chapterNum',
+        url: url, // Pass the real URL directly (don't reconstruct it!)
         publishDate: _parseDate(dateEl?.text.trim()),
       );
     }).toList();

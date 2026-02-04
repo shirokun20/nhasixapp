@@ -23,7 +23,8 @@ class NativeDownloadService {
     String? url,
     String? coverUrl,
     String? language,
-    bool enableNotifications = true, // NEW
+    bool enableNotifications = true,
+    String backupFolderName = 'nhasix', // ✅ NEW: Configurable backup folder
   }) async {
     try {
       final workId = await _channel.invokeMethod<String>('kuronNativeStartDownload', {
@@ -37,7 +38,8 @@ class NativeDownloadService {
         'url': url,
         'coverUrl': coverUrl,
         'language': language,
-        'enableNotifications': enableNotifications, // NEW
+        'enableNotifications': enableNotifications,
+        'backupFolderName': backupFolderName, // ✅ NEW: Pass to native
       });
       return workId ?? '';
     } on PlatformException catch (e) {
