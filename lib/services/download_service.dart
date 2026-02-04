@@ -13,6 +13,7 @@ import 'notification_service.dart';
 import 'download_manager.dart';
 import '../core/utils/permission_helper.dart';
 import '../core/utils/storage_settings.dart';
+import '../core/constants/app_constants.dart' as app_constants;
 
 /// Service untuk handle actual file download
 class DownloadService {
@@ -56,7 +57,7 @@ class DownloadService {
       Directory downloadDir;
       if (savePath != null && savePath.isNotEmpty) {
         // Appending 'images' for consistency with _createDownloadDirectory structure
-        downloadDir = Directory(path.join(savePath, 'images'));
+        downloadDir = Directory(path.join(savePath, app_constants.AppStorage.imagesSubfolder));
         if (!await downloadDir.exists()) {
           await downloadDir.create(recursive: true);
         }
@@ -429,13 +430,13 @@ class DownloadService {
       String contentId, String sourceId) async {
     // Use smart Downloads directory detection
     final downloadsPath = await _getDownloadsDirectory();
-    final nhasixDir = Directory(path.join(downloadsPath, 'nhasix'));
+    final nhasixDir = Directory(path.join(downloadsPath, app_constants.AppStorage.backupFolderName));
 
     // Use source-based path
     final sourceDir = Directory(path.join(nhasixDir.path, sourceId));
 
     final contentDir = Directory(path.join(sourceDir.path, contentId));
-    final imagesDir = Directory(path.join(contentDir.path, 'images'));
+    final imagesDir = Directory(path.join(contentDir.path, app_constants.AppStorage.imagesSubfolder));
 
     // Create directories if they don't exist
     if (!await imagesDir.exists()) {
@@ -475,7 +476,7 @@ class DownloadService {
   Future<void> ensurePrivacyProtection() async {
     try {
       final downloadsPath = await _getDownloadsDirectory();
-      final nhasixDir = Directory(path.join(downloadsPath, 'nhasix'));
+      final nhasixDir = Directory(path.join(downloadsPath, app_constants.AppStorage.backupFolderName));
 
       if (await nhasixDir.exists()) {
         await _createNoMediaFile(nhasixDir);
@@ -642,7 +643,7 @@ class DownloadService {
     };
 
     final metadataFile =
-        File(path.join(downloadDir.parent.path, 'metadata.json'));
+        File(path.join(downloadDir.parent.path, app_constants.AppStorage.metadataFileName));
     await metadataFile.writeAsString(
       const JsonEncoder.withIndent('  ').convert(metadata),
     );
@@ -662,7 +663,7 @@ class DownloadService {
   Future<String?> getDownloadPath(String contentId) async {
     try {
       final downloadsPath = await _getDownloadsDirectory();
-      final nhasixDir = Directory(path.join(downloadsPath, 'nhasix'));
+      final nhasixDir = Directory(path.join(downloadsPath, app_constants.AppStorage.backupFolderName));
 
       if (!await nhasixDir.exists()) return null;
 
@@ -715,7 +716,7 @@ class DownloadService {
     final downloadPath = await getDownloadPath(contentId);
     if (downloadPath == null) return false;
 
-    final imagesDir = Directory(path.join(downloadPath, 'images'));
+    final imagesDir = Directory(path.join(downloadPath, app_constants.AppStorage.imagesSubfolder));
     if (!await imagesDir.exists()) return false;
 
     final files = await imagesDir.list().toList();
@@ -728,7 +729,7 @@ class DownloadService {
       final downloadPath = await getDownloadPath(contentId);
       if (downloadPath == null) return [];
 
-      final imagesDir = Directory(path.join(downloadPath, 'images'));
+      final imagesDir = Directory(path.join(downloadPath, app_constants.AppStorage.imagesSubfolder));
       if (!await imagesDir.exists()) return [];
 
       final files = await imagesDir
