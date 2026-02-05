@@ -95,6 +95,7 @@ import 'package:nhasixapp/services/image_metadata_service.dart';
 import 'package:nhasixapp/services/export_service.dart';
 import 'package:nhasixapp/services/legal_content_service.dart';
 import 'package:nhasixapp/services/license_service.dart'; // NEW
+import 'package:nhasixapp/services/ad_service.dart'; // NEW
 import 'package:nhasixapp/services/cache/cache_manager.dart' as multi_cache;
 
 final getIt = GetIt.instance;
@@ -306,6 +307,12 @@ void _setupServices() {
         remoteConfigService: getIt<RemoteConfigService>(),
         prefs: getIt<SharedPreferences>(),
         secureStorage: getIt<FlutterSecureStorage>(),
+      ));
+
+  // Ad Service
+  getIt.registerLazySingleton<AdService>(() => AdService(
+        logger: getIt<Logger>(),
+        licenseService: getIt<LicenseService>(),
       ));
 }
 

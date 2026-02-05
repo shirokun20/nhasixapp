@@ -16,6 +16,7 @@ import 'package:nhasixapp/services/history_cleanup_service.dart';
 import 'package:nhasixapp/services/app_update_service.dart';
 import 'package:nhasixapp/services/workers/download_worker.dart';
 import 'package:nhasixapp/services/license_service.dart';
+import 'package:nhasixapp/services/ad_service.dart';
 import 'package:nhasixapp/core/utils/performance_monitor.dart';
 import 'dart:io';
 
@@ -57,6 +58,14 @@ void main() async {
       debugPrint('⚠️ LicenseService init failed: $e');
       return; // Continue startup
     });
+
+    // Initialize AdService
+    // Depends on LicenseService for premium check
+    try {
+      await getIt<AdService>().initialize();
+    } catch (e) {
+      debugPrint('⚠️ AdService init failed: $e');
+    }
 
     // Initialize History Cleanup Service
     final historyCleanupService = getIt<HistoryCleanupService>();

@@ -15,6 +15,7 @@ import 'package:nhasixapp/core/utils/app_state_manager.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:kuron_core/kuron_core.dart';
+import 'package:nhasixapp/services/ad_service.dart';
 import '../../../../core/utils/error_message_utils.dart';
 import '../../widgets/download_button_widget.dart';
 import '../../widgets/progressive_image_widget.dart';
@@ -1625,7 +1626,17 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  void _readContent(Content content, {bool forceStartFromBeginning = false}) {
+  void _readContent(Content content,
+      {bool forceStartFromBeginning = false}) async {
+    // Show Interstitial Ad before reading
+    try {
+      final adService = getIt<AdService>();
+      await adService.showInterstitial();
+    } catch (e) {
+      Logger().e('Failed to show interstitial ad: $e');
+    }
+
+    if (!mounted) return;
     // Get metadata from current state if available
     final currentState = _detailCubit.state;
     final imageMetadata =

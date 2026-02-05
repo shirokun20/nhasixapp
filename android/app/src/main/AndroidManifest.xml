@@ -105,7 +105,7 @@
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             android:foregroundServiceType="dataSync"
-            android:exported="false" /> // Tools:node="merge" handled automatically by merge logic usually but explicit is safer here if not merging.
+            android:exported="false" />
             
     </application>
     <!-- Required to query activities that can process text, see:
