@@ -11,6 +11,10 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 
+import com.startapp.sdk.adsbase.Ad
+import com.startapp.sdk.adsbase.adlisteners.AdDisplayListener
+import com.startapp.sdk.adsbase.adlisteners.AdEventListener
+
 /** KuronAdsPlugin */
 class KuronAdsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private lateinit var channel: MethodChannel
@@ -35,9 +39,32 @@ class KuronAdsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 result.success(null)
             }
             "showInterstitial" -> {
-                if (activity != null) {
-                    StartAppAd.showAd(activity)
-                    result.success(true)
+                val currentActivity = activity
+                if (currentActivity != null) {
+                    val startAppAd = StartAppAd(currentActivity)
+                    // Load ad with listener to know when to show
+                    startAppAd.loadAd(object : AdEventListener {
+                        override fun onReceiveAd(ad: Ad) {
+                            // Ad received, now show it with display listener
+                            startAppAd.showAd(object : AdDisplayListener {
+                                override fun adHidden(ad: Ad) {
+                                    result.success(true)
+                                }
+
+                                override fun adDisplayed(ad: Ad) {}
+
+                                override fun adClicked(ad: Ad) {}
+
+                                override fun adNotDisplayed(ad: Ad) {
+                                    result.success(false)
+                                }
+                            })
+                        }
+
+                        override fun onFailedToReceiveAd(ad: Ad?) {
+                            result.success(false)
+                        }
+                    })
                 } else {
                     result.error("NO_ACTIVITY", "Activity is null", null)
                 }
