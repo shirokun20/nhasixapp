@@ -788,6 +788,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.9.5"
+  kuron_ads:
+    dependency: "direct main"
+    description:
+      path: "packages/kuron_ads"
+      relative: true
+    source: path
+    version: "0.0.1"
   kuron_core:
     dependency: "direct main"
     description:

@@ -42,6 +42,8 @@ import 'package:nhasixapp/presentation/cubits/source/source_state.dart';
 import 'package:kuron_core/kuron_core.dart' hide SearchFilter, SortOption;
 import 'package:nhasixapp/presentation/widgets/welcome_onboarding_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:nhasixapp/services/ad_service.dart'; // NEW
+// NEW
 
 // New imports for dynamic sorting
 import 'package:nhasixapp/core/config/config_models.dart';
@@ -416,10 +418,25 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                   child: _buildScrollableContent(state),
                 ),
               ),
+              
+              // Sticky Banner Ad
+              _buildBannerAd(),
             ],
           );
         },
       ),
+    );
+  }
+
+  Widget _buildBannerAd() {
+    final adService = getIt<AdService>();
+    debugPrint(
+        'MainScreen: Building Banner Ad. ShouldShow: ${adService.shouldShowAds}');
+    if (!adService.shouldShowAds) return const SizedBox.shrink();
+
+    return Container(
+      alignment: Alignment.bottomCenter,
+      child: adService.getBannerAdWidget(),
     );
   }
 
@@ -680,6 +697,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                 },
               ),
             ),
+
+          // Start.io Banner Ad
 
           // Hybrid Pinterest-style Grid Layout
           BlocBuilder<SettingsCubit, SettingsState>(
@@ -1315,7 +1334,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         url: url,
         enableJavaScript: true,
       );
-      
     } catch (e) {
       Logger().e('Error opening in browser: $e');
       if (mounted) {

@@ -16,6 +16,7 @@ import '../../cubits/reader/reader_cubit.dart';
 import '../../widgets/progress_indicator_widget.dart';
 import '../../widgets/error_widget.dart';
 import '../../widgets/extended_image_reader_widget.dart';
+import 'package:nhasixapp/services/ad_service.dart';
 
 /// Simple reader screen for reading manga/doujinshi content
 class ReaderScreen extends StatefulWidget {
@@ -392,15 +393,23 @@ class _ReaderScreenState extends State<ReaderScreen> {
         },
         child: BlocBuilder<ReaderCubit, ReaderState>(
           builder: (context, state) {
-            return Scaffold(
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              body: LayoutBuilder(
-                builder: (context, constraints) {
-                  if (constraints.maxWidth < 50 || constraints.maxHeight < 50) {
-                    return const SizedBox.shrink();
-                  }
-                  return _buildBody(state);
-                },
+            return PopScope(
+              canPop: true,
+              onPopInvokedWithResult: (didPop, result) {
+                if (didPop) {
+                  getIt<AdService>().showInterstitial();
+                }
+              },
+              child: Scaffold(
+                backgroundColor: Theme.of(context).colorScheme.surface,
+                body: LayoutBuilder(
+                  builder: (context, constraints) {
+                    if (constraints.maxWidth < 50 || constraints.maxHeight < 50) {
+                      return const SizedBox.shrink();
+                    }
+                    return _buildBody(state);
+                  },
+                ),
               ),
             );
           },

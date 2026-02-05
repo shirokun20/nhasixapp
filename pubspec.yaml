@@ -77,6 +77,8 @@ dependencies:
   share_plus: ^12.0.1
   url_launcher: ^6.3.1
   flutter_secure_storage: ^9.2.2
+  kuron_ads:
+    path: packages/kuron_ads
 
   # WebView for Cloudflare bypass
 

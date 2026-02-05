@@ -1,0 +1,19 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  package="id.komiktap.kuron_ads.kuron_ads">
+    <application>
+        <!-- Start.io Ad Configuration -->
+        <meta-data
+            android:name="com.startapp.sdk.APPLICATION_ID"
+            android:value="200467444" />
+
+        <!-- Disable Return Ads (to ensure Premium users don't see them) -->
+        <meta-data
+            android:name="com.startapp.sdk.RETURN_ADS_ENABLED"
+            android:value="false" />
+
+        <!-- Disable Splash Ads (to ensure Premium users don't see them) -->
+        <meta-data
+            android:name="com.startapp.sdk.SPLASH_ADS_ENABLED"
+            android:value="false" />
+    </application>
+</manifest>
