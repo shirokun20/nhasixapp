@@ -250,6 +250,14 @@ class _AboutContentState extends State<_AboutContent>
                       locale: Localizations.localeOf(context).languageCode,
                     ),
                   ),
+                  _buildDivider(),
+                  _buildMenuItem(
+                    context,
+                    icon: Icons.coffee_outlined,
+                    title: l10n.supportDeveloper,
+                    subtitle: l10n.supportDeveloperSubtitle,
+                    onTap: () => _showDonationDialog(context, l10n),
+                  ),
                 ], theme),
 
                 const SizedBox(height: 32),
@@ -475,5 +483,48 @@ class _AboutContentState extends State<_AboutContent>
         );
       }
     }
+  }
+
+  void _showDonationDialog(BuildContext context, AppLocalizations l10n) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.coffee, color: Colors.orange),
+            const SizedBox(width: 8),
+            Text(l10n.supportDeveloper),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(l10n.donateMessage),
+            const SizedBox(height: 16),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                'assets/images/donation_qris.jpeg',
+                width: 200,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              l10n.thankYouMessage,
+              style: TextStyleConst.bodyMedium
+                  .copyWith(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.close),
+          ),
+        ],
+      ),
+    );
   }
 }

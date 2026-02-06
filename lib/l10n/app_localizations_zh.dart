@@ -51,6 +51,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get about => '关于';
 
   @override
+  String get supportDeveloper => '支持开发者';
+
+  @override
+  String get supportDeveloperSubtitle => '请我喝杯咖啡';
+
+  @override
+  String get donateMessage => '如果您觉得此应用有帮助，可以通过 QRIS 捐赠来支持开发。谢谢！☕';
+
+  @override
+  String get thankYouMessage => '感谢您的支持！';
+
+  @override
   String get searchHint => '搜索内容...';
 
   @override

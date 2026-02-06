@@ -184,6 +184,30 @@ abstract class AppLocalizations {
   /// **'About'**
   String get about;
 
+  /// No description provided for @supportDeveloper.
+  ///
+  /// In en, this message translates to:
+  /// **'Support Developer'**
+  String get supportDeveloper;
+
+  /// No description provided for @supportDeveloperSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy me a coffee'**
+  String get supportDeveloperSubtitle;
+
+  /// No description provided for @donateMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'If you find this app helpful, you can support its development by donating via QRIS. Thank you! ☕'**
+  String get donateMessage;
+
+  /// No description provided for @thankYouMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you for your support!'**
+  String get thankYouMessage;
+
   /// No description provided for @searchHint.
   ///
   /// In en, this message translates to:

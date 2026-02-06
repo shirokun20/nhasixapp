@@ -115,6 +115,19 @@ flutter run
 
 ---
 
+## ☕ **Dukung Pengembang**
+
+Jika kamu menyukai **Kuron** dan ingin mendukung pengembangannya, kamu bisa mentraktir saya kopi! ☕  
+Scan QRIS di bawah ini untuk berdonasi:
+
+<p align="center">
+  <img src="assets/images/donation_qris.jpeg" width="300" alt="Donasi QRIS" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
+</p>
+
+> **Catatan:** Dukunganmu membantu menjaga server tetap berjalan dan update terus mengalir! 🚀
+
+---
+
 ## 📜 **Lisensi & Legal**
 
 **⚠️ Peringatan Konten 18+** • **Hanya Untuk Edukasi** • **Lisensi MIT**

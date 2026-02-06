@@ -51,6 +51,19 @@ class AppLocalizationsId extends AppLocalizations {
   String get about => 'Tentang';
 
   @override
+  String get supportDeveloper => 'Dukung Pengembang';
+
+  @override
+  String get supportDeveloperSubtitle => 'Traktir saya kopi';
+
+  @override
+  String get donateMessage =>
+      'Jika aplikasi ini bermanfaat, kamu bisa mendukung pengembangannya dengan berdonasi via QRIS. Terima kasih! ☕';
+
+  @override
+  String get thankYouMessage => 'Terima kasih atas dukunganmu!';
+
+  @override
   String get searchHint => 'Cari konten...';
 
   @override

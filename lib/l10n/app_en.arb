@@ -15,6 +15,10 @@
   "disguiseMode": "Disguise Mode",
   "offline": "Offline",
   "about": "About",
+  "supportDeveloper": "Support Developer",
+  "supportDeveloperSubtitle": "Buy me a coffee",
+  "donateMessage": "If you find this app helpful, you can support its development by donating via QRIS. Thank you! ☕",
+  "thankYouMessage": "Thank you for your support!",
   
   "searchHint": "Search content...",
   "searchPlaceholder": "Enter search keywords",

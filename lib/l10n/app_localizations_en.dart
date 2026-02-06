@@ -51,6 +51,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get about => 'About';
 
   @override
+  String get supportDeveloper => 'Support Developer';
+
+  @override
+  String get supportDeveloperSubtitle => 'Buy me a coffee';
+
+  @override
+  String get donateMessage =>
+      'If you find this app helpful, you can support its development by donating via QRIS. Thank you! ☕';
+
+  @override
+  String get thankYouMessage => 'Thank you for your support!';
+
+  @override
   String get searchHint => 'Search content...';
 
   @override

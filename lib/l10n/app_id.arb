@@ -23,6 +23,10 @@
   "disguiseMode": "Mode Penyamaran",
   "offline": "Offline",
   "about": "Tentang",
+  "supportDeveloper": "Dukung Pengembang",
+  "supportDeveloperSubtitle": "Traktir saya kopi",
+  "donateMessage": "Jika aplikasi ini bermanfaat, kamu bisa mendukung pengembangannya dengan berdonasi via QRIS. Terima kasih! ☕",
+  "thankYouMessage": "Terima kasih atas dukunganmu!",
   
   "searchHint": "Cari konten...",
   "searchPlaceholder": "Masukkan kata kunci pencarian",

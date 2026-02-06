@@ -1,13 +1,13 @@
 {
   "@@locale": "zh",
 
-  "errorNetwork": "网络错误。请检查您的连接并重试。",
-  "errorServer": "服务器错误。请稍后再试。",
-  "errorCloudflare": "内容暂时被阻止 (Cloudflare)。请稍后再试。",
-  "errorParsing": "加载内容数据失败。内容可能不可用。",
-  "errorUnknown": "发生错误。请重试。",
-  "errorConnectionTimeout": "连接超时。请重试。",
-  "errorConnectionRefused": "连接被拒绝。服务器可能已关闭。",
+  "errorNetwork": "网络连接错误，请检查您的网络设置。",
+  "errorServer": "服务器暂时无法响应，请稍后再试。",
+  "errorCloudflare": "检测到 Cloudflare 验证，请稍后重试。",
+  "errorParsing": "数据解析失败，内容可能已失效。",
+  "errorUnknown": "发生未知错误，请重试。",
+  "errorConnectionTimeout": "连接请求超时，请重试。",
+  "errorConnectionRefused": "连接被拒绝，服务器可能已停止服务。",
   "appTitle": "Kuron",
   "appSubtitle": "Enhanced Reading Experience",
   "home": "首页",
@@ -22,21 +22,25 @@
   "disguiseMode": "伪装模式",
   "offline": "离线",
   "about": "关于",
+  "supportDeveloper": "支持开发者",
+  "supportDeveloperSubtitle": "请我喝杯咖啡",
+  "donateMessage": "如果您觉得此应用有帮助，可以通过 QRIS 捐赠来支持开发。谢谢！☕",
+  "thankYouMessage": "感谢您的支持！",
   "searchHint": "搜索内容...",
   "searchPlaceholder": "输入搜索关键词",
   "noResults": "未找到结果",
   "searchSuggestions": "搜索建议",
   "suggestions": "建议：",
   "tapToLoadContent": "点击加载内容",
-  "checkInternetConnection": "Check your internet 连接",
-  "trySwitchingNetwork": "尝试在WiFi和移动数据之间切换",
-  "restartRouter": "如果使用WiFi，请重启路由器",
-  "checkWebsiteStatus": "检查网站是否宕机",
-  "cloudflareBypassMessage": "该网站受Cloudflare保护。我们正在尝试绕过保护。",
+  "checkInternetConnection": "请检查您的网络连接",
+  "trySwitchingNetwork": "尝试切换 WiFi 或移动数据",
+  "restartRouter": "如果使用 WiFi，请尝试重启路由器",
+  "checkWebsiteStatus": "检查目标网站是否正常运行",
+  "cloudflareBypassMessage": "网站受 Cloudflare 保护，正在尝试绕过验证。",
   "forceBypass": "强制绕过",
-  "unableToProcessData": "无法处理接收到的数据。网站结构可能已更改。",
-  "reportIssue": "报告问题",
-  "serverReturnedError": "服务器 returned {statusCode}. The service might be temporarily不可用.错误",
+  "unableToProcessData": "无法处理返回数据，网站结构可能已变更。",
+  "reportIssue": "反馈问题",
+  "serverReturnedError": "服务器返回错误代码 {statusCode}，服务暂时不可用。",
   "@serverReturnedError": {
     "placeholders": {
       "statusCode": {
@@ -44,7 +48,7 @@
       }
     }
   },
-  "searchResults": "搜索Results",
+  "searchResults": "搜索结果",
   "failedToOpenBrowser": "无法打开浏览器",
   "viewDownloads": "查看下载",
   "clearSearch": "清除搜索",
@@ -57,7 +61,7 @@
   "contentHidden": "内容已隐藏",
   "tapToViewAnyway": "点击仍然查看",
   "checkOutThisGallery": "查看这个画廊！",
-  "galleriesPreloaded": "{count} galleries preloaded",
+  "galleriesPreloaded": "已预加载 {count} 个画廊",
   "@galleriesPreloaded": {
     "placeholders": {
       "count": {
@@ -97,9 +101,9 @@
   "excludeParodies": "排除原作",
   "excludeArtists": "排除画师",
   "noResultsFound": "未找到结果",
-  "tryAdjustingFilters": "尝试调整您的搜索筛选器或搜索词。",
-  "tryDifferentKeywords": "Try different keywords",
-  "networkError": "网络错误。请检查您的连接并重试。",
+  "tryAdjustingFilters": "尝试调整筛选条件或使用其他关键词。",
+  "tryDifferentKeywords": "尝试使用不同的关键词。",
+  "networkError": "网络连接错误，请检查网络设置。",
   "serverError": "服务器错误",
   "accessBlocked": "访问被阻止。正在尝试绕过保护...",
   "tooManyRequests": "请求过多。请稍等片刻后重试。",
@@ -137,11 +141,11 @@
   "tryBrowsingOtherTags": "Try browsing other tags",
   "checkPopularContent": "Check 热门内容",
   "useSearchFunction": "Use the 搜索function",
-  "checkInternetConnectionSuggestion": "Check your internet 连接",
-  "tryRefreshingPage": "Try refreshing the 页面",
-  "browsePopularContentSuggestion": "Browse 热门内容",
-  "failedToInitializeSearch": "无法initialize 搜索",
-  "noResultsFoundFor": "未找到results for \"{query}\"",
+  "checkInternetConnectionSuggestion": "检查您的网络连接",
+  "tryRefreshingPage": "尝试刷新页面",
+  "browsePopularContentSuggestion": "浏览热门内容",
+  "failedToInitializeSearch": "搜索初始化失败",
+  "noResultsFoundFor": "未找到 \"{query}\" 的相关结果",
   "@noResultsFoundFor": {
     "placeholders": {
       "query": {
@@ -149,9 +153,9 @@
       }
     }
   },
-  "searchingWithFilters": "搜索ing with filters...",
-  "noResultsFoundWithCurrentFilters": "未找到results with 当前 filters",
-  "invalidFilter": "Invalid filter: {errors}",
+  "searchingWithFilters": "正在根据筛选条件搜索...",
+  "noResultsFoundWithCurrentFilters": "当前筛选条件下未找到结果",
+  "invalidFilter": "无效的筛选器：{errors}",
   "@invalidFilter": {
     "placeholders": {
       "errors": {
@@ -159,7 +163,7 @@
       }
     }
   },
-  "invalidSearchFilter": "Invalid 搜索filter: {errors}",
+  "invalidSearchFilter": "无效的搜索筛选：{errors}",
   "@invalidSearchFilter": {
     "placeholders": {
       "errors": {
@@ -170,35 +174,35 @@
   "pages": "页数",
   "tags": "标签",
   "language": "语言",
-  "uploadedOn": "Uploaded 开启",
+  "uploadedOn": "上传于",
   "readNow": "立即阅读",
-  "featured": "Featured",
+  "featured": "精选",
   "confirmDownload": "确认下载",
-  "downloadConfirmation": "Are you sure you want to 下载?",
+  "downloadConfirmation": "确定要下载吗？",
   "confirmButton": "确认",
   "download": "下载",
   "downloading": "下载中",
-  "downloadCompleted": "下载 Completed",
-  "downloadFailed": "Download失败",
-  "initializing": "Initializing...",
-  "noContentToBrowse": "否内容 loaded to 打开 in 浏览器",
-  "addToFavorites": "添加到收藏",
-  "removeFromFavorites": "从收藏中移除",
+  "downloadCompleted": "下载完成",
+  "downloadFailed": "下载失败",
+  "initializing": "初始化中...",
+  "noContentToBrowse": "没有可加载到浏览器的内容",
+  "addToFavorites": "加入收藏",
+  "removeFromFavorites": "取消收藏",
   "content": "内容",
   "view": "查看",
-  "clearAll": "清除全部",
-  "exportList": "Export 列表",
-  "unableToCheck": "Unable to check 连接.",
-  "noContentAvailable": "无content可用",
-  "noContentToDownload": "无content可用 to 下载",
-  "noGalleriesFound": "未找到galleries 开启 this 页面",
-  "noContentLoadedToBrowse": "否内容 loaded to 打开 in 浏览器",
-  "showCachedContent": "显示Cached 内容",
-  "openedInBrowser": "Opened in 浏览器",
-  "foundGalleries": "Found Galleries",
-  "checkingDownloadStatus": "Checking 下载状态...",
-  "allGalleriesDownloaded": "全部 Galleries Downloaded",
-  "downloadStarted": "下载 Started",
+  "clearAll": "清空全部",
+  "exportList": "导出列表",
+  "unableToCheck": "无法检查连接状况",
+  "noContentAvailable": "暂无内容",
+  "noContentToDownload": "无可下载内容",
+  "noGalleriesFound": "此页面未找到画廊",
+  "noContentLoadedToBrowse": "没有可加载到浏览器的内容",
+  "showCachedContent": "显示缓存内容",
+  "openedInBrowser": "已在浏览器中打开",
+  "foundGalleries": "发现画廊",
+  "checkingDownloadStatus": "正在检查下载状态...",
+  "allGalleriesDownloaded": "所有画廊已下载",
+  "downloadStarted": "下载已开始",
   "@downloadStarted": {
     "placeholders": {
       "title": {
@@ -206,39 +210,39 @@
       }
     }
   },
-  "downloadNewGalleries": "下载新 Galleries",
+  "downloadNewGalleries": "下载新画廊",
   "downloadProgress": "下载进度",
-  "downloadComplete": "下载 Complete",
+  "downloadComplete": "下载完成",
   "downloadError": "下载错误",
-  "verifyingFiles": "验证文件",
-  "verifyingFilesWithTitle": "验证 {title}...",
+  "verifyingFiles": "校验文件",
+  "verifyingFilesWithTitle": "正在校验 {title}...",
   "@verifyingFilesWithTitle": {
     "placeholders": {
       "title": {"type": "String"}
     }
   },
-  "verifyingProgress": "验证中 ({progress}%)",
+  "verifyingProgress": "校验中 ({progress}%)",
   "@verifyingProgress": {
     "placeholders": {
       "progress": {"type": "int"}
     }
   },
-  "initializingDownloads": "Initializing downloads...",
-  "loadingDownloads": "加载中 downloads...",
-  "pauseAll": "Pause 全部",
-  "resumeAll": "Resume 全部",
-  "cancelAll": "取消 全部",
-  "clearCompleted": "清除 已完成",
-  "cleanupStorage": "Cleanup 存储",
+  "initializingDownloads": "正在初始化下载...",
+  "loadingDownloads": "正在加载下载...",
+  "pauseAll": "全部暂停",
+  "resumeAll": "全部继续",
+  "cancelAll": "全部取消",
+  "clearCompleted": "清除已完成",
+  "cleanupStorage": "清理存储",
   "all": "全部",
   "active": "进行中",
   "completed": "已完成",
-  "noDownloadsYet": "暂无下载",
-  "noActiveDownloads": "无active downloads",
-  "noQueuedDownloads": "无queued downloads",
-  "noCompletedDownloads": "无completed downloads",
-  "noFailedDownloads": "No失败 downloads",
-  "pdfConversionStarted": "PDF conversion started for {contentId}",
+  "noDownloadsYet": "暂无下载记录",
+  "noActiveDownloads": "没有进行中的下载",
+  "noQueuedDownloads": "没有排队中的下载",
+  "noCompletedDownloads": "没有已完成的下载",
+  "noFailedDownloads": "没有失败的下载",
+  "pdfConversionStarted": "已开始转换 PDF: {contentId}",
   "@pdfConversionStarted": {
     "placeholders": {
       "contentId": {
@@ -246,43 +250,43 @@
       }
     }
   },
-  "cancelAllDownloads": "取消 全部 下载",
-  "cancelAllConfirmation": "Are you sure you want to 取消全部 active downloads? This 操作 cannot be undone.",
+  "cancelAllDownloads": "取消所有下载",
+  "cancelAllConfirmation": "确定要取消所有进行中的下载吗？此操作无法撤销。",
   "cancelDownload": "取消下载",
-  "cancelDownloadConfirmation": "Are you sure you want to 取消 this 下载? 进度 will be lost.",
-  "removeDownload": "移除Download",
-  "removeDownloadConfirmation": "Are you sure you want to 移除this 下载 from the 列表? Downloaded files will be已删除.",
-  "cleanupConfirmation": "This will 移除orphaned files and clean up失败 downloads. Continue?",
+  "cancelDownloadConfirmation": "确定要取消此下载任务吗？当前进度将丢失。",
+  "removeDownload": "移除下载",
+  "removeDownloadConfirmation": "确定要从列表移除此下载吗？已下载的文件也将被删除。",
+  "cleanupConfirmation": "此操作将清理无用的文件和失败的下载记录，是否继续？",
   "downloadDetails": "下载详情",
   "status": "状态",
   "progress": "进度",
   "progressPercent": "进度 %",
   "speed": "速度",
   "size": "大小",
-  "started": "Started",
-  "ended": "Ended",
-  "duration": "时长",
-  "eta": "ETA",
+  "started": "开始时间",
+  "ended": "结束时间",
+  "duration": "耗时",
+  "eta": "预计剩余时间",
   "queued": "排队中",
-  "downloaded": "Downloaded",
+  "downloaded": "已下载",
   "resume": "继续",
   "failed": "失败",
-  "downloadListExported": "下载列表 exported",
+  "downloadListExported": "下载列表已导出",
   "downloadAll": "全部下载",
-  "downloadRange": "下载 Range",
-  "selectDownloadRange": "选择下载 Range",
-  "totalPages": "总计 Pages",
-  "useSliderToSelectRange": "Use slider to 选择 range:",
-  "orEnterManually": "Or 输入manually:",
-  "startPage": "开始页面",
-  "endPage": "结束页面",
-  "quickSelections": "Quick selections:",
-  "allPages": "全部 页数",
-  "firstHalf": "First Half",
-  "secondHalf": "Second Half",
-  "first10": "First 10",
-  "last10": "Last 10",
-  "countAlreadyDownloaded": "Skipped {count} already downloaded",
+  "downloadRange": "范围下载",
+  "selectDownloadRange": "选择下载范围",
+  "totalPages": "总页数",
+  "useSliderToSelectRange": "使用滑块选择范围：",
+  "orEnterManually": "或手动输入：",
+  "startPage": "起始页",
+  "endPage": "结束页",
+  "quickSelections": "快速选择：",
+  "allPages": "所有页面",
+  "firstHalf": "前半部分",
+  "secondHalf": "后半部分",
+  "first10": "前 10 页",
+  "last10": "后 10 页",
+  "countAlreadyDownloaded": "已跳过 {count} 个已下载项",
   "@countAlreadyDownloaded": {
     "placeholders": {
       "count": {
@@ -290,7 +294,7 @@
       }
     }
   },
-  "newGalleriesToDownload": "• {count} 新 galleries to 下载",
+  "newGalleriesToDownload": "• {count} 个新画廊待下载",
   "@newGalleriesToDownload": {
     "placeholders": {
       "count": {
@@ -298,7 +302,7 @@
       }
     }
   },
-  "alreadyDownloaded": "• {count} already downloaded (will be skipped)",
+  "alreadyDownloaded": "• {count} 个已存在 (将被跳过)",
   "@alreadyDownloaded": {
     "placeholders": {
       "count": {
@@ -306,7 +310,7 @@
       }
     }
   },
-  "downloadNew": "下载 {count} 新",
+  "downloadNew": "下载 {count} 个新项目",
   "@downloadNew": {
     "placeholders": {
       "count": {
@@ -314,7 +318,7 @@
       }
     }
   },
-  "queuedDownloads": "Queued {count} 新 downloads",
+  "queuedDownloads": "已添加 {count} 个新下载到队列",
   "@queuedDownloads": {
     "placeholders": {
       "count": {
@@ -322,7 +326,7 @@
       }
     }
   },
-  "downloadInfo": "下载 {count} 新 galleries?\\n\\nThis may take significant 时间 and 存储 space.",
+  "downloadInfo": "确定下载 {count} 个新画廊吗？\n\n这可能需要较长时间并占用大量存储空间。",
   "@downloadInfo": {
     "placeholders": {
       "count": {
@@ -330,8 +334,8 @@
       }
     }
   },
-  "failedToDownload": "无法download galleries",
-  "selectedPagesTo": "Selected: Pages {start} to {end}",
+  "failedToDownload": "下载画廊失败",
+  "selectedPagesTo": "已选：第 {start} 页 至 第 {end} 页",
   "@selectedPagesTo": {
     "placeholders": {
       "start": {
@@ -342,7 +346,7 @@
       }
     }
   },
-  "pagesPercentage": "{count} pages ({percentage}%)",
+  "pagesPercentage": "{count} 页 ({percentage}%)",
   "@pagesPercentage": {
     "placeholders": {
       "count": {
@@ -353,7 +357,7 @@
       }
     }
   },
-  "rangeDownloadStarted": "Range 下载 started: {title} ({pageText})",
+  "rangeDownloadStarted": "范围下载已开始：{title} ({pageText})",
   "@rangeDownloadStarted": {
     "placeholders": {
       "title": {
@@ -364,7 +368,7 @@
       }
     }
   },
-  "opening": "Opening: {title}",
+  "opening": "正在打开：{title}",
   "@opening": {
     "placeholders": {
       "title": {
@@ -372,10 +376,10 @@
       }
     }
   },
-  "lastUpdatedLabel": "Updated:",
-  "rangeLabel": "Range:",
-  "ofWord": "of",
-  "waitAndTry": "Wait {minutes} minutes and try again",
+  "lastUpdatedLabel": "更新于:",
+  "rangeLabel": "范围:",
+  "ofWord": "/",
+  "waitAndTry": "请等待 {minutes} 分钟后再试",
   "@waitAndTry": {
     "placeholders": {
       "minutes": {
@@ -383,18 +387,18 @@
       }
     }
   },
-  "serviceUnderMaintenance": "The service might be under maintenance",
-  "waitForBypass": "Wait for automatic bypass to complete",
-  "tryUsingVpn": "Try using a VPN if可用",
-  "checkBackLater": "Check 返回 in a few minutes",
-  "tryRefreshingContent": "Try refreshing the 内容",
-  "checkForAppUpdate": "Check if the 应用 needs an 更新",
-  "reportIfPersists": "Report the issue if it persists",
-  "maintenanceTakesHours": "Maintenance usually takes a few hours",
-  "checkSocialMedia": "Check social media for updates",
+  "serviceUnderMaintenance": "服务可能正在维护中",
+  "waitForBypass": "等待自动绕过完成",
+  "tryUsingVpn": "尝试使用 VPN",
+  "checkBackLater": "请过几分钟再来看看",
+  "tryRefreshingContent": "尝试刷新内容",
+  "checkForAppUpdate": "检查应用更新",
+  "reportIfPersists": "如果问题持续存在，请反馈",
+  "maintenanceTakesHours": "维护通常需要几个小时",
+  "checkSocialMedia": "查看社交媒体获取最新消息",
   "tryAgainLater": "请稍后重试",
-  "serverUnavailable": "The 服务器 is currently不可用. Please try again later.",
-  "useBroaderSearchTerms": "Use broader 搜索terms",
+  "serverUnavailable": "服务器当前不可用，请稍后再试。",
+  "useBroaderSearchTerms": "使用更宽泛的搜索词",
   
   "welcomeTitle": "欢迎使用 Kuron！",
   "welcomeMessage": "感谢您安装我们的应用。在开始之前，请注意：",
@@ -412,13 +416,13 @@
   "pleaseGrantAllPermissions": "请授予所有必需的权限以继续",
   "permissionDenied": "权限被拒绝。某些功能可能无法正常工作。",
   
-  "loadingFavorites": "加载中收藏...",
-  "errorLoadingFavorites": "错误 加载中 收藏",
-  "removeFavorite": "移除Favorite",
-  "removeFavoriteConfirmation": "Are you sure you want to 移除this 内容 from 收藏?",
+  "loadingFavorites": "正在加载收藏...",
+  "errorLoadingFavorites": "加载收藏失败",
+  "removeFavorite": "取消收藏",
+  "removeFavoriteConfirmation": "确定要将此内容移出收藏夹吗？",
   "removeAction": "移除",
-  "deleteFavorites": "删除 收藏",
-  "deleteFavoritesConfirmation": "Are you sure you want to 移除{count} favorite{s}?",
+  "deleteFavorites": "删除收藏",
+  "deleteFavoritesConfirmation": "确定要删除 {count} 个收藏项吗？",
   "@deleteFavoritesConfirmation": {
     "placeholders": {
       "count": {
@@ -429,14 +433,14 @@
       }
     }
   },
-  "exportFavorites": "导出 收藏",
-  "noFavoritesYet": "否收藏 yet. 开始 adding 内容 to your 收藏!",
+  "exportFavorites": "导出收藏",
+  "noFavoritesYet": "暂无收藏。快去添加一些喜欢的内容吧！",
   "@noFavoritesYet": {
     "description": "Message shown when user has no favorites"
   },
-  "exportingFavorites": "Exporting 收藏...",
-  "exportComplete": "导出 Complete",
-  "exportedFavoritesCount": "Exported {count} favorites成功ly.",
+  "exportingFavorites": "正在导出收藏...",
+  "exportComplete": "导出完成",
+  "exportedFavoritesCount": "成功导出 {count} 个收藏项。",
   "@exportedFavoritesCount": {
     "placeholders": {
       "count": {
@@ -444,7 +448,7 @@
       }
     }
   },
-  "exportFailed": "Export失败: {error}",
+  "exportFailed": "导出失败: {error}",
   "@exportFailed": {
     "placeholders": {
       "error": {
@@ -463,13 +467,13 @@
   "selectFavorites": "选择收藏",
   "exportAction": "导出",
   "refreshAction": "刷新",
-  "deleteSelected": "已选择删除项",
-  "searchFavorites": "搜索favorites...",
+  "deleteSelected": "删除所选",
+  "searchFavorites": "搜索收藏...",
   "selectAll": "全选",
   "clearSelection": "清除",
-  "removingFromFavorites": "Removing from 收藏...",
-  "removedFromFavorites": "Removed from 收藏",
-  "failedToRemoveFavorite": "无法移除favorite: {error}",
+  "removingFromFavorites": "正在移除收藏...",
+  "removedFromFavorites": "已移除收藏",
+  "failedToRemoveFavorite": "移除收藏失败: {error}",
   "@failedToRemoveFavorite": {
     "placeholders": {
       "error": {
@@ -477,7 +481,7 @@
       }
     }
   },
-  "removedFavoritesCount": "Removed {count} 收藏",
+  "removedFavoritesCount": "已移除 {count} 个收藏",
   "@removedFavoritesCount": {
     "placeholders": {
       "count": {
@@ -485,7 +489,7 @@
       }
     }
   },
-  "failedToRemoveFavorites": "无法移除favorites: {error}",
+  "failedToRemoveFavorites": "批量移除失败: {error}",
   "@failedToRemoveFavorites": {
     "placeholders": {
       "error": {
@@ -496,89 +500,89 @@
   "appearance": "外观",
   "theme": "主题",
   "imageQuality": "图片质量",
-  "blurThumbnails": "Blur 缩略图s",
-  "blurThumbnailsDescription": "Apply blur effect 开启卡片 images for privacy",
-  "gridColumns": "网格 Columns (竖屏)",
+  "blurThumbnails": "模糊缩略图",
+  "blurThumbnailsDescription": "对卡片图片应用模糊效果以保护隐私",
+  "gridColumns": "网格列数 (竖屏)",
   "reader": "阅读器",
-  "showSystemUIInReader": "显示System UI in Reader",
-  "historyCleanup": "历史 Cleanup",
-  "autoCleanupHistory": "自动 Cleanup 历史",
-  "automaticallyCleanOldReadingHistory": "Automatically clean 旧 reading 历史",
-  "cleanupInterval": "Cleanup Interval",
-  "howOftenToCleanupHistory": "How often to cleanup 历史",
-  "maxHistoryDays": "最大历史 Days",
-  "maximumDaysToKeepHistory": "Maximum days to keep 历史 (0 = unlimited)",
-  "cleanupOnInactivity": "Cleanup 开启 Inactivity",
-  "cleanHistoryWhenAppUnused": "Clean 历史 when 应用 is unused for several days",
-  "inactivityThreshold": "Inactivity Threshold",
-  "daysOfInactivityBeforeCleanup": "Days of inactivity before cleanup",
-  "resetToDefault": "重置 to 默认",
-  "resetToDefaults": "重置 to Defaults",
-  "generalSettings": "通用 设置",
-  "displaySettings": "显示",
+  "showSystemUIInReader": "阅读时显示系统界面",
+  "historyCleanup": "历史清理",
+  "autoCleanupHistory": "自动清理历史",
+  "automaticallyCleanOldReadingHistory": "自动清理旧的阅读历史记录",
+  "cleanupInterval": "清理间隔",
+  "howOftenToCleanupHistory": "执行清理的频率",
+  "maxHistoryDays": "保留历史天数",
+  "maximumDaysToKeepHistory": "保留历史记录的最大天数 (0 = 无限)",
+  "cleanupOnInactivity": "闲置清理",
+  "cleanHistoryWhenAppUnused": "应用未使用多天后自动清理",
+  "inactivityThreshold": "闲置阈值",
+  "daysOfInactivityBeforeCleanup": "触发清理的闲置天数",
+  "resetToDefault": "恢复默认",
+  "resetToDefaults": "恢复默认设置",
+  "generalSettings": "通用设置",
+  "displaySettings": "显示设置",
   "darkMode": "深色模式",
   "lightMode": "浅色模式",
   "systemMode": "跟随系统",
   "appLanguage": "应用语言",
-  "allowAnalytics": "全部ow Analytics",
-  "privacyAnalytics": "隐私 Analytics",
-  "termsAndConditions": "Terms and Conditions",
-  "termsAndConditionsSubtitle": "用户 agreement and disclaimers",
+  "allowAnalytics": "允许分析统计",
+  "privacyAnalytics": "隐私分析",
+  "termsAndConditions": "条款与条件",
+  "termsAndConditionsSubtitle": "用户协议和免责声明",
   "privacyPolicy": "隐私政策",
-  "privacyPolicySubtitle": "How we handle your data",
-  "faq": "FAQ",
-  "faqSubtitle": "Frequently asked questions",
-  "resetSettings": "重置 设置",
-  "resetReaderSettings": "重置 阅读器 设置",
-  "resetReaderSettingsConfirmation": "This will 重置全部 reader设置 to their 默认 values:\n\n",
-  "readingModeLabel": "阅读模式: 水平 页数",
-  "keepScreenOnLabel": "Keep 屏幕 On: 关闭",
-  "showUILabel": "显示UI: 开启",
-  "areYouSure": "Are you sure you want to proceed?",
-  "readerSettingsResetSuccess": "Reader设置 have been 重置 to defaults.",
-  "failedToResetSettings": "无法reset设置: {error}",
-  "readingHistory": "Reading 历史",
-  "clearAllHistory": "清除 全部 历史",
-  "manualCleanup": "手动 Cleanup",
-  "cleanupSettings": "Cleanup设置",
-  "removeFromHistory": "移除from 历史",
-  "removeFromHistoryQuestion": "移除this 项目 from reading 历史?",
-  "cleanup": "Cleanup",
-  "failedToLoadCleanupStatus": "无法load cleanup 状态",
-  "manualCleanupConfirmation": "This will perform cleanup based 开启 your current设置. Continue?",
-  "noReadingHistory": "无Reading 历史",
-  "errorLoadingHistory": "错误 加载中 历史",
-  "nextPage": "下一步 页",
-  "previousPage": "上一步 页",
-  "pageOf": "of",
+  "privacyPolicySubtitle": "数据处理方式说明",
+  "faq": "常见问题",
+  "faqSubtitle": "常见问题解答",
+  "resetSettings": "重置设置",
+  "resetReaderSettings": "重置阅读器设置",
+  "resetReaderSettingsConfirmation": "这将重置阅读器的所有设置到默认值：\n\n",
+  "readingModeLabel": "阅读模式：水平翻页",
+  "keepScreenOnLabel": "保持屏幕常亮：关",
+  "showUILabel": "显示界面：开",
+  "areYouSure": "确定要继续吗？",
+  "readerSettingsResetSuccess": "阅读器设置已恢复默认。",
+  "failedToResetSettings": "重置设置失败：{error}",
+  "readingHistory": "阅读历史",
+  "clearAllHistory": "清空历史",
+  "manualCleanup": "手动清理",
+  "cleanupSettings": "清理设置",
+  "removeFromHistory": "从历史中移除",
+  "removeFromHistoryQuestion": "确定移除此历史记录？",
+  "cleanup": "清理",
+  "failedToLoadCleanupStatus": "无法加载清理状态",
+  "manualCleanupConfirmation": "将根据当前设置执行清理，是否继续？",
+  "noReadingHistory": "暂无阅读历史",
+  "errorLoadingHistory": "加载历史记录出错",
+  "nextPage": "下一页",
+  "previousPage": "上一页",
+  "pageOf": " / ",
   "fullscreen": "全屏",
   "exitFullscreen": "退出全屏",
-  "checkingConnection": "Checking 连接...",
-  "backOnline": "返回 online! 全部 features可用.",
-  "stillNoInternet": "Still 无internet 连接.",
-  "unableToCheckConnection": "Unable to check 连接.",
+  "checkingConnection": "正在检查连接...",
+  "backOnline": "网络已恢复！所有功能可用。",
+  "stillNoInternet": "网络连接仍不可用。",
+  "unableToCheckConnection": "无法检查连接。",
   "connectionError": "连接错误",
   "low": "低",
   "medium": "中",
   "high": "高",
   "original": "原图",
-  "lowFaster": "低 (Faster)",
-  "highBetterQuality": "高 (Better 质量)",
-  "originalLargest": "原图 (Largest)",
-  "lowQuality": "低 (Faster)",
+  "lowFaster": "低 (较快)",
+  "highBetterQuality": "高 (较清晰)",
+  "originalLargest": "原图 (最大)",
+  "lowQuality": "低 (较快)",
   "mediumQuality": "中",
-  "highQuality": "高 (Better 质量)",
-  "originalQuality": "原图 (Largest)",
-  "dark": "Dark",
-  "light": "Light",
+  "highQuality": "高 (较清晰)",
+  "originalQuality": "原图 (最大)",
+  "dark": "深色",
+  "light": "浅色",
   "amoled": "AMOLED",
-  "english": "English",
-  "japanese": "Japanese",
-  "indonesian": "Indonesian",
-  "chinese": "中文（简体）",
-  "comfortReading": "Comfortable Reading",
-  "sortBy": "排序方式",
-  "filterBy": "筛选 by",
+  "english": "英语",
+  "japanese": "日语",
+  "indonesian": "印尼语",
+  "chinese": "简体中文",
+  "comfortReading": "舒适阅读",
+  "sortBy": "排序",
+  "filterBy": "筛选",
   "recent": "最近",
   "popular": "热门",
   "oldest": "最早",
@@ -599,14 +603,14 @@
   "clear": "清除",
   "remove": "移除",
   "share": "分享",
-  "goBack": "前往 返回",
+  "goBack": "返回",
   "yes": "是",
   "no": "否",
-  "previous": "上一步",
-  "next": "下一步",
-  "goToDownloads": "前往 to 下载",
+  "previous": "上一页",
+  "next": "下一页",
+  "goToDownloads": "转到下载",
   "retryAction": "重试",
-  "hours": "{count}h",
+  "hours": "{count} 小时",
   "@hours": {
     "placeholders": {
       "count": {
@@ -614,7 +618,7 @@
       }
     }
   },
-  "days": "{count} days",
+  "days": "{count} 天",
   "@days": {
     "placeholders": {
       "count": {
@@ -623,7 +627,7 @@
     }
   },
   "unknown": "未知",
-  "daysAgo": "{count}{suffix} ago",
+  "daysAgo": "{count}{suffix}前",
   "@daysAgo": {
     "placeholders": {
       "count": {
@@ -634,7 +638,7 @@
       }
     }
   },
-  "hoursAgo": "{count}{suffix} ago",
+  "hoursAgo": "{count}{suffix}前",
   "@hoursAgo": {
     "placeholders": {
       "count": {
@@ -645,7 +649,7 @@
       }
     }
   },
-  "minutesAgo": "{count}{suffix} ago",
+  "minutesAgo": "{count}{suffix}前",
   "@minutesAgo": {
     "placeholders": {
       "count": {
@@ -658,22 +662,22 @@
   },
   "noData": "无数据",
   "unknownTitle": "未知标题",
-  "offlineContentError": "Offline 内容错误",
-  "other": "Other",
-  "confirmResetSettings": "Are you sure you want to 恢复 all设置 to 默认?",
+  "offlineContentError": "离线内容错误",
+  "other": "其他",
+  "confirmResetSettings": "确定要恢复所有默认设置吗？",
   "reset": "重置",
-  "manageAutoCleanupDescription": "Manage automatic cleanup of reading 历史 to free up 存储 space.",
-  "nextCleanup": "下一步 cleanup",
-  "historyStatistics": "历史 Statistics",
-  "totalItems": "总计 items",
-  "lastCleanup": "Last cleanup",
-  "lastAppAccess": "Last 应用 access",
-  "oneDay": "1 day",
-  "twoDays": "2 days",
-  "oneWeek": "1 week",
-  "privacyInfoText": "• Data is stored 开启 your device\n• Not sent to external servers\n• Only to improve 应用 performance\n• Can be disabled anytime",
-  "unlimited": "Unlimited",
-  "daysValue": "{days} days",
+  "manageAutoCleanupDescription": "管理阅读历史的自动清理策略以节省空间。",
+  "nextCleanup": "下次清理",
+  "historyStatistics": "历史记录统计",
+  "totalItems": "总数",
+  "lastCleanup": "上次清理",
+  "lastAppAccess": "上次使用",
+  "oneDay": "1 天",
+  "twoDays": "2 天",
+  "oneWeek": "1 周",
+  "privacyInfoText": "• 数据仅存储在本地设备\n• 不会上传至任何外部服务器\n• 仅用于优化应用性能\n• 可随时关闭",
+  "unlimited": "无限制",
+  "daysValue": "{days} 天",
   "@daysValue": {
     "placeholders": {
       "days": {
@@ -681,10 +685,10 @@
       }
     }
   },
-  "analyticsSubtitle": "Helps 应用 development with 本地 data (not shared)",
-  "loadingError": "加载中 错误",
-  "jumpToPage": "Jump to 页面",
-  "pageInputLabel": "页面 (1-{maxPages})",
+  "analyticsSubtitle": "利用本地数据辅助开发优 (不共享)",
+  "loadingError": "加载错误",
+  "jumpToPage": "跳转到页",
+  "pageInputLabel": "页码 (1-{maxPages})",
   "@pageInputLabel": {
     "placeholders": {
       "maxPages": {
@@ -692,7 +696,7 @@
       }
     }
   },
-  "pageOfPages": "页面 {current} of {total}",
+  "pageOfPages": "第 {current} 页，共 {total} 页",
   "@pageOfPages": {
     "placeholders": {
       "current": {
@@ -704,29 +708,29 @@
     }
   },
   "jump": "跳转",
-  "readerSettings": "阅读器 设置",
+  "readerSettings": "阅读器设置",
   "readingMode": "阅读模式",
-  "horizontalPages": "水平 页数",
-  "verticalPages": "垂直 页数",
-  "continuousScroll": "连续 Scroll",
+  "horizontalPages": "水平翻页",
+  "verticalPages": "垂直翻页",
+  "continuousScroll": "连续卷轴",
   "keepScreenOn": "保持屏幕常亮",
-  "keepScreenOnDescription": "Prevent 屏幕 from turning 关闭 while reading",
-  "platformNotSupported": "Platform 否t Supported",
-  "platformNotSupportedBody": "Kuron is designed exclusively for Android devices.",
-  "platformNotSupportedInstall": "Please 安装 and run this 应用开启 an Android device.",
-  "storagePermissionRequired": "需要Storage 权限 is for downloads. Please grant 存储权限 in app设置.",
-  "storagePermissionExplanation": "This 应用 needs 存储权限 to 下载 files to your device. Files will be已保存 to the Downloads/nhasix folder.",
-  "grantPermission": "Grant 权限",
-  "permissionRequired": "需要权限",
-  "storagePermissionSettingsPrompt": "需要Storage 权限 is to 下载 files. Please grant 存储权限 in app设置.",
-  "openSettings": "打开 设置",
-  "readingHistoryMessage": "Your reading 历史 will appear here as you read 内容.",
+  "keepScreenOnDescription": "阅读时防止屏幕自动关闭",
+  "platformNotSupported": "平台不支持",
+  "platformNotSupportedBody": "Kuron 专为 Android 设备设计。",
+  "platformNotSupportedInstall": "请在 Android 设备上安装并运行此应用。",
+  "storagePermissionRequired": "下载功能需要存储权限，请在设置中授予权限。",
+  "storagePermissionExplanation": "应用需要存储权限才能将文件下载到您的设备（Downloads/nhasix 文件夹）。",
+  "grantPermission": "授予权限",
+  "permissionRequired": "权限受限",
+  "storagePermissionSettingsPrompt": "文件下载需要存储权限。请在应用设置中开启存储权限。",
+  "openSettings": "打开设置",
+  "readingHistoryMessage": "您的阅读历史将在这里显示。",
   "startReading": "开始阅读",
-  "searchSomethingInteresting": "搜索for something interesting",
-  "checkOutFeaturedItems": "Check out featured items",
-  "appSubtitleDescription": "Nhentai unofficial 客户端",
-  "downloadedGalleries": "Downloaded galleries",
-  "favoriteGalleries": "Favorite galleries",
+  "searchSomethingInteresting": "搜索些有趣的内容吧",
+  "checkOutFeaturedItems": "查看精选内容",
+  "appSubtitleDescription": "非官方 Nhentai 客户端",
+  "downloadedGalleries": "已下载图集",
+  "favoriteGalleries": "收藏图集",
   "viewHistory": "查看历史",
   "openInBrowser": "在浏览器中打开",
   "downloadAllGalleries": "下载此页面中的所有画廊",
@@ -735,7 +739,7 @@
   "favoriteFeatureDisabled": "此来源不支持收藏功能",
   "featureNotAvailable": "此功能当前不可用",
   "chaptersTitle": "章节",
-  "chapterCount": "{count} chapters",
+  "chapterCount": "{count} 个章节",
   "@chapterCount": {
     "placeholders": {
       "count": {
@@ -745,7 +749,7 @@
   },
   "readChapter": "阅读",
   "downloadChapter": "下载章节",
-  "enterPageNumber": "输入page number (1 - {totalPages})",
+  "enterPageNumber": "输入页码 (1 - {totalPages})",
   "@enterPageNumber": {
     "placeholders": {
       "totalPages": {
@@ -753,9 +757,9 @@
       }
     }
   },
-  "pageNumber": "页面 number",
+  "pageNumber": "页码",
   "go": "前往",
-  "validPageNumberError": "Please 输入a valid 页面 number between 1 and {totalPages}",
+  "validPageNumberError": "请输入有效的页码 (1 - {totalPages})",
   "@validPageNumberError": {
     "placeholders": {
       "totalPages": {
@@ -763,27 +767,27 @@
       }
     }
   },
-  "tapToJump": "Tap to jump",
-  "goToPage": "Go to 页面",
-  "previousPageTooltip": "上一步页面",
-  "nextPageTooltip": "下一步页面",
-  "tapToJumpToPage": "Tap to jump to 页面",
-  "loadingContentTitle": "加载中内容",
-  "loadingContentDetails": "加载中内容详情",
-  "fetchingMetadata": "Fetching metadata and images...",
-  "thisMayTakeMoments": "This may take a few moments",
-  "youAreOffline": "You are offline. Some features may be limited.",
-  "goOnline": "前往 在线",
-  "youAreOfflineTapToGoOnline": "You are offline. Tap to go online.",
-  "contentInformation": "内容 Information",
+  "tapToJump": "点击跳转",
+  "goToPage": "跳转到页",
+  "previousPageTooltip": "上一页",
+  "nextPageTooltip": "下一页",
+  "tapToJumpToPage": "点击跳转到其他页",
+  "loadingContentTitle": "加载内容中",
+  "loadingContentDetails": "加载内容详情中",
+  "fetchingMetadata": "正在获取元数据和图片...",
+  "thisMayTakeMoments": "这可能需要一点时间",
+  "youAreOffline": "当前处于离线状态，部分功能受限。",
+  "goOnline": "切换至在线",
+  "youAreOfflineTapToGoOnline": "当前离线，点击切换至在线模式。",
+  "contentInformation": "内容信息",
   "copyLink": "复制链接",
-  "moreOptions": "More 选项",
-  "moreLikeThis": "More Like This",
-  "statistics": "Statistics",
+  "moreOptions": "更多选项",
+  "moreLikeThis": "类似推荐",
+  "statistics": "统计信息",
   "shareContent": "分享内容",
-  "sharePanelOpened": "分享 panel opened成功ly!",
-  "shareFailed": "Share失败, but 链接 copied to clipboard",
-  "downloadStartedFor": "下载 started for \"{title}\"",
+  "sharePanelOpened": "分享面板已打开！",
+  "shareFailed": "分享失败，链接已复制到剪贴板",
+  "downloadStartedFor": "已开始下载 \"{title}\"",
   "@downloadStartedFor": {
     "placeholders": {
       "title": {
@@ -792,11 +796,11 @@
     }
   },
   "viewDownloadsAction": "查看",
-  "failedToStartDownload": "无法start download: {error}",
-  "linkCopiedToClipboard": "链接 copied to clipboard",
-  "failedToCopyLink": "无法copy 链接. Please try again.",
-  "copiedLink": "Copied 链接",
-  "linkCopiedToClipboardDescription": "The following 链接 has been copied to your clipboard:",
+  "failedToStartDownload": "无法开始下载: {error}",
+  "linkCopiedToClipboard": "链接已复制",
+  "failedToCopyLink": "复制链接失败，请重试。",
+  "copiedLink": "已复制链接",
+  "linkCopiedToClipboardDescription": "以下链接已复制到您的剪贴板：",
   "closeDialog": "关闭",
   "goOnlineDialogTitle": "前往 在线",
   "goOnlineDialogContent": "You are currently in offline模式. Would you like to go online to access the latest 内容?",

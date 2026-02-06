@@ -115,6 +115,19 @@ flutter run
 
 ---
 
+## ☕ **Support Developer**
+
+If you love **Kuron** and want to support its development, you can buy me a coffee! ☕  
+Scan the QRIS below to donate:
+
+<p align="center">
+  <img src="assets/images/donation_qris.jpeg" width="300" alt="QRIS Donation" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
+</p>
+
+> **Note:** Your support helps keep the servers running and the updates coming! 🚀
+
+---
+
 ## 📜 **License & Legal**
 
 **⚠️ 18+ Content Warning** • **Educational Use Only** • **MIT License**
