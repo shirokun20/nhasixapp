@@ -19,20 +19,45 @@ import com.startapp.sdk.adsbase.adlisteners.AdEventListener
 class KuronAdsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private lateinit var channel: MethodChannel
     private var activity: Activity? = null
+    private lateinit var bannerFactory: BannerNativeViewFactory
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "kuron_ads")
         channel.setMethodCallHandler(this)
         
         // Register Banner Factory
+        bannerFactory = BannerNativeViewFactory()
         flutterPluginBinding.platformViewRegistry.registerViewFactory(
             "kuron_ads/banner",
-            BannerNativeViewFactory()
+            bannerFactory
         )
     }
 
     override fun onMethodCall(call: MethodCall, result: Result) {
         when (call.method) {
+            "initialize" -> {
+                val appId = call.argument<String>("appId")
+                val testMode = call.argument<Boolean>("testMode") ?: false
+                val currentActivity = activity
+                
+                if (appId != null && currentActivity != null) {
+                    try {
+                        // Initialize StartApp SDK
+                        StartAppSDK.init(currentActivity, appId, true)
+                        StartAppSDK.setTestAdsEnabled(testMode)
+                        StartAppAd.disableSplash()
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("INIT_ERROR", e.message, null)
+                    }
+                } else {
+                     if (appId == null) {
+                        result.error("INVALID_ARGS", "App ID is required", null)
+                     } else {
+                        result.error("NO_ACTIVITY", "Activity is null", null)
+                     }
+                }
+            }
             "setTestAdsEnabled" -> {
                 val enabled = call.argument<Boolean>("enabled") ?: false
                 StartAppSDK.setTestAdsEnabled(enabled)
@@ -82,17 +107,29 @@ class KuronAdsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     // ActivityAware Implementation
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity
+        if (this::bannerFactory.isInitialized) {
+            bannerFactory.setActivity(binding.activity)
+        }
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
         activity = null
+        if (this::bannerFactory.isInitialized) {
+            bannerFactory.setActivity(null)
+        }
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
         activity = binding.activity
+        if (this::bannerFactory.isInitialized) {
+            bannerFactory.setActivity(binding.activity)
+        }
     }
 
     override fun onDetachedFromActivity() {
         activity = null
+        if (this::bannerFactory.isInitialized) {
+            bannerFactory.setActivity(null)
+        }
     }
 }

@@ -1,5 +1,6 @@
 package id.komiktap.kuron_ads.kuron_ads
 
+import android.app.Activity
 import android.content.Context
 import android.graphics.Color
 import android.view.Gravity
@@ -9,7 +10,7 @@ import com.startapp.sdk.ads.banner.Banner
 import com.startapp.sdk.ads.banner.BannerListener
 import io.flutter.plugin.platform.PlatformView
 
-class BannerNativeView(context: Context, id: Int, creationParams: Map<String?, Any?>?) : PlatformView {
+class BannerNativeView(context: Context, activity: Activity?, id: Int, creationParams: Map<String?, Any?>?) : PlatformView {
     private val container: FrameLayout = FrameLayout(context)
     private var banner: Banner? = null
 
@@ -17,8 +18,9 @@ class BannerNativeView(context: Context, id: Int, creationParams: Map<String?, A
         // Setup container with gravity center
         container.setBackgroundColor(Color.TRANSPARENT)
         
-        // Initialize Start.io Banner
-        banner = Banner(context)
+        // Initialize Start.io Banner with Activity Context if available
+        // CRITICAL: Using Activity context allows clicks to launch Intents properly
+        banner = Banner(activity ?: context)
         val params = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.WRAP_CONTENT,
             FrameLayout.LayoutParams.WRAP_CONTENT
@@ -33,8 +35,12 @@ class BannerNativeView(context: Context, id: Int, creationParams: Map<String?, A
             override fun onFailedToReceiveAd(p0: View?) {
                 println("KuronAds: Banner Ad Failed to Receive")
             }
-            override fun onClick(p0: View?) {}
-            override fun onImpression(p0: View?) {}
+            override fun onClick(p0: View?) {
+                println("KuronAds: Banner Ad Clicked")
+            }
+            override fun onImpression(p0: View?) {
+                println("KuronAds: Banner Ad Impression")
+            }
         })
 
         container.addView(banner, params)
