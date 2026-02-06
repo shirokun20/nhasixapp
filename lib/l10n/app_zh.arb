@@ -802,9 +802,9 @@
   "copiedLink": "已复制链接",
   "linkCopiedToClipboardDescription": "以下链接已复制到您的剪贴板：",
   "closeDialog": "关闭",
-  "goOnlineDialogTitle": "前往 在线",
-  "goOnlineDialogContent": "You are currently in offline模式. Would you like to go online to access the latest 内容?",
-  "goingOnline": "前往ing online...",
+  "goOnlineDialogTitle": "切换至在线",
+  "goOnlineDialogContent": "您当前处于离线模式。是否切换到在线模式以获取最新内容？",
+  "goingOnline": "正在上线...",
   "viewAllChapters": "查看所有章节",
   "searchChapters": "搜索章节...",
   "noChaptersFound": "未找到章节",
@@ -819,8 +819,8 @@
   "favoritesLabel": "收藏",
   "tagsLabel": "标签",
   "artistsLabel": "画师",
-  "relatedLabel": "Related",
-  "yearAgo": "{count} year{plural} ago",
+  "relatedLabel": "相关",
+  "yearAgo": "{count} 年前",
   "@yearAgo": {
     "placeholders": {
       "count": {
@@ -831,7 +831,7 @@
       }
     }
   },
-  "monthAgo": "{count} month{plural} ago",
+  "monthAgo": "{count} 个月前",
   "@monthAgo": {
     "placeholders": {
       "count": {
@@ -842,7 +842,7 @@
       }
     }
   },
-  "dayAgo": "{count} day{plural} ago",
+  "dayAgo": "{count} 天前",
   "@dayAgo": {
     "placeholders": {
       "count": {
@@ -853,7 +853,7 @@
       }
     }
   },
-  "hourAgo": "{count} hour{plural} ago",
+  "hourAgo": "{count} 小时前",
   "@hourAgo": {
     "placeholders": {
       "count": {
@@ -879,13 +879,13 @@
       }
     }
   },
-  "loadingFavoritesMessage": "加载中收藏...",
-  "deletingFavoritesMessage": "Deleting 收藏...",
-  "removingFromFavoritesMessage": "Removing from 收藏...",
-  "favoritesDeletedMessage": "Favorites已删除成功ly",
-  "failedToDeleteFavoritesMessage": "无法删除favorites",
-  "confirmDeleteFavoritesTitle": "删除 收藏",
-  "confirmDeleteFavoritesMessage": "Are you sure you want to 删除{count} favorite{plural}?",
+  "loadingFavoritesMessage": "正在加载收藏...",
+  "deletingFavoritesMessage": "正在删除收藏...",
+  "removingFromFavoritesMessage": "正在从收藏中移除...",
+  "favoritesDeletedMessage": "收藏删除成功",
+  "failedToDeleteFavoritesMessage": "删除收藏失败",
+  "confirmDeleteFavoritesTitle": "删除收藏",
+  "confirmDeleteFavoritesMessage": "确定要删除 {count} 个收藏吗？",
   "@confirmDeleteFavoritesMessage": {
     "placeholders": {
       "count": {
@@ -896,13 +896,13 @@
       }
     }
   },
-  "exportFavoritesTitle": "导出 收藏",
-  "exportingFavoritesMessage": "Exporting 收藏...",
-  "favoritesExportedMessage": "收藏 exported成功ly",
-  "failedToExportFavoritesMessage": "无法export 收藏",
-  "searchFavoritesHint": "搜索favorites...",
-  "searchOfflineContentHint": "搜索offline 内容...",
-  "failedToLoadPage": "无法load 页面 {pageNumber}",
+  "exportFavoritesTitle": "导出收藏",
+  "exportingFavoritesMessage": "正在导出收藏...",
+  "favoritesExportedMessage": "收藏导出成功",
+  "failedToExportFavoritesMessage": "导出收藏失败",
+  "searchFavoritesHint": "搜索收藏...",
+  "searchOfflineContentHint": "搜索离线内容...",
+  "failedToLoadPage": "无法加载第 {pageNumber} 页",
   "@failedToLoadPage": {
     "placeholders": {
       "pageNumber": {
@@ -911,15 +911,15 @@
     }
   },
   "failedToLoad": "加载失败",
-  "loginRequiredForAction": "需要Login for this 操作",
+  "loginRequiredForAction": "此操作需要登录",
   "login": "登录",
-  "offlineContentTitle": "Offline 内容",
-  "favorited": "Favorited",
-  "favorite": "Favorite",
-  "errorLoadingFavoritesTitle": "错误 加载中 收藏",
-  "filterDataTitle": "筛选 Data",
+  "offlineContentTitle": "离线内容",
+  "favorited": "已收藏",
+  "favorite": "收藏",
+  "errorLoadingFavoritesTitle": "加载收藏出错",
+  "filterDataTitle": "筛选数据",
   "clearAllAction": "清除全部",
-  "searchFilterHint": "搜索{filterType}...",
+  "searchFilterHint": "搜索 {filterType}...",
   "@searchFilterHint": {
     "placeholders": {
       "filterType": {
@@ -927,7 +927,7 @@
       }
     }
   },
-  "selectedCountFormat2": "Selected ({count})",
+  "selectedCountFormat2": "已选 ({count})",
   "@selectedCountFormat2": {
     "placeholders": {
       "count": {
@@ -935,8 +935,8 @@
       }
     }
   },
-  "errorLoadingFilterDataTitle": "加载中筛选 data错误",
-  "noFilterTypeAvailable": "无{filterType}可用",
+  "errorLoadingFilterDataTitle": "加载筛选数据出错",
+  "noFilterTypeAvailable": "无可用 {filterType}",
   "@noFilterTypeAvailable": {
     "placeholders": {
       "filterType": {
@@ -944,7 +944,7 @@
       }
     }
   },
-  "noResultsFoundForQuery": "未找到results for \"{query}\"",
+  "noResultsFoundForQuery": "未找到 \"{query}\" 的结果",
   "@noResultsFoundForQuery": {
     "placeholders": {
       "query": {
@@ -952,8 +952,8 @@
       }
     }
   },
-  "contentNotFoundTitle": "内容 Not Found",
-  "contentNotFoundMessage": "内容 with ID \"{contentId}\" was not found.",
+  "contentNotFoundTitle": "内容未找到",
+  "contentNotFoundMessage": "未找到 ID 为 \"{contentId}\" 的内容。",
   "@contentNotFoundMessage": {
     "placeholders": {
       "contentId": {
@@ -961,15 +961,15 @@
       }
     }
   },
-  "filterCategoriesTitle": "筛选 分类",
+  "filterCategoriesTitle": "筛选分类",
   "searchTitle": "搜索",
-  "advancedSearchTitle": "高级 搜索",
-  "enterSearchQueryHint": "输入搜索query (e.g. \"big breasts english\")",
-  "popularSearchesTitle": "热门 Searches",
-  "recentSearchesTitle": "最近 Searches",
-  "pressSearchButtonMessage": "Press the 搜索button to find 内容 with your 当前 filters",
-  "searchingMessage": "搜索ing...",
-  "resultsCountFormat": "{count} results",
+  "advancedSearchTitle": "高级搜索",
+  "enterSearchQueryHint": "输入搜索关键词 (例如 \"big breasts english\")",
+  "popularSearchesTitle": "热门搜索",
+  "recentSearchesTitle": "最近搜索",
+  "pressSearchButtonMessage": "点击搜索按钮以应用当前筛选条件",
+  "searchingMessage": "搜索中...",
+  "resultsCountFormat": "{count} 个结果",
   "@resultsCountFormat": {
     "placeholders": {
       "count": {
@@ -977,10 +977,10 @@
       }
     }
   },
-  "viewInMainAction": "查看 in 主页",
-  "searchErrorTitle": "搜索 错误",
+  "viewInMainAction": "在主页查看",
+  "searchErrorTitle": "搜索错误",
   "noResultsFoundTitle": "未找到结果",
-  "pageText": "页面 {pageNumber}",
+  "pageText": "第 {pageNumber} 页",
   "@pageText": {
     "placeholders": {
       "pageNumber": {
@@ -988,7 +988,7 @@
       }
     }
   },
-  "pagesText": "pages {startPage}-{endPage}",
+  "pagesText": "页数 {startPage}-{endPage}",
   "@pagesText": {
     "placeholders": {
       "startPage": {
@@ -1004,18 +1004,18 @@
   "errorOccurred": "发生错误",
   "tapToRetry": "点击重试",
   "helpTitle": "帮助",
-  "helpNoResults": "未找到results for your 搜索",
-  "helpTryDifferent": "Try using different keywords or check your spelling",
-  "helpUseFilters": "Use filters to narrow down your 搜索",
-  "helpCheckConnection": "Check your internet 连接",
-  "sendReportText": "Send Report",
-  "technicalDetailsTitle": "Technical 详情",
-  "reportSentText": "Report sent!",
-  "suggestionCheckConnection": "Check your internet 连接",
-  "suggestionTryWifiMobile": "Try switching between WiFi and mobile data",
-  "suggestionRestartRouter": "Restart your router if using WiFi",
-  "suggestionCheckWebsite": "Check if the website is down",
-  "noContentFoundWithQuery": "未找到content for \"{query}\". Try adjusting your 搜索terms or filters.",
+  "helpNoResults": "未找到相关搜索结果",
+  "helpTryDifferent": "尝试使用不同的关键词或检查拼写",
+  "helpUseFilters": "使用筛选器缩小搜索范围",
+  "helpCheckConnection": "检查您的网络连接",
+  "sendReportText": "发送报告",
+  "technicalDetailsTitle": "技术详情",
+  "reportSentText": "报告已发送！",
+  "suggestionCheckConnection": "检查网络连接",
+  "suggestionTryWifiMobile": "尝试切换 WiFi 或移动数据",
+  "suggestionRestartRouter": "如果使用 WiFi，请尝试重启路由器",
+  "suggestionCheckWebsite": "检查网站是否宕机",
+  "noContentFoundWithQuery": "未找到 \"{query}\" 的内容。尝试调整关键词或筛选器。",
   "@noContentFoundWithQuery": {
     "placeholders": {
       "query": {
@@ -1023,22 +1023,22 @@
       }
     }
   },
-  "noContentFound": "未找到content. Try adjusting your 搜索terms or filters.",
-  "suggestionTryDifferentKeywords": "Try different keywords",
-  "suggestionRemoveFilters": "移除some filters",
-  "suggestionCheckSpelling": "Check spelling",
-  "suggestionUseBroaderTerms": "Use broader 搜索terms",
-  "underMaintenanceTitle": "Under Maintenance",
-  "underMaintenanceMessage": "The service is currently under maintenance. Please check 返回 later.",
-  "suggestionMaintenanceHours": "Maintenance usually takes a few hours",
-  "suggestionCheckSocial": "Check social media for updates",
+  "noContentFound": "未找到内容。尝试调整关键词或筛选器。",
+  "suggestionTryDifferentKeywords": "尝试不同的关键词",
+  "suggestionRemoveFilters": "移除部分筛选器",
+  "suggestionCheckSpelling": "检查拼写",
+  "suggestionUseBroaderTerms": "使用更宽泛的搜索词",
+  "underMaintenanceTitle": "维护中",
+  "underMaintenanceMessage": "服务正在维护中，请稍后再试。",
+  "suggestionMaintenanceHours": "维护通常需要几个小时",
+  "suggestionCheckSocial": "查看社交媒体获取更新",
   "suggestionTryLater": "请稍后重试",
-  "includeFilter": "Include",
-  "excludeFilter": "Exclude",
-  "overallProgress": "Overall 进度",
+  "includeFilter": "包含",
+  "excludeFilter": "排除",
+  "overallProgress": "总进度",
   "total": "总计",
   "done": "完成",
-  "downloadsFailed": "{count} download{plural}失败",
+  "downloadsFailed": "{count} 个下载失败",
   "@downloadsFailed": {
     "placeholders": {
       "count": {
@@ -1049,24 +1049,24 @@
       }
     }
   },
-  "processing": "Processing...",
+  "processing": "处理中...",
   "readingCompleted": "已完成",
-  "readAgain": "Read Again",
+  "readAgain": "再次阅读",
   "continueReading": "继续阅读",
-  "lessThanOneMinute": "Less than 1 minute",
-  "readingTime": "reading 时间",
-  "downloadActions": "下载 Actions",
+  "lessThanOneMinute": "少于 1 分钟",
+  "readingTime": "阅读时长",
+  "downloadActions": "下载操作",
   "pause": "暂停",
-  "convertToPdf": "Convert to PDF",
+  "convertToPdf": "转换为 PDF",
   "details": "详情",
   "downloadActionPause": "暂停",
   "downloadActionResume": "继续",
   "downloadActionCancel": "取消",
   "downloadActionRetry": "重试",
-  "downloadActionConvertToPdf": "Convert to PDF",
+  "downloadActionConvertToPdf": "转换为 PDF",
   "downloadActionDetails": "详情",
   "downloadActionRemove": "移除",
-  "downloadPagesRangeFormat": "{downloaded}/{total} (页数 {start}-{end} of {totalPages})",
+  "downloadPagesRangeFormat": "{downloaded}/{total} (第 {start}-{end} 页，共 {totalPages} 页)",
   "@downloadPagesRangeFormat": {
     "placeholders": {
       "downloaded": {
@@ -1105,7 +1105,7 @@
       }
     }
   },
-  "downloadEtaLabel": "ETA: {duration}",
+  "downloadEtaLabel": "预计剩余: {duration}",
   "@downloadEtaLabel": {
     "placeholders": {
       "duration": {
@@ -1113,49 +1113,49 @@
       }
     }
   },
-  "downloadSettingsTitle": "Download设置",
-  "performanceSection": "Performance",
-  "maxConcurrentDownloads": "最大 Concurrent Downloads",
-  "concurrentDownloadsWarning": "高er values may consume more bandwidth and device resources",
+  "downloadSettingsTitle": "下载设置",
+  "performanceSection": "性能",
+  "maxConcurrentDownloads": "最大并发下载数",
+  "concurrentDownloadsWarning": "较高的值可能会消耗更多带宽和设备资源",
   "imageQualityLabel": "图片质量",
-  "autoRetrySection": "自动 重试",
-  "autoRetryFailedDownloads": "自动 重试 失败 下载",
-  "autoRetryDescription": "Automatically retry失败 downloads",
-  "maxRetryAttempts": "最大 Retry Attempts",
+  "autoRetrySection": "自动重试",
+  "autoRetryFailedDownloads": "自动重试失败的下载",
+  "autoRetryDescription": "自动重试失败的下载任务",
+  "maxRetryAttempts": "最大重试次数",
   "networkSection": "网络",
-  "wifiOnlyLabel": "WiFi Only",
-  "wifiOnlyDescription": "Only 下载 when connected to WiFi",
-  "downloadTimeoutLabel": "下载 Timeout",
+  "wifiOnlyLabel": "仅 WiFi",
+  "wifiOnlyDescription": "仅在连接 WiFi 时下载",
+  "downloadTimeoutLabel": "下载超时",
   "notificationsSection": "通知",
-  "enableNotificationsLabel": "启用Notifications",
-  "enableNotificationsDescription": "显示notifications for 下载进度",
-  "minutesUnit": "最小",
-  "searchContentHint": "搜索content...",
-  "hideFiltersTooltip": "隐藏filters",
-  "showMoreFiltersTooltip": "显示more filters",
-  "advancedFiltersTitle": "高级 筛选s",
+  "enableNotificationsLabel": "启用通知",
+  "enableNotificationsDescription": "显示下载进度通知",
+  "minutesUnit": "分钟",
+  "searchContentHint": "搜索内容...",
+  "hideFiltersTooltip": "隐藏筛选",
+  "showMoreFiltersTooltip": "显示更多筛选",
+  "advancedFiltersTitle": "高级筛选",
   "sortByLabel": "排序方式",
   "categoryLabel": "分类",
-  "includeTagsLabel": "Include tags (comma separated)",
-  "includeTagsHint": "e.g., romance, comedy, school",
-  "excludeTagsLabel": "Exclude 标签",
-  "excludeTagsHint": "e.g., horror, violence",
-  "artistsHint": "e.g., artist1, artist2",
-  "pageCountRangeTitle": "页面数量 Range",
-  "minPagesLabel": "最小 pages",
-  "maxPagesLabel": "最大 pages",
-  "rangeToSeparator": "to",
-  "popularTagsTitle": "热门 Tags",
-  "filtersActiveLabel": "进行中",
+  "includeTagsLabel": "包含标签 (逗号分隔)",
+  "includeTagsHint": "例如: romance, comedy, school",
+  "excludeTagsLabel": "排除标签",
+  "excludeTagsHint": "例如: horror, violence",
+  "artistsHint": "例如: artist1, artist2",
+  "pageCountRangeTitle": "页数范围",
+  "minPagesLabel": "最少页数",
+  "maxPagesLabel": "最多页数",
+  "rangeToSeparator": "至",
+  "popularTagsTitle": "热门标签",
+  "filtersActiveLabel": "生效中",
   "clearAllFilters": "清除全部",
-  "initializingApp": "Initializing Application...",
-  "settingUpComponents": "Setting up components and checking 连接...",
-  "bypassingProtection": "Bypassing protection and establishing 连接...",
-  "connectionFailed": "Connection失败",
-  "readyToGo": "Ready to 前往!",
-  "launchingApp": "Launching 主页 application...",
-  "imageNotAvailable": "图片 not可用",
-  "loadingPage": "加载中页面 {pageNumber}...",
+  "initializingApp": "正在初始化应用...",
+  "settingUpComponents": "正在设置组件并检查连接...",
+  "bypassingProtection": "正在绕过防护并建立连接...",
+  "connectionFailed": "连接失败",
+  "readyToGo": "准备就绪！",
+  "launchingApp": "正在启动主应用...",
+  "imageNotAvailable": "图片不可用",
+  "loadingPage": "正在加载第 {pageNumber} 页...",
   "@loadingPage": {
     "placeholders": {
       "pageNumber": {
@@ -1171,28 +1171,28 @@
       }
     }
   },
-  "noImage": "否图片",
-  "youAreOfflineShort": "You are offline",
-  "someFeaturesLimited": "Some features are limited. Connect to internet for full access.",
+  "noImage": "无图",
+  "youAreOfflineShort": "当前处于离线状态",
+  "someFeaturesLimited": "部分功能受限。请连接网络以获取完整体验。",
   "wifi": "WIFI",
-  "ethernet": "ETHERNET",
-  "mobile": "MOBILE",
+  "ethernet": "以太网",
+  "mobile": "移动网络",
   "online": "在线",
-  "offlineMode": "Offline模式",
-  "applySearch": "Apply 搜索",
-  "addFiltersToSearch": "添加 filters above to 启用search",
-  "startSearching": "开始 searching",
-  "enterKeywordsAdvancedHint": "输入keywords, tags, or use advanced filters to find 内容",
-  "filtersReady": "筛选s Ready",
-  "clearAllFiltersTooltip": "清除all filters",
-  "offlineSomeFeaturesUnavailable": "You are offline. Some features may not be可用.",
-  "usingDownloadedContentOnly": "Using downloaded 内容 only",
-  "onlineModeWithNetworkAccess": "Online模式 with 网络 access",
-  "tagsScreenPlaceholder": "Tags 屏幕 - To be implemented",
-  "artistsScreenPlaceholder": "Artists 屏幕 - To be implemented",
-  "statusScreenPlaceholder": "状态屏幕 - To be implemented",
-  "pageNotFound": "页面 Not Found",
-  "pageNotFoundWithUri": "页面 not found: {uri}",
+  "offlineMode": "离线模式",
+  "applySearch": "应用搜索",
+  "addFiltersToSearch": "添加上方筛选器以启用搜索",
+  "startSearching": "开始搜索",
+  "enterKeywordsAdvancedHint": "输入关键词、标签或使用高级筛选来查找内容",
+  "filtersReady": "筛选器已就绪",
+  "clearAllFiltersTooltip": "清除所有筛选",
+  "offlineSomeFeaturesUnavailable": "当前处于离线状态，部分功能可能不可用。",
+  "usingDownloadedContentOnly": "仅显示已下载内容",
+  "onlineModeWithNetworkAccess": "在线模式 (已联网)",
+  "tagsScreenPlaceholder": "标签页面 - 待实现",
+  "artistsScreenPlaceholder": "画师页面 - 待实现",
+  "statusScreenPlaceholder": "状态页面 - 待实现",
+  "pageNotFound": "页面未找到",
+  "pageNotFoundWithUri": "页面未找到: {uri}",
   "@pageNotFoundWithUri": {
     "placeholders": {
       "uri": {
@@ -1200,15 +1200,15 @@
       }
     }
   },
-  "goHome": "前往 首页",
+  "goHome": "前往首页",
   "debugThemeInfo": "DEBUG: 主题信息",
-  "lightTheme": "Light",
-  "darkTheme": "Dark",
+  "lightTheme": "浅色",
+  "darkTheme": "深色",
   "amoledTheme": "AMOLED",
-  "systemMessages": "系统 Messages and Background Services",
-  "notificationMessages": "通知 Messages",
-  "convertingToPdf": "Converting to PDF...",
-  "convertingToPdfWithTitle": "Converting {title} to PDF...",
+  "systemMessages": "系统消息与后台服务",
+  "notificationMessages": "通知消息",
+  "convertingToPdf": "正在转换为 PDF...",
+  "convertingToPdfWithTitle": "正在将 {title} 转换为 PDF...",
   "@convertingToPdfWithTitle": {
     "placeholders": {
       "title": {
@@ -1216,8 +1216,8 @@
       }
     }
   },
-  "convertingToPdfProgress": "Converting to PDF ({progress}%)",
-  "convertingToPdfProgressWithTitle": "Converting {title} to PDF ({progress}%)",
+  "convertingToPdfProgress": "转换 PDF 中 ({progress}%)",
+  "convertingToPdfProgressWithTitle": "正在转换 {title} 为 PDF ({progress}%)",
   "@convertingToPdfProgressWithTitle": {
     "placeholders": {
       "title": {
@@ -1228,8 +1228,8 @@
       }
     }
   },
-  "pdfCreatedSuccessfully": "PDF Created成功ly",
-  "pdfCreatedWithParts": "{title} converted to {partsCount} PDF files",
+  "pdfCreatedSuccessfully": "PDF 创建成功",
+  "pdfCreatedWithParts": "{title} 已转换为 {partsCount} 个 PDF 文件",
   "@pdfCreatedWithParts": {
     "placeholders": {
       "title": {
@@ -1240,8 +1240,8 @@
       }
     }
   },
-  "pdfConversionFailed": "PDF conversion失败 for {contentId}: {error}",
-  "pdfConversionFailedWithError": "PDF conversion失败 for {title}: {error}",
+  "pdfConversionFailed": "{contentId} PDF 转换失败: {error}",
+  "pdfConversionFailedWithError": "{title} PDF 转换失败: {error}",
   "@pdfConversionFailedWithError": {
     "placeholders": {
       "title": {
@@ -1252,7 +1252,7 @@
       }
     }
   },
-  "downloadingWithTitle": "Downloading: {title}",
+  "downloadingWithTitle": "正在下载: {title}",
   "@downloadingWithTitle": {
     "placeholders": {
       "title": {
@@ -1261,7 +1261,7 @@
     }
   },
   "downloadingProgress": "下载中 ({progress}%)",
-  "downloadedWithTitle": "Downloaded: {title}",
+  "downloadedWithTitle": "已下载: {title}",
   "@downloadedWithTitle": {
     "placeholders": {
       "title": {
@@ -1269,7 +1269,7 @@
       }
     }
   },
-  "downloadFailedWithTitle": "Failed: {title}",
+  "downloadFailedWithTitle": "失败: {title}",
   "@downloadFailedWithTitle": {
     "placeholders": {
       "title": {
@@ -1278,15 +1278,15 @@
     }
   },
   "downloadPaused": "已暂停",
-  "downloadResumed": "Resumed",
-  "downloadCancelled": "取消led",
+  "downloadResumed": "已继续",
+  "downloadCancelled": "已取消",
   "downloadRetry": "重试",
   "downloadOpen": "打开",
   "pdfOpen": "打开 PDF",
   "pdfShare": "分享",
   "pdfRetry": "重试 PDF",
-  "downloadServiceMessages": "下载 Service Messages",
-  "downloadRangeInfo": " (页数 {startPage}-{endPage})",
+  "downloadServiceMessages": "下载服务消息",
+  "downloadRangeInfo": " (第 {startPage}-{endPage} 页)",
   "@downloadRangeInfo": {
     "placeholders": {
       "startPage": {
@@ -1297,7 +1297,7 @@
       }
     }
   },
-  "downloadRangeComplete": " (页数 {startPage}-{endPage})",
+  "downloadRangeComplete": " (第 {startPage}-{endPage} 页)",
   "@downloadRangeComplete": {
     "placeholders": {
       "startPage": {
@@ -1308,7 +1308,7 @@
       }
     }
   },
-  "invalidPageRange": "Invalid 页面 range: {start}-{end} (total: {total})",
+  "invalidPageRange": "无效的页码范围: {start}-{end} (共 {total} 页)",
   "@invalidPageRange": {
     "placeholders": {
       "start": {
@@ -1322,7 +1322,7 @@
       }
     }
   },
-  "noDataReceived": "无data received for image: {url}",
+  "noDataReceived": "未接收到图片数据: {url}",
   "@noDataReceived": {
     "placeholders": {
       "url": {
@@ -1330,7 +1330,7 @@
       }
     }
   },
-  "createdNoMediaFile": "Created .nomedia 文件 for privacy: {path}",
+  "createdNoMediaFile": "为保护隐私已创建 .nomedia 文件: {path}",
   "@createdNoMediaFile": {
     "placeholders": {
       "path": {
@@ -1338,9 +1338,9 @@
       }
     }
   },
-  "privacyProtectionEnsured": "隐私 protection ensured for existing downloads",
-  "pdfConversionMessages": "PDF Conversion Service Messages",
-  "pdfConversionCompleted": "PDF conversion completed成功ly for {contentId}",
+  "privacyProtectionEnsured": "已确保存有下载内容的隐私保护",
+  "pdfConversionMessages": "PDF 转换服务消息",
+  "pdfConversionCompleted": "{contentId} PDF 转换成功",
   "@pdfConversionCompleted": {
     "placeholders": {
       "contentId": {
@@ -1358,7 +1358,7 @@
       }
     }
   },
-  "pdfPartProcessing": "Processing part {part} in isolate...",
+  "pdfPartProcessing": "正在处理第 {part} 部分 (Isolate)...",
   "@pdfPartProcessing": {
     "placeholders": {
       "part": {
@@ -1366,8 +1366,8 @@
       }
     }
   },
-  "pdfSingleProcessing": "Processing single PDF in isolate...",
-  "pdfSplitRequired": "Splitting into {totalParts} parts ({totalPages} pages)",
+  "pdfSingleProcessing": "正在处理单体 PDF (Isolate)...",
+  "pdfSplitRequired": "正在分割为 {totalParts} 个部分 (共 {totalPages} 页)",
   "@pdfSplitRequired": {
     "placeholders": {
       "totalParts": {
@@ -1378,7 +1378,7 @@
       }
     }
   },
-  "pdfCreatedFiles": "Created {partsCount} PDF file(s) with {pageCount} 总计 pages",
+  "pdfCreatedFiles": "已创建 {partsCount} 个 PDF 文件，共 {pageCount} 页",
   "@pdfCreatedFiles": {
     "placeholders": {
       "partsCount": {
@@ -1389,8 +1389,8 @@
       }
     }
   },
-  "pdfNoImagesProvided": "无images provided for PDF conversion",
-  "pdfFailedToCreatePart": "无法create PDF part {part}: {error}",
+  "pdfNoImagesProvided": "未提供用于 PDF 转换的图片",
+  "pdfFailedToCreatePart": "无法创建 PDF 第 {part} 部分: {error}",
   "@pdfFailedToCreatePart": {
     "placeholders": {
       "part": {
@@ -1401,7 +1401,7 @@
       }
     }
   },
-  "pdfFailedToCreate": "无法create PDF: {error}",
+  "pdfFailedToCreate": "无法创建 PDF: {error}",
   "@pdfFailedToCreate": {
     "placeholders": {
       "error": {
@@ -1409,7 +1409,7 @@
       }
     }
   },
-  "pdfOutputDirectoryCreated": "Created PDF output directory: {path}",
+  "pdfOutputDirectoryCreated": "已创建 PDF 输出目录: {path}",
   "@pdfOutputDirectoryCreated": {
     "placeholders": {
       "path": {
@@ -1417,7 +1417,7 @@
       }
     }
   },
-  "pdfUsingFallbackDirectory": "Using fallback directory: {path}",
+  "pdfUsingFallbackDirectory": "使用备用目录: {path}",
   "@pdfUsingFallbackDirectory": {
     "placeholders": {
       "path": {
@@ -1425,7 +1425,7 @@
       }
     }
   },
-  "pdfInfoSaved": "PDF info已保存 for {contentId} ({partsCount} parts, {pageCount} pages)",
+  "pdfInfoSaved": "{contentId} PDF 信息已保存 ({partsCount} 部分, {pageCount} 页)",
   "@pdfInfoSaved": {
     "placeholders": {
       "contentId": {
@@ -1439,7 +1439,7 @@
       }
     }
   },
-  "pdfExistsForContent": "PDF exists for {contentId}: {exists}",
+  "pdfExistsForContent": "{contentId} PDF 是否存在: {exists}",
   "@pdfExistsForContent": {
     "placeholders": {
       "contentId": {
@@ -1450,7 +1450,7 @@
       }
     }
   },
-  "pdfFoundFiles": "Found {count} PDF file(s) for {contentId}",
+  "pdfFoundFiles": "找到 {contentId} 的 {count} 个 PDF 文件",
   "@pdfFoundFiles": {
     "placeholders": {
       "contentId": {
@@ -1461,7 +1461,7 @@
       }
     }
   },
-  "pdfDeletedFiles": "Successfully已删除 {count} PDF file(s) for {contentId}",
+  "pdfDeletedFiles": "成功删除 {contentId} 的 {count} 个 PDF 文件",
   "@pdfDeletedFiles": {
     "placeholders": {
       "contentId": {
@@ -1472,7 +1472,7 @@
       }
     }
   },
-  "pdfTotalSize": "总计 PDF 大小 for {contentId}: {sizeBytes} bytes",
+  "pdfTotalSize": "{contentId} PDF 总大小: {sizeBytes} 字节",
   "@pdfTotalSize": {
     "placeholders": {
       "contentId": {
@@ -1483,7 +1483,7 @@
       }
     }
   },
-  "pdfCleanupStarted": "Starting PDF cleanup, deleting files older than {maxAge} days",
+  "pdfCleanupStarted": "开始 PDF 清理，删除 {maxAge} 天前的文件",
   "@pdfCleanupStarted": {
     "placeholders": {
       "maxAge": {
@@ -1491,7 +1491,7 @@
       }
     }
   },
-  "pdfCleanupCompleted": "Cleanup completed,已删除 {deletedCount} 旧 PDF files",
+  "pdfCleanupCompleted": "清理完成，已删除 {deletedCount} 个旧 PDF 文件",
   "@pdfCleanupCompleted": {
     "placeholders": {
       "deletedCount": {
@@ -1499,12 +1499,12 @@
       }
     }
   },
-  "pdfStatistics": "PDF statistics - {totalFiles} files, {totalSizeFormatted} 总计大小, {uniqueContents} unique contents, {averageFilesPerContent} avg files per 内容",
-  "historyCleanupMessages": "历史 Cleanup Service Messages",
-  "historyCleanupServiceInitialized": "历史 Cleanup Service initialized",
-  "historyCleanupServiceDisposed": "历史 Cleanup Service disposed",
-  "autoCleanupDisabled": "自动 cleanup 历史 is disabled",
-  "cleanupServiceStarted": "Cleanup service started with {intervalHours}h interval",
+  "pdfStatistics": "PDF 统计 - {totalFiles} 文件, 总大小 {totalSizeFormatted}, {uniqueContents} 个内容, 平均每个内容 {averageFilesPerContent} 个文件",
+  "historyCleanupMessages": "历史清理服务消息",
+  "historyCleanupServiceInitialized": "历史清理服务已初始化",
+  "historyCleanupServiceDisposed": "历史清理服务已销毁",
+  "autoCleanupDisabled": "自动清理历史已禁用",
+  "cleanupServiceStarted": "清理服务已启动，间隔 {intervalHours} 小时",
   "@cleanupServiceStarted": {
     "placeholders": {
       "intervalHours": {
@@ -1512,7 +1512,7 @@
       }
     }
   },
-  "performingHistoryCleanup": "Performing 历史 cleanup: {reason}",
+  "performingHistoryCleanup": "正在执行历史清理: {reason}",
   "@performingHistoryCleanup": {
     "placeholders": {
       "reason": {
@@ -1520,7 +1520,7 @@
       }
     }
   },
-  "historyCleanupCompleted": "历史 cleanup completed: cleared {clearedCount} entries ({reason})",
+  "historyCleanupCompleted": "历史清理完成: 清除了 {clearedCount} 条记录 ({reason})",
   "@historyCleanupCompleted": {
     "placeholders": {
       "clearedCount": {
@@ -1531,10 +1531,10 @@
       }
     }
   },
-  "manualHistoryCleanup": "Performing 手动历史 cleanup",
-  "updatedLastAppAccess": "Updated last 应用 access 时间",
-  "updatedLastCleanupTime": "Updated last cleanup 时间",
-  "intervalCleanup": "Interval cleanup ({intervalHours}h)",
+  "manualHistoryCleanup": "正在执行手动历史清理",
+  "updatedLastAppAccess": "已更新上次应用访问时间",
+  "updatedLastCleanupTime": "已更新上次清理时间",
+  "intervalCleanup": "定时清理 ({intervalHours}h)",
   "@intervalCleanup": {
     "placeholders": {
       "intervalHours": {
@@ -1542,7 +1542,7 @@
       }
     }
   },
-  "inactivityCleanup": "Inactivity cleanup ({inactivityDays} days)",
+  "inactivityCleanup": "闲置清理 ({inactivityDays} 天)",
   "@inactivityCleanup": {
     "placeholders": {
       "inactivityDays": {
@@ -1550,7 +1550,7 @@
       }
     }
   },
-  "maxAgeCleanup": "最大 age cleanup ({maxDays} days)",
+  "maxAgeCleanup": "过期清理 ({maxDays} 天)",
   "@maxAgeCleanup": {
     "placeholders": {
       "maxDays": {
@@ -1558,8 +1558,8 @@
       }
     }
   },
-  "initialCleanupSetup": "Initial cleanup setup",
-  "shouldCleanupOldHistory": "Should cleanup 旧 history: {shouldCleanup}",
+  "initialCleanupSetup": "初始清理设置",
+  "shouldCleanupOldHistory": "是否应清理旧历史: {shouldCleanup}",
   "@shouldCleanupOldHistory": {
     "placeholders": {
       "shouldCleanup": {
@@ -1567,8 +1567,8 @@
       }
     }
   },
-  "analyticsMessages": "Analytics Service Messages",
-  "analyticsServiceInitialized": "Analytics service initialized - tracking {enabled}",
+  "analyticsMessages": "统计服务消息",
+  "analyticsServiceInitialized": "统计服务已初始化 - 追踪 {enabled}",
   "@analyticsServiceInitialized": {
     "placeholders": {
       "enabled": {
@@ -1576,11 +1576,11 @@
       }
     }
   },
-  "analyticsTrackingEnabled": "Analytics tracking enabled by 用户",
-  "analyticsTrackingDisabled": "Analytics tracking disabled by 用户 - data cleared",
-  "analyticsDataCleared": "Analytics data cleared by 用户 request",
-  "analyticsServiceDisposed": "Analytics service disposed",
-  "analyticsEventTracked": "📊 Analytics: {eventType} - {eventName}",
+  "analyticsTrackingEnabled": "用户已启用统计追踪",
+  "analyticsTrackingDisabled": "用户已禁用统计追踪 - 数据已清除",
+  "analyticsDataCleared": "应用户请求已清除统计数据",
+  "analyticsServiceDisposed": "统计服务已销毁",
+  "analyticsEventTracked": "📊 统计: {eventType} - {eventName}",
   "@analyticsEventTracked": {
     "placeholders": {
       "eventType": {
@@ -1591,8 +1591,8 @@
       }
     }
   },
-  "appStartedEvent": "应用 started event tracked",
-  "sessionEndEvent": "Session 结束 event tracked ({minutes} minutes)",
+  "appStartedEvent": "应用启动事件已追踪",
+  "sessionEndEvent": "会话结束事件已追踪 ({minutes} 分钟)",
   "@sessionEndEvent": {
     "placeholders": {
       "minutes": {
@@ -1600,9 +1600,9 @@
       }
     }
   },
-  "analyticsEnabledEvent": "Analytics enabled event tracked",
-  "analyticsDisabledEvent": "Analytics disabled event tracked",
-  "screenViewEvent": "屏幕查看 tracked: {screenName}",
+  "analyticsEnabledEvent": "统计启用事件已追踪",
+  "analyticsDisabledEvent": "统计禁用事件已追踪",
+  "screenViewEvent": "屏幕浏览已追踪: {screenName}",
   "@screenViewEvent": {
     "placeholders": {
       "screenName": {
@@ -1610,7 +1610,7 @@
       }
     }
   },
-  "userActionEvent": "用户操作 tracked: {action}",
+  "userActionEvent": "用户操作已追踪: {action}",
   "@userActionEvent": {
     "placeholders": {
       "action": {
@@ -1618,7 +1618,7 @@
       }
     }
   },
-  "performanceEvent": "Performance tracked: {operation} ({durationMs}ms)",
+  "performanceEvent": "性能已追踪: {operation} ({durationMs}ms)",
   "@performanceEvent": {
     "placeholders": {
       "operation": {
@@ -1629,7 +1629,7 @@
       }
     }
   },
-  "errorEvent": "tracked: {errorType} - {errorMessage}错误",
+  "errorEvent": "错误已追踪: {errorType} - {errorMessage}",
   "@errorEvent": {
     "placeholders": {
       "errorType": {
@@ -1640,7 +1640,7 @@
       }
     }
   },
-  "featureUsageEvent": "Feature usage tracked: {feature}",
+  "featureUsageEvent": "功能使用已追踪: {feature}",
   "@featureUsageEvent": {
     "placeholders": {
       "feature": {
@@ -1648,7 +1648,7 @@
       }
     }
   },
-  "readingSessionEvent": "Reading session tracked: {contentId} ({minutes}min, {pages} pages)",
+  "readingSessionEvent": "阅读会话已追踪: {contentId} ({minutes}分, {pages} 页)",
   "@readingSessionEvent": {
     "placeholders": {
       "contentId": {
@@ -1662,8 +1662,8 @@
       }
     }
   },
-  "offlineManagerMessages": "Offline 内容 Manager Messages",
-  "offlineContentAvailable": "内容 {contentId} is可用 offline: {available}",
+  "offlineManagerMessages": "离线内容管理器消息",
+  "offlineContentAvailable": "内容 {contentId} 可离线访问: {available}",
   "@offlineContentAvailable": {
     "placeholders": {
       "contentId": {
@@ -1674,7 +1674,7 @@
       }
     }
   },
-  "offlineContentPath": "Offline 内容 path for {contentId}: {path}",
+  "offlineContentPath": "{contentId} 离线内容路径: {path}",
   "@offlineContentPath": {
     "placeholders": {
       "contentId": {
@@ -1685,7 +1685,7 @@
       }
     }
   },
-  "foundExistingFiles": "Found {count} existing downloaded files",
+  "foundExistingFiles": "发现 {count} 个已下载文件",
   "@foundExistingFiles": {
     "placeholders": {
       "count": {
@@ -1693,7 +1693,7 @@
       }
     }
   },
-  "offlineImageUrlsFound": "Found {count} offline 图片 URLs for {contentId}",
+  "offlineImageUrlsFound": "发现 {contentId} 的 {count} 个离线图片链接",
   "@offlineImageUrlsFound": {
     "placeholders": {
       "contentId": {
@@ -1704,7 +1704,7 @@
       }
     }
   },
-  "offlineContentIdsFound": "Found {count} offline 内容 IDs",
+  "offlineContentIdsFound": "发现 {count} 个离线内容 ID",
   "@offlineContentIdsFound": {
     "placeholders": {
       "count": {
@@ -1712,7 +1712,7 @@
       }
     }
   },
-  "searchingOfflineContent": "Searching offline 内容 for: {query}",
+  "searchingOfflineContent": "正在搜索离线内容: {query}",
   "@searchingOfflineContent": {
     "placeholders": {
       "query": {
@@ -1720,7 +1720,7 @@
       }
     }
   },
-  "offlineContentMetadata": "Offline 内容 metadata for {contentId}: {source}",
+  "offlineContentMetadata": "{contentId} 离线内容元数据: {source}",
   "@offlineContentMetadata": {
     "placeholders": {
       "contentId": {
@@ -1731,7 +1731,7 @@
       }
     }
   },
-  "offlineContentCreated": "Offline 内容 created for {contentId}",
+  "offlineContentCreated": "已为 {contentId} 创建离线内容",
   "@offlineContentCreated": {
     "placeholders": {
       "contentId": {
@@ -1739,7 +1739,7 @@
       }
     }
   },
-  "offlineStorageUsage": "Offline 存储 usage: {sizeBytes} bytes",
+  "offlineStorageUsage": "离线存储使用量: {sizeBytes} 字节",
   "@offlineStorageUsage": {
     "placeholders": {
       "sizeBytes": {
@@ -1747,9 +1747,9 @@
       }
     }
   },
-  "cleanupOrphanedFilesStarted": "Starting cleanup of orphaned offline files",
-  "cleanupOrphanedFilesCompleted": "Cleanup of orphaned offline files completed",
-  "removedOrphanedDirectory": "移除d orphaned directory: {path}",
+  "cleanupOrphanedFilesStarted": "开始清理孤立离线文件",
+  "cleanupOrphanedFilesCompleted": "孤立离线文件清理完成",
+  "removedOrphanedDirectory": "已移除孤立目录: {path}",
   "@removedOrphanedDirectory": {
     "placeholders": {
       "path": {
@@ -1757,12 +1757,12 @@
       }
     }
   },
-  "queryLabel": "Query",
-  "excludeGroupsLabel": "Exclude 社团",
-  "excludeCharactersLabel": "Exclude 角色",
-  "excludeParodiesLabel": "Exclude 原作",
-  "excludeArtistsLabel": "Exclude 画师",
-  "minutes": "{count}m",
+  "queryLabel": "查询",
+  "excludeGroupsLabel": "排除社团",
+  "excludeCharactersLabel": "排除角色",
+  "excludeParodiesLabel": "排除原作",
+  "excludeArtistsLabel": "排除画师",
+  "minutes": "{count}分",
   "@minutes": {
     "placeholders": {
       "count": {
@@ -1770,7 +1770,7 @@
       }
     }
   },
-  "seconds": "{count}s",
+  "seconds": "{count}秒",
   "@seconds": {
     "placeholders": {
       "count": {
@@ -1778,9 +1778,9 @@
       }
     }
   },
-  "loadingUserPreferences": "加载中用户 preferences",
-  "successfullyLoadedUserPreferences": "Successfully loaded 用户 preferences",
-  "invalidColumnsPortraitValue": "Invalid columns 竖屏 value: {value}",
+  "loadingUserPreferences": "正在加载用户偏好设置",
+  "successfullyLoadedUserPreferences": "成功加载用户偏好设置",
+  "invalidColumnsPortraitValue": "无效的竖屏列数: {value}",
   "@invalidColumnsPortraitValue": {
     "placeholders": {
       "value": {
@@ -1788,7 +1788,7 @@
       }
     }
   },
-  "invalidColumnsLandscapeValue": "Invalid columns 横屏 value: {value}",
+  "invalidColumnsLandscapeValue": "无效的横屏列数: {value}",
   "@invalidColumnsLandscapeValue": {
     "placeholders": {
       "value": {
@@ -1796,9 +1796,9 @@
       }
     }
   },
-  "updatingSettingsViaPreferencesService": "Updating设置 via PreferencesService",
-  "successfullyUpdatedSettings": "Successfully已更新设置",
-  "failedToUpdateSetting": "无法update setting: {error}",
+  "updatingSettingsViaPreferencesService": "通过 PreferencesService 更新设置",
+  "successfullyUpdatedSettings": "设置更新成功",
+  "failedToUpdateSetting": "设置更新失败: {error}",
   "@failedToUpdateSetting": {
     "placeholders": {
       "error": {
@@ -1806,8 +1806,8 @@
       }
     }
   },
-  "resettingAllSettingsToDefaults": "Resetting all设置 to defaults",
-  "successfullyResetAllSettingsToDefaults": "Successfully 重置 all设置 to defaults",
+  "resettingAllSettingsToDefaults": "正在恢复所有默认设置",
+  "successfullyResetAllSettingsToDefaults": "已恢复所有默认设置",
   "@failedToResetSettings": {
     "placeholders": {
       "error": {
@@ -1815,10 +1815,10 @@
       }
     }
   },
-  "settingsNotLoaded": "设置 not loaded",
-  "exportingSettings": "Exporting设置",
-  "successfullyExportedSettings": "Successfully exported设置",
-  "failedToExportSettings": "无法export设置: {error}",
+  "settingsNotLoaded": "设置未加载",
+  "exportingSettings": "正在导出设置",
+  "successfullyExportedSettings": "设置导出成功",
+  "failedToExportSettings": "设置导出失败: {error}",
   "@failedToExportSettings": {
     "placeholders": {
       "error": {
@@ -1826,9 +1826,9 @@
       }
     }
   },
-  "importingSettings": "Importing设置",
-  "successfullyImportedSettings": "Successfully imported设置",
-  "failedToImportSettings": "无法import设置: {error}",
+  "importingSettings": "正在导入设置",
+  "successfullyImportedSettings": "设置导入成功",
+  "failedToImportSettings": "设置导入失败: {error}",
   "@failedToImportSettings": {
     "placeholders": {
       "error": {
@@ -1836,20 +1836,20 @@
       }
     }
   },
-  "unableToSyncSettings": "Unable to sync设置. Changes will be已保存 locally.",
+  "unableToSyncSettings": "无法同步设置，更改仅保存在本地。",
   "@unableToSyncSettings": {
     "description": "Error message when settings cannot be synced"
   },
-  "unableToSaveSettings": "Unable to save设置. Please check device 存储.",
+  "unableToSaveSettings": "无法保存设置，请检查设备存储。",
   "@unableToSaveSettings": {
     "description": "Error message when settings cannot be saved due to storage issues"
   },
-  "failedToUpdateSettings": "无法update设置. Please try again.",
+  "failedToUpdateSettings": "设置更新失败，请重试。",
   "@failedToUpdateSettings": {
     "description": "Generic error message when settings update fails"
   },
-  "noHistoryFound": "未找到history",
-  "loadedHistoryEntries": "Loaded {count} 历史 entries",
+  "noHistoryFound": "未找到历史记录",
+  "loadedHistoryEntries": "已加载 {count} 条历史记录",
   "@loadedHistoryEntries": {
     "placeholders": {
       "count": {
@@ -1857,7 +1857,7 @@
       }
     }
   },
-  "failedToLoadHistory": "无法load history: {error}",
+  "failedToLoadHistory": "历史记录加载失败: {error}",
   "@failedToLoadHistory": {
     "placeholders": {
       "error": {
@@ -1865,7 +1865,7 @@
       }
     }
   },
-  "loadingMoreHistory": "加载中 more 历史 (页面 {page})",
+  "loadingMoreHistory": "正在加载更多历史 (第 {page} 页)",
   "@loadingMoreHistory": {
     "placeholders": {
       "page": {
@@ -1873,7 +1873,7 @@
       }
     }
   },
-  "loadedMoreHistoryEntries": "Loaded {count} more entries, total: {total}",
+  "loadedMoreHistoryEntries": "已加载另外 {count} 条，共 {total} 条",
   "@loadedMoreHistoryEntries": {
     "placeholders": {
       "count": {
@@ -1884,8 +1884,8 @@
       }
     }
   },
-  "refreshingHistory": "Refreshing 历史",
-  "refreshedHistoryWithEntries": "Refreshed 历史 with {count} entries",
+  "refreshingHistory": "正在刷新历史",
+  "refreshedHistoryWithEntries": "历史已刷新，共 {count} 条",
   "@refreshedHistoryWithEntries": {
     "placeholders": {
       "count": {
@@ -1893,7 +1893,7 @@
       }
     }
   },
-  "failedToRefreshHistory": "无法refresh history: {error}",
+  "failedToRefreshHistory": "历史刷新失败: {error}",
   "@failedToRefreshHistory": {
     "placeholders": {
       "error": {
@@ -1901,9 +1901,9 @@
       }
     }
   },
-  "clearingAllHistory": "Clearing 全部历史",
-  "allHistoryCleared": "全部历史 cleared",
-  "failedToClearHistory": "无法清除history: {error}",
+  "clearingAllHistory": "正在清空所有历史",
+  "allHistoryCleared": "所有历史已清空",
+  "failedToClearHistory": "清空历史失败: {error}",
   "@failedToClearHistory": {
     "placeholders": {
       "error": {
@@ -1911,7 +1911,7 @@
       }
     }
   },
-  "removingHistoryItem": "Removing 历史 item: {contentId}",
+  "removingHistoryItem": "正在移除历史项: {contentId}",
   "@removingHistoryItem": {
     "placeholders": {
       "contentId": {
@@ -1919,7 +1919,7 @@
       }
     }
   },
-  "removedHistoryItem": "Removed 历史 item: {contentId}",
+  "removedHistoryItem": "已移除历史项: {contentId}",
   "@removedHistoryItem": {
     "placeholders": {
       "contentId": {
@@ -1927,7 +1927,7 @@
       }
     }
   },
-  "failedToRemoveHistoryItem": "无法移除history item: {error}",
+  "failedToRemoveHistoryItem": "移除历史项失败: {error}",
   "@failedToRemoveHistoryItem": {
     "placeholders": {
       "error": {
@@ -1935,9 +1935,9 @@
       }
     }
   },
-  "performingManualHistoryCleanup": "Performing 手动历史 cleanup",
-  "manualCleanupCompleted": "手动 cleanup completed",
-  "failedToPerformCleanup": "无法perform cleanup: {error}",
+  "performingManualHistoryCleanup": "正在执行手动历史清理",
+  "manualCleanupCompleted": "手动清理完成",
+  "failedToPerformCleanup": "执行清理失败: {error}",
   "@failedToPerformCleanup": {
     "placeholders": {
       "error": {
@@ -1945,9 +1945,9 @@
       }
     }
   },
-  "updatingCleanupSettings": "Updating cleanup设置",
-  "cleanupSettingsUpdated": "Cleanup设置已更新",
-  "addingContentToFavorites": "Adding 内容 to favorites: {title}",
+  "updatingCleanupSettings": "正在更新清理设置",
+  "cleanupSettingsUpdated": "清理设置已更新",
+  "addingContentToFavorites": "正在添加到收藏: {title}",
   "@addingContentToFavorites": {
     "placeholders": {
       "title": {
@@ -1955,7 +1955,7 @@
       }
     }
   },
-  "successfullyAddedToFavorites": "Successfully added to favorites: {title}",
+  "successfullyAddedToFavorites": "已成功添加到收藏: {title}",
   "@successfullyAddedToFavorites": {
     "placeholders": {
       "title": {
@@ -1963,7 +1963,7 @@
       }
     }
   },
-  "contentNotInFavorites": "内容 {contentId} is not in 收藏, skipping removal",
+  "contentNotInFavorites": "内容 {contentId} 不在收藏中，跳过移除",
   "@contentNotInFavorites": {
     "placeholders": {
       "contentId": {
@@ -1971,7 +1971,7 @@
       }
     }
   },
-  "callingRemoveFromFavoritesUseCase": "Calling removeFrom收藏UseCase with params: {params}",
+  "callingRemoveFromFavoritesUseCase": "调用 removeFromFavoritesUseCase，参数: {params}",
   "@callingRemoveFromFavoritesUseCase": {
     "placeholders": {
       "params": {
@@ -1979,8 +1979,8 @@
       }
     }
   },
-  "successfullyCalledRemoveFromFavoritesUseCase": "成功fully called removeFrom收藏UseCase",
-  "updatingFavoritesListInState": "Updating 收藏列表 in state, removing contentId: {contentId}",
+  "successfullyCalledRemoveFromFavoritesUseCase": "成功调用 removeFromFavoritesUseCase",
+  "updatingFavoritesListInState": "更新状态中的收藏列表，移除内容 ID: {contentId}",
   "@updatingFavoritesListInState": {
     "placeholders": {
       "contentId": {
@@ -1988,7 +1988,7 @@
       }
     }
   },
-  "favoritesCountBeforeAfter": "收藏 count: before={before}, after={after}",
+  "favoritesCountBeforeAfter": "收藏数量: 之前={before}, 之后={after}",
   "@favoritesCountBeforeAfter": {
     "placeholders": {
       "before": {
@@ -1999,8 +1999,8 @@
       }
     }
   },
-  "stateUpdatedSuccessfully": "State已更新成功ly",
-  "successfullyRemovedFromFavorites": "成功fully removed from favorites: {contentId}",
+  "stateUpdatedSuccessfully": "状态更新成功",
+  "successfullyRemovedFromFavorites": "成功从收藏移除: {contentId}",
   "@successfullyRemovedFromFavorites": {
     "placeholders": {
       "contentId": {
@@ -2008,7 +2008,7 @@
       }
     }
   },
-  "errorRemovingContentFromFavorites": "removing 内容 {contentId} from favorites: {error}错误",
+  "errorRemovingContentFromFavorites": "从收藏中移除内容 {contentId} 失败: {error}",
   "@errorRemovingContentFromFavorites": {
     "placeholders": {
       "contentId": {
@@ -2019,7 +2019,7 @@
       }
     }
   },
-  "removingFavoritesInBatch": "Removing {count} 收藏 in batch",
+  "removingFavoritesInBatch": "批量移除 {count} 个收藏",
   "@removingFavoritesInBatch": {
     "placeholders": {
       "count": {
@@ -2027,7 +2027,7 @@
       }
     }
   },
-  "successfullyRemovedFavoritesInBatch": "Successfully removed {count} 收藏 in batch",
+  "successfullyRemovedFavoritesInBatch": "成功批量移除 {count} 个收藏",
   "@successfullyRemovedFavoritesInBatch": {
     "placeholders": {
       "count": {
@@ -2035,7 +2035,7 @@
       }
     }
   },
-  "searchingFavoritesWithQuery": "Searching 收藏 with query: {query}",
+  "searchingFavoritesWithQuery": "正在搜索收藏: {query}",
   "@searchingFavoritesWithQuery": {
     "placeholders": {
       "query": {
@@ -2043,7 +2043,7 @@
       }
     }
   },
-  "foundFavoritesMatchingQuery": "Found {count} 收藏 matching query",
+  "foundFavoritesMatchingQuery": "找到 {count} 个匹配的收藏",
   "@foundFavoritesMatchingQuery": {
     "placeholders": {
       "count": {
@@ -2051,9 +2051,9 @@
       }
     }
   },
-  "clearingFavoritesSearch": "Clearing 收藏搜索",
-  "exportingFavoritesData": "Exporting 收藏 data",
-  "successfullyExportedFavorites": "Successfully exported {count} 收藏",
+  "clearingFavoritesSearch": "正在清除收藏搜索",
+  "exportingFavoritesData": "正在导出收藏数据",
+  "successfullyExportedFavorites": "成功导出 {count} 个收藏",
   "@successfullyExportedFavorites": {
     "placeholders": {
       "count": {
@@ -2061,8 +2061,8 @@
       }
     }
   },
-  "importingFavoritesData": "Importing 收藏 data",
-  "successfullyImportedFavorites": "Successfully imported {count} 收藏",
+  "importingFavoritesData": "正在导入收藏数据",
+  "successfullyImportedFavorites": "成功导入 {count} 个收藏",
   "@successfullyImportedFavorites": {
     "placeholders": {
       "count": {
@@ -2070,7 +2070,7 @@
       }
     }
   },
-  "failedToImportFavorite": "无法import favorite: {error}",
+  "failedToImportFavorite": "导入收藏失败: {error}",
   "@failedToImportFavorite": {
     "placeholders": {
       "error": {
