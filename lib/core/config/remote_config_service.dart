@@ -298,8 +298,20 @@ class RemoteConfigService {
     return isEnabledInConfig;
   }
   
+  /// Check if a feature requires premium (without checking license validity)
+  /// This is useful for UI logic that needs to check license separately
+  bool doesFeatureRequirePremium(String source, String featureName) {
+    if (!_sourceConfigs.containsKey(source)) return false;
+
+    final featureMap = _premiumRegistry[source];
+    if (featureMap == null) return false;
+
+    return featureMap[featureName] ?? false;
+  }
+
   /// Check if a specific named feature is accessible (checks enabled + premium)
-  bool isContentFeatureAccessible(String source, String featureName) {
+  /// [isPremiumActive] - Optional override for premium status. If not provided, reads from SharedPreferences
+  bool isContentFeatureAccessible(String source, String featureName, {bool? isPremiumActive}) {
     if (!_sourceConfigs.containsKey(source)) return false;
     
     // 1. Check if feature is enabled in basic config first (if accessible)
@@ -316,7 +328,8 @@ class RemoteConfigService {
     final requiresPremium = featureMap[featureName] ?? false;
     
     if (requiresPremium) {
-       final isLicenseValid = _prefs.getBool('komiktap_license_valid') ?? false;
+       // Use provided premium status or fall back to SharedPreferences
+       final isLicenseValid = isPremiumActive ?? (_prefs.getBool('komiktap_license_valid') ?? false);
        if (!isLicenseValid) {
          return false;
        }

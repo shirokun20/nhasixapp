@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/services/license_service.dart';
 
 import '../../../core/constants/text_style_const.dart';
 import '../../../l10n/app_localizations.dart';
@@ -643,16 +644,20 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         _handlePdfConversion(download);
         break;
       case 'open_pdf':
-        // Check feature flag
+        // Check premium requirement using authoritative LicenseService
         final remoteConfig = getIt<RemoteConfigService>();
-        // Offline content always has sourceId
-        final isEnabled = remoteConfig.isContentFeatureAccessible(
-            sourceId ?? SourceType.nhentai.id, 'generatePdf');
-
-        if (!isEnabled) {
-          PremiumRequiredDialog.show(context);
-          break;
+        final effectiveSourceId = sourceId ?? SourceType.nhentai.id;
+        
+        // Check if feature requires premium
+        if (remoteConfig.doesFeatureRequirePremium(effectiveSourceId, 'generatePdf')) {
+          // Use LicenseService as source of truth for premium status
+          final licenseService = getIt<LicenseService>();
+          if (!licenseService.isPremiumActive) {
+            PremiumRequiredDialog.show(context);
+            break;
+          }
         }
+        
         downloadBloc.add(DownloadOpenContentEvent(download.contentId));
         break;
     }

@@ -4,11 +4,11 @@
 
 ## 1. Penerimaan Syarat
 
-Dengan mengunduh, menginstal, atau menggunakan Kuron ("Aplikasi"), Anda setuju untuk terikat dengan Syarat dan Ketentuan ini. Jika Anda tidak setuju, mohon jangan gunakan Aplikasi ini.
+Dengan mengunduh, menginstal, atau menggunakan KomikTap ("Aplikasi"), Anda setuju untuk terikat dengan Syarat dan Ketentuan ini. Jika Anda tidak setuju, mohon jangan gunakan Aplikasi ini.
 
 ## 2. Disclaimer
 
-> **PENTING**: Kuron adalah **aplikasi klien pihak ketiga yang tidak resmi**. Aplikasi ini **TIDAK berafiliasi dengan, didukung oleh, atau terhubung dengan nhentai.net** atau operatornya.
+> **PENTING**: KomikTap adalah **aplikasi klien pihak ketiga yang tidak resmi**. Aplikasi ini **TIDAK berafiliasi dengan, didukung oleh, atau terhubung dengan nhentai.net** atau operatornya.
 
 - Aplikasi tidak meng-host, menyimpan, atau mendistribusikan konten apapun
 - Semua konten bersumber langsung dari website pihak ketiga
@@ -64,4 +64,4 @@ Untuk pertanyaan atau kekhawatiran, silakan kunjungi website resmi kami.
 
 ---
 
-*Dengan menggunakan Kuron, Anda mengakui bahwa Anda telah membaca, memahami, dan menyetujui Syarat dan Ketentuan ini.*
+*Dengan menggunakan KomikTap, Anda mengakui bahwa Anda telah membaca, memahami, dan menyetujui Syarat dan Ketentuan ini.*
