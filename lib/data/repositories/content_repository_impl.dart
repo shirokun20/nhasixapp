@@ -148,6 +148,9 @@ class ContentRepositoryImpl implements ContentRepository {
 
             return entity;
           } catch (e) {
+            if (e is core.LoginRequiredException) {
+              rethrow;
+            }
             _logger.w('Failed to fetch detail from source: $e');
             throw NetworkException('Failed to fetch content detail: $e');
           }

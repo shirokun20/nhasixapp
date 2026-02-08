@@ -1,7 +1,7 @@
 import '../base_usecase.dart';
-import '../../entities/entities.dart';
 import '../../value_objects/value_objects.dart';
 import '../../repositories/repositories.dart';
+import 'package:kuron_core/kuron_core.dart';
 
 /// Use case for getting detailed content information
 class GetContentDetailUseCase extends UseCase<Content, GetContentDetailParams> {
@@ -32,6 +32,8 @@ class GetContentDetailUseCase extends UseCase<Content, GetContentDetailParams> {
 
       return content;
     } on UseCaseException {
+      rethrow;
+    } on LoginRequiredException {
       rethrow;
     } catch (e) {
       throw NetworkException('Failed to get content detail: ${e.toString()}');

@@ -30,7 +30,6 @@ void main() {
       
       // Verify genres are parsed
       expect(firstItem.genres, isNotEmpty);
-      print('First item genres: ${firstItem.genres}');
       
       // Should have multiple genres
       expect(firstItem.genres.length, greaterThan(5));
@@ -42,9 +41,6 @@ void main() {
       
       // Print all parsed items for debugging
       for (var i = 0; i < results.length && i < 3; i++) {
-        print('\nItem $i:');
-        print('  Title: ${results[i].title}');
-        print('  Genres: ${results[i].genres}');
       }
     });
     
