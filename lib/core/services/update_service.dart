@@ -63,13 +63,14 @@ class UpdateService {
           final String versionCode = latestVersion['code']?.toString() ?? '';
           final String versionName = latestVersion['name'] ?? '';
           final String changelog = latestVersion['changelog'] ?? 'No changelog available.';
-          String downloadPath = latestVersion['download_url'] ?? '';
+          // Handle relative URL (preserved for potential future use or logging)
+          // String downloadUrl = downloadPath;
+          // if (downloadPath.isNotEmpty && !downloadPath.startsWith('http')) {
+          //    downloadUrl = '$_baseUrl$downloadPath';
+          // }
 
-          // Handle relative URL
-          String downloadUrl = downloadPath;
-          if (downloadPath.isNotEmpty && !downloadPath.startsWith('http')) {
-             downloadUrl = '$_baseUrl$downloadPath';
-          }
+          // User requested to always redirect to the general download page
+          const String downloadUrl = 'https://portal.konterkt.com/download';
 
           _logger.i('UpdateService: New version found: $versionName ($versionCode)');
           return UpdateInfo(
