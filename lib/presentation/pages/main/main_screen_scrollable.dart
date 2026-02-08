@@ -135,13 +135,24 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   /// Initialize content - check for saved search state first
   Future<void> _initializeContent() async {
     try {
+      // Get current source ID
+      final sourceCubit = getIt<SourceCubit>();
+      final sourceId = sourceCubit.state.activeSource?.id;
+
       // Load saved sorting preference
       final userDataRepository = getIt<UserDataRepository>();
       _currentSortOption = await userDataRepository.getSortingPreference();
 
-      // Check if there's a saved search filter from local storage
+      if (sourceId == null) {
+        _isShowingSearchResults = false;
+        _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
+        setState(() {});
+        return;
+      }
+
+      // Check if there's a saved search filter from local storage for this source
       final savedFilterData =
-          await getIt<LocalDataSource>().getLastSearchFilter();
+          await getIt<LocalDataSource>().getLastSearchFilter(sourceId);
 
       if (savedFilterData != null) {
         try {
@@ -157,7 +168,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             _contentBloc.add(ContentSearchEvent(_currentSearchFilter!));
           } else {
             // Invalid or empty filter, clear it and load normal content
-            await getIt<LocalDataSource>().removeLastSearchFilter();
+            await getIt<LocalDataSource>().removeLastSearchFilter(sourceId);
             _isShowingSearchResults = false;
             _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
           }
@@ -165,7 +176,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           // Error parsing filter data, clear it and load normal content
           Logger().w(
               'MainScreen: Error parsing saved filter, clearing it: $filterError');
-          await getIt<LocalDataSource>().removeLastSearchFilter();
+          await getIt<LocalDataSource>().removeLastSearchFilter(sourceId);
           _isShowingSearchResults = false;
           _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
         }
@@ -200,8 +211,14 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   /// Reload search filter from storage and apply to content bloc
   Future<void> _reloadSearchFilter() async {
     try {
+      // Get current source ID
+      final sourceCubit = getIt<SourceCubit>();
+      final sourceId = sourceCubit.state.activeSource?.id;
+
+      if (sourceId == null) return;
+
       final savedFilterData =
-          await getIt<LocalDataSource>().getLastSearchFilter();
+          await getIt<LocalDataSource>().getLastSearchFilter(sourceId);
 
       if (savedFilterData != null) {
         final savedFilter = SearchFilter.fromJson(savedFilterData);
@@ -291,21 +308,17 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
               listener: (context, state) async {
                 // Reload content when source changes
                 if (mounted) {
-                  // Clear saved search filter to prevent cross-source tag issues
-                  await getIt<LocalDataSource>().removeLastSearchFilter();
-
-                  // Reset search state
+                  // Reset search state UI first
                   setState(() {
                     _isShowingSearchResults = false;
                     _currentSearchFilter = null;
                   });
-
-                  _contentBloc.add(ContentLoadEvent(
-                    sortBy: _currentSortOption,
-                    forceRefresh: true,
-                  ));
+                  
+                  // Re-initialize content which will load saved filter for new source if exists
+                  await _initializeContent();
                 }
               },
+
             ),
           ],
           child: BlocBuilder<HomeBloc, HomeState>(
@@ -1206,7 +1219,13 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     // 2. Clear search filter from local storage
     // 3. Load normal content with current sort option
     // 4. Show success/error states properly
-    _contentBloc.add(ContentClearSearchEvent(sortBy: _currentSortOption));
+    final sourceId = getIt<SourceCubit>().state.activeSource?.id;
+    if (sourceId != null) {
+      _contentBloc.add(ContentClearSearchEvent(
+        sourceId: sourceId,
+        sortBy: _currentSortOption,
+      ));
+    }
   }
 
   /// Build content footer with pagination

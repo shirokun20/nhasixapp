@@ -65,6 +65,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   List<String> _searchHistory = [];
   List<String> _popularSearches = [];
   Timer? _debounceTimer;
+  String? _currentSourceId;
 
   // Configuration constants
   static const Duration _debounceDelay = Duration(milliseconds: 500);
@@ -84,7 +85,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     Emitter<SearchState> emit,
   ) async {
     try {
-      _logger.i('SearchBloc: Initializing search');
+      _currentSourceId = event.sourceId;
+      _logger.i('SearchBloc: Initializing search for source: $_currentSourceId');
 
       // Load search history
       _searchHistory = await _localDataSource.getSearchHistory();
@@ -106,29 +108,31 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         'romance',
         'school',
         'uniform',
-      ];
+        ];
 
       // Load search presets (from preferences)
       await _loadSearchPresets();
 
-      // Load last search filter state if exists
-      final lastFilterData = await _localDataSource.getLastSearchFilter();
-      if (lastFilterData != null) {
-        try {
-          _currentFilter = SearchFilter.fromJson(lastFilterData);
-          _logger.i('SearchBloc: Loaded last search filter state');
+      // Load last search filter state if exists for this source
+      if (_currentSourceId != null) {
+        final lastFilterData = await _localDataSource.getLastSearchFilter(_currentSourceId!);
+        if (lastFilterData != null) {
+          try {
+            _currentFilter = SearchFilter.fromJson(lastFilterData);
+            _logger.i('SearchBloc: Loaded last search filter state for $_currentSourceId');
 
-          // If there was a previous search, emit the filter updated state
-          if (_currentFilter.hasFilters) {
-            emit(SearchFilterUpdated(
-              filter: _currentFilter,
-              timestamp: DateTime.now(),
-            ));
-            return;
+            // If there was a previous search, emit the filter updated state
+            if (_currentFilter.hasFilters) {
+              emit(SearchFilterUpdated(
+                filter: _currentFilter,
+                timestamp: DateTime.now(),
+              ));
+              return;
+            }
+          } catch (e) {
+            _logger.e('SearchBloc: Error loading search filter state: $e');
+            // Continue with default initialization
           }
-        } catch (e) {
-          _logger.e('SearchBloc: Error loading search filter state: $e');
-          // Continue with default initialization
         }
       }
 
@@ -350,11 +354,11 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
       // Save search filter state to local datasource for persistence
       // BUT EXCLUDE tag clicks from detail screen to prevent unwanted saving
-      if (_currentFilter.source != SearchSource.detailScreen) {
-        await _localDataSource.saveSearchFilter(_currentFilter.toJson());
-        _logger.d('SearchBloc: Saved search filter to local storage (source: ${_currentFilter.source.displayName})');
+      if (_currentFilter.source != SearchSource.detailScreen && _currentSourceId != null) {
+        await _localDataSource.saveSearchFilter(_currentSourceId!, _currentFilter.toJson());
+        _logger.d('SearchBloc: Saved search filter to local storage (source: ${_currentFilter.source.displayName}, sourceId: $_currentSourceId)');
       } else {
-        _logger.d('SearchBloc: Skipped saving search filter - tag click from detail screen');
+        _logger.d('SearchBloc: Skipped saving search filter - tag click from detail screen or no sourceId');
       }
 
       // Perform search
@@ -411,7 +415,9 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
     // Clear search filter state from local datasource
     try {
-      await _localDataSource.clearSearchFilter();
+      if (_currentSourceId != null) {
+        await _localDataSource.removeLastSearchFilter(_currentSourceId!);
+      }
     } catch (e) {
       _logger.e('SearchBloc: Error clearing search filter state: $e');
     }
@@ -957,7 +963,10 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   /// Get last search filter from local datasource
   Future<SearchFilter?> getLastSearchFilter() async {
     try {
-      final filterData = await _localDataSource.getLastSearchFilter();
+      if (_currentSourceId == null) {
+        return null;
+      }
+      final filterData = await _localDataSource.getLastSearchFilter(_currentSourceId!);
       if (filterData != null) {
         return SearchFilter.fromJson(filterData);
       }

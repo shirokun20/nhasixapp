@@ -66,13 +66,15 @@ class ContentClearEvent extends ContentEvent {
 /// Event to clear search results and return to normal content
 class ContentClearSearchEvent extends ContentEvent {
   const ContentClearSearchEvent({
+    required this.sourceId,
     this.sortBy = SortOption.newest,
   });
 
+  final String sourceId;
   final SortOption sortBy;
 
   @override
-  List<Object?> get props => [sortBy];
+  List<Object?> get props => [sourceId, sortBy];
 }
 
 /// Event to search content with filters

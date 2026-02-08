@@ -960,8 +960,8 @@ class LocalDataSource {
 
   // ==================== SEARCH FILTER STATE PERSISTENCE ====================
 
-  /// Save search filter state for persistence
-  Future<void> saveSearchFilter(Map<String, dynamic> filterData) async {
+  /// Save search filter state for persistence with sourceId
+  Future<void> saveSearchFilter(String sourceId, Map<String, dynamic> filterData) async {
     try {
       final db = await _getSafeDatabase();
       if (db == null) {
@@ -972,22 +972,22 @@ class LocalDataSource {
       await db.insert(
         'search_filter_state',
         {
-          'id': 1, // Always use ID 1 for single state
+          'source_id': sourceId,
           'filter_data': jsonEncode(filterData),
           'saved_at': DateTime.now().millisecondsSinceEpoch,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
-      _logger.d('Saved search filter state');
+      _logger.d('Saved search filter state for $sourceId');
     } catch (e) {
       _logger.e('Error saving search filter: $e');
       rethrow;
     }
   }
 
-  /// Get last search filter state
-  Future<Map<String, dynamic>?> getLastSearchFilter() async {
+  /// Get last search filter state for a specific source
+  Future<Map<String, dynamic>?> getLastSearchFilter(String sourceId) async {
     try {
       final db = await _getSafeDatabase();
       if (db == null) {
@@ -997,8 +997,8 @@ class LocalDataSource {
 
       final result = await db.query(
         'search_filter_state',
-        where: 'id = ?',
-        whereArgs: [1],
+        where: 'source_id = ?',
+        whereArgs: [sourceId],
         limit: 1,
       );
 
@@ -1012,8 +1012,8 @@ class LocalDataSource {
     }
   }
 
-  /// Clear search filter state
-  Future<void> clearSearchFilter() async {
+  /// Clear search filter state for a specific source
+  Future<void> removeLastSearchFilter(String sourceId) async {
     try {
       final db = await _getSafeDatabase();
       if (db == null) {
@@ -1021,8 +1021,12 @@ class LocalDataSource {
         return;
       }
 
-      await db.delete('search_filter_state');
-      _logger.d('Cleared search filter state');
+      await db.delete(
+        'search_filter_state',
+        where: 'source_id = ?',
+        whereArgs: [sourceId],
+      );
+      _logger.d('Cleared search filter state for $sourceId');
     } catch (e) {
       _logger.e('Error clearing search filter: $e');
     }
@@ -1234,14 +1238,5 @@ class LocalDataSource {
     }
   }
 
-  /// Add method to remove last search filter (fix for search persistence issue)
-  Future<void> removeLastSearchFilter() async {
-    try {
-      await clearSearchFilter();
-      _logger.d('Removed last search filter');
-    } catch (e) {
-      _logger.e('Error removing last search filter: $e');
-      rethrow;
-    }
-  }
+
 }

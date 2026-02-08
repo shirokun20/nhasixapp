@@ -493,42 +493,39 @@ class UserDataRepositoryImpl implements UserDataRepository {
   // ==================== SEARCH STATE PERSISTENCE ====================
 
   @override
-  Future<void> saveSearchFilter(SearchFilter filter) async {
+  Future<void> saveSearchFilter(String sourceId, SearchFilter filter) async {
     try {
-      _logger.d('Saving search filter state');
-      await localDataSource.saveSearchFilter(filter.toJson());
+      _logger.d('Saving search filter state for $sourceId');
+      await localDataSource.saveSearchFilter(sourceId, filter.toJson());
       _logger.d('Search filter state saved');
     } catch (e, stackTrace) {
-      _logger.e('Failed to save search filter',
-          error: e, stackTrace: stackTrace);
+      _logger.e('Failed to save search filter', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
 
   @override
-  Future<SearchFilter?> getLastSearchFilter() async {
+  Future<SearchFilter?> getLastSearchFilter(String sourceId) async {
     try {
-      final filterData = await localDataSource.getLastSearchFilter();
+      final filterData = await localDataSource.getLastSearchFilter(sourceId);
       if (filterData != null) {
         return SearchFilter.fromJson(filterData);
       }
       return null;
     } catch (e, stackTrace) {
-      _logger.e('Failed to get last search filter',
-          error: e, stackTrace: stackTrace);
+      _logger.e('Failed to get last search filter', error: e, stackTrace: stackTrace);
       return null;
     }
   }
 
   @override
-  Future<void> clearSearchFilter() async {
+  Future<void> clearSearchFilter(String sourceId) async {
     try {
-      _logger.d('Clearing search filter state');
-      await localDataSource.clearSearchFilter();
+      _logger.d('Clearing search filter state for $sourceId');
+      await localDataSource.removeLastSearchFilter(sourceId);
       _logger.d('Search filter state cleared');
     } catch (e, stackTrace) {
-      _logger.e('Failed to clear search filter',
-          error: e, stackTrace: stackTrace);
+      _logger.e('Failed to clear search filter', error: e, stackTrace: stackTrace);
     }
   }
 

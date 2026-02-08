@@ -10,7 +10,12 @@ abstract class SearchEvent extends Equatable {
 
 /// Event to initialize search
 class SearchInitializeEvent extends SearchEvent {
-  const SearchInitializeEvent();
+  const SearchInitializeEvent({required this.sourceId});
+
+  final String sourceId;
+
+  @override
+  List<Object> get props => [sourceId];
 }
 
 /// Event to perform search with query

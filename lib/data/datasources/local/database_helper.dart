@@ -7,7 +7,7 @@ import 'package:logger/logger.dart';
 /// Database helper class for managing SQLite database
 class DatabaseHelper {
   static const String _databaseName = 'nhasix_app.db';
-  static const int _databaseVersion = 7; // Updated for multi-source support
+  static const int _databaseVersion = 8; // Updated for multi-source search filter
 
   static Database? _database;
   static final Logger _logger = Logger();
@@ -306,10 +306,32 @@ class DatabaseHelper {
       await _onCreate(db, newVersion);
     }
 
-    // For major version changes, recreate database
+  // For major version changes, recreate database
     if (oldVersion < newVersion && (newVersion - oldVersion) > 2) {
       await _dropAllTables(db);
       await _onCreate(db, newVersion);
+    }
+    
+    // Version 8: Update search_filter_state to support per-source storage
+    if (oldVersion < 8 && newVersion >= 8) {
+      _logger.i('Upgrading to version 8: Updating search_filter_state for multi-source support');
+      
+      try {
+        // Drop existing table and recreate with source_id
+        await db.execute('DROP TABLE IF EXISTS search_filter_state');
+        
+        await db.execute('''
+          CREATE TABLE search_filter_state (
+            source_id TEXT PRIMARY KEY,
+            filter_data TEXT, -- JSON serialized SearchFilter
+            saved_at INTEGER
+          )
+        ''');
+        
+        _logger.i('Updated search_filter_state table schema successfully');
+      } catch (e) {
+        _logger.e('Error upgrading search_filter_state table: $e');
+      }
     }
   }
 
@@ -393,7 +415,7 @@ class DatabaseHelper {
   void _createSearchFilterStateTable(Batch batch) {
     batch.execute('''
       CREATE TABLE search_filter_state (
-        id INTEGER PRIMARY KEY DEFAULT 1,
+        source_id TEXT PRIMARY KEY,
         filter_data TEXT, -- JSON serialized SearchFilter
         saved_at INTEGER
       )

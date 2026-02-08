@@ -224,16 +224,20 @@ abstract class UserDataRepository {
 
   /// Save search filter state for persistence
   ///
+  /// [sourceId] - Source identifier
   /// [filter] - Search filter to save
-  Future<void> saveSearchFilter(SearchFilter filter);
+  Future<void> saveSearchFilter(String sourceId, SearchFilter filter);
 
   /// Get last search filter state
   ///
+  /// [sourceId] - Source identifier
   /// Returns last saved search filter or null if none exists
-  Future<SearchFilter?> getLastSearchFilter();
+  Future<SearchFilter?> getLastSearchFilter(String sourceId);
 
   /// Clear search filter state
-  Future<void> clearSearchFilter();
+  ///
+  /// [sourceId] - Source identifier
+  Future<void> clearSearchFilter(String sourceId);
 
   // ==================== SORTING PREFERENCES ====================
 
