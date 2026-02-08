@@ -171,19 +171,19 @@ class OfflineContentManager {
 
       for (final sId in distinctSources) {
         // NEW: Source-based paths (nhasix/{source}/{contentId}/)
-        paths.add(path.join(downloadsPath, 'nhasix', sId, contentId));
+        paths.add(path.join(downloadsPath, 'komikTapXKuron', sId, contentId));
       }
 
       // LEGACY: Direct paths (nhasix/{contentId}/)
-      paths.add(path.join(downloadsPath, 'nhasix', contentId));
+      paths.add(path.join(downloadsPath, 'komikTapXKuron', contentId));
 
       // Try app documents directory
       final documentsDir = await getApplicationDocumentsDirectory();
       for (final sId in distinctSources) {
         paths.add(path.join(
-            documentsDir.path, 'downloads', 'nhasix', sId, contentId));
+            documentsDir.path, 'downloads', 'komikTapXKuron', sId, contentId));
       }
-      paths.add(path.join(documentsDir.path, 'downloads', 'nhasix', contentId));
+      paths.add(path.join(documentsDir.path, 'downloads', 'komikTapXKuron', contentId));
 
       // Try external storage directory directly
       try {
@@ -196,10 +196,10 @@ class OfflineContentManager {
             for (final sId in distinctSources) {
               // NEW: Source-based paths
               paths.add(path.join(
-                  externalRoot, folderName, 'nhasix', sId, contentId));
+                  externalRoot, folderName, 'komikTapXKuron', sId, contentId));
             }
             // LEGACY: Direct paths
-            paths.add(path.join(externalRoot, folderName, 'nhasix', contentId));
+            paths.add(path.join(externalRoot, folderName, 'komikTapXKuron', contentId));
           }
         }
       } catch (e) {
@@ -447,7 +447,7 @@ class OfflineContentManager {
   String _extractSourceIdFromPath(String contentPath) {
     try {
       final segments = contentPath.split(path.separator);
-      final nhasixIndex = segments.indexOf('nhasix');
+      final nhasixIndex = segments.indexOf('komikTapXKuron');
       if (nhasixIndex != -1 && nhasixIndex + 1 < segments.length) {
         final potentialSource = segments[nhasixIndex + 1];
         // Only return if it's a known source (not a content ID)

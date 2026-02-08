@@ -15,7 +15,7 @@ import 'package:path/path.dart' as path;
 ///
 /// Supports metadata.json validation for downloaded content
 class LocalImagePreloader {
-  static const String _baseLocalPath = 'nhasix';
+  static const String _baseLocalPath = 'komikTapXKuron';
   static const String _cacheSubPath = 'cache';
   static const Duration _cacheExpiryDuration =
       Duration(hours: 6); // Cache expires in 6 hours

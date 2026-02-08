@@ -296,11 +296,11 @@ class PdfConversionService {
           if (sourceId != null) {
             // New structure: Downloads/nhasix/[sourceId]/[contentId]/pdf/
             outputDir = Directory(
-                path.join(downloadsPath, 'nhasix', sourceId, contentId, 'pdf'));
+                path.join(downloadsPath, 'komikTapXKuron', sourceId, contentId, 'pdf'));
           } else {
             // Legacy/Fallback: Downloads/nhasix/[contentId]/pdf/
             outputDir =
-                Directory(path.join(downloadsPath, 'nhasix', contentId, 'pdf'));
+                Directory(path.join(downloadsPath, 'komikTapXKuron', contentId, 'pdf'));
           }
         } else {
           // Fallback ke folder umum: Downloads/nhasix-generate/pdf/

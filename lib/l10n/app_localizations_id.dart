@@ -3332,7 +3332,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get backupNotFoundMessage =>
-      'Folder cadangan \'nhasix\' tidak ditemukan di lokasi default. Apakah Anda ingin memilih folder kustom yang berisi cadangan Anda?';
+      'Folder cadangan \'komikTapXKuron\' tidak ditemukan di lokasi default. Apakah Anda ingin memilih folder kustom yang berisi cadangan Anda?';
 
   @override
   String get selectFolder => 'Pilih Folder';

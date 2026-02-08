@@ -3280,7 +3280,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get backupNotFoundMessage =>
-      '在默认位置未找到\'nhasix\'备份文件夹。您想选择包含备份的自定义文件夹吗？';
+      '在默认位置未找到\'komikTapXKuron\'备份文件夹。您想选择包含备份的自定义文件夹吗？';
 
   @override
   String get selectFolder => '选择文件夹';

@@ -2319,7 +2319,7 @@
   "defaultStorage": "Default (Internal)",
   "storageDescription": "Choose a folder to save downloads",
   "backupNotFound": "Backup Not Found",
-  "backupNotFoundMessage": "No 'nhasix' backup folder was found in the default location. Would you like to select a custom folder containing your backup?",
+  "backupNotFoundMessage": "No 'komikTapXKuron' backup folder was found in the default location. Would you like to select a custom folder containing your backup?",
   "selectFolder": "Select Folder",
   "premiumFeature": "Premium Feature",
   "premiumRequired": "Premium Required",

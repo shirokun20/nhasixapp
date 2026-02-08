@@ -36,7 +36,7 @@ class MockRemoteConfigService extends RemoteConfigService {
       progressUpdateIntervalMs: 100,
     ),
     storage: cfg.AppStorage(
-      backupFolderName: 'nhasix',
+      backupFolderName: 'komikTapXKuron',
       maxImageSizeKb: 200,
       pdfPartsSizePages: 100,
     ),

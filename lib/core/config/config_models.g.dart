@@ -467,7 +467,7 @@ Map<String, dynamic> _$AppUiConfigToJson(AppUiConfig instance) =>
     };
 
 AppStorage _$AppStorageFromJson(Map<String, dynamic> json) => AppStorage(
-      backupFolderName: json['backupFolderName'] as String? ?? 'nhasix',
+      backupFolderName: json['backupFolderName'] as String? ?? 'komikTapXKuron',
       maxImageSizeKb: (json['maxImageSizeKb'] as num?)?.toInt() ?? 200,
       pdfPartsSizePages: (json['pdfPartsSizePages'] as num?)?.toInt() ?? 100,
     );

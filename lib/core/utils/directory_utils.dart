@@ -162,15 +162,15 @@ class DirectoryUtils {
         debugPrint('DIRECTORY_UTILS: Custom storage exists: $customExists');
         
         if (customExists) {
-          // Check if 'nhasix' subfolder exists inside custom root (Standard structure)
-          final nhasixInCustom = Directory(path.join(customRoot, 'nhasix'));
+          // Check if 'komikTapXKuron' subfolder exists inside custom root (Standard structure)
+          final nhasixInCustom = Directory(path.join(customRoot, 'komikTapXKuron'));
           if (await nhasixInCustom.exists()) {
              _logger.d('DirectoryUtils: Found nhasix folder in custom root: ${nhasixInCustom.path}');
              debugPrint('DIRECTORY_UTILS: Found nhasix folder in custom root: ${nhasixInCustom.path}');
              return nhasixInCustom.path;
           }
 
-          // If 'nhasix' subfolder doesn't exist, assume custom root IS the backup folder (User selected the 'nhasix' folder itself or a custom named folder)
+          // If 'komikTapXKuron' subfolder doesn't exist, assume custom root IS the backup folder (User selected the 'komikTapXKuron' folder itself or a custom named folder)
           _logger.d('DirectoryUtils: nhasix subfolder not found, using custom root as base: $customRoot');
           debugPrint('DIRECTORY_UTILS: nhasix subfolder not found, using custom root as base: $customRoot');
           return customRoot;
@@ -186,7 +186,7 @@ class DirectoryUtils {
       debugPrint(
           'DIRECTORY_UTILS: getDownloadsDirectory() returned: $downloadsPath');
 
-      final nhasixPath = path.join(downloadsPath, 'nhasix');
+      final nhasixPath = path.join(downloadsPath, 'komikTapXKuron');
       debugPrint('DIRECTORY_UTILS: Looking for nhasix folder at: $nhasixPath');
 
       final nhasixDir = Directory(nhasixPath);

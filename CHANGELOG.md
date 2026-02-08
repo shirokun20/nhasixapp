@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.0.0] - 2026-02-08
+
+### 🚀 Official Release
+- **New Update System**: Switched to `portal.konterkt.com` for faster, more reliable updates.
+- **Improved Downloads**: Updates now redirect users to a dedicated download page for better experience.
+- **Performance**: Optimized APK size and startup time.
+- **Universal APK**: Switched to a single, optimized universal APK for all devices.
+- **Smart History**: Enabled auto-cleanup for history to keep the app lightweight.
+
 ## [0.9.9] - 2026-01-28
 
 ### 🚀 Pre-Release Polish

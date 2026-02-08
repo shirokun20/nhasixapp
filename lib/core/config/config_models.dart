@@ -620,7 +620,7 @@ class AppStorage {
   final int pdfPartsSizePages;
 
   AppStorage({
-    this.backupFolderName = 'nhasix',
+    this.backupFolderName = 'komikTapXKuron',
     this.maxImageSizeKb = 200,
     this.pdfPartsSizePages = 100,
   });

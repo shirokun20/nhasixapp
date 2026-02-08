@@ -3318,7 +3318,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backupNotFoundMessage =>
-      'No \'nhasix\' backup folder was found in the default location. Would you like to select a custom folder containing your backup?';
+      'No \'komikTapXKuron\' backup folder was found in the default location. Would you like to select a custom folder containing your backup?';
 
   @override
   String get selectFolder => 'Select Folder';

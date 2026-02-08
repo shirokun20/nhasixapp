@@ -797,9 +797,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             currentState.settings.customStorageRoot!.isNotEmpty) {
           final baseDownloadPath = currentState.settings.customStorageRoot!;
           
-          // Match DownloadService structure: [Root]/nhasix/[sourceId]/[contentId]
+          // Match DownloadService structure: [Root]/[backupFolderName]/[sourceId]/[contentId]
           savePath = path.join(
-              baseDownloadPath, 'nhasix', content.sourceId, event.contentId);
+              baseDownloadPath, AppStorage.backupFolderName, content.sourceId, event.contentId);
         } else {
            // STRICT REQUIREMENT: If customStorageRoot is empty, DO NOT ALLOW DOWNLOAD.
            _logger.e('❌ Download blocked: No custom storage root selected.');
@@ -1349,10 +1349,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     if (pathToDelete == null || pathToDelete.isEmpty) {
        // Try to resolve based on settings and ID
        if (currentState.settings.customStorageRoot != null) {
-          // Best guess reconstruction: root/nhasix/[source]/[id]
+          // Best guess reconstruction: root/[backupFolderName]/[source]/[id]
           // We might need sourceId, hopefully it's in the download object or we guess
           final sourceId = download.sourceId ?? 'unknown'; // Fallback might fail but worth a try or iterate sources
-          pathToDelete = path.join(currentState.settings.customStorageRoot!, 'nhasix', sourceId, event.contentId);
+          pathToDelete = path.join(currentState.settings.customStorageRoot!, AppStorage.backupFolderName, sourceId, event.contentId);
        }
     }
 
@@ -2349,7 +2349,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       // Get the downloads directory
       final downloadsPath = await DownloadStorageUtils.getDownloadsDirectory();
-      final nhasixDir = Directory(path.join(downloadsPath, 'nhasix'));
+      final nhasixDir = Directory(path.join(downloadsPath, 'komikTapXKuron'));
 
       if (!await nhasixDir.exists()) {
         _logger
@@ -2532,7 +2532,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         // Try to reconstruct path
          if (_settings.customStorageRoot != null && _settings.customStorageRoot!.isNotEmpty) {
              final sourceId = download.sourceId ?? SourceType.crotpedia.id;
-             downloadPath = path.join(_settings.customStorageRoot!, 'nhasix', sourceId, contentId);
+             downloadPath = path.join(_settings.customStorageRoot!, 'komikTapXKuron', sourceId, contentId);
              _logger.d('DownloadBloc: Reconstructed path for open: $downloadPath');
          }
       }

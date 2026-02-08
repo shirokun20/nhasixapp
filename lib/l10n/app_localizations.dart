@@ -5715,7 +5715,7 @@ abstract class AppLocalizations {
   /// No description provided for @backupNotFoundMessage.
   ///
   /// In en, this message translates to:
-  /// **'No \'nhasix\' backup folder was found in the default location. Would you like to select a custom folder containing your backup?'**
+  /// **'No \'komikTapXKuron\' backup folder was found in the default location. Would you like to select a custom folder containing your backup?'**
   String get backupNotFoundMessage;
 
   /// No description provided for @selectFolder.
