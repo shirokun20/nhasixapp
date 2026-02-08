@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:extended_image/extended_image.dart';
-import '../../core/utils/webtoon_detector.dart';
 import '../../data/models/reader_settings_model.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
@@ -51,8 +50,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
-  // 🎯 PHASE 2: Cache loaded image size for webtoon detection
-  Size? _loadedImageSize;
+
 
   @override
   void initState() {
@@ -86,25 +84,23 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   /// 🎯 PHASE 2: Automatically detects webtoon images and applies BoxFit.fitWidth
   /// for better vertical scrolling experience.
   BoxFit _getAdaptiveBoxFit() {
-    // Check if image is loaded and detect webtoon
-    if (_loadedImageSize != null) {
-      final isWebtoon = WebtoonDetector.isWebtoon(_loadedImageSize!);
-
-      if (isWebtoon) {
-        // Webtoon images: Use fitWidth to fill screen width
-        // This allows full vertical scrolling without horizontal overflow
-        debugPrint('🎨 Webtoon detected (page ${widget.pageNumber}): '
-            'AR=${WebtoonDetector.getAspectRatio(_loadedImageSize!)?.toStringAsFixed(2)} '
-            '→ Using BoxFit.fitWidth');
-        return BoxFit.fitWidth;
-      }
-    }
-
-    // Normal images: Use BoxFit.contain for proper centering
-    // BoxFit.contain will:
-    // 1. Fit the entire image within bounds
-    // 2. Maintain aspect ratio
-    // 3. Auto-center the image (critical for PageView)
+    // 🐛 BUG FIX: Always use BoxFit.contain for ALL images
+    // 
+    // PROBLEM: BoxFit.fitWidth was causing aspect ratio distortion on different screens:
+    // - On Infinix Smart 7 (HD+ 720×1612, ~267 ppi): Images looked "fat"/stretched
+    // - On POCO X6 Pro (1.5K 1220×2712, ~446 ppi): Images looked "slim"/correct
+    // 
+    // ROOT CAUSE: BoxFit.fitWidth scales to screen width, but different screen aspect
+    // ratios (wider vs narrower) can cause the image to appear distorted when the
+    // height is constrained differently.
+    // 
+    // SOLUTION: BoxFit.contain ensures the ENTIRE image fits within the view while
+    // preserving its aspect ratio, regardless of screen dimensions. This provides
+    // consistent rendering across all devices.
+    // 
+    // TRADE-OFF: Users may see small letterboxing (black bars) on sides for images
+    // that don't perfectly match screen aspect ratio, but this is preferable to
+    // distorted/stretched images.
     return BoxFit.contain;
 
     /* Original adaptive strategy (caused centering issues):
@@ -171,7 +167,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         key:
             ValueKey('extended_image_${widget.contentId}_${widget.pageNumber}'),
         fit: _getAdaptiveBoxFit(),
-        mode: widget.enableZoom
+        mode: widget.enableZoom &&
+                widget.readingMode != ReadingMode.continuousScroll
             ? ExtendedImageMode.gesture
             : ExtendedImageMode.none,
         clearMemoryCacheWhenDispose: false,
@@ -227,7 +224,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         key:
             ValueKey('extended_image_${widget.contentId}_${widget.pageNumber}'),
         fit: _getAdaptiveBoxFit(),
-        mode: widget.enableZoom
+        mode: widget.enableZoom &&
+                widget.readingMode != ReadingMode.continuousScroll
             ? ExtendedImageMode.gesture
             : ExtendedImageMode.none,
         clearMemoryCacheWhenDispose: false,

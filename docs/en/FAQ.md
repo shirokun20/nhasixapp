@@ -2,19 +2,19 @@
 
 ---
 
-**Q: What is Kuron?**
+**Q: What is KomikTap?**
 
-Kuron is an unofficial, third-party client for browsing content. It provides a mobile-friendly interface with additional features like offline reading and favorites.
-
----
-
-**Q: Is Kuron free?**
-
-Yes, Kuron is completely free and open-source. You can view the source code on GitHub.
+KomikTap is an unofficial, third-party client for browsing content. It provides a mobile-friendly interface with additional features like offline reading and favorites.
 
 ---
 
-**Q: Is Kuron safe to use?**
+**Q: Is KomikTap free?**
+
+Yes, KomikTap is completely free and open-source. You can view the source code on GitHub.
+
+---
+
+**Q: Is KomikTap safe to use?**
 
 Yes. The app does not collect any personal data and all information is stored locally on your device.
 
@@ -30,7 +30,7 @@ Go to **Settings → Display → Blur Thumbnails** and turn it OFF.
 
 **Q: Where are downloaded files saved?**
 
-Downloads are saved in: `Downloads/nhasix/` folder on your device.
+Downloads are saved in: `Downloads/KomikTapXKuron/` folder on your device.
 
 ---
 
@@ -92,7 +92,7 @@ Try these solutions:
 
 **Q: Does the app collect my data?**
 
-No. Kuron does not collect any personal information. All data (history, favorites, settings) is stored locally on your device only.
+No. KomikTap does not collect any personal information. All data (history, favorites, settings) is stored locally on your device only.
 
 ---
 

@@ -4,7 +4,7 @@
 
 ## Overview
 
-Kuron ("the App") is committed to protecting your privacy. This Privacy Policy explains how we handle your information when you use our App.
+KomikTap ("the App") is committed to protecting your privacy. This Privacy Policy explains how we handle your information when you use our App.
 
 ## Data Collection
 
@@ -88,4 +88,4 @@ For privacy concerns or questions, please visit our GitHub repository.
 
 ---
 
-*Your privacy is important to us. Kuron is designed to be a privacy-respecting application.*
+*Your privacy is important to us. KomikTap is designed to be a privacy-respecting application.*

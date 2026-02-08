@@ -2,19 +2,19 @@
 
 ---
 
-**Q: Apa itu Kuron?**
+**Q: Apa itu KomikTap?**
 
-Kuron adalah klien pihak ketiga tidak resmi untuk menjelajahi konten. Aplikasi ini menyediakan antarmuka yang ramah seluler dengan fitur tambahan seperti pembacaan offline dan favorit.
-
----
-
-**Q: Apakah Kuron gratis?**
-
-Ya, Kuron sepenuhnya gratis dan open-source. Anda dapat melihat kode sumbernya di GitHub.
+KomikTap adalah klien pihak ketiga tidak resmi untuk menjelajahi konten. Aplikasi ini menyediakan antarmuka yang ramah seluler dengan fitur tambahan seperti pembacaan offline dan favorit.
 
 ---
 
-**Q: Apakah Kuron aman digunakan?**
+**Q: Apakah KomikTap gratis?**
+
+Ya, KomikTap sepenuhnya gratis dan open-source. Anda dapat melihat kode sumbernya di GitHub.
+
+---
+
+**Q: Apakah KomikTap aman digunakan?**
 
 Ya. Aplikasi tidak mengumpulkan data pribadi apapun dan semua informasi disimpan secara lokal di perangkat Anda.
 
@@ -30,7 +30,7 @@ Pergi ke **Pengaturan → Tampilan → Blur Thumbnail** dan matikan.
 
 **Q: Di mana file unduhan disimpan?**
 
-Unduhan disimpan di folder: `Downloads/nhasix/` di perangkat Anda.
+Unduhan disimpan di folder: `Downloads/KomikTapXKuron/` di perangkat Anda.
 
 ---
 
@@ -92,7 +92,7 @@ Coba solusi berikut:
 
 **Q: Apakah aplikasi mengumpulkan data saya?**
 
-Tidak. Kuron tidak mengumpulkan informasi pribadi apapun. Semua data (riwayat, favorit, pengaturan) disimpan secara lokal di perangkat Anda saja.
+Tidak. KomikTap tidak mengumpulkan informasi pribadi apapun. Semua data (riwayat, favorit, pengaturan) disimpan secara lokal di perangkat Anda saja.
 
 ---
 

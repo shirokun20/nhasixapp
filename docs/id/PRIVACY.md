@@ -4,7 +4,7 @@
 
 ## Ringkasan
 
-Kuron ("Aplikasi") berkomitmen untuk melindungi privasi Anda. Kebijakan Privasi ini menjelaskan bagaimana kami menangani informasi Anda saat menggunakan Aplikasi kami.
+KomikTap ("Aplikasi") berkomitmen untuk melindungi privasi Anda. Kebijakan Privasi ini menjelaskan bagaimana kami menangani informasi Anda saat menggunakan Aplikasi kami.
 
 ## Pengumpulan Data
 
@@ -88,4 +88,4 @@ Untuk kekhawatiran atau pertanyaan privasi, silakan kunjungi repositori GitHub k
 
 ---
 
-*Privasi Anda penting bagi kami. Kuron dirancang untuk menjadi aplikasi yang menghormati privasi.*
+*Privasi Anda penting bagi kami. KomikTap dirancang untuk menjadi aplikasi yang menghormati privasi.*

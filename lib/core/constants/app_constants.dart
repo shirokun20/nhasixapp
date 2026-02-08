@@ -91,7 +91,7 @@ class AppStorage {
  
   /// Backup folder name
   static String get backupFolderName =>
-      _remoteConfig.appConfig?.storage?.backupFolderName ?? 'komikTapXKuron';
+      _remoteConfig.appConfig?.storage?.backupFolderName ?? 'KomikTapXKuron';
  
   /// Default source ID for backward compatibility with existing downloads
   static final String defaultSourceId = SourceType.nhentai.id;

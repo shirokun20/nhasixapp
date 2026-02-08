@@ -176,6 +176,10 @@ class MyApp extends StatelessWidget {
 
   /// Convert settings language to Locale
   Locale _getLocaleFromSettings(SettingsState settingsState) {
+    // FORCE INDONESIAN as per user feedback
+    return const Locale('id');
+    
+    /* Previous logic preserved for reference but disabled
     if (settingsState is SettingsLoaded) {
       switch (settingsState.preferences.defaultLanguage) {
         case 'indonesian':
@@ -188,5 +192,6 @@ class MyApp extends StatelessWidget {
       }
     }
     return const Locale('en'); // Default to English
+    */
   }
 }

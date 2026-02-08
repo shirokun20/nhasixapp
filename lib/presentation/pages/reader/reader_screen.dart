@@ -160,6 +160,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
         _prefetchImages(
             clampedPage, state.content!.imageUrls, state.imageMetadata);
       }
+
+      // ✨ NEW: Auto-hide UI on scroll down
+      // If scrolling down (user moving finger up) and UI is visible -> hide it
+      if (_scrollController.position.userScrollDirection.toString() ==
+              'ScrollDirection.reverse' &&
+          (state.showUI ?? false)) {
+        _readerCubit.hideUI();
+      }
     }
   }
 
@@ -611,7 +619,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       return Container(
         key: ValueKey(
             'image_viewer_$pageNumber'), // 🐛 FIX: Preserve widget identity to prevent re-loading
-        margin: const EdgeInsets.only(bottom: 8.0),
+        // margin: const EdgeInsets.only(bottom: 8.0), // REMOVED GAP
         child: ExtendedImageReaderWidget(
           imageUrl: imageUrl,
           contentId: widget.contentId,

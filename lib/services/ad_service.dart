@@ -25,7 +25,7 @@ class AdService {
       // 2. Enable test mode (pass configuration to native side)
       // Setting testMode to true for development
       // TODO: Replace with your actual StartApp App ID
-      const String appId = "200467444"; // Example StartApp Test ID
+      const String appId = "201356049"; // Example StartApp Test ID
       await KuronAds.initialize(appId: appId, testMode: false);
       
       _logger.i('AdService: Logic initialized. Native Plugin Ready.');

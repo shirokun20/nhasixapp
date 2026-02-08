@@ -89,22 +89,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: (v) => context.read<SettingsCubit>().updateTheme(v!),
               theme: theme,
             ),
-            _buildDivider(theme),
-            _buildDropdownTile(
-              context: context,
-              title: l10n.appLanguage,
-              subtitle: 'Select your preferred language',
-              value: prefs.defaultLanguage,
-              items: [
-                DropdownMenuItem(value: 'english', child: Text(l10n.english)),
-                DropdownMenuItem(
-                    value: 'indonesian', child: Text(l10n.indonesian)),
-                DropdownMenuItem(value: 'chinese', child: Text(l10n.chinese)),
-              ],
-              onChanged: (v) =>
-                  context.read<SettingsCubit>().updateDefaultLanguage(v!),
-              theme: theme,
-            ),
+            // _buildDivider(theme),
+            // _buildDropdownTile(
+            //   context: context,
+            //   title: l10n.appLanguage,
+            //   subtitle: 'Select your preferred language',
+            //   value: 'indonesian', // FORCE SELECTION
+            //   items: [
+            //     // DropdownMenuItem(value: 'english', child: Text(l10n.english)),
+            //     DropdownMenuItem(
+            //         value: 'indonesian', child: Text(l10n.indonesian)),
+            //     // DropdownMenuItem(value: 'chinese', child: Text(l10n.chinese)),
+            //   ],
+            //   onChanged: (v) =>
+            //       context.read<SettingsCubit>().updateDefaultLanguage(v!),
+            //   theme: theme,
+            // ),
             _buildDivider(theme),
             _buildDropdownTile(
               context: context,

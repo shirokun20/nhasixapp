@@ -525,8 +525,8 @@ class _DetailScreenState extends State<DetailScreen> {
                     const SizedBox(height: 24),
 
                     // Statistics section
-                    _buildStatisticsSection(content),
-                    const SizedBox(height: 32),
+                    // _buildStatisticsSection(content),
+                    // const SizedBox(height: 32),
 
                     // Related content section
                     if (content.relatedContent.isNotEmpty) ...[
@@ -618,15 +618,16 @@ class _DetailScreenState extends State<DetailScreen> {
 
           // Metadata rows with enhanced styling
           _buildMetadataRow('Source', content.source, Icons.dns_rounded),
-          _buildMetadataRow(
-              AppLocalizations.of(context)!.idLabel, content.id, Icons.tag),
-          _buildMetadataRow(AppLocalizations.of(context)!.pagesLabel,
-              '${content.pageCount}', Icons.menu_book),
-          _buildMetadataRow(AppLocalizations.of(context)!.languageLabel,
-              content.language.toLowerCase(), Icons.language),
-          if (content.artists.isNotEmpty)
-            _buildMetadataRow(AppLocalizations.of(context)!.artistLabel,
-                content.artists.join(', '), Icons.person),
+          // User feedback: Hide ID, Pages, Language, Artist
+          // _buildMetadataRow(
+          //     AppLocalizations.of(context)!.idLabel, content.id, Icons.tag),
+          // _buildMetadataRow(AppLocalizations.of(context)!.pagesLabel,
+          //     '${content.pageCount}', Icons.menu_book),
+          // _buildMetadataRow(AppLocalizations.of(context)!.languageLabel,
+          //     content.language.toLowerCase(), Icons.language),
+          // if (content.artists.isNotEmpty)
+          //   _buildMetadataRow(AppLocalizations.of(context)!.artistLabel,
+          //       content.artists.join(', '), Icons.person),
           if (content.characters.isNotEmpty)
             _buildMetadataRow(AppLocalizations.of(context)!.charactersLabel,
                 content.characters.join(', '), Icons.people),
@@ -1217,82 +1218,82 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  Widget _buildStatisticsSection(Content content) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            AppLocalizations.of(context)!.statistics,
-            style: TextStyleConst.headingSmall.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 12),
-          // First row of stats
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildStatItem(
-                icon: Icons.favorite,
-                label: AppLocalizations.of(context)!.favoritesLabel,
-                value: _formatNumber(content.favorites),
-                color: Theme.of(context).colorScheme.error,
-              ),
-              _buildStatItem(
-                icon: Icons.menu_book,
-                label: AppLocalizations.of(context)!.pagesLabel,
-                value: '${content.pageCount}',
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              _buildStatItem(
-                icon: Icons.label,
-                label: AppLocalizations.of(context)!.tagsLabel,
-                value: '${content.tags.length}',
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-            ],
-          ),
+  // Widget _buildStatisticsSection(Content content) {
+  //   return Container(
+  //     padding: const EdgeInsets.all(16),
+  //     decoration: BoxDecoration(
+  //       color: Theme.of(context).colorScheme.surfaceContainer,
+  //       borderRadius: BorderRadius.circular(12),
+  //       border: Border.all(color: Theme.of(context).colorScheme.outline),
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Text(
+  //           AppLocalizations.of(context)!.statistics,
+  //           style: TextStyleConst.headingSmall.copyWith(
+  //             color: Theme.of(context).colorScheme.onSurface,
+  //           ),
+  //         ),
+  //         const SizedBox(height: 12),
+  //         // First row of stats
+  //         Row(
+  //           mainAxisAlignment: MainAxisAlignment.spaceAround,
+  //           children: [
+  //             _buildStatItem(
+  //               icon: Icons.favorite,
+  //               label: AppLocalizations.of(context)!.favoritesLabel,
+  //               value: _formatNumber(content.favorites),
+  //               color: Theme.of(context).colorScheme.error,
+  //             ),
+  //             _buildStatItem(
+  //               icon: Icons.menu_book,
+  //               label: AppLocalizations.of(context)!.pagesLabel,
+  //               value: '${content.pageCount}',
+  //               color: Theme.of(context).colorScheme.primary,
+  //             ),
+  //             _buildStatItem(
+  //               icon: Icons.label,
+  //               label: AppLocalizations.of(context)!.tagsLabel,
+  //               value: '${content.tags.length}',
+  //               color: Theme.of(context).colorScheme.secondary,
+  //             ),
+  //           ],
+  //         ),
 
-          // Second row of stats (if there are artists or other relevant data)
-          if (content.artists.isNotEmpty || content.language.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                if (content.artists.isNotEmpty)
-                  _buildStatItem(
-                    icon: Icons.person,
-                    label: AppLocalizations.of(context)!.artistsLabel,
-                    value: '${content.artists.length}',
-                    color: Theme.of(context).colorScheme.tertiary,
-                  ),
-                _buildStatItem(
-                  icon: Icons.language,
-                  label: AppLocalizations.of(context)!.languageLabel,
-                  value: content.language.toUpperCase(),
-                  color: Theme.of(context).colorScheme.secondaryContainer,
-                ),
-                if (content.relatedContent.isNotEmpty)
-                  _buildStatItem(
-                    icon: Icons.recommend,
-                    label: AppLocalizations.of(context)!.relatedLabel,
-                    value: '${content.relatedContent.length}',
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
+  //         // Second row of stats (if there are artists or other relevant data)
+  //         if (content.artists.isNotEmpty || content.language.isNotEmpty) ...[
+  //           const SizedBox(height: 16),
+  //           Row(
+  //             mainAxisAlignment: MainAxisAlignment.spaceAround,
+  //             children: [
+  //               if (content.artists.isNotEmpty)
+  //                 _buildStatItem(
+  //                   icon: Icons.person,
+  //                   label: AppLocalizations.of(context)!.artistsLabel,
+  //                   value: '${content.artists.length}',
+  //                   color: Theme.of(context).colorScheme.tertiary,
+  //                 ),
+  //               _buildStatItem(
+  //                 icon: Icons.language,
+  //                 label: AppLocalizations.of(context)!.languageLabel,
+  //                 value: content.language.toUpperCase(),
+  //                 color: Theme.of(context).colorScheme.secondaryContainer,
+  //               ),
+  //               if (content.relatedContent.isNotEmpty)
+  //                 _buildStatItem(
+  //                   icon: Icons.recommend,
+  //                   label: AppLocalizations.of(context)!.relatedLabel,
+  //                   value: '${content.relatedContent.length}',
+  //                   color: Theme.of(context).colorScheme.primary,
+  //                 ),
+  //             ],
+  //           ),
+  //         ],
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildRelatedContentSection(Content content) {
     // Check if related content feature is enabled for this source
@@ -1407,31 +1408,31 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  Widget _buildStatItem({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 24),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyleConst.headingSmall.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyleConst.bodySmall.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
-    );
-  }
+  // Widget _buildStatItem({
+  //   required IconData icon,
+  //   required String label,
+  //   required String value,
+  //   required Color color,
+  // }) {
+  //   return Column(
+  //     children: [
+  //       Icon(icon, color: color, size: 24),
+  //       const SizedBox(height: 4),
+  //       Text(
+  //         value,
+  //         style: TextStyleConst.headingSmall.copyWith(
+  //           color: Theme.of(context).colorScheme.onSurface,
+  //         ),
+  //       ),
+  //       Text(
+  //         label,
+  //         style: TextStyleConst.bodySmall.copyWith(
+  //           color: Theme.of(context).colorScheme.onSurfaceVariant,
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildErrorState(DetailError state) {
     return Scaffold(

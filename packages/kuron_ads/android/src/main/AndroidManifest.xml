@@ -4,7 +4,7 @@
         <!-- Start.io Ad Configuration -->
         <meta-data
             android:name="com.startapp.sdk.APPLICATION_ID"
-            android:value="200467444" />
+            android:value="201356049" />
 
         <!-- Disable Return Ads (to ensure Premium users don't see them) -->
         <meta-data
