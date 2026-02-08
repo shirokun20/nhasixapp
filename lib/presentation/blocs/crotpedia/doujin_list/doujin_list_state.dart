@@ -12,13 +12,24 @@ class DoujinListInitial extends DoujinListState {}
 
 class DoujinListLoading extends DoujinListState {}
 
-class DoujinListLoaded extends DoujinListState {
-  final List<DoujinListItem> doujins;
+// New state for when syncing from network
+class DoujinListSyncing extends DoujinListState {
+  final String message;
 
-  const DoujinListLoaded(this.doujins);
+  const DoujinListSyncing(this.message);
 
   @override
-  List<Object> get props => [doujins];
+  List<Object> get props => [message];
+}
+
+class DoujinListLoaded extends DoujinListState {
+  final List<DoujinListItem> doujins;
+  final bool isSyncing; // True when syncing in background
+
+  const DoujinListLoaded(this.doujins, {this.isSyncing = false});
+
+  @override
+  List<Object> get props => [doujins, isSyncing];
 }
 
 class DoujinListError extends DoujinListState {

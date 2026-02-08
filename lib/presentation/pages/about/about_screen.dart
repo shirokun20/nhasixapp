@@ -253,6 +253,16 @@ class _AboutContentState extends State<_AboutContent>
                   _buildDivider(),
                   _buildMenuItem(
                     context,
+                    icon: Icons.thumb_up_outlined,
+                    title: l10n.facebookPage,
+                    subtitle: l10n.facebookPageSubtitle,
+                    onTap: () => _launchURL(
+                        'https://www.facebook.com/profile.php?id=61586101395866'),
+                    isExternal: true,
+                  ),
+                  _buildDivider(),
+                  _buildMenuItem(
+                    context,
                     icon: Icons.coffee_outlined,
                     title: l10n.supportDeveloper,
                     subtitle: l10n.supportDeveloperSubtitle,

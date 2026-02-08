@@ -30,13 +30,15 @@ class RequestItem {
   final String coverUrl;
   final String url;
   final int id; // ID for pagination/key
-  final String status;
+  final String? status; // Optional - not always available in HTML
+  final Map<String, String> genres; // slug -> name
 
   RequestItem({
     required this.title,
     required this.coverUrl,
     required this.url,
     required this.id,
-    required this.status,
+    this.status,
+    this.genres = const {},
   });
 }

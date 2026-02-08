@@ -23,3 +23,6 @@ export 'src/value_objects/popular_timeframe.dart';
 
 // Enums
 export 'src/enums/source_type.dart';
+
+// Exceptions
+export 'src/exceptions/login_required_exception.dart';

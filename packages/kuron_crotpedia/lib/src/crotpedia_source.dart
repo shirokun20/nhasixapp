@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 import 'package:native_dio_adapter/native_dio_adapter.dart';
+import 'package:html/parser.dart' as html_parser;
 import 'crotpedia_scraper.dart';
 import 'crotpedia_url_builder.dart';
 import 'crotpedia_search_capabilities.dart';
@@ -320,6 +321,17 @@ class CrotpediaSource implements ContentSource {
         options: Options(headers: {'Referer': '$baseUrlValue/'}),
       );
 
+      // Parse HTML to check for login requirement
+      final document = html_parser.parse(response.data);
+      
+      // Check if login is required
+      if (_scraper.isLoginRequired(document)) {
+        throw LoginRequiredException(
+          'This content requires authentication',
+          loginUrl: '$baseUrlValue/login/',
+        );
+      }
+
       final seriesDetail = _scraper.parseSeriesDetail(response.data);
 
       // Map chapters
@@ -452,6 +464,24 @@ class CrotpediaSource implements ContentSource {
     } catch (e) {
       _logger?.e('Failed to get chapter images: $e');
       return [];
+    }
+  }
+
+  /// Exposed method to fetch raw HTML using the native adapter and bypass logic
+  /// This is used by CrotpediaFeatureRepository to ensure consistent access behavior
+  Future<String> fetchHtml(String url) async {
+    try {
+      final response = await _getWithBypass<String>(
+        url,
+        options: Options(
+          headers: {'Referer': '$baseUrlValue/'},
+          responseType: ResponseType.plain,
+        ),
+      );
+      return response.data ?? '';
+    } catch (e) {
+      _logger?.e('Failed to fetch HTML for $url: $e');
+      rethrow;
     }
   }
 

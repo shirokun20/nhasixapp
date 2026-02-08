@@ -481,7 +481,7 @@ void _setupRepositories() {
   // Crotpedia Feature Repository
   getIt.registerLazySingleton<CrotpediaFeatureRepository>(
       () => CrotpediaFeatureRepositoryImpl(
-            remoteDataSource: getIt<RemoteDataSource>(),
+            crotpediaSource: getIt<CrotpediaSource>(),
             scraper: getIt<CrotpediaScraper>(),
             doujinListDao: getIt<DoujinListDao>(),
             logger: getIt<Logger>(),

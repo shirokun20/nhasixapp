@@ -95,7 +95,7 @@ class AntiDetection {
   }
 
   /// Get random headers for request
-  Map<String, String> getRandomHeaders() {
+  Map<String, String> getRandomHeaders({String? referer}) {
     // Rotate user agent occasionally
 
     if (_requestCount % 10 == 0 || _currentUserAgent == null) {
@@ -114,7 +114,7 @@ class AntiDetection {
       'Sec-Fetch-Site': 'none',
       'Sec-Fetch-User': '?1',
       'Cache-Control': 'max-age=0',
-      'Referer': 'https://nhentai.net/', // ← selalu sertakan referer!
+      'Referer': referer ?? 'https://nhentai.net/', // ← selalu sertakan referer!
     };
 
     // Randomly add some optional headers

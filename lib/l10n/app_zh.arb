@@ -26,6 +26,9 @@
   "supportDeveloperSubtitle": "请我喝杯咖啡",
   "donateMessage": "如果您觉得此应用有帮助，可以通过 QRIS 捐赠来支持开发。谢谢！☕",
   "thankYouMessage": "感谢您的支持！",
+
+  "facebookPage": "Doujin Stash 3",
+  "facebookPageSubtitle": "点赞关注以支持我们",
   "searchHint": "搜索内容...",
   "searchPlaceholder": "输入搜索关键词",
   "noResults": "未找到结果",

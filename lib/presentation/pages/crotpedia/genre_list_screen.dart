@@ -7,6 +7,7 @@ import 'package:nhasixapp/presentation/blocs/crotpedia/genre_list/genre_list_sta
 import 'package:nhasixapp/domain/repositories/crotpedia/crotpedia_feature_repository.dart';
 import 'package:nhasixapp/presentation/widgets/error_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progress_indicator_widget.dart';
+import 'package:nhasixapp/presentation/widgets/app_drawer_content.dart';
 
 class CrotpediaGenreListScreen extends StatelessWidget {
   const CrotpediaGenreListScreen({super.key});
@@ -18,6 +19,7 @@ class CrotpediaGenreListScreen extends StatelessWidget {
         getIt<CrotpediaFeatureRepository>(),
       )..fetchGenres(),
       child: Scaffold(
+        drawer: const AppDrawerContent(),
         appBar: AppBar(
           title: const Text('Genre List'),
           centerTitle: true,

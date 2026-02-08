@@ -4,25 +4,27 @@ import '../../../../domain/repositories/crotpedia/crotpedia_feature_repository.d
 import '../../../../domain/entities/crotpedia/crotpedia_entities.dart';
 import 'package:kuron_crotpedia/kuron_crotpedia.dart';
 import '../../datasources/local/doujin_list_dao.dart';
-import '../../datasources/remote/remote_data_source.dart';
+
 
 class CrotpediaFeatureRepositoryImpl implements CrotpediaFeatureRepository {
-  final RemoteDataSource remoteDataSource;
+  final CrotpediaSource crotpediaSource;
   final CrotpediaScraper scraper;
   final DoujinListDao doujinListDao;
   final Logger logger;
 
   CrotpediaFeatureRepositoryImpl({
-    required this.remoteDataSource,
+    required this.crotpediaSource,
     required this.scraper,
     required this.doujinListDao,
     Logger? logger,
   }) : logger = logger ?? Logger();
 
+  static const String _baseUrl = 'https://crotpedia.net';
+
   @override
   Future<List<GenreItem>> getGenreList() async {
     try {
-        final html = await remoteDataSource.fetchHtml('/genre-list/'); 
+        final html = await crotpediaSource.fetchHtml('$_baseUrl/genre-list/'); 
         final items = scraper.parseGenreList(html);
         return items.map((e) => GenreItem(
           name: e.name,
@@ -48,7 +50,7 @@ class CrotpediaFeatureRepositoryImpl implements CrotpediaFeatureRepository {
         }
         
         logger.i('Fetching doujin list from remote');
-        final html = await remoteDataSource.fetchHtml('/doujin-list/');
+        final html = await crotpediaSource.fetchHtml('$_baseUrl/doujin-list/');
         final items = scraper.parseDoujinList(html);
         
         final mappedItems = items.map((e) => DoujinListItem(
@@ -58,9 +60,14 @@ class CrotpediaFeatureRepositoryImpl implements CrotpediaFeatureRepository {
         )).where((e) => e.id != null).toList();
         
         if (mappedItems.isNotEmpty) {
-            logger.i('Caching ${mappedItems.length} doujin items');
+            logger.i('Parsed ${mappedItems.length} doujin items from HTML');
+            logger.i('Caching doujin items to DB...');
             await doujinListDao.clear(); 
             await doujinListDao.insertAll(mappedItems);
+            
+            // Verify saved count
+            final savedCount = await doujinListDao.count();
+            logger.i('Successfully saved $savedCount items to DB (expected: ${mappedItems.length})');
         }
         
         return mappedItems;
@@ -68,7 +75,7 @@ class CrotpediaFeatureRepositoryImpl implements CrotpediaFeatureRepository {
         logger.e('Error fetching doujin list', error: e);
         final local = await doujinListDao.getAll();
         if (local.isNotEmpty) {
-             logger.w('Returning local doujin list due to error');
+             logger.w('Returning ${local.length} items from local doujin list due to error');
              return local;
         }
         rethrow;
@@ -77,16 +84,17 @@ class CrotpediaFeatureRepositoryImpl implements CrotpediaFeatureRepository {
 
   @override
   Future<List<RequestItem>> getRequestList({int page = 1}) async {
-     try {
-        final path = page == 1 ? '/baca/publisher/request/' : '/baca/publisher/request/page/$page/';
-        final html = await remoteDataSource.fetchHtml(path);
+    try {
+        final path = page == 1 ? '$_baseUrl/baca/publisher/request/' : '$_baseUrl/baca/publisher/request/page/$page/';
+        final html = await crotpediaSource.fetchHtml(path);
         final items = scraper.parseRequestList(html);
         return items.map((e) => RequestItem(
           title: e.title,
           coverUrl: e.coverUrl,
           url: e.url ?? '',
           id: int.tryParse(e.id ?? '0') ?? 0,
-          status: e.status ?? 'Unknown',
+          status: e.status,
+          genres: e.genres,
         )).toList();
      } catch (e) {
         logger.e('Error fetching request list', error: e);

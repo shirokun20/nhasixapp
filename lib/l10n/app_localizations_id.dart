@@ -79,6 +79,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get suggestions => 'Saran:';
 
   @override
+  String get facebookPage => 'Doujin Stash 3';
+
+  @override
+  String get facebookPageSubtitle => 'Bantu support dengan like halaman';
+
+  @override
   String get tapToLoadContent => 'Ketuk untuk memuat konten';
 
   @override

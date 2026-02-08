@@ -238,6 +238,18 @@ abstract class AppLocalizations {
   /// **'Suggestions:'**
   String get suggestions;
 
+  /// No description provided for @facebookPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Doujin Stash 3'**
+  String get facebookPage;
+
+  /// No description provided for @facebookPageSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Support us by liking our page'**
+  String get facebookPageSubtitle;
+
   /// No description provided for @tapToLoadContent.
   ///
   /// In en, this message translates to:

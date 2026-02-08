@@ -79,6 +79,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get suggestions => 'Suggestions:';
 
   @override
+  String get facebookPage => 'Doujin Stash 3';
+
+  @override
+  String get facebookPageSubtitle => 'Support us by liking our page';
+
+  @override
   String get tapToLoadContent => 'Tap to load content';
 
   @override

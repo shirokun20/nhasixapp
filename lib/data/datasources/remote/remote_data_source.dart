@@ -70,7 +70,7 @@ class RemoteDataSource {
       await antiDetection.initialize();
 
       // Attempt Cloudflare bypass
-      final bypassSuccess = await cloudflareBypass.attemptBypass();
+      final bypassSuccess = await cloudflareBypass.attemptBypass(targetUrl: baseUrl);
       if (!bypassSuccess) {
         _logger.w('Cloudflare bypass failed, some requests may fail');
         return false;
@@ -465,7 +465,7 @@ class RemoteDataSource {
   Future<bool> bypassCloudflare() async {
     try {
       _logger.i('Attempting Cloudflare bypass...');
-      return await cloudflareBypass.attemptBypass();
+      return await cloudflareBypass.attemptBypass(targetUrl: baseUrl);
     } catch (e, stackTrace) {
       _logger.e('Cloudflare bypass failed', error: e, stackTrace: stackTrace);
       return false;
@@ -510,7 +510,12 @@ class RemoteDataSource {
 
         // Apply anti-detection measures
         await antiDetection.applyRandomDelay();
-        final headers = antiDetection.getRandomHeaders();
+        
+        // Calculate referer based on URL
+        final uri = Uri.parse(url);
+        final referer = '${uri.scheme}://${uri.host}/';
+        
+        final headers = antiDetection.getRandomHeaders(referer: referer);
 
         _logger.i("headers: $headers");
 
@@ -534,8 +539,8 @@ class RemoteDataSource {
 
           // Check if Cloudflare challenge is present
           if (cloudflareBypass.isCloudflareChallenge(html)) {
-            _logger.w('Cloudflare challenge detected, attempting bypass...');
-            final bypassSuccess = await cloudflareBypass.attemptBypass();
+            _logger.w('Cloudflare challenge detected, attempting bypass for $url...');
+            final bypassSuccess = await cloudflareBypass.attemptBypass(targetUrl: url);
             if (!bypassSuccess) {
               throw const CloudflareException(
                   'Failed to bypass Cloudflare protection');

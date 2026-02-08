@@ -1408,6 +1408,10 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Widget _buildErrorState(DetailError state) {
+    // Check if it's a login required error
+    final isLoginError = state.errorType == 'login_required';
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
@@ -1419,7 +1423,7 @@ class _DetailScreenState extends State<DetailScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          AppLocalizations.of(context)!.error,
+          isLoginError ? 'Authentication Required' : l10n.error,
           style: TextStyleConst.headingMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -1438,29 +1442,36 @@ class _DetailScreenState extends State<DetailScreen> {
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.errorContainer,
+                    color: isLoginError 
+                        ? Theme.of(context).colorScheme.primaryContainer 
+                        : Theme.of(context).colorScheme.errorContainer,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .error
-                          .withValues(alpha: 0.5),
+                      color: isLoginError
+                          ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)
+                          : Theme.of(context).colorScheme.error.withValues(alpha: 0.5),
                       width: 2,
                     ),
                   ),
                   child: Icon(
-                    Icons.error_outline,
+                    isLoginError ? Icons.lock_person : Icons.error_outline,
                     size: 64,
-                    color: Theme.of(context).colorScheme.error,
+                    color: isLoginError 
+                        ? Theme.of(context).colorScheme.primary 
+                        : Theme.of(context).colorScheme.error,
                   ),
                 ),
                 const SizedBox(height: 32),
 
                 // Error title
                 Text(
-                  AppLocalizations.of(context)!.failedToLoadContent,
+                  isLoginError 
+                      ? 'Login Required' 
+                      : l10n.failedToLoadContent,
                   style: TextStyleConst.headingLarge.copyWith(
-                    color: Theme.of(context).colorScheme.error,
+                    color: isLoginError 
+                        ? Theme.of(context).colorScheme.primary 
+                        : Theme.of(context).colorScheme.error,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -1478,8 +1489,10 @@ class _DetailScreenState extends State<DetailScreen> {
                     ),
                   ),
                   child: Text(
-                    ErrorMessageUtils.getFriendlyErrorMessage(
-                        state.error, AppLocalizations.of(context)),
+                    isLoginError
+                        ? 'You need to log in to Crotpedia to view this content.'
+                        : ErrorMessageUtils.getFriendlyErrorMessage(
+                            state.error, l10n),
                     style: TextStyleConst.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
@@ -1493,11 +1506,31 @@ class _DetailScreenState extends State<DetailScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (state.canRetry) ...[
+                    if (isLoginError) ...[
+                      ElevatedButton.icon(
+                        onPressed: () => context.push('/crotpedia-login'),
+                        icon: const Icon(Icons.login),
+                        label: Text(l10n.login),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
+                          foregroundColor:
+                              Theme.of(context).colorScheme.onPrimary,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                    ] else if (state.canRetry) ...[
                       ElevatedButton.icon(
                         onPressed: () => _detailCubit.retryLoading(),
                         icon: const Icon(Icons.refresh),
-                        label: Text(AppLocalizations.of(context)!.retry),
+                        label: Text(l10n.retry),
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               Theme.of(context).colorScheme.primary,
@@ -1517,7 +1550,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     OutlinedButton.icon(
                       onPressed: () => context.pop(),
                       icon: const Icon(Icons.arrow_back),
-                      label: Text(AppLocalizations.of(context)!.goBack),
+                      label: Text(l10n.goBack),
                       style: OutlinedButton.styleFrom(
                         foregroundColor:
                             Theme.of(context).colorScheme.onSurfaceVariant,

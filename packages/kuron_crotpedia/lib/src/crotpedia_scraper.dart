@@ -149,24 +149,28 @@ class CrotpediaScraper {
   List<CrotpediaSeries> parseDoujinList(String htmlContent) {
     final document = html_parser.parse(htmlContent);
     
-    // Try to find container first
-    final containerSelector = _selectors['doujinList_container'] ?? _defaultSelectors['doujinList_container'];
-    final container = containerSelector != null ? document.querySelector(containerSelector) : null;
+    // Get ALL alphabet section containers (-, #, A, B, C, etc.)
+    final containers = document.querySelectorAll('.mangalist-blc');
+    final allItems = <CrotpediaSeries>[];
     
-    // Use container if found, otherwise document
-    final root = container ?? document;
+    // Iterate through each alphabet section
+    for (final container in containers) {
+      // Get all series links in this section
+      final items = container.querySelectorAll('a.series');
+      
+      for (final item in items) {
+        allItems.add(CrotpediaSeries(
+          slug: _extractSlug(item.attributes['href']),
+          title: item.text.trim(),
+          coverUrl: '', // No cover in list view
+          url: item.attributes['href'],
+          id: item.attributes['rel'], // Extract ID from rel attribute
+          // Optional: add section header for grouping
+        ));
+      }
+    }
     
-    final items = root.querySelectorAll(_getSelector('doujinList_link'));
-
-    return items.map((item) {
-      return CrotpediaSeries(
-        slug: _extractSlug(item.attributes['href']),
-        title: item.text.trim(),
-        coverUrl: '', // No cover in list view
-        url: item.attributes['href'],
-        id: item.attributes['rel'], // Extract ID from rel attribute
-      );
-    }).toList();
+    return allItems;
   }
 
   /// Parse genre list page
@@ -229,6 +233,22 @@ class CrotpediaScraper {
       final title = titleEl?.text.trim() ?? 'Unknown';
       final url = link?.attributes['href'] ?? '';
       
+      // Parse genres from the .genres div
+      final genresContainer = item.querySelector('.flexbox2-side .genres span');
+      final genres = <String, String>{};
+      if (genresContainer != null) {
+        final genreLinks = genresContainer.querySelectorAll('a');
+        for (final genreLink in genreLinks) {
+          final genreName = genreLink.text.trim();
+          final genreUrl = genreLink.attributes['href'] ?? '';
+          if (genreName.isNotEmpty && genreUrl.isNotEmpty) {
+            // Extract slug from URL (e.g., /baca/genre/ahegao/ -> ahegao)
+            final slug = _extractSlug(genreUrl);
+            genres[slug] = genreName;
+          }
+        }
+      }
+      
       // Generate ID or extract if possible (hashcode as fallback)
       final id = title.hashCode.toString();
       
@@ -239,6 +259,7 @@ class CrotpediaScraper {
         url: url,
         status: statusEl?.text.trim(),
         id: id,
+        genres: genres,
       );
     }).toList();
   }
@@ -377,9 +398,15 @@ class CrotpediaScraper {
           return _finalizeSlug(pathSegments[seriesIndex + 1]);
         }
         
+        // Check for /baca/genre/slug/ pattern
+        final genreIndex = pathSegments.indexOf('genre');
+        if (genreIndex != -1 && genreIndex + 1 < pathSegments.length) {
+          return _finalizeSlug(pathSegments[genreIndex + 1]);
+        }
+        
         // Also check for /baca/slug/ (older/alternate structure)
         final bacaIndex = pathSegments.indexOf('baca');
-        if (bacaIndex != -1 && bacaIndex + 1 < pathSegments.length && pathSegments[bacaIndex + 1] != 'series') {
+        if (bacaIndex != -1 && bacaIndex + 1 < pathSegments.length && pathSegments[bacaIndex + 1] != 'series' && pathSegments[bacaIndex + 1] != 'genre') {
              return _finalizeSlug(pathSegments[bacaIndex + 1]);
         }
 
@@ -510,5 +537,32 @@ class CrotpediaScraper {
 
   String? _parseAlternativeTitle(Document doc) {
     return _parseInfoFromList(doc, 'Alternative');
+  }
+
+  /// Detects if the page requires login/authentication
+  /// 
+  /// Checks for multiple indicators:
+  /// 1. Login form presence (#koi_login_form)
+  /// 2. Canonical URL containing /login/
+  /// 3. Title containing "Login"
+  bool isLoginRequired(Document document) {
+    // Check for login form
+    final loginForm = document.querySelector('#koi_login_form');
+    if (loginForm != null) return true;
+    
+    // Check canonical URL
+    final canonical = document.querySelector('link[rel="canonical"]');
+    if (canonical != null) {
+      final href = canonical.attributes['href'] ?? '';
+      if (href.contains('/login/')) return true;
+    }
+    
+    // Check page title
+    final title = document.querySelector('title');
+    if (title != null && title.text.toLowerCase().contains('login')) {
+      return true;
+    }
+    
+    return false;
   }
 }

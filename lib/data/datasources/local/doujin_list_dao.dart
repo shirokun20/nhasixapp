@@ -30,7 +30,7 @@ class DoujinListDao {
     await batch.commit(noResult: true);
   }
 
-  Future<List<DoujinListItem>> search(String query, {int limit = 50, int offset = 0}) async {
+  Future<List<DoujinListItem>> search(String query, {int? limit, int? offset}) async {
     final db = await _db;
     final List<Map<String, dynamic>> maps = await db.query(
       'doujin_list',
@@ -50,7 +50,7 @@ class DoujinListDao {
     });
   }
 
-  Future<List<DoujinListItem>> getAll({int limit = 50, int offset = 0}) async {
+  Future<List<DoujinListItem>> getAll({int? limit, int? offset}) async {
     final db = await _db;
     final List<Map<String, dynamic>> maps = await db.query(
       'doujin_list',

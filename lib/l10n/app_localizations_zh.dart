@@ -78,6 +78,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get suggestions => '建议：';
 
   @override
+  String get facebookPage => 'Doujin Stash 3';
+
+  @override
+  String get facebookPageSubtitle => '点赞关注以支持我们';
+
+  @override
   String get tapToLoadContent => '点击加载内容';
 
   @override

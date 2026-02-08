@@ -100,6 +100,16 @@ class DetailCubit extends BaseCubit<DetailState> {
       ));
 
       logInfo('Successfully loaded content detail: ${content.title}');
+    } on LoginRequiredException catch (e) {
+      if (isClosed) return;
+      
+      emit(DetailError(
+        message: e.message,
+        errorType: 'login_required',
+        canRetry: false,
+        contentId: contentId,
+        error: e,
+      ));
     } catch (e, stackTrace) {
       if (isClosed) return;
       handleError(e, stackTrace, 'load content detail');
