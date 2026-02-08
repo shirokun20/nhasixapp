@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:extended_image/extended_image.dart';
-import '../../core/utils/webtoon_detector.dart';
+// import '../../core/utils/webtoon_detector.dart';
 import '../../data/models/reader_settings_model.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
@@ -52,7 +52,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   late Animation<double> _pulseAnimation;
 
   // 🎯 PHASE 2: Cache loaded image size for webtoon detection
-  Size? _loadedImageSize;
+  // Size? _loadedImageSize;
 
   @override
   void initState() {
@@ -87,18 +87,18 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   /// for better vertical scrolling experience.
   BoxFit _getAdaptiveBoxFit() {
     // Check if image is loaded and detect webtoon
-    if (_loadedImageSize != null) {
-      final isWebtoon = WebtoonDetector.isWebtoon(_loadedImageSize!);
+    // if (_loadedImageSize != null) {
+    //   final isWebtoon = WebtoonDetector.isWebtoon(_loadedImageSize!);
 
-      if (isWebtoon) {
-        // Webtoon images: Use fitWidth to fill screen width
-        // This allows full vertical scrolling without horizontal overflow
-        debugPrint('🎨 Webtoon detected (page ${widget.pageNumber}): '
-            'AR=${WebtoonDetector.getAspectRatio(_loadedImageSize!)?.toStringAsFixed(2)} '
-            '→ Using BoxFit.fitWidth');
-        return BoxFit.fitWidth;
-      }
-    }
+    //   if (isWebtoon) {
+    //     // Webtoon images: Use fitWidth to fill screen width
+    //     // This allows full vertical scrolling without horizontal overflow
+    //     debugPrint('🎨 Webtoon detected (page ${widget.pageNumber}): '
+    //         'AR=${WebtoonDetector.getAspectRatio(_loadedImageSize!)?.toStringAsFixed(2)} '
+    //         '→ Using BoxFit.fitWidth');
+    //     return BoxFit.fitWidth;
+    //   }
+    // }
 
     // Normal images: Use BoxFit.contain for proper centering
     // BoxFit.contain will:
@@ -171,7 +171,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         key:
             ValueKey('extended_image_${widget.contentId}_${widget.pageNumber}'),
         fit: _getAdaptiveBoxFit(),
-        mode: widget.enableZoom
+        mode: widget.enableZoom &&
+                widget.readingMode != ReadingMode.continuousScroll
             ? ExtendedImageMode.gesture
             : ExtendedImageMode.none,
         clearMemoryCacheWhenDispose: false,
@@ -227,7 +228,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         key:
             ValueKey('extended_image_${widget.contentId}_${widget.pageNumber}'),
         fit: _getAdaptiveBoxFit(),
-        mode: widget.enableZoom
+        mode: widget.enableZoom &&
+                widget.readingMode != ReadingMode.continuousScroll
             ? ExtendedImageMode.gesture
             : ExtendedImageMode.none,
         clearMemoryCacheWhenDispose: false,

@@ -159,10 +159,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
         _prefetchImages(
             clampedPage, state.content!.imageUrls, state.imageMetadata);
       }
+      // ✨ NEW: Auto-hide UI on scroll down
+      // If scrolling down (user moving finger up) and UI is visible -> hide it
+      if (_scrollController.position.userScrollDirection.toString() ==
+              'ScrollDirection.reverse' &&
+          (state.showUI ?? false)) {
+        _readerCubit.hideUI();
+      }
     }
   }
-
-
 
   @override
   void dispose() {
@@ -209,7 +214,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             // Fallback to URL validation if no metadata found
             // We TRUST the URL list from the source. Removing brittle filename parsing validation.
             // checks that caused false positives (e.g. 0-indexed filenames).
-            isValid = true; 
+            isValid = true;
           }
         } else {
           // No metadata available. Trust the URL list order.
@@ -502,8 +507,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
         itemBuilder: (context, index) {
           final imageUrl = state.content?.imageUrls[index] ?? '';
           final pageNumber = index + 1;
-
-
 
           // Debug logging removed to prevent false positives with 0-indexed filenames
 

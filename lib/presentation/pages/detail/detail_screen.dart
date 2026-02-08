@@ -618,8 +618,9 @@ class _DetailScreenState extends State<DetailScreen> {
           _buildMetadataRow('Source', content.source, Icons.dns_rounded),
           _buildMetadataRow(
               AppLocalizations.of(context)!.idLabel, content.id, Icons.tag),
-          _buildMetadataRow(AppLocalizations.of(context)!.pagesLabel,
-              '${content.pageCount}', Icons.menu_book),
+          if (content.pageCount > 0)
+            _buildMetadataRow(AppLocalizations.of(context)!.pagesLabel,
+                '${content.pageCount}', Icons.menu_book),
           _buildMetadataRow(AppLocalizations.of(context)!.languageLabel,
               content.language.toLowerCase(), Icons.language),
           if (content.artists.isNotEmpty)
@@ -1157,7 +1158,7 @@ class _DetailScreenState extends State<DetailScreen> {
               );
             },
           ),
-          
+
           if (chapters.length > 5)
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -1442,22 +1443,28 @@ class _DetailScreenState extends State<DetailScreen> {
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: isLoginError 
-                        ? Theme.of(context).colorScheme.primaryContainer 
+                    color: isLoginError
+                        ? Theme.of(context).colorScheme.primaryContainer
                         : Theme.of(context).colorScheme.errorContainer,
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: isLoginError
-                          ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)
-                          : Theme.of(context).colorScheme.error.withValues(alpha: 0.5),
+                          ? Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withValues(alpha: 0.5)
+                          : Theme.of(context)
+                              .colorScheme
+                              .error
+                              .withValues(alpha: 0.5),
                       width: 2,
                     ),
                   ),
                   child: Icon(
                     isLoginError ? Icons.lock_person : Icons.error_outline,
                     size: 64,
-                    color: isLoginError 
-                        ? Theme.of(context).colorScheme.primary 
+                    color: isLoginError
+                        ? Theme.of(context).colorScheme.primary
                         : Theme.of(context).colorScheme.error,
                   ),
                 ),
@@ -1465,12 +1472,10 @@ class _DetailScreenState extends State<DetailScreen> {
 
                 // Error title
                 Text(
-                  isLoginError 
-                      ? 'Login Required' 
-                      : l10n.failedToLoadContent,
+                  isLoginError ? 'Login Required' : l10n.failedToLoadContent,
                   style: TextStyleConst.headingLarge.copyWith(
-                    color: isLoginError 
-                        ? Theme.of(context).colorScheme.primary 
+                    color: isLoginError
+                        ? Theme.of(context).colorScheme.primary
                         : Theme.of(context).colorScheme.error,
                   ),
                   textAlign: TextAlign.center,
@@ -1658,8 +1663,6 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-
-
   /// Get base URL for active source
   String _getSourceBaseUrl() {
     final sourceState = context.read<SourceCubit>().state;
@@ -1670,7 +1673,7 @@ class _DetailScreenState extends State<DetailScreen> {
   String _buildContentUrl(Content content) {
     // Helper to get base URL for a specific source
     final baseUrl = _getSourceBaseUrl();
-    
+
     if (content.sourceId == SourceType.komiktap.id) {
       // KomikTap uses /manga/{slug}/
       return '$baseUrl/manga/${content.id}/';
