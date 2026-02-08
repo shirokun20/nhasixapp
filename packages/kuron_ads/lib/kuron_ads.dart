@@ -4,9 +4,12 @@ import 'package:flutter/services.dart';
 class KuronAds {
   static const MethodChannel _channel = MethodChannel('kuron_ads');
 
-  /// Initialize the SDK (Test Mode)
-  static Future<void> initialize({bool testMode = false}) async {
-    await _channel.invokeMethod('setTestAdsEnabled', {'enabled': testMode});
+  /// Initialize the SDK with App ID
+  static Future<void> initialize({required String appId, bool testMode = false}) async {
+    await _channel.invokeMethod('initialize', {
+      'appId': appId,
+      'testMode': testMode,
+    });
   }
 
   /// Trigger an Interstitial Ad
