@@ -1,6 +1,7 @@
 import 'package:html/parser.dart' as html_parser;
 import 'package:html/dom.dart';
 import 'models/crotpedia_series.dart';
+import 'models/crotpedia_genre.dart';
 
 /// HTML parsing logic for Crotpedia website.
 class CrotpediaScraper {
@@ -19,7 +20,22 @@ class CrotpediaScraper {
     'search_title': '.flexbox2-title span',
 
     // doujinList
+    'doujinList_container': '.mangalist-blc',
     'doujinList_link': 'a.series',
+
+    // genreList
+    'genreList_container': 'ul.achlist',
+    'genreList_item': 'li',
+    'genreList_link': 'a',
+    'genreList_count': 'span',
+
+    // requestList
+    'requestList_container': '.flexbox2',
+    'requestList_item': '.flexbox2-item',
+    'requestList_link': 'a',
+    'requestList_cover': 'img',
+    'requestList_title': '.flexbox2-title span',
+    'requestList_status': '.flexbox2-footer',
 
     // pagination
     'pagination_current': '.pagination .page-numbers.current',
@@ -132,13 +148,97 @@ class CrotpediaScraper {
   /// Parse doujin list page (alphabetical)
   List<CrotpediaSeries> parseDoujinList(String htmlContent) {
     final document = html_parser.parse(htmlContent);
-    final items = document.querySelectorAll(_getSelector('doujinList_link'));
+    
+    // Try to find container first
+    final containerSelector = _selectors['doujinList_container'] ?? _defaultSelectors['doujinList_container'];
+    final container = containerSelector != null ? document.querySelector(containerSelector) : null;
+    
+    // Use container if found, otherwise document
+    final root = container ?? document;
+    
+    final items = root.querySelectorAll(_getSelector('doujinList_link'));
 
     return items.map((item) {
       return CrotpediaSeries(
         slug: _extractSlug(item.attributes['href']),
         title: item.text.trim(),
         coverUrl: '', // No cover in list view
+        url: item.attributes['href'],
+        id: item.attributes['rel'], // Extract ID from rel attribute
+      );
+    }).toList();
+  }
+
+  /// Parse genre list page
+  List<CrotpediaGenre> parseGenreList(String htmlContent) {
+    final document = html_parser.parse(htmlContent);
+    
+    final container = document.querySelector(_getSelector('genreList_container'));
+    if (container == null) return [];
+    
+    final items = container.querySelectorAll(_getSelector('genreList_item'));
+    final results = <CrotpediaGenre>[];
+
+    for (final item in items) {
+      final link = item.querySelector(_getSelector('genreList_link'));
+      if (link == null) continue;
+      
+      final url = link.attributes['href'] ?? '';
+      
+      // Extract count and clean name
+      final countEl = item.querySelector(_getSelector('genreList_count'));
+      final countText = countEl?.text ?? '0';
+      final count = int.tryParse(countText) ?? 0;
+      
+      String name = link.text;
+      if (countEl != null) {
+        name = name.replaceAll(countEl.text, '').trim();
+      }
+      
+      // Slug
+      final uri = Uri.parse(url);
+      final slug = uri.pathSegments.isNotEmpty 
+          ? uri.pathSegments.where((s) => s.isNotEmpty).last 
+          : name.toLowerCase().replaceAll(' ', '-');
+          
+      results.add(CrotpediaGenre(
+        name: name,
+        slug: slug,
+        url: url,
+        count: count,
+      ));
+    }
+    return results;
+  }
+
+  /// Parse request list page
+  List<CrotpediaSeries> parseRequestList(String htmlContent) {
+    final document = html_parser.parse(htmlContent);
+    final container = document.querySelector(_getSelector('requestList_container'));
+    
+    if (container == null) return [];
+    
+    final items = container.querySelectorAll(_getSelector('requestList_item'));
+    
+    return items.map((item) {
+      final link = item.querySelector(_getSelector('requestList_link'));
+      final img = item.querySelector(_getSelector('requestList_cover'));
+      final titleEl = item.querySelector(_getSelector('requestList_title'));
+      final statusEl = item.querySelector(_getSelector('requestList_status'));
+      
+      final title = titleEl?.text.trim() ?? 'Unknown';
+      final url = link?.attributes['href'] ?? '';
+      
+      // Generate ID or extract if possible (hashcode as fallback)
+      final id = title.hashCode.toString();
+      
+      return CrotpediaSeries(
+        slug: _extractSlug(url),
+        title: title,
+        coverUrl: img?.attributes['src'] ?? '',
+        url: url,
+        status: statusEl?.text.trim(),
+        id: id,
       );
     }).toList();
   }

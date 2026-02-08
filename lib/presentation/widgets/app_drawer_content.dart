@@ -153,7 +153,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                     const SourceSelector(),
                     const SizedBox(height: 8),
 
-                    // Crotpedia specific actions
+                      // Crotpedia specific actions
                     if (context.watch<SourceCubit>().state.activeSource?.id ==
                         SourceType.crotpedia.id) ...[
                       BlocBuilder<CrotpediaAuthCubit, CrotpediaAuthState>(
@@ -183,6 +183,70 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                           );
                         },
                       ),
+
+                      // Dynamic Crotpedia Menu
+                      Builder(builder: (context) {
+                          final configService = getIt<RemoteConfigService>();
+                          final rawConfig = configService.getRawConfig('crotpedia');
+                          if (rawConfig != null && rawConfig.containsKey('menuConfig')) {
+                              final menuConfig = rawConfig['menuConfig'] as Map<String, dynamic>;
+                              final List<Widget> menuItems = [];
+
+                              // Helper for icon mapping
+                              IconData getIcon(String? iconName) {
+                                  switch (iconName) {
+                                      case 'volunteer_activism': return Icons.volunteer_activism;
+                                      case 'category': return Icons.category;
+                                      case 'library_books': return Icons.library_books;
+                                      case 'assignment': return Icons.assignment;
+                                      default: return Icons.circle;
+                                  }
+                              }
+                              
+                              // Helper for route mapping
+                              String getRoute(String key) {
+                                  switch (key) {
+                                      case 'genreList': return AppRoute.crotpediaGenreList;
+                                      case 'doujinList': return AppRoute.crotpediaDoujinList;
+                                      case 'requestList': return AppRoute.crotpediaRequestList;
+                                      case 'donation': return AppRoute.crotpediaDonation; // Needs handling
+                                      default: return '';
+                                  }
+                              }
+                              
+                              menuConfig.forEach((key, value) {
+                                  if (value is Map<String, dynamic> && value['enabled'] == true) {
+                                      final label = value['label'] as String;
+                                      final iconName = value['icon'] as String?;
+                                      final route = getRoute(key);
+                                      
+                                      if (route.isNotEmpty) {
+                                          menuItems.add(_buildNavItem(
+                                              context,
+                                              icon: getIcon(iconName),
+                                              label: label,
+                                              route: route,
+                                              isSelected: isSelected(route),
+                                              theme: theme,
+                                          ));
+                                      }
+                                  }
+                              });
+                              
+                              if (menuItems.isNotEmpty) {
+                                  return Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                          _buildSectionLabel('MENU', theme),
+                                          const SizedBox(height: 8),
+                                          ...menuItems,
+                                          const SizedBox(height: 16),
+                                      ],
+                                  );
+                              }
+                          }
+                          return const SizedBox.shrink();
+                      }),
                     ],
 
                     _buildSectionLabel(l10n.home.toUpperCase(), theme),

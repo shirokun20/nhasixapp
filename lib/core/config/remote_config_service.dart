@@ -27,6 +27,7 @@ class RemoteConfigService {
   AppConfig? _appConfig;
   TagsManifest? _tagsManifest;
   final Map<String, SourceConfig> _sourceConfigs = {};
+  final Map<String, Map<String, dynamic>> _rawSourceConfigs = {};
 
   RemoteConfigService({
     required Dio dio,
@@ -85,6 +86,7 @@ class RemoteConfigService {
     try {
       final assetString = await rootBundle.loadString(assetPath);
       final data = jsonDecode(assetString) as Map<String, dynamic>;
+      _rawSourceConfigs[sourceName] = data;
       updateConfig(data);
     } catch (e) {
       _logger.w('Asset load failed for $sourceName', error: e);
@@ -207,6 +209,11 @@ class RemoteConfigService {
 
   AppConfig? get appConfig => _appConfig;
   TagsManifest? get tagsManifest => _tagsManifest;
+  
+  /// Get raw config json (useful for dynamic properties not yet in model)
+  Map<String, dynamic>? getRawConfig(String source) {
+    return _rawSourceConfigs[source];
+  }
 
   // Existing helpers
   Future<bool> hasValidCache(String source) async {

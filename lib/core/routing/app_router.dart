@@ -21,6 +21,10 @@ import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/pages/crotpedia/crotpedia_login_page.dart';
 import 'package:nhasixapp/core/models/image_metadata.dart';
 import 'package:nhasixapp/core/utils/app_animations.dart';
+import 'package:nhasixapp/presentation/pages/crotpedia/genre_list_screen.dart'; // NEW
+import 'package:nhasixapp/presentation/pages/crotpedia/doujin_list_screen.dart'; // NEW
+import 'package:nhasixapp/presentation/pages/crotpedia/request_list_screen.dart'; // NEW
+import 'package:url_launcher/url_launcher.dart';
 
 class AppRouter {
   /// Global navigator key untuk Cloudflare bypass dialog
@@ -328,6 +332,39 @@ class AppRouter {
           const CrotpediaLoginPage(),
           type: RouteTransitionType.fadeSlide,
         ),
+      ),
+
+      // Crotpedia Genre List
+      GoRoute(
+        path: AppRoute.crotpediaGenreList,
+        name: AppRoute.crotpediaGenreListName,
+        builder: (context, state) => const CrotpediaGenreListScreen(),
+      ),
+
+      // Crotpedia Doujin List
+      GoRoute(
+        path: AppRoute.crotpediaDoujinList,
+        name: AppRoute.crotpediaDoujinListName,
+        builder: (context, state) => const CrotpediaDoujinListScreen(),
+      ),
+
+      // Crotpedia Request List
+      GoRoute(
+        path: AppRoute.crotpediaRequestList,
+        name: AppRoute.crotpediaRequestListName,
+        builder: (context, state) => const CrotpediaRequestListScreen(),
+      ),
+
+      // Crotpedia Donation (Handler)
+      GoRoute(
+        path: AppRoute.crotpediaDonation,
+        name: AppRoute.crotpediaDonationName,
+        redirect: (context, state) {
+            // This is a bit hacky for a route, but useful for menu consistency
+            // Better handled in the onTap handler, but here for completeness if deep linked
+            launchUrl(Uri.parse('https://trakteer.id/crotpedia/tip'), mode: LaunchMode.externalApplication);
+            return null; 
+        },
       ),
     ],
 

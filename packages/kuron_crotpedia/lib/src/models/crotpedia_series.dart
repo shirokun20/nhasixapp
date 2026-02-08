@@ -6,6 +6,8 @@ class CrotpediaSeries {
   final String title;
   final String coverUrl;
   final String? status;
+  final String? id;
+  final String? url;
   final String? author;
   final String? artist;
   final int? year;
@@ -17,6 +19,8 @@ class CrotpediaSeries {
     required this.title,
     required this.coverUrl,
     this.status,
+    this.id,
+    this.url,
     this.author,
     this.artist,
     this.year,
@@ -39,6 +43,8 @@ class CrotpediaSeriesDetail extends CrotpediaSeries {
     required super.title,
     required super.coverUrl,
     super.status,
+    super.id,
+    super.url,
     super.author,
     super.artist,
     super.year,

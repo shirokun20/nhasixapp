@@ -7,7 +7,7 @@ import 'package:logger/logger.dart';
 /// Database helper class for managing SQLite database
 class DatabaseHelper {
   static const String _databaseName = 'nhasix_app.db';
-  static const int _databaseVersion = 8; // Updated for multi-source search filter
+  static const int _databaseVersion = 9; // Updated for Crotpedia Doujin List
 
   static Database? _database;
   static final Logger _logger = Logger();
@@ -115,6 +115,7 @@ class DatabaseHelper {
     _createSearchHistoryTable(batch);
     _createSearchFilterStateTable(batch);
     _createReaderPositionsTable(batch);
+    _createDoujinListTable(batch);
 
     // Create indexes
     _createIndexes(batch);
@@ -333,6 +334,23 @@ class DatabaseHelper {
         _logger.e('Error upgrading search_filter_state table: $e');
       }
     }
+
+    if (oldVersion < 9 && newVersion >= 9) {
+      _logger.i('Upgrading to version 9: Adding doujin_list table');
+      try {
+        await db.execute('''
+          CREATE TABLE doujin_list (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            url TEXT NOT NULL,
+            updated_at INTEGER
+          )
+        ''');
+        _logger.i('Added doujin_list table');
+      } catch (e) {
+        _logger.w('Error adding doujin_list table: $e');
+      }
+    }
   }
 
   /// Create favorites table with source_id for multi-source support
@@ -442,6 +460,18 @@ class DatabaseHelper {
     ''');
   }
 
+  /// Create doujin list table for Crotpedia
+  void _createDoujinListTable(Batch batch) {
+    batch.execute('''
+      CREATE TABLE doujin_list (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        url TEXT NOT NULL,
+        updated_at INTEGER
+      )
+    ''');
+  }
+
   /// Create database indexes for performance
   void _createIndexes(Batch batch) {
     // Favorites indexes
@@ -542,6 +572,7 @@ class DatabaseHelper {
     batch.delete('history');
     batch.delete('downloads');
     batch.delete('favorites');
+    batch.delete('doujin_list');
 
     await batch.commit();
     _logger.i('All data cleared from database');

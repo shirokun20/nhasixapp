@@ -36,6 +36,7 @@ import 'package:nhasixapp/data/datasources/remote/nhentai_scraper.dart';
 import 'package:nhasixapp/data/datasources/remote/api/nhentai_api_client.dart';
 import 'package:nhasixapp/data/datasources/local/tag_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/request_rate_manager.dart';
+import 'package:nhasixapp/data/datasources/local/doujin_list_dao.dart';
 
 // BLoCs
 import 'package:nhasixapp/presentation/blocs/splash/splash_bloc.dart';
@@ -52,11 +53,13 @@ import 'package:nhasixapp/presentation/cubits/update/update_cubit.dart';
 
 // Repositories
 import 'package:nhasixapp/domain/repositories/repositories.dart';
+import 'package:nhasixapp/domain/repositories/crotpedia/crotpedia_feature_repository.dart';
 import 'package:nhasixapp/data/repositories/content_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/user_data_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/settings_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/reader_settings_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/reader_repository_impl.dart';
+import 'package:nhasixapp/data/repositories/crotpedia/crotpedia_feature_repository_impl.dart';
 
 // Use Cases
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
@@ -375,6 +378,8 @@ void _setupDataSources() {
             ?.displayName,
       ));
 
+
+
   // KomikTap Scraper
   getIt.registerLazySingleton<KomiktapScraper>(() => KomiktapScraper(
         customSelectors: getIt<RemoteConfigService>()
@@ -412,6 +417,10 @@ void _setupDataSources() {
   // Tag Data Source
   getIt.registerLazySingleton<TagDataSource>(
       () => TagDataSource(logger: getIt<Logger>()));
+
+  // Crotpedia Doujin List DAO
+  getIt.registerLazySingleton<DoujinListDao>(
+      () => DoujinListDao(getIt<DatabaseHelper>()));
 }
 
 /// Setup repository implementations
@@ -468,6 +477,15 @@ void _setupRepositories() {
         offlineContentManager: getIt<OfflineContentManager>(),
         logger: getIt<Logger>(),
       ));
+
+  // Crotpedia Feature Repository
+  getIt.registerLazySingleton<CrotpediaFeatureRepository>(
+      () => CrotpediaFeatureRepositoryImpl(
+            remoteDataSource: getIt<RemoteDataSource>(),
+            scraper: getIt<CrotpediaScraper>(),
+            doujinListDao: getIt<DoujinListDao>(),
+            logger: getIt<Logger>(),
+          ));
 }
 
 /// Setup use cases

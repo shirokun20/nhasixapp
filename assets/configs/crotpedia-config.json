@@ -1,6 +1,6 @@
 {
     "source": "crotpedia",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "lastUpdated": "2026-02-04T20:55:00+07:00",
     "baseUrl": "https://crotpedia.net",
     "searchConfig": {
@@ -191,6 +191,34 @@
             "paramName": "page"
         }
     },
+    "menuConfig": {
+        "donation": {
+            "enabled": true,
+            "url": "https://trakteer.id/crotpedia/tip",
+            "label": "Donasi (Trakteer)",
+            "icon": "volunteer_activism"
+        },
+        "genreList": {
+            "enabled": true,
+            "endpoint": "/genre-list/",
+            "label": "Genre List",
+            "icon": "category"
+        },
+        "doujinList": {
+            "enabled": true,
+            "endpoint": "/doujin-list/",
+            "label": "Doujin List (A-Z)",
+            "icon": "library_books",
+            "cache": true
+        },
+        "requestList": {
+            "enabled": true,
+            "endpoint": "/baca/publisher/request/",
+            "label": "Project Request",
+            "icon": "assignment",
+            "pagination": true
+        }
+    },
     "scraper": {
         "enabled": true,
         "selectors": {
@@ -206,8 +234,26 @@
                 "cover": ".flexbox2-thumb img",
                 "title": ".flexbox2-title span"
             },
+            "genreList": {
+                "container": "ul.achlist",
+                "item": "li",
+                "link": "a",
+                "name": "a",
+                "count": "span"
+            },
             "doujinList": {
-                "link": "a.series"
+                "container": ".mangalist-blc",
+                "index": "li",
+                "link": "a.series",
+                "title": "a.series"
+            },
+            "requestList": {
+                "container": ".flexbox2",
+                "item": ".flexbox2-item",
+                "link": "a",
+                "cover": "img",
+                "title": ".flexbox2-title span",
+                "status": ".flexbox2-footer"
             },
             "detail": {
                 "title": ".series-titlex h2",
@@ -243,7 +289,11 @@
             "search": "/?s={query}",
             "searchPaginated": "/page/{num}/?s={query}",
             "advancedSearch": "/advanced-search/?title={title}...",
-            "advancedSearchPaginated": "/advanced-search/page/{num}/?title={title}..."
+            "advancedSearchPaginated": "/advanced-search/page/{num}/?title={title}...",
+            "genreList": "/genre-list/",
+            "doujinList": "/doujin-list/",
+            "requestList": "/baca/publisher/request/",
+            "requestListPaginated": "/baca/publisher/request/page/{num}/"
         }
     },
     "auth": {
@@ -275,7 +325,11 @@
         "supportsTagExclusion": false,
         "supportsAdvancedSearch": true,
         "generatePdf": false,
-        "offlineMode": true
+        "offlineMode": true,
+        "genreList": true,
+        "doujinshiList": true,
+        "requestList": true,
+        "donation": true
     },
     "ui": {
         "displayName": "Crotpedia",

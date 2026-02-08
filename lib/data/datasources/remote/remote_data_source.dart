@@ -50,6 +50,14 @@ class RemoteDataSource {
   static const Duration requestTimeout = Duration(seconds: 30);
   static const int maxRetries = 3;
 
+  /// Public method to fetch HTML content from a specific path
+  /// Used by feature-specific repositories (e.g., Crotpedia)
+  Future<String> fetchHtml(String path) async {
+    // Construct full URL if path is relative
+    final url = path.startsWith('http') ? path : '$baseUrl$path';
+    return _getPageHtml(url);
+  }
+
   /// Initialize the remote data source
   Future<bool> initialize() async {
     try {
