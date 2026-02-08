@@ -87,13 +87,15 @@
             "cleanAfterDays": 30
         }
     },
-    "premium": {
-        "enabled": true,
-        "activation": {
-            "type": "license_key",
-            "validateEndpoint": "http://192.168.0.7:8000/api/check-license",
-            "maxDevices": 3,
-            "deviceLimitMessage": "License limit reached. Unlink other devices to continue."
+    "featureFlags": {
+        "premium": {
+            "enabled": true,
+            "activation": {
+                "type": "license_key",
+                "validateEndpoint": "https://portal.konterkt.com/api/check-license",
+                "maxDevices": 3,
+                "deviceLimitMessage": "License limit reached. Unlink other devices to continue."
+            }
         }
     }
 }

@@ -135,6 +135,10 @@
       "enabled": true,
       "requiresPremium": false
     },
+    "history": {
+      "enabled": false,
+      "requiresPremium": false
+    },
     "chapters": {
       "enabled": true,
       "requiresPremium": false

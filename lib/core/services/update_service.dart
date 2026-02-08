@@ -18,11 +18,9 @@ class UpdateService {
   final Dio _dio;
   final Logger _logger;
 
-  // GitHub Repository details
-  static const String _owner = 'shirokun20';
-  static const String _repo = 'nhasixapp';
-  static const String _baseUrl =
-      'https://api.github.com/repos/$_owner/$_repo/releases/latest';
+  // New API details
+  static const String _baseUrl = 'https://portal.konterkt.com';
+  static const String _checkUpdateEndpoint = '/api/check-update';
 
   UpdateService({
     required Logger logger,
@@ -35,49 +33,52 @@ class UpdateService {
     try {
       _logger.i('UpdateService: Checking for updates from $_baseUrl...');
 
-      // Get current app version
+      // Get current app version info
       final packageInfo = await PackageInfo.fromPlatform();
-      final currentVersion = packageInfo.version; // e.g., 1.0.0
+      final currentVersionCode = packageInfo.buildNumber; // e.g., 1 (integer as string)
+      final currentVersionName = packageInfo.version;
 
-      _logger.d('UpdateService: Current version: $currentVersion');
+      _logger.d('UpdateService: Current version: $currentVersionName ($currentVersionCode)');
 
-      // Fetch latest release from GitHub
-      final response = await _dio.get(_baseUrl);
+      // Call API with version_code
+      final response = await _dio.get(
+        '$_baseUrl$_checkUpdateEndpoint',
+        queryParameters: {'version_code': currentVersionCode},
+      );
 
       if (response.statusCode == 200) {
         final data = response.data;
-        final String tagName = data['tag_name'] ?? ''; // e.g., v1.0.1
+        
+        // Validate response status
+        if (data['status'] != 'success') {
+          _logger.w('UpdateService: API returned status ${data['status']}');
+          return null;
+        }
 
-        // Remove 'v' prefix if present for comparison
-        final cleanTagName = tagName.replaceAll('v', '');
+        final updateData = data['data'];
+        final bool updateAvailable = updateData['update_available'] ?? false;
 
-        // Simple comparison: if tagName != currentVersion (and assumes tagName > currentVersion)
-        // ideally we should use a proper semantic version comparison
-        if (_isNewerVersion(currentVersion, cleanTagName)) {
-          final String body = data['body'] ?? 'No changelog available.';
-          final String htmlUrl =
-              data['html_url'] ?? ''; // URL to the release page
+        if (updateAvailable) {
+          final latestVersion = updateData['latest_version'];
+          final String versionCode = latestVersion['code']?.toString() ?? '';
+          final String versionName = latestVersion['name'] ?? '';
+          final String changelog = latestVersion['changelog'] ?? 'No changelog available.';
+          String downloadPath = latestVersion['download_url'] ?? '';
 
-          // Try to find an apk asset, otherwise fallback to html_url
-          String downloadUrl = htmlUrl;
-          final List assets = data['assets'] ?? [];
-          final apkAsset = assets.firstWhere(
-            (asset) => (asset['name'] as String).endsWith('.apk'),
-            orElse: () => null,
-          );
-
-          if (apkAsset != null) {
-            downloadUrl = apkAsset['browser_download_url'];
+          // Handle relative URL
+          String downloadUrl = downloadPath;
+          if (downloadPath.isNotEmpty && !downloadPath.startsWith('http')) {
+             downloadUrl = '$_baseUrl$downloadPath';
           }
 
-          _logger.i('UpdateService: New version found: $tagName');
+          _logger.i('UpdateService: New version found: $versionName ($versionCode)');
           return UpdateInfo(
-            tagName: tagName,
-            content: body,
+            tagName: versionName, // Using version name as tagName for UI compatibility
+            content: changelog,
             downloadUrl: downloadUrl,
           );
         } else {
-          _logger.i('UpdateService: App is up to date.');
+          _logger.d('UpdateService: App is up to date.');
           return null;
         }
       } else {
@@ -90,30 +91,7 @@ class UpdateService {
     }
   }
 
-  /// Compare semantic versions
-  bool _isNewerVersion(String current, String remote) {
-    try {
-      // Remove any build numbers (+11)
-      final currentClean = current.split('+').first;
-      final remoteClean = remote.split('+').first;
-
-      List<int> currentParts = currentClean.split('.').map(int.parse).toList();
-      List<int> remoteParts = remoteClean.split('.').map(int.parse).toList();
-
-      for (int i = 0; i < remoteParts.length; i++) {
-        // If current doesn't have this part (e.g. 1.0 vs 1.0.1), remote is newer
-        if (i >= currentParts.length) return true;
-
-        if (remoteParts[i] > currentParts[i]) {
-          return true;
-        } else if (remoteParts[i] < currentParts[i]) {
-          return false;
-        }
-      }
-      return false; // Equal
-    } catch (e) {
-      _logger.w('UpdateService: Version parsing error ($current vs $remote)');
-      return false;
-    }
-  }
+  // _isNewerVersion is likely no longer needed as the API decides 'update_available',
+  // but keeping it or removing it depends on if we want client-side double-check.
+  // The API response explicitly says "update_available": true/false, so we rely on that.
 }

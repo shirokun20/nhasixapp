@@ -25,24 +25,24 @@ echo "🧹 Cleaning project..."
 flutter clean > /dev/null 2>&1
 
 echo "📊 OPTIMIZATION STRATEGIES:"
-echo "✅ Split APK per ABI (arm64, arm, x86_64) - Flutter --split-per-abi"
+echo "✅ Universal APK (fat APK) - Single APK for all architectures"
 echo "✅ Enable Android R8 obfuscation + minify"
 echo "✅ Compress native libraries"
 echo "✅ Remove debug symbols"
 echo "✅ Shrink resources"
 echo ""
 
-# Build with Flutter's --split-per-abi flag (generates all ABIs in one command)
-echo "🔨 Building optimized APKs (automatic split per architecture)..."
+# Build optimized universal APK
+echo "🔨 Building optimized APK (universal)..."
 
 if [ "$BUILD_TYPE" = "release" ]; then
-    flutter build apk --release --split-per-abi --split-debug-info=build/debug-info/
+    flutter build apk --release
 else
-    flutter build apk --debug --split-per-abi
+    flutter build apk --debug
 fi
 
 echo ""
-echo "✅ Optimized builds completed!"
+echo "✅ Optimized build completed!"
 echo ""
 
 # Create output directory
@@ -54,7 +54,7 @@ echo "📁 OPTIMIZED APK FILES:"
 echo "📂 Output directory: $OUTPUT_DIR/"
 echo ""
 
-# Find and copy all split APKs
+# Find and copy universal APK
 # Note: Renamed via android/app/build.gradle to komiktap_*.apk
 # Location: build/app/outputs/apk/release/ or build/app/outputs/apk/debug/
 APK_SEARCH_PATH="build/app/outputs/apk/$BUILD_TYPE/komiktap_*.apk"
@@ -79,20 +79,16 @@ fi
 echo ""
 echo "📏 SIZE SUMMARY:"
 total_size=$(du -ch $OUTPUT_DIR/komiktap_*.apk 2>/dev/null | grep total | cut -f1 || echo '0')
-count=$(ls -1 $OUTPUT_DIR/komiktap_*.apk 2>/dev/null | wc -l | tr -d ' ')
-echo "📦 Total APKs: $count"
-echo "📊 Combined size: $total_size"
-echo "💾 Previous universal: ~29MB"
+echo "📦 Total APKs: $FOUND_COUNT"
+echo "📊 Total size: $total_size"
 echo ""
-echo "📂 All APKs saved to: $OUTPUT_DIR/"
+echo "📂 APK saved to: $OUTPUT_DIR/"
 echo ""
 
 echo ""
 echo "🎯 RECOMMENDATIONS:"
-echo "📱 Use ARM64 APK for modern devices (95% of users)"
-echo "📱 Use ARM APK for older devices (compatibility)"
-echo "📱 x86_64 APK also generated (for emulators/ChromeOS)"
-echo "🚀 Upload to Google Play as App Bundle for automatic optimization"
+echo "📱 Universal APK works on all devices (ARM64, ARM, x86_64, etc)"
+echo "� Useful if split APKs cause issues with native libraries or loading"
 echo "⚡ Single Flutter command generates all ABIs automatically"
 echo ""
 echo "🎉 Optimization complete! All APKs ready in $OUTPUT_DIR/"

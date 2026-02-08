@@ -311,14 +311,43 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                         }
                         return const SizedBox.shrink();
                       }),
-                      _buildNavItem(
-                        context,
-                        icon: Icons.history_rounded,
-                        label: l10n.viewHistory,
-                        route: AppRoute.history,
-                        isSelected: isSelected(AppRoute.history),
-                        theme: theme,
-                      ),
+                      Builder(builder: (context) {
+                        final sourceId = context
+                                .read<SourceCubit>()
+                                .state
+                                .activeSource
+                                ?.id ??
+                            'nhentai';
+                        final config = getIt<RemoteConfigService>();
+                        // Favorites page should generally be accessible, but if we want to be strict:
+                        // checking if ANY source has favorites enabled?
+                        // For now, let's keep Favorites always visible or check current source?
+                        // Favorites usually contains mixed content. Let's start with checking current source or just keep it.
+                        // User JSON "favorite": true.
+                        // If feature disabled, maybe we hide it?
+                        // But favorites are local. Even if source disables LOOKING UP favorites, local DB still exists.
+                        // Let's safe-guard it anyway with the flag if desired, but primarily Random is the one that breaks if API missing.
+                        if (config.isFeatureEnabled(
+                            sourceId, (f) => f.favorite?.enabled ?? false)) {
+                          return _buildNavItem(
+                            context,
+                            icon: Icons.favorite_rounded,
+                            label: l10n.favoriteGalleries,
+                            route: AppRoute.favorites,
+                            isSelected: isSelected(AppRoute.favorites),
+                            theme: theme,
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      }),
+                      // _buildNavItem(
+                      //   context,
+                      //   icon: Icons.history_rounded,
+                      //   label: l10n.viewHistory,
+                      //   route: AppRoute.history,
+                      //   isSelected: isSelected(AppRoute.history),
+                      //   theme: theme,
+                      // ),
                     ],
                     const SizedBox(height: 16),
                     _buildSectionLabel('MORE', theme),

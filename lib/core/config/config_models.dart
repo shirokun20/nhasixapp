@@ -351,6 +351,7 @@ class FeatureConfig {
   final FeatureFlag? related;
   final FeatureFlag? download;
   final FeatureFlag? favorite;
+  final FeatureFlag? history;
   final FeatureFlag? chapters;
   final FeatureFlag? bookmark;
   final FeatureFlag? supportsTagExclusion;
@@ -363,6 +364,7 @@ class FeatureConfig {
     this.related,
     this.download,
     this.favorite,
+    this.history,
     this.chapters,
     this.bookmark,
     this.supportsTagExclusion,
