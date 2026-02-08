@@ -4,11 +4,11 @@
 
 ## 1. Acceptance of Terms
 
-By downloading, installing, or using Kuron ("the App"), you agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use the App.
+By downloading, installing, or using KomikTap ("the App"), you agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use the App.
 
 ## 2. Disclaimer
 
-> **IMPORTANT**: Kuron is an **unofficial, third-party client application**. This App is **NOT affiliated with, endorsed by, or connected to nhentai.net** or any of its operators.
+> **IMPORTANT**: KomikTap is an **unofficial, third-party client application**. This App is **NOT affiliated with, endorsed by, or connected to nhentai.net** or any of its operators.
 
 - The App does not host, store, or distribute any content
 - All content is sourced directly from third-party websites
@@ -34,7 +34,7 @@ You agree to:
 ## 5. Intellectual Property
 
 - All content accessed through this App belongs to their respective creators and copyright holders
-- The App itself is open-source and available on GitHub
+- The App itself is free and available on official website
 - Open Source Licenses can be viewed within the App
 
 ## 6. No Warranty
@@ -60,7 +60,7 @@ We reserve the right to modify these terms at any time. Continued use of the App
 
 ## 9. Contact
 
-For questions or concerns, please visit our GitHub repository or contact the developer.
+For questions or concerns, please visit our official website.
 
 ---
 

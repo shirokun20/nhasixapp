@@ -4,7 +4,7 @@
 
 ## Overview
 
-Kuron ("the App") is committed to protecting your privacy. This Privacy Policy explains how we handle your information when you use our App.
+KomikTap ("the App") is committed to protecting your privacy. This Privacy Policy explains how we handle your information when you use our App.
 
 ## Data Collection
 
@@ -28,7 +28,6 @@ The following data is stored **only on your device**:
 | Favorites | Save your favorite galleries | Local SQLite database |
 | Downloads | Offline reading | Device storage |
 | Settings | Your preferences | SharedPreferences |
-| Search History | Quick access to past searches | Local storage |
 
 ## Data Sharing
 
@@ -43,11 +42,7 @@ The following data is stored **only on your device**:
 
 The App connects to:
 
-- **nhentai.net** - To fetch content and images
-- **crotpedia.net** - To fetch content and images
 - **komiktap.info** - To fetch content and images
-- **GitHub** - To check for app updates and load legal documents
-- **No other connections**
 
 ## Data Security
 
@@ -59,7 +54,6 @@ The App connects to:
 
 You have full control over your data:
 
-- **Clear History**: Settings → Reader → Clear All History
 - **Clear Favorites**: Favorites → Clear All
 - **Delete Downloads**: Downloads → Remove
 - **Reset All Settings**: Settings → Reset to Defaults
@@ -69,22 +63,13 @@ You have full control over your data:
 
 This App is **not intended for users under 18 years of age**. We do not knowingly collect information from minors.
 
-## Local Analytics (Optional)
-
-If enabled in Settings:
-
-- Analytics data is stored **locally only**
-- Used to improve app performance
-- **Never sent to any server**
-- Can be disabled anytime in Settings
-
 ## Changes to This Policy
 
 We may update this Privacy Policy from time to time. Changes will be reflected in the "Last Updated" date above.
 
 ## Contact
 
-For privacy concerns or questions, please visit our GitHub repository.
+For privacy concerns or questions, please visit our official website.
 
 ---
 

@@ -2,15 +2,15 @@
 
 ---
 
-**Q: What is Kuron?**
+**Q: What is KomikTap?**
 
-Kuron is an unofficial, third-party client for browsing content. It provides a mobile-friendly interface with additional features like offline reading and favorites.
+KomikTap is an unofficial, third-party client for browsing content. It provides a mobile-friendly interface with additional features like offline reading and favorites.
 
 ---
 
-**Q: Is Kuron free?**
+**Q: Is KomikTap free?**
 
-Yes, Kuron is completely free and open-source. You can view the source code on GitHub.
+Yes, KomikTap is completely free.
 
 ---
 
@@ -30,7 +30,7 @@ Go to **Settings → Display → Blur Thumbnails** and turn it OFF.
 
 **Q: Where are downloaded files saved?**
 
-Downloads are saved in: `Downloads/nhasix/` folder on your device.
+Downloads are saved in: `Downloads/KomikTapXkuron/` folder on your device.
 
 ---
 
@@ -46,12 +46,6 @@ Open any gallery and tap the **heart icon** to add it to your favorites.
 
 ---
 
-**Q: How do I clear my reading history?**
-
-Go to **Settings → Reader → Clear All History** or enable **Auto Cleanup** for automatic history management.
-
----
-
 **Q: The app can't connect / shows errors**
 
 Try these solutions:
@@ -59,7 +53,6 @@ Try these solutions:
 2. The website may be temporarily down
 3. Try using a VPN if access is blocked in your region
 4. Pull down to refresh the content
-5. **Crotpedia Only**: Some chapters require login. Navigate to **Drawer → Login** to access full content.
 
 ---
 
@@ -112,19 +105,19 @@ You can either:
 
 **Q: How do I update the app?**
 
-Go to **About → Check for Updates**. You'll be notified when a new version is available on GitHub.
+Go to **About → Check for Updates**. You'll be notified when a new version is available on official website.
 
 ---
 
 **Q: Why isn't the app on Play Store?**
 
-Due to content restrictions, the app is distributed via GitHub releases only.
+Due to content restrictions, the app is distributed via official website only.
 
 ---
 
 **Q: How do I report a bug?**
 
-Please open an issue on our GitHub repository with:
+Please open an issue on our official whatsapp group with:
 - Description of the problem
 - Steps to reproduce
 - Your device model and Android version
@@ -133,11 +126,10 @@ Please open an issue on our GitHub repository with:
 
 **Q: How can I contribute?**
 
-The app is open-source! You can contribute by:
+The app is free! You can contribute by:
 - Submitting bug reports
 - Suggesting features
-- Contributing code via pull requests
 
 ---
 
-*Didn't find your answer? Visit our GitHub repository for more help.*
+*Didn't find your answer? Visit our official whatsapp group for more help.*

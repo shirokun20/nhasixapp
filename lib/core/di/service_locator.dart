@@ -294,11 +294,9 @@ void _setupServices() {
     )..initialize(),
   );
 
-  // Legal Content Service - Fetch legal docs from GitHub with local fallback
-  getIt.registerLazySingleton<LegalContentService>(() => LegalContentService(
-        dio: getIt<Dio>(),
-        prefs: getIt<SharedPreferences>(),
-      ));
+  // Legal Content Service - Fetch legal docs from local assets
+  getIt.registerLazySingleton<LegalContentService>(
+      () => LegalContentService());
 
   // License Service
   getIt.registerLazySingleton<LicenseService>(() => LicenseService(

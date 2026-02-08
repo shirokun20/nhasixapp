@@ -1,7 +1,5 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 /// Types of legal content available
 enum LegalContentType {
@@ -10,24 +8,12 @@ enum LegalContentType {
   faq,
 }
 
-/// Service to fetch legal content from GitHub with local fallback
+/// Service to fetch legal content from local assets
 class LegalContentService {
-  LegalContentService({
-    required Dio dio,
-    required SharedPreferences prefs,
-  })  : _dio = dio,
-        _prefs = prefs;
+  LegalContentService({AssetBundle? bundle}) : _bundle = bundle ?? rootBundle;
 
-  final Dio _dio;
-  final SharedPreferences _prefs;
+  final AssetBundle _bundle;
   final _logger = Logger();
-
-  /// GitHub raw content base URL
-  static const _githubBaseUrl =
-      'https://raw.githubusercontent.com/shirokun20/nhasixapp/master/docs';
-
-  /// Cache key prefix
-  static const _cacheKeyPrefix = 'legal_content_cache_';
 
   /// Get file name for content type
   String _getFileName(LegalContentType type) {
@@ -38,18 +24,6 @@ class LegalContentService {
         return 'privacy_policy.md';
       case LegalContentType.faq:
         return 'faq.md';
-    }
-  }
-
-  /// Get GitHub file name for content type
-  String _getGitHubFileName(LegalContentType type) {
-    switch (type) {
-      case LegalContentType.termsAndConditions:
-        return 'TERMS.md';
-      case LegalContentType.privacyPolicy:
-        return 'PRIVACY.md';
-      case LegalContentType.faq:
-        return 'FAQ.md';
     }
   }
 
@@ -75,57 +49,10 @@ class LegalContentService {
     }
   }
 
-  /// Fetch content with hybrid approach:
-  /// 1. Try GitHub first
-  /// 2. If fail, use cached version
-  /// 3. If no cache, use local asset
+  /// Fetch content from local assets
   Future<String> fetchContent(LegalContentType type, String locale) async {
-    final cacheKey = '$_cacheKeyPrefix${type.name}_$locale';
-
-    try {
-      // Try fetching from GitHub
-      final content = await _fetchFromGitHub(type, locale);
-
-      // Cache the fetched content
-      await _prefs.setString(cacheKey, content);
-      _logger.i(
-          'LegalContentService: Fetched and cached ${type.name} from GitHub');
-
-      return content;
-    } catch (e) {
-      _logger.w('LegalContentService: GitHub fetch failed: $e');
-
-      // Try cached version
-      final cached = _prefs.getString(cacheKey);
-      if (cached != null && cached.isNotEmpty) {
-        _logger.i('LegalContentService: Using cached ${type.name}');
-        return cached;
-      }
-
-      // Fall back to local asset
-      _logger.i('LegalContentService: Using local asset for ${type.name}');
-      return _loadLocalAsset(type, locale);
-    }
-  }
-
-  /// Fetch from GitHub raw content
-  Future<String> _fetchFromGitHub(LegalContentType type, String locale) async {
-    final fileName = _getGitHubFileName(type);
-    final url = '$_githubBaseUrl/$locale/$fileName';
-
-    final response = await _dio.get<String>(
-      url,
-      options: Options(
-        receiveTimeout: const Duration(seconds: 10),
-        sendTimeout: const Duration(seconds: 5),
-      ),
-    );
-
-    if (response.statusCode == 200 && response.data != null) {
-      return response.data!;
-    }
-
-    throw Exception('Failed to fetch from GitHub: ${response.statusCode}');
+    _logger.i('LegalContentService: Loading ${type.name} from local assets');
+    return _loadLocalAsset(type, locale);
   }
 
   /// Load from local assets
@@ -134,24 +61,14 @@ class LegalContentService {
     final assetPath = 'assets/legal/$locale/$fileName';
 
     try {
-      return await rootBundle.loadString(assetPath);
+      return await _bundle.loadString(assetPath);
     } catch (e) {
       // If locale-specific file not found, try English
       if (locale != 'en') {
         _logger.w('LegalContentService: Fallback to English for ${type.name}');
-        return await rootBundle.loadString('assets/legal/en/$fileName');
+        return await _bundle.loadString('assets/legal/en/$fileName');
       }
       rethrow;
     }
-  }
-
-  /// Clear cached content
-  Future<void> clearCache() async {
-    for (final type in LegalContentType.values) {
-      for (final locale in ['en', 'id']) {
-        await _prefs.remove('$_cacheKeyPrefix${type.name}_$locale');
-      }
-    }
-    _logger.i('LegalContentService: Cache cleared');
   }
 }

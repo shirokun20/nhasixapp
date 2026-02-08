@@ -4,7 +4,7 @@
 
 ## Ringkasan
 
-Kuron ("Aplikasi") berkomitmen untuk melindungi privasi Anda. Kebijakan Privasi ini menjelaskan bagaimana kami menangani informasi Anda saat menggunakan Aplikasi kami.
+KomikTap ("Aplikasi") berkomitmen untuk melindungi privasi Anda. Kebijakan Privasi ini menjelaskan bagaimana kami menangani informasi Anda saat menggunakan Aplikasi kami.
 
 ## Pengumpulan Data
 
@@ -28,14 +28,12 @@ Data berikut disimpan **hanya di perangkat Anda**:
 | Favorit | Menyimpan galeri favorit Anda | Database SQLite lokal |
 | Unduhan | Membaca offline | Penyimpanan perangkat |
 | Pengaturan | Preferensi Anda | SharedPreferences |
-| Riwayat Pencarian | Akses cepat ke pencarian sebelumnya | Penyimpanan lokal |
 
 ## Berbagi Data
 
 **Kami tidak membagikan data apapun kepada pihak ketiga.**
 
 - Tidak ada data yang dikirim ke server kami (kami tidak punya)
-- Tidak ada jaringan iklan
 - Tidak ada platform analitik
 - Tidak ada integrasi media sosial
 
@@ -43,11 +41,7 @@ Data berikut disimpan **hanya di perangkat Anda**:
 
 Aplikasi terhubung ke:
 
-- **nhentai.net** - Untuk mengambil konten dan gambar
-- **crotpedia.net** - Untuk mengambil konten dan gambar
 - **komiktap.info** - Untuk mengambil konten dan gambar
-- **GitHub** - Untuk memeriksa pembaruan aplikasi dan memuat dokumen hukum
-- **Tidak ada koneksi lain**
 
 ## Keamanan Data
 
@@ -69,23 +63,14 @@ Anda memiliki kontrol penuh atas data Anda:
 
 Aplikasi ini **tidak ditujukan untuk pengguna di bawah 18 tahun**. Kami tidak dengan sengaja mengumpulkan informasi dari anak di bawah umur.
 
-## Analitik Lokal (Opsional)
-
-Jika diaktifkan di Pengaturan:
-
-- Data analitik disimpan **hanya secara lokal**
-- Digunakan untuk meningkatkan performa aplikasi
-- **Tidak pernah dikirim ke server manapun**
-- Dapat dinonaktifkan kapan saja di Pengaturan
-
 ## Perubahan Kebijakan Ini
 
 Kami dapat memperbarui Kebijakan Privasi ini dari waktu ke waktu. Perubahan akan tercermin pada tanggal "Terakhir Diperbarui" di atas.
 
 ## Kontak
 
-Untuk kekhawatiran atau pertanyaan privasi, silakan kunjungi repositori GitHub kami.
+Untuk kekhawatiran atau pertanyaan privasi, silakan kunjungi website resmi kami.
 
 ---
 
-*Privasi Anda penting bagi kami. Kuron dirancang untuk menjadi aplikasi yang menghormati privasi.*
+*Privasi Anda penting bagi kami. KomikTap dirancang untuk menjadi aplikasi yang menghormati privasi.*

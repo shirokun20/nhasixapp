@@ -34,7 +34,7 @@ Anda setuju untuk:
 ## 5. Hak Kekayaan Intelektual
 
 - Semua konten yang diakses melalui Aplikasi ini adalah milik kreator dan pemegang hak cipta masing-masing
-- Aplikasi ini sendiri bersifat open-source dan tersedia di GitHub
+- Aplikasi ini sendiri bersifat free dan tersedia di website resmi
 - Lisensi Open Source dapat dilihat di dalam Aplikasi
 
 ## 6. Tanpa Jaminan
@@ -60,7 +60,7 @@ Kami berhak untuk mengubah syarat ini kapan saja. Penggunaan berkelanjutan atas 
 
 ## 9. Kontak
 
-Untuk pertanyaan atau kekhawatiran, silakan kunjungi repositori GitHub kami atau hubungi developer.
+Untuk pertanyaan atau kekhawatiran, silakan kunjungi website resmi kami.
 
 ---
 

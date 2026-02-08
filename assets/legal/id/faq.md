@@ -2,19 +2,19 @@
 
 ---
 
-**Q: Apa itu Kuron?**
+**Q: Apa itu KomikTap?**
 
-Kuron adalah klien pihak ketiga tidak resmi untuk menjelajahi konten. Aplikasi ini menyediakan antarmuka yang ramah seluler dengan fitur tambahan seperti pembacaan offline dan favorit.
-
----
-
-**Q: Apakah Kuron gratis?**
-
-Ya, Kuron sepenuhnya gratis dan open-source. Anda dapat melihat kode sumbernya di GitHub.
+KomikTap adalah klien pihak ketiga tidak resmi untuk menjelajahi konten. Aplikasi ini menyediakan antarmuka yang ramah seluler dengan fitur tambahan seperti pembacaan offline dan favorit.
 
 ---
 
-**Q: Apakah Kuron aman digunakan?**
+**Q: Apakah KomikTap gratis?**
+
+Ya, KomikTap sepenuhnya gratis dan open-source. Anda dapat melihat kode sumbernya di GitHub.
+
+---
+
+**Q: Apakah KomikTap aman digunakan?**
 
 Ya. Aplikasi tidak mengumpulkan data pribadi apapun dan semua informasi disimpan secara lokal di perangkat Anda.
 
@@ -30,7 +30,7 @@ Pergi ke **Pengaturan → Tampilan → Blur Thumbnail** dan matikan.
 
 **Q: Di mana file unduhan disimpan?**
 
-Unduhan disimpan di folder: `Downloads/nhasix/` di perangkat Anda.
+Unduhan disimpan di folder: `Downloads/KomikTapXKuron/` di perangkat Anda.
 
 ---
 
@@ -46,19 +46,13 @@ Buka galeri manapun dan ketuk **ikon hati** untuk menambahkannya ke favorit Anda
 
 ---
 
-**Q: Bagaimana cara menghapus riwayat baca?**
-
-Pergi ke **Pengaturan → Pembaca → Hapus Semua Riwayat** atau aktifkan **Pembersihan Otomatis** untuk manajemen riwayat otomatis.
-
----
-
 **Q: Aplikasi tidak bisa terhubung / menampilkan error**
 
-Coba solusi ini:
+Coba solusi berikut:
 1. Periksa koneksi internet Anda
 2. Website mungkin sedang down sementara
-3. Coba gunakan VPN jika akses diblokir di wilayah Anda
-4. Tarik ke bawah untuk menyegarkan konten
+3. Gunakan VPN jika akses diblokir di wilayah Anda
+4. Tarik ke bawah untuk refresh konten
 5. **Khusus Crotpedia**: Beberapa chapter mewajibkan login. Buka **Drawer → Login** untuk mengakses konten penuh.
 
 ---
@@ -92,7 +86,7 @@ Coba solusi ini:
 
 **Q: Apakah aplikasi mengumpulkan data saya?**
 
-Tidak. Kuron tidak mengumpulkan informasi pribadi apapun. Semua data (riwayat, favorit, pengaturan) disimpan secara lokal di perangkat Anda saja.
+Tidak. KomikTap tidak mengumpulkan informasi pribadi apapun. Semua data (riwayat, favorit, pengaturan) disimpan secara lokal di perangkat Anda saja.
 
 ---
 
@@ -112,19 +106,19 @@ Anda bisa:
 
 **Q: Bagaimana cara memperbarui aplikasi?**
 
-Pergi ke **Tentang → Periksa Pembaruan**. Anda akan diberi tahu ketika versi baru tersedia di GitHub.
+Pergi ke **Tentang → Periksa Pembaruan**. Anda akan diberi tahu ketika versi baru tersedia di website resmi.
 
 ---
 
 **Q: Mengapa aplikasi tidak ada di Play Store?**
 
-Karena pembatasan konten, aplikasi didistribusikan hanya melalui GitHub releases.
+Karena pembatasan konten, aplikasi didistribusikan hanya melalui website resmi.
 
 ---
 
 **Q: Bagaimana cara melaporkan bug?**
 
-Silakan buka issue di repositori GitHub kami dengan:
+Silakan buka issue di group whatsapp resmi kami dengan:
 - Deskripsi masalah
 - Langkah-langkah untuk mereproduksi
 - Model perangkat dan versi Android Anda
@@ -133,11 +127,10 @@ Silakan buka issue di repositori GitHub kami dengan:
 
 **Q: Bagaimana saya bisa berkontribusi?**
 
-Aplikasi ini open-source! Anda dapat berkontribusi dengan:
+Aplikasi ini free! Anda dapat berkontribusi dengan:
 - Mengirimkan laporan bug
 - Menyarankan fitur
-- Berkontribusi kode melalui pull request
 
 ---
 
-*Tidak menemukan jawaban Anda? Kunjungi repositori GitHub kami untuk bantuan lebih lanjut.*
+*Tidak menemukan jawaban Anda? Kunjungi group whatsapp resmi kami untuk bantuan lebih lanjut.*

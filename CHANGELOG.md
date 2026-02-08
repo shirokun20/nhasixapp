@@ -8,12 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [1.0.0] - 2026-02-08
 
-### 🚀 Official Release
-- **New Update System**: Switched to `portal.konterkt.com` for faster, more reliable updates.
-- **Improved Downloads**: Updates now redirect users to a dedicated download page for better experience.
-- **Performance**: Optimized APK size and startup time.
-- **Universal APK**: Switched to a single, optimized universal APK for all devices.
-- **Smart History**: Enabled auto-cleanup for history to keep the app lightweight.
+### 🚀 Official Release & Rebranding
+- **Rebranding**: Application renamed from **Kuron** to **KomikTap**.
+- **New Update System**: Switched to a centralized portal for reliable updates.
+- **Universal APK**: Optimized universal APK for all devices.
+
+### 🛠 Improvements & Fixes
+- **Reader Experience**: Fixed image distortion on devices with different aspect ratios (e.g., Infinix vs POCO).
+- **Storage**: Migrated app base folder to `komikTapXKuron` for better organization.
+- **Smart History**: Enabled auto-cleanup for history.
+- **Monetization**: Updated ad configuration.
 
 ## [0.9.9] - 2026-01-28
 
