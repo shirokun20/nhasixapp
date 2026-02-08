@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.10] - 2026-02-08
+
+### 🚀 New Features
+- **Crotpedia Enhancements**: 
+  - Added **Genre List** screen with browsable genre categories and item counts
+  - Added **Doujin List** screen with alphabetical index (A-Z) for easy navigation
+  - Added **Project Request** screen displaying community-requested content with pagination
+- **Login Required Detection**: Implemented automatic detection and handling for content requiring authentication in Crotpedia
+
+### 🎨 Reader UX Improvements
+- **Auto-Hide UI on Scroll**: Reader interface now automatically hides on scroll for immersive reading experience
+- **Disabled Zoom in Continuous Scroll**: Prevents accidental zoom gestures in continuous scroll mode for smoother reading
+- **Conditional Page Count Display**: Page count now displayed contextually based on reading mode
+
+### 🛠 Improvements
+- Enhanced request list parsing with support for genres, ratings, and synopsis
+- Updated Crotpedia config to version 1.2.0 with new menu configurations
+- Propagated `LoginRequiredException` through content detail retrieval for better error handling
+
+### 🔧 Technical
+- New localization strings for login-required scenarios
+- Removed debug print statements from Crotpedia scraper tests
+- Added `flutter_02.png` screenshot to repository
+
+---
+
 ## [0.9.9] - 2026-01-28
 
 ### 🚀 Pre-Release Polish
