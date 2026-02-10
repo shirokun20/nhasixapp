@@ -19,7 +19,7 @@ class GetRandomContentUseCase extends UseCase<List<Content>, int> {
       }
 
       if (count > maxCount) {
-        throw ValidationException('Count cannot exceed $maxCount');
+        throw const ValidationException('Count cannot exceed $maxCount');
       }
 
       // Get random content from repository

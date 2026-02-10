@@ -145,31 +145,31 @@ class _WidgetExamplesScreenState extends State<WidgetExamplesScreen> {
             // Progress Indicators
             _buildSection(
               'Progress Indicators',
-              Column(
+              const Column(
                 children: [
                   // Circular progress
-                  const AppProgressIndicator(
+                  AppProgressIndicator(
                     message: 'Loading content...',
                     size: 32,
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
 
                   // Linear progress
-                  const AppLinearProgressIndicator(
+                  AppLinearProgressIndicator(
                     value: 0.65,
                     message: 'Download progress',
                     showPercentage: true,
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
 
                   // Pulsing dots
-                  const PulsingDotIndicator(
+                  PulsingDotIndicator(
                     dotCount: 3,
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
 
                   // Shimmer loading
                   SizedBox(

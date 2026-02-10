@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
-import 'package:nhasixapp/presentation/blocs/crotpedia/request_list/request_list_cubit.dart';
-import 'package:nhasixapp/presentation/blocs/crotpedia/request_list/request_list_state.dart';
-import 'package:nhasixapp/domain/repositories/crotpedia/crotpedia_feature_repository.dart';
+import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_state.dart';
 import 'package:nhasixapp/presentation/widgets/error_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progress_indicator_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_drawer_content.dart';
@@ -17,9 +16,7 @@ class CrotpediaRequestListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => RequestListCubit(
-        getIt<CrotpediaFeatureRepository>(),
-      )..loadFirstPage(),
+      create: (context) => getIt<CrotpediaFeatureCubit>()..loadRequestList(),
       child: Scaffold(
         drawer: const AppDrawerContent(),
         appBar: AppBar(
@@ -57,8 +54,7 @@ class _RequestListBodyState extends State<_RequestListBody> {
 
   void _onScroll() {
     if (_isBottom) {
-      // Now context.read will work because this widget is INSIDE BlocProvider
-      context.read<RequestListCubit>().loadNextPage();
+      context.read<CrotpediaFeatureCubit>().loadNextRequestPage();
     }
   }
 
@@ -71,16 +67,17 @@ class _RequestListBodyState extends State<_RequestListBody> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<RequestListCubit, RequestListState>(
+    return BlocBuilder<CrotpediaFeatureCubit, CrotpediaFeatureState>(
       builder: (context, state) {
-        if (state is RequestListLoading) {
+        if (state is CrotpediaFeatureLoading) {
           return const Center(child: AppProgressIndicator());
-        } else if (state is RequestListError) {
+        } else if (state is CrotpediaFeatureError) {
           return Center(
             child: AppErrorWidget(
               title: 'Error Loading Requests',
               message: state.message,
-              onRetry: () => context.read<RequestListCubit>().loadFirstPage(),
+              onRetry: () =>
+                  context.read<CrotpediaFeatureCubit>().loadRequestList(page: 1),
             ),
           );
         } else if (state is RequestListLoaded) {
@@ -89,7 +86,7 @@ class _RequestListBodyState extends State<_RequestListBody> {
           }
           return RefreshIndicator(
             onRefresh: () async {
-              await context.read<RequestListCubit>().loadFirstPage();
+              await context.read<CrotpediaFeatureCubit>().loadRequestList(page: 1);
             },
             child: ListView.separated(
               controller: _scrollController,
@@ -105,26 +102,28 @@ class _RequestListBodyState extends State<_RequestListBody> {
                     ),
                   );
                 }
-                
+
                 final request = state.requests[index];
                 return Card(
                   clipBehavior: Clip.antiAlias,
                   elevation: 2,
                   child: InkWell(
                     onTap: () {
-                       // Extract slug from URL using basic parsing
-                       try {
-                           final uri = Uri.parse(request.url);
-                           final segments = uri.pathSegments;
-                           // Path usually /baca/series/slug/
-                           int seriesIndex = segments.indexOf('series');
-                           if (seriesIndex != -1 && seriesIndex + 1 < segments.length) {
-                               final slug = segments[seriesIndex + 1];
-                               AppRouter.goToContentDetail(context, slug, sourceId: SourceType.crotpedia.id);
-                           }
-                       } catch (e) {
-                           // Ignore
-                       }
+                      // Extract slug from URL using basic parsing
+                      try {
+                        final uri = Uri.parse(request.url);
+                        final segments = uri.pathSegments;
+                        // Path usually /baca/series/slug/
+                        final int seriesIndex = segments.indexOf('series');
+                        if (seriesIndex != -1 &&
+                            seriesIndex + 1 < segments.length) {
+                          final slug = segments[seriesIndex + 1];
+                          AppRouter.goToContentDetail(context, slug,
+                              sourceId: SourceType.crotpedia.id);
+                        }
+                      } catch (e) {
+                        // Ignore
+                      }
                     },
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,11 +135,13 @@ class _RequestListBodyState extends State<_RequestListBody> {
                           child: CachedNetworkImage(
                             imageUrl: request.coverUrl,
                             fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(color: Colors.grey[200]),
-                            errorWidget: (context, url, error) => const Icon(Icons.broken_image),
+                            placeholder: (context, url) =>
+                                Container(color: Colors.grey[200]),
+                            errorWidget: (context, url, error) =>
+                                const Icon(Icons.broken_image),
                           ),
                         ),
-                        
+
                         Expanded(
                           child: Padding(
                             padding: const EdgeInsets.all(12),
@@ -150,43 +151,60 @@ class _RequestListBodyState extends State<_RequestListBody> {
                                 // Title
                                 Text(
                                   request.title,
-                                  style: Theme.of(context).textTheme.titleMedium,
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 8),
-                                
+
                                 // Genres (wrapped chips)
                                 if (request.genres.isNotEmpty)
                                   Wrap(
                                     spacing: 4,
                                     runSpacing: 4,
-                                    children: request.genres.values.take(5).map((genre) {
+                                    children: request.genres.values
+                                        .take(5)
+                                        .map((genre) {
                                       return Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 2),
                                         decoration: BoxDecoration(
-                                          color: Theme.of(context).colorScheme.primaryContainer,
-                                          borderRadius: BorderRadius.circular(4),
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primaryContainer,
+                                          borderRadius:
+                                              BorderRadius.circular(4),
                                         ),
                                         child: Text(
                                           genre,
-                                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                            color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                          ),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelSmall
+                                              ?.copyWith(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimaryContainer,
+                                              ),
                                         ),
                                       );
                                     }).toList(),
                                   ),
-                                
+
                                 // Show count if there are more genres
                                 if (request.genres.length > 5)
                                   Padding(
                                     padding: const EdgeInsets.only(top: 4),
                                     child: Text(
                                       '+${request.genres.length - 5} more',
-                                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall
+                                          ?.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
                                     ),
                                   ),
                               ],

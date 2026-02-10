@@ -17,14 +17,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     Emitter<HomeState> emit,
   ) async {
     emit(HomeLoading());
-    
+
     // 🔒 PRIVACY: Ensure existing downloads have .nomedia protection in background
     _ensureDownloadPrivacy();
-    
+
     await Future.delayed(const Duration(seconds: 2));
-    emit(HomeLoaded(data: "Initial Data"));
+    emit(HomeLoaded(data: 'Initial Data'));
   }
-  
+
   /// Ensure download privacy protection in background
   void _ensureDownloadPrivacy() {
     try {

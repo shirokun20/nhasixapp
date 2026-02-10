@@ -114,8 +114,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
               value: 'clear_all',
               child: Row(
                 children: [
-                  Icon(Icons.clear_all, size: 20),
-                  SizedBox(width: 8),
+                  const Icon(Icons.clear_all, size: 20),
+                  const SizedBox(width: 8),
                   Text(AppLocalizations.of(context)!.clearAllHistory),
                 ],
               ),
@@ -124,8 +124,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
               value: 'manual_cleanup',
               child: Row(
                 children: [
-                  Icon(Icons.cleaning_services, size: 20),
-                  SizedBox(width: 8),
+                  const Icon(Icons.cleaning_services, size: 20),
+                  const SizedBox(width: 8),
                   Text(AppLocalizations.of(context)!.manualCleanup),
                 ],
               ),
@@ -134,8 +134,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
               value: 'cleanup_settings',
               child: Row(
                 children: [
-                  Icon(Icons.settings, size: 20),
-                  SizedBox(width: 8),
+                  const Icon(Icons.settings, size: 20),
+                  const SizedBox(width: 8),
                   Text(AppLocalizations.of(context)!.cleanupSettings),
                 ],
               ),
@@ -169,7 +169,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
 
     if (state is HistoryEmpty) {
-      return Center(child: const HistoryEmptyWidget());
+      return const Center(child: HistoryEmptyWidget());
     }
 
     if (state is HistoryLoaded) {
@@ -323,7 +323,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   void _navigateToContent(BuildContext context, History historyItem) {
     // Source-aware navigation based on content source type
-    // 
+    //
     // Crotpedia: Chapter-based structure
     //   - History stores chapter ID (e.g., "manga-slug-chapter-5")
     //   - Navigate directly to reader for seamless continuation
@@ -332,7 +332,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     //   - History stores series ID (e.g., "123456")
     //   - Navigate to detail screen first (backward compatible)
     //   - User can view tags/info before continuing to read
-    
+
     if (historyItem.sourceId == 'crotpedia') {
       // Crotpedia: Direct to reader (chapter ID already stored)
       context.push('/reader/${historyItem.contentId}');

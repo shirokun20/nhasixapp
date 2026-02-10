@@ -227,7 +227,7 @@ class SearchQueryBuilder {
 
   /// Parse query string back to SearchFilter (for URL parsing)
   static SearchFilter parseQuery(String queryString) {
-    final filter = SearchFilter();
+    const filter = SearchFilter();
 
     if (queryString.isEmpty) {
       return filter;

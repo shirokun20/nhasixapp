@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
-import 'package:nhasixapp/presentation/blocs/crotpedia/doujin_list/doujin_list_cubit.dart';
-import 'package:nhasixapp/presentation/blocs/crotpedia/doujin_list/doujin_list_state.dart';
-import 'package:nhasixapp/domain/repositories/crotpedia/crotpedia_feature_repository.dart';
+import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_state.dart';
 import 'package:nhasixapp/presentation/widgets/error_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progress_indicator_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_drawer_content.dart';
@@ -17,9 +16,7 @@ class CrotpediaDoujinListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => DoujinListCubit(
-        getIt<CrotpediaFeatureRepository>(),
-      )..fetchDoujins(),
+      create: (context) => getIt<CrotpediaFeatureCubit>()..loadDoujinList(),
       child: Scaffold(
         drawer: const AppDrawerContent(),
         appBar: AppBar(
@@ -41,12 +38,17 @@ class _DoujinListBody extends StatefulWidget {
 
 class _DoujinListBodyState extends State<_DoujinListBody> {
   final ItemScrollController _itemScrollController = ItemScrollController();
-  final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
+  final ItemPositionsListener _itemPositionsListener =
+      ItemPositionsListener.create();
   final TextEditingController _searchController = TextEditingController();
-  
+
   // Sections in order: -, #, A-Z
-  final List<String> _sections = ['-', '#', ...List.generate(26, (i) => String.fromCharCode(65 + i))];
-  
+  final List<String> _sections = [
+    '-',
+    '#',
+    ...List.generate(26, (i) => String.fromCharCode(65 + i))
+  ];
+
   Map<String, List<dynamic>> _groupedDoujins = {};
   List<_ListItem> _listItems = [];
   String _searchQuery = '';
@@ -71,14 +73,17 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
     // Filter by search query first
     final filteredDoujins = _searchQuery.isEmpty
         ? doujins
-        : doujins.where((d) => d.title.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
-    
+        : doujins
+            .where((d) =>
+                d.title.toLowerCase().contains(_searchQuery.toLowerCase()))
+            .toList();
+
     _groupedDoujins = {for (var section in _sections) section: []};
-    
+
     for (var doujin in filteredDoujins) {
       final title = doujin.title.toUpperCase();
       String section;
-      
+
       if (title.startsWith('-')) {
         section = '-';
       } else if (RegExp(r'^[0-9]').hasMatch(title)) {
@@ -91,10 +96,10 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
           section = '#'; // Fallback for special chars
         }
       }
-      
+
       _groupedDoujins[section]?.add(doujin);
     }
-    
+
     // Build flat list with headers
     _listItems = [];
     for (var section in _sections) {
@@ -109,7 +114,8 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
   }
 
   void _scrollToSection(String section) {
-    final index = _listItems.indexWhere((item) => item.isHeader && item.section == section);
+    final index = _listItems
+        .indexWhere((item) => item.isHeader && item.section == section);
     if (index != -1) {
       _itemScrollController.scrollTo(
         index: index,
@@ -121,10 +127,10 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DoujinListCubit, DoujinListState>(
+    return BlocBuilder<CrotpediaFeatureCubit, CrotpediaFeatureState>(
       builder: (context, state) {
         // Show syncing message
-        if (state is DoujinListSyncing) {
+        if (state is CrotpediaFeatureSyncing) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -140,33 +146,35 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
                 Text(
                   'This may take a few moments...',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                   textAlign: TextAlign.center,
                 ),
               ],
             ),
           );
         }
-        
-        if (state is DoujinListLoading) {
+
+        if (state is CrotpediaFeatureLoading) {
           return const Center(child: AppProgressIndicator());
-        } else if (state is DoujinListError) {
+        } else if (state is CrotpediaFeatureError) {
           return Center(
             child: AppErrorWidget(
               title: 'Error Loading Doujin List',
               message: state.message,
-              onRetry: () => context.read<DoujinListCubit>().fetchDoujins(forceRefresh: true),
+              onRetry: () => context
+                  .read<CrotpediaFeatureCubit>()
+                  .loadDoujinList(forceRefresh: true),
             ),
           );
         } else if (state is DoujinListLoaded) {
           if (state.doujins.isEmpty) {
             return const Center(child: Text('No doujins found'));
           }
-          
+
           // Group doujins
           _groupDoujins(state.doujins);
-          
+
           return Column(
             children: [
               // Search bar
@@ -187,69 +195,51 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     filled: true,
-                    fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    fillColor:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
                   ),
                 ),
               ),
-              
-              // Show syncing indicator banner if syncing in background
-              if (state.isSyncing)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Syncing data in background...',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              
+
               // Results count
               if (_searchQuery.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       'Found ${_listItems.where((item) => !item.isHeader).length} results',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                     ),
                   ),
                 ),
-              
+
               // Main list
               Expanded(
                 child: Stack(
                   children: [
                     RefreshIndicator(
                       onRefresh: () async {
-                        await context.read<DoujinListCubit>().fetchDoujins(forceRefresh: true);
+                        await context
+                            .read<CrotpediaFeatureCubit>()
+                            .loadDoujinList(forceRefresh: true);
                       },
                       child: _listItems.isEmpty
                           ? Center(
                               child: Text(
                                 'No results found for "$_searchQuery"',
-                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyLarge
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
                               ),
                             )
                           : ScrollablePositionedList.builder(
@@ -258,17 +248,25 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
                               itemCount: _listItems.length,
                               itemBuilder: (context, index) {
                                 final item = _listItems[index];
-                                
+
                                 if (item.isHeader) {
                                   return Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 8),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .surfaceContainerHighest,
                                     child: Text(
                                       item.section!,
-                                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).colorScheme.primary,
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                          ),
                                     ),
                                   );
                                 } else {
@@ -276,26 +274,36 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
                                   return ListTile(
                                     title: Text(
                                       doujin.title,
-                                      style: Theme.of(context).textTheme.bodyLarge,
+                                      style:
+                                          Theme.of(context).textTheme.bodyLarge,
                                     ),
-                                    trailing: const Icon(Icons.chevron_right, size: 16),
+                                    trailing: const Icon(Icons.chevron_right,
+                                        size: 16),
                                     onTap: () {
                                       try {
                                         final uri = Uri.parse(doujin.url);
                                         final segments = uri.pathSegments;
-                                        int seriesIndex = segments.indexOf('series');
-                                        if (seriesIndex != -1 && seriesIndex + 1 < segments.length) {
-                                          final slug = segments[seriesIndex + 1];
-                                          AppRouter.goToContentDetail(context, slug, sourceId: SourceType.crotpedia.id);
+                                        final int seriesIndex =
+                                            segments.indexOf('series');
+                                        if (seriesIndex != -1 &&
+                                            seriesIndex + 1 < segments.length) {
+                                          final slug =
+                                              segments[seriesIndex + 1];
+                                          AppRouter.goToContentDetail(
+                                              context, slug,
+                                              sourceId:
+                                                  SourceType.crotpedia.id);
                                         } else {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text('Cannot parse slug from URL: ${doujin.url}'))
-                                          );
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(SnackBar(
+                                                  content: Text(
+                                                      'Cannot parse slug from URL: ${doujin.url}')));
                                         }
                                       } catch (e) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text('Error parsing URL: ${doujin.url}'))
-                                        );
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(SnackBar(
+                                                content: Text(
+                                                    'Error parsing URL: ${doujin.url}')));
                                       }
                                     },
                                   );
@@ -303,7 +311,7 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
                               },
                             ),
                     ),
-                    
+
                     // Floating A-Z navigation (only show when not searching)
                     if (_searchQuery.isEmpty)
                       Positioned(
@@ -313,10 +321,16 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
                         child: Container(
                           width: 28,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surface
+                                .withValues(alpha: 0.9),
                             border: Border(
                               left: BorderSide(
-                                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .outline
+                                    .withValues(alpha: 0.2),
                               ),
                             ),
                           ),
@@ -324,10 +338,13 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
                             itemCount: _sections.length,
                             itemBuilder: (context, index) {
                               final section = _sections[index];
-                              final hasItems = (_groupedDoujins[section] ?? []).isNotEmpty;
-                              
+                              final hasItems =
+                                  (_groupedDoujins[section] ?? []).isNotEmpty;
+
                               return InkWell(
-                                onTap: hasItems ? () => _scrollToSection(section) : null,
+                                onTap: hasItems
+                                    ? () => _scrollToSection(section)
+                                    : null,
                                 child: SizedBox(
                                   height: 20,
                                   child: Center(
@@ -337,8 +354,13 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
                                         fontSize: 10,
                                         fontWeight: FontWeight.w500,
                                         color: hasItems
-                                            ? Theme.of(context).colorScheme.primary
-                                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withValues(alpha: 0.3),
                                       ),
                                     ),
                                   ),

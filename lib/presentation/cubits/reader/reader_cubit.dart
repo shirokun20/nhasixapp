@@ -101,7 +101,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       }
 
       if (shouldUsePreloaded) {
-        _logger.i("✅ Strategy A: Using preloaded content: $contentId");
+        _logger.i('✅ Strategy A: Using preloaded content: $contentId');
         content = preloadedContent;
         // Check if it's local paths
         final hasLocalPaths =
@@ -111,25 +111,25 @@ class ReaderCubit extends Cubit<ReaderState> {
       // Strategy B: Offline Content (Primary Performance Path)
       else if (isOfflineAvailable) {
         _logger.i(
-            "💾 Strategy B: Loading content from offline storage: $contentId");
+            '💾 Strategy B: Loading content from offline storage: $contentId');
         content = await offlineContentManager.createOfflineContent(contentId);
         isOfflineMode = true;
 
         // 🚀 OPTIONAL: Trigger background online update if connected
         // This updates metadata/details silently without blocking UI
         if (isConnected && !_isCrotpediaChapterId(contentId)) {
-          _fetchOnlineDetailsInBackground(contentId);
+          await _fetchOnlineDetailsInBackground(contentId);
         }
       }
       // Strategy C: Online Content (Fallback)
       else if (isConnected && !_isCrotpediaChapterId(contentId)) {
-        _logger.i("🌐 Strategy C: Fetching online content: $contentId");
+        _logger.i('🌐 Strategy C: Fetching online content: $contentId');
         try {
           content = await getContentDetailUseCase(
               GetContentDetailParams.fromString(contentId));
           isOfflineMode = false;
         } catch (e) {
-          _logger.w("Online fetch failed: $e");
+          _logger.w('Online fetch failed: $e');
         }
       }
 
@@ -137,7 +137,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       if (content == null) {
         if (preloadedContent != null && preloadedContent.imageUrls.isNotEmpty) {
           _logger.w(
-              "⚠️ Strategy D: Using preloaded content as fallback: $contentId");
+              '⚠️ Strategy D: Using preloaded content as fallback: $contentId');
           content = preloadedContent;
           isOfflineMode = !isConnected;
         } else {
@@ -174,9 +174,9 @@ class ReaderCubit extends Cubit<ReaderState> {
       emit(ReaderLoaded(state));
 
       // 5. Post-load setup (Async)
-      _handlePostLoadSetup(savedSettings);
+      await _handlePostLoadSetup(savedSettings);
     } catch (e, stackTrace) {
-      _logger.e("Reader Cubit Error: $e", error: e, stackTrace: stackTrace);
+      _logger.e('Reader Cubit Error: $e', error: e, stackTrace: stackTrace);
       _stopAutoHideTimer();
       if (!isClosed) {
         emit(ReaderError(state.copyWith(
@@ -203,7 +203,7 @@ class ReaderCubit extends Cubit<ReaderState> {
     try {
       return await readerSettingsRepository.getReaderSettings();
     } catch (e) {
-      _logger.w("Failed to load reader settings, using defaults: $e");
+      _logger.w('Failed to load reader settings, using defaults: $e');
       return const ReaderSettings(); // Use defaults
     }
   }
@@ -220,9 +220,9 @@ class ReaderCubit extends Cubit<ReaderState> {
       _startReadingTimer();
 
       // Save to history (don't await to avoid blocking)
-      _saveToHistory();
+      await _saveToHistory();
     } catch (e) {
-      _logger.w("Post-load setup failed: $e");
+      _logger.w('Post-load setup failed: $e');
     }
   }
 
@@ -328,7 +328,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       await readerRepository.saveReaderPosition(position);
 
       await readerRepository.saveReaderPosition(position);
-      
+
       // Also update history - ONLY for nhentai
       if (state.content!.sourceId == SourceType.nhentai.id) {
         final params = AddToHistoryParams.fromString(
@@ -359,7 +359,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       readerSettingsRepository
           .saveShowUI(newShowUI)
           .catchError((e, stackTrace) {
-        _logger.e("Failed to save show UI setting: $e",
+        _logger.e('Failed to save show UI setting: $e',
             error: e, stackTrace: stackTrace);
         // Settings will still apply for current session
       });
@@ -434,9 +434,9 @@ class ReaderCubit extends Cubit<ReaderState> {
     // Save to preferences with error handling
     try {
       await readerSettingsRepository.saveReadingMode(mode);
-      _logger.i("Successfully saved reading mode: ${mode.name}");
+      _logger.i('Successfully saved reading mode: ${mode.name}');
     } catch (e, stackTrace) {
-      _logger.e("Failed to save reading mode: $e",
+      _logger.e('Failed to save reading mode: $e',
           error: e, stackTrace: stackTrace);
       // Settings will still apply for current session
     }
@@ -460,14 +460,14 @@ class ReaderCubit extends Cubit<ReaderState> {
       // Save to preferences with error handling
       try {
         await readerSettingsRepository.saveKeepScreenOn(newKeepScreenOn);
-        _logger.i("Successfully saved keep screen on: $newKeepScreenOn");
+        _logger.i('Successfully saved keep screen on: $newKeepScreenOn');
       } catch (e, stackTrace) {
-        _logger.e("Failed to save keep screen on setting: $e",
+        _logger.e('Failed to save keep screen on setting: $e',
             error: e, stackTrace: stackTrace);
         // Settings will still apply for current session
       }
     } catch (e, stackTrace) {
-      _logger.e("Failed to toggle wakelock: $e",
+      _logger.e('Failed to toggle wakelock: $e',
           error: e, stackTrace: stackTrace);
       // Don't update state if wakelock operation failed
     }
@@ -628,7 +628,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   Future<void> resetReaderSettings() async {
     try {
       await readerSettingsRepository.resetToDefaults();
-      _logger.i("Successfully reset reader settings to defaults");
+      _logger.i('Successfully reset reader settings to defaults');
 
       // Apply default settings to current state
       if (!isClosed) {
@@ -643,11 +643,11 @@ class ReaderCubit extends Cubit<ReaderState> {
       try {
         await WakelockPlus.disable();
       } catch (e, stackTrace) {
-        _logger.e("Failed to disable wakelock during reset: $e",
+        _logger.e('Failed to disable wakelock during reset: $e',
             error: e, stackTrace: stackTrace);
       }
     } catch (e, stackTrace) {
-      _logger.e("Failed to reset reader settings: $e",
+      _logger.e('Failed to reset reader settings: $e',
           error: e, stackTrace: stackTrace);
 
       // Still apply default settings to current state even if persistence failed
@@ -664,7 +664,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         await WakelockPlus.disable();
       } catch (wakelockError) {
         _logger
-            .e("Failed to disable wakelock after reset error: $wakelockError");
+            .e('Failed to disable wakelock after reset error: $wakelockError');
       }
 
       // Re-throw to let UI handle the error
@@ -677,8 +677,10 @@ class ReaderCubit extends Cubit<ReaderState> {
   Future<void> _saveToHistory() async {
     try {
       // Only allow nhentai source to be saved in history
-      if (state.content != null && state.content!.sourceId != SourceType.nhentai.id) {
-        _logger.d('Skipping history save for non-nhentai source: ${state.content!.sourceId}');
+      if (state.content != null &&
+          state.content!.sourceId != SourceType.nhentai.id) {
+        _logger.d(
+            'Skipping history save for non-nhentai source: ${state.content!.sourceId}');
         return;
       }
 
@@ -741,7 +743,7 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   /// Start reading timer
   void _startReadingTimer() {
-    _logger.i("start reading timer");
+    _logger.i('start reading timer');
     _readingTimer?.cancel();
     _readingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       // Check if cubit is still active before emitting state
@@ -755,7 +757,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         timer.cancel();
       }
     });
-    _logger.i("end reading timer");
+    _logger.i('end reading timer');
   }
 
   /// Stop reading timer

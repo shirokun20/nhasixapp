@@ -32,7 +32,7 @@ void main() {
       final mockRemoteDataSource = MockRemoteDataSource();
       final adapter = NhentaiScraperAdapterImpl(mockRemoteDataSource);
 
-      final coreFilter = core.SearchFilter(
+      const coreFilter = core.SearchFilter(
         query: 'test query',
         page: 1,
         sort: core.SortOption.popular,

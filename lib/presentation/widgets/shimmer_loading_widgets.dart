@@ -83,10 +83,10 @@ class ContentCardShimmer extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Image placeholder
-            ShimmerBox(
+            const ShimmerBox(
               height: 120,
               width: 90,
-              borderRadius: const BorderRadius.only(
+              borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(12),
                 bottomLeft: Radius.circular(12),
               ),
@@ -123,12 +123,12 @@ class ContentCardShimmer extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     // Stats
-                    Row(
+                    const Row(
                       children: [
                         ShimmerBox(
                           height: 12,
                           width: 50,
-                          margin: const EdgeInsets.only(right: 12),
+                          margin: EdgeInsets.only(right: 12),
                         ),
                         ShimmerBox(
                           height: 12,
@@ -269,7 +269,7 @@ class DetailScreenShimmer extends StatelessWidget {
                       width: MediaQuery.of(context).size.width * 0.3,
                     ),
                     const SizedBox(width: 16),
-                    Expanded(
+                    const Expanded(
                       child: ShimmerBox(
                         height: 16,
                         width: double.infinity,
@@ -283,8 +283,8 @@ class DetailScreenShimmer extends StatelessWidget {
             // Description
             ...List.generate(
               4,
-              (index) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+              (index) => const Padding(
+                padding: EdgeInsets.only(bottom: 8),
                 child: ShimmerBox(
                   height: 14,
                   width: double.infinity,

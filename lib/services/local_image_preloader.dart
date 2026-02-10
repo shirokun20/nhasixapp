@@ -45,7 +45,7 @@ class LocalImagePreloader {
         _logger.d('🐛 Added internal cache: $cacheDir');
 
         // Trigger cache cleanup in background
-        _cleanupExpiredCache();
+        await _cleanupExpiredCache();
       }
 
       // Priority 3: Internal app documents directory (fallback storage)

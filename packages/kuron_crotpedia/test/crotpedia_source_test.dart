@@ -80,14 +80,14 @@ void main() {
   group('getList', () {
     test('returns content list from home page for page 1', () async {
       final mockSeriesList = [
-        CrotpediaSeries(
+        const CrotpediaSeries(
           title: 'Test Series 1',
           slug: 'test-series-1',
           coverUrl: 'https://example.com/cover1.jpg',
           genres: {'action': 'Action', 'drama': 'Drama'},
           artist: 'Artist 1',
         ),
-        CrotpediaSeries(
+        const CrotpediaSeries(
           title: 'Test Series 2',
           slug: 'test-series-2',
           coverUrl: 'https://example.com/cover2.jpg',
@@ -125,7 +125,7 @@ void main() {
 
     test('returns content list from paginated page', () async {
       final mockSeriesList = [
-        CrotpediaSeries(
+        const CrotpediaSeries(
           title: 'Test Series 3',
           slug: 'test-series-3',
           coverUrl: 'https://example.com/cover3.jpg',
@@ -173,7 +173,7 @@ void main() {
   group('getPopular', () {
     test('returns popular series', () async {
       final mockSeriesList = [
-        CrotpediaSeries(
+        const CrotpediaSeries(
           title: 'Popular Series',
           slug: 'popular-series',
           coverUrl: 'https://example.com/popular.jpg',
@@ -210,7 +210,7 @@ void main() {
   group('search', () {
     test('performs simple search with query only', () async {
       final mockSeriesList = [
-        CrotpediaSeries(
+        const CrotpediaSeries(
           title: 'Search Result',
           slug: 'search-result',
           coverUrl: 'https://example.com/search.jpg',
@@ -224,7 +224,7 @@ void main() {
         statusCode: 200,
       );
 
-      final filter = SearchFilter(
+      const filter = SearchFilter(
         query: 'test query',
         page: 1,
       );
@@ -241,7 +241,7 @@ void main() {
 
     test('performs advanced search with tags', () async {
       final mockSeriesList = [
-        CrotpediaSeries(
+        const CrotpediaSeries(
           title: 'Advanced Search Result',
           slug: 'advanced-search',
           coverUrl: 'https://example.com/advanced.jpg',
@@ -255,7 +255,7 @@ void main() {
         statusCode: 200,
       );
 
-      final filter = SearchFilter(
+      const filter = SearchFilter(
         query: 'test',
         page: 1,
         includeTags: [
@@ -275,7 +275,7 @@ void main() {
     test('returns empty list on search error', () async {
       when(mockDio.get(any)).thenThrow(Exception('Search error'));
 
-      final filter = SearchFilter(query: 'test', page: 1);
+      const filter = SearchFilter(query: 'test', page: 1);
       final result = await source.search(filter);
 
       expect(result.contents, isEmpty);
@@ -360,7 +360,7 @@ void main() {
   group('getRelated', () {
     test('returns related content based on tags', () async {
       // Mock getDetail
-      final mockSeriesDetail = CrotpediaSeriesDetail(
+      const mockSeriesDetail = CrotpediaSeriesDetail(
         slug: 'original',
         title: 'Original Series',
         coverUrl: 'https://example.com/original.jpg',
@@ -376,19 +376,19 @@ void main() {
 
       // Mock search results
       final mockSearchResults = [
-        CrotpediaSeries(
+        const CrotpediaSeries(
           title: 'Related Series 1',
           slug: 'related-1',
           coverUrl: 'https://example.com/related1.jpg',
           genres: {'action': 'Action'},
         ),
-        CrotpediaSeries(
+        const CrotpediaSeries(
           title: 'Related Series 2',
           slug: 'related-2',
           coverUrl: 'https://example.com/related2.jpg',
           genres: {'action': 'Action'},
         ),
-        CrotpediaSeries(
+        const CrotpediaSeries(
           title: 'Original Series',
           slug: 'original',
           coverUrl: 'https://example.com/original.jpg',
@@ -419,7 +419,7 @@ void main() {
     });
 
     test('returns empty list when no tags available', () async {
-      final mockSeriesDetail = CrotpediaSeriesDetail(
+      const mockSeriesDetail = CrotpediaSeriesDetail(
         slug: 'notags',
         title: 'Series without tags',
         coverUrl: 'https://example.com/notags.jpg',
@@ -455,13 +455,13 @@ void main() {
 
   group('parseContentIdFromUrl', () {
     test('extracts slug from valid URL', () {
-      final url = 'https://crotpedia.net/baca/series/my-series-slug/';
+      const url = 'https://crotpedia.net/baca/series/my-series-slug/';
       final id = source.parseContentIdFromUrl(url);
       expect(id, equals('my-series-slug'));
     });
 
     test('returns null for invalid URL', () {
-      final url = 'https://crotpedia.net/other-page/';
+      const url = 'https://crotpedia.net/other-page/';
       final id = source.parseContentIdFromUrl(url);
       expect(id, isNull);
     });

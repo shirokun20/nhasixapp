@@ -309,7 +309,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                 Text(
                   state.message ??
                       (AppLocalizations.of(context)?.unknownError ??
-                          "Unknown error"),
+                          'Unknown error'),
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),

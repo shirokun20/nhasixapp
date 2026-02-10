@@ -79,7 +79,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
     // Second call: Load related content independently
     if (mounted && _detailCubit.state is DetailLoaded) {
-      _detailCubit.loadRelatedContent();
+      await _detailCubit.loadRelatedContent();
     }
   }
 
@@ -97,7 +97,7 @@ class _DetailScreenState extends State<DetailScreen> {
     // Prevent multiple simultaneous navigation attempts
     if (_isNavigating) {
       Logger()
-          .w("Navigation already in progress, ignoring tag search: $tagName");
+          .w('Navigation already in progress, ignoring tag search: $tagName');
       return;
     }
 
@@ -144,10 +144,10 @@ class _DetailScreenState extends State<DetailScreen> {
       if (mounted) {
         AppRouter.goToContentByTag(context, query);
       } else {
-        Logger().w("Widget unmounted before navigation for tag: $tagName");
+        Logger().w('Widget unmounted before navigation for tag: $tagName');
       }
     } catch (e, stackTrace) {
-      Logger().e("Error navigating to tag: $tagName",
+      Logger().e('Error navigating to tag: $tagName',
           error: e, stackTrace: stackTrace);
 
       // Handle error gracefully

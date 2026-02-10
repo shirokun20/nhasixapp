@@ -892,7 +892,7 @@ class NhentaiScraper {
       if (name == null || href == null) return null;
 
       // Parse count with K/M suffix support
-      int count = _parseCountWithSuffix(countText);
+      final int count = _parseCountWithSuffix(countText);
 
       // Determine tag type from URL
       String type = 'tag';
@@ -972,7 +972,7 @@ class NhentaiScraper {
       if (name == null || href == null) return null;
 
       // Parse count with K/M suffix support
-      int count = _parseCountWithSuffix(countText);
+      final int count = _parseCountWithSuffix(countText);
 
       return TagModel(
         id: 0, // Default ID for scraped tags

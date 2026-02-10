@@ -83,7 +83,7 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
           if (shouldExit == true) {
             if (context.mounted) {
               // Actually exit the app using SystemNavigator
-              SystemNavigator.pop();
+              await SystemNavigator.pop();
             }
           }
         },
@@ -128,7 +128,7 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
                     children: [
                       // GLOBAL DOWNLOAD HEADER
                       const GlobalDownloadProgressWidget(),
-                      
+
                       // Show offline banner when in offline mode
                       if (isOfflineMode) _buildOfflineBanner(context),
                       Expanded(
@@ -380,11 +380,11 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
               children: [
                 Icon(Icons.check_circle,
                     color: Theme.of(context).colorScheme.onPrimary),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Text(AppLocalizations.of(context)!.backOnline),
               ],
             ),
-            duration: Duration(seconds: 3),
+            duration: const Duration(seconds: 3),
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
@@ -396,11 +396,11 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
               children: [
                 Icon(Icons.wifi_off,
                     color: Theme.of(context).colorScheme.onError),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Text(AppLocalizations.of(context)!.stillNoInternet),
               ],
             ),
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -413,11 +413,11 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
             children: [
               Icon(Icons.error_outline,
                   color: Theme.of(context).colorScheme.onError),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               Text(AppLocalizations.of(context)!.unableToCheck),
             ],
           ),
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -495,12 +495,12 @@ mixin OfflineAwareMixin<T extends StatefulWidget> on State<T> {
             children: [
               Icon(Icons.offline_bolt,
                   color: Theme.of(context).colorScheme.onError),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               Expanded(child: Text(message)),
             ],
           ),
           backgroundColor: Theme.of(context).colorScheme.error,
-          duration: Duration(seconds: 3),
+          duration: const Duration(seconds: 3),
         ),
       );
     }
@@ -514,12 +514,12 @@ mixin OfflineAwareMixin<T extends StatefulWidget> on State<T> {
           content: Row(
             children: [
               Icon(Icons.wifi, color: Theme.of(context).colorScheme.onPrimary),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               Expanded(child: Text(message)),
             ],
           ),
           backgroundColor: Theme.of(context).colorScheme.primary,
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
     }

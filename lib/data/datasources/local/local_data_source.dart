@@ -242,7 +242,7 @@ class LocalDataSource {
       }
 
       String whereClause = '1=1';
-      List<dynamic> whereArgs = [];
+      final List<dynamic> whereArgs = [];
 
       if (state != null) {
         whereClause += ' AND state = ?';
@@ -311,13 +311,14 @@ class LocalDataSource {
   }
 
   /// Get downloads count by state and source
-  Future<int> getDownloadsCount({DownloadState? state, String? sourceId}) async {
+  Future<int> getDownloadsCount(
+      {DownloadState? state, String? sourceId}) async {
     try {
       final db = await _getSafeDatabase();
       if (db == null) return 0;
 
       String whereClause = '1=1';
-      List<dynamic> whereArgs = [];
+      final List<dynamic> whereArgs = [];
 
       if (state != null) {
         whereClause += ' AND state = ?';
@@ -341,13 +342,14 @@ class LocalDataSource {
   }
 
   /// Get total download size
-  Future<int> getTotalDownloadSize({DownloadState? state, String? sourceId}) async {
+  Future<int> getTotalDownloadSize(
+      {DownloadState? state, String? sourceId}) async {
     try {
       final db = await _getSafeDatabase();
       if (db == null) return 0;
 
       String whereClause = '1=1';
-      List<dynamic> whereArgs = [];
+      final List<dynamic> whereArgs = [];
 
       if (state != null) {
         whereClause += ' AND state = ?';
@@ -363,10 +365,10 @@ class LocalDataSource {
         'SELECT SUM(file_size) as total_size FROM downloads WHERE $whereClause',
         whereArgs.isNotEmpty ? whereArgs : null,
       );
-      
+
       final totalKey = result.first['total_size'];
       if (totalKey != null) {
-         return totalKey as int;
+        return totalKey as int;
       }
       return 0;
     } catch (e) {
@@ -394,7 +396,11 @@ class LocalDataSource {
 
       String whereClause =
           '(LOWER(id) LIKE ? OR LOWER(title) LIKE ? OR LOWER(source_id) LIKE ?)';
-      List<dynamic> whereArgs = [queryPattern, queryPattern, queryPattern];
+      final List<dynamic> whereArgs = [
+        queryPattern,
+        queryPattern,
+        queryPattern
+      ];
 
       if (state != null) {
         whereClause = '$whereClause AND state = ?';
@@ -415,7 +421,8 @@ class LocalDataSource {
         offset: offset,
       );
 
-      _logger.d('Search downloads found ${result.length} results for: $query (offset: $offset)');
+      _logger.d(
+          'Search downloads found ${result.length} results for: $query (offset: $offset)');
       return result;
     } catch (e) {
       _logger.e('Error searching downloads: $e');
@@ -437,7 +444,11 @@ class LocalDataSource {
 
       String whereClause =
           '(LOWER(id) LIKE ? OR LOWER(title) LIKE ? OR LOWER(source_id) LIKE ?)';
-      List<dynamic> whereArgs = [queryPattern, queryPattern, queryPattern];
+      final List<dynamic> whereArgs = [
+        queryPattern,
+        queryPattern,
+        queryPattern
+      ];
 
       if (state != null) {
         whereClause = '$whereClause AND state = ?';
@@ -464,7 +475,7 @@ class LocalDataSource {
       return 0;
     }
   }
-  
+
   /// Get search results count
   Future<int> getSearchCount({
     required String query,
@@ -479,7 +490,11 @@ class LocalDataSource {
 
       String whereClause =
           '(LOWER(id) LIKE ? OR LOWER(title) LIKE ? OR LOWER(source_id) LIKE ?)';
-      List<dynamic> whereArgs = [queryPattern, queryPattern, queryPattern];
+      final List<dynamic> whereArgs = [
+        queryPattern,
+        queryPattern,
+        queryPattern
+      ];
 
       if (state != null) {
         whereClause = '$whereClause AND state = ?';
@@ -513,7 +528,7 @@ class LocalDataSource {
         return;
       }
 
-      _logger.i("isi datanya: ${history.toMap()}");
+      _logger.i('isi datanya: ${history.toMap()}');
 
       await db.insert(
         'history',
@@ -961,7 +976,8 @@ class LocalDataSource {
   // ==================== SEARCH FILTER STATE PERSISTENCE ====================
 
   /// Save search filter state for persistence with sourceId
-  Future<void> saveSearchFilter(String sourceId, Map<String, dynamic> filterData) async {
+  Future<void> saveSearchFilter(
+      String sourceId, Map<String, dynamic> filterData) async {
     try {
       final db = await _getSafeDatabase();
       if (db == null) {
@@ -1237,6 +1253,4 @@ class LocalDataSource {
       _logger.e('Error clearing reader positions: $e');
     }
   }
-
-
 }

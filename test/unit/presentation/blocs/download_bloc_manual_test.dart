@@ -99,7 +99,7 @@ class MockNotificationService extends Fake implements NotificationService {
 
 class MockRemoteConfigService extends Fake implements RemoteConfigService {
   @override
-  get appConfig => null;
+  Null get appConfig => null;
 }
 
 class MockGetContentDetailUseCase extends Fake
@@ -177,17 +177,17 @@ void main() {
     });
 
     debugPrint('Initializing Bloc...');
-    bloc.add(DownloadInitializeEvent());
+    bloc.add(const DownloadInitializeEvent());
 
     // Wait for initial load
-    await Future.delayed(Duration(milliseconds: 200));
+    await Future.delayed(const Duration(milliseconds: 200));
 
     debugPrint('Starting Download...');
     // Trigger start (will fail and should retry)
-    bloc.add(DownloadStartEvent('test-id'));
+    bloc.add(const DownloadStartEvent('test-id'));
 
     // Wait for retry logic
-    await Future.delayed(Duration(milliseconds: 1000));
+    await Future.delayed(const Duration(milliseconds: 1000));
 
     await subscription.cancel();
     await bloc.close();

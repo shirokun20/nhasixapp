@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
-import 'package:nhasixapp/presentation/blocs/crotpedia/genre_list/genre_list_cubit.dart';
-import 'package:nhasixapp/presentation/blocs/crotpedia/genre_list/genre_list_state.dart';
-import 'package:nhasixapp/domain/repositories/crotpedia/crotpedia_feature_repository.dart';
+import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_state.dart';
 import 'package:nhasixapp/presentation/widgets/error_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progress_indicator_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_drawer_content.dart';
@@ -15,25 +14,23 @@ class CrotpediaGenreListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => GenreListCubit(
-        getIt<CrotpediaFeatureRepository>(),
-      )..fetchGenres(),
+      create: (context) => getIt<CrotpediaFeatureCubit>()..loadGenreList(),
       child: Scaffold(
         drawer: const AppDrawerContent(),
         appBar: AppBar(
           title: const Text('Genre List'),
           centerTitle: true,
         ),
-        body: BlocBuilder<GenreListCubit, GenreListState>(
+        body: BlocBuilder<CrotpediaFeatureCubit, CrotpediaFeatureState>(
           builder: (context, state) {
-            if (state is GenreListLoading) {
+            if (state is CrotpediaFeatureLoading) {
               return const Center(child: AppProgressIndicator());
-            } else if (state is GenreListError) {
+            } else if (state is CrotpediaFeatureError) {
               return Center(
                 child: AppErrorWidget(
                   title: 'Error Loading Genres',
                   message: state.message,
-                  onRetry: () => context.read<GenreListCubit>().refreshGenres(),
+                  onRetry: () => context.read<CrotpediaFeatureCubit>().loadGenreList(),
                 ),
               );
             } else if (state is GenreListLoaded) {
@@ -42,7 +39,7 @@ class CrotpediaGenreListScreen extends StatelessWidget {
               }
               return RefreshIndicator(
                 onRefresh: () async {
-                  await context.read<GenreListCubit>().refreshGenres();
+                  await context.read<CrotpediaFeatureCubit>().loadGenreList();
                 },
                 child: GridView.builder(
                   padding: const EdgeInsets.all(16),

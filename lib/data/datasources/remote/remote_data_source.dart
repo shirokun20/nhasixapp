@@ -70,7 +70,8 @@ class RemoteDataSource {
       await antiDetection.initialize();
 
       // Attempt Cloudflare bypass
-      final bypassSuccess = await cloudflareBypass.attemptBypass(targetUrl: baseUrl);
+      final bypassSuccess =
+          await cloudflareBypass.attemptBypass(targetUrl: baseUrl);
       if (!bypassSuccess) {
         _logger.w('Cloudflare bypass failed, some requests may fail');
         return false;
@@ -313,7 +314,7 @@ class RemoteDataSource {
 
       _logger.i(
           'Successfully extracted content ID: $contentId from random page. Fetching details via API...');
-      
+
       // Use API-enabled method to get details
       return await getContentDetailViaApi(contentId);
     } catch (e, stackTrace) {
@@ -486,11 +487,12 @@ class RemoteDataSource {
             final remainingTime = _rateManager.remainingCooldown;
             _logger
                 .w('In cooldown, ${remainingTime?.inSeconds ?? 0}s remaining');
-            throw RateLimitException('In cooldown period', '429');
+            throw const RateLimitException('In cooldown period', '429');
           } else {
             _logger.w('Rate limit protection triggered');
             _rateManager.triggerCooldown();
-            throw RateLimitException('Request rate limit exceeded', '429');
+            throw const RateLimitException(
+                'Request rate limit exceeded', '429');
           }
         }
 
@@ -510,14 +512,14 @@ class RemoteDataSource {
 
         // Apply anti-detection measures
         await antiDetection.applyRandomDelay();
-        
+
         // Calculate referer based on URL
         final uri = Uri.parse(url);
         final referer = '${uri.scheme}://${uri.host}/';
-        
+
         final headers = antiDetection.getRandomHeaders(referer: referer);
 
-        _logger.i("headers: $headers");
+        _logger.i('headers: $headers');
 
         final response = await httpClient.get(
           url,
@@ -539,8 +541,10 @@ class RemoteDataSource {
 
           // Check if Cloudflare challenge is present
           if (cloudflareBypass.isCloudflareChallenge(html)) {
-            _logger.w('Cloudflare challenge detected, attempting bypass for $url...');
-            final bypassSuccess = await cloudflareBypass.attemptBypass(targetUrl: url);
+            _logger.w(
+                'Cloudflare challenge detected, attempting bypass for $url...');
+            final bypassSuccess =
+                await cloudflareBypass.attemptBypass(targetUrl: url);
             if (!bypassSuccess) {
               throw const CloudflareException(
                   'Failed to bypass Cloudflare protection');
@@ -598,7 +602,8 @@ class RemoteDataSource {
     }
 
     throw lastException ??
-        NetworkException('Failed to fetch HTML after $maxRetries attempts');
+        const NetworkException(
+            'Failed to fetch HTML after $maxRetries attempts');
   }
 
   /// Handle Dio exceptions and convert to appropriate exception types

@@ -55,7 +55,8 @@ class PdfConversionQueueManager {
     String? sourceId,
   }) async {
     if (_conversionService == null || _notificationService == null) {
-      _logger?.e('PdfConversionQueueManager: Not initialized! Call initialize() first.');
+      _logger?.e(
+          'PdfConversionQueueManager: Not initialized! Call initialize() first.');
       throw StateError('PdfConversionQueueManager not initialized');
     }
 
@@ -79,7 +80,7 @@ class PdfConversionQueueManager {
 
     // Start processing if not already running
     if (!_isProcessing) {
-      _processQueue();
+      await _processQueue();
     }
   }
 

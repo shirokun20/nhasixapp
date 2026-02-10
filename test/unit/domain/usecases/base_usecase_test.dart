@@ -95,7 +95,7 @@ void main() {
 
   group('PaginatedResult', () {
     test('creates result with items', () {
-      final result = PaginatedResult<int>(
+      const result = PaginatedResult<int>(
         items: [1, 2, 3],
         currentPage: 1,
         totalPages: 5,
@@ -134,7 +134,7 @@ void main() {
     });
 
     test('map transforms items', () {
-      final result = PaginatedResult<int>(
+      const result = PaginatedResult<int>(
         items: [1, 2, 3],
         currentPage: 1,
         totalPages: 1,

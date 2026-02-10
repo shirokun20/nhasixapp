@@ -59,7 +59,7 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
     // Use a reference to the dialog state setter to update progress
     StateSetter? dialogSetState;
 
-    showDialog(
+    await showDialog(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
@@ -97,7 +97,7 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
 
       // Show success dialog with share option
       if (context.mounted) {
-        showDialog(
+        await showDialog(
           context: context,
           builder: (context) => AlertDialog(
             title: Text(AppLocalizations.of(context)!.exportComplete),
@@ -172,10 +172,12 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       final syncResult = await offlineManager.syncBackupToDatabase(
         backupPath,
         onProgress: (processed, total) {
-          final percentage = total > 0 ? ((processed / total) * 100).toInt() : 0;
+          final percentage =
+              total > 0 ? ((processed / total) * 100).toInt() : 0;
           notificationService.updateSyncProgress(
             progress: percentage,
-            message: AppLocalizations.of(context)!.syncProgressMessage(processed, total),
+            message: AppLocalizations.of(context)!
+                .syncProgressMessage(processed, total),
           );
         },
       );
@@ -199,22 +201,24 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
 
       // Force refresh to reload from database AND clear loading state
       // This must run unconditionally to stop the loading shimmer
-      context.read<OfflineSearchCubit>().forceRefresh();
+      await context.read<OfflineSearchCubit>().forceRefresh();
 
       // ✅ NEW: Refresh DownloadBloc to sync Downloads Screen with database
       // This ensures Downloads Screen shows imported content immediately
       // without requiring app restart
       try {
         context.read<DownloadBloc>().add(const DownloadRefreshEvent());
-        debugPrint('OFFLINE_AUTO_SCAN: Triggered DownloadBloc refresh after sync');
+        debugPrint(
+            'OFFLINE_AUTO_SCAN: Triggered DownloadBloc refresh after sync');
       } catch (e) {
         // DownloadBloc might not be available in all contexts (e.g., if Downloads Screen hasn't been visited)
         // This is non-critical, so just log and continue
-        debugPrint('OFFLINE_AUTO_SCAN: Could not refresh DownloadBloc (not initialized yet): $e');
+        debugPrint(
+            'OFFLINE_AUTO_SCAN: Could not refresh DownloadBloc (not initialized yet): $e');
       }
     } else {
       debugPrint('OFFLINE_AUTO_SCAN: No backup folder found automatically');
-      
+
       if (!context.mounted) return;
 
       // Prompt user to pick manually
@@ -237,19 +241,18 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       );
 
       if (shouldPick == true && context.mounted) {
-         final pickedPath = await StorageSettings.pickAndSaveCustomRoot(context);
-         if (pickedPath != null && context.mounted) {
-             // Recursive call to try again with new path
-             await _autoScanBackupFolder(context);
-             return;
-         }
+        final pickedPath = await StorageSettings.pickAndSaveCustomRoot(context);
+        if (pickedPath != null && context.mounted) {
+          // Recursive call to try again with new path
+          await _autoScanBackupFolder(context);
+          return;
+        }
       }
 
       // Ensure we clear loading state if we didn't recurse
       if (context.mounted) {
-         context.read<OfflineSearchCubit>().forceRefresh();
+        await context.read<OfflineSearchCubit>().forceRefresh();
       }
     }
   }
-
 }

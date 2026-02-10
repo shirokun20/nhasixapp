@@ -56,8 +56,8 @@ void main() {
     // Stream controller for DownloadManager progress
     late StreamController<DownloadProgressUpdate> progressController;
 
-    final testContentId = '123';
-    final testDownloadStatus = DownloadStatus(
+    const testContentId = '123';
+    const testDownloadStatus = DownloadStatus(
       contentId: testContentId,
       state: DownloadState.downloading,
       downloadedPages: 10,
@@ -143,7 +143,7 @@ void main() {
         settings: DownloadSettings.defaultSettings(),
         lastUpdated: DateTime.now(),
       ),
-      act: (bloc) => bloc.add(DownloadCompletedEvent(testContentId)),
+      act: (bloc) => bloc.add(const DownloadCompletedEvent(testContentId)),
       verify: (bloc) {
         // Verify saving to DB
         verify(() => mockRepo.saveDownloadStatus(any(

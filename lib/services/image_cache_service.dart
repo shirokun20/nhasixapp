@@ -177,7 +177,7 @@ class ImageCacheService {
     try {
       final metadata = await _getCacheMetadata();
       int totalSize = 0;
-      int totalFiles = metadata.length;
+      final int totalFiles = metadata.length;
 
       for (final entry in metadata.values) {
         totalSize += entry['size'] as int? ?? 0;
@@ -276,7 +276,7 @@ class ImageCacheService {
         totalSize += entry['size'] as int? ?? 0;
       }
 
-      final maxSizeBytes = _maxCacheSizeMB * 1024 * 1024;
+      const maxSizeBytes = _maxCacheSizeMB * 1024 * 1024;
 
       if (totalSize > maxSizeBytes) {
         _logger.i(

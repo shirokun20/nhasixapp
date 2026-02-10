@@ -1,4 +1,3 @@
-
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/usecases.dart';
 import '../../../services/history_cleanup_service.dart';
@@ -28,7 +27,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
   final AppLocalizations? localizations;
 
   static const int _pageSize = 50;
-  
+
   /// Load history from the beginning
   Future<void> loadHistory() async {
     try {
@@ -53,7 +52,8 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'load history');
       emit(HistoryError(
-        message: localizations?.failedToLoadHistory(e.toString()) ?? 'Failed to load history: ${e.toString()}',
+        message: localizations?.failedToLoadHistory(e.toString()) ??
+            'Failed to load history: ${e.toString()}',
         canRetry: true,
       ));
     }
@@ -62,15 +62,15 @@ class HistoryCubit extends BaseCubit<HistoryState> {
   /// Load more history (pagination)
   Future<void> loadMoreHistory() async {
     final currentState = state;
-    if (currentState is! HistoryLoaded || 
-        currentState.hasReachedMax || 
+    if (currentState is! HistoryLoaded ||
+        currentState.hasReachedMax ||
         currentState.isLoadingMore) {
       return;
     }
 
     try {
       logInfo('Loading more history (page ${currentState.currentPage + 1})');
-      
+
       emit(currentState.copyWith(isLoadingMore: true));
 
       final nextPage = currentState.currentPage + 1;
@@ -88,13 +88,14 @@ class HistoryCubit extends BaseCubit<HistoryState> {
         isLoadingMore: false,
       ));
 
-      logDebug('Loaded ${moreHistory.length} more entries, total: ${updatedHistory.length}');
+      logDebug(
+          'Loaded ${moreHistory.length} more entries, total: ${updatedHistory.length}');
     } catch (e, stackTrace) {
       final currentState = state;
       if (currentState is HistoryLoaded) {
         emit(currentState.copyWith(isLoadingMore: false));
       }
-      
+
       handleError(e, stackTrace, 'load more history');
       // Don't emit error state for pagination failures
       // Just log and continue with current state
@@ -105,7 +106,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
   Future<void> refreshHistory() async {
     try {
       logInfo('Refreshing history');
-      
+
       final history = await getHistoryUseCase(
         const GetHistoryParams(page: 1, limit: _pageSize),
       );
@@ -124,7 +125,8 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'refresh history');
       emit(HistoryError(
-        message: localizations?.failedToRefreshHistory(e.toString()) ?? 'Failed to refresh history: ${e.toString()}',
+        message: localizations?.failedToRefreshHistory(e.toString()) ??
+            'Failed to refresh history: ${e.toString()}',
         canRetry: true,
       ));
     }
@@ -136,14 +138,15 @@ class HistoryCubit extends BaseCubit<HistoryState> {
       logInfo('Clearing all history');
       emit(const HistoryClearing());
 
-      await clearHistoryUseCase(NoParams());
-      
+      await clearHistoryUseCase(const NoParams());
+
       emit(const HistoryEmpty());
       logDebug('All history cleared');
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'clear history');
       emit(HistoryError(
-        message: localizations?.failedToClearHistory(e.toString()) ?? 'Failed to clear history: ${e.toString()}',
+        message: localizations?.failedToClearHistory(e.toString()) ??
+            'Failed to clear history: ${e.toString()}',
         canRetry: false,
       ));
     }
@@ -156,7 +159,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
 
     try {
       logInfo('Removing history item: $contentId');
-      
+
       await removeHistoryItemUseCase(
         RemoveHistoryItemParams.fromContentId(contentId),
       );
@@ -175,7 +178,8 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'remove history item');
       emit(HistoryError(
-        message: localizations?.failedToRemoveHistoryItem(e.toString()) ?? 'Failed to remove history item: ${e.toString()}',
+        message: localizations?.failedToRemoveHistoryItem(e.toString()) ??
+            'Failed to remove history item: ${e.toString()}',
         canRetry: false,
       ));
     }
@@ -184,7 +188,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
   /// Get history count
   Future<int> getHistoryCount() async {
     try {
-      return await getHistoryCountUseCase(NoParams());
+      return await getHistoryCountUseCase(const NoParams());
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'get history count');
       return 0;
@@ -208,15 +212,16 @@ class HistoryCubit extends BaseCubit<HistoryState> {
       emit(const HistoryClearing());
 
       await historyCleanupService.performManualCleanup();
-      
+
       // Reload history after cleanup
       await loadHistory();
-      
+
       logDebug('Manual cleanup completed');
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'manual cleanup');
       emit(HistoryError(
-        message: localizations?.failedToPerformCleanup(e.toString()) ?? 'Failed to perform cleanup: ${e.toString()}',
+        message: localizations?.failedToPerformCleanup(e.toString()) ??
+            'Failed to perform cleanup: ${e.toString()}',
         canRetry: true,
       ));
     }
@@ -270,9 +275,9 @@ class HistoryCubit extends BaseCubit<HistoryState> {
   /// Check if more history can be loaded
   bool get canLoadMore {
     final currentState = state;
-    return currentState is HistoryLoaded && 
-           !currentState.hasReachedMax && 
-           !currentState.isLoadingMore;
+    return currentState is HistoryLoaded &&
+        !currentState.hasReachedMax &&
+        !currentState.isLoadingMore;
   }
 
   /// Check if history is empty

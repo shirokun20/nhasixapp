@@ -169,9 +169,11 @@ class UserDataRepositoryImpl implements UserDataRepository {
   }
 
   @override
-  Future<int> getDownloadsCount({DownloadState? state, String? sourceId}) async {
+  Future<int> getDownloadsCount(
+      {DownloadState? state, String? sourceId}) async {
     try {
-      return await localDataSource.getDownloadsCount(state: state, sourceId: sourceId);
+      return await localDataSource.getDownloadsCount(
+          state: state, sourceId: sourceId);
     } catch (e, stackTrace) {
       _logger.e('Failed to get downloads count',
           error: e, stackTrace: stackTrace);
@@ -180,9 +182,11 @@ class UserDataRepositoryImpl implements UserDataRepository {
   }
 
   @override
-  Future<int> getTotalDownloadSize({DownloadState? state, String? sourceId}) async {
+  Future<int> getTotalDownloadSize(
+      {DownloadState? state, String? sourceId}) async {
     try {
-      return await localDataSource.getTotalDownloadSize(state: state, sourceId: sourceId);
+      return await localDataSource.getTotalDownloadSize(
+          state: state, sourceId: sourceId);
     } catch (e, stackTrace) {
       _logger.e('Failed to get total download size',
           error: e, stackTrace: stackTrace);
@@ -199,7 +203,8 @@ class UserDataRepositoryImpl implements UserDataRepository {
     int offset = 0,
   }) async {
     try {
-      _logger.i('Searching downloads for query: $query, limit: $limit, offset: $offset');
+      _logger.i(
+          'Searching downloads for query: $query, limit: $limit, offset: $offset');
       return await localDataSource.searchDownloads(
         query: query,
         state: state,
@@ -212,7 +217,7 @@ class UserDataRepositoryImpl implements UserDataRepository {
       return [];
     }
   }
-  
+
   @override
   Future<int> getSearchCount({
     required String query,
@@ -244,7 +249,8 @@ class UserDataRepositoryImpl implements UserDataRepository {
         sourceId: sourceId,
       );
     } catch (e, stackTrace) {
-      _logger.e('Failed to get search download size', error: e, stackTrace: stackTrace);
+      _logger.e('Failed to get search download size',
+          error: e, stackTrace: stackTrace);
       return 0;
     }
   }
@@ -296,7 +302,7 @@ class UserDataRepositoryImpl implements UserDataRepository {
     try {
       final historyModel = await localDataSource.getHistory(id);
       _logger
-          .w("isi file dari getHistoryEntry db: ${historyModel?.toEntity()}");
+          .w('isi file dari getHistoryEntry db: ${historyModel?.toEntity()}');
       return historyModel?.toEntity();
     } catch (e, stackTrace) {
       _logger.e('Failed to get history entry',
@@ -361,23 +367,24 @@ class UserDataRepositoryImpl implements UserDataRepository {
     try {
       // Get preferences from local DB
       var userPrefs = await localDataSource.getUserPreferences();
-      
+
       // Ensure customStorageRoot is synced with StorageSettings (Source of Truth)
       try {
         final customRoot = await StorageSettings.getCustomRootPath();
         if (customRoot != null && customRoot.isNotEmpty) {
           if (userPrefs.customStorageRoot != customRoot) {
-            _logger.d('Syncing customStorageRoot from StorageSettings: $customRoot');
+            _logger.d(
+                'Syncing customStorageRoot from StorageSettings: $customRoot');
             userPrefs = userPrefs.copyWith(customStorageRoot: customRoot);
-            
+
             // Optional: Sync back to DB if needed, but for now just returning correct value is enough
-            // saveUserPreferences(userPrefs); 
+            // saveUserPreferences(userPrefs);
           }
         }
       } catch (e) {
         _logger.w('Failed to sync customStorageRoot from StorageSettings: $e');
       }
-      
+
       return userPrefs;
     } catch (e, stackTrace) {
       _logger.e('Failed to get user preferences',
@@ -499,7 +506,8 @@ class UserDataRepositoryImpl implements UserDataRepository {
       await localDataSource.saveSearchFilter(sourceId, filter.toJson());
       _logger.d('Search filter state saved');
     } catch (e, stackTrace) {
-      _logger.e('Failed to save search filter', error: e, stackTrace: stackTrace);
+      _logger.e('Failed to save search filter',
+          error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
@@ -513,7 +521,8 @@ class UserDataRepositoryImpl implements UserDataRepository {
       }
       return null;
     } catch (e, stackTrace) {
-      _logger.e('Failed to get last search filter', error: e, stackTrace: stackTrace);
+      _logger.e('Failed to get last search filter',
+          error: e, stackTrace: stackTrace);
       return null;
     }
   }
@@ -525,7 +534,8 @@ class UserDataRepositoryImpl implements UserDataRepository {
       await localDataSource.removeLastSearchFilter(sourceId);
       _logger.d('Search filter state cleared');
     } catch (e, stackTrace) {
-      _logger.e('Failed to clear search filter', error: e, stackTrace: stackTrace);
+      _logger.e('Failed to clear search filter',
+          error: e, stackTrace: stackTrace);
     }
   }
 

@@ -253,7 +253,7 @@ class DatabaseHelper {
     // Fix history table schema if needed (for any version upgrade)
     try {
       // Check if history table has the correct schema
-      final historyColumns = await db.rawQuery("PRAGMA table_info(history)");
+      final historyColumns = await db.rawQuery('PRAGMA table_info(history)');
       final hasIdColumn = historyColumns.any((col) => col['name'] == 'id');
 
       if (!hasIdColumn) {
@@ -307,20 +307,21 @@ class DatabaseHelper {
       await _onCreate(db, newVersion);
     }
 
-  // For major version changes, recreate database
+    // For major version changes, recreate database
     if (oldVersion < newVersion && (newVersion - oldVersion) > 2) {
       await _dropAllTables(db);
       await _onCreate(db, newVersion);
     }
-    
+
     // Version 8: Update search_filter_state to support per-source storage
     if (oldVersion < 8 && newVersion >= 8) {
-      _logger.i('Upgrading to version 8: Updating search_filter_state for multi-source support');
-      
+      _logger.i(
+          'Upgrading to version 8: Updating search_filter_state for multi-source support');
+
       try {
         // Drop existing table and recreate with source_id
         await db.execute('DROP TABLE IF EXISTS search_filter_state');
-        
+
         await db.execute('''
           CREATE TABLE search_filter_state (
             source_id TEXT PRIMARY KEY,
@@ -328,7 +329,7 @@ class DatabaseHelper {
             saved_at INTEGER
           )
         ''');
-        
+
         _logger.i('Updated search_filter_state table schema successfully');
       } catch (e) {
         _logger.e('Error upgrading search_filter_state table: $e');

@@ -103,24 +103,34 @@ class CrotpediaLoginPage extends StatelessWidget {
       if (result != null && result['success'] == true) {
         final cookiesStrList =
             (result['cookies'] as List<dynamic>?)?.cast<String>() ?? [];
-        
+
         final cookies = cookiesStrList.map((str) {
-            final parts = str.split('=');
-            return io.Cookie(parts[0].trim(), parts.length > 1 ? parts.sublist(1).join('=') : '');
-         }).toList();
+          final parts = str.split('=');
+          return io.Cookie(parts[0].trim(),
+              parts.length > 1 ? parts.sublist(1).join('=') : '');
+        }).toList();
 
         // 🔍 Verification: Check if we actually have a session cookie
-        final hasSession = cookies.any((c) => c.name.contains('wordpress_logged_in'));
-        
+        final hasSession =
+            cookies.any((c) => c.name.contains('wordpress_logged_in'));
+
         if (hasSession) {
-           final username = cookies.firstWhere((c) => c.name.contains('wordpress_logged_in')).value.split('%7C').firstOrNull ?? 'User';
-           context.read<CrotpediaAuthCubit>().externalLogin(username, cookies);
+          final username = cookies
+                  .firstWhere((c) => c.name.contains('wordpress_logged_in'))
+                  .value
+                  .split('%7C')
+                  .firstOrNull ??
+              'User';
+          await context
+              .read<CrotpediaAuthCubit>()
+              .externalLogin(username, cookies);
         } else {
-           if (context.mounted) {
-             ScaffoldMessenger.of(context).showSnackBar(
-               const SnackBar(content: Text('Login incomplete. Please try again.')),
-             );
-           }
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Login incomplete. Please try again.')),
+            );
+          }
         }
       }
     } catch (e) {

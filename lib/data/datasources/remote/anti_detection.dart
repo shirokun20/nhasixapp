@@ -114,7 +114,8 @@ class AntiDetection {
       'Sec-Fetch-Site': 'none',
       'Sec-Fetch-User': '?1',
       'Cache-Control': 'max-age=0',
-      'Referer': referer ?? 'https://nhentai.net/', // ← selalu sertakan referer!
+      'Referer':
+          referer ?? 'https://nhentai.net/', // ← selalu sertakan referer!
     };
 
     // Randomly add some optional headers
@@ -141,10 +142,10 @@ class AntiDetection {
   /// Calculate minimum delay based on request frequency
   Duration _calculateMinDelay() {
     // Reduced base delay from 2000ms to 1000ms for better performance
-    final baseDelay = 1000; // 1 second base (reduced from 2 seconds)
+    const baseDelay = 1000; // 1 second base (reduced from 2 seconds)
     final additionalDelay =
         (_requestCount ~/ 10) * 500; // +0.5s per 10 requests (less aggressive)
-    final maxDelay = 5000; // Max 5 seconds (reduced from 8 seconds)
+    const maxDelay = 5000; // Max 5 seconds (reduced from 8 seconds)
 
     return Duration(
       milliseconds: min(baseDelay + additionalDelay, maxDelay),

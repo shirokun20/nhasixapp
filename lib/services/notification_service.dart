@@ -364,7 +364,7 @@ class NotificationService {
         NotificationDetailsBuilder.progress(
           progress: 0,
           highPriority: true,
-          playSound: false,  // Only play sound for first item
+          playSound: false, // Only play sound for first item
           enableVibration: false,
         ),
         payload: contentId,
@@ -392,8 +392,7 @@ class NotificationService {
             args: {'count': queuedCount},
             fallback: 'PDF Queue: $queuedCount items waiting'),
         _getLocalized('pdfQueueNext',
-            args: {'titles': queuedTitles},
-            fallback: 'Next: $queuedTitles'),
+            args: {'titles': queuedTitles}, fallback: 'Next: $queuedTitles'),
         NotificationDetailsBuilder.progress(
           progress: 0,
           highPriority: false,
@@ -426,8 +425,7 @@ class NotificationService {
     try {
       await _notificationsPlugin.show(
         _pdfQueueNotificationId,
-        _getLocalized('pdfBatchCompleted',
-            fallback: 'PDF Batch Completed'),
+        _getLocalized('pdfBatchCompleted', fallback: 'PDF Batch Completed'),
         _getLocalized('pdfBatchCompletedCount',
             args: {'count': count},
             fallback: '✅ $count PDFs created successfully'),
@@ -667,12 +665,12 @@ class NotificationService {
             actions: isPaused
                 ? [
                     // Show resume action when paused
-                    AndroidNotificationAction(
+                    const AndroidNotificationAction(
                       'resume',
                       'Resume',
                       showsUserInterface: true,
                     ),
-                    AndroidNotificationAction(
+                    const AndroidNotificationAction(
                       'cancel',
                       'Cancel',
                       showsUserInterface: true,
@@ -680,12 +678,12 @@ class NotificationService {
                   ]
                 : [
                     // Show pause action when downloading
-                    AndroidNotificationAction(
+                    const AndroidNotificationAction(
                       'pause',
                       'Pause',
                       showsUserInterface: true,
                     ),
-                    AndroidNotificationAction(
+                    const AndroidNotificationAction(
                       'cancel',
                       'Cancel',
                       showsUserInterface: true,
@@ -883,7 +881,7 @@ class NotificationService {
         99999, // Fixed test ID
         'Test Action Buttons',
         'This is a test notification with action buttons',
-        NotificationDetails(
+        const NotificationDetails(
           android: AndroidNotificationDetails(
             NotificationChannels.downloadChannelId,
             NotificationChannels.downloadChannelName,
@@ -893,7 +891,7 @@ class NotificationService {
             ongoing: false,
             autoCancel: true,
             // Remove icons and actions to avoid drawable resource errors
-            styleInformation: const BigTextStyleInformation(
+            styleInformation: BigTextStyleInformation(
               'Simple test notification without icons',
               contentTitle: 'Test Action Buttons',
               summaryText: 'Testing...',
@@ -998,7 +996,6 @@ class NotificationService {
 
   /// Fixed notification ID base for verification operations
 
-
   /// Get verification notification ID from content ID
   int _getVerificationNotificationId(String contentId) {
     // FIXED: Use a DIFFERENT ID for verification to separate it from active download
@@ -1022,7 +1019,7 @@ class NotificationService {
       // ✅ FIXED: Explicitly cancel the "Downloading" notification first
       // This ensures we don't have two notifications for the same content
       await cancelDownloadNotification(contentId);
-      
+
       final notificationId = _getVerificationNotificationId(contentId);
 
       await _notificationsPlugin.show(

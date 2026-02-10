@@ -337,7 +337,7 @@ class _AboutContentState extends State<_AboutContent>
       builder: (context, state) {
         String status = 'Check for updates';
         IconData icon = Icons.refresh;
-        bool isLoading = state is UpdateChecking;
+        final bool isLoading = state is UpdateChecking;
 
         if (isLoading) {
           status = 'Checking...';

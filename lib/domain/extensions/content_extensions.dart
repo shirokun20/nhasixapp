@@ -21,7 +21,7 @@ extension ContentAppExtensions on Content {
     if (imagePath.startsWith('http')) return null;
 
     try {
-      var parentDir = File(imagePath).parent;
+      final parentDir = File(imagePath).parent;
       // If parent is "images" subfolder, go up one more level to content dir
       if (path.basename(parentDir.path) == 'images') {
         return parentDir.parent.path;

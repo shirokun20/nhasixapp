@@ -12,7 +12,6 @@ import '../constants/app_constants.dart';
 import 'download_storage_utils.dart';
 import 'storage_settings.dart';
 
-
 /// Manager for offline content detection and operations
 class OfflineContentManager {
   OfflineContentManager({
@@ -39,8 +38,7 @@ class OfflineContentManager {
   final Map<String, List<String>> _imageUrlsCache = {};
   final Map<String, DateTime> _imageUrlsCacheTime = {};
 
-  static const Duration _urlCacheDuration = Duration(minutes: 5); 
-
+  static const Duration _urlCacheDuration = Duration(minutes: 5);
 
   // Localization callback
   String Function(String key, {Map<String, dynamic>? args})? _localize;
@@ -57,32 +55,33 @@ class OfflineContentManager {
         // _logger.d("✅ Content $contentId is marked as COMPLETED in DB");
         return true;
       }
-      
+
       // _logger.d("⚠️ Content $contentId not COMPLETED in DB (status: ${downloadStatus?.state}), checking filesystem...");
 
       // 2. Fallback: Check filesystem directly
       // This handles cases where DB might be out of sync or content was manually restored
       final contentPath = await getOfflineContentPath(contentId);
       if (contentPath == null) {
-        _logger.w("❌ No offline path found for $contentId");
+        _logger.w('❌ No offline path found for $contentId');
         return false;
       }
 
       final contentDir = Directory(contentPath);
       if (!await contentDir.exists()) {
-         _logger.w("❌ Directory does not exist for $contentId: $contentPath");
-         return false;
+        _logger.w('❌ Directory does not exist for $contentId: $contentPath');
+        return false;
       }
 
       // Check if at least one image file exists
       // Check images subdirectory first (new structure)
       final imagesDir = Directory(path.join(contentPath, 'images'));
-      if (await imagesDir.exists() && (await imagesDir.list().isEmpty) == false) {
-         final files = await imagesDir.list().toList();
-         if (files.any((f) => f is File && _isImageFile(f.path))) {
-           // _logger.d("✅ Found images in subfolder for $contentId");
-           return true;
-         }
+      if (await imagesDir.exists() &&
+          (await imagesDir.list().isEmpty) == false) {
+        final files = await imagesDir.list().toList();
+        if (files.any((f) => f is File && _isImageFile(f.path))) {
+          // _logger.d("✅ Found images in subfolder for $contentId");
+          return true;
+        }
       }
 
       // Check root directory (legacy)
@@ -90,13 +89,13 @@ class OfflineContentManager {
       final imageFiles = files
           .where((file) => file is File && _isImageFile(file.path))
           .toList();
-      
+
       if (imageFiles.isNotEmpty) {
         // _logger.d("✅ Found images in root folder for $contentId");
         return true;
       }
-      
-      _logger.w("❌ No images found in $contentPath for $contentId");
+
+      _logger.w('❌ No images found in $contentPath for $contentId');
       return false;
     } catch (e, stackTrace) {
       _logger.e('Error checking offline availability for $contentId',
@@ -124,25 +123,28 @@ class OfflineContentManager {
         // Verify if the DB path actually exists
         final dbPath = downloadStatus!.downloadPath!;
         if (await Directory(dbPath).exists()) {
-           return dbPath;
+          return dbPath;
         }
-        _logger.w("⚠️ Path from DB does not exist: $dbPath. Searching alternatives...");
+        _logger.w(
+            '⚠️ Path from DB does not exist: $dbPath. Searching alternatives...');
       }
 
       // Fallback: try to find the content in multiple possible locations
       final possiblePaths = await _getPossibleDownloadPaths(contentId);
       // _logger.d("🔍 Scanning ${possiblePaths.length} possible paths for $contentId");
-      
+
       for (final contentPath in possiblePaths) {
         if (await Directory(contentPath).exists()) {
-          _logger.i('✅ Found offline content path for $contentId: $contentPath');
+          _logger
+              .i('✅ Found offline content path for $contentId: $contentPath');
           // 🚀 OPTIMIZATION: Update cache
           _pathCache[contentId] = contentPath;
           return contentPath;
         }
       }
 
-      _logger.w('❌ No offline content path found for $contentId after strict scan');
+      _logger.w(
+          '❌ No offline content path found for $contentId after strict scan');
       return null;
     } catch (e, stackTrace) {
       _logger.e('Error getting offline content path for $contentId',
@@ -216,7 +218,7 @@ class OfflineContentManager {
           '/sdcard/Downloads/nhasix/$sId/$contentId',
         ]);
       }
-      
+
       paths.addAll([
         '/storage/emulated/0/Download/nhasix/$contentId',
         '/storage/emulated/0/Downloads/nhasix/$contentId',
@@ -260,7 +262,8 @@ class OfflineContentManager {
       // 🚀 OPTIMIZATION: Check cache first
       if (_imageUrlsCache.containsKey(contentId) &&
           _imageUrlsCacheTime.containsKey(contentId) &&
-          DateTime.now().difference(_imageUrlsCacheTime[contentId]!) < _urlCacheDuration) {
+          DateTime.now().difference(_imageUrlsCacheTime[contentId]!) <
+              _urlCacheDuration) {
         return _imageUrlsCache[contentId]!;
       }
 
@@ -300,7 +303,7 @@ class OfflineContentManager {
           _extractPageNumber(a.path).compareTo(_extractPageNumber(b.path)));
 
       final urls = imageFiles.map((file) => file.path).toList();
-      
+
       // 🚀 OPTIMIZATION: Update cache
       if (urls.isNotEmpty) {
         _imageUrlsCache[contentId] = urls;
@@ -316,24 +319,34 @@ class OfflineContentManager {
   }
 
   /// Get offline first image path (fast, for cover display)
-  /// 
+  ///
   /// This method constructs the path to the first image without scanning
   /// the entire directory, making it much faster for grid/list displays.
-  /// 
+  ///
   /// Tries common patterns: 001.jpg, 001.png, 001.webp, 1.jpg
-  Future<String?> getOfflineFirstImagePath(String contentId, {String? downloadPath}) async {
+  Future<String?> getOfflineFirstImagePath(String contentId,
+      {String? downloadPath}) async {
     try {
-      final contentPath = downloadPath ?? await getOfflineContentPath(contentId);
+      final contentPath =
+          downloadPath ?? await getOfflineContentPath(contentId);
       if (contentPath == null) return null;
 
       // Try images subdirectory first (new structure)
       final imagesDir = path.join(contentPath, 'images');
-      
+
       // Common first page patterns
       final patterns = [
-        '001.jpg', '001.png', '001.webp', '001.jpeg',
-        '1.jpg', '1.png', '1.webp', '1.jpeg',
-        '0001.jpg', '0001.png', '0001.webp',
+        '001.jpg',
+        '001.png',
+        '001.webp',
+        '001.jpeg',
+        '1.jpg',
+        '1.png',
+        '1.webp',
+        '1.jpeg',
+        '0001.jpg',
+        '0001.png',
+        '0001.webp',
       ];
 
       // Try new structure first
@@ -549,7 +562,7 @@ class OfflineContentManager {
           favorites.where((fav) => fav['id'] == contentId).firstOrNull;
       _logger.i(_getLocalized('offlineContentMetadata',
           args: {'contentId': contentId, 'source': 'favorites'},
-          fallback: "apakah data dari favorite? ${favorite != null}"));
+          fallback: 'apakah data dari favorite? ${favorite != null}'));
       if (favorite != null) {
         final metadata = {
           'id': contentId,
@@ -567,8 +580,8 @@ class OfflineContentManager {
       final historyEntry = await _userDataRepository.getHistoryEntry(contentId);
       _logger.i(_getLocalized('offlineContentMetadata',
           args: {'contentId': contentId, 'source': 'history'},
-          fallback: "apakah data dari history? ${historyEntry != null}"));
-      _logger.i("isi file history nya: $historyEntry");
+          fallback: 'apakah data dari history? ${historyEntry != null}'));
+      _logger.i('isi file history nya: $historyEntry');
       if (historyEntry != null) {
         final metadata = {
           'id': contentId,
@@ -637,14 +650,15 @@ class OfflineContentManager {
       final totalSize = await _userDataRepository.getTotalDownloadSize(
         state: DownloadState.completed,
       );
-      
+
       if (totalSize > 0) {
         return totalSize;
       }
 
       // 2. Fallback: Only iterate filesystem if DB returns 0 (e.g. migration needed or clean install)
       // This is still slow but should rarely happen for existing users with data
-      _logger.w("⚠️ DB download size is 0, falling back to slow filesystem scan");
+      _logger
+          .w('⚠️ DB download size is 0, falling back to slow filesystem scan');
       final offlineIds = await getOfflineContentIds();
       int fsTotalSize = 0;
 
@@ -1304,125 +1318,126 @@ class OfflineContentManager {
   }
 
   /// Smart Downloads directory detection
-/// Priority:
-/// 1. Check custom storage root (from StorageSettings) first
-/// 2. Fallback to Downloads folder detection for backward compatibility
-/// Tries multiple possible Downloads folder names and locations
-Future<String> _getDownloadsDirectory() async {
-  try {
-    // PRIORITY 1: Check custom storage root first
-    final customRoot = await StorageSettings.getCustomRootPath();
-    if (customRoot != null && customRoot.isNotEmpty) {
-      final customDir = Directory(customRoot);
-      if (await customDir.exists()) {
-        _logger.d('Using custom storage root: $customRoot');
-        return customRoot;
-      } else {
-        _logger.w('Custom storage root set but does not exist: $customRoot, falling back to Downloads');
-      }
-    }
-    
-    // PRIORITY 2: Fallback to Downloads folder for backward compatibility
-    // First, try to get external storage directory
-    Directory? externalDir;
+  /// Priority:
+  /// 1. Check custom storage root (from StorageSettings) first
+  /// 2. Fallback to Downloads folder detection for backward compatibility
+  /// Tries multiple possible Downloads folder names and locations
+  Future<String> _getDownloadsDirectory() async {
     try {
-      externalDir = await getExternalStorageDirectory();
-    } catch (e) {
-      _logger.w('Could not get external storage directory: $e');
-    }
+      // PRIORITY 1: Check custom storage root first
+      final customRoot = await StorageSettings.getCustomRootPath();
+      if (customRoot != null && customRoot.isNotEmpty) {
+        final customDir = Directory(customRoot);
+        if (await customDir.exists()) {
+          _logger.d('Using custom storage root: $customRoot');
+          return customRoot;
+        } else {
+          _logger.w(
+              'Custom storage root set but does not exist: $customRoot, falling back to Downloads');
+        }
+      }
 
-    if (externalDir != null) {
-      // Try to find Downloads folder in external storage root
-      final externalRoot = externalDir.path.split('/Android')[0];
+      // PRIORITY 2: Fallback to Downloads folder for backward compatibility
+      // First, try to get external storage directory
+      Directory? externalDir;
+      try {
+        externalDir = await getExternalStorageDirectory();
+      } catch (e) {
+        _logger.w('Could not get external storage directory: $e');
+      }
 
-      // Common Downloads folder names (English, Indonesian, Spanish, etc.)
-      final downloadsFolderNames = [
-        'Download', // English (most common)
-        'Downloads', // English alternative
-        'Unduhan', // Indonesian
-        'Descargas', // Spanish
-        'Téléchargements', // French
-        'Downloads', // German uses English
-        'ダウンロード', // Japanese
+      if (externalDir != null) {
+        // Try to find Downloads folder in external storage root
+        final externalRoot = externalDir.path.split('/Android')[0];
+
+        // Common Downloads folder names (English, Indonesian, Spanish, etc.)
+        final downloadsFolderNames = [
+          'Download', // English (most common)
+          'Downloads', // English alternative
+          'Unduhan', // Indonesian
+          'Descargas', // Spanish
+          'Téléchargements', // French
+          'Downloads', // German uses English
+          'ダウンロード', // Japanese
+        ];
+
+        // Try each possible Downloads folder
+        for (final folderName in downloadsFolderNames) {
+          final downloadsDir = Directory(path.join(externalRoot, folderName));
+          if (await downloadsDir.exists()) {
+            // _logger.i('Found Downloads directory: ${downloadsDir.path}');
+            return downloadsDir.path;
+          }
+        }
+
+        // If no Downloads folder found, create one in external storage root
+        final defaultDownloadsDir =
+            Directory(path.join(externalRoot, 'Download'));
+        try {
+          if (!await defaultDownloadsDir.exists()) {
+            await defaultDownloadsDir.create(recursive: true);
+            _logger
+                .i('Created Downloads directory: ${defaultDownloadsDir.path}');
+          }
+          return defaultDownloadsDir.path;
+        } catch (e) {
+          _logger.w(
+              'Could not create Downloads directory in external storage: $e');
+        }
+      }
+
+      // Fallback 1: Try hardcoded common paths
+      final commonPaths = [
+        '/storage/emulated/0/Download',
+        '/storage/emulated/0/Downloads',
+        '/storage/emulated/0/Unduhan',
+        '/sdcard/Download',
+        '/sdcard/Downloads',
       ];
 
-      // Try each possible Downloads folder
-      for (final folderName in downloadsFolderNames) {
-        final downloadsDir = Directory(path.join(externalRoot, folderName));
-        if (await downloadsDir.exists()) {
-          // _logger.i('Found Downloads directory: ${downloadsDir.path}');
-          return downloadsDir.path;
+      for (final commonPath in commonPaths) {
+        final dir = Directory(commonPath);
+        if (await dir.exists()) {
+          _logger.i('Found Downloads directory at common path: $commonPath');
+          return commonPath;
         }
       }
 
-      // If no Downloads folder found, create one in external storage root
-      final defaultDownloadsDir =
-          Directory(path.join(externalRoot, 'Download'));
-      try {
-        if (!await defaultDownloadsDir.exists()) {
-          await defaultDownloadsDir.create(recursive: true);
-          _logger
-              .i('Created Downloads directory: ${defaultDownloadsDir.path}');
+      // Fallback 2: Use app-specific external storage
+      if (externalDir != null) {
+        final appDownloadsDir =
+            Directory(path.join(externalDir.path, 'downloads'));
+        if (!await appDownloadsDir.exists()) {
+          await appDownloadsDir.create(recursive: true);
         }
-        return defaultDownloadsDir.path;
-      } catch (e) {
-        _logger.w(
-            'Could not create Downloads directory in external storage: $e');
+        _logger.i(
+            'Using app-specific downloads directory: ${appDownloadsDir.path}');
+        return appDownloadsDir.path;
       }
-    }
 
-    // Fallback 1: Try hardcoded common paths
-    final commonPaths = [
-      '/storage/emulated/0/Download',
-      '/storage/emulated/0/Downloads',
-      '/storage/emulated/0/Unduhan',
-      '/sdcard/Download',
-      '/sdcard/Downloads',
-    ];
-
-    for (final commonPath in commonPaths) {
-      final dir = Directory(commonPath);
-      if (await dir.exists()) {
-        _logger.i('Found Downloads directory at common path: $commonPath');
-        return commonPath;
-      }
-    }
-
-    // Fallback 2: Use app-specific external storage
-    if (externalDir != null) {
-      final appDownloadsDir =
-          Directory(path.join(externalDir.path, 'downloads'));
-      if (!await appDownloadsDir.exists()) {
-        await appDownloadsDir.create(recursive: true);
+      // Fallback 3: Use application documents directory
+      final documentsDir = await getApplicationDocumentsDirectory();
+      final documentsDownloadsDir =
+          Directory(path.join(documentsDir.path, 'downloads'));
+      if (!await documentsDownloadsDir.exists()) {
+        await documentsDownloadsDir.create(recursive: true);
       }
       _logger.i(
-          'Using app-specific downloads directory: ${appDownloadsDir.path}');
-      return appDownloadsDir.path;
-    }
+          'Using app documents downloads directory: ${documentsDownloadsDir.path}');
+      return documentsDownloadsDir.path;
+    } catch (e) {
+      _logger.e('Error detecting Downloads directory: $e');
 
-    // Fallback 3: Use application documents directory
-    final documentsDir = await getApplicationDocumentsDirectory();
-    final documentsDownloadsDir =
-        Directory(path.join(documentsDir.path, 'downloads'));
-    if (!await documentsDownloadsDir.exists()) {
-      await documentsDownloadsDir.create(recursive: true);
+      // Emergency fallback: use app documents
+      final documentsDir = await getApplicationDocumentsDirectory();
+      final emergencyDir = Directory(path.join(documentsDir.path, 'downloads'));
+      if (!await emergencyDir.exists()) {
+        await emergencyDir.create(recursive: true);
+      }
+      _logger.w('Using emergency fallback directory: ${emergencyDir.path}');
+      return emergencyDir.path;
     }
-    _logger.i(
-        'Using app documents downloads directory: ${documentsDownloadsDir.path}');
-    return documentsDownloadsDir.path;
-  } catch (e) {
-    _logger.e('Error detecting Downloads directory: $e');
-
-    // Emergency fallback: use app documents
-    final documentsDir = await getApplicationDocumentsDirectory();
-    final emergencyDir = Directory(path.join(documentsDir.path, 'downloads'));
-    if (!await emergencyDir.exists()) {
-      await emergencyDir.create(recursive: true);
-    }
-    _logger.w('Using emergency fallback directory: ${emergencyDir.path}');
-    return emergencyDir.path;
   }
-}
 
   /// Sync backup folder content to database
   /// Returns map with 'synced' (new items) and 'updated' (fixed paths) counts
@@ -1461,7 +1476,7 @@ Future<String> _getDownloadsDirectory() async {
     final contents = await scanBackupFolder(backupPath);
     int syncedCount = 0;
     int updatedCount = 0;
-    int total = contents.length;
+    final int total = contents.length;
     int processed = 0;
 
     // Report initial progress (0/total)
@@ -1538,7 +1553,7 @@ Future<String> _getDownloadsDirectory() async {
 
       processed++;
       onProgress?.call(processed, total);
-      
+
       // Small yield to not block UI/thread too much during heavy sync
       if (processed % 10 == 0) {
         await Future.delayed(Duration.zero);
@@ -1626,4 +1641,3 @@ Future<String> _getDownloadsDirectory() async {
     }
   }
 }
-

@@ -450,7 +450,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                     onPressed: () {
                       state.reLoadImage();
                     },
-                    icon: Icon(Icons.refresh, size: 16),
+                    icon: const Icon(Icons.refresh, size: 16),
                     label: Text(AppLocalizations.of(context)!.retry),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,

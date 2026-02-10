@@ -71,9 +71,9 @@ void main() async {
                 size: 48,
               ),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'Rendering Error',
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -118,7 +118,7 @@ class MyApp extends StatelessWidget {
                     '🌐 MaterialApp rebuilt with locale: ${locale.languageCode}');
 
                 return MaterialApp.router(
-                  title: "Kuron",
+                  title: 'Kuron',
                   debugShowCheckedModeBanner: false,
                   routerConfig: AppRouter.router,
                   theme: themeState.themeData,

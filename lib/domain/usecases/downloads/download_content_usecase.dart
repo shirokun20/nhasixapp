@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 
-
 import '../base_usecase.dart';
 import '../../entities/entities.dart';
 import '../../repositories/repositories.dart';
@@ -12,7 +11,6 @@ import '../../../services/native_download_service.dart';
 import '../../../services/pdf_service.dart';
 import '../../../services/download_manager.dart';
 import '../../../core/constants/app_constants.dart';
-
 
 /// Use case for downloading content for offline reading
 class DownloadContentUseCase
@@ -44,24 +42,25 @@ class DownloadContentUseCase
       if (params.priority < 0 || params.priority > 10) {
         throw const ValidationException('Priority must be between 0 and 10');
       }
-      
+
       // STORAGE VALIDATION: Custom Storage Root is MANDATORY
       // Use provided savePath or fallback to global setting
       // We must resolve this BEFORE starting download
       String effectiveSavePath = params.savePath ?? '';
       if (effectiveSavePath.isEmpty) {
-         // Import StorageSettings if not already imported, or fetch from repository if available.
-         // Since we don't have StorageSettings imported here, we'll try to rely on UserDataRepository or assume params MUST have it.
-         // However, the user asked to check "flutter.custom_storage_root".
-         // Let's check UserPreferences via repository.
-         final prefs = await _userDataRepository.getUserPreferences();
-         if (prefs.customStorageRoot.isNotEmpty) {
-           effectiveSavePath = prefs.customStorageRoot;
-         }
+        // Import StorageSettings if not already imported, or fetch from repository if available.
+        // Since we don't have StorageSettings imported here, we'll try to rely on UserDataRepository or assume params MUST have it.
+        // However, the user asked to check "flutter.custom_storage_root".
+        // Let's check UserPreferences via repository.
+        final prefs = await _userDataRepository.getUserPreferences();
+        if (prefs.customStorageRoot.isNotEmpty) {
+          effectiveSavePath = prefs.customStorageRoot;
+        }
       }
-      
+
       if (effectiveSavePath.isEmpty) {
-         throw const ValidationException('Custom storage root is required. Please set a download location in settings.');
+        throw const ValidationException(
+            'Custom storage root is required. Please set a download location in settings.');
       }
 
       // Check if already downloaded (optional)
@@ -108,7 +107,7 @@ class DownloadContentUseCase
           // STRICTLY DISABLE NATIVE NOTIFICATIONS
           // Hardcoded to false to ensure native notifications are NEVER shown,
           // regardless of what might be passed in params.
-          false, 
+          false,
         );
       }
 
@@ -127,7 +126,8 @@ class DownloadContentUseCase
       await _userDataRepository.deleteDownloadStatus(contentId);
 
       // Remove downloaded files from storage
-      await _nativeDownloadService.deleteDownloadedContent(contentId, dirPath: dirPath);
+      await _nativeDownloadService.deleteDownloadedContent(contentId,
+          dirPath: dirPath);
     } catch (e) {
       _logger.e('Failed to delete downloaded content: $contentId', error: e);
     }
@@ -135,7 +135,7 @@ class DownloadContentUseCase
 
   /// Perform the actual download process using NativeDownloadService
   ///
-  /// REVAMP: This method is now "Fire-and-Forget". 
+  /// REVAMP: This method is now "Fire-and-Forget".
   /// It starts the native download and returns immediately.
   /// Progress and completion are handled globally by DownloadManager listening to NativeDownloadService.
   Future<DownloadStatus> _performActualDownload(
@@ -162,8 +162,8 @@ class DownloadContentUseCase
 
       // Convert thumbnail URLs to full image URLs
       final fullImageUrls = content.imageUrls.map((url) => url).toList();
-      
-      String destination = savePath ?? '';
+
+      final String destination = savePath ?? '';
 
       // Start Native Download (Fire and Forget)
       await _nativeDownloadService.startDownload(
@@ -180,22 +180,22 @@ class DownloadContentUseCase
         backupFolderName: AppStorage.backupFolderName, // ✅ Pass from config
       );
 
-      // We do NOT wait for completion here anymore. 
+      // We do NOT wait for completion here anymore.
       // The NativeService emits events to the EventChannel, which DownloadManager picks up.
       // DownloadBloc listens to DownloadManager and updates state accordingly.
 
       _logger.i('Native download started for ${content.id}');
 
       // Note: If PDF conversion is requested, we need a way to trigger it AFTER download completes.
-      // Since we are not waiting here, the PDF conversion logic must be moved 
+      // Since we are not waiting here, the PDF conversion logic must be moved
       // to where the 'COMPLETED' event is handled (likely in DownloadBloc._onProgressUpdate).
       // For now, we'll note this limitation or handle it in Bloc.
-      
-      return currentStatus;
 
+      return currentStatus;
     } catch (e) {
-      _logger.e('Failed to start download for content: ${content.id}', error: e);
-      
+      _logger.e('Failed to start download for content: ${content.id}',
+          error: e);
+
       // Update status to failed
       currentStatus = currentStatus.copyWith(
         state: DownloadState.failed,
@@ -271,7 +271,8 @@ class DownloadContentUseCase
   Future<String> _getOrCreatePdfOutputPath(String contentId) async {
     try {
       // Get content download path (nhasix/{source}/{contentId})
-      final contentPath = await _nativeDownloadService.getDownloadPath(contentId);
+      final contentPath =
+          await _nativeDownloadService.getDownloadPath(contentId);
 
       if (contentPath == null) {
         throw Exception('Content path not found');
@@ -379,7 +380,8 @@ class DownloadContentParams extends UseCaseParams {
       endPage: endPage ?? this.endPage,
       cookies: cookies ?? this.cookies, // NEW
       savePath: savePath ?? this.savePath, // NEW
-      enableNotifications: enableNotifications ?? this.enableNotifications, // NEW
+      enableNotifications:
+          enableNotifications ?? this.enableNotifications, // NEW
     );
   }
 
@@ -418,17 +420,18 @@ class DownloadContentParams extends UseCaseParams {
   }
 
   /// Create params for immediate download with images
-  factory DownloadContentParams.immediate(Content content,
-      {bool convertToPdf = false,
-      String imageQuality = 'high',
-      Duration? timeoutDuration,
-      int? startPage,
-      // NEW
-      int? endPage,
-      Map<String, String>? cookies,
-      String? savePath,
-      bool enableNotifications = true, // NEW
-      }) {
+  factory DownloadContentParams.immediate(
+    Content content, {
+    bool convertToPdf = false,
+    String imageQuality = 'high',
+    Duration? timeoutDuration,
+    int? startPage,
+    // NEW
+    int? endPage,
+    Map<String, String>? cookies,
+    String? savePath,
+    bool enableNotifications = true, // NEW
+  }) {
     return DownloadContentParams(
       content: content,
       priority: 5,

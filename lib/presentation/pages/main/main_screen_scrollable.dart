@@ -108,7 +108,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     final hasSeenWelcome = prefs.getBool('has_seen_welcome_v1') ?? false;
 
     if (!hasSeenWelcome && mounted) {
-      showModalBottomSheet(
+      await showModalBottomSheet(
         context: context,
         isDismissible: false,
         enableDrag: false,
@@ -268,9 +268,9 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
           _lastBackPressTime = now;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text('Press back again to exit'),
-              duration: const Duration(seconds: 2),
+              duration: Duration(seconds: 2),
             ),
           );
           return;
@@ -313,12 +313,11 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                     _isShowingSearchResults = false;
                     _currentSearchFilter = null;
                   });
-                  
+
                   // Re-initialize content which will load saved filter for new source if exists
                   await _initializeContent();
                 }
               },
-
             ),
           ],
           child: BlocBuilder<HomeBloc, HomeState>(
@@ -948,7 +947,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           SnackBar(
             content: Row(
               children: [
-                SizedBox(
+                const SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
@@ -956,12 +955,12 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Text(AppLocalizations.of(context)?.refreshingContent ??
                     'Refreshing content...'),
               ],
             ),
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
@@ -1334,7 +1333,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         url: url,
         enableJavaScript: true,
       );
-      
     } catch (e) {
       Logger().e('Error opening in browser: $e');
       if (mounted) {
@@ -1417,7 +1415,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       // Rebuild the URL with clean parameters
       final cleanUri = uri.replace(
           queryParameters: cleanParams.isEmpty ? null : cleanParams);
-      String cleanedUrl = cleanUri.toString();
+      final String cleanedUrl = cleanUri.toString();
 
       return cleanedUrl;
     } catch (e) {
@@ -1491,7 +1489,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           SnackBar(
             content: Row(
               children: [
-                SizedBox(
+                const SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
@@ -1499,12 +1497,12 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Text(AppLocalizations.of(context)!.checkingDownloadStatus),
               ],
             ),
-            duration:
-                Duration(seconds: 10), // Longer duration for checking process
+            duration: const Duration(
+                seconds: 10), // Longer duration for checking process
           ),
         );
       }
@@ -1541,8 +1539,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             SnackBar(
               content: Row(
                 children: [
-                  Icon(Icons.check_circle, color: Colors.white),
-                  SizedBox(width: 8),
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                         AppLocalizations.of(context)!.allGalleriesDownloaded),
@@ -1550,7 +1548,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                 ],
               ),
               backgroundColor: Colors.blue,
-              duration: Duration(seconds: 3),
+              duration: const Duration(seconds: 3),
             ),
           );
         }
@@ -1568,17 +1566,17 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(AppLocalizations.of(context)!.foundGalleries),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(AppLocalizations.of(context)!
                     .newGalleriesToDownload(galleriesNeedDownload.length)),
                 Text(AppLocalizations.of(context)!
                     .alreadyDownloaded(alreadyDownloadedCount)),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 if (galleriesNeedDownload.isNotEmpty)
                   Text(
                     AppLocalizations.of(context)!
                         .downloadInfo(galleriesNeedDownload.length),
-                    style: TextStyle(fontWeight: FontWeight.normal),
+                    style: const TextStyle(fontWeight: FontWeight.normal),
                   ),
               ],
             ),
@@ -1619,8 +1617,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.download, color: Colors.white),
-                SizedBox(width: 8),
+                const Icon(Icons.download, color: Colors.white),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -1632,7 +1630,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                         Text(
                           AppLocalizations.of(context)!
                               .countAlreadyDownloaded(alreadyDownloadedCount),
-                          style: TextStyle(fontSize: 12, color: Colors.white70),
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.white70),
                         ),
                     ],
                   ),
@@ -1640,7 +1639,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
               ],
             ),
             backgroundColor: queuedCount > 0 ? Colors.green : Colors.orange,
-            duration: Duration(seconds: 5),
+            duration: const Duration(seconds: 5),
             action: SnackBarAction(
               label: AppLocalizations.of(context)?.viewDownloads ??
                   'View Downloads',
@@ -1659,13 +1658,13 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.error, color: Colors.white),
-                SizedBox(width: 8),
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 8),
                 Text(AppLocalizations.of(context)!.failedToDownload),
               ],
             ),
             backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
+            duration: const Duration(seconds: 3),
           ),
         );
       }

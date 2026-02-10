@@ -1,14 +1,14 @@
 import 'package:kuron_core/kuron_core.dart';
 
 /// Search capabilities for Crotpedia source.
-final crotpediaSearchCapabilities = SearchCapabilities(
+const crotpediaSearchCapabilities = SearchCapabilities(
   supportsTagExclusion: false, // No tag exclusion for Crotpedia
   supportsAdvancedSyntax: true, // Advanced search available
-  availableFilters: const [
+  availableFilters: [
     FilterType.tag, // Genres
     FilterType.category, // Type (Manga, Doujinshi, etc)
   ],
-  availableSorts: const [
+  availableSorts: [
     SortOption.newest, // update
     SortOption.popular, // popular
   ],

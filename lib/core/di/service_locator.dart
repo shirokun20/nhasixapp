@@ -50,6 +50,7 @@ import 'package:nhasixapp/presentation/cubits/cubits.dart';
 import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/theme/theme_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/update/update_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_cubit.dart';
 
 // Repositories
 import 'package:nhasixapp/domain/repositories/repositories.dart';
@@ -73,6 +74,9 @@ import 'package:nhasixapp/domain/usecases/history/remove_history_item_usecase.da
 import 'package:nhasixapp/domain/usecases/history/get_history_count_usecase.dart';
 import 'package:nhasixapp/domain/usecases/settings/get_user_preferences_usecase.dart';
 import 'package:nhasixapp/domain/usecases/settings/save_user_preferences_usecase.dart';
+import 'package:nhasixapp/domain/usecases/crotpedia/get_genre_list_usecase.dart';
+import 'package:nhasixapp/domain/usecases/crotpedia/get_doujin_list_usecase.dart';
+import 'package:nhasixapp/domain/usecases/crotpedia/get_request_list_usecase.dart';
 
 // Services
 import 'package:nhasixapp/services/native_download_service.dart';
@@ -495,6 +499,15 @@ void _setupUseCases() {
       () => GetUserPreferencesUseCase(getIt<SettingsRepository>()));
   getIt.registerLazySingleton<SaveUserPreferencesUseCase>(
       () => SaveUserPreferencesUseCase(getIt<SettingsRepository>()));
+
+  // Crotpedia Use Cases
+  getIt.registerLazySingleton<GetGenreListUseCase>(
+      () => GetGenreListUseCase(getIt<CrotpediaFeatureRepository>()));
+  getIt.registerLazySingleton<GetDoujinListUseCase>(
+      () => GetDoujinListUseCase(getIt<CrotpediaFeatureRepository>()));
+  getIt.registerLazySingleton<GetRequestListUseCase>(
+      () => GetRequestListUseCase(getIt<CrotpediaFeatureRepository>()));
+
   // Content Use Cases
   getIt.registerLazySingleton<GetContentListUseCase>(
       () => GetContentListUseCase(getIt()));
@@ -640,6 +653,14 @@ void _setupCubits() {
   // CrotpediaAuthCubit - Crotpedia login management
   getIt.registerLazySingleton<CrotpediaAuthCubit>(() => CrotpediaAuthCubit(
         source: getIt<CrotpediaSource>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // CrotpediaFeatureCubit - Crotpedia features (Genre, Doujin, Request lists)
+  getIt.registerFactory<CrotpediaFeatureCubit>(() => CrotpediaFeatureCubit(
+        getGenreListUseCase: getIt<GetGenreListUseCase>(),
+        getDoujinListUseCase: getIt<GetDoujinListUseCase>(),
+        getRequestListUseCase: getIt<GetRequestListUseCase>(),
         logger: getIt<Logger>(),
       ));
 

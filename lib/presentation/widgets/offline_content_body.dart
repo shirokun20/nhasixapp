@@ -247,11 +247,12 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                 final sourceId = config.source;
                 final displayName = config.ui?.displayName ?? sourceId;
                 final themeColor = config.ui?.themeColor;
-                
+
                 Color? chipColor;
                 if (themeColor != null) {
                   try {
-                    chipColor = Color(int.parse(themeColor.replaceFirst('#', '0xFF')));
+                    chipColor =
+                        Color(int.parse(themeColor.replaceFirst('#', '0xFF')));
                   } catch (e) {
                     // Fallback if color parsing fails
                   }
@@ -264,13 +265,16 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                     label: displayName,
                     isSelected: selectedSourceId == sourceId,
                     onSelected: (selected) {
-                      if (selected) _offlineSearchCubit.filterBySource(sourceId);
+                      if (selected) {
+                        _offlineSearchCubit.filterBySource(sourceId);
+                      }
                     },
                     color: chipColor?.withValues(alpha: 0.2),
                     selectedColor: chipColor,
-                    textColor: (selectedSourceId == sourceId && chipColor != null) 
-                        ? Colors.white 
-                        : null,
+                    textColor:
+                        (selectedSourceId == sourceId && chipColor != null)
+                            ? Colors.white
+                            : null,
                   ),
                 );
               }),
@@ -291,12 +295,13 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
     Color? textColor,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return FilterChip(
       label: Text(
         label.toUpperCase(),
         style: TextStyle(
-          color: textColor ?? (isSelected ? colorScheme.onPrimary : colorScheme.onSurface),
+          color: textColor ??
+              (isSelected ? colorScheme.onPrimary : colorScheme.onSurface),
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           fontSize: 12,
         ),
@@ -431,7 +436,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                 FilledButton.icon(
                   onPressed: () => context.go('/downloads'),
                   icon: const Icon(Icons.download_rounded),
-                  label: Text(
+                  label: const Text(
                       'Browse Downloads'), // Hardcoded to avoid key guessing
                   style: FilledButton.styleFrom(
                     backgroundColor: colorScheme.primary,
@@ -590,7 +595,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
 
     if (!context.mounted) return;
 
-    showModalBottomSheet(
+    await showModalBottomSheet(
       context: context,
       backgroundColor: colorScheme.surface,
       shape: const RoundedRectangleBorder(
@@ -698,7 +703,6 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                   );
                 },
               ),
-
               Builder(
                 builder: (context) {
                   try {

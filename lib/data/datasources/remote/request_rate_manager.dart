@@ -54,7 +54,7 @@ class RequestRateManager {
     );
 
     // Cap at 15 seconds maximum
-    final maxDelay = Duration(seconds: 15);
+    const maxDelay = Duration(seconds: 15);
     final finalDelay = Duration(
       milliseconds:
           min(calculatedDelay.inMilliseconds, maxDelay.inMilliseconds),

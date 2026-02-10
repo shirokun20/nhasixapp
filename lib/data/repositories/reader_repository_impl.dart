@@ -19,7 +19,8 @@ class ReaderRepositoryImpl implements ReaderRepository {
     try {
       final model = ReaderPositionModel.fromEntity(position);
       await _localDataSource.saveReaderPosition(model);
-      _logger.d('Saved reader position for ${position.contentId} at page ${position.currentPage}');
+      _logger.d(
+          'Saved reader position for ${position.contentId} at page ${position.currentPage}');
     } catch (e) {
       _logger.e('Failed to save reader position: $e');
       rethrow;
@@ -31,9 +32,10 @@ class ReaderRepositoryImpl implements ReaderRepository {
     try {
       final model = await _localDataSource.getReaderPosition(contentId);
       if (model == null) return null;
-      
+
       final position = model.toEntity();
-      _logger.d('Retrieved reader position for $contentId at page ${position.currentPage}');
+      _logger.d(
+          'Retrieved reader position for $contentId at page ${position.currentPage}');
       return position;
     } catch (e) {
       _logger.e('Failed to get reader position for $contentId: $e');
@@ -51,7 +53,7 @@ class ReaderRepositoryImpl implements ReaderRepository {
         limit: limit,
         page: page,
       );
-      
+
       final positions = models.map((model) => model.toEntity()).toList();
       _logger.d('Retrieved ${positions.length} reader positions');
       return positions;
@@ -84,23 +86,27 @@ class ReaderRepositoryImpl implements ReaderRepository {
   }
 
   @override
-  Future<void> updateReadingTime(String contentId, int additionalMinutes) async {
+  Future<void> updateReadingTime(
+      String contentId, int additionalMinutes) async {
     try {
       // Get current position
       final currentPosition = await getReaderPosition(contentId);
       if (currentPosition == null) {
-        _logger.w('Cannot update reading time: no position found for $contentId');
+        _logger
+            .w('Cannot update reading time: no position found for $contentId');
         return;
       }
 
       // Update with additional reading time
       final updatedPosition = currentPosition.copyWith(
-        readingTimeMinutes: currentPosition.readingTimeMinutes + additionalMinutes,
+        readingTimeMinutes:
+            currentPosition.readingTimeMinutes + additionalMinutes,
         lastAccessed: DateTime.now(),
       );
 
       await saveReaderPosition(updatedPosition);
-      _logger.d('Updated reading time for $contentId: +${additionalMinutes}m (total: ${updatedPosition.readingTimeMinutes}m)');
+      _logger.d(
+          'Updated reading time for $contentId: +${additionalMinutes}m (total: ${updatedPosition.readingTimeMinutes}m)');
     } catch (e) {
       _logger.e('Failed to update reading time for $contentId: $e');
       rethrow;
@@ -114,7 +120,7 @@ class ReaderRepositoryImpl implements ReaderRepository {
         limit: limit,
         page: 1,
       );
-      
+
       final contentIds = models.map((model) => model.contentId).toList();
       _logger.d('Retrieved ${contentIds.length} recently read content IDs');
       return contentIds;
@@ -143,7 +149,7 @@ class ReaderRepositoryImpl implements ReaderRepository {
   }) async {
     try {
       // Get existing position or create new one
-      ReaderPosition position = await getReaderPosition(contentId) ??
+      final ReaderPosition position = await getReaderPosition(contentId) ??
           ReaderPosition.initial(
             contentId: contentId,
             totalPages: totalPages,
@@ -154,11 +160,13 @@ class ReaderRepositoryImpl implements ReaderRepository {
         currentPage: currentPage,
         totalPages: totalPages,
         lastAccessed: DateTime.now(),
-        readingProgress: ReaderPosition.calculateProgress(currentPage, totalPages),
+        readingProgress:
+            ReaderPosition.calculateProgress(currentPage, totalPages),
       );
 
       await saveReaderPosition(updatedPosition);
-      _logger.d('Updated reader page for $contentId to $currentPage/$totalPages');
+      _logger
+          .d('Updated reader page for $contentId to $currentPage/$totalPages');
     } catch (e) {
       _logger.e('Failed to update reader page for $contentId: $e');
       rethrow;

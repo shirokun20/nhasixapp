@@ -97,8 +97,10 @@ class UpdateService {
       final currentClean = current.split('+').first;
       final remoteClean = remote.split('+').first;
 
-      List<int> currentParts = currentClean.split('.').map(int.parse).toList();
-      List<int> remoteParts = remoteClean.split('.').map(int.parse).toList();
+      final List<int> currentParts =
+          currentClean.split('.').map(int.parse).toList();
+      final List<int> remoteParts =
+          remoteClean.split('.').map(int.parse).toList();
 
       for (int i = 0; i < remoteParts.length; i++) {
         // If current doesn't have this part (e.g. 1.0 vs 1.0.1), remote is newer

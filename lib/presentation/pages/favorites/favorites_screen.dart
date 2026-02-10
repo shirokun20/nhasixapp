@@ -181,7 +181,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   Future<void> _showExportDialog() async {
-    showDialog(
+    await showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
@@ -215,7 +215,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         Navigator.of(context).pop(); // Close loading dialog
 
         // Show export result
-        showDialog(
+        await showDialog(
           context: context,
           builder: (context) => AlertDialog(
             backgroundColor: Theme.of(context).colorScheme.surfaceContainer,

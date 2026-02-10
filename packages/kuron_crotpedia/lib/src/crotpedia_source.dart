@@ -130,9 +130,9 @@ class CrotpediaSource implements ContentSource {
       // NativeAdapter will handle standard headers.
       // If we have a stored dynamic UA from previous bypass, use it.
       if (_cloudflareBypass?.currentUserAgent != null) {
-         options ??= Options();
-         options.headers ??= {};
-         options.headers!['user-agent'] = _cloudflareBypass!.currentUserAgent;
+        options ??= Options();
+        options.headers ??= {};
+        options.headers!['user-agent'] = _cloudflareBypass!.currentUserAgent;
       }
 
       return await _dio.get<T>(url, options: options);
@@ -151,18 +151,20 @@ class CrotpediaSource implements ContentSource {
         // Attempt bypass if available
         if (_cloudflareBypass != null) {
           _logger?.i('🚀 Launching visible WebView bypass dialog for $url');
-          final bypassSuccess = await _cloudflareBypass.attemptBypass(targetUrl: url);
+          final bypassSuccess =
+              await _cloudflareBypass.attemptBypass(targetUrl: url);
 
           if (bypassSuccess) {
             _logger?.i('✅ Cloudflare bypass successful');
-            
+
             // Optimization removed as native WebView doesn't return HTML content currently
             _logger?.i('✅ Retrying request via Dio...');
-            
+
             _logger?.i('✅ Retrying request via Dio...');
             // Retry request after successful bypass
             // Ensure the new Dynamic UA is used
-            options?.headers?['user-agent'] = _cloudflareBypass.currentUserAgent;
+            options?.headers?['user-agent'] =
+                _cloudflareBypass.currentUserAgent;
 
             return await _dio.get<T>(url, options: options);
           } else {
@@ -323,7 +325,7 @@ class CrotpediaSource implements ContentSource {
 
       // Parse HTML to check for login requirement
       final document = html_parser.parse(response.data);
-      
+
       // Check if login is required
       if (_scraper.isLoginRequired(document)) {
         throw LoginRequiredException(
@@ -510,26 +512,24 @@ class CrotpediaSource implements ContentSource {
       password: password,
       rememberMe: rememberMe,
     );
-    
+
     // 2. If failure is due to Cloudflare/403, try WebView Auto-Login
     if (!result.success && _cloudflareBypass != null) {
-       _logger?.w('Standard login failed, attempting WebView Auto-Login...');
-       
-       final cookies = await _cloudflareBypass.attemptLogin(
-         email: email, 
-         password: password
-       );
-       
-       if (cookies != null && cookies.isNotEmpty) {
-         _logger?.i('✅ WebView Auto-Login successful!');
-         await _authManager.setExternalLogin(email: email, cookies: cookies);
-         
-         // Extract username from email
-         final username = email.split('@').first;
-         return CrotpediaAuthResult.success(username);
-       }
+      _logger?.w('Standard login failed, attempting WebView Auto-Login...');
+
+      final cookies = await _cloudflareBypass.attemptLogin(
+          email: email, password: password);
+
+      if (cookies != null && cookies.isNotEmpty) {
+        _logger?.i('✅ WebView Auto-Login successful!');
+        await _authManager.setExternalLogin(email: email, cookies: cookies);
+
+        // Extract username from email
+        final username = email.split('@').first;
+        return CrotpediaAuthResult.success(username);
+      }
     }
-    
+
     return result;
   }
 
@@ -673,7 +673,7 @@ class CrotpediaSource implements ContentSource {
       final end =
           (i + 1 < matches.length) ? matches[i + 1].start : query.length;
 
-      var value = query.substring(start, end).trim();
+      final value = query.substring(start, end).trim();
       params[key] = value;
     }
 

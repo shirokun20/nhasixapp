@@ -16,8 +16,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -175,7 +173,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 subtitle: l10n.howOftenToCleanupHistory,
                 value: prefs.historyCleanupIntervalHours,
                 items: [6, 12, 24, 48, 168].map((h) {
-                  String label = h < 24
+                  final String label = h < 24
                       ? '${h}h'
                       : h == 24
                           ? l10n.oneDay
@@ -532,8 +530,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-
-
   Widget _buildDisguiseModeTile(
       UserPreferences prefs, ThemeData theme, AppLocalizations l10n) {
     return BlocBuilder<SettingsCubit, SettingsState>(
@@ -642,7 +638,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         );
         if (confirm == true) {
-          settingsCubit.resetToDefaults();
+          await settingsCubit.resetToDefaults();
         }
       },
       icon: const Icon(Icons.refresh),
