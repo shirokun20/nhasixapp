@@ -46,7 +46,9 @@ app.*.map.json
 # Project documentation and Agent metadata
 .agent/
 .opencode/
-projects/
+projects/*
+!projects/templates/
+!projects/master-project-list.md
 
 # FVM Version Cache
 .fvm/
