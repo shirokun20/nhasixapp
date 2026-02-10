@@ -86,10 +86,12 @@ class _AppDrawerContentState extends State<AppDrawerContent>
       Navigator.pop(context); // Close drawer first
     }
 
-    if (route == AppRoute.crotpediaLogin) {
-      context.push(route);
-    } else {
+    // Use go() for root navigation (Home/Main) to clear stack
+    // Use push() for everything else (Settings, About, etc) to preserve back navigation
+    if (route == AppRoute.home || route == AppRoute.main || route == '/') {
       context.go(route);
+    } else {
+      context.push(route);
     }
   }
 
