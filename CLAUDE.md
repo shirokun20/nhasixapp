@@ -16,10 +16,13 @@ We operate with professional discipline. Code is ephemeral; Architecture is perm
 ### 1. The Project Lifecycle
 **Never write code without a plan.**
 
-1.  **Analysis** (`projects/analysis-plan/`)
-    *Use the `planner` agent to draft high-quality RFCs/Plans here.*
+1.  **Analysis & Planning**
+    *   **Active Planning**: `projects/analysis-plan/`
+    *   **Issues**: `projects/issues/`
+    *   **Backlog / Ideas**: `projects/future-plan/`
+    **STOP & WAIT**: Do not move ANY of these to Execution without explicit user command. User may only want analysis.
 2.  **Execution** (`projects/onprogress-plan/`)
-    *Move folder here when coding starts. Maintain `progress.md`.*
+    *Move folder/issue here when coding starts (only after approval). Maintain `progress.md`.*
 3.  **Completion** (`projects/success-plan/`)
     *Move here when merged. Update master list.*
 
