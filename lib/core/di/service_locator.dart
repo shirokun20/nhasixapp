@@ -488,6 +488,7 @@ void _setupRepositories() {
             crotpediaSource: getIt<CrotpediaSource>(),
             scraper: getIt<CrotpediaScraper>(),
             doujinListDao: getIt<DoujinListDao>(),
+            sharedPreferences: getIt<SharedPreferences>(), // INJECTED
             logger: getIt<Logger>(),
           ));
 }
