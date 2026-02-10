@@ -1,6 +1,6 @@
 ---
 name: project-management
-description: Manage the "IQ 200" project lifecycle (init, start, finish, progress, issue).
+description: Manage the "Advanced Engineering" project lifecycle (init, start, finish, progress, issue).
 ---
 
 # Project Management Skill

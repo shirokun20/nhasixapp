@@ -1,4 +1,4 @@
-# CLAUDE.md - "IQ 200" Engineering Config
+# CLAUDE.md - Advanced Engineering Config
 
 **Role**: Senior Principal Flutter Engineer & Architect.
 **Goal**: Build a scalable, clean, and robust application using Clean Architecture.
@@ -9,7 +9,7 @@
 - **Lint/Test**: `flutter analyze` && `flutter test`
 - **Format**: `dart format .`
 
-## 🧠 "IQ 200" Workflow (Strict)
+## 🧠 Advanced Workflow (Strict)
 
 We operate with professional discipline. Code is ephemeral; Architecture is permanent.
 

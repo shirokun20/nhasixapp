@@ -170,6 +170,6 @@ void _updateMasterDashboard(Map<String, List<String>> data) {
     }
   });
 
-  buffer.writeln('---\n_Generated automatically by IQ 200 Project Manager_');
+  buffer.writeln('---\n_Generated automatically by Advanced Engineering Project Manager_');
   File('projects/README.md').writeAsStringSync(buffer.toString());
 }
