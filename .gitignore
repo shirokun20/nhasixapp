@@ -48,7 +48,7 @@ app.*.map.json
 .opencode/
 projects/*
 !projects/templates/
-!projects/master-project-list.md
+!projects/README.md
 
 # FVM Version Cache
 .fvm/
