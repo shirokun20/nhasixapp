@@ -3,7 +3,10 @@
     "allow": [
       "mcp__ide__getDiagnostics",
       "Bash(python3:*)",
-      "Bash(flutter test:*)"
+      "Bash(flutter test:*)",
+      "Bash(dart:*)",
+      "Bash(./build_optimized.sh:*)",
+      "Bash(git check-ignore:*)"
     ]
   },
   "enabledPlugins": {
