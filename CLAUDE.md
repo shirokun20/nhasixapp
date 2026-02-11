@@ -17,14 +17,23 @@ We operate with professional discipline. Code is ephemeral; Architecture is perm
 **Never write code without a plan.**
 
 1.  **Analysis & Planning**
-    *   **Active Planning**: `projects/analysis-plan/`
-    *   **Issues**: `projects/issues/`
-    *   **Backlog / Ideas**: `projects/future-plan/`
-    **STOP & WAIT**: Do not move ANY of these to Execution without explicit user command. User may only want analysis.
+    *   **Folder Structure**: `projects/analysis-plan/[project_name]/`
+    *   **Main File**: `[project_name]_[date].md` (Description/Analysis)
+    *   **Issues**: `projects/issues/` (Markdown files allowed here)
+    *   **Backlog**: `projects/future-plan/[project_name]/` (Follows Analysis structure)
+    **STOP & WAIT**: Do not move ANY of these to Execution without explicit user command.
+
 2.  **Execution** (`projects/onprogress-plan/`)
-    *Move folder/issue here when coding starts (only after approval). Maintain `progress.md`.*
+    *   **Convert Issue to Folder**: Create folder `[project_name]`. Move issue to `resolved_issues/`.
+    *   **Main File**: Ensure `[project_name]_[date].md` exists.
+    *   **Require `progress.md`**: MUST exist for dashboard tracking.
+    *   **Approval**: Only move here after explicit user approval.
+
 3.  **Completion** (`projects/success-plan/`)
-    *Move here when merged. Update master list.*
+    *   **Move Folder**: Move the entire folder here.
+    *   **Update**: Mark `progress.md` as 100%.
+    *   **Script**: Run `dart scripts/project_status.dart`.
+    *   **Git**: DO NOT run `git add/commit`. User handles source control.
 
 ### 2. Architecture Standards
 - **Clean Architecture**: `Domain` (Pure Dart) ← `Data` (Impl/API) ← `Presentation` (Flutter).

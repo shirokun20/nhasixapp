@@ -5,8 +5,8 @@ import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_state.dart';
 import 'package:nhasixapp/presentation/widgets/error_widget.dart';
-import 'package:nhasixapp/presentation/widgets/progress_indicator_widget.dart';
-import 'package:nhasixapp/presentation/widgets/app_drawer_content.dart';
+import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
+import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:kuron_core/kuron_core.dart'; // For ContentSourceRegistry
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -18,7 +18,7 @@ class CrotpediaRequestListScreen extends StatelessWidget {
     return BlocProvider(
       create: (context) => getIt<CrotpediaFeatureCubit>()..loadRequestList(),
       child: Scaffold(
-        drawer: const AppDrawerContent(),
+        drawer: AppMainDrawerWidget(context: context),
         appBar: AppBar(
           title: const Text('Project Requests'),
           centerTitle: true,
@@ -70,7 +70,7 @@ class _RequestListBodyState extends State<_RequestListBody> {
     return BlocBuilder<CrotpediaFeatureCubit, CrotpediaFeatureState>(
       builder: (context, state) {
         if (state is CrotpediaFeatureLoading) {
-          return const Center(child: AppProgressIndicator());
+          return const ListShimmer(itemCount: 8);
         } else if (state is CrotpediaFeatureError) {
           return Center(
             child: AppErrorWidget(

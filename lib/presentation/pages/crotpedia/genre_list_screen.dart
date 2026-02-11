@@ -5,8 +5,8 @@ import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_state.dart';
 import 'package:nhasixapp/presentation/widgets/error_widget.dart';
-import 'package:nhasixapp/presentation/widgets/progress_indicator_widget.dart';
-import 'package:nhasixapp/presentation/widgets/app_drawer_content.dart';
+import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
+import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 
 class CrotpediaGenreListScreen extends StatelessWidget {
   const CrotpediaGenreListScreen({super.key});
@@ -16,7 +16,7 @@ class CrotpediaGenreListScreen extends StatelessWidget {
     return BlocProvider(
       create: (context) => getIt<CrotpediaFeatureCubit>()..loadGenreList(),
       child: Scaffold(
-        drawer: const AppDrawerContent(),
+        drawer: AppMainDrawerWidget(context: context),
         appBar: AppBar(
           title: const Text('Genre List'),
           centerTitle: true,
@@ -24,7 +24,7 @@ class CrotpediaGenreListScreen extends StatelessWidget {
         body: BlocBuilder<CrotpediaFeatureCubit, CrotpediaFeatureState>(
           builder: (context, state) {
             if (state is CrotpediaFeatureLoading) {
-              return const Center(child: AppProgressIndicator());
+              return const GenreListShimmer();
             } else if (state is CrotpediaFeatureError) {
               return Center(
                 child: AppErrorWidget(

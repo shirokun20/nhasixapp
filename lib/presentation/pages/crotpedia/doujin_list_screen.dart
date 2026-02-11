@@ -6,7 +6,8 @@ import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_featur
 import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_state.dart';
 import 'package:nhasixapp/presentation/widgets/error_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progress_indicator_widget.dart';
-import 'package:nhasixapp/presentation/widgets/app_drawer_content.dart';
+import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
+import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:kuron_core/kuron_core.dart'; // For ContentSourceRegistry
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
@@ -18,7 +19,7 @@ class CrotpediaDoujinListScreen extends StatelessWidget {
     return BlocProvider(
       create: (context) => getIt<CrotpediaFeatureCubit>()..loadDoujinList(),
       child: Scaffold(
-        drawer: const AppDrawerContent(),
+        drawer: AppMainDrawerWidget(context: context),
         appBar: AppBar(
           title: const Text('Doujin List (A-Z)'),
           centerTitle: true,
@@ -156,7 +157,7 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
         }
 
         if (state is CrotpediaFeatureLoading) {
-          return const Center(child: AppProgressIndicator());
+          return const SimpleListShimmer();
         } else if (state is CrotpediaFeatureError) {
           return Center(
             child: AppErrorWidget(
