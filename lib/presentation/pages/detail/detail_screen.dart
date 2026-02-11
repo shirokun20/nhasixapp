@@ -454,6 +454,9 @@ class _DetailScreenState extends State<DetailScreen> {
                       fit: BoxFit.cover,
                       memCacheWidth: 800,
                       memCacheHeight: 1200,
+                      httpHeaders: getIt<ContentSourceRegistry>()
+                          .getSource(content.sourceId)
+                          ?.getImageDownloadHeaders(imageUrl: content.coverUrl),
                       placeholder: Container(
                         color: Theme.of(context).colorScheme.surfaceContainer,
                         child: Center(
@@ -1336,6 +1339,10 @@ class _DetailScreenState extends State<DetailScreen> {
                   fit: BoxFit.cover,
                   memCacheWidth: 320,
                   memCacheHeight: 400,
+                  httpHeaders: getIt<ContentSourceRegistry>()
+                      .getSource(relatedContent.sourceId)
+                      ?.getImageDownloadHeaders(
+                          imageUrl: relatedContent.coverUrl),
                   placeholder: Container(
                     color: Theme.of(context).colorScheme.surfaceContainer,
                     child: Center(

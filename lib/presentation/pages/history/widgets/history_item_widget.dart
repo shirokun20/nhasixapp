@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:kuron_core/kuron_core.dart';
 
 import '../../../../core/constants/text_style_const.dart';
 import '../../../../domain/entities/entities.dart';
@@ -65,6 +67,9 @@ class HistoryItemWidget extends StatelessWidget {
                 height: 120,
                 fit: BoxFit.cover,
                 borderRadius: BorderRadius.circular(8),
+                httpHeaders: getIt<ContentSourceRegistry>()
+                    .getSource(history.sourceId)
+                    ?.getImageDownloadHeaders(imageUrl: history.coverUrl!),
               )
             : Container(
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,

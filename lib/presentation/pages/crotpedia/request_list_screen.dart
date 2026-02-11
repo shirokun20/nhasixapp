@@ -190,6 +190,9 @@ class _RequestCard extends StatelessWidget {
                     fit: BoxFit.cover,
                     memCacheWidth: 200,
                     memCacheHeight: 300,
+                    httpHeaders: getIt<ContentSourceRegistry>()
+                        .getSource(SourceType.crotpedia.id)
+                        ?.getImageDownloadHeaders(imageUrl: coverUrl),
                   ),
                 ),
               ),

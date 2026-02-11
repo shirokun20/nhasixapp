@@ -3,10 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:kuron_core/kuron_core.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/routing/app_route.dart';
-import '../../../domain/entities/entities.dart';
 import '../../../services/analytics_service.dart';
 import '../../../core/utils/app_animations.dart';
 import '../../cubits/random_gallery/random_gallery_cubit.dart';
@@ -167,6 +167,9 @@ class _RandomGalleryView extends StatelessWidget {
               contentId: gallery.id,
               isThumbnail: true,
               fit: BoxFit.cover,
+              httpHeaders: getIt<ContentSourceRegistry>()
+                  .getSource(gallery.sourceId)
+                  ?.getImageDownloadHeaders(imageUrl: gallery.coverUrl),
             ),
 
             // Censor Overlay

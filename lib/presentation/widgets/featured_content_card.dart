@@ -4,6 +4,7 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../core/constants/text_style_const.dart';
 import 'package:kuron_core/kuron_core.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import '../../l10n/app_localizations.dart';
 import 'progressive_image_widget.dart';
 
@@ -55,6 +56,10 @@ class FeaturedContentCard extends StatelessWidget {
                               aspectRatio: 0.7,
                               borderRadius: BorderRadius.zero,
                               showOfflineIndicator: false,
+                              httpHeaders: getIt<ContentSourceRegistry>()
+                                  .getSource(content.sourceId)
+                                  ?.getImageDownloadHeaders(
+                                      imageUrl: content.coverUrl),
                             )
                           : _buildPlaceholder(context),
 

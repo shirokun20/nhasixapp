@@ -3,6 +3,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../core/constants/text_style_const.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -304,6 +305,10 @@ class ContentCard extends StatelessWidget {
   }
 
   Widget _buildCoverImage() {
+    // Get headers for image request (needed for Crotpedia and other sources that require Referer)
+    final source = getIt<ContentSourceRegistry>().getSource(content.sourceId);
+    final headers = source?.getImageDownloadHeaders(imageUrl: content.coverUrl);
+
     return Builder(
       builder: (context) => Container(
         width: double.infinity,
@@ -319,6 +324,7 @@ class ContentCard extends StatelessWidget {
                     BorderRadius.zero, // No border radius, handled by parent
                 showOfflineIndicator:
                     false, // Disable to prevent duplicate with ContentCard's own indicator
+                httpHeaders: headers,
               )
             : _buildImageError(),
       ),

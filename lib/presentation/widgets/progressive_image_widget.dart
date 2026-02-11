@@ -42,6 +42,7 @@ class ProgressiveImageWidget extends StatefulWidget {
     this.errorWidget,
     this.fadeInDuration = const Duration(milliseconds: 300),
     this.fadeOutDuration = const Duration(milliseconds: 100),
+    this.httpHeaders,
   });
 
   final String networkUrl;
@@ -58,6 +59,7 @@ class ProgressiveImageWidget extends StatefulWidget {
   final Widget? errorWidget;
   final Duration fadeInDuration;
   final Duration fadeOutDuration;
+  final Map<String, String>? httpHeaders;
 
   @override
   State<ProgressiveImageWidget> createState() => _ProgressiveImageWidgetState();
@@ -265,6 +267,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
           widget.errorWidget ?? _buildErrorWidget(),
       fadeInDuration: widget.fadeInDuration,
       fadeOutDuration: widget.fadeOutDuration,
+      httpHeaders: widget.httpHeaders,
     );
 
     // Apply border radius if specified
@@ -725,6 +728,7 @@ class ProgressiveThumbnailWidget extends StatelessWidget {
     this.aspectRatio = 0.7,
     this.borderRadius = const BorderRadius.all(Radius.circular(8)),
     this.showOfflineIndicator = false,
+    this.httpHeaders,
   });
 
   final String networkUrl;
@@ -732,6 +736,7 @@ class ProgressiveThumbnailWidget extends StatelessWidget {
   final double aspectRatio;
   final BorderRadius borderRadius;
   final bool showOfflineIndicator;
+  final Map<String, String>? httpHeaders;
 
   @override
   Widget build(BuildContext context) {
@@ -749,6 +754,7 @@ class ProgressiveThumbnailWidget extends StatelessWidget {
             borderRadius: borderRadius,
             memCacheWidth: 400,
             memCacheHeight: 600,
+            httpHeaders: httpHeaders,
           ),
 
           // Offline indicator overlay
