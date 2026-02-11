@@ -8,7 +8,9 @@
       "Bash(git check-ignore:*)",
       "Bash(fvm flutter analyze:*)",
       "Bash(fvm flutter test:*)",
-      "WebFetch(domain:kiro.dev)"
+      "WebFetch(domain:kiro.dev)",
+      "Bash(dart:*)",
+      "Bash(flutter test:*)"
     ],
     "additionalDirectories": [
       "/Users/asix/Documents/learn_flutter/nhasixapp/projects/issues",

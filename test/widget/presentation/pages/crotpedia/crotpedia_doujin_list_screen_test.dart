@@ -44,13 +44,15 @@ void main() {
   }
 
   group('CrotpediaDoujinListScreen', () {
-    testWidgets('shows loading indicator when state is loading', (tester) async {
+    testWidgets('shows shimmer loading when state is loading', (tester) async {
       when(() => mockCubit.state).thenReturn(CrotpediaFeatureLoading());
       when(() => mockCubit.loadDoujinList()).thenAnswer((_) async {});
 
       await tester.pumpWidget(createWidgetUnderTest());
 
-      expect(find.byType(AppProgressIndicator), findsOneWidget);
+      // It's a private class, so we can't find by type easily unless we export it or find by key/structure
+      // But looking at the implementation, it returns a _DoujinListShimmer which contains a ListView
+      expect(find.byType(ListView), findsOneWidget);
     });
 
     testWidgets('shows syncing indicator when state is syncing', (tester) async {
@@ -76,6 +78,12 @@ void main() {
     });
 
     testWidgets('shows list of doujins when state is loaded', (tester) async {
+      // Set a large enough screen size to avoid overflow in AlphabetNavigator
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final doujins = [
         DoujinListItem(title: 'Doujin A', url: '/doujin/a'),
         DoujinListItem(title: 'Doujin B', url: '/doujin/b'),
@@ -99,7 +107,8 @@ void main() {
 
       await tester.pumpWidget(createWidgetUnderTest());
 
-      expect(find.text('No doujins found'), findsOneWidget);
+      expect(find.byType(AppErrorWidget), findsOneWidget);
+      expect(find.text('No Doujins Found'), findsOneWidget);
     });
   });
 }

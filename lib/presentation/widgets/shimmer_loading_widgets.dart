@@ -379,51 +379,92 @@ class GenreListShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 3.5,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-      ),
-      itemCount: 20,
-      itemBuilder: (context, index) {
-        return BaseShimmer(
-          child: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3),
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return CustomScrollView(
+      slivers: [
+        // Header shimmer
+        SliverToBoxAdapter(
+          child: BaseShimmer(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                children: [
+                  ShimmerBox(
+                    height: 20,
+                    width: 20,
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  width: 30,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                  const SizedBox(width: 8),
+                  const ShimmerBox(height: 20, width: 140),
+                  const Spacer(),
+                  ShimmerBox(
+                    height: 24,
+                    width: 36,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        );
-      },
+        ),
+        // Grid shimmer
+        SliverPadding(
+          padding: const EdgeInsets.all(12),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 2.8,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                return BaseShimmer(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: colorScheme.outlineVariant
+                            .withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ShimmerBox(
+                            height: 14,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ShimmerBox(
+                          width: 32,
+                          height: 20,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+              childCount: 20,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

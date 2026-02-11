@@ -10,7 +10,7 @@ import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_featur
 import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_state.dart';
 import 'package:nhasixapp/presentation/pages/crotpedia/genre_list_screen.dart';
 import 'package:nhasixapp/presentation/widgets/error_widget.dart';
-import 'package:nhasixapp/presentation/widgets/progress_indicator_widget.dart';
+import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 
 class MockCrotpediaFeatureCubit extends MockCubit<CrotpediaFeatureState>
     implements CrotpediaFeatureCubit {}
@@ -20,7 +20,6 @@ void main() {
 
   setUp(() {
     mockCubit = MockCrotpediaFeatureCubit();
-    // Setup GetIt
     if (GetIt.instance.isRegistered<CrotpediaFeatureCubit>()) {
       GetIt.instance.unregister<CrotpediaFeatureCubit>();
     }
@@ -45,14 +44,14 @@ void main() {
   }
 
   group('CrotpediaGenreListScreen', () {
-    testWidgets('shows loading indicator when state is loading',
+    testWidgets('shows shimmer loading when state is loading',
         (tester) async {
       when(() => mockCubit.state).thenReturn(CrotpediaFeatureLoading());
       when(() => mockCubit.loadGenreList()).thenAnswer((_) async {});
 
       await tester.pumpWidget(createWidgetUnderTest());
 
-      expect(find.byType(AppProgressIndicator), findsOneWidget);
+      expect(find.byType(GenreListShimmer), findsOneWidget);
     });
 
     testWidgets('shows error widget when state is error', (tester) async {
@@ -83,13 +82,27 @@ void main() {
       expect(find.text('5'), findsOneWidget);
     });
 
-    testWidgets('shows empty message when genre list is empty', (tester) async {
+    testWidgets('shows header with genre count when loaded', (tester) async {
+      final genres = [
+        GenreItem(name: 'Action', count: 10, url: '/genre/action', slug: 'action'),
+      ];
+      when(() => mockCubit.state).thenReturn(GenreListLoaded(genres));
+      when(() => mockCubit.loadGenreList()).thenAnswer((_) async {});
+
+      await tester.pumpWidget(createWidgetUnderTest());
+
+      expect(find.text('Browse by Genre'), findsOneWidget);
+      expect(find.text('1'), findsOneWidget); // genre count badge
+    });
+
+    testWidgets('shows empty state when genre list is empty', (tester) async {
       when(() => mockCubit.state).thenReturn(const GenreListLoaded([]));
       when(() => mockCubit.loadGenreList()).thenAnswer((_) async {});
 
       await tester.pumpWidget(createWidgetUnderTest());
 
-      expect(find.text('No genres found'), findsOneWidget);
+      expect(find.byType(AppErrorWidget), findsOneWidget);
+      expect(find.text('No Genres Found'), findsOneWidget);
     });
   });
 }

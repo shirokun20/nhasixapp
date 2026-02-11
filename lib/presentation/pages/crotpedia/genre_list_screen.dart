@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
+import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_state.dart';
 import 'package:nhasixapp/presentation/widgets/error_widget.dart';
@@ -30,81 +31,239 @@ class CrotpediaGenreListScreen extends StatelessWidget {
                 child: AppErrorWidget(
                   title: 'Error Loading Genres',
                   message: state.message,
-                  onRetry: () => context.read<CrotpediaFeatureCubit>().loadGenreList(),
+                  onRetry: () =>
+                      context.read<CrotpediaFeatureCubit>().loadGenreList(),
                 ),
               );
             } else if (state is GenreListLoaded) {
               if (state.genres.isEmpty) {
-                return const Center(child: Text('No genres found'));
+                return const Center(
+                  child: AppErrorWidget(
+                    title: 'No Genres Found',
+                    message: 'There are no genres available at the moment.',
+                    icon: Icons.category_outlined,
+                  ),
+                );
               }
               return RefreshIndicator(
                 onRefresh: () async {
                   await context.read<CrotpediaFeatureCubit>().loadGenreList();
                 },
-                child: GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2, // Adjust based on screen width if needed
-                    childAspectRatio: 3.5,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                  ),
-                  itemCount: state.genres.length,
-                  itemBuilder: (context, index) {
-                    final genre = state.genres[index];
-                    return InkWell(
-                      onTap: () {
-                         // Use 'genre:' prefix as supported by CrotpediaSource
-                         AppRouter.goToContentByTag(context, 'genre:${genre.slug}');
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.outlineVariant,
-                          ),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: CustomScrollView(
+                  slivers: [
+                    // Header section
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                         child: Row(
                           children: [
-                            Expanded(
-                              child: Text(
-                                genre.name,
-                                style: Theme.of(context).textTheme.titleMedium,
-                                overflow: TextOverflow.ellipsis,
+                            Icon(
+                              Icons.category_rounded,
+                              size: 20,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Browse by Genre',
+                              style: TextStyleConst.headingSmall.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
-                            if (genre.count > 0) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  genre.count.toString(),
-                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                  ),
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .secondaryContainer,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '${state.genres.length}',
+                                style: TextStyleConst.labelMedium.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSecondaryContainer,
                                 ),
                               ),
-                            ],
+                            ),
                           ],
                         ),
                       ),
-                    );
-                  },
+                    ),
+                    // Genre grid
+                    SliverPadding(
+                      padding: const EdgeInsets.all(12),
+                      sliver: SliverGrid(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 2.8,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final genre = state.genres[index];
+                            return _GenreCard(
+                              name: genre.name,
+                              count: genre.count,
+                              icon: _getGenreIcon(genre.name),
+                              onTap: () => AppRouter.goToContentByTag(
+                                  context, 'genre:${genre.slug}'),
+                            );
+                          },
+                          childCount: state.genres.length,
+                        ),
+                      ),
+                    ),
+                    // Bottom padding
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: 16),
+                    ),
+                  ],
                 ),
               );
             }
             return const SizedBox.shrink();
           },
+        ),
+      ),
+    );
+  }
+
+  static IconData _getGenreIcon(String genreName) {
+    final name = genreName.toLowerCase();
+    if (name.contains('action')) return Icons.flash_on_rounded;
+    if (name.contains('adventure')) return Icons.explore_rounded;
+    if (name.contains('comedy')) return Icons.sentiment_very_satisfied_rounded;
+    if (name.contains('drama')) return Icons.theater_comedy_rounded;
+    if (name.contains('fantasy')) return Icons.auto_awesome_rounded;
+    if (name.contains('horror')) return Icons.nights_stay_rounded;
+    if (name.contains('mystery')) return Icons.search_rounded;
+    if (name.contains('romance')) return Icons.favorite_rounded;
+    if (name.contains('sci-fi') || name.contains('science')) {
+      return Icons.rocket_launch_rounded;
+    }
+    if (name.contains('slice of life')) return Icons.coffee_rounded;
+    if (name.contains('sports')) return Icons.sports_soccer_rounded;
+    if (name.contains('supernatural')) return Icons.blur_on_rounded;
+    if (name.contains('thriller')) return Icons.warning_amber_rounded;
+    if (name.contains('school')) return Icons.school_rounded;
+    if (name.contains('music')) return Icons.music_note_rounded;
+    if (name.contains('mecha')) return Icons.smart_toy_rounded;
+    if (name.contains('historical')) return Icons.history_edu_rounded;
+    if (name.contains('military')) return Icons.shield_rounded;
+    if (name.contains('psychological')) return Icons.psychology_rounded;
+    if (name.contains('harem')) return Icons.people_rounded;
+    if (name.contains('ecchi')) return Icons.local_fire_department_rounded;
+    if (name.contains('shounen')) return Icons.whatshot_rounded;
+    if (name.contains('shoujo')) return Icons.star_rounded;
+    if (name.contains('seinen')) return Icons.person_rounded;
+    if (name.contains('josei')) return Icons.face_rounded;
+    if (name.contains('isekai')) return Icons.public_rounded;
+    if (name.contains('magic')) return Icons.auto_fix_high_rounded;
+    if (name.contains('demon') || name.contains('devil')) {
+      return Icons.whatshot_rounded;
+    }
+    if (name.contains('game')) return Icons.sports_esports_rounded;
+    if (name.contains('martial')) return Icons.sports_martial_arts_rounded;
+    if (name.contains('vampire')) return Icons.dark_mode_rounded;
+    if (name.contains('police') || name.contains('detective')) {
+      return Icons.local_police_rounded;
+    }
+    if (name.contains('space')) return Icons.travel_explore_rounded;
+    if (name.contains('food') || name.contains('cook')) {
+      return Icons.restaurant_rounded;
+    }
+    if (name.contains('parody')) return Icons.content_copy_rounded;
+    if (name.contains('samurai')) return Icons.sports_martial_arts_rounded;
+    if (name.contains('super')) return Icons.bolt_rounded;
+    return Icons.label_rounded;
+  }
+}
+
+class _GenreCard extends StatelessWidget {
+  final String name;
+  final int count;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _GenreCard({
+    required this.name,
+    required this.count,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: colorScheme.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        splashColor: colorScheme.primary.withValues(alpha: 0.08),
+        highlightColor: colorScheme.primary.withValues(alpha: 0.04),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            children: [
+              // Genre icon
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  size: 18,
+                  color: colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 10),
+              // Genre name
+              Expanded(
+                child: Text(
+                  name,
+                  style: TextStyleConst.labelLarge.copyWith(
+                    color: colorScheme.onSurface,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+              // Count badge
+              if (count > 0)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: colorScheme.tertiaryContainer,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    count.toString(),
+                    style: TextStyleConst.labelSmall.copyWith(
+                      color: colorScheme.onTertiaryContainer,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

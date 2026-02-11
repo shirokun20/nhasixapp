@@ -10,7 +10,6 @@ import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_featur
 import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_state.dart';
 import 'package:nhasixapp/presentation/pages/crotpedia/request_list_screen.dart';
 import 'package:nhasixapp/presentation/widgets/error_widget.dart';
-import 'package:nhasixapp/presentation/widgets/progress_indicator_widget.dart';
 
 class MockCrotpediaFeatureCubit extends MockCubit<CrotpediaFeatureState>
     implements CrotpediaFeatureCubit {}
@@ -50,7 +49,8 @@ void main() {
 
       await tester.pumpWidget(createWidgetUnderTest());
 
-      expect(find.byType(AppProgressIndicator), findsOneWidget);
+      // Should show shimmer list (ListView)
+      expect(find.byType(ListView), findsOneWidget);
     });
 
     testWidgets('shows error widget when state is error', (tester) async {
@@ -85,6 +85,7 @@ void main() {
       when(() => mockCubit.loadRequestList()).thenAnswer((_) async {});
 
       await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pump(); // Pump for image loading if needed
 
       // Should find titles
       expect(find.text('Request A'), findsOneWidget);
@@ -101,7 +102,8 @@ void main() {
 
       await tester.pumpWidget(createWidgetUnderTest());
 
-      expect(find.text('No requests found'), findsOneWidget);
+      expect(find.byType(AppErrorWidget), findsOneWidget);
+      expect(find.text('No Requests Found'), findsOneWidget);
     });
   });
 }
