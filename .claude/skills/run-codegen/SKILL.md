@@ -1,7 +1,6 @@
 ---
 name: run-codegen
 description: Run Flutter build_runner to regenerate code (freezed, json_serializable)
-disable-model-invocation: true
 ---
 
 # Run Codegen

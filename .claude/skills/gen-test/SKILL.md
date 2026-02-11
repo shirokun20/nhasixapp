@@ -1,14 +1,6 @@
 ---
 name: gen-test
 description: Generate unit tests for a Dart class using mocktail and bloc_test
-input_schema:
-  type: object
-  properties:
-    file_path:
-      type: string
-      description: The path to the source file to generate tests for
-  required:
-    - file_path
 ---
 
 # Generate Tests
