@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.11] - 2026-02-11
+
+### 🚀 New Features
+- **View Comments**:
+  - Added ability to view comments on gallery detail pages.
+  - Integration with **NHentai JSON API** for reliable comment data.
+  - Robust handling of avatar URLs and comment formatting (Markdown).
+  - Modern, card-based UI optimized for readability in both Light and Dark modes.
+
+### 🛠 Improvements
+- **Network Stability**:
+  - Implemented `NativeAdapter` for Dio HTTP client to bypass Cloudflare TLS fingerprinting issues (`Connection reset by peer`).
+  - Improved resilience of API requests and scraping fallbacks.
+- **Architecture**:
+  - Refactored `Comment` entity to `kuron_core` for better modularity across packages.
+  - Cleaned up legacy scraping code in favor of API-first approach for comments.
+
+### 🔧 Technical
+- Updated `pubspec.yaml` to version `0.9.11+19`.
+- Added unit tests for API model parsing and comment mapping.
+- Enhanced error logging for network requests.
+
+---
+
 ## [0.9.10] - 2026-02-08
 
 ### 🚀 New Features

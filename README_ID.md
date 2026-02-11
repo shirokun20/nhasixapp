@@ -15,7 +15,7 @@
 
 ## 📥 **Download Rilis Terbaru**
 
-[📦 **Download v0.9.10**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.10)
+[📦 **Download v0.9.11+19**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.11%2B19)
 
 | Varian | Ukuran | Cocok Untuk | Status |
 |:-------|:----:|:---------|:------:|
@@ -25,6 +25,11 @@
 ---
 
 ## ✨ **Fitur Utama**
+
+### 💬 **Interaksi Komunitas (Baru!)**
+- **Lihat Komentar**: Baca diskusi langsung di halaman detail.
+- **Tampilan Modern**: UI komentar berbentuk kartu yang rapi di mode Terang & Gelap.
+- **Data Realtime**: Menggunakan API resmi untuk data komentar yang akurat dan cepat.
 
 ### 🎯 **Membaca & Menjelajah**
 - **Immersive Reader**: Mode layar penuh, transisi halus, dan rendering tajam.

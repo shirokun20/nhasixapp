@@ -15,7 +15,7 @@
 
 ## 📥 **Download Latest Release**
 
-[📦 **Get v0.9.10**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.10)
+[📦 **Get v0.9.11+19**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.11%2B19)
 
 | Variant | Size | Best For | Status |
 |:-------|:----:|:---------|:------:|
@@ -25,6 +25,11 @@
 ---
 
 ## ✨ **Key Features**
+
+### 💬 **Community Interaction (New!)**
+- **View Comments**: Read discussions directly on detail pages.
+- **Modern UI**: Clean, card-based layout optimized for both Light & Dark modes.
+- **Realtime Data**: Uses official API for reliable and fast comment loading.
 
 ### 🎯 **Reading & Discovery**
 - **Immersive Reader**: Full-screen mode, smooth page transitions, and high-quality rendering.
