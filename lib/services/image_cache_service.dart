@@ -4,6 +4,9 @@ import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
+import 'package:flutter/foundation.dart';
+import 'package:image/image.dart' as img;
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 /// Internal class for memory cache data
 class _CachedImageData {
@@ -32,14 +35,15 @@ class ImageCacheService {
   final Map<String, _CachedImageData> _memoryCache = {};
 
   /// Get cached image data by URL
-  Future<File?> getCachedImage(String imageUrl) async {
+  /// If [isStaticGif] is true, it looks for the processed static version of the GIF
+  Future<File?> getCachedImage(String imageUrl, {bool isStaticGif = false}) async {
     try {
-      final cacheKey = _generateCacheKey(imageUrl);
+      final cacheKey = _generateCacheKey(imageUrl, isStaticGif: isStaticGif);
 
       // Check memory cache first
       final memoryData = _memoryCache[cacheKey];
       if (memoryData != null && !_isExpired(memoryData.cachedAt)) {
-        _logger.d('Image cache hit (memory): $imageUrl');
+        _logger.d('Image cache hit (memory): $imageUrl (static: $isStaticGif)');
         return memoryData.file;
       }
 
@@ -60,7 +64,7 @@ class ImageCacheService {
             size: await cacheFile.length(),
           );
 
-          _logger.d('Image cache hit (disk): $imageUrl');
+          _logger.d('Image cache hit (disk): $imageUrl (static: $isStaticGif)');
           return cacheFile;
         } else {
           // Remove expired cache
@@ -70,7 +74,7 @@ class ImageCacheService {
         }
       }
 
-      _logger.d('Image cache miss: $imageUrl');
+      _logger.d('Image cache miss: $imageUrl (static: $isStaticGif)');
       return null;
     } catch (e) {
       _logger.w('Error getting cached image for $imageUrl: $e');
@@ -78,10 +82,56 @@ class ImageCacheService {
     }
   }
 
-  /// Cache image data
-  Future<void> cacheImage(String imageUrl, List<int> imageData) async {
+  /// Get or process a static image from a GIF URL
+  /// Returns a cached File of the static JPG
+  Future<File?> getOrProcessStaticGif(
+      String url, Map<String, String>? headers) async {
     try {
-      final cacheKey = _generateCacheKey(imageUrl);
+      // 1. Check if we already have the static version cached
+      final cachedFile = await getCachedImage(url, isStaticGif: true);
+      if (cachedFile != null) return cachedFile;
+
+      // 2. Download the original GIF
+      final file =
+          await DefaultCacheManager().getSingleFile(url, headers: headers);
+      final bytes = await file.readAsBytes();
+
+      // 3. Convert to static JPG in isolate
+      final staticBytes = await compute(_decodeGifToStaticImage, bytes);
+      if (staticBytes == null) return null;
+
+      // 4. Cache the result
+      await cacheImage(url, staticBytes, isStaticGif: true);
+
+      // 5. Return the newly cached file
+      return await getCachedImage(url, isStaticGif: true);
+    } catch (e) {
+      _logger.e('Error processing GIF: $e');
+      return null;
+    }
+  }
+
+  /// Static function for isolate processing
+  static Future<Uint8List?> _decodeGifToStaticImage(Uint8List bytes) async {
+    try {
+      // Decode the image (GIF or otherwise)
+      final image = img.decodeImage(bytes);
+      if (image == null) return null;
+
+      // Encode as optimized JPEG (static image)
+      // This strips animation frames and returns just the first frame
+      return Uint8List.fromList(img.encodeJpg(image, quality: 85));
+    } catch (e) {
+      debugPrint('Error decoding GIF in isolate: $e');
+      return null;
+    }
+  }
+
+  /// Cache image data
+  Future<void> cacheImage(String imageUrl, List<int> imageData,
+      {bool isStaticGif = false}) async {
+    try {
+      final cacheKey = _generateCacheKey(imageUrl, isStaticGif: isStaticGif);
       final cacheDir = await _getCacheDirectory();
       final cacheFile = File('${cacheDir.path}/$cacheKey');
 
@@ -197,11 +247,11 @@ class ImageCacheService {
   }
 
   /// Generate cache key from URL
-  String _generateCacheKey(String url) {
+  String _generateCacheKey(String url, {bool isStaticGif = false}) {
     // Use SHA-256 hash of URL as cache key
     final bytes = utf8.encode(url);
     final hash = sha256.convert(bytes);
-    return hash.toString();
+    return isStaticGif ? '${hash}_static' : hash.toString();
   }
 
   /// Get cache directory

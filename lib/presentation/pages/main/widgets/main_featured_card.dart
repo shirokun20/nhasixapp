@@ -2,10 +2,12 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+
 import 'package:nhasixapp/core/constants/text_style_const.dart';
-import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
+import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:kuron_core/kuron_core.dart';
 
 /// Horizontal featured card widget: Image left (40%), Content info right (60%)
 class MainFeaturedCard extends StatelessWidget {
@@ -359,12 +361,15 @@ class MainFeaturedCard extends StatelessWidget {
     required String coverUrl,
     String? fallbackUrl,
   }) {
-    return CachedNetworkImage(
-      imageUrl: coverUrl,
+    return ProgressiveImageWidget(
+      networkUrl: coverUrl,
+      httpHeaders: getIt<ContentSourceRegistry>()
+          .getSource(content.sourceId)
+          ?.getImageDownloadHeaders(imageUrl: coverUrl),
       fit: BoxFit.cover,
       memCacheWidth: 400,
       memCacheHeight: 600,
-      placeholder: (context, url) => Container(
+      placeholder: Container(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
         child: Center(
           child: Icon(
@@ -377,15 +382,17 @@ class MainFeaturedCard extends StatelessWidget {
           ),
         ),
       ),
-      errorWidget: (context, url, error) {
+      errorWidget: 
         // Try fallback URL if available
-        if (fallbackUrl != null && fallbackUrl != coverUrl) {
-          return CachedNetworkImage(
-            imageUrl: fallbackUrl,
+        (fallbackUrl != null && fallbackUrl != coverUrl) ? ProgressiveImageWidget(
+            networkUrl: fallbackUrl,
+            httpHeaders: getIt<ContentSourceRegistry>()
+                .getSource(content.sourceId)
+                ?.getImageDownloadHeaders(imageUrl: fallbackUrl),
             fit: BoxFit.cover,
             memCacheWidth: 400,
             memCacheHeight: 600,
-            placeholder: (context, url) => Container(
+            placeholder: Container(
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               child: Center(
                 child: CircularProgressIndicator(
@@ -394,12 +401,8 @@ class MainFeaturedCard extends StatelessWidget {
                 ),
               ),
             ),
-            errorWidget: (context, url, error) =>
-                _buildErrorPlaceholder(context),
-          );
-        }
-        return _buildErrorPlaceholder(context);
-      },
+            errorWidget: _buildErrorPlaceholder(context),
+          ) : _buildErrorPlaceholder(context),
     );
   }
 

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
 import 'package:shimmer/shimmer.dart';
 import 'package:logger/logger.dart';
 
@@ -250,8 +251,44 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
 
   /// Build network image with caching
   Widget _buildNetworkImage() {
-    if (kDebugMode) {
-      _logger.d('📡 Loading network image: ${widget.networkUrl}');
+    // Improved GIF detection to handle query parameters
+    final uri = Uri.parse(widget.networkUrl);
+    final isGif = uri.path.toLowerCase().endsWith('.gif');
+
+    if (isGif) {
+      // Use efficient cached/processed GIF handling
+      return FutureBuilder<File?>(
+        future: getIt<ImageCacheService>()
+            .getOrProcessStaticGif(widget.networkUrl, widget.httpHeaders),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return widget.placeholder ?? _buildPlaceholder();
+          }
+          if (snapshot.hasError || snapshot.data == null) {
+            if (kDebugMode) {
+              _logger.e('❌ Error loading GIF as static image: ${snapshot.error}');
+            }
+            return widget.errorWidget ?? _buildErrorWidget();
+          }
+          
+          final imageWidget = Image.file(
+            snapshot.data!,
+            width: widget.width,
+            height: widget.height,
+            fit: widget.fit,
+            errorBuilder: (context, error, stackTrace) =>
+                widget.errorWidget ?? _buildErrorWidget(),
+          );
+
+          if (widget.borderRadius != null) {
+            return ClipRRect(
+              borderRadius: widget.borderRadius!,
+              child: imageWidget,
+            );
+          }
+          return imageWidget;
+        },
+      );
     }
 
     Widget imageWidget = CachedNetworkImage(

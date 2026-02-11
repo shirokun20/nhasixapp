@@ -870,12 +870,15 @@ class CompactContentCard extends StatelessWidget {
                 child: SizedBox(
                   width: 60,
                   height: 80,
-                  child: CachedNetworkImage(
-                    imageUrl: content.coverUrl,
+                  child: ProgressiveImageWidget(
+                    networkUrl: content.coverUrl,
+                    httpHeaders: getIt<ContentSourceRegistry>()
+                        .getSource(content.sourceId)
+                        ?.getImageDownloadHeaders(imageUrl: content.coverUrl),
                     fit: BoxFit.cover,
                     width: 60,
                     height: 80,
-                    placeholder: (context, url) => Container(
+                    placeholder: Container(
                       color:
                           Theme.of(context).colorScheme.surfaceContainerHighest,
                       child: Center(
@@ -885,7 +888,7 @@ class CompactContentCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    errorWidget: (context, url, error) => Container(
+                    errorWidget: Container(
                       color:
                           Theme.of(context).colorScheme.surfaceContainerHighest,
                       child: Icon(
