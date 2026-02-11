@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart'; // For ScrollDirection
 // import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -159,12 +160,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
         _prefetchImages(
             clampedPage, state.content!.imageUrls, state.imageMetadata);
       }
-      // ✨ NEW: Auto-hide UI on scroll down
-      // If scrolling down (user moving finger up) and UI is visible -> hide it
-      if (_scrollController.position.userScrollDirection.toString() ==
-              'ScrollDirection.reverse' &&
+      // ✨ Auto-hide UI on scroll down
+      final scrollDirection = _scrollController.position.userScrollDirection;
+      if (scrollDirection == ScrollDirection.reverse &&
           (state.showUI ?? false)) {
         _readerCubit.hideUI();
+      }
+      // ✨ Auto-show UI on scroll up
+      else if (scrollDirection == ScrollDirection.forward &&
+          !(state.showUI ?? false)) {
+        _readerCubit.showUI();
       }
     }
   }
