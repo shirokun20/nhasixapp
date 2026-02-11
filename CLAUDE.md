@@ -18,7 +18,7 @@ We operate with professional discipline. Code is ephemeral; Architecture is perm
 
 1.  **Analysis & Planning**
     *   **Folder Structure**: `projects/analysis-plan/[project_name]/`
-    *   **Main File**: `[project_name]_[date].md` (Description/Analysis)
+    *   **Main File**: `[project_name]_[date].md` (Copy from `projects/templates/project_plan_template.md`)
     *   **Issues**: `projects/issues/` (Markdown files allowed here)
     *   **Backlog**: `projects/future-plan/[project_name]/` (Follows Analysis structure)
     **STOP & WAIT**: Do not move ANY of these to Execution without explicit user command.
@@ -26,7 +26,7 @@ We operate with professional discipline. Code is ephemeral; Architecture is perm
 2.  **Execution** (`projects/onprogress-plan/`)
     *   **Convert Issue to Folder**: Create folder `[project_name]`. Move issue to `resolved_issues/`.
     *   **Main File**: Ensure `[project_name]_[date].md` exists.
-    *   **Require `progress.md`**: MUST exist for dashboard tracking.
+    *   **Require `progress.md`**: MUST exist for dashboard tracking (Copy Implementation Plan from Analysis).
     *   **Approval**: Only move here after explicit user approval.
 
 3.  **Completion** (`projects/success-plan/`)

@@ -7,8 +7,7 @@
       "Bash(dart:*)",
       "Bash(./build_optimized.sh:*)",
       "Bash(git check-ignore:*)",
-      "Bash(flutter analyze:*)",
-      "Bash(/Users/asix/fvm/default/bin/dart:*)"
+      "Bash(flutter analyze:*)"
     ],
     "additionalDirectories": [
       "/Users/asix/Documents/learn_flutter/nhasixapp/projects/issues"

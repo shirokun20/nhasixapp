@@ -14,9 +14,9 @@ Scaffolds a new analysis folder using the standard template.
 - **Input**: `name` (string)
 - **Steps**:
   1. Create directory `projects/analysis-plan/[name]/`.
-  2. Copy `projects/templates/project_plan_template.md` to `projects/analysis-plan/[name]/README.md`.
-  3. Replace `[Project Name]` in the file with the actual name.
-  4. Add entry to `projects/README.md` under "Analysis".
+  2. Generate filename: `projects/analysis-plan/[name]/[name]_[YYYY-MM-DD].md`.
+  3. Copy `projects/templates/project_plan_template.md` to that file.
+  4. Replace `[Project Name]` in the file with the actual name.
   5. Run `dart scripts/project_status.dart` to update dashboards.
 
 ### 2. Start Project (`start`)
@@ -24,19 +24,18 @@ Moves a project to execution.
 - **Input**: `name` (string)
 - **Steps**:
   1. Move `projects/analysis-plan/[name]` to `projects/onprogress-plan/[name]`.
-  2. Create `projects/onprogress-plan/[name]/progress.md` with a checkbox list derived from the analysis plan.
-  3. Update `projects/README.md` (Analysis -> In Progress).
+  2. Create `projects/onprogress-plan/[name]/progress.md`.
+  3. Copy the "Implementation Plan" section from the main project file to `progress.md`.
   4. Run `dart scripts/project_status.dart` to update dashboards.
 
 ### 3. Finish Project (`finish`)
 Archives a completed project.
 - **Input**: `name` (string)
 - **Steps**:
-  1. Verify all checkboxes in `progress.md` are checked.
+  1. Verify `progress.md` has 100% completion (all checkboxes checked).
   2. Run `flutter analyze` and `flutter test`.
   3. Move `projects/onprogress-plan/[name]` to `projects/success-plan/[name]`.
-  4. Update `projects/README.md` (In Progress -> Completed).
-  5. Run `dart scripts/project_status.dart` to update dashboards.
+  4. Run `dart scripts/project_status.dart` to update dashboards.
 
 ### 4. Check Progress (`progress`)
 Updates all project dashboards.
