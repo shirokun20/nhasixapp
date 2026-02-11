@@ -203,6 +203,8 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       // This must run unconditionally to stop the loading shimmer
       await context.read<OfflineSearchCubit>().forceRefresh();
 
+      if (!context.mounted) return;
+
       // ✅ NEW: Refresh DownloadBloc to sync Downloads Screen with database
       // This ensures Downloads Screen shows imported content immediately
       // without requiring app restart

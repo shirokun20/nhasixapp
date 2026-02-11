@@ -16,6 +16,15 @@ We operate with professional discipline. Code is ephemeral; Architecture is perm
 ### 1. The Project Lifecycle
 **Never write code without a plan.**
 
+#### 🧭 Active Steering (Automatic Context)
+**CRITICAL**: At the start of every session, YOU MUST:
+1.  Check `projects/onprogress-plan/`.
+2.  If a project exists there, READ its `progress.md` and main Spec file immediately.
+3.  **Treat `progress.md` as the Master Plan**. Do not implement features not listed there.
+4.  **Update `progress.md`** automatically as tasks are completed.
+
+#### Phases:
+
 1.  **Analysis & Planning**
     *   **Folder Structure**: `projects/analysis-plan/[project_name]/`
     *   **Main File**: `[project_name]_[date].md` (Copy from `projects/templates/project_plan_template.md`)

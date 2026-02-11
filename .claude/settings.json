@@ -2,7 +2,7 @@
   "commands": {
     "AutoFormat": {
       "type": "bash",
-      "command": "dart format \"$FILE_PATH\"",
+      "command": "fvm dart format \"$FILE_PATH\"",
       "description": "Auto-format Dart code on save"
     },
     "CheckProtectedFiles": {

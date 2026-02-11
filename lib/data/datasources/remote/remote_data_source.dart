@@ -1103,24 +1103,6 @@ class RemoteDataSource {
       _logger.d('📄 [SCRAPER MODE] API disabled or unavailable');
     }
 
-    // 2. Fallback to Scraping
-    try {
-      _logger.i('📄 [SCRAPER MODE] Fetching comments for ID: $contentId');
-
-      // Comments are on the gallery page itself, so we fetch the detail page
-      final url = '$baseUrl/g/$contentId/';
-      final html = await _getPageHtml(url);
-
-      final comments = scraper.parseComments(html);
-      _logger.i(
-          'Successfully parsed ${comments.length} comments for ID: $contentId');
-
-      return comments;
-    } catch (e, stackTrace) {
-      _logger.e('Failed to get comments for ID: $contentId',
-          error: e, stackTrace: stackTrace);
-      // Return empty list on error instead of throwing to avoid breaking UI
-      return [];
-    }
+    return [];
   }
 }
