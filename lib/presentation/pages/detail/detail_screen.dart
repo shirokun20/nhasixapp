@@ -530,7 +530,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     // Related content section
                     if (content.relatedContent.isNotEmpty) ...[
                       _buildRelatedContentSection(content),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 20),
                     ],
 
                     // Comments section

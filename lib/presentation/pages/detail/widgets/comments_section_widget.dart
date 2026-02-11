@@ -82,12 +82,17 @@ class _CommentsContent extends StatelessWidget {
                     horizontal: 16.0, vertical: 12.0),
                 child: Row(
                   children: [
-                    const Icon(Icons.comment, size: 20),
+                    Icon(
+                      Icons.comment,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'Comments (${state.comments.length})',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                     ),
                   ],

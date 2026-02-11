@@ -1372,11 +1372,16 @@ class NhentaiScraper {
       final commentContainer = document.querySelector(commentContainerSelector);
 
       if (commentContainer == null) {
+        _logger.w('No comment container found');
         return [];
       }
 
+      _logger.d(
+          'Found comment container, parsing comments... with selector: $commentItemSelector');
+
       final commentElements =
           commentContainer.querySelectorAll(commentItemSelector);
+      _logger.d('Found ${commentElements.length} comment elements');
       final comments = <CommentModel>[];
 
       for (final element in commentElements) {

@@ -6,12 +6,14 @@ library;
 
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
+import 'package:native_dio_adapter/native_dio_adapter.dart';
 
 import '../../../../core/config/remote_config_service.dart';
 import '../../../../core/config/api_config.dart';
 import '../anti_detection.dart';
 import '../request_rate_manager.dart';
 import 'nhentai_api_models.dart';
+import 'nhentai_api_comments_model.dart';
 
 /// Exception thrown when nhentai API request fails
 class NhentaiApiException implements Exception {
@@ -76,6 +78,12 @@ class NhentaiApiClient {
       headers: antiDetection.getRandomHeaders(),
     ));
 
+    // Use NativeAdapter to avoid TLS fingerprinting issues (Cloudflare 403/Connection Reset)
+    dio.httpClientAdapter = NativeAdapter(
+      createCupertinoConfiguration: () =>
+          URLSessionConfiguration.ephemeralSessionConfiguration(),
+    );
+
     // Add logging interceptor in debug mode
     dio.interceptors.add(LogInterceptor(
       requestBody: false,
@@ -108,6 +116,8 @@ class NhentaiApiClient {
   }
 
   String _getRelatedEndpoint(String id) => '$_apiBaseUrl/gallery/$id/related';
+
+  String _getCommentsEndpoint(String id) => '$_apiBaseUrl/gallery/$id/comments';
 
   /// Wait for rate limiting before making request
   Future<void> _waitForRateLimit() async {
@@ -215,6 +225,33 @@ class NhentaiApiClient {
       return relatedResponse;
     } catch (e) {
       _logger.e('NhentaiApiClient: Failed to fetch related for $id', error: e);
+      rethrow;
+    }
+  }
+
+  /// Get comments for a gallery
+  ///
+  /// [id] - Gallery ID
+  /// Returns List of [NhentaiComment]
+  Future<List<NhentaiComment>> getComments(String id) async {
+    final url = _getCommentsEndpoint(id);
+    _logger.d('NhentaiApiClient: Fetching comments for gallery $id');
+
+    try {
+      await _waitForRateLimit();
+      final response = await _makeRequest(url);
+
+      if (response.data is List) {
+        final comments = (response.data as List)
+            .map((e) => NhentaiComment.fromJson(e as Map<String, dynamic>))
+            .toList();
+        _logger.i(
+            'NhentaiApiClient: Fetched ${comments.length} comments for gallery $id');
+        return comments;
+      }
+      return [];
+    } catch (e) {
+      _logger.e('NhentaiApiClient: Failed to fetch comments for $id', error: e);
       rethrow;
     }
   }

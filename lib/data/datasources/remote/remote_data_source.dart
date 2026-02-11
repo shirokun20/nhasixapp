@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
+import 'package:native_dio_adapter/native_dio_adapter.dart';
 import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass_no_webview.dart';
 import 'dart:math';
 
@@ -667,6 +668,12 @@ class RemoteDataSource {
     httpClient.options.maxRedirects = 5;
     httpClient.options.responseType = ResponseType.plain;
 
+    // Use NativeAdapter for the main HTTP client as well to fix scraping issues
+    httpClient.httpClientAdapter = NativeAdapter(
+      createCupertinoConfiguration: () =>
+          URLSessionConfiguration.ephemeralSessionConfiguration(),
+    );
+
     // Add enhanced error handling interceptor
     httpClient.interceptors.add(
       InterceptorsWrapper(
@@ -1074,17 +1081,39 @@ class RemoteDataSource {
     }
   }
 
-  /// Get comments for a gallery (Scraping only)
+  /// Get comments for a gallery (API preferred, fallback to Scraping)
   Future<List<CommentModel>> getComments(String contentId) async {
+    // 1. Try API first
+    if (_useApi && apiClient != null && ApiConfig.enableApiFallback) {
+      try {
+        _logger.i('🚀 [API MODE] Fetching comments for ID: $contentId');
+        final apiComments = await apiClient!.getComments(contentId);
+
+        final comments =
+            apiComments.map((c) => CommentModel.fromApi(c)).toList();
+
+        _logger.i(
+            '✅ [API SUCCESS] Fetched ${comments.length} comments for ID: $contentId');
+        return comments;
+      } catch (e) {
+        _logger.w('⚠️ [API FAILED] Falling back to HTML scraping for comments: $e');
+        // Fall through to scraping
+      }
+    } else {
+      _logger.d('📄 [SCRAPER MODE] API disabled or unavailable');
+    }
+
+    // 2. Fallback to Scraping
     try {
-      _logger.i('Fetching comments for ID: $contentId');
+      _logger.i('📄 [SCRAPER MODE] Fetching comments for ID: $contentId');
 
       // Comments are on the gallery page itself, so we fetch the detail page
       final url = '$baseUrl/g/$contentId/';
       final html = await _getPageHtml(url);
 
       final comments = scraper.parseComments(html);
-      _logger.i('Successfully parsed ${comments.length} comments for ID: $contentId');
+      _logger.i(
+          'Successfully parsed ${comments.length} comments for ID: $contentId');
 
       return comments;
     } catch (e, stackTrace) {

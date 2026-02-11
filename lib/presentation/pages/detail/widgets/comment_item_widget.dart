@@ -4,6 +4,8 @@ import 'package:markdown_widget/markdown_widget.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import 'package:url_launcher/url_launcher.dart';
+
 class CommentItemWidget extends StatelessWidget {
   final Comment comment;
 
@@ -17,101 +19,124 @@ class CommentItemWidget extends StatelessWidget {
     final theme = Theme.of(context);
     final dateFormat = DateFormat('MMM d, yyyy • HH:mm');
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.dividerColor.withValues(alpha: 0.1),
+        side: BorderSide(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              // Avatar
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  image: comment.avatarUrl != null &&
-                          comment.avatarUrl!.isNotEmpty
-                      ? DecorationImage(
-                          image: CachedNetworkImageProvider(comment.avatarUrl!),
-                          fit: BoxFit.cover,
-                        )
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                // Avatar
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    border: Border.all(
+                      color: theme.colorScheme.outlineVariant,
+                      width: 1,
+                    ),
+                    image: comment.avatarUrl != null &&
+                            comment.avatarUrl!.isNotEmpty
+                        ? DecorationImage(
+                            image:
+                                CachedNetworkImageProvider(comment.avatarUrl!),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                  child: comment.avatarUrl == null || comment.avatarUrl!.isEmpty
+                      ? Icon(Icons.person, size: 20, color: theme.hintColor)
                       : null,
                 ),
-                child: comment.avatarUrl == null || comment.avatarUrl!.isEmpty
-                    ? Icon(Icons.person, size: 20, color: theme.hintColor)
-                    : null,
-              ),
-              const SizedBox(width: 12),
+                const SizedBox(width: 12),
 
-              // Username and Date
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      comment.username,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (comment.postDate != null)
+                // Username and Date
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        dateFormat.format(comment.postDate!),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.hintColor,
-                          fontSize: 11,
+                        comment.username,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Comment Body (Markdown)
-          MarkdownWidget(
-            data: comment.body,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            config: MarkdownConfig(
-              configs: [
-                PConfig(
-                  textStyle: theme.textTheme.bodyMedium!,
-                ),
-                LinkConfig(
-                  style: TextStyle(
-                    color: theme.colorScheme.primary,
-                    decoration: TextDecoration.underline,
-                  ),
-                  onTap: (url) {
-                    // TODO: Handle link tap securely
-                  },
-                ),
-                BlockquoteConfig(
-                  sideColor: theme.colorScheme.primary,
-                  // backgroundColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
-                ),
-                CodeConfig(
-                  style: TextStyle(
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                    fontFamily: 'monospace',
+                      const SizedBox(height: 2),
+                      if (comment.postDate != null)
+                        Text(
+                          dateFormat.format(comment.postDate!),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontSize: 11,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+
+            // Comment Body (Markdown)
+            MarkdownWidget(
+              data: comment.body,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(0),
+              config: MarkdownConfig(
+                configs: [
+                  PConfig(
+                    textStyle: theme.textTheme.bodyMedium!.copyWith(
+                      color: theme.colorScheme.onSurface,
+                      height: 1.5,
+                    ),
+                  ),
+                  LinkConfig(
+                    style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      decoration: TextDecoration.underline,
+                    ),
+                    onTap: (url) async {
+                      if (url.isNotEmpty) {
+                        final uri = Uri.tryParse(url);
+                        if (uri != null && await canLaunchUrl(uri)) {
+                          await launchUrl(uri,
+                              mode: LaunchMode.externalApplication);
+                        }
+                      }
+                    },
+                  ),
+                  BlockquoteConfig(
+                    sideColor: theme.colorScheme.primary,
+                    // backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    textColor: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  CodeConfig(
+                    style: TextStyle(
+                      backgroundColor:
+                          theme.colorScheme.surfaceContainerHighest,
+                      fontFamily: 'monospace',
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
