@@ -3,14 +3,15 @@
     "allow": [
       "mcp__ide__getDiagnostics",
       "Bash(python3:*)",
-      "Bash(flutter test:*)",
-      "Bash(dart:*)",
+      "Bash(fvm dart:*)",
       "Bash(./build_optimized.sh:*)",
       "Bash(git check-ignore:*)",
-      "Bash(flutter analyze:*)"
+      "Bash(fvm flutter analyze:*)",
+      "Bash(fvm flutter test:*)"
     ],
     "additionalDirectories": [
-      "/Users/asix/Documents/learn_flutter/nhasixapp/projects/issues"
+      "/Users/asix/Documents/learn_flutter/nhasixapp/projects/issues",
+      "/Users/asix/Documents/learn_flutter/nhasixapp/projects/analysis-plan"
     ]
   },
   "enabledPlugins": {

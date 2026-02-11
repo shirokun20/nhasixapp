@@ -5,6 +5,7 @@ import 'dart:math';
 
 import '../../models/content_model.dart';
 import '../../models/tag_model.dart';
+import '../../models/comment_model.dart';
 import '../../../domain/entities/search_filter.dart';
 import '../../../../core/config/api_config.dart';
 import 'api/nhentai_api_client.dart';
@@ -1069,6 +1070,27 @@ class RemoteDataSource {
       return contents;
     } catch (e) {
       _logger.e('Failed to get related content: $e');
+      return [];
+    }
+  }
+
+  /// Get comments for a gallery (Scraping only)
+  Future<List<CommentModel>> getComments(String contentId) async {
+    try {
+      _logger.i('Fetching comments for ID: $contentId');
+
+      // Comments are on the gallery page itself, so we fetch the detail page
+      final url = '$baseUrl/g/$contentId/';
+      final html = await _getPageHtml(url);
+
+      final comments = scraper.parseComments(html);
+      _logger.i('Successfully parsed ${comments.length} comments for ID: $contentId');
+
+      return comments;
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get comments for ID: $contentId',
+          error: e, stackTrace: stackTrace);
+      // Return empty list on error instead of throwing to avoid breaking UI
       return [];
     }
   }

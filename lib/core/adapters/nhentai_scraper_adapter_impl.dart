@@ -79,6 +79,11 @@ class NhentaiScraperAdapterImpl implements NhentaiScraperAdapter {
   }
 
   @override
+  Future<List<core.Comment>> getComments(String contentId) async {
+    return await _remoteDataSource.getComments(contentId);
+  }
+
+  @override
   Future<core.ContentListResult> search(core.SearchFilter filter) async {
     final appFilter = _mapSearchFilter(filter);
     final result =

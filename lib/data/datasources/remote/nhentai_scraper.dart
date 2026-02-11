@@ -5,6 +5,7 @@ import 'package:nhasixapp/domain/entities/entities.dart';
 
 import '../../models/content_model.dart';
 import '../../models/tag_model.dart';
+import '../../models/comment_model.dart';
 import 'tag_resolver.dart';
 
 import 'package:nhasixapp/core/config/remote_config_service.dart';
@@ -42,6 +43,8 @@ class NhentaiScraper {
     'tagItem': '.tag',
     'tagName': '.name',
     'tagCount': '.count',
+    'commentContainer': '#comments',
+    'commentItem': '.comment',
   };
 
   String _getSelector(String key) {
@@ -75,6 +78,8 @@ class NhentaiScraper {
   String get tagItemSelector => _getSelector('tagItem');
   String get tagNameSelector => _getSelector('tagName');
   String get tagCountSelector => _getSelector('tagCount');
+  String get commentContainerSelector => _getSelector('commentContainer');
+  String get commentItemSelector => _getSelector('commentItem');
 
   // URL patterns
   static const String contentUrlPattern = r'/g/(\d+)/';
@@ -1358,6 +1363,36 @@ class NhentaiScraper {
       relatedContent: baseContent.relatedContent,
       cachedAt: baseContent.cachedAt,
     );
+  }
+
+  /// Parse comments from HTML
+  List<CommentModel> parseComments(String html) {
+    try {
+      final document = html_parser.parse(html);
+      final commentContainer = document.querySelector(commentContainerSelector);
+
+      if (commentContainer == null) {
+        return [];
+      }
+
+      final commentElements =
+          commentContainer.querySelectorAll(commentItemSelector);
+      final comments = <CommentModel>[];
+
+      for (final element in commentElements) {
+        try {
+          comments.add(CommentModel.fromHtml(element));
+        } catch (e) {
+          _logger.w('Failed to parse comment: $e');
+        }
+      }
+
+      _logger.d('Parsed ${comments.length} comments');
+      return comments;
+    } catch (e, stackTrace) {
+      _logger.e('Failed to parse comments', error: e, stackTrace: stackTrace);
+      return [];
+    }
   }
 
   /// Parse page count from dedicated Pages section

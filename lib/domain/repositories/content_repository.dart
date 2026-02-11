@@ -86,6 +86,12 @@ abstract class ContentRepository {
   /// Returns list of image URLs for the chapter
   Future<List<String>> getChapterImages(ContentId chapterId,
       {String? sourceId});
+
+  /// Get comments for a specific gallery
+  ///
+  /// [contentId] - The ID of the gallery
+  /// Returns a list of comments
+  Future<List<Comment>> getComments(String contentId);
 }
 
 /// Result wrapper for paginated content lists

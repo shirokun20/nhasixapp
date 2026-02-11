@@ -1,5 +1,6 @@
 import '../entities/content.dart';
 import '../entities/content_list_result.dart';
+import '../entities/comment.dart';
 import '../entities/search_filter.dart';
 import '../value_objects/sort_option.dart';
 import '../value_objects/popular_timeframe.dart';
@@ -51,6 +52,9 @@ abstract class ContentSource {
 
   /// Get related content for a specific content ID
   Future<List<Content>> getRelated(String contentId);
+
+  /// Get comments for a specific content ID
+  Future<List<Comment>> getComments(String contentId) async => [];
 
   /// Build full image URL for this source
   String buildImageUrl({

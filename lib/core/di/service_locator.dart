@@ -51,6 +51,7 @@ import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubi
 import 'package:nhasixapp/presentation/cubits/theme/theme_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/update/update_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/comments/comments_cubit.dart';
 
 // Repositories
 import 'package:nhasixapp/domain/repositories/repositories.dart';
@@ -65,6 +66,7 @@ import 'package:nhasixapp/data/repositories/crotpedia/crotpedia_feature_reposito
 // Use Cases
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
 import 'package:nhasixapp/domain/usecases/content/get_chapter_images_usecase.dart';
+import 'package:nhasixapp/domain/usecases/content/get_comments_usecase.dart';
 import 'package:nhasixapp/domain/usecases/favorites/favorites_usecases.dart';
 import 'package:nhasixapp/domain/usecases/downloads/downloads_usecases.dart';
 import 'package:nhasixapp/domain/usecases/history/add_to_history_usecase.dart';
@@ -520,6 +522,8 @@ void _setupUseCases() {
       () => GetRandomContentUseCase(getIt()));
   getIt.registerLazySingleton<GetChapterImagesUseCase>(
       () => GetChapterImagesUseCase(getIt()));
+  getIt.registerLazySingleton<GetCommentsUseCase>(
+      () => GetCommentsUseCase(getIt()));
 
   // Favorites Use Cases
   getIt.registerLazySingleton<AddToFavoritesUseCase>(
@@ -714,6 +718,11 @@ void _setupCubits() {
   getIt.registerFactory<UpdateCubit>(() => UpdateCubit(
         updateService: getIt<UpdateService>(),
         logger: getIt<Logger>(),
+      ));
+
+  // CommentsCubit
+  getIt.registerFactory<CommentsCubit>(() => CommentsCubit(
+        getIt<GetCommentsUseCase>(),
       ));
 }
 

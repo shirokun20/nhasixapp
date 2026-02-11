@@ -21,6 +21,7 @@ _No items in this stage._
 |---|---|---|---|
 | **fix_app_drawer_transparency_on_list_screens** | `██████████` | 100% | ✅ Ready |
 | **smart-caching-and-fixes** | `██████████` | 100% | ✅ Ready |
+| **view_comments** | `██████████` | 100% | ✅ Ready |
 
 ## 🐛 Active Issues
 _No items in this stage._

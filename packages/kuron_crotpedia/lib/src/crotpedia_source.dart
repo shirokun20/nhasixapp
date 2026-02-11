@@ -418,6 +418,11 @@ class CrotpediaSource implements ContentSource {
   }
 
   @override
+  Future<List<Comment>> getComments(String contentId) async {
+    return [];
+  }
+
+  @override
   String buildImageUrl({
     required String contentId,
     required String mediaId,

@@ -1,4 +1,5 @@
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/data/models/content_model.dart';
 
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/content_repository.dart';
@@ -6,7 +7,6 @@ import '../../domain/value_objects/value_objects.dart';
 import '../datasources/remote/remote_data_source.dart';
 import '../../services/cache/cache_manager.dart' as multi_cache;
 import '../models/tag_model.dart';
-import '../models/content_model.dart';
 import '../../services/detail_cache_service.dart';
 import '../datasources/remote/exceptions.dart';
 import '../../services/request_deduplication_service.dart';
@@ -352,6 +352,17 @@ class ContentRepositoryImpl implements ContentRepository {
       return [];
     } catch (e) {
       _logger.e('Failed to get chapter images: $e');
+      return [];
+    }
+  }
+
+  @override
+  Future<List<Comment>> getComments(String contentId) async {
+    try {
+      _logger.i('Getting comments for: $contentId');
+      return await _activeSource.getComments(contentId);
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get comments', error: e, stackTrace: stackTrace);
       return [];
     }
   }

@@ -21,6 +21,7 @@ import '../../widgets/progressive_image_widget.dart';
 import '../../widgets/shimmer_loading_widgets.dart';
 import '../../widgets/permission_request_sheet.dart';
 import 'widgets/chapter_list_bottom_sheet.dart';
+import 'widgets/comments_section_widget.dart';
 
 class DetailScreen extends StatefulWidget {
   final String contentId;
@@ -531,6 +532,10 @@ class _DetailScreenState extends State<DetailScreen> {
                       _buildRelatedContentSection(content),
                       const SizedBox(height: 32),
                     ],
+
+                    // Comments section
+                    CommentsSectionWidget(contentId: content.id),
+                    const SizedBox(height: 32),
                   ],
                 ),
               ),
