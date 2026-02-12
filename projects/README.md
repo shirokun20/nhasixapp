@@ -28,7 +28,9 @@ _No items in this stage._
 | **view_comments** | `██████████` | 100% | ✅ Ready |
 
 ## 🐛 Active Issues
-_No items in this stage._
+| Issue | Date | Status |
+|---|---|---|
+| chapter reading history navigation | 2026-02-12 | 🔴 Open |
 
 ---
 _Generated automatically by Advanced Engineering Project Manager_

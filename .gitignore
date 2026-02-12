@@ -45,7 +45,7 @@ app.*.map.json
 
 # Project documentation and Agent metadata
 .agent/
-.opencode/
+# .opencode/
 projects/*
 !projects/templates/
 !projects/README.md

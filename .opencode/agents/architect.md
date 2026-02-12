@@ -1,6 +1,6 @@
 ---
-name: architect
-description: Reviews code for Clean Architecture compliance and suggests refactoring.
+description: Reviews code for Clean Architecture compliance and suggests refactoring
+mode: subagent
 ---
 
 # Architect Agent

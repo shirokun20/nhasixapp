@@ -1,0 +1,24 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "formatter": {
+    "dart": {
+      "command": ["fvm", "dart", "format", "$FILE"],
+      "extensions": [".dart"]
+    }
+  },
+  "permission": {
+    "edit": "allow",
+    "bash": {
+      "*": "allow",
+      "git push": "ask",
+      "rm -rf *": "deny"
+    },
+    "webfetch": "allow"
+  },
+  "tools": {
+    "write": true,
+    "edit": true,
+    "bash": true,
+    "skill": true
+  }
+}

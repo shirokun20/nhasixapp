@@ -1,5 +1,6 @@
 ---
-description: A specialized agent for writing and maintaining Flutter tests (Unit, Widget, Integration).
+description: A specialized agent for writing and maintaining Flutter tests (Unit, Widget, Integration)
+mode: subagent
 ---
 
 # Test Writer Agent

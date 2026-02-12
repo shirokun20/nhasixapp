@@ -5,7 +5,7 @@ description: Manage the "Advanced Engineering" project lifecycle (init, start, f
 
 # Project Management Skill
 
-This skill manages the strict project lifecycle defined in `CLAUDE.md`.
+This skill manages the strict project lifecycle defined in `AGENTS.md`.
 
 ## Actions
 
@@ -49,3 +49,45 @@ Creates a standardized issue ticket.
   1. Generate filename: `projects/issues/YYYY-MM-DD-[title_snake_case].md`.
   2. Copy content from `projects/templates/issue_template.md`.
   3. Update title in file.
+  4. **Update `projects/issues/README.md`** with the new issue entry.
+  5. **Update `projects/README.md`** Active Issues section with the new issue.
+  6. Run `dart scripts/project_status.dart` to update dashboards.
+
+## 📋 README Update Guidelines
+
+When creating/updating issues, always update:
+
+### 1. `projects/issues/README.md`
+Add entry to Active Issues table:
+```markdown
+| [Issue Title](./YYYY-MM-DD-file_name.md) | YYYY-MM-DD | Type | Priority | Status |
+```
+
+### 2. `projects/README.md`
+Add entry to Active Issues section:
+```markdown
+| [Issue Title](./issues/YYYY-MM-DD-file_name.md) | YYYY-MM-DD | Type | Priority | Status |
+```
+
+### Status Labels
+- 📝 Documented - Issue created, awaiting approval
+- 🔍 Analyzing - In analysis phase
+- 🚧 In Progress - Being implemented
+- ✅ Resolved - Completed
+
+## 📜 Available Scripts
+
+Scripts located in `scripts/` folder:
+
+| Script | Command | Purpose |
+|---|---|---|
+| **project_status.dart** | `dart scripts/project_status.dart` | Auto-update all project dashboards with progress bars |
+| **create_feature.dart** | `dart scripts/create_feature.dart [name]` | Scaffold new feature structure (legacy) |
+
+**Important**: Always run `dart scripts/project_status.dart` after:
+- Creating new issue
+- Moving project between phases
+- Updating progress.md checkboxes
+- Completing project implementation
+
+This ensures all README.md dashboards stay synchronized.
