@@ -8,6 +8,7 @@ import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_state.dart';
 import 'package:nhasixapp/presentation/widgets/error_widget.dart';
+import 'package:nhasixapp/presentation/widgets/highlighted_text_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progress_indicator_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
 import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
@@ -315,6 +316,7 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
                                 } else {
                                   return _DoujinListTile(
                                     doujin: item.doujin!,
+                                    searchQuery: _searchQuery,
                                   );
                                 }
                               },
@@ -405,8 +407,9 @@ class _SectionHeader extends StatelessWidget {
 
 class _DoujinListTile extends StatelessWidget {
   final dynamic doujin;
+  final String searchQuery;
 
-  const _DoujinListTile({required this.doujin});
+  const _DoujinListTile({required this.doujin, this.searchQuery = ''});
 
   @override
   Widget build(BuildContext context) {
@@ -432,8 +435,9 @@ class _DoujinListTile extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(
-                    doujin.title,
+                  child: HighlightedText(
+                    text: doujin.title,
+                    highlight: searchQuery,
                     style: TextStyleConst.bodyMedium.copyWith(
                       color: colorScheme.onSurface,
                     ),
