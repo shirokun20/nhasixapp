@@ -7,7 +7,7 @@ import 'package:logger/logger.dart';
 /// Database helper class for managing SQLite database
 class DatabaseHelper {
   static const String _databaseName = 'nhasix_app.db';
-  static const int _databaseVersion = 9; // Updated for Crotpedia Doujin List
+  static const int _databaseVersion = 10; // Updated for Favorites Title Fix
 
   static Database? _database;
   static final Logger _logger = Logger();
@@ -352,6 +352,31 @@ class DatabaseHelper {
         _logger.w('Error adding doujin_list table: $e');
       }
     }
+
+    if (oldVersion < 10 && newVersion >= 10) {
+      _logger.i('Upgrading to version 10: Adding title column to favorites table');
+      try {
+        // Add title column
+        await db.execute('ALTER TABLE favorites ADD COLUMN title TEXT');
+        _logger.i('Added title column to favorites table');
+
+        // Attempt to backfill titles from history and downloads
+        await db.execute('''
+          UPDATE favorites 
+          SET title = (
+            SELECT COALESCE(h.title, d.title)
+            FROM favorites f2
+            LEFT JOIN history h ON f2.id = h.id AND f2.source_id = h.source_id
+            LEFT JOIN downloads d ON f2.id = d.id AND f2.source_id = d.source_id
+            WHERE f2.id = favorites.id AND f2.source_id = favorites.source_id
+          )
+          WHERE title IS NULL
+        ''');
+        _logger.i('Backfilled titles for existing favorites');
+      } catch (e) {
+        _logger.e('Error upgrading favorites table: $e');
+      }
+    }
   }
 
   /// Create favorites table with source_id for multi-source support
@@ -360,6 +385,7 @@ class DatabaseHelper {
       CREATE TABLE favorites (
         id TEXT NOT NULL,
         source_id TEXT NOT NULL DEFAULT 'nhentai',
+        title TEXT,
         cover_url TEXT,
         added_at INTEGER,
         PRIMARY KEY (id, source_id)

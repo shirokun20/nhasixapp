@@ -57,6 +57,7 @@ class LocalDataSource {
         {
           'id': id,
           'source_id': sourceId,
+          'title': title, // Added title
           'cover_url': coverUrl,
           'added_at': DateTime.now().millisecondsSinceEpoch,
         },
@@ -103,7 +104,7 @@ class LocalDataSource {
     }
   }
 
-  /// Get favorite content with title from history/downloads
+  /// Get favorite content with title from favorites table (fallback to history/downloads)
   Future<List<Map<String, dynamic>>> getFavorites({
     int page = 1,
     int limit = 20,
@@ -117,14 +118,14 @@ class LocalDataSource {
 
       final offset = (page - 1) * limit;
 
-      // LEFT JOIN with history and downloads to get the title
+      // Prefer f.title, fallback to history/downloads for old data
       final result = await db.rawQuery('''
         SELECT 
           f.id,
           f.source_id,
           f.cover_url,
           f.added_at,
-          COALESCE(h.title, d.title) as title
+          COALESCE(f.title, h.title, d.title) as title
         FROM favorites f
         LEFT JOIN history h ON f.id = h.id AND f.source_id = h.source_id
         LEFT JOIN downloads d ON f.id = d.id AND f.source_id = d.source_id

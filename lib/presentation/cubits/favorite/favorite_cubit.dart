@@ -277,9 +277,11 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
       }
 
       // Filter current favorites by query (simple text search)
+      final lowerQuery = query.toLowerCase();
       final filteredFavorites = currentState.favorites.where((favorite) {
         final id = favorite['id']?.toString().toLowerCase() ?? '';
-        return id.contains(query.toLowerCase());
+        final title = favorite['title']?.toString().toLowerCase() ?? '';
+        return id.contains(lowerQuery) || title.contains(lowerQuery);
       }).toList();
 
       emit(currentState.copyWith(

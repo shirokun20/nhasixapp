@@ -14,6 +14,7 @@ import '../../cubits/favorite/favorite_cubit.dart';
 import '../../cubits/settings/settings_cubit.dart';
 import '../../widgets/widgets.dart';
 import '../../widgets/app_scaffold_with_offline.dart';
+import '../../widgets/highlighted_text_widget.dart';
 
 /// Screen for managing user's favorite content
 /// Features: favorites list, search, batch operations, export/import
@@ -550,7 +551,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               final contentId = favorite['id'].toString();
               final isSelected = _selectedItems.contains(contentId);
 
-              return _buildFavoriteCard(favorite, isSelected);
+              return _buildFavoriteCard(favorite, isSelected, state.searchQuery);
             },
           );
         },
@@ -558,7 +559,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 
-  Widget _buildFavoriteCard(Map<String, dynamic> favorite, bool isSelected) {
+  Widget _buildFavoriteCard(Map<String, dynamic> favorite, bool isSelected, [String? searchQuery]) {
     final contentId = favorite['id'].toString();
     final coverUrl = favorite['cover_url']?.toString() ?? '';
 
@@ -637,8 +638,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           // Title (if available)
                           if (favorite['title'] != null)
                             Expanded(
-                              child: Text(
-                                favorite['title'].toString(),
+                              child: HighlightedText(
+                                text: favorite['title'].toString(),
+                                highlight: searchQuery ?? '',
                                 style: TextStyleConst.caption.copyWith(
                                   color:
                                       Theme.of(context).colorScheme.onSurface,
@@ -655,16 +657,21 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            '#$contentId',
-                            style: TextStyleConst.caption.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant
-                                  .withValues(alpha: 0.7),
-                              fontSize: 10,
+                          Expanded(
+                            child: Text(
+                              '#$contentId',
+                              style: TextStyleConst.caption.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant
+                                    .withValues(alpha: 0.7),
+                                fontSize: 10,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          const SizedBox(width: 8),
                           Text(
                             _formatDate(favorite['added_at']),
                             style: TextStyleConst.caption.copyWith(

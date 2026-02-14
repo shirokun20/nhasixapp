@@ -24,6 +24,7 @@ _No items in this stage._
 | **crotpedia_ui_modernization** | `██████████` | 100% | ✅ Ready |
 | **doujin_search_highlight** | `██████████` | 100% | ✅ Ready |
 | **fix_app_drawer_transparency_on_list_screens** | `██████████` | 100% | ✅ Ready |
+| **offline_search_highlight** | `██████████` | 100% | ✅ Ready |
 | **reader_header_auto_show** | `██████████` | 100% | ✅ Ready |
 | **smart-caching-and-fixes** | `██████████` | 100% | ✅ Ready |
 | **view_comments** | `██████████` | 100% | ✅ Ready |

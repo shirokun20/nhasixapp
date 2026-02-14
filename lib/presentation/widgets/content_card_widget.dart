@@ -8,6 +8,7 @@ import 'package:kuron_core/kuron_core.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'progressive_image_widget.dart';
+import 'highlighted_text_widget.dart';
 
 /// Enhanced content card widget with image caching and improved UI
 ///
@@ -38,6 +39,7 @@ class ContentCard extends StatelessWidget {
     this.isBlurred = false, // NEW: for blur excluded content
     this.offlineDownloadDate, // NEW: for offline screen - when content was downloaded
     this.offlineSize, // NEW: for offline screen - total file size
+    this.highlightQuery, // NEW: for search highlighting
   });
 
   final Content content;
@@ -61,6 +63,7 @@ class ContentCard extends StatelessWidget {
   final String?
       offlineDownloadDate; // NEW: formatted download date (e.g., "Nov 27, 2025")
   final String? offlineSize; // NEW: formatted file size (e.g., "45.2 MB")
+  final String? highlightQuery; // NEW: text to highlight in title
 
   @override
   Widget build(BuildContext context) {
@@ -511,16 +514,31 @@ class ContentCard extends StatelessWidget {
 
   Widget _buildTitle() {
     return Builder(
-      builder: (context) => Text(
-        content.getDisplayTitle(),
-        style: TextStyleConst.contentTitle.copyWith(
-          color: Theme.of(context).colorScheme.onSurface,
-          fontSize: 13,
-          height: 1.2,
-        ),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
+      builder: (context) {
+        if (highlightQuery != null && highlightQuery!.isNotEmpty) {
+          return HighlightedText(
+            text: content.getDisplayTitle(),
+            highlight: highlightQuery!,
+            style: TextStyleConst.contentTitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: 13,
+              height: 1.2,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          );
+        }
+        return Text(
+          content.getDisplayTitle(),
+          style: TextStyleConst.contentTitle.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 13,
+            height: 1.2,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        );
+      },
     );
   }
 
