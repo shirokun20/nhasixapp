@@ -14,6 +14,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Integration with **NHentai JSON API** for reliable comment data.
   - Robust handling of avatar URLs and comment formatting (Markdown).
   - Modern, card-based UI optimized for readability in both Light and Dark modes.
+- **Search Highlighting**:
+  - Implemented search term highlighting for **Favorites**, **Offline Downloads**, and **Doujin List**.
+  - Improved search experience with visual feedback on matching text.
+- **Favorites Enhancement**:
+  - Added ability to search favorites by **Title** (previously only ID).
+
+### 🛠 Fixes
+- **Favorites Bug Fix**: 
+  - Fixed issue where items from certain sources (KomikTap, Crotpedia) displayed overflowing IDs and missing titles.
+  - Implemented database migration (v10) to persist titles locally, ensuring data reliability.
+  - Fixed UI layout overflow in Favorites cards for long IDs.
 
 ### 🛠 Improvements
 - **Network Stability**:
