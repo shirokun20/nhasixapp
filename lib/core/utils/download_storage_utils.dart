@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
+import 'package:crypto/crypto.dart';
 
 
 import '../constants/app_constants.dart';
@@ -272,59 +273,72 @@ class DownloadStorageUtils {
     }
   }
 
-  /// Get the content directory path for a given content ID
-  /// Checks new source-based path first, then falls back to legacy path
-  /// [sourceId] - Source identifier (default: 'nhentai')
-  static Future<String> getContentDirectory(
-    String contentId, {
-    String? sourceId,
-  }) async {
-    final downloadsPath = await getDownloadsDirectory();
+
+
+  /// Get safe content ID for folder usage
+  /// If contentId is too long (> 50 chars), it will return a truncated version with hash
+  static String getSafeContentId(String contentId) {
+    if (contentId.length <= 50) {
+      return contentId;
+    }
+    
+    // Create a safe hash to avoid collisions
+    final bytes = utf8.encode(contentId);
+    final digest = sha1.convert(bytes);
+    final hash = digest.toString().substring(0, 8);
+    
+    // Truncate to 40 chars and append hash
+    // Result length: 40 + 1 + 8 = 49 chars
+    return '${contentId.substring(0, 40)}_$hash';
+  }
+
+  /// Get content directory
+  /// 
+  /// This checks both the safe path (new) and legacy path (old)
+  /// Returns the path that exists, or the new safe path if neither exists
+  static Future<String> getContentDirectory(String contentId, {String? sourceId}) async {
+    final downloadsDir = await getDownloadsDirectory();
     final effectiveSourceId = sourceId ?? AppStorage.defaultSourceId;
-
-    // New path structure: nhasix/{source}/{contentId}/
-    final newPath = path.join(
-      downloadsPath,
-      AppStorage.backupFolderName,
-      effectiveSourceId,
-      contentId,
-    );
-
-    // Check if new path exists
-    if (await Directory(newPath).exists()) {
-      return newPath;
+    
+    // 1. Check Safe ID Path (New Standard)
+    final safeId = getSafeContentId(contentId);
+    final safePath = path.join(downloadsDir, AppStorage.backupFolderName, effectiveSourceId, safeId);
+    if (await Directory(safePath).exists()) {
+      return safePath;
+    }
+    
+    // 2. Check Original ID Path (Legacy / Standard for short IDs)
+    if (safeId != contentId) {
+       final originalPath = path.join(downloadsDir, AppStorage.backupFolderName, effectiveSourceId, contentId);
+       if (await Directory(originalPath).exists()) {
+         return originalPath;
+       }
     }
 
-    // Check legacy path: nhasix/{contentId}/
-    final legacyPath = path.join(
-      downloadsPath,
-      AppStorage.backupFolderName,
-      contentId,
-    );
-
+    // 3. Check Legacy Path (No Source ID)
+    final legacyPath = path.join(downloadsDir, AppStorage.backupFolderName, safeId);
     if (await Directory(legacyPath).exists()) {
       return legacyPath;
     }
+    
+    if (safeId != contentId) {
+      final legacyOriginalPath = path.join(downloadsDir, AppStorage.backupFolderName, contentId);
+      if (await Directory(legacyOriginalPath).exists()) {
+        return legacyOriginalPath;
+      }
+    }
 
-    // Return new path for new downloads
-    return newPath;
+    // Default to the safe path for new content
+    return safePath;
   }
-
-  /// Get the content directory path for new downloads (always uses new structure)
-  /// [sourceId] - Source identifier (default: 'nhentai')
-  static Future<String> getNewContentDirectory(
-    String contentId, {
-    String? sourceId,
-  }) async {
-    final downloadsPath = await getDownloadsDirectory();
+  
+  /// Get NEW directory for content (always uses safe ID)
+  static Future<String> getNewContentDirectory(String contentId, {String? sourceId}) async {
+    final downloadsDir = await getDownloadsDirectory();
     final effectiveSourceId = sourceId ?? AppStorage.defaultSourceId;
-
-    return path.join(
-      downloadsPath,
-      AppStorage.backupFolderName,
-      effectiveSourceId,
-      contentId,
-    );
+    final safeId = getSafeContentId(contentId);
+    
+    return path.join(downloadsDir, AppStorage.backupFolderName, effectiveSourceId, safeId);
   }
 
   /// Get the source directory path

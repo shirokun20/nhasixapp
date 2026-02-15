@@ -171,19 +171,33 @@ class OfflineContentManager {
       // Deduplicate
       final distinctSources = sourcesToCheck.toSet().toList();
 
+      final safeContentId = DownloadStorageUtils.getSafeContentId(contentId);
+
       for (final sId in distinctSources) {
         // NEW: Source-based paths (nhasix/{source}/{contentId}/)
         paths.add(path.join(downloadsPath, 'nhasix', sId, contentId));
+        
+        // NEW: Source-based SAFE paths
+        if (safeContentId != contentId) {
+          paths.add(path.join(downloadsPath, 'nhasix', sId, safeContentId));
+        }
       }
 
       // LEGACY: Direct paths (nhasix/{contentId}/)
       paths.add(path.join(downloadsPath, 'nhasix', contentId));
+      if (safeContentId != contentId) {
+        paths.add(path.join(downloadsPath, 'nhasix', safeContentId));
+      }
 
       // Try app documents directory
       final documentsDir = await getApplicationDocumentsDirectory();
       for (final sId in distinctSources) {
         paths.add(path.join(
             documentsDir.path, 'downloads', 'nhasix', sId, contentId));
+        if (safeContentId != contentId) {
+          paths.add(path.join(
+             documentsDir.path, 'downloads', 'nhasix', sId, safeContentId));
+        }
       }
       paths.add(path.join(documentsDir.path, 'downloads', 'nhasix', contentId));
 
@@ -199,6 +213,10 @@ class OfflineContentManager {
               // NEW: Source-based paths
               paths.add(path.join(
                   externalRoot, folderName, 'nhasix', sId, contentId));
+               if (safeContentId != contentId) {
+                 paths.add(path.join(
+                    externalRoot, folderName, 'nhasix', sId, safeContentId));
+               }
             }
             // LEGACY: Direct paths
             paths.add(path.join(externalRoot, folderName, 'nhasix', contentId));
@@ -217,6 +235,16 @@ class OfflineContentManager {
           '/sdcard/Download/nhasix/$sId/$contentId',
           '/sdcard/Downloads/nhasix/$sId/$contentId',
         ]);
+        
+        if (safeContentId != contentId) {
+           paths.addAll([
+            '/storage/emulated/0/Download/nhasix/$sId/$safeContentId',
+            '/storage/emulated/0/Downloads/nhasix/$sId/$safeContentId',
+            '/storage/emulated/0/Unduhan/nhasix/$sId/$safeContentId',
+            '/sdcard/Download/nhasix/$sId/$safeContentId',
+            '/sdcard/Downloads/nhasix/$sId/$safeContentId',
+          ]);
+        }
       }
 
       paths.addAll([
