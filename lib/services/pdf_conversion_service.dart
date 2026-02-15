@@ -6,6 +6,7 @@ import 'package:logger/logger.dart';
 import 'package:get_it/get_it.dart';
 
 import '../core/utils/directory_utils.dart';
+import '../core/utils/download_storage_utils.dart';
 import 'notification_service.dart';
 import 'native_pdf_service.dart';
 
@@ -295,12 +296,16 @@ class PdfConversionService {
         if (contentId != null) {
           if (sourceId != null) {
             // New structure: Downloads/nhasix/[sourceId]/[contentId]/pdf/
+            // FIX: Use Safe ID for folder creation to handle long titles
+            final safeContentId = DownloadStorageUtils.getSafeContentId(contentId);
             outputDir = Directory(
-                path.join(downloadsPath, 'nhasix', sourceId, contentId, 'pdf'));
+                path.join(downloadsPath, 'nhasix', sourceId, safeContentId, 'pdf'));
           } else {
             // Legacy/Fallback: Downloads/nhasix/[contentId]/pdf/
+            // FIX: Use Safe ID for folder creation
+            final safeContentId = DownloadStorageUtils.getSafeContentId(contentId);
             outputDir =
-                Directory(path.join(downloadsPath, 'nhasix', contentId, 'pdf'));
+                Directory(path.join(downloadsPath, 'nhasix', safeContentId, 'pdf'));
           }
         } else {
           // Fallback ke folder umum: Downloads/nhasix-generate/pdf/
@@ -352,24 +357,55 @@ class PdfConversionService {
   Future<bool> isPdfExistForContent(String contentId,
       {String? outputDir, String? sourceId}) async {
     try {
+      // 1. Check Primary (Elegant/Safe) Path
       final pdfDir =
           await _createPdfOutputDirectory(outputDir, contentId, sourceId);
 
       // Cek apakah ada file PDF dengan prefix contentId
-      // Check if PDF files with contentId prefix exist
-      if (!await pdfDir.exists()) return false;
+      // Check if PDF files with contentId prefix exist in primary location
+      if (await _hasPdfInDirectory(pdfDir, contentId)) {
+         _logger.d('PDF found in primary location: ${pdfDir.path}');
+         return true;
+      }
 
-      final files = await pdfDir.list().toList();
-      final pdfExists = files.any((file) =>
+      // 2. Check Legacy Path (Original ID) if different
+      // Only if we are using default storage (outputDir is null) and have a sourceId
+      if (outputDir == null && sourceId != null) {
+          final safeId = DownloadStorageUtils.getSafeContentId(contentId);
+          if (safeId != contentId) {
+             // Reconstruct legacy path manually to avoid _createPdfOutputDirectory using safeId
+             final downloadsPath = await DirectoryUtils.getDownloadsDirectory();
+             final legacyPdfDir = Directory(path.join(downloadsPath, 'nhasix', contentId, 'pdf'));
+             
+             if (await _hasPdfInDirectory(legacyPdfDir, contentId)) {
+                _logger.d('PDF found in legacy location: ${legacyPdfDir.path}');
+                return true;
+             }
+          }
+      }
+
+      _logger.d(_getLocalized('pdfExistsForContent',
+          args: {'contentId': contentId, 'exists': 'false'},
+          fallback:
+              'PdfConversionService: PDF NOT found for $contentId'));
+      return false;
+    } catch (e) {
+      _logger.e(
+          'PdfConversionService: Error checking PDF existence for $contentId',
+          error: e);
+      return false;
+    }
+  }
+
+  /// Helper untuk cek existensi PDF dalam direktori
+  Future<bool> _hasPdfInDirectory(Directory dir, String contentId) async {
+    try {
+      if (!await dir.exists()) return false;
+      final files = await dir.list().toList();
+      return files.any((file) =>
           file is File &&
           path.basename(file.path).startsWith('${contentId}_') &&
           path.extension(file.path).toLowerCase() == '.pdf');
-
-      _logger.d(_getLocalized('pdfExistsForContent',
-          args: {'contentId': contentId, 'exists': pdfExists.toString()},
-          fallback:
-              'PdfConversionService: PDF exists for $contentId: $pdfExists'));
-      return pdfExists;
     } catch (e) {
       _logger.e(
           'PdfConversionService: Error checking PDF existence for $contentId',
@@ -385,19 +421,23 @@ class PdfConversionService {
   Future<List<String>> getPdfPathsForContent(String contentId,
       {String? outputDir}) async {
     try {
+      // 1. Check Primary (Elegant/Safe) Path
       final pdfDir = await _createPdfOutputDirectory(outputDir, contentId);
-      final pdfPaths = <String>[];
+      var pdfPaths = await _getPdfsInDirectory(pdfDir, contentId);
 
-      // Scan direktori untuk file PDF dengan prefix contentId
-      // Scan directory for PDF files with contentId prefix
-      final files = await pdfDir.list().toList();
-
-      for (final file in files) {
-        if (file is File &&
-            path.basename(file.path).startsWith('${contentId}_') &&
-            path.extension(file.path).toLowerCase() == '.pdf') {
-          pdfPaths.add(file.path);
-        }
+      // 2. Check Legacy Path (Original ID) if found nothing in primary
+      if (pdfPaths.isEmpty && outputDir == null) {
+          final safeId = DownloadStorageUtils.getSafeContentId(contentId);
+          if (safeId != contentId) {
+             final downloadsPath = await DirectoryUtils.getDownloadsDirectory();
+             final legacyPdfDir = Directory(path.join(downloadsPath, 'nhasix', contentId, 'pdf'));
+             
+             final legacyPaths = await _getPdfsInDirectory(legacyPdfDir, contentId);
+             if (legacyPaths.isNotEmpty) {
+                 _logger.d('PDFs found in legacy location: ${legacyPdfDir.path}');
+                 pdfPaths = legacyPaths;
+             }
+          }
       }
 
       // Sort berdasarkan nama file untuk urutan part yang benar
@@ -416,7 +456,21 @@ class PdfConversionService {
     }
   }
 
-  /// Hapus semua file PDF untuk konten tertentu
+  /// Helper untuk mendapatkan list PDF dalam direktori
+  Future<List<String>> _getPdfsInDirectory(Directory dir, String contentId) async {
+      final pdfPaths = <String>[];
+      if (!await dir.exists()) return pdfPaths;
+      
+      final files = await dir.list().toList();
+      for (final file in files) {
+        if (file is File &&
+            path.basename(file.path).startsWith('${contentId}_') &&
+            path.extension(file.path).toLowerCase() == '.pdf') {
+          pdfPaths.add(file.path);
+        }
+      }
+      return pdfPaths;
+  }
   /// Delete all PDF files for specific content
   ///
   /// Returns: true jika berhasil dihapus, false jika gagal
