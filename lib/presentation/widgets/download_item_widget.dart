@@ -8,6 +8,7 @@ import '../../domain/entities/entities.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/download_service.dart';
 import '../../services/pdf_conversion_service.dart';
+import '../../core/utils/download_storage_utils.dart';
 
 /// Widget for displaying individual download item with progress and actions
 class DownloadItemWidget extends StatelessWidget {
@@ -100,6 +101,8 @@ class DownloadItemWidget extends StatelessWidget {
                                 color: colorScheme.onSurface
                                     .withValues(alpha: 0.5),
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -694,21 +697,9 @@ class DownloadItemWidget extends StatelessWidget {
   /// Get display ID string
   /// Returns condensed ID for long slug-based IDs (like Crotpedia)
   String _getDisplayId(DownloadStatus download) {
-    // If nhentai (numeric), show full ID
-    if (download.sourceId == SourceType.nhentai.id ||
-        download.sourceId == null) {
-      return '#${download.contentId}';
-    }
-
-    // For Crotpedia (slugs), show truncated hash
-    if (download.sourceId == SourceType.crotpedia.id) {
-      // Create a short 6-char hex code from the slug
-      final hash = download.contentId.hashCode.toRadixString(16).toUpperCase();
-      final shortCode = hash.padLeft(6, '0').substring(0, 6);
-      return '#$shortCode';
-    }
-
-    // Default fallback
-    return '#${download.contentId}';
+    // For ALL sources, try to get a shorter "Elegant" ID if the original is too long
+    // If it's already short (e.g. nhentai), getElegantId will return it as is.
+    final elegantId = DownloadStorageUtils.getElegantId(download.contentId);
+    return '#$elegantId';
   }
 }

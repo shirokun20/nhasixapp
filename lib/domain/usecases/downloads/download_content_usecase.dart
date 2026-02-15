@@ -11,6 +11,7 @@ import '../../../services/native_download_service.dart';
 import '../../../services/pdf_service.dart';
 import '../../../services/download_manager.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/utils/download_storage_utils.dart';
 
 /// Use case for downloading content for offline reading
 class DownloadContentUseCase
@@ -164,6 +165,19 @@ class DownloadContentUseCase
       final fullImageUrls = content.imageUrls.map((url) => url).toList();
 
       final String destination = savePath ?? '';
+
+      // 💾 Save metadata JSON as the "Decoder Key" for Safe IDs (CRITICAL)
+      // This ensures that even with hashed folder names, we can identify the content.
+      await DownloadStorageUtils.saveLocalMetadata(
+        contentId: content.id,
+        sourceId: content.sourceId,
+        title: content.title,
+        savePath: destination,
+        coverUrl: content.coverUrl,
+        url: content.url,
+        language: content.language,
+        totalImages: content.imageUrls.length,
+      );
 
       // Start Native Download (Fire and Forget)
       await _nativeDownloadService.startDownload(

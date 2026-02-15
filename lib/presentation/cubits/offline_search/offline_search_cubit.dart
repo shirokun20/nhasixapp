@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
 import '../../../core/utils/offline_content_manager.dart';
+import '../../../core/utils/download_storage_utils.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../../domain/entities/download_status.dart';
 import '../../../domain/repositories/user_data_repository.dart';
@@ -48,16 +49,28 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
     for (final content in contents) {
       try {
-        // Get the directory path from the first image URL
-        if (content.imageUrls.isNotEmpty) {
-          final firstImagePath = content.imageUrls.first;
-          final file = File(firstImagePath);
-          final dirPath = file.parent.path;
+        // Use the centralized directory lookup which handles Elegant IDs
+        final dirPath = await DownloadStorageUtils.getContentDirectory(
+            content.id,
+            sourceId: content.sourceId);
 
-          // Calculate directory size
-          final sizeInBytes = await _getDirectorySize(Directory(dirPath));
+        final dir = Directory(dirPath);
+        if (await dir.exists()) {
+          final sizeInBytes = await _getDirectorySize(dir);
           sizes[content.id] =
               OfflineContentManager.formatStorageSize(sizeInBytes);
+        } else {
+          // Fallback: Try to get directory from first image path if available
+          if (content.imageUrls.isNotEmpty) {
+            final firstImagePath = content.imageUrls.first;
+            final file = File(firstImagePath);
+            final parentDir = file.parent;
+             if (await parentDir.exists()) {
+                final sizeInBytes = await _getDirectorySize(parentDir);
+                sizes[content.id] =
+                    OfflineContentManager.formatStorageSize(sizeInBytes);
+             }
+          }
         }
       } catch (e) {
         // Skip if unable to calculate size

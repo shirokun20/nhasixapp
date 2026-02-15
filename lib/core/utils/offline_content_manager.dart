@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:crypto/crypto.dart';
 
 import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/domain/extensions/content_extensions.dart';
@@ -172,14 +173,28 @@ class OfflineContentManager {
       final distinctSources = sourcesToCheck.toSet().toList();
 
       final safeContentId = DownloadStorageUtils.getSafeContentId(contentId);
+      // Note: safeContentId IS elegantId now, but we keep variable for clarity vs legacy checks below
 
       for (final sId in distinctSources) {
         // NEW: Source-based paths (nhasix/{source}/{contentId}/)
         paths.add(path.join(downloadsPath, 'nhasix', sId, contentId));
         
-        // NEW: Source-based SAFE paths
+        // NEW: Source-based ELEGANT/SAFE paths
         if (safeContentId != contentId) {
           paths.add(path.join(downloadsPath, 'nhasix', sId, safeContentId));
+        }
+        
+        // LEGACY CHECK: Truncated "Safe" ID (Interim format)
+        // We need to re-generate the old truncated hash format to check for it
+        if (contentId.length > 50) {
+           final bytes = utf8.encode(contentId);
+           final digest = sha1.convert(bytes);
+           final hash = digest.toString().substring(0, 8);
+           final truncatedId = '${contentId.substring(0, 40)}_$hash';
+           
+           if (truncatedId != safeContentId) {
+             paths.add(path.join(downloadsPath, 'nhasix', sId, truncatedId));
+           }
         }
       }
 
@@ -1186,15 +1201,24 @@ class OfflineContentManager {
 
       final imageUrls = imageFiles.map((f) => f.path).toList();
 
-      // Try to read title from metadata.json
+      // Try to read title AND ID from metadata.json
       String title = contentId;
+      String actualContentId = contentId; // Default to folder name
       Map<String, dynamic>? metadata;
+      
       try {
         final metadataFile = File(path.join(entity.path, 'metadata.json'));
         if (await metadataFile.exists()) {
           final metadataContent = await metadataFile.readAsString();
           metadata = json.decode(metadataContent) as Map<String, dynamic>;
+          
           title = metadata['title'] ?? contentId;
+          
+          // CRITICAL FIX: Use the original ID stored in metadata if available
+          // This handles the case where folder name is Elegant ID but content ID is long
+          if (metadata['id'] != null && metadata['id'].toString().isNotEmpty) {
+             actualContentId = metadata['id'].toString();
+          }
         }
       } catch (e) {
         _logger.w('Error reading metadata for $contentId: $e');
@@ -1212,7 +1236,7 @@ class OfflineContentManager {
 
       final content = Content(
         sourceId: sourceId,
-        id: contentId,
+        id: actualContentId, // Use the resolved ID (from metadata or folder name)
         title: title,
         coverUrl: coverUrl,
         tags: [],
