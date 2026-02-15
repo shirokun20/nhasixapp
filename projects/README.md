@@ -16,7 +16,9 @@
 _No items in this stage._
 
 ## 🚧 On Progress
-_No items in this stage._
+| Project Name | Progress | % | Status |
+|---|---|---|---|
+| **chapter_reading_history_navigation** | `██░░░░░░░░` | 23% | 🚧 Building |
 
 ## ✅ Success
 | Project Name | Progress | % | Status |

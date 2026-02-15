@@ -320,7 +320,7 @@ class ContentRepositoryImpl implements ContentRepository {
   }
 
   @override
-  Future<List<String>> getChapterImages(ContentId chapterId,
+  Future<ChapterData> getChapterImages(ContentId chapterId,
       {String? sourceId}) async {
     try {
       _logger.d(
@@ -334,25 +334,17 @@ class ContentRepositoryImpl implements ContentRepository {
       }
 
       // Check if source supports getChapterImages
-      // Note: core.ContentSource might not have getChapterImages exposed directly
-      // if it's not in the base interface.
-      // We might need to cast to CrotpediaSource or specific interface if not standard.
-      // However, assuming standard interface upgrade or dynamic check.
-      // Since `getChapterImages` is likely specific to Crotpedia/Manga sources:
       if (source is crotpedia.CrotpediaSource) {
         return await source.getChapterImages(chapterId.value);
       } else if (source is KomiktapSource) {
-        // KomikTap support for chapter downloads
         return await source.getChapterImages(chapterId.value);
       }
 
-      // If source doesn't support it or is standard source without chapters
-      // We could try getDetail as fallback? No, chapter images are specific.
       _logger.w('Source ${source.displayName} does not support chapter images');
-      return [];
+      return const ChapterData(images: []);
     } catch (e) {
       _logger.e('Failed to get chapter images: $e');
-      return [];
+      return const ChapterData(images: []);
     }
   }
 

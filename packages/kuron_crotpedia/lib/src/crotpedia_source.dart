@@ -37,6 +37,7 @@ class CrotpediaSource implements ContentSource {
     Logger? logger,
     String? baseUrl,
     String? displayName,
+    bool useNativeAdapter = true,
   })  : _scraper = scraper,
         _authManager = authManager,
         _dio = dio,
@@ -51,10 +52,19 @@ class CrotpediaSource implements ContentSource {
               )
             : null {
     // Configure NativeAdapter to fix Cloudflare 403 (TLS Fingerprint)
-    _dio.httpClientAdapter = NativeAdapter(
-      createCupertinoConfiguration: () =>
-          URLSessionConfiguration.ephemeralSessionConfiguration(),
-    );
+    if (useNativeAdapter) {
+      try {
+        _dio.httpClientAdapter = NativeAdapter(
+          createCupertinoConfiguration: () =>
+              URLSessionConfiguration.ephemeralSessionConfiguration(),
+        );
+      } catch (e) {
+        // Fallback or ignore if platform doesn't support it (e.g. tests)
+        if (logger != null) {
+          logger.w('Failed to initialize NativeAdapter: $e');
+        }
+      }
+    }
 
     if (baseUrl != null) {
       CrotpediaUrlBuilder.setBaseUrl(baseUrl);
@@ -412,7 +422,7 @@ class CrotpediaSource implements ContentSource {
 
       return [];
     } catch (e) {
-      _logger?.e('Failed to get related: $e');
+      _logger?.e('Failed to fetch list: $e');
       return [];
     }
   }
@@ -459,8 +469,8 @@ class CrotpediaSource implements ContentSource {
 
   // ============ Crotpedia-Specific Methods ============
 
-  /// Get images from a specific chapter
-  Future<List<String>> getChapterImages(String chapterSlug) async {
+  /// Get images and navigation from a specific chapter
+  Future<ChapterData> getChapterImages(String chapterSlug) async {
     try {
       final url = CrotpediaUrlBuilder.chapterReader(chapterSlug);
       final response = await _getWithBypass(
@@ -470,7 +480,7 @@ class CrotpediaSource implements ContentSource {
       return _scraper.parseChapterImages(response.data);
     } catch (e) {
       _logger?.e('Failed to get chapter images: $e');
-      return [];
+      return const ChapterData(images: []);
     }
   }
 

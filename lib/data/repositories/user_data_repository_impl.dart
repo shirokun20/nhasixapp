@@ -312,6 +312,30 @@ class UserDataRepositoryImpl implements UserDataRepository {
   }
 
   @override
+  Future<History?> getChapterHistoryEntry(String id, String chapterId) async {
+    try {
+      final historyModel = await localDataSource.getChapterHistory(id, chapterId);
+      return historyModel?.toEntity();
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get chapter history entry',
+          error: e, stackTrace: stackTrace);
+      return null;
+    }
+  }
+
+  @override
+  Future<List<History>> getAllChapterHistory(String id) async {
+    try {
+      final historyModels = await localDataSource.getContentChaptersHistory(id);
+      return historyModels.map((model) => model.toEntity()).toList();
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get all chapter history',
+          error: e, stackTrace: stackTrace);
+      return [];
+    }
+  }
+
+  @override
   Future<void> removeFromHistory(String id) async {
     try {
       _logger.i('Removing from history: $id');

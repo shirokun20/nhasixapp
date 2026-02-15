@@ -11,12 +11,14 @@ import '../../../core/models/image_metadata.dart';
 import '../../../core/utils/offline_content_manager.dart';
 import '../../../data/models/reader_settings_model.dart';
 import 'package:kuron_core/kuron_core.dart';
+import 'package:logger/logger.dart';
 import '../../../services/local_image_preloader.dart';
 import '../../cubits/reader/reader_cubit.dart';
 // import '../../cubits/reader/reader_state.dart';
 import '../../widgets/progress_indicator_widget.dart';
 import '../../widgets/error_widget.dart';
 import '../../widgets/extended_image_reader_widget.dart';
+import 'end_of_chapter_overlay.dart';
 
 /// Simple reader screen for reading manga/doujinshi content
 class ReaderScreen extends StatefulWidget {
@@ -27,6 +29,10 @@ class ReaderScreen extends StatefulWidget {
     this.forceStartFromBeginning = false,
     this.preloadedContent,
     this.imageMetadata,
+    this.chapterData,
+    this.parentContent, // Parent series for chapter mode
+    this.allChapters, // All chapters for navigation
+    this.currentChapter, // Current chapter being read
   });
 
   final String contentId;
@@ -34,6 +40,10 @@ class ReaderScreen extends StatefulWidget {
   final bool forceStartFromBeginning;
   final Content? preloadedContent;
   final List<ImageMetadata>? imageMetadata;
+  final ChapterData? chapterData;
+  final Content? parentContent; // Parent series
+  final List<Chapter>? allChapters; // All chapters
+  final Chapter? currentChapter; // Current chapter
 
   @override
   State<ReaderScreen> createState() => _ReaderScreenState();
@@ -47,6 +57,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   // Debouncing for scroll updates
   int _lastReportedPage = 1;
+  int _lastSavedPage = 0; // Track last saved page to prevent backward saves
 
   // Prefetch control
   final Set<int> _prefetchedPages = <int>{};
@@ -55,9 +66,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
   // Debounce mechanism to prevent onPageChanged loops
   bool _isProgrammaticAnimation = false;
 
+  // 🚀 OPTIMIZATION: Throttle save to DB and UI toggle
+  Timer? _saveDebounceTimer;
+  Timer? _pageUpdateTimer; // Separate timer for page updates
+  Timer? _uiToggleDebounceTimer;
+  bool _lastUIVisibleState = true;
+
   // 🚀 OPTIMIZATION: Preload content before BlocProvider setup
   Content? _preloadedContent;
   List<ImageMetadata>? _preloadedImageMetadata;
+  ChapterData? _preloadedChapterData;
+  Content? _preloadedParentContent; // Parent series for chapters
+  List<Chapter>? _preloadedAllChapters; // All chapters for navigation
+  Chapter? _preloadedCurrentChapter; // Current chapter
   bool _isPreloading = false;
 
   @override
@@ -97,18 +118,59 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     // Get preloaded content and metadata from route extra if available
     final routeExtra = GoRouterState.of(context).extra;
+
+    // 🔍 DEBUG LOGGING - What did we receive from router?
+    Logger().i('📥 ReaderScreen._initializeFromRouteExtra - Received:');
+    Logger().i('  routeExtra type: ${routeExtra.runtimeType}');
+
     if (routeExtra is Map<String, dynamic>) {
+      Logger().i('  Map keys: ${routeExtra.keys.toList()}');
+
       if (routeExtra['content'] is Content && widget.preloadedContent == null) {
         _preloadedContent = routeExtra['content'] as Content;
+        Logger().i('  ✓ content: ${_preloadedContent?.title}');
       }
       if (routeExtra['imageMetadata'] is List<ImageMetadata> &&
           widget.imageMetadata == null) {
         _preloadedImageMetadata =
             routeExtra['imageMetadata'] as List<ImageMetadata>;
+        Logger()
+            .i('  ✓ imageMetadata: ${_preloadedImageMetadata?.length} items');
+      }
+      if (routeExtra['chapterData'] is ChapterData &&
+          widget.chapterData == null) {
+        _preloadedChapterData = routeExtra['chapterData'] as ChapterData;
+        Logger().i(
+            '  ✓ chapterData: prev=${_preloadedChapterData?.prevChapterId}, next=${_preloadedChapterData?.nextChapterId}');
+      }
+      if (routeExtra['parentContent'] is Content &&
+          widget.parentContent == null) {
+        _preloadedParentContent = routeExtra['parentContent'] as Content;
+        Logger().i('  ✓ parentContent: ${_preloadedParentContent?.title}');
+      }
+      if (routeExtra['allChapters'] is List<Chapter> &&
+          widget.allChapters == null) {
+        _preloadedAllChapters = routeExtra['allChapters'] as List<Chapter>;
+        Logger()
+            .i('  ✓ allChapters: ${_preloadedAllChapters?.length} chapters');
+        if (_preloadedAllChapters != null &&
+            _preloadedAllChapters!.isNotEmpty) {
+          Logger().i('    First: ${_preloadedAllChapters!.first.title}');
+          Logger().i('    Last: ${_preloadedAllChapters!.last.title}');
+        }
+      } else {
+        Logger().e('  ❌ allChapters NOT received or wrong type!');
+        Logger().e('    Type: ${routeExtra['allChapters'].runtimeType}');
+      }
+      if (routeExtra['currentChapter'] is Chapter &&
+          widget.currentChapter == null) {
+        _preloadedCurrentChapter = routeExtra['currentChapter'] as Chapter;
+        Logger().i('  ✓ currentChapter: ${_preloadedCurrentChapter?.title}');
       }
     } else if (routeExtra is Content && widget.preloadedContent == null) {
       // Fallback for direct Content object (backward compatibility)
       _preloadedContent = routeExtra;
+      Logger().i('  ✓ Direct Content: ${_preloadedContent?.title}');
     }
   }
 
@@ -154,12 +216,31 @@ class _ReaderScreenState extends State<ReaderScreen> {
           (_scrollController.offset / approximateItemHeight).round() + 1;
       final clampedPage = visiblePage.clamp(1, state.content!.pageCount);
 
-      // Only prefetch when page changes - no state updates, no history saves
+      // 🚀 FIX: Update ReaderCubit state so progress bar moves (even if estimation is rough)
       if (clampedPage != _lastReportedPage) {
         _lastReportedPage = clampedPage;
+
+        if (!_isProgrammaticAnimation) {
+          _readerCubit.updateCurrentPageFromSwipe(clampedPage);
+        }
+
         _prefetchImages(
             clampedPage, state.content!.imageUrls, state.imageMetadata);
       }
+
+      // 🐛 FIX: Check if user truly reached bottom in continuous scroll
+      // Mark as complete only when scroll position is at bottom
+      final scrollPosition = _scrollController.position;
+      if (scrollPosition.hasPixels) {
+        final isAtBottom = scrollPosition.pixels >=
+            scrollPosition.maxScrollExtent - 100; // 100px threshold
+
+        if (isAtBottom) {
+          // User reached bottom -> save with last page to mark complete
+          _readerCubit.updateCurrentPageFromSwipe(state.content!.pageCount);
+        }
+      }
+
       // ✨ Auto-hide UI on scroll down
       final scrollDirection = _scrollController.position.userScrollDirection;
       if (scrollDirection == ScrollDirection.reverse &&
@@ -174,12 +255,112 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
   }
 
+  /// 🚀 NEW: Handle scroll notification with accurate metrics
+  void _onScrollNotification(
+      ScrollUpdateNotification notification, ReaderState state) {
+    if (state.content == null) return;
+
+    final metrics = notification.metrics;
+    final totalPages = state.content!.pageCount;
+
+    // Calculate scroll progress percentage (0.0 to 1.0)
+    final scrollProgress = metrics.maxScrollExtent > 0
+        ? metrics.pixels / metrics.maxScrollExtent
+        : 0.0;
+
+    // Estimate current page based on scroll progress
+    // This is more accurate than height-based estimation
+    final estimatedPage =
+        (scrollProgress * totalPages).ceil().clamp(1, totalPages);
+
+    // Update current page for progress bar with debounce
+    if (estimatedPage != _lastReportedPage && !_isProgrammaticAnimation) {
+      _lastReportedPage = estimatedPage;
+
+      // 🚀 OPTIMIZATION: Debounce page updates to reduce DB writes
+      _debouncePageUpdate(estimatedPage, state);
+
+      // Prefetch next images
+      _prefetchImages(
+          estimatedPage, state.content!.imageUrls, state.imageMetadata);
+    }
+
+    // 🐛 FIX: Check if user truly reached bottom using scroll metrics
+    // More reliable than pixel threshold
+    final isAtBottom =
+        metrics.pixels >= metrics.maxScrollExtent - 50; // 50px threshold
+
+    if (isAtBottom) {
+      // User reached bottom -> save to DB with debounce to avoid spam
+      _debounceSaveHistory(state, totalPages);
+    }
+
+    // ✨ Auto-hide/show UI based on scroll direction with debounce
+    if (notification.scrollDelta != null && notification.scrollDelta! > 5) {
+      // Scrolling down (threshold 5px to avoid micro-scrolls)
+      _debounceUIToggle(false, state);
+    } else if (notification.scrollDelta != null &&
+        notification.scrollDelta! < -5) {
+      // Scrolling up (threshold -5px to avoid micro-scrolls)
+      _debounceUIToggle(true, state);
+    }
+  }
+
+  /// 🚀 OPTIMIZATION: Debounce save to DB to prevent spam
+  void _debounceSaveHistory(ReaderState state, int page) {
+    _saveDebounceTimer?.cancel();
+    _saveDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+      // Only save if still at bottom after 500ms
+      _readerCubit.updateCurrentPageFromSwipe(page);
+    });
+  }
+
+  /// 🚀 OPTIMIZATION: Debounce page updates to reduce DB spam
+  void _debouncePageUpdate(int page, ReaderState state) {
+    // 🐛 FIX: Only save if progress moves forward (user reads more)
+    // Don't save when scrolling back up to re-read
+    if (page <= _lastSavedPage) {
+      return; // Skip saving if scrolling backwards
+    }
+
+    _pageUpdateTimer?.cancel();
+    _pageUpdateTimer = Timer(const Duration(milliseconds: 800), () {
+      // Save page progress after user stops scrolling for 800ms
+      // This prevents DB spam when user scrolls up/down repeatedly
+      _lastSavedPage = page; // Update last saved page
+      _readerCubit.updateCurrentPageFromSwipe(page);
+    });
+  }
+
+  /// 🚀 OPTIMIZATION: Debounce UI toggle to prevent flickering
+  void _debounceUIToggle(bool shouldShow, ReaderState state) {
+    // Only toggle if state actually changed
+    if (_lastUIVisibleState == shouldShow) return;
+
+    _uiToggleDebounceTimer?.cancel();
+    _uiToggleDebounceTimer = Timer(const Duration(milliseconds: 150), () {
+      _lastUIVisibleState = shouldShow;
+      if (shouldShow && !(state.showUI ?? false)) {
+        _readerCubit.showUI();
+      } else if (!shouldShow && (state.showUI ?? false)) {
+        _readerCubit.hideUI();
+      }
+    });
+  }
+
+  @override
   @override
   void dispose() {
     _scrollController.removeListener(_onScrollChanged);
     _pageController.dispose();
     _verticalPageController.dispose();
     _scrollController.dispose();
+
+    // 🚀 OPTIMIZATION: Cancel debounce timers
+    _saveDebounceTimer?.cancel();
+    _pageUpdateTimer?.cancel();
+    _uiToggleDebounceTimer?.cancel();
+
     super.dispose();
   }
 
@@ -378,6 +559,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
             _preloadedContent ?? widget.preloadedContent;
         final effectiveImageMetadata =
             _preloadedImageMetadata ?? widget.imageMetadata;
+        final effectiveChapterData =
+            _preloadedChapterData ?? widget.chapterData;
+        final effectiveParentContent =
+            _preloadedParentContent ?? widget.parentContent;
+        final effectiveAllChapters =
+            _preloadedAllChapters ?? widget.allChapters;
+        final effectiveCurrentChapter =
+            _preloadedCurrentChapter ?? widget.currentChapter;
 
         // Always call loadContent with preloaded content if available
         return _readerCubit
@@ -387,6 +576,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
             forceStartFromBeginning: widget.forceStartFromBeginning,
             preloadedContent: effectivePreloadedContent,
             imageMetadata: effectiveImageMetadata,
+            chapterData: effectiveChapterData,
+            parentContent: effectiveParentContent, // Parent series
+            allChapters: effectiveAllChapters, // All chapters
+            currentChapter: effectiveCurrentChapter, // Current chapter
           );
       },
       child: BlocListener<ReaderCubit, ReaderState>(
@@ -440,6 +633,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
             forceStartFromBeginning: widget.forceStartFromBeginning,
             preloadedContent: widget.preloadedContent,
             imageMetadata: widget.imageMetadata,
+            chapterData: widget.chapterData,
+            parentContent: widget.parentContent, // Parent series
+            allChapters: widget.allChapters, // All chapters
+            currentChapter: widget.currentChapter, // Current chapter
           ),
         ),
       );
@@ -460,17 +657,45 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   Widget _buildReaderContent(ReaderState state) {
+    final showNav = _shouldShowNavigationItem(state);
+
     switch (state.readingMode ?? ReadingMode.singlePage) {
       case ReadingMode.singlePage:
-        return _buildSinglePageReader(state);
+        return _buildSinglePageReader(state, showNavigation: showNav);
       case ReadingMode.verticalPage:
-        return _buildVerticalPageReader(state);
+        return _buildVerticalPageReader(state, showNavigation: showNav);
       case ReadingMode.continuousScroll:
-        return _buildContinuousReader(state);
+        return _buildContinuousReader(state, showNavigation: showNav);
     }
   }
 
-  Widget _buildSinglePageReader(ReaderState state) {
+  bool _shouldShowNavigationItem(ReaderState state) {
+    if (state.isOfflineMode ?? false) return false;
+    return state.content != null && (state.content!.imageUrls.isNotEmpty);
+  }
+
+  Widget _buildChapterNavigationPage(ReaderState state) {
+    final bool isChapterMode =
+        state.chapterData != null || state.currentChapter != null;
+    final bool hasPrevChapter = state.chapterData?.prevChapterId != null;
+    final bool hasNextChapter = state.chapterData?.nextChapterId != null;
+
+    return EndOfChapterOverlay(
+      state: state,
+      isChapterMode: isChapterMode,
+      onBackToDetail: () => Navigator.of(context).pop(),
+      onPreviousChapter:
+          hasPrevChapter ? () => _readerCubit.loadPreviousChapter() : null,
+      onNextChapter:
+          hasNextChapter ? () => _readerCubit.loadNextChapter() : null,
+    );
+  }
+
+  Widget _buildSinglePageReader(ReaderState state,
+      {bool showNavigation = false}) {
+    final pageCount = state.content?.imageUrls.length ?? 0;
+    final totalItems = showNavigation ? pageCount + 1 : pageCount;
+
     return GestureDetector(
       onTapUp: (details) {
         // Simple tap gesture: center = toggle UI, sides = navigate
@@ -493,27 +718,30 @@ class _ReaderScreenState extends State<ReaderScreen> {
         controller: _pageController,
         scrollDirection: Axis.horizontal,
         onPageChanged: (index) {
-          final newPage = index + 1;
+          // If this is the navigation page, keep reporting the last page
+          // to keep the progress bar at 100% and save position correctly.
+          final reportPage =
+              (showNavigation && index >= pageCount) ? pageCount : index + 1;
 
-          debugPrint('� PageView changed to index=$index (page $newPage)');
+          debugPrint(
+              ' PageView changed to index=$index (reporting page $reportPage)');
 
           // Only handle UI tasks, no navigation logic
-          // This prevents recursive loops with jumpToPage
           final imageUrls = state.content?.imageUrls ?? [];
-          _prefetchImages(newPage, imageUrls, state.imageMetadata);
+          _prefetchImages(reportPage, imageUrls, state.imageMetadata);
 
-          // Update ReaderCubit state to reflect the current page without triggering navigation
+          // Update ReaderCubit state
           if (!_isProgrammaticAnimation) {
-            // Only update state if this was a real user swipe
-            _readerCubit.updateCurrentPageFromSwipe(newPage);
+            _readerCubit.updateCurrentPageFromSwipe(reportPage);
           }
         },
-        itemCount: state.content?.imageUrls.length ?? 0,
+        itemCount: totalItems,
         itemBuilder: (context, index) {
+          if (showNavigation && index == pageCount) {
+            return _buildChapterNavigationPage(state);
+          }
           final imageUrl = state.content?.imageUrls[index] ?? '';
           final pageNumber = index + 1;
-
-          // Debug logging removed to prevent false positives with 0-indexed filenames
 
           return _buildImageViewer(imageUrl, pageNumber);
         },
@@ -521,7 +749,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
   }
 
-  Widget _buildVerticalPageReader(ReaderState state) {
+  Widget _buildVerticalPageReader(ReaderState state,
+      {bool showNavigation = false}) {
+    final pageCount = state.content?.imageUrls.length ?? 0;
+    final totalItems = showNavigation ? pageCount + 1 : pageCount;
+
     return GestureDetector(
       onTapUp: (details) {
         // Simple tap gesture: center = toggle UI, top/bottom = navigate
@@ -544,24 +776,27 @@ class _ReaderScreenState extends State<ReaderScreen> {
         controller: _verticalPageController,
         scrollDirection: Axis.vertical,
         onPageChanged: (index) {
-          final newPage = index + 1;
+          // If this is the navigation page, keep reporting the last page
+          final reportPage =
+              (showNavigation && index >= pageCount) ? pageCount : index + 1;
 
           debugPrint(
-              '� Vertical PageView changed to index=$index (page $newPage)');
+              ' Vertical PageView changed to index=$index (reporting page $reportPage)');
 
           // Only handle UI tasks, no navigation logic
-          // This prevents recursive loops with jumpToPage
           final imageUrls = state.content?.imageUrls ?? [];
-          _prefetchImages(newPage, imageUrls, state.imageMetadata);
+          _prefetchImages(reportPage, imageUrls, state.imageMetadata);
 
-          // Update ReaderCubit state to reflect the current page without triggering navigation
+          // Update ReaderCubit state
           if (!_isProgrammaticAnimation) {
-            // Only update state if this was a real user swipe
-            _readerCubit.updateCurrentPageFromSwipe(newPage);
+            _readerCubit.updateCurrentPageFromSwipe(reportPage);
           }
         },
-        itemCount: state.content?.imageUrls.length ?? 0,
+        itemCount: totalItems,
         itemBuilder: (context, index) {
+          if (showNavigation && index == pageCount) {
+            return _buildChapterNavigationPage(state);
+          }
           final imageUrl = state.content?.imageUrls[index] ?? '';
           return _buildImageViewer(imageUrl, index + 1);
         },
@@ -569,7 +804,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
   }
 
-  Widget _buildContinuousReader(ReaderState state) {
+  Widget _buildContinuousReader(ReaderState state,
+      {bool showNavigation = false}) {
+    final pageCount = state.content?.imageUrls.length ?? 0;
+    final totalItems = showNavigation ? pageCount + 1 : pageCount;
+
     // 🐛 BUG FIX: Remove GestureDetector wrapper to prevent scroll gesture conflicts
     // GestureDetector blocks ListView scroll gestures, causing:
     // 1. Unable to scroll down
@@ -579,21 +818,38 @@ class _ReaderScreenState extends State<ReaderScreen> {
     // 🚀 OPTIMIZATION: Get enableZoom once outside itemBuilder to avoid BlocBuilder in ListView
     final enableZoom = state.enableZoom ?? true;
 
-    return ListView.builder(
-      controller: _scrollController,
-      physics: const BouncingScrollPhysics(), // Smoother scroll
-      cacheExtent:
-          1000.0, // 🐛 FIX: Keep 1000px of items in memory to prevent re-loading images
-      itemCount: state.content?.imageUrls.length ?? 0,
-      itemBuilder: (context, index) {
-        final imageUrl = state.content?.imageUrls[index] ?? '';
-        return _buildImageViewer(
-          imageUrl,
-          index + 1,
-          isContinuous: true,
-          enableZoom: enableZoom,
-        );
+    // 🐛 FIX: Wrap ListView with NotificationListener for accurate scroll tracking
+    return NotificationListener<ScrollNotification>(
+      onNotification: (ScrollNotification notification) {
+        if (notification is ScrollUpdateNotification) {
+          _onScrollNotification(notification, state);
+        }
+        return false; // Allow notification to bubble up
       },
+      child: ListView.builder(
+        controller: _scrollController,
+        physics: const BouncingScrollPhysics(), // Smoother scroll
+        cacheExtent:
+            10000.0, // 🚀 OPTIMIZATION: Increased from 1000px to 10000px to keep more images in memory
+        addAutomaticKeepAlives:
+            true, // Keep widgets alive when scrolled out of view
+        itemCount: totalItems,
+        itemBuilder: (context, index) {
+          if (showNavigation && index == pageCount) {
+            return SizedBox(
+              height: MediaQuery.of(context).size.height * 0.8,
+              child: _buildChapterNavigationPage(state),
+            );
+          }
+          final imageUrl = state.content?.imageUrls[index] ?? '';
+          return _buildImageViewer(
+            imageUrl,
+            index + 1,
+            isContinuous: true,
+            enableZoom: enableZoom,
+          );
+        },
+      ),
     );
   }
 
@@ -864,7 +1120,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     ? null
                     : () => _readerCubit.previousPage(),
                 icon: Icon(
-                  Icons.skip_previous,
+                  Icons.navigate_before,
                   color: state.isFirstPage
                       ? Theme.of(context)
                           .colorScheme
@@ -887,7 +1143,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 onPressed:
                     state.isLastPage ? null : () => _readerCubit.nextPage(),
                 icon: Icon(
-                  Icons.skip_next,
+                  Icons.navigate_next,
                   color: state.isLastPage
                       ? Theme.of(context)
                           .colorScheme
@@ -902,6 +1158,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
       ),
     );
   }
+
+  // DELETED: _buildEndOfChapterOverlay (moved to extra page in builder)
 
   // DISABLED: Jump to page feature temporarily disabled to prevent navigation bugs
   // Users should focus on sequential reading for better experience
@@ -1057,6 +1315,39 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 ),
               ),
 
+              // Chapter Selector (only in chapter mode)
+              if (currentState.chapterData != null ||
+                  currentState.currentChapter != null) ...[
+                const Divider(height: 32),
+                ListTile(
+                  title: Text(
+                    'Chapter',
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  subtitle: Text(
+                    currentState.currentChapter?.title ??
+                        currentState.content?.title.split(' - ').last ??
+                        'No chapter selected',
+                    style: TextStyleConst.bodySmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: Icon(
+                    Icons.list,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  onTap: () {
+                    // Show chapter list in a dialog
+                    Navigator.pop(context); // Close settings
+                    _showChapterSelector(currentState);
+                  },
+                ),
+              ],
+
               // Keep screen on
               ListTile(
                 title: Text(
@@ -1179,6 +1470,80 @@ class _ReaderScreenState extends State<ReaderScreen> {
               style: TextStyleConst.buttonMedium.copyWith(
                 color: Theme.of(context).colorScheme.error,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChapterSelector(ReaderState state) {
+    if (_readerCubit.allChapters == null || _readerCubit.allChapters!.isEmpty) {
+      // No chapters available
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('No chapters available'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+        title: Text(
+          'Select Chapter',
+          style: TextStyleConst.headingMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: _readerCubit.allChapters!.length,
+            itemBuilder: (context, index) {
+              final chapter = _readerCubit.allChapters![index];
+              final isCurrentChapter = chapter.id == state.content?.id;
+
+              return ListTile(
+                title: Text(
+                  chapter.title,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight:
+                        isCurrentChapter ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+                leading: Icon(
+                  isCurrentChapter ? Icons.check_circle : Icons.circle_outlined,
+                  color: isCurrentChapter
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                selected: isCurrentChapter,
+                selectedTileColor: Theme.of(context)
+                    .colorScheme
+                    .primaryContainer
+                    .withValues(alpha: 0.2),
+                onTap: () {
+                  Navigator.pop(context); // Close dialog
+                  if (!isCurrentChapter) {
+                    _readerCubit.loadChapter(chapter.id);
+                  }
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Theme.of(context).colorScheme.primary),
             ),
           ),
         ],

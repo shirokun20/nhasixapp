@@ -13,6 +13,8 @@ class ReaderState extends Equatable {
     this.message,
     this.isOfflineMode,
     this.imageMetadata,
+    this.chapterData,
+    this.currentChapter,
   });
 
   final Content? content;
@@ -25,6 +27,8 @@ class ReaderState extends Equatable {
   final String? message;
   final bool? isOfflineMode;
   final List<ImageMetadata>? imageMetadata;
+  final ChapterData? chapterData;
+  final Chapter? currentChapter;
 
   @override
   List<Object?> get props => [
@@ -38,6 +42,8 @@ class ReaderState extends Equatable {
         message,
         isOfflineMode,
         imageMetadata,
+        chapterData,
+        currentChapter,
       ];
 
   static const _undefined = Object();
@@ -53,6 +59,8 @@ class ReaderState extends Equatable {
     Object? message = _undefined,
     Object? isOfflineMode = _undefined,
     List<ImageMetadata>? imageMetadata,
+    ChapterData? chapterData,
+    Chapter? currentChapter,
   }) {
     return ReaderState(
       content: content ?? this.content,
@@ -71,6 +79,8 @@ class ReaderState extends Equatable {
           ? this.isOfflineMode
           : isOfflineMode as bool?,
       imageMetadata: imageMetadata ?? this.imageMetadata,
+      chapterData: chapterData ?? this.chapterData,
+      currentChapter: currentChapter ?? this.currentChapter,
     );
   }
 
@@ -122,6 +132,8 @@ class ReaderLoading extends ReaderState {
           message: prevState.message,
           isOfflineMode: prevState.isOfflineMode,
           imageMetadata: prevState.imageMetadata,
+          chapterData: prevState.chapterData,
+          currentChapter: prevState.currentChapter,
         );
 }
 
@@ -139,6 +151,8 @@ class ReaderLoaded extends ReaderState {
           message: prevState.message,
           isOfflineMode: prevState.isOfflineMode ?? false,
           imageMetadata: prevState.imageMetadata,
+          chapterData: prevState.chapterData,
+          currentChapter: prevState.currentChapter,
         );
 }
 
@@ -156,5 +170,7 @@ class ReaderError extends ReaderState {
           message: prevState.message,
           isOfflineMode: prevState.isOfflineMode,
           imageMetadata: prevState.imageMetadata,
+          chapterData: prevState.chapterData,
+          currentChapter: prevState.currentChapter,
         );
 }

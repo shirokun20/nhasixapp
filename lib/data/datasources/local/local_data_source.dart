@@ -521,6 +521,7 @@ class LocalDataSource {
   // ==================== HISTORY OPERATIONS ====================
 
   /// Save history entry (with title and cover_url)
+  /// For chapter mode content, chapterId is included in the primary key
   Future<void> saveHistory(HistoryModel history) async {
     try {
       final db = await _getSafeDatabase();
@@ -529,58 +530,38 @@ class LocalDataSource {
         return;
       }
 
-      _logger.i('isi datanya: ${history.toMap()}');
-
+      // Save entry with chapter_id (empty string for non-chapter mode)
+      // With composite PK (id, source_id, chapter_id), this supports:
+      // - Single entry for non-chapter content (chapter_id = '')
+      // - Multiple entries for chapter content (different chapter_ids)
       await db.insert(
         'history',
         history.toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
-      _logger.d('Saved history for ${history.contentId}');
+      _logger.d(
+          'Saved history for ${history.contentId} (Chapter: ${history.chapterId})');
     } catch (e) {
       _logger.e('Error saving history: $e');
-
-      // If it's a schema error, try to fix it
-      if (e.toString().contains('no column named id') ||
-          e.toString().contains('table history has no column named id')) {
-        _logger.w(
-            'Detected history table schema issue, attempting to reset database...');
-        try {
-          await _databaseHelper.resetDatabase();
-          // Retry the operation after reset
-          final newDb = await _getSafeDatabase();
-          if (newDb != null) {
-            await newDb.insert(
-              'history',
-              history.toMap(),
-              conflictAlgorithm: ConflictAlgorithm.replace,
-            );
-            _logger.i('Successfully saved history after database reset');
-            return;
-          }
-        } catch (resetError) {
-          _logger.e('Failed to reset database: $resetError');
-        }
-      }
-
       rethrow;
     }
   }
 
-  /// Get history entry
+  /// Get history entry by content ID
+  /// For chapter mode, returns the most recent chapter entry for this content
   Future<HistoryModel?> getHistory(String id) async {
     try {
       final db = await _getSafeDatabase();
-      if (db == null) {
-        _logger.e('Database not available, cannot get history');
-        return null;
-      }
+      if (db == null) return null;
 
+      // First try to get the most recent entry for this content
+      // This works for both chapter and non-chapter mode
       final result = await db.query(
         'history',
         where: 'id = ?',
         whereArgs: [id],
+        orderBy: 'last_viewed DESC',
         limit: 1,
       );
 
@@ -592,7 +573,54 @@ class LocalDataSource {
     }
   }
 
+  /// Get specific chapter history
+  Future<HistoryModel?> getChapterHistory(String id, String chapterId) async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) return null;
+
+      final result = await db.query(
+        'history',
+        where: 'id = ? AND chapter_id = ?',
+        whereArgs: [id, chapterId],
+        limit: 1,
+      );
+
+      if (result.isEmpty) return null;
+      return HistoryModel.fromMap(result.first);
+    } catch (e) {
+      _logger.e('Error getting chapter history: $e');
+      return null;
+    }
+  }
+
+  /// Get all chapter history for a content (series)
+  /// Now queries by parent_id since chapter entries use chapter.id as primary key
+  Future<List<HistoryModel>> getContentChaptersHistory(String seriesId) async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) return [];
+
+      // Query by parent_id (series ID) to get all chapters
+      // parent_id is set for chapter mode entries
+      final result = await db.query(
+        'history',
+        where: 'parent_id = ? AND chapter_id != ?',
+        whereArgs: [seriesId, ''],
+        orderBy: 'chapter_index ASC',
+      );
+
+      _logger.d(
+          'Found ${result.length} chapter history entries for series: $seriesId');
+      return result.map((row) => HistoryModel.fromMap(row)).toList();
+    } catch (e) {
+      _logger.e('Error getting content chapters history: $e');
+      return [];
+    }
+  }
+
   /// Get all history entries
+  /// Returns all entries (both chapter and non-chapter) ordered by last viewed
   Future<List<HistoryModel>> getAllHistory({
     int page = 1,
     int limit = 50,
@@ -606,6 +634,8 @@ class LocalDataSource {
 
       final offset = (page - 1) * limit;
 
+      // Get all entries, including chapter entries
+      // Each entry has composite PK (id, source_id, chapter_id)
       final result = await db.query(
         'history',
         orderBy: 'last_viewed DESC',
@@ -637,6 +667,7 @@ class LocalDataSource {
   }
 
   /// Delete history entry
+  /// Deletes all entries (both main and chapters) for this content
   Future<void> deleteHistory(String id) async {
     try {
       final db = await _getSafeDatabase();

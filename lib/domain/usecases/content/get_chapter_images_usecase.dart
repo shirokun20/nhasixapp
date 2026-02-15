@@ -1,16 +1,17 @@
 import '../base_usecase.dart';
 import '../../value_objects/value_objects.dart';
 import '../../repositories/repositories.dart';
+import '../../entities/entities.dart';
 
 /// Use case for getting chapter images
 class GetChapterImagesUseCase
-    extends UseCase<List<String>, GetChapterImagesParams> {
+    extends UseCase<ChapterData, GetChapterImagesParams> {
   GetChapterImagesUseCase(this._contentRepository);
 
   final ContentRepository _contentRepository;
 
   @override
-  Future<List<String>> call(GetChapterImagesParams params) async {
+  Future<ChapterData> call(GetChapterImagesParams params) async {
     return await _contentRepository.getChapterImages(
       params.chapterId,
       sourceId: params.sourceId,

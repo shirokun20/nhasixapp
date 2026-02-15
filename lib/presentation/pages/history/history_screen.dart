@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:logger/logger.dart';
 import '../../widgets/shimmer_loading_widgets.dart';
 import 'package:go_router/go_router.dart';
 
@@ -322,26 +323,40 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   void _navigateToContent(BuildContext context, History historyItem) {
-    // Source-aware navigation based on content source type
-    //
-    // Crotpedia: Chapter-based structure
-    //   - History stores chapter ID (e.g., "manga-slug-chapter-5")
-    //   - Navigate directly to reader for seamless continuation
-    //
-    // Nhentai: Series-based structure
-    //   - History stores series ID (e.g., "123456")
-    //   - Navigate to detail screen first (backward compatible)
-    //   - User can view tags/info before continuing to read
+    // Navigate to detail screen for all content types
+    // Chapter mode content will show read indicator in chapter list
+    Logger().d('Navigating to content: ${historyItem.toJson()}');
 
-    if (historyItem.sourceId == 'crotpedia') {
-      // Crotpedia: Direct to reader (chapter ID already stored)
-      context.push('/reader/${historyItem.contentId}');
-    } else {
-      // Nhentai & others: To detail screen (backward compatible)
-      context.push(
-        '/content/${historyItem.contentId}?sourceId=${historyItem.sourceId}',
-      );
+    // Determine the target content ID:
+    // - For chapter mode with parentId: use parentId (series ID)
+    // - Otherwise: use contentId
+    final targetContentId = (historyItem.isChapterMode &&
+            historyItem.parentId != null &&
+            historyItem.parentId!.isNotEmpty)
+        ? historyItem.parentId!
+        : historyItem.contentId;
+
+    // Build query parameters
+    final queryParams = <String, String>{
+      'sourceId': historyItem.sourceId,
+    };
+
+    // For chapter mode, pass chapterId to highlight the read chapter
+    if (historyItem.isChapterMode &&
+        historyItem.chapterId != null &&
+        historyItem.chapterId!.isNotEmpty) {
+      queryParams['chapterId'] = historyItem.chapterId!;
     }
+
+    // Build query string
+    final queryString = queryParams.entries
+        .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+        .join('&');
+
+    Logger().d('🔗 Navigating to: /content/$targetContentId?$queryString');
+
+    // Navigate to detail screen
+    context.push('/content/$targetContentId?$queryString');
   }
 
   void _navigateToCleanupSettings(BuildContext context) {

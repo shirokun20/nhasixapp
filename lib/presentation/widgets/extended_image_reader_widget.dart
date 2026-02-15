@@ -42,7 +42,7 @@ class ExtendedImageReaderWidget extends StatefulWidget {
 }
 
 class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   late AnimationController _zoomController;
   late Animation<double> _zoomAnimation;
   final GlobalKey<ExtendedImageGestureState> _gestureKey = GlobalKey();
@@ -53,6 +53,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
   // 🎯 PHASE 2: Cache loaded image size for webtoon detection
   // Size? _loadedImageSize;
+
+  // 🚀 OPTIMIZATION: Keep widget alive in ListView to prevent reload
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -157,6 +161,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
   @override
   Widget build(BuildContext context) {
+    // 🚀 OPTIMIZATION: Call super.build for AutomaticKeepAliveClientMixin
+    super.build(context);
+
     // Check if imageUrl is a local file path
     final isLocalFile = widget.imageUrl.startsWith('/') ||
         widget.imageUrl.startsWith('\\') ||

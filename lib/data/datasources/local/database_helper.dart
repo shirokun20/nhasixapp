@@ -7,7 +7,8 @@ import 'package:logger/logger.dart';
 /// Database helper class for managing SQLite database
 class DatabaseHelper {
   static const String _databaseName = 'nhasix_app.db';
-  static const int _databaseVersion = 10; // Updated for Favorites Title Fix
+  static const int _databaseVersion =
+      12; // Updated for parent_id support in history
 
   static Database? _database;
   static final Logger _logger = Logger();
@@ -354,7 +355,8 @@ class DatabaseHelper {
     }
 
     if (oldVersion < 10 && newVersion >= 10) {
-      _logger.i('Upgrading to version 10: Adding title column to favorites table');
+      _logger
+          .i('Upgrading to version 10: Adding title column to favorites table');
       try {
         // Add title column
         await db.execute('ALTER TABLE favorites ADD COLUMN title TEXT');
@@ -375,6 +377,81 @@ class DatabaseHelper {
         _logger.i('Backfilled titles for existing favorites');
       } catch (e) {
         _logger.e('Error upgrading favorites table: $e');
+      }
+    }
+    if (oldVersion < 11 && newVersion >= 11) {
+      _logger.i('Upgrading to version 11: Adding chapter support to history');
+      try {
+        await db.transaction((txn) async {
+          // 1. Rename existing table
+          await txn.execute('ALTER TABLE history RENAME TO history_old');
+
+          // 2. Create new table with new Schema and PK
+          await txn.execute('''
+            CREATE TABLE history (
+              id TEXT NOT NULL,
+              source_id TEXT NOT NULL DEFAULT 'nhentai',
+              title TEXT,
+              cover_url TEXT,
+              last_viewed INTEGER,
+              last_page INTEGER DEFAULT 1,
+              total_pages INTEGER,
+              time_spent INTEGER DEFAULT 0,
+              is_completed INTEGER DEFAULT 0,
+              chapter_id TEXT NOT NULL DEFAULT '',
+              chapter_index INTEGER DEFAULT 0,
+              chapter_title TEXT,
+              PRIMARY KEY (id, source_id, chapter_id)
+            )
+          ''');
+
+          // 3. Copy data
+          // Set chapter_id to empty string for existing records (content-level history)
+          await txn.execute('''
+            INSERT INTO history (
+              id, source_id, title, cover_url, last_viewed, last_page, 
+              total_pages, time_spent, is_completed, chapter_id
+            )
+            SELECT 
+              id, source_id, title, cover_url, last_viewed, last_page, 
+              total_pages, time_spent, is_completed, '' 
+            FROM history_old
+          ''');
+
+          // 4. Drop old table
+          await txn.execute('DROP TABLE history_old');
+
+          // 5. Recreate Indexes
+          await txn.execute(
+              'CREATE INDEX idx_history_last_viewed ON history (last_viewed DESC)');
+          await txn.execute(
+              'CREATE INDEX idx_history_is_completed ON history (is_completed)');
+          await txn.execute(
+              'CREATE INDEX idx_history_source ON history (source_id)');
+          await txn.execute(
+              'CREATE INDEX idx_history_chapter_lookup ON history (id, chapter_id)');
+        });
+
+        _logger.i('Successfully migrated history table to version 11');
+      } catch (e) {
+        _logger.e('Error upgrading history table: $e');
+        rethrow;
+      }
+    }
+
+    if (oldVersion < 12 && newVersion >= 12) {
+      _logger.i('Upgrading to version 12: Adding parent_id to history');
+      try {
+        // Add parent_id column to track series/parent content for chapters
+        await db.execute('ALTER TABLE history ADD COLUMN parent_id TEXT');
+        _logger.i('Added parent_id column to history table');
+
+        // Create index for parent_id lookups
+        await db
+            .execute('CREATE INDEX idx_history_parent ON history (parent_id)');
+        _logger.i('Created index on parent_id');
+      } catch (e) {
+        _logger.w('Error adding parent_id column: $e');
       }
     }
   }
@@ -428,9 +505,13 @@ class DatabaseHelper {
         last_viewed INTEGER,
         last_page INTEGER DEFAULT 1,
         total_pages INTEGER,
-        time_spent INTEGER DEFAULT 0, -- in milliseconds
-        is_completed INTEGER DEFAULT 0, -- boolean as integer
-        PRIMARY KEY (id, source_id)
+        time_spent INTEGER DEFAULT 0,
+        is_completed INTEGER DEFAULT 0,
+        chapter_id TEXT NOT NULL DEFAULT '',
+        chapter_index INTEGER DEFAULT 0,
+        chapter_title TEXT,
+        parent_id TEXT,
+        PRIMARY KEY (id, source_id, chapter_id)
       )
     ''');
   }

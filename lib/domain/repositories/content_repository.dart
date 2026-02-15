@@ -79,12 +79,12 @@ abstract class ContentRepository {
   /// Returns true if content exists and accessible
   Future<bool> verifyContentExists(ContentId contentId);
 
-  /// Get chapter images
+  /// Get chapter images and navigation
   ///
   /// [chapterId] - Chapter ID
   /// [sourceId] - Optional source ID
-  /// Returns list of image URLs for the chapter
-  Future<List<String>> getChapterImages(ContentId chapterId,
+  /// Returns chapter data containing images and navigation
+  Future<ChapterData> getChapterImages(ContentId chapterId,
       {String? sourceId});
 
   /// Get comments for a specific gallery

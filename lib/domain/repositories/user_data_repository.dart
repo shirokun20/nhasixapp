@@ -162,6 +162,17 @@ abstract class UserDataRepository {
   /// Returns history entry or null if not found
   Future<History?> getHistoryEntry(String id);
 
+  /// Get history entry for specific chapter
+  ///
+  /// [id] - Content ID
+  /// [chapterId] - Chapter ID
+  Future<History?> getChapterHistoryEntry(String id, String chapterId);
+
+  /// Get all chapter history for a content
+  ///
+  /// [id] - Content ID
+  Future<List<History>> getAllChapterHistory(String id);
+
   /// Remove from history
   ///
   /// [id] - Content ID to remove from history

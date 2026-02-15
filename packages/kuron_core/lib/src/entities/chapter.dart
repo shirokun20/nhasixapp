@@ -27,4 +27,20 @@ class Chapter extends Equatable {
 
   @override
   List<Object?> get props => [id, title, url, uploadDate, scanGroup];
+
+  Chapter copyWith({
+    String? id,
+    String? title,
+    String? url,
+    DateTime? uploadDate,
+    String? scanGroup,
+  }) {
+    return Chapter(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      url: url ?? this.url,
+      uploadDate: uploadDate ?? this.uploadDate,
+      scanGroup: scanGroup ?? this.scanGroup,
+    );
+  }
 }

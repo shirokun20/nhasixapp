@@ -2,6 +2,15 @@ import 'dart:io';
 import 'package:test/test.dart';
 import 'package:kuron_crotpedia/src/crotpedia_scraper.dart';
 
+String fixture(String name) {
+  final dir = Directory.current;
+  // If running from root, verify if we need to append package path
+  final path = dir.path.endsWith('kuron_crotpedia') 
+      ? 'test/fixtures/$name' 
+      : 'packages/kuron_crotpedia/test/fixtures/$name';
+  return File(path).readAsStringSync();
+}
+
 void main() {
   late CrotpediaScraper scraper;
 
@@ -12,8 +21,7 @@ void main() {
   group('CrotpediaScraper', () {
     group('parseLatestSeries', () {
       test('parses series list HTML correctly from real HTML', () async {
-        final html =
-            await File('test/fixtures/series_list.html').readAsString();
+        final html = fixture('series_list.html');
         final series = scraper.parseLatestSeries(html);
 
         // Real HTML has multiple .flexbox4-item elements
@@ -51,8 +59,7 @@ void main() {
 
     group('parseSeriesDetail', () {
       test('parses series detail HTML correctly from real HTML', () async {
-        final html =
-            await File('test/fixtures/series_detail.html').readAsString();
+        final html = fixture('series_detail.html');
         final detail = scraper.parseSeriesDetail(html);
 
         // Real halaman_detail.html has actual data
@@ -66,16 +73,15 @@ void main() {
 
         // Check genres
         expect(detail.genres, isNotEmpty);
-        expect(detail.genres, contains('Ahegao'));
-        expect(detail.genres, contains('Uncensored'));
+        expect(detail.genres, containsValue('Ahegao'));
+        expect(detail.genres, containsValue('Uncensored'));
 
         // Check synopsis
         expect(detail.synopsis, contains('Jatuh cinta sedarai kecil'));
       });
 
       test('parses chapter list correctly from real HTML', () async {
-        final html =
-            await File('test/fixtures/series_detail.html').readAsString();
+        final html = fixture('series_detail.html');
         final detail = scraper.parseSeriesDetail(html);
 
         // Real HTML has .series-chapterlist li elements
@@ -163,34 +169,35 @@ void main() {
 
     group('parseChapterImages', () {
       test('extracts image URLs correctly from real HTML', () async {
-        final html =
-            await File('test/fixtures/chapter_reader.html').readAsString();
-        final images = scraper.parseChapterImages(html);
+        final html = fixture('chapter_reader.html');
+        final chapterData = scraper.parseChapterImages(html);
 
         // Real halaman_baca.html has .reader-area p img elements
-        expect(images, isNotEmpty);
-        expect(images.length, greaterThan(10)); // Real HTML has 27 images
+        expect(chapterData.images, isNotEmpty);
+        expect(chapterData.images.length,
+            greaterThan(10)); // Real HTML has 27 images
 
         // Check that each image URL is valid
-        for (final imageUrl in images) {
+        for (final imageUrl in chapterData.images) {
           expect(imageUrl, isNotEmpty);
         }
       });
 
       test('filters out non-content images (ads)', () async {
-        final html =
-            await File('test/fixtures/chapter_reader.html').readAsString();
-        final images = scraper.parseChapterImages(html);
+        final html = fixture('chapter_reader.html');
+        final chapterData = scraper.parseChapterImages(html);
 
         // Should not contain saweria/donation images
-        expect(images.any((url) => url.contains('saweria')), isFalse);
-        expect(images.any((url) => url.contains('donasi')), isFalse);
+        expect(chapterData.images.any((url) => url.contains('saweria')),
+            isFalse);
+        expect(chapterData.images.any((url) => url.contains('donasi')),
+            isFalse);
       });
 
       test('returns empty list if no images found', () {
         const html = '<html><div class="entry-content"></div></html>';
-        final images = scraper.parseChapterImages(html);
-        expect(images, isEmpty);
+        final chapterData = scraper.parseChapterImages(html);
+        expect(chapterData.images, isEmpty);
       });
 
       test('handles alternative container (.reader-area)', () {
@@ -201,9 +208,17 @@ void main() {
             </div>
           </html>
         ''';
-        final images = scraper.parseChapterImages(html);
-        expect(images, hasLength(1));
-        expect(images[0], contains('test.jpg'));
+        final chapterData = scraper.parseChapterImages(html);
+        expect(chapterData.images, hasLength(1));
+        expect(chapterData.images[0], contains('test.jpg'));
+      });
+
+      test('parses navigation links correctly', () {
+        final html = fixture('chapter_reader_with_nav.html');
+        final chapterData = scraper.parseChapterImages(html);
+
+        expect(chapterData.prevChapterId, equals('chapter-prev-slug'));
+        expect(chapterData.nextChapterId, equals('chapter-next-slug'));
       });
     });
 
@@ -211,8 +226,10 @@ void main() {
       test('parses doujin list correctly', () {
         const html = '''
           <html>
-            <a class="series" href="/baca/series/series-1/">Series 1</a>
-            <a class="series" href="/baca/series/series-2/">Series 2</a>
+            <div class="mangalist-blc">
+              <a class="series" href="/baca/series/series-1/">Series 1</a>
+              <a class="series" href="/baca/series/series-2/">Series 2</a>
+            </div>
           </html>
         ''';
         final series = scraper.parseDoujinList(html);
@@ -227,8 +244,7 @@ void main() {
     group('parseSearchResults', () {
       test('parses search results from real HTML', () async {
         // Use search_results.html (halaman_advanced_search_result_found.html)
-        final html =
-            await File('test/fixtures/search_results.html').readAsString();
+        final html = fixture('search_results.html');
         final series = scraper.parseSearchResults(html);
 
         // Should find items in flexbox2
@@ -283,8 +299,7 @@ void main() {
 
     group('parsePagination', () {
       test('parses pagination correctly from homepage HTML', () async {
-        final html =
-            await File('test/fixtures/series_list.html').readAsString();
+        final html = fixture('series_list.html');
         final pagination = scraper.parsePagination(html);
 
         expect(pagination.currentPage, equals(1));
@@ -292,8 +307,7 @@ void main() {
       });
 
       test('parses pagination correctly from search results HTML', () async {
-        final html =
-            await File('test/fixtures/search_results.html').readAsString();
+        final html = fixture('search_results.html');
         final pagination = scraper.parsePagination(html);
 
         // Search results page also has pagination

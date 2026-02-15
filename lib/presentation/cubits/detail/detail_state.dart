@@ -29,6 +29,7 @@ class DetailLoaded extends DetailState {
     required this.lastUpdated,
     this.isTogglingFavorite = false,
     this.imageMetadata,
+    this.chapterHistory,
   });
 
   final Content content;
@@ -36,6 +37,7 @@ class DetailLoaded extends DetailState {
   final bool isTogglingFavorite;
   final DateTime lastUpdated;
   final List<ImageMetadata>? imageMetadata;
+  final Map<String, History>? chapterHistory;
 
   @override
   List<Object?> get props => [
@@ -44,6 +46,7 @@ class DetailLoaded extends DetailState {
         isTogglingFavorite,
         lastUpdated,
         imageMetadata,
+        chapterHistory,
       ];
 
   /// Create a copy with updated properties
@@ -53,6 +56,7 @@ class DetailLoaded extends DetailState {
     bool? isTogglingFavorite,
     DateTime? lastUpdated,
     List<ImageMetadata>? imageMetadata,
+    Map<String, History>? chapterHistory,
   }) {
     return DetailLoaded(
       content: content ?? this.content,
@@ -60,6 +64,7 @@ class DetailLoaded extends DetailState {
       isTogglingFavorite: isTogglingFavorite ?? this.isTogglingFavorite,
       lastUpdated: lastUpdated ?? this.lastUpdated,
       imageMetadata: imageMetadata ?? this.imageMetadata,
+      chapterHistory: chapterHistory ?? this.chapterHistory,
     );
   }
 
@@ -190,6 +195,7 @@ class DetailOpeningChapter extends DetailLoaded {
     required super.isFavorited,
     required super.lastUpdated,
     super.imageMetadata,
+    super.chapterHistory,
   });
 }
 
@@ -201,12 +207,17 @@ class DetailReaderReady extends DetailLoaded {
     required super.isFavorited,
     required super.lastUpdated,
     super.imageMetadata,
+    super.chapterHistory,
+    this.chapterData,
+    this.currentChapter,
   });
 
   final Content chapterContent;
+  final ChapterData? chapterData;
+  final Chapter? currentChapter;
 
   @override
-  List<Object?> get props => [...super.props, chapterContent];
+  List<Object?> get props => [...super.props, chapterContent, chapterData, currentChapter];
 }
 
 /// State when login is required for an action
@@ -225,6 +236,7 @@ class DetailActionFailure extends DetailLoaded {
     required super.isFavorited,
     required super.lastUpdated,
     super.imageMetadata,
+    super.chapterHistory,
     this.needsLogin = false,
     this.error,
   });

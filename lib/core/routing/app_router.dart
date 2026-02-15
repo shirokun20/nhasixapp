@@ -20,6 +20,7 @@ import 'package:nhasixapp/presentation/pages/about/about_screen.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/pages/crotpedia/crotpedia_login_page.dart';
 import 'package:nhasixapp/core/models/image_metadata.dart';
+import 'package:kuron_core/kuron_core.dart' hide FilterItem, SearchFilter;
 import 'package:nhasixapp/core/utils/app_animations.dart';
 import 'package:nhasixapp/presentation/pages/crotpedia/genre_list_screen.dart'; // NEW
 import 'package:nhasixapp/presentation/pages/crotpedia/doujin_list_screen.dart'; // NEW
@@ -154,13 +155,16 @@ class AppRouter {
           final forceStartFromBeginning =
               state.uri.queryParameters['forceStartFromBeginning'] == 'true';
 
-          // Extract content and imageMetadata from extra
+          // Extract content, imageMetadata, and chapterData from extra
           Content? content;
           List<ImageMetadata>? imageMetadata;
+          ChapterData? chapterData;
+
           if (state.extra is Map<String, dynamic>) {
             final extra = state.extra as Map<String, dynamic>;
             content = extra['content'] as Content?;
             imageMetadata = extra['imageMetadata'] as List<ImageMetadata>?;
+            chapterData = extra['chapterData'] as ChapterData?;
           } else {
             // Backward compatibility: if extra is Content directly
             content = state.extra as Content?;
@@ -172,6 +176,7 @@ class AppRouter {
             forceStartFromBeginning: forceStartFromBeginning,
             preloadedContent: content,
             imageMetadata: imageMetadata,
+            chapterData: chapterData,
           );
         },
       ),
@@ -417,10 +422,21 @@ class AppRouter {
       {int page = 1,
       bool forceStartFromBeginning = false,
       Content? content,
-      List<ImageMetadata>? imageMetadata}) {
+      List<ImageMetadata>? imageMetadata,
+      ChapterData? chapterData,
+      Content? parentContent,          // Parent series for chapter mode
+      List<Chapter>? allChapters,      // All chapters for navigation
+      Chapter? currentChapter}) {      // Current chapter being read
     context.push(
         '/reader/$contentId?page=$page&forceStartFromBeginning=$forceStartFromBeginning',
-        extra: {'content': content, 'imageMetadata': imageMetadata});
+        extra: {
+          'content': content,
+          'imageMetadata': imageMetadata,
+          'chapterData': chapterData,
+          'parentContent': parentContent,
+          'allChapters': allChapters,
+          'currentChapter': currentChapter,
+        });
   }
 
   static void goToReaderPdf(BuildContext context,

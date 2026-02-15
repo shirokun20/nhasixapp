@@ -1,5 +1,6 @@
 import 'package:html/parser.dart' as html_parser;
 import 'package:html/dom.dart';
+import 'package:kuron_core/kuron_core.dart';
 import 'models/crotpedia_series.dart';
 import 'models/crotpedia_genre.dart';
 
@@ -60,6 +61,8 @@ class CrotpediaScraper {
     // reader
     'reader_container': '.reader-area',
     'reader_images': 'p img',
+    'reader_next': '.nextprev a.next, .nav-links a.next, a.next_page, .navigation .rightnav a',
+    'reader_prev': '.nextprev a.prev, .nav-links a.prev, a.prev_page, .navigation .leftnav a',
   };
 
   final Map<String, String> _selectors;
@@ -365,27 +368,62 @@ class CrotpediaScraper {
   /// Parse chapter page to extract image URLs
   /// Input: HTML from /baca/{chapterSlug}/
   /// Output: List of image URLs in order
-  List<String> parseChapterImages(String htmlContent) {
+  /// Parse chapter page to extract image URLs and navigation
+  /// Input: HTML from /baca/{chapterSlug}/
+  /// Output: ChapterData with images and next/prev links
+  ChapterData parseChapterImages(String htmlContent) {
     final document = html_parser.parse(htmlContent);
 
     // Get reader container using configured selector
     final container = document.querySelector(_getSelector('reader_container'));
+    
+    // Images
+    final List<String> images;
+    if (container != null) {
+      final imgElements = container.querySelectorAll(_getSelector('reader_images'));
+      images = imgElements
+          .map((img) => img.attributes['src'] ?? '')
+          .where((src) => src.isNotEmpty)
+          .toList();
+    } else {
+      images = [];
+    }
 
-    if (container == null) return [];
+    // Navigation
+    String? nextId;
+    String? prevId;
+    String? nextTitle;
+    String? prevTitle;
 
-    // Images within container
-    final images = container.querySelectorAll(_getSelector('reader_images'));
+    // Try to find next/prev links
+    // Note: Selectors might return multiple buttons (top and bottom), just take first valid
+    final nextEl = document.querySelector(_getSelector('reader_next'));
+    if (nextEl != null) {
+      final href = nextEl.attributes['href'];
+      nextId = _extractSlug(href);
+      nextTitle = nextEl.text.trim(); // Often just "Next"
+    }
 
-    return images
-        .map((img) => img.attributes['src'] ?? '')
-        .where((src) => src.isNotEmpty)
-        .toList();
+    final prevEl = document.querySelector(_getSelector('reader_prev'));
+    if (prevEl != null) {
+      final href = prevEl.attributes['href'];
+      prevId = _extractSlug(href);
+      prevTitle = prevEl.text.trim(); // Often just "Prev"
+    }
+
+    return ChapterData(
+      images: images,
+      nextChapterId: nextId != null && nextId.isNotEmpty ? nextId : null,
+      prevChapterId: prevId != null && prevId.isNotEmpty ? prevId : null,
+      nextChapterTitle: nextTitle,
+      prevChapterTitle: prevTitle,
+    );
   }
 
   // ============ Helper Methods ============
 
   String _extractSlug(String? url) {
-    if (url == null || url.isEmpty) return '';
+    if (url == null || url.isEmpty || url.startsWith('#')) return '';
 
     try {
       final uri = Uri.parse(url);

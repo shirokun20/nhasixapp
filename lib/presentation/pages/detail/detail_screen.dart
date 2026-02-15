@@ -26,11 +26,13 @@ import 'widgets/comments_section_widget.dart';
 class DetailScreen extends StatefulWidget {
   final String contentId;
   final String? sourceId;
+  final String? chapterId; // Chapter ID from history for read indicator
 
   const DetailScreen({
     super.key,
     required this.contentId,
     this.sourceId,
+    this.chapterId,
   });
 
   @override
@@ -71,6 +73,40 @@ class _DetailScreenState extends State<DetailScreen> {
     if (downloadBloc.state is DownloadInitial) {
       downloadBloc.add(const DownloadInitializeEvent());
     }
+
+    // Auto-scroll to chapter after content is loaded
+    if (widget.chapterId != null && widget.chapterId!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToChapter(widget.chapterId!);
+      });
+    }
+  }
+
+  /// Auto-scroll to specific chapter in the list
+  void _scrollToChapter(String chapterId) {
+    final state = _detailCubit.state;
+    if (state is! DetailLoaded) return;
+    if (state.content.chapters == null || state.content.chapters!.isEmpty) {
+      return;
+    }
+
+    // Find chapter index
+    final chapters = state.content.chapters!;
+    final chapterIndex = chapters.indexWhere((c) => c.id == chapterId);
+
+    if (chapterIndex == -1) return;
+
+    // Calculate scroll position (approximate)
+    // Chapter list starts after metadata sections
+    final approximateOffset = 600 + (chapterIndex * 100);
+
+    _scrollController.animateTo(
+      approximateOffset.toDouble(),
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+
+    Logger().i('Auto-scrolled to chapter ${chapterIndex + 1}');
   }
 
   /// Load content detail and related content as separate API calls
@@ -89,6 +125,18 @@ class _DetailScreenState extends State<DetailScreen> {
     _scrollController.dispose();
     _detailCubit.close();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh chapter history when returning from reader (screen regains focus)
+    final route = ModalRoute.of(context);
+    if (route?.isCurrent == true) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _detailCubit.refreshChapterHistory();
+      });
+    }
   }
 
   /// Navigate to tag browsing mode (SIMPLIFIED routing)
@@ -189,8 +237,13 @@ class _DetailScreenState extends State<DetailScreen> {
               return BlocListener<DetailCubit, DetailState>(
                 listener: (context, state) {
                   if (state is DetailReaderReady) {
-                    _readContent(state.chapterContent,
-                        forceStartFromBeginning: true);
+                    _readContent(
+                      state.chapterContent,
+                      forceStartFromBeginning: true,
+                      parentContent: state.content, // Parent series
+                      chapterData: state.chapterData, // Navigation data
+                      currentChapter: state.currentChapter, // Current chapter
+                    );
                     context.read<DetailCubit>().resetToLoaded();
                   } else if (state is DetailActionFailure) {
                     if (state.needsLogin) {
@@ -840,6 +893,11 @@ class _DetailScreenState extends State<DetailScreen> {
   Widget _buildChapterList(Content content) {
     final chapters = content.chapters!;
     final l10n = AppLocalizations.of(context)!;
+    // Get chapter history from current state
+    final currentState = _detailCubit.state;
+    final chapterHistory = currentState is DetailLoaded
+        ? (currentState.chapterHistory ?? {})
+        : <String, History>{};
 
     return Container(
       decoration: BoxDecoration(
@@ -970,23 +1028,53 @@ class _DetailScreenState extends State<DetailScreen> {
                 favorites: 0,
               );
 
+              // Check reading status for creative indicators
+              final isRead = chapterHistory.containsKey(chapter.id);
+              final isCompleted =
+                  isRead && chapterHistory[chapter.id]!.isCompleted;
+              final progress = isRead
+                  ? chapterHistory[chapter.id]!.lastPage /
+                      chapterHistory[chapter.id]!.totalPages
+                  : 0.0;
+
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .outline
-                        .withValues(alpha: 0.2),
+                    color: isCompleted
+                        ? Theme.of(context)
+                            .colorScheme
+                            .tertiary
+                            .withValues(alpha: 0.5)
+                        : isRead
+                            ? Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.3)
+                            : Theme.of(context)
+                                .colorScheme
+                                .outline
+                                .withValues(alpha: 0.2),
+                    width: isRead ? 2 : 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .shadow
-                          .withValues(alpha: 0.04),
+                      color: isCompleted
+                          ? Theme.of(context)
+                              .colorScheme
+                              .tertiary
+                              .withValues(alpha: 0.15)
+                          : isRead
+                              ? Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withValues(alpha: 0.1)
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .shadow
+                                  .withValues(alpha: 0.04),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -1001,42 +1089,172 @@ class _DetailScreenState extends State<DetailScreen> {
                       padding: const EdgeInsets.all(16),
                       child: Row(
                         children: [
-                          // Chapter number badge with gradient
-                          Container(
-                            width: 52,
-                            height: 52,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Theme.of(context).colorScheme.primary,
-                                  Theme.of(context).colorScheme.secondary,
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(14),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .primary
-                                      .withValues(alpha: 0.25),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
+                          // Chapter number badge with status-based styling
+                          Stack(
+                            children: [
+                              Container(
+                                width: 52,
+                                height: 52,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: isCompleted
+                                        ? [
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .tertiary,
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .tertiaryContainer,
+                                          ]
+                                        : isRead
+                                            ? [
+                                                Theme.of(context)
+                                                    .colorScheme
+                                                    .primary,
+                                                Theme.of(context)
+                                                    .colorScheme
+                                                    .secondary,
+                                              ]
+                                            : [
+                                                Theme.of(context)
+                                                    .colorScheme
+                                                    .primary,
+                                                Theme.of(context)
+                                                    .colorScheme
+                                                    .secondary,
+                                              ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: isCompleted
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .tertiary
+                                              .withValues(alpha: 0.4)
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withValues(alpha: 0.25),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                            child: Center(
-                              child: Text(
-                                '${index + 1}',
-                                style: TextStyleConst.headingSmall.copyWith(
-                                  color:
-                                      Theme.of(context).colorScheme.onPrimary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
+                                child: Center(
+                                  child: isCompleted
+                                      ? Icon(
+                                          Icons.check,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onTertiary,
+                                          size: 28,
+                                        )
+                                      : isRead
+                                          ? Stack(
+                                              alignment: Alignment.center,
+                                              children: [
+                                                Text(
+                                                  '${index + 1}',
+                                                  style: TextStyleConst
+                                                      .headingSmall
+                                                      .copyWith(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .onPrimary,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                                // Progress ring for in-progress
+                                                SizedBox(
+                                                  width: 40,
+                                                  height: 40,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    value: progress,
+                                                    strokeWidth: 3,
+                                                    backgroundColor: Colors
+                                                        .white
+                                                        .withValues(alpha: 0.3),
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                            Color>(
+                                                      Colors.white.withValues(
+                                                          alpha: 0.9),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                          : Text(
+                                              '${index + 1}',
+                                              style: TextStyleConst.headingSmall
+                                                  .copyWith(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 18,
+                                              ),
+                                            ),
                                 ),
                               ),
-                            ),
+                              // Status dot indicator
+                              if (isRead)
+                                Positioned(
+                                  right: 0,
+                                  top: 0,
+                                  child: Container(
+                                    width: 14,
+                                    height: 14,
+                                    decoration: BoxDecoration(
+                                      color: isCompleted
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .tertiary
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .surface,
+                                        width: 2,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: (isCompleted
+                                                  ? Theme.of(context)
+                                                      .colorScheme
+                                                      .tertiary
+                                                  : Theme.of(context)
+                                                      .colorScheme
+                                                      .primary)
+                                              .withValues(alpha: 0.5),
+                                          blurRadius: 4,
+                                        ),
+                                      ],
+                                    ),
+                                    child: Icon(
+                                      isCompleted
+                                          ? Icons.done
+                                          : Icons.play_arrow,
+                                      size: 8,
+                                      color: isCompleted
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .onTertiary
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                           const SizedBox(width: 16),
 
@@ -1045,26 +1263,76 @@ class _DetailScreenState extends State<DetailScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  chapter.title,
-                                  style: TextStyleConst.bodyLarge.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        chapter.title,
+                                        style:
+                                            TextStyleConst.bodyLarge.copyWith(
+                                          fontWeight: isRead
+                                              ? FontWeight.w700
+                                              : FontWeight.w600,
+                                          color: isCompleted
+                                              ? Theme.of(context)
+                                                  .colorScheme
+                                                  .tertiary
+                                              : isRead
+                                                  ? Theme.of(context)
+                                                      .colorScheme
+                                                      .primary
+                                                  : Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                if (chapter.uploadDate != null) ...[
-                                  const SizedBox(height: 6),
-                                  Row(
-                                    children: [
+                                const SizedBox(height: 4),
+                                // Subtitle row with reading info or upload date
+                                Row(
+                                  children: [
+                                    if (isRead) ...[
+                                      Icon(
+                                        isCompleted
+                                            ? Icons.check_circle
+                                            : Icons.auto_stories,
+                                        size: 12,
+                                        color: isCompleted
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .tertiary
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        isCompleted
+                                            ? 'Chapter completed'
+                                            : 'Continue from page ${chapterHistory[chapter.id]!.lastPage}',
+                                        style:
+                                            TextStyleConst.bodySmall.copyWith(
+                                          color: isCompleted
+                                              ? Theme.of(context)
+                                                  .colorScheme
+                                                  .tertiary
+                                              : Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ] else if (chapter.uploadDate != null) ...[
                                       Icon(
                                         Icons.schedule,
-                                        size: 14,
+                                        size: 12,
                                         color: Theme.of(context)
                                             .colorScheme
-                                            .primary,
+                                            .onSurfaceVariant,
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
@@ -1078,8 +1346,8 @@ class _DetailScreenState extends State<DetailScreen> {
                                         ),
                                       ),
                                     ],
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ],
                             ),
                           ),
@@ -1104,7 +1372,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                 const SizedBox(width: 8),
                               ],
 
-                              // Read button with modern styling
+                              // Read button with status-based styling
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
@@ -1112,21 +1380,38 @@ class _DetailScreenState extends State<DetailScreen> {
                                 ),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: [
-                                      Theme.of(context).colorScheme.primary,
-                                      Theme.of(context)
-                                          .colorScheme
-                                          .primary
-                                          .withValues(alpha: 0.8),
-                                    ],
+                                    colors: isCompleted
+                                        ? [
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .tertiary,
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .tertiary
+                                                .withValues(alpha: 0.8),
+                                          ]
+                                        : [
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                                .withValues(alpha: 0.8),
+                                          ],
                                   ),
                                   borderRadius: BorderRadius.circular(12),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary
-                                          .withValues(alpha: 0.3),
+                                      color: isCompleted
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .tertiary
+                                              .withValues(alpha: 0.3)
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withValues(alpha: 0.3),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
                                     ),
@@ -1135,13 +1420,55 @@ class _DetailScreenState extends State<DetailScreen> {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Text(
-                                      l10n.readChapter,
-                                      style:
-                                          TextStyleConst.labelMedium.copyWith(
+                                    // Status icon based on reading progress
+                                    if (isCompleted)
+                                      Icon(
+                                        Icons.emoji_events,
+                                        size: 16,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onTertiary,
+                                      )
+                                    else if (isRead)
+                                      SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          value: progress,
+                                          strokeWidth: 2,
+                                          backgroundColor: Colors.white
+                                              .withValues(alpha: 0.3),
+                                          valueColor:
+                                              const AlwaysStoppedAnimation<
+                                                  Color>(
+                                            Colors.white,
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      Icon(
+                                        Icons.menu_book,
+                                        size: 16,
                                         color: Theme.of(context)
                                             .colorScheme
                                             .onPrimary,
+                                      ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      isCompleted
+                                          ? 'Read Again'
+                                          : isRead
+                                              ? 'Continue'
+                                              : l10n.readChapter,
+                                      style:
+                                          TextStyleConst.labelMedium.copyWith(
+                                        color: isCompleted
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .onTertiary
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .onPrimary,
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
@@ -1149,9 +1476,13 @@ class _DetailScreenState extends State<DetailScreen> {
                                     Icon(
                                       Icons.arrow_forward,
                                       size: 16,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onPrimary,
+                                      color: isCompleted
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .onTertiary
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
                                     ),
                                   ],
                                 ),
@@ -1650,7 +1981,13 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  void _readContent(Content content, {bool forceStartFromBeginning = false}) {
+  void _readContent(
+    Content content, {
+    bool forceStartFromBeginning = false,
+    Content? parentContent, // Parent series for chapter mode
+    ChapterData? chapterData, // Navigation data
+    Chapter? currentChapter, // Current chapter
+  }) {
     // Get metadata from current state if available
     final currentState = _detailCubit.state;
     final imageMetadata =
@@ -1666,12 +2003,35 @@ class _DetailScreenState extends State<DetailScreen> {
           '⚠️ Content passed from DetailScreen has no images, forcing reader to fetch fresh data: ${content.id}');
     }
 
+    // Extract allChapters from parentContent
+    final allChapters = parentContent?.chapters;
+
+    // 🔍 DEBUG LOGGING - Chapter Data Flow
+    Logger().i('📤 DetailScreen._readContent - Sending to Reader:');
+    Logger().i('  contentId: ${content.id}');
+    Logger().i('  content.title: ${content.title}');
+    Logger().i('  parentContent: ${parentContent?.title ?? "NULL"}');
+    Logger().i('  parentContent.id: ${parentContent?.id ?? "NULL"}');
+    Logger().i('  allChapters count: ${allChapters?.length ?? 0}');
+    if (allChapters != null && allChapters.isNotEmpty) {
+      Logger().i('  allChapters[0]: ${allChapters.first.title}');
+      Logger().i('  allChapters[last]: ${allChapters.last.title}');
+    }
+    Logger().i('  currentChapter: ${currentChapter?.title ?? "NULL"}');
+    Logger().i('  currentChapter.id: ${currentChapter?.id ?? "NULL"}');
+    Logger().i('  chapterData.prevId: ${chapterData?.prevChapterId ?? "NULL"}');
+    Logger().i('  chapterData.nextId: ${chapterData?.nextChapterId ?? "NULL"}');
+
     AppRouter.goToReader(
       context,
       content.id,
       forceStartFromBeginning: forceStartFromBeginning,
       content: contentToPass,
       imageMetadata: imageMetadata, // Pass metadata to reader
+      chapterData: chapterData, // Pass navigation data
+      parentContent: parentContent, // Pass parent series
+      allChapters: allChapters, // Pass all chapters
+      currentChapter: currentChapter, // Pass current chapter
     );
   }
 

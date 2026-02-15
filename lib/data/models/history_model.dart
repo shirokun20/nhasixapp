@@ -12,6 +12,10 @@ class HistoryModel extends History {
     super.isCompleted = false,
     super.title,
     super.coverUrl,
+    super.parentId,
+    super.chapterId,
+    super.chapterIndex,
+    super.chapterTitle,
   });
 
   /// Create HistoryModel from History entity
@@ -19,6 +23,7 @@ class HistoryModel extends History {
     History history, {
     String? title,
     String? coverUrl,
+    String? parentId,
   }) {
     return HistoryModel(
       contentId: history.contentId,
@@ -30,6 +35,10 @@ class HistoryModel extends History {
       isCompleted: history.isCompleted,
       title: title,
       coverUrl: coverUrl,
+      parentId: parentId ?? history.parentId,
+      chapterId: history.chapterId,
+      chapterIndex: history.chapterIndex,
+      chapterTitle: history.chapterTitle,
     );
   }
 
@@ -45,6 +54,10 @@ class HistoryModel extends History {
       isCompleted: isCompleted,
       title: title,
       coverUrl: coverUrl,
+      parentId: parentId,
+      chapterId: chapterId,
+      chapterIndex: chapterIndex,
+      chapterTitle: chapterTitle,
     );
   }
 
@@ -60,6 +73,10 @@ class HistoryModel extends History {
       isCompleted: (map['is_completed'] ?? 0) == 1,
       title: map['title'],
       coverUrl: map['cover_url'],
+      parentId: map['parent_id'] as String?,
+      chapterId: map['chapter_id'] as String?,
+      chapterIndex: map['chapter_index'] as int?,
+      chapterTitle: map['chapter_title'] as String?,
     );
   }
 
@@ -70,11 +87,15 @@ class HistoryModel extends History {
       'source_id': sourceId,
       'title': title,
       'cover_url': coverUrl,
+      'parent_id': parentId,
       'last_viewed': lastViewed.millisecondsSinceEpoch,
       'last_page': lastPage,
       'total_pages': totalPages,
       'time_spent': timeSpent.inMilliseconds,
       'is_completed': isCompleted ? 1 : 0,
+      'chapter_id': chapterId ?? '',
+      'chapter_index': chapterIndex ?? 0,
+      'chapter_title': chapterTitle,
     };
   }
 }

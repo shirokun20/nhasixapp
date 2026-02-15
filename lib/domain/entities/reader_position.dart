@@ -12,6 +12,9 @@ class ReaderPosition extends Equatable {
     this.readingTimeMinutes = 0,
     this.title,
     this.coverUrl,
+    this.chapterId,
+    this.chapterIndex,
+    this.chapterTitle,
   });
 
   /// Content ID (unique identifier)
@@ -38,6 +41,15 @@ class ReaderPosition extends Equatable {
   /// Optional cover URL for display  
   final String? coverUrl;
 
+  /// Optional chapter ID for chapter-based content
+  final String? chapterId;
+
+  /// Optional chapter index for ordering
+  final int? chapterIndex;
+
+  /// Optional chapter title
+  final String? chapterTitle;
+
   @override
   List<Object?> get props => [
         contentId,
@@ -48,6 +60,9 @@ class ReaderPosition extends Equatable {
         readingTimeMinutes,
         title,
         coverUrl,
+        chapterId,
+        chapterIndex,
+        chapterTitle,
       ];
 
   /// Copy with new values
@@ -60,6 +75,9 @@ class ReaderPosition extends Equatable {
     int? readingTimeMinutes,
     String? title,
     String? coverUrl,
+    String? chapterId,
+    int? chapterIndex,
+    String? chapterTitle,
   }) {
     return ReaderPosition(
       contentId: contentId ?? this.contentId,
@@ -70,6 +88,9 @@ class ReaderPosition extends Equatable {
       readingTimeMinutes: readingTimeMinutes ?? this.readingTimeMinutes,
       title: title ?? this.title,
       coverUrl: coverUrl ?? this.coverUrl,
+      chapterId: chapterId ?? this.chapterId,
+      chapterIndex: chapterIndex ?? this.chapterIndex,
+      chapterTitle: chapterTitle ?? this.chapterTitle,
     );
   }
 
@@ -108,6 +129,9 @@ class ReaderPosition extends Equatable {
     String? title,
     String? coverUrl,
     int readingTimeMinutes = 0,
+    String? chapterId,
+    int? chapterIndex,
+    String? chapterTitle,
   }) {
     return ReaderPosition(
       contentId: contentId,
@@ -118,6 +142,9 @@ class ReaderPosition extends Equatable {
       readingTimeMinutes: readingTimeMinutes,
       title: title,
       coverUrl: coverUrl,
+      chapterId: chapterId,
+      chapterIndex: chapterIndex,
+      chapterTitle: chapterTitle,
     );
   }
 
@@ -127,6 +154,9 @@ class ReaderPosition extends Equatable {
     required int totalPages,
     String? title,
     String? coverUrl,
+    String? chapterId,
+    int? chapterIndex,
+    String? chapterTitle,
   }) {
     return ReaderPosition.create(
       contentId: contentId,
@@ -134,6 +164,9 @@ class ReaderPosition extends Equatable {
       totalPages: totalPages,
       title: title,
       coverUrl: coverUrl,
+      chapterId: chapterId,
+      chapterIndex: chapterIndex,
+      chapterTitle: chapterTitle,
     );
   }
 

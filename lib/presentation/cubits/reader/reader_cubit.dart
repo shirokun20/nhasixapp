@@ -7,6 +7,7 @@ import 'package:equatable/equatable.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../../domain/entities/reader_position.dart';
 import '../../../domain/usecases/content/get_content_detail_usecase.dart';
+import '../../../domain/usecases/content/get_chapter_images_usecase.dart';
 import '../../../domain/usecases/history/add_to_history_usecase.dart';
 import '../../../domain/repositories/reader_settings_repository.dart';
 import '../../../domain/repositories/reader_repository.dart';
@@ -24,6 +25,7 @@ part 'reader_state.dart';
 class ReaderCubit extends Cubit<ReaderState> {
   ReaderCubit({
     required this.getContentDetailUseCase,
+    required this.getChapterImagesUseCase,
     required this.addToHistoryUseCase,
     required this.readerSettingsRepository,
     required this.readerRepository,
@@ -33,6 +35,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   }) : super(const ReaderInitial());
 
   final GetContentDetailUseCase getContentDetailUseCase;
+  final GetChapterImagesUseCase getChapterImagesUseCase;
   final AddToHistoryUseCase addToHistoryUseCase;
   final ReaderSettingsRepository readerSettingsRepository;
   final ReaderRepository readerRepository;
@@ -47,15 +50,56 @@ class ReaderCubit extends Cubit<ReaderState> {
   // Webtoon/manhwa auto-detection
   bool _hasDetectedWebtoon = false;
 
+  // Chapter navigation context
+  Content? _parentContent; // Parent series for chapter navigation
+  List<Chapter>? _allChapters; // All chapters available for navigation
+
+  // Public getters for chapter navigation
+  Content? get parentContent => _parentContent;
+  List<Chapter>? get allChapters => _allChapters;
+
   /// Load content for reading with offline support - OPTIMIZED VERSION
-  Future<void> loadContent(String contentId,
-      {int initialPage = 1,
-      bool forceStartFromBeginning = false,
-      Content? preloadedContent,
-      List<ImageMetadata>? imageMetadata}) async {
+  Future<void> loadContent(
+    String contentId, {
+    int initialPage = 1,
+    bool forceStartFromBeginning = false,
+    Content? preloadedContent,
+    List<ImageMetadata>? imageMetadata,
+    ChapterData? chapterData,
+    Content? parentContent, // Parent series for chapter mode
+    List<Chapter>? allChapters, // All chapters for navigation
+    Chapter? currentChapter, // Current chapter being read
+  }) async {
     try {
       _stopAutoHideTimer();
       emit(ReaderLoading(state));
+
+      // Store chapter navigation context first
+      _parentContent = parentContent;
+      _allChapters = allChapters;
+
+      // 🔍 DEBUG LOGGING - What did ReaderCubit receive?
+      _logger.i('📥 ReaderCubit.loadContent - Received:');
+      _logger.i('  contentId: $contentId');
+      _logger.i('  preloadedContent: ${preloadedContent?.title ?? "NULL"}');
+      _logger.i('  parentContent: ${parentContent?.title ?? "NULL"}');
+      _logger.i('  parentContent.id: ${parentContent?.id ?? "NULL"}');
+      _logger.i('  allChapters: ${allChapters?.length ?? 0} chapters');
+      if (allChapters != null && allChapters.isNotEmpty) {
+        _logger.i(
+            '    First: ${allChapters.first.title} (${allChapters.first.id})');
+        _logger
+            .i('    Last: ${allChapters.last.title} (${allChapters.last.id})');
+      }
+      _logger.i('  currentChapter: ${currentChapter?.title ?? "NULL"}');
+      _logger.i(
+          '  chapterData: prev=${chapterData?.prevChapterId}, next=${chapterData?.nextChapterId}');
+      _logger.i('');
+      _logger.i('  Stored in ReaderCubit:');
+      _logger.i('  _parentContent: ${_parentContent?.title ?? "NULL"}');
+      _logger.i('  _allChapters: ${_allChapters?.length ?? 0} chapters');
+
+      // Check network connectivity?.chapters;
 
       final isConnected = networkCubit.isConnected;
 
@@ -132,7 +176,6 @@ class ReaderCubit extends Cubit<ReaderState> {
           _logger.w('Online fetch failed: $e');
         }
       }
-
       // Strategy D: Last Resort Fallback (Partial Preloaded or Offline Retry)
       if (content == null) {
         if (preloadedContent != null && preloadedContent.imageUrls.isNotEmpty) {
@@ -158,6 +201,26 @@ class ReaderCubit extends Cubit<ReaderState> {
         throw Exception('Content not available online or offline');
       }
 
+      // 3.5. Fetch ChapterData if missing (for navigation)
+      // If we loaded content but don't have chapterData (navigation links), try to fetch it
+      if (chapterData == null &&
+          isConnected &&
+          _isCrotpediaChapterId(contentId)) {
+        try {
+          _logger
+              .i('🔍 Fetching missing chapter data for navigation: $contentId');
+          final fetchedChapterData =
+              await getChapterImagesUseCase(GetChapterImagesParams.fromString(
+            contentId,
+            sourceId: content.sourceId,
+          ));
+          chapterData = fetchedChapterData;
+        } catch (e) {
+          _logger.w('Failed to fetch chapter navigation data: $e');
+          // Start without navigation rather than failing completely
+        }
+      }
+
       // 4. Emit Loaded State Immediately
       emit(state.copyWith(
         content: content,
@@ -168,6 +231,8 @@ class ReaderCubit extends Cubit<ReaderState> {
         readingTimer: Duration.zero,
         isOfflineMode: isOfflineMode,
         imageMetadata: imageMetadata,
+        chapterData: chapterData,
+        currentChapter: currentChapter,
       ));
 
       _logImageUrlMapping(content);
@@ -256,6 +321,85 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
+  /// Load next chapter
+  Future<void> loadNextChapter() async {
+    if (state.chapterData?.nextChapterId == null) return;
+    await loadChapter(state.chapterData!.nextChapterId!);
+  }
+
+  /// Load previous chapter
+  Future<void> loadPreviousChapter() async {
+    if (state.chapterData?.prevChapterId == null) return;
+    await loadChapter(state.chapterData!.prevChapterId!);
+  }
+
+  Future<void> loadChapter(String chapterId) async {
+    try {
+      if (_allChapters == null || _allChapters!.isEmpty) {
+        _logger.e('⛔ Cannot navigate: No chapter list available');
+        emit(ReaderError(state.copyWith(
+          message: 'Chapter navigation not available',
+        )));
+        return;
+      }
+
+      emit(ReaderLoading(state));
+
+      // IMPORTANT: We now rely on _allChapters list passed from DetailScreen
+      // This list contains chapters in the correct order with their IDs
+      final chapter = _allChapters!.firstWhere(
+        (ch) => ch.id == chapterId,
+        orElse: () =>
+            Chapter(id: chapterId, title: 'Unknown Chapter', url: chapterId),
+      );
+
+      _logger.i('Loading chapter: ${chapter.title} (${chapter.id})');
+
+      // Fetch chapter images and navigation data
+      final chapterData =
+          await getChapterImagesUseCase(GetChapterImagesParams.fromString(
+        chapterId,
+        sourceId: _parentContent?.sourceId ?? state.content?.sourceId,
+      ));
+
+      if (chapterData.images.isEmpty) {
+        emit(ReaderError(state.copyWith(
+          message: 'Failed to load chapter images',
+        )));
+        return;
+      }
+
+      // Extract the parent series title (before the ' - Chapter' part)
+      final parentTitle =
+          _parentContent?.title ?? state.content?.title.split(' - ')[0] ?? '';
+      final fullTitle = '$parentTitle - ${chapter.title}';
+
+      final newContent = (_parentContent ?? state.content!).copyWith(
+        id: chapterId,
+        title: fullTitle,
+        imageUrls: chapterData.images,
+        pageCount: chapterData.images.length,
+        chapters: _allChapters ?? [], // Include all chapters for navigation
+      );
+
+      emit(ReaderLoaded(state.copyWith(
+        content: newContent,
+        currentPage: 1,
+        chapterData: chapterData,
+        currentChapter: chapter,
+        readingTimer: Duration.zero,
+      )));
+
+      // Save to history
+      await _saveToHistory();
+    } catch (e) {
+      _logger.e('Failed to load chapter: $e');
+      emit(ReaderError(state.copyWith(
+        message: 'Failed to load chapter: ${e.toString()}',
+      )));
+    }
+  }
+
   /// Jump to specific page
   void jumpToPage(int page) {
     goToPage(page);
@@ -327,21 +471,73 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       await readerRepository.saveReaderPosition(position);
 
-      await readerRepository.saveReaderPosition(position);
-
-      // Also update history - ONLY for nhentai
-      if (state.content!.sourceId == SourceType.nhentai.id) {
-        final params = AddToHistoryParams.fromString(
-          state.content!.id,
-          validPage,
-          totalPages,
-          timeSpent: state.readingTimer ?? Duration.zero,
-          title: state.content!.title,
-          coverUrl: state.content!.coverUrl,
-          sourceId: state.content!.sourceId,
-        );
-        await addToHistoryUseCase(params);
+      // Calculate chapter index if available
+      int? chapterIndex;
+      if (state.currentChapter != null && state.content?.chapters != null) {
+        chapterIndex = state.content!.chapters!
+            .indexWhere((c) => c.id == state.currentChapter!.id);
       }
+
+      // Determine chapter ID - fallback to content.id for chapter mode
+      String? chapterId = state.currentChapter?.id;
+      String? chapterTitle = state.currentChapter?.title;
+
+      // If currentChapter is null but content.id looks like a chapter ID, use it
+      if (chapterId == null || chapterId.isEmpty) {
+        final contentId = state.content!.id;
+        if (_isCrotpediaChapterId(contentId)) {
+          chapterId = contentId;
+          // Try to extract chapter title from content title
+          final title = state.content!.title;
+          if (title.contains(' - ')) {
+            chapterTitle = title.split(' - ').last;
+          } else {
+            chapterTitle = title;
+          }
+        }
+      }
+
+      // Additional fallback: if chapterId is still empty but we have chapterTitle
+      // that looks like a chapter ID (contains "-chapter-"), use it
+      if ((chapterId == null || chapterId.isEmpty) &&
+          chapterTitle != null &&
+          chapterTitle.isNotEmpty &&
+          chapterTitle.contains('-chapter-')) {
+        chapterId = chapterTitle;
+      }
+
+      // NEW LOGIC:
+      // - If chapter mode: contentId = chapter.id, parentId = series.id
+      // - If non-chapter mode: contentId = content.id, parentId = null
+      final bool isChapterMode = chapterId != null && chapterId.isNotEmpty;
+      final String historyContentId;
+      final String? historyParentId;
+
+      if (isChapterMode) {
+        // Chapter mode: use chapter.id as contentId
+        historyContentId = chapterId;
+        // parentId is the series ID
+        historyParentId = _parentContent?.id;
+      } else {
+        // Non-chapter mode: use content.id as contentId
+        historyContentId = state.content!.id;
+        historyParentId = null;
+      }
+
+      final params = AddToHistoryParams.fromString(
+        historyContentId,
+        validPage,
+        totalPages,
+        timeSpent: state.readingTimer ?? Duration.zero,
+        title: state.content!.title,
+        coverUrl: state.content!.coverUrl,
+        sourceId: state.content!.sourceId,
+        parentId: historyParentId,
+        chapterId: chapterId,
+        chapterIndex: chapterIndex,
+        chapterTitle: chapterTitle,
+      );
+      await addToHistoryUseCase(params);
     } catch (e, stackTrace) {
       _logger.e('Failed to save silent page update to history',
           error: e, stackTrace: stackTrace);
@@ -673,26 +869,98 @@ class ReaderCubit extends Cubit<ReaderState> {
   }
 
   /// Save current reading progress to history
-  /// Only save history for nhentai source (as requested)
   Future<void> _saveToHistory() async {
     try {
-      // Only allow nhentai source to be saved in history
-      if (state.content != null &&
-          state.content!.sourceId != SourceType.nhentai.id) {
+      // Debug logging
+      _logger.d('📝 _saveToHistory called');
+      _logger.d(
+          '   state.currentChapter: ${state.currentChapter?.title ?? "NULL"}');
+      _logger.d(
+          '   state.currentChapter.id: ${state.currentChapter?.id ?? "NULL"}');
+      _logger.d('   state.content.id: ${state.content!.id}');
+
+      // Calculate chapter index if available
+      int? chapterIndex;
+      if (state.currentChapter != null && state.content?.chapters != null) {
+        chapterIndex = state.content!.chapters!
+            .indexWhere((c) => c.id == state.currentChapter!.id);
+      }
+
+      // Determine chapter ID - fallback to content.id for chapter mode
+      // This ensures chapterId is set even when currentChapter is null
+      String? chapterId = state.currentChapter?.id;
+      String? chapterTitle = state.currentChapter?.title;
+
+      _logger.d('   Initial chapterId: $chapterId');
+      _logger.d('   Initial chapterTitle: $chapterTitle');
+
+      // If currentChapter is null but content.id looks like a chapter ID, use it
+      if (chapterId == null || chapterId.isEmpty) {
+        final contentId = state.content!.id;
+        if (_isCrotpediaChapterId(contentId)) {
+          chapterId = contentId;
+          // Try to extract chapter title from content title
+          // Format: "Series Title - Chapter X" or just "Chapter X"
+          final title = state.content!.title;
+          if (title.contains(' - ')) {
+            chapterTitle = title.split(' - ').last;
+          } else {
+            chapterTitle = title;
+          }
+          _logger.d('📝 Using content.id as chapterId: $chapterId');
+        }
+      }
+
+      // Additional fallback: if chapterId is still empty but we have chapterTitle
+      // that looks like a chapter ID (contains "-chapter-"), use it
+      if ((chapterId == null || chapterId.isEmpty) &&
+          chapterTitle != null &&
+          chapterTitle.isNotEmpty &&
+          chapterTitle.contains('-chapter-')) {
+        chapterId = chapterTitle;
+        _logger.d('📝 Using chapterTitle as chapterId: $chapterId');
+      }
+
+      _logger.d('   Final chapterId: $chapterId');
+      _logger.d('   _parentContent.id: ${_parentContent?.id ?? "NULL"}');
+
+      // NEW LOGIC:
+      // - If chapter mode: contentId = chapter.id, parentId = series.id
+      // - If non-chapter mode: contentId = content.id, parentId = null
+      final bool isChapterMode = chapterId != null && chapterId.isNotEmpty;
+      final String historyContentId;
+      final String? historyParentId;
+
+      if (isChapterMode) {
+        // Chapter mode: use chapter.id as contentId
+        historyContentId = chapterId;
+        // parentId is the series ID
+        historyParentId = _parentContent?.id;
         _logger.d(
-            'Skipping history save for non-nhentai source: ${state.content!.sourceId}');
-        return;
+            '📚 CHAPTER MODE: contentId=$historyContentId, parentId=$historyParentId');
+      } else {
+        // Non-chapter mode: use content.id as contentId
+        historyContentId = state.content!.id;
+        historyParentId = null;
+        _logger.d('📖 NON-CHAPTER MODE: contentId=$historyContentId');
       }
 
       final params = AddToHistoryParams.fromString(
-        state.content!.id,
+        historyContentId,
         state.currentPage ?? 1,
         state.content!.pageCount,
         timeSpent: state.readingTimer ?? Duration.zero,
         title: state.content!.title,
         coverUrl: state.content!.coverUrl,
         sourceId: state.content!.sourceId,
+        parentId: historyParentId,
+        chapterId: chapterId,
+        chapterIndex: chapterIndex,
+        chapterTitle: chapterTitle,
       );
+
+      _logger.d(
+          '📤 Saving history with contentId: ${params.contentId.value}, parentId: ${params.parentId}, chapterId: ${params.chapterId}');
       await addToHistoryUseCase(params);
     } catch (e, stackTrace) {
       _logger.e('Failed to save reading progress to history',

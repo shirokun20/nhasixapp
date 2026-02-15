@@ -11,6 +11,7 @@ import '../base/base_cubit.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_crotpedia/kuron_crotpedia.dart';
 import '../../../../core/utils/error_message_utils.dart';
+import '../../../domain/entities/history.dart';
 
 part 'detail_state.dart';
 
@@ -92,17 +93,27 @@ class DetailCubit extends BaseCubit<DetailState> {
 
       if (isClosed) return;
 
+      // Load chapter history
+      final chapterHistoryList =
+          await _userDataRepository.getAllChapterHistory(contentId);
+      final chapterHistory = {
+        for (var history in chapterHistoryList) history.chapterId!: history
+      };
+
+      if (isClosed) return;
+
       emit(DetailLoaded(
         content: content,
         isFavorited: isFavorited,
         lastUpdated: DateTime.now(),
         imageMetadata: imageMetadata,
+        chapterHistory: chapterHistory,
       ));
 
       logInfo('Successfully loaded content detail: ${content.title}');
     } on LoginRequiredException catch (e) {
       if (isClosed) return;
-      
+
       emit(DetailError(
         message: e.message,
         errorType: 'login_required',
@@ -116,7 +127,7 @@ class DetailCubit extends BaseCubit<DetailState> {
 
       final errorType = determineErrorType(e);
       final message = ErrorMessageUtils.getFriendlyErrorMessage(e);
-      
+
       emit(DetailError(
         message: message,
         errorType: errorType,
@@ -377,17 +388,21 @@ class DetailCubit extends BaseCubit<DetailState> {
         isFavorited: currentState.isFavorited,
         lastUpdated: currentState.lastUpdated,
         imageMetadata: currentState.imageMetadata,
+        chapterHistory: currentState.chapterHistory,
       ));
 
       final source =
           _contentSourceRegistry.getSource(currentState.content.sourceId);
 
       List<String> images = [];
+      ChapterData? chapterData;
 
       if (source is CrotpediaSource) {
-        images = await source.getChapterImages(chapter.id);
+        chapterData = await source.getChapterImages(chapter.id);
+        images = chapterData.images;
       } else if (source is KomiktapSource) {
-        images = await source.getChapterImages(chapter.id);
+        chapterData = await source.getChapterImages(chapter.id);
+        images = chapterData.images;
       } else {
         logWarning(
             'Source ${source?.displayName} does not support getChapterImages direct call');
@@ -412,6 +427,7 @@ class DetailCubit extends BaseCubit<DetailState> {
           isFavorited: currentState.isFavorited,
           lastUpdated: currentState.lastUpdated,
           imageMetadata: currentState.imageMetadata,
+          chapterHistory: currentState.chapterHistory,
           needsLogin: needsLogin,
         ));
 
@@ -421,8 +437,8 @@ class DetailCubit extends BaseCubit<DetailState> {
       }
 
       // Create a temporary Content object for the Reader
+      // KEEP the original content ID (Series ID) so history/settings work correctly
       final chapterContent = currentState.content.copyWith(
-        id: chapter.id,
         title: '${currentState.content.title} - ${chapter.title}',
         imageUrls: images,
         pageCount: images.length,
@@ -435,17 +451,21 @@ class DetailCubit extends BaseCubit<DetailState> {
         isFavorited: currentState.isFavorited,
         lastUpdated: currentState.lastUpdated,
         imageMetadata: currentState.imageMetadata,
+        chapterHistory: currentState.chapterHistory,
+        chapterData: chapterData,
+        currentChapter: chapter, // Add this field to DetailReaderReady state
       ));
     } catch (e) {
       logger.e('Failed to open chapter: $e');
       final message = ErrorMessageUtils.getFriendlyErrorMessage(e);
-      
+
       emit(DetailActionFailure(
         message: 'Failed to open chapter: $message',
         content: currentState.content,
         isFavorited: currentState.isFavorited,
         lastUpdated: currentState.lastUpdated,
         imageMetadata: currentState.imageMetadata,
+        chapterHistory: currentState.chapterHistory,
         error: e,
       ));
     }
@@ -460,6 +480,7 @@ class DetailCubit extends BaseCubit<DetailState> {
         isFavorited: currentState.isFavorited,
         lastUpdated: currentState.lastUpdated,
         imageMetadata: currentState.imageMetadata,
+        chapterHistory: currentState.chapterHistory,
       ));
     } else if (currentState is DetailActionFailure) {
       emit(DetailLoaded(
@@ -467,7 +488,40 @@ class DetailCubit extends BaseCubit<DetailState> {
         isFavorited: currentState.isFavorited,
         lastUpdated: currentState.lastUpdated,
         imageMetadata: currentState.imageMetadata,
+        chapterHistory: currentState.chapterHistory,
       ));
+    }
+  }
+
+  /// Refresh chapter history from database
+  /// Call this when returning from reader to update read indicators
+  Future<void> refreshChapterHistory() async {
+    final currentState = state;
+    if (currentState is! DetailLoaded) {
+      logWarning('Cannot refresh chapter history: content not loaded');
+      return;
+    }
+
+    try {
+      logInfo('Refreshing chapter history for: ${currentState.content.id}');
+
+      final chapterHistoryList = await _userDataRepository
+          .getAllChapterHistory(currentState.content.id);
+      final chapterHistory = {
+        for (var history in chapterHistoryList) history.chapterId!: history
+      };
+
+      if (isClosed) return;
+
+      emit(currentState.copyWith(
+        chapterHistory: chapterHistory,
+        lastUpdated: DateTime.now(),
+      ));
+
+      logInfo('Chapter history refreshed: ${chapterHistory.length} entries');
+    } catch (e) {
+      logWarning('Failed to refresh chapter history: $e');
+      // Don't emit error, just keep current state
     }
   }
 }

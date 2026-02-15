@@ -46,6 +46,10 @@ class AddToHistoryUseCase extends UseCase<void, AddToHistoryParams> {
         coverUrl: params.coverUrl,
         title: params.title,
         sourceId: params.sourceId,
+        parentId: params.parentId,
+        chapterId: params.chapterId,
+        chapterIndex: params.chapterIndex,
+        chapterTitle: params.chapterTitle,
       );
 
       await _userDataRepository.saveHistory(history);
@@ -67,6 +71,10 @@ class AddToHistoryParams extends UseCaseParams {
     this.coverUrl,
     this.title,
     this.sourceId = 'nhentai',
+    this.parentId,
+    this.chapterId,
+    this.chapterIndex,
+    this.chapterTitle,
   });
 
   final ContentId contentId;
@@ -76,9 +84,23 @@ class AddToHistoryParams extends UseCaseParams {
   final String? coverUrl;
   final String? title;
   final String sourceId;
+  final String? parentId; // Parent/series ID for chapter mode
+  final String? chapterId;
+  final int? chapterIndex;
+  final String? chapterTitle;
 
   @override
-  List<Object?> get props => [contentId, page, totalPages, timeSpent, sourceId];
+  List<Object?> get props => [
+        contentId,
+        page,
+        totalPages,
+        timeSpent,
+        sourceId,
+        parentId,
+        chapterId,
+        chapterIndex,
+        chapterTitle,
+      ];
 
   AddToHistoryParams copyWith({
     ContentId? contentId,
@@ -88,6 +110,10 @@ class AddToHistoryParams extends UseCaseParams {
     String? coverUrl,
     String? title,
     String? sourceId,
+    String? parentId,
+    String? chapterId,
+    int? chapterIndex,
+    String? chapterTitle,
   }) {
     return AddToHistoryParams(
       contentId: contentId ?? this.contentId,
@@ -97,6 +123,10 @@ class AddToHistoryParams extends UseCaseParams {
       title: title,
       coverUrl: coverUrl,
       sourceId: sourceId ?? this.sourceId,
+      parentId: parentId ?? this.parentId,
+      chapterId: chapterId ?? this.chapterId,
+      chapterIndex: chapterIndex ?? this.chapterIndex,
+      chapterTitle: chapterTitle ?? this.chapterTitle,
     );
   }
 
@@ -109,6 +139,10 @@ class AddToHistoryParams extends UseCaseParams {
     String? coverUrl,
     String? title,
     String sourceId = 'nhentai',
+    String? parentId,
+    String? chapterId,
+    int? chapterIndex,
+    String? chapterTitle,
   }) {
     return AddToHistoryParams(
       contentId: ContentId.fromString(contentId),
@@ -118,6 +152,10 @@ class AddToHistoryParams extends UseCaseParams {
       title: title,
       coverUrl: coverUrl,
       sourceId: sourceId,
+      parentId: parentId,
+      chapterId: chapterId,
+      chapterIndex: chapterIndex,
+      chapterTitle: chapterTitle,
     );
   }
 
@@ -130,6 +168,10 @@ class AddToHistoryParams extends UseCaseParams {
     String? coverUrl,
     String? title,
     String sourceId = 'nhentai',
+    String? parentId,
+    String? chapterId,
+    int? chapterIndex,
+    String? chapterTitle,
   }) {
     return AddToHistoryParams(
       contentId: ContentId.fromInt(contentId),
@@ -139,6 +181,10 @@ class AddToHistoryParams extends UseCaseParams {
       title: title,
       coverUrl: coverUrl,
       sourceId: sourceId,
+      parentId: parentId,
+      chapterId: chapterId,
+      chapterIndex: chapterIndex,
+      chapterTitle: chapterTitle,
     );
   }
 

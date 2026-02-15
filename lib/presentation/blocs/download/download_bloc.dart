@@ -739,14 +739,14 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _logger.i(
             'DownloadBloc: Content has empty images, trying getChapterImages fallback for ${event.contentId}');
         try {
-          final chapterImages = await _getChapterImagesUseCase.call(
+          final chapterData = await _getChapterImagesUseCase.call(
             GetChapterImagesParams.fromString(event.contentId),
           );
 
-          if (chapterImages.isNotEmpty) {
+          if (chapterData.images.isNotEmpty) {
             content = content.copyWith(
-              imageUrls: chapterImages,
-              pageCount: chapterImages.length,
+              imageUrls: chapterData.images,
+              pageCount: chapterData.images.length,
               // If URL is still empty after chapter fetch (unlikely but possible), try again
               url: (content.url?.isEmpty ?? true)
                   ? _generateFallbackUrl(
@@ -756,7 +756,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
             // Update total pages
             updatedDownload = updatedDownload.copyWith(
-              totalPages: chapterImages.length,
+              totalPages: chapterData.images.length,
               sourceId: updatedDownload.sourceId ?? SourceType.crotpedia.id,
             );
             await _userDataRepository.saveDownloadStatus(updatedDownload);

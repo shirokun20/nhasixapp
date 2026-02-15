@@ -1,7 +1,9 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:html/dom.dart';
+import 'package:kuron_core/kuron_core.dart';
 import 'models/komiktap_models.dart';
 
 /// HTML parsing logic for KomikTap website.
@@ -53,6 +55,8 @@ class KomiktapScraper {
     // reader
     'reader_container': '#readerarea',
     'reader_images': 'img',
+    'reader_next': '.nextprev a.next, .nav-links a.next, .ch-next-btn',
+    'reader_prev': '.nextprev a.prev, .nav-links a.prev, .ch-prev-btn',
   };
 
   final Map<String, String> _selectors;
@@ -384,7 +388,10 @@ class KomiktapScraper {
   // ============ Chapter/Reader Parsing ============
 
   /// Parse chapter page to extract image URLs
-  List<String> parseChapterImages(String htmlContent) {
+  /// Parse chapter page to extract image URLs and navigation
+  ChapterData parseChapterImages(String htmlContent) {
+    List<String> imageUrls = [];
+    
     try {
       // Try to extract from ts_reader.run() JavaScript
       final tsReaderRegex = RegExp(
@@ -410,12 +417,10 @@ class KomiktapScraper {
               final images = firstSource['images'] as List<dynamic>?;
 
               if (images != null) {
-                final imageUrls = images
+                imageUrls = images
                     .map((img) => img.toString())
                     .where((url) => url.isNotEmpty)
                     .toList();
-
-                return imageUrls;
               }
             }
           } catch (e) {
@@ -427,18 +432,114 @@ class KomiktapScraper {
       // Regex extraction failed, fallback to DOM parsing
     }
 
-    // Fallback: Try DOM parsing
     final document = html_parser.parse(htmlContent);
-    final container = document.querySelector(_getSelector('reader_container'));
 
-    if (container == null) return [];
+    // Fallback: Try DOM parsing if JS extraction failed
+    if (imageUrls.isEmpty) {
+      final container = document.querySelector(_getSelector('reader_container'));
 
-    final images = container.querySelectorAll(_getSelector('reader_images'));
+      if (container != null) {
+        final images = container.querySelectorAll(_getSelector('reader_images'));
+        imageUrls = images
+            .map((img) => img.attributes['src'] ?? '')
+            .where((src) => src.isNotEmpty)
+            .toList();
+      }
+    }
 
-    return images
-        .map((img) => img.attributes['src'] ?? '')
-        .where((src) => src.isNotEmpty)
-        .toList();
+    // Navigation - Parse from ts_reader.run(...) JSON
+    // Komiktap stores navigation URLs in a script tag like:
+    // ts_reader.run({"post_id":163542, ..., "prevUrl":"https://...", "nextUrl":"https://...", ...});
+    String? nextId;
+    String? prevId;
+    String? nextTitle;
+    String? prevTitle;
+
+    // Find the script tag containing ts_reader.run
+    final scripts = document.querySelectorAll('script');
+    for (final script in scripts) {
+      final scriptContent = script.text;
+      if (scriptContent.contains('ts_reader.run')) {
+        debugPrint('🔍 KomiktapScraper: Found ts_reader.run script');
+        
+        // Extract prevUrl and nextUrl directly from the script content
+        // Pattern matches: "prevUrl":"https://..." or "prevUrl":""
+        final prevUrlPattern = RegExp(r'"prevUrl"\s*:\s*"([^"]*)"');
+        final nextUrlPattern = RegExp(r'"nextUrl"\s*:\s*"([^"]*)"');
+        
+        final prevMatch = prevUrlPattern.firstMatch(scriptContent);
+        final nextMatch = nextUrlPattern.firstMatch(scriptContent);
+        
+        if (prevMatch != null) {
+          var prevUrl = prevMatch.group(1) ?? '';
+          // Unescape the URL (replace \/ with /)
+          prevUrl = prevUrl.replaceAll(r'\/', '/');
+          
+          debugPrint('🔍 Found prevUrl: $prevUrl');
+          
+          if (prevUrl.isNotEmpty && !prevUrl.startsWith('#')) {
+            prevId = _extractSlugFromUrl(prevUrl);
+            debugPrint('✅   Prev chapter ID: $prevId');
+          } else {
+            debugPrint('⚠️   Prev URL is empty or placeholder');
+          }
+        } else {
+          debugPrint('⚠️   prevUrl not found in script');
+        }
+        
+        if (nextMatch != null) {
+          var nextUrl = nextMatch.group(1) ?? '';
+          // Unescape the URL (replace \/ with /)
+          nextUrl = nextUrl.replaceAll(r'\/', '/');
+          
+          debugPrint('🔍 Found nextUrl: $nextUrl');
+          
+          if (nextUrl.isNotEmpty && !nextUrl.startsWith('#')) {
+            nextId = _extractSlugFromUrl(nextUrl);
+            debugPrint('✅   Next chapter ID: $nextId');
+          } else {
+            debugPrint('⚠️   Next URL is empty or placeholder');
+          }
+        } else {
+          debugPrint('⚠️   nextUrl not found in script');
+        }
+        
+        break; // Found ts_reader.run, exit loop
+      }
+    }
+
+    // Fallback: Try button hrefs (in case ts_reader.run is not found)
+    if (nextId == null || prevId == null) {
+      debugPrint('� Falling back to button href parsing');
+      
+      final nextEl = document.querySelector(_getSelector('reader_next'));
+      if (nextEl != null && !nextEl.classes.contains('disabled')) {
+        final href = nextEl.attributes['href'];
+        if (href != null && !href.startsWith('#')) {
+          nextId = _extractSlugFromUrl(href);
+          nextTitle = nextEl.text.trim();
+          debugPrint('✅   Next from button: $nextId');
+        }
+      }
+
+      final prevEl = document.querySelector(_getSelector('reader_prev'));
+      if (prevEl != null && !prevEl.classes.contains('disabled')) {
+        final href = prevEl.attributes['href'];
+        if (href != null && !href.startsWith('#')) {
+          prevId = _extractSlugFromUrl(href);
+          prevTitle = prevEl.text.trim();
+          debugPrint('✅   Prev from button: $prevId');
+        }
+      }
+    }
+
+    return ChapterData(
+      images: imageUrls,
+      nextChapterId: nextId != null && nextId.isNotEmpty ? nextId : null,
+      prevChapterId: prevId != null && prevId.isNotEmpty ? prevId : null,
+      nextChapterTitle: nextTitle,
+      prevChapterTitle: prevTitle,
+    );
   }
 
   // ============ Helper Methods ============

@@ -16,6 +16,7 @@ export 'src/entities/content_list_result.dart';
 export 'src/entities/filter_item.dart';
 export 'src/entities/content_metadata.dart';
 export 'src/entities/chapter.dart';
+export 'src/entities/chapter_data.dart';
 export 'src/entities/comment.dart';
 
 // Value Objects
