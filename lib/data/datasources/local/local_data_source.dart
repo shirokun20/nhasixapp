@@ -540,8 +540,8 @@ class LocalDataSource {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
-      _logger.d(
-          'Saved history for ${history.contentId} (Chapter: ${history.chapterId})');
+      // _logger.d(
+      //     'Saved history for ${history.contentId} (Chapter: ${history.chapterId})');
     } catch (e) {
       _logger.e('Error saving history: $e');
       rethrow;

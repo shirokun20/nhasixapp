@@ -479,7 +479,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     // DON'T emit state - this prevents BlocBuilder rebuilds
     // But still save position and history for persistence
     try {
-      // Update internal tracking without state emission
       final position = ReaderPosition.create(
         contentId: state.content!.id,
         currentPage: validPage,
@@ -491,7 +490,8 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       await readerRepository.saveReaderPosition(position);
 
-      // Calculate chapter index if available
+      if (state.isOfflineMode == true) return;
+
       int? chapterIndex;
       if (state.currentChapter != null && state.content?.chapters != null) {
         chapterIndex = state.content!.chapters!
@@ -890,8 +890,9 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   /// Save current reading progress to history
   Future<void> _saveToHistory() async {
+    if (state.isOfflineMode == true) return;
+
     try {
-      // Debug logging
       _logger.d('📝 _saveToHistory called');
       _logger.d(
           '   state.currentChapter: ${state.currentChapter?.title ?? "NULL"}');
@@ -956,8 +957,8 @@ class ReaderCubit extends Cubit<ReaderState> {
         historyContentId = chapterId;
         // parentId is the series ID
         historyParentId = _parentContent?.id;
-        _logger.d(
-            '📚 CHAPTER MODE: contentId=$historyContentId, parentId=$historyParentId');
+        // _logger.d(
+        //     '📚 CHAPTER MODE: contentId=$historyContentId, parentId=$historyParentId');
       } else {
         // Non-chapter mode: use content.id as contentId
         historyContentId = state.content!.id;
@@ -1004,12 +1005,11 @@ class ReaderCubit extends Cubit<ReaderState> {
         coverUrl: state.content!.coverUrl,
         readingTimeMinutes: (state.readingTimer?.inMinutes ?? 0),
       );
-
+      // if (position.currentPage <= position.totalPages) {
       await readerRepository.saveReaderPosition(position);
-      if (position.currentPage <= position.totalPages) {
-        _logger.i(
-            '✅ Saved reader position: ${state.content!.id} at page ${state.currentPage}/${state.content!.pageCount}');
-      }
+      // }
+      // _logger.i(
+      //     '✅ Saved reader position: ${state.content!.id} at page ${state.currentPage}/${state.content!.pageCount}');
     } catch (e) {
       _logger.e('Failed to save reader position: $e');
       // Don't emit error state for position saving

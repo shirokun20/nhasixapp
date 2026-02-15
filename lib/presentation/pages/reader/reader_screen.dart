@@ -325,8 +325,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
               .clamp(0, totalPages - 1) +
           1;
 
-      Logger().t(
-          '📐 Avg height: ${averageItemHeight.toStringAsFixed(0)}px, viewport center at page $estimatedPage');
+      // Logger().t(
+      //     '📐 Avg height: ${averageItemHeight.toStringAsFixed(0)}px, viewport center at page $estimatedPage');
     } else {
       // Fallback: Use screen-based estimation (only when maxScrollExtent not ready)
       final estimatedItemHeight = screenHeight * 0.9;
@@ -1191,35 +1191,37 @@ class _ReaderScreenState extends State<ReaderScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           // Progress bar
-          isOnNavigationPage ? const SizedBox.shrink() :  Row(
-            children: [
-              Text(
-                '$displayPage',
-                style: TextStyleConst.bodySmall.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+          isOnNavigationPage
+              ? const SizedBox.shrink()
+              : Row(
+                  children: [
+                    Text(
+                      '$displayPage',
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: LinearProgressIndicator(
+                        value: displayProgress,
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .outline
+                            .withValues(alpha: 0.3),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.primary),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${state.content?.pageCount ?? 1}',
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: LinearProgressIndicator(
-                  value: displayProgress,
-                  backgroundColor: Theme.of(context)
-                      .colorScheme
-                      .outline
-                      .withValues(alpha: 0.3),
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).colorScheme.primary),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '${state.content?.pageCount ?? 1}',
-                style: TextStyleConst.bodySmall.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
 
           const SizedBox(height: 16),
 
@@ -1587,7 +1589,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   void _showChapterSelector(ReaderState state) {
     if (_readerCubit.allChapters == null || _readerCubit.allChapters!.isEmpty) {
-      // No chapters available
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('No chapters available'),
@@ -1597,86 +1598,312 @@ class _ReaderScreenState extends State<ReaderScreen> {
       return;
     }
 
-    // 🔍 DEBUG: Log current chapter info
-    Logger().i('📋 Chapter Selector opened:');
-    Logger().i('  state.content.id: ${state.content?.id}');
-    Logger().i(
-        '  state.currentChapter: ${state.currentChapter?.title} (${state.currentChapter?.id})');
-    Logger().i('  Total chapters: ${_readerCubit.allChapters!.length}');
+    final chapters = _readerCubit.allChapters!;
+    int currentIndex = -1;
+    for (int i = 0; i < chapters.length; i++) {
+      final isMatch = state.currentChapter != null
+          ? chapters[i].id == state.currentChapter!.id
+          : chapters[i].id == state.content?.id;
+      if (isMatch) {
+        currentIndex = i;
+        break;
+      }
+    }
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-        title: Text(
-          'Select Chapter',
-          style: TextStyleConst.headingMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: _readerCubit.allChapters!.length,
-            itemBuilder: (context, index) {
-              final chapter = _readerCubit.allChapters![index];
-
-              // 🐛 FIX: Use state.currentChapter for more reliable detection
-              // Fallback to state.content.id if currentChapter not available
-              final isCurrentChapter = state.currentChapter != null
-                  ? chapter.id == state.currentChapter!.id
-                  : chapter.id == state.content?.id;
-
-              // 🔍 DEBUG: Log each chapter comparison
-              if (index < 3) {
-                // Only log first 3 to avoid spam
-                Logger().t('  Chapter[$index]: ${chapter.title}');
-                Logger().t('    chapter.id: ${chapter.id}');
-                Logger().t('    isCurrentChapter: $isCurrentChapter');
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          builder: (_, scrollController) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (currentIndex > 0 && scrollController.hasClients) {
+                final targetOffset = currentIndex * 72.0 - 100;
+                if (targetOffset > 0) {
+                  scrollController.animateTo(
+                    targetOffset,
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeOutCubic,
+                  );
+                }
               }
+            });
 
-              return ListTile(
-                title: Text(
-                  chapter.title,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight:
-                        isCurrentChapter ? FontWeight.bold : FontWeight.normal,
+            return Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 20,
+                    offset: const Offset(0, -4),
                   ),
-                ),
-                leading: Icon(
-                  isCurrentChapter ? Icons.check_circle : Icons.circle_outlined,
-                  color: isCurrentChapter
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                selected: isCurrentChapter,
-                selectedTileColor: Theme.of(context)
-                    .colorScheme
-                    .primaryContainer
-                    .withValues(alpha: 0.2),
-                onTap: () {
-                  Navigator.pop(context); // Close dialog
-                  if (!isCurrentChapter) {
-                    _readerCubit.loadChapter(chapter.id);
-                  }
-                },
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Theme.of(context).colorScheme.primary),
-            ),
-          ),
-        ],
-      ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant
+                                .withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.menu_book_rounded,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onPrimaryContainer,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Chapters',
+                                    style: TextStyleConst.headingSmall.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${chapters.length} chapters',
+                                    style: TextStyleConst.bodySmall.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () => Navigator.pop(sheetContext),
+                              icon: Icon(
+                                Icons.close_rounded,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Divider(
+                    height: 1,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .outlineVariant
+                        .withValues(alpha: 0.5),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      controller: scrollController,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      itemCount: chapters.length,
+                      itemBuilder: (_, index) {
+                        final chapter = chapters[index];
+                        final isCurrent = index == currentIndex;
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Material(
+                            color: isCurrent
+                                ? Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer
+                                    .withValues(alpha: 0.4)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: () {
+                                Navigator.pop(sheetContext);
+                                if (!isCurrent) {
+                                  _readerCubit.loadChapter(chapter.id);
+                                }
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        gradient: isCurrent
+                                            ? LinearGradient(
+                                                colors: [
+                                                  Theme.of(context)
+                                                      .colorScheme
+                                                      .primary,
+                                                  Theme.of(context)
+                                                      .colorScheme
+                                                      .secondary,
+                                                ],
+                                              )
+                                            : null,
+                                        color: isCurrent
+                                            ? null
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Center(
+                                        child: isCurrent
+                                            ? Icon(
+                                                Icons.play_arrow_rounded,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary,
+                                                size: 20,
+                                              )
+                                            : Text(
+                                                '${index + 1}',
+                                                style: TextStyleConst
+                                                    .labelMedium
+                                                    .copyWith(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            chapter.title,
+                                            style: TextStyleConst.bodyMedium
+                                                .copyWith(
+                                              color: isCurrent
+                                                  ? Theme.of(context)
+                                                      .colorScheme
+                                                      .primary
+                                                  : Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface,
+                                              fontWeight: isCurrent
+                                                  ? FontWeight.w700
+                                                  : FontWeight.w500,
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          if (chapter.uploadDate != null) ...[
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              _formatChapterDate(
+                                                  chapter.uploadDate!),
+                                              style: TextStyleConst.bodySmall
+                                                  .copyWith(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurfaceVariant,
+                                                fontSize: 11,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    if (isCurrent)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          'NOW',
+                                          style: TextStyleConst.labelSmall
+                                              .copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onPrimary,
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 10,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
+  }
+
+  String _formatChapterDate(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    if (diff.inDays == 0) return 'Today';
+    if (diff.inDays == 1) return 'Yesterday';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}w ago';
+    if (diff.inDays < 365) return '${(diff.inDays / 30).floor()}mo ago';
+    return '${date.day}/${date.month}/${date.year}';
   }
 
   Future<void> _resetReaderSettings() async {

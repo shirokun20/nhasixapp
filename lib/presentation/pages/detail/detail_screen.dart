@@ -1310,20 +1310,23 @@ class _DetailScreenState extends State<DetailScreen> {
                                                 .primary,
                                       ),
                                       const SizedBox(width: 4),
-                                      Text(
-                                        isCompleted
-                                            ? 'Chapter completed'
-                                            : 'Continue from page ${chapterHistory[chapter.id]!.lastPage}',
-                                        style:
-                                            TextStyleConst.bodySmall.copyWith(
-                                          color: isCompleted
-                                              ? Theme.of(context)
-                                                  .colorScheme
-                                                  .tertiary
-                                              : Theme.of(context)
-                                                  .colorScheme
-                                                  .primary,
-                                          fontWeight: FontWeight.w500,
+                                      Flexible(
+                                        child: Text(
+                                          isCompleted
+                                              ? 'Chapter completed'
+                                              : 'Continue from page ${chapterHistory[chapter.id]!.lastPage}',
+                                          style:
+                                              TextStyleConst.bodySmall.copyWith(
+                                            color: isCompleted
+                                                ? Theme.of(context)
+                                                    .colorScheme
+                                                    .tertiary
+                                                : Theme.of(context)
+                                                    .colorScheme
+                                                    .primary,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                     ] else if (chapter.uploadDate != null) ...[
@@ -1335,14 +1338,17 @@ class _DetailScreenState extends State<DetailScreen> {
                                             .onSurfaceVariant,
                                       ),
                                       const SizedBox(width: 4),
-                                      Text(
-                                        _formatDate(chapter.uploadDate!),
-                                        style:
-                                            TextStyleConst.bodySmall.copyWith(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurfaceVariant,
-                                          fontWeight: FontWeight.w500,
+                                      Flexible(
+                                        child: Text(
+                                          _formatDate(chapter.uploadDate!),
+                                          style:
+                                              TextStyleConst.bodySmall.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                     ],
@@ -1375,8 +1381,8 @@ class _DetailScreenState extends State<DetailScreen> {
                               // Read button with status-based styling
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 10,
+                                  horizontal: 12,
+                                  vertical: 8,
                                 ),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(

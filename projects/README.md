@@ -13,7 +13,9 @@
 | **nhentai_search_revamp** | `..........` | 0% | 🧊 Backlog |
 
 ## 📋 Analysis Phase
-_No items in this stage._
+| Project Name | Progress | % | Status |
+|---|---|---|---|
+| **download_metadata_revamp** | `..........` | 0% | Pending |
 
 ## 🚧 On Progress
 _No items in this stage._
@@ -32,7 +34,9 @@ _No items in this stage._
 | **view_comments** | `██████████` | 100% | ✅ Ready |
 
 ## 🐛 Active Issues
-_No items in this stage._
+| Issue | Date | Status |
+|---|---|---|
+| download metadata chapter parentid | 2026-02-15 | 🔴 Open |
 
 ---
 _Generated automatically by Advanced Engineering Project Manager_
