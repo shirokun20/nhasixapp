@@ -747,8 +747,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
     final hasContent =
         state.content != null && (state.content!.imageUrls.isNotEmpty);
-    debugPrint(
-        '🔍 Should show navigation: hasContent=$hasContent, isOffline=${state.isOfflineMode ?? false}');
     return hasContent;
   }
 
