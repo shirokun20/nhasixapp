@@ -6,6 +6,61 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.12] - 2026-02-15
+
+### 🚀 New Features
+- **Enhanced Chapter Reading Experience**:
+  - End-of-chapter overlay with "Next Chapter" / "Back to Detail" options
+  - Chapter navigation support (Next/Previous chapter buttons)
+  - Integrated history tracking for each chapter
+  - Chapter selector dropdown in reader settings
+  - Support for chapter-based content (Crotpedia, Komiktap)
+- **Improved Image Loading**:
+  - Replaced `CachedNetworkImage` with `ProgressiveImageWidget` for better static GIF support
+  - Source-specific HTTP headers passed to image loading widgets
+  - Enhanced compatibility with various content sources
+- **Auto-Hide UI**:
+  - Reader UI (top/bottom bars) auto-hides and auto-shows on scroll
+  - Improved reading experience for immersive content consumption
+
+### 🛠 Fixes
+- **Navigation Page Accessibility**:
+  - Fixed PageView onPageChanged to report actual page number (35) instead of clamped (34)
+  - Fixed nextPage() and updateCurrentPageFromSwipe() to allow pageCount+1 when navigation is enabled
+  - UI now displays "Chapter Complete" (bold, primary color) instead of "Page 35 of 34"
+  - UI now displays "100%" instead of "103%" overflow
+  - Progress bar shows 100% instead of overflow
+  - Navigation page accessible via both swipe AND tap "Next" button
+  - Only enabled in online mode with content.imageUrls.isNotEmpty
+- **Continuous Scroll Enhancement**:
+  - Enhanced page detection accuracy using viewport center calculation
+  - Adaptive item height calculation based on actual maxScrollExtent
+  - Fixed false page saves during programmatic scroll operations
+  - Better handling of webtoon (tall images) vs manga (normal images)
+
+### 🛠 Improvements
+- **Database**:
+  - Database v11: Added chapter support to history table (chapter_id, chapter_index, chapter_title)
+  - Database v12: Added parent_id to history for series/parent content tracking
+- **History Tracking**:
+  - Chapter-level read status tracking
+  - Creative read indicators in chapter list:
+    - Color-coded chapter badges (tertiary=completed, primary=in-progress)
+    - Circular progress ring on chapter number
+    - "Done" trophy badge for completed chapters
+    - Percentage badge with mini progress for in-progress chapters
+  - Auto-scroll to last read chapter when opening from history
+- **Search**:
+  - Search highlighting for Doujin List, Favorites, and Offline Downloads
+  - Title-based search enabled in Favorites
+
+### 🔧 Technical
+- Updated `pubspec.yaml` to version `0.9.12+20`
+- Added OpenCode configuration and skill definitions
+- Modernized Crotpedia UI with Genre List, Doujin List (A-Z index), and Project Request screens
+
+---
+
 ## [0.9.11] - 2026-02-11
 
 ### 🚀 New Features
