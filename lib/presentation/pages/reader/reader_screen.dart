@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart'; // For ScrollDirection
 // import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -87,7 +86,27 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _pageController = PageController(initialPage: widget.initialPage - 1);
     _verticalPageController =
         PageController(initialPage: widget.initialPage - 1);
-    _scrollController = ScrollController();
+
+    // 🐛 CRITICAL FIX: Set flag BEFORE ScrollController to prevent false saves
+    // When ScrollController is created with initialScrollOffset, it triggers
+    // scroll events immediately which can cause false page saves
+    if (widget.initialPage > 1) {
+      _isProgrammaticAnimation = true;
+      Logger().i(
+          '🔒 Locked programmatic animation flag for initial scroll to page ${widget.initialPage}');
+    }
+
+    // 🚀 OPTIMIZATION: Calculate initial scroll offset for continuous scroll
+    // This allows starting from a specific page while keeping all pages available
+    final screenHeight = WidgetsBinding
+            .instance.platformDispatcher.views.first.physicalSize.height /
+        WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
+    final estimatedItemHeight = screenHeight * 0.9; // Approximate image height
+    final initialScrollOffset = (widget.initialPage - 1) * estimatedItemHeight;
+
+    _scrollController = ScrollController(
+      initialScrollOffset: initialScrollOffset > 0 ? initialScrollOffset : 0,
+    );
     _readerCubit = getIt<ReaderCubit>();
 
     // 🚀 OPTIMIZATION: Initialize route extra synchronously before build
@@ -97,10 +116,22 @@ class _ReaderScreenState extends State<ReaderScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Start preloading after route extra is processed
       _startPreloading();
+
+      // 🚀 FIX: Unlock flag after content settles (1.5s for images to load)
+      if (widget.initialPage > 1) {
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          if (mounted) {
+            _isProgrammaticAnimation = false;
+            Logger().i(
+                '🔓 Unlocked programmatic animation flag - user can scroll freely');
+          }
+        });
+      }
     });
 
-    // Add scroll listener for continuous mode
-    _scrollController.addListener(_onScrollChanged);
+    // 🚀 REMOVED: _onScrollChanged listener (causes duplicate saves)
+    // We now use ONLY NotificationListener for more accurate tracking
+    // _scrollController.addListener(_onScrollChanged);
 
     // 🚀 OPTIMIZATION: Start preloading content immediately - MOVED TO POST FRAME CALLBACK
     // _startPreloading();
@@ -203,6 +234,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
   }
 
+  /// 🚀 DEPRECATED: Old scroll handler - replaced by NotificationListener
+  /// Keeping code for reference, but disabled to prevent duplicate saves
+  /*
   void _onScrollChanged() {
     final state = _readerCubit.state;
     if (state.readingMode == ReadingMode.continuousScroll &&
@@ -254,27 +288,63 @@ class _ReaderScreenState extends State<ReaderScreen> {
       }
     }
   }
+  */
 
   /// 🚀 NEW: Handle scroll notification with accurate metrics
   void _onScrollNotification(
       ScrollUpdateNotification notification, ReaderState state) {
     if (state.content == null) return;
 
+    // 🐛 CRITICAL: Skip all processing during programmatic scroll
+    // This prevents false page saves during initial positioning
+    if (_isProgrammaticAnimation) {
+      Logger().t(
+          '⏭️  Skipping scroll event (programmatic): ${notification.metrics.pixels.toStringAsFixed(0)}px');
+      return;
+    }
+
     final metrics = notification.metrics;
     final totalPages = state.content!.pageCount;
+    final screenHeight = MediaQuery.of(context).size.height;
 
-    // Calculate scroll progress percentage (0.0 to 1.0)
-    final scrollProgress = metrics.maxScrollExtent > 0
-        ? metrics.pixels / metrics.maxScrollExtent
-        : 0.0;
+    // 🎯 CRITICAL FIX: Use viewport center for page detection
+    // This is more accurate than using scroll position directly
+    final viewportCenter = metrics.pixels + (screenHeight / 2);
 
-    // Estimate current page based on scroll progress
-    // This is more accurate than height-based estimation
-    final estimatedPage =
-        (scrollProgress * totalPages).ceil().clamp(1, totalPages);
+    // 🎯 ADAPTIVE: Calculate average item height based on ACTUAL maxScrollExtent
+    // This adapts to webtoon (tall images) vs manga (normal images)
+    int estimatedPage;
+
+    if (metrics.maxScrollExtent > 0 && totalPages > 0) {
+      // Use actual maxScrollExtent to calculate accurate average height
+      final averageItemHeight = metrics.maxScrollExtent / totalPages;
+
+      // Find which page the viewport center is currently viewing
+      estimatedPage = (viewportCenter / averageItemHeight)
+              .floor()
+              .clamp(0, totalPages - 1) +
+          1;
+
+      Logger().t(
+          '📐 Avg height: ${averageItemHeight.toStringAsFixed(0)}px, viewport center at page $estimatedPage');
+    } else {
+      // Fallback: Use screen-based estimation (only when maxScrollExtent not ready)
+      final estimatedItemHeight = screenHeight * 0.9;
+      estimatedPage = ((metrics.pixels / estimatedItemHeight) + 1)
+          .round()
+          .clamp(1, totalPages);
+
+      Logger().t('📐 Using fallback estimation (maxScrollExtent not ready)');
+    }
+
+    // Debug logging (only when page changes)
+    if (estimatedPage != _lastReportedPage) {
+      Logger().t(
+          '📄 Page: $estimatedPage/$totalPages (scroll: ${metrics.pixels.toStringAsFixed(0)}px / ${metrics.maxScrollExtent.toStringAsFixed(0)}px, center: ${viewportCenter.toStringAsFixed(0)}px)');
+    }
 
     // Update current page for progress bar with debounce
-    if (estimatedPage != _lastReportedPage && !_isProgrammaticAnimation) {
+    if (estimatedPage != _lastReportedPage) {
       _lastReportedPage = estimatedPage;
 
       // 🚀 OPTIMIZATION: Debounce page updates to reduce DB writes
@@ -290,7 +360,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final isAtBottom =
         metrics.pixels >= metrics.maxScrollExtent - 50; // 50px threshold
 
-    if (isAtBottom) {
+    if (isAtBottom && _lastSavedPage < totalPages) {
+      Logger().i('📍 User reached bottom - marking as complete');
       // User reached bottom -> save to DB with debounce to avoid spam
       _debounceSaveHistory(state, totalPages);
     }
@@ -349,9 +420,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   @override
-  @override
   void dispose() {
-    _scrollController.removeListener(_onScrollChanged);
+    // 🚀 REMOVED: Old scroll listener (now using NotificationListener)
+    // _scrollController.removeListener(_onScrollChanged);
     _pageController.dispose();
     _verticalPageController.dispose();
     _scrollController.dispose();
@@ -670,8 +741,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   bool _shouldShowNavigationItem(ReaderState state) {
-    if (state.isOfflineMode ?? false) return false;
-    return state.content != null && (state.content!.imageUrls.isNotEmpty);
+    if (state.isOfflineMode ?? false) {
+      debugPrint('❌ Navigation page disabled: Offline mode');
+      return false;
+    }
+    final hasContent =
+        state.content != null && (state.content!.imageUrls.isNotEmpty);
+    debugPrint(
+        '🔍 Should show navigation: hasContent=$hasContent, isOffline=${state.isOfflineMode ?? false}');
+    return hasContent;
   }
 
   Widget _buildChapterNavigationPage(ReaderState state) {
@@ -696,6 +774,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final pageCount = state.content?.imageUrls.length ?? 0;
     final totalItems = showNavigation ? pageCount + 1 : pageCount;
 
+    debugPrint(
+        '📖 SinglePageReader: pageCount=$pageCount, showNavigation=$showNavigation, totalItems=$totalItems');
+
     return GestureDetector(
       onTapUp: (details) {
         // Simple tap gesture: center = toggle UI, sides = navigate
@@ -718,17 +799,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
         controller: _pageController,
         scrollDirection: Axis.horizontal,
         onPageChanged: (index) {
-          // If this is the navigation page, keep reporting the last page
-          // to keep the progress bar at 100% and save position correctly.
-          final reportPage =
-              (showNavigation && index >= pageCount) ? pageCount : index + 1;
+          // Convert 0-indexed to 1-indexed page number
+          // For navigation page (index == pageCount), report pageCount + 1
+          final reportPage = index + 1;
 
           debugPrint(
-              ' PageView changed to index=$index (reporting page $reportPage)');
+              '📖 PageView changed to index=$index (reporting page $reportPage)');
 
           // Only handle UI tasks, no navigation logic
           final imageUrls = state.content?.imageUrls ?? [];
-          _prefetchImages(reportPage, imageUrls, state.imageMetadata);
+          // Don't prefetch for navigation page
+          if (index < pageCount) {
+            _prefetchImages(reportPage, imageUrls, state.imageMetadata);
+          }
 
           // Update ReaderCubit state
           if (!_isProgrammaticAnimation) {
@@ -754,6 +837,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final pageCount = state.content?.imageUrls.length ?? 0;
     final totalItems = showNavigation ? pageCount + 1 : pageCount;
 
+    debugPrint(
+        '📖 VerticalPageReader: pageCount=$pageCount, showNavigation=$showNavigation, totalItems=$totalItems');
+
     return GestureDetector(
       onTapUp: (details) {
         // Simple tap gesture: center = toggle UI, top/bottom = navigate
@@ -776,16 +862,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
         controller: _verticalPageController,
         scrollDirection: Axis.vertical,
         onPageChanged: (index) {
-          // If this is the navigation page, keep reporting the last page
-          final reportPage =
-              (showNavigation && index >= pageCount) ? pageCount : index + 1;
+          // Convert 0-indexed to 1-indexed page number
+          // For navigation page (index == pageCount), report pageCount + 1
+          final reportPage = index + 1;
 
           debugPrint(
-              ' Vertical PageView changed to index=$index (reporting page $reportPage)');
+              '📖 Vertical PageView changed to index=$index (reporting page $reportPage)');
 
           // Only handle UI tasks, no navigation logic
           final imageUrls = state.content?.imageUrls ?? [];
-          _prefetchImages(reportPage, imageUrls, state.imageMetadata);
+          // Don't prefetch for navigation page
+          if (index < pageCount) {
+            _prefetchImages(reportPage, imageUrls, state.imageMetadata);
+          }
 
           // Update ReaderCubit state
           if (!_isProgrammaticAnimation) {
@@ -1002,15 +1091,27 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 if (state.readingMode != ReadingMode.continuousScroll)
                   Row(
                     children: [
-                      Text(
-                        AppLocalizations.of(context)?.pageOfPages(
-                                state.currentPage ?? 1,
-                                state.content?.pageCount ?? 1) ??
-                            'Page ${state.currentPage ?? 1} of ${state.content?.pageCount ?? 1}',
-                        style: TextStyleConst.bodySmall.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      // Check if we're on navigation page
+                      if ((state.currentPage ?? 1) >
+                          (state.content?.pageCount ?? 1))
+                        Text(
+                          'Chapter Complete',
+                          style: TextStyleConst.bodySmall.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      else
+                        Text(
+                          AppLocalizations.of(context)?.pageOfPages(
+                                  state.currentPage ?? 1,
+                                  state.content?.pageCount ?? 1) ??
+                              'Page ${state.currentPage ?? 1} of ${state.content?.pageCount ?? 1}',
+                          style: TextStyleConst.bodySmall.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                         ),
-                      ),
                     ],
                   ),
               ],
@@ -1068,6 +1169,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   Widget _buildBottomBar(ReaderState state) {
+    // Clamp display values for navigation page
+    final isOnNavigationPage =
+        (state.currentPage ?? 1) > (state.content?.pageCount ?? 1);
+    final displayPage = isOnNavigationPage
+        ? (state.content?.pageCount ?? 1)
+        : (state.currentPage ?? 1);
+    final displayProgress = isOnNavigationPage ? 1.0 : state.progress;
+    final displayPercentage =
+        isOnNavigationPage ? 100 : state.progressPercentage;
+
+    debugPrint(
+        '🎨 BottomBar: currentPage=${state.currentPage}, pageCount=${state.content?.pageCount}, '
+        'isOnNavPage=$isOnNavigationPage, displayProgress=$displayProgress, displayPercentage=$displayPercentage%');
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1078,10 +1193,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           // Progress bar
-          Row(
+          isOnNavigationPage ? const SizedBox.shrink() :  Row(
             children: [
               Text(
-                '${state.currentPage ?? 1}',
+                '$displayPage',
                 style: TextStyleConst.bodySmall.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -1089,7 +1204,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: LinearProgressIndicator(
-                  value: state.progress,
+                  value: displayProgress,
                   backgroundColor: Theme.of(context)
                       .colorScheme
                       .outline
@@ -1132,7 +1247,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
               // Page info and jump
               Text(
-                '${state.progressPercentage}%',
+                '$displayPercentage%',
                 style: TextStyleConst.bodyMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -1140,16 +1255,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
               // Next page
               IconButton(
-                onPressed:
-                    state.isLastPage ? null : () => _readerCubit.nextPage(),
+                onPressed: () => _readerCubit
+                    .nextPage(), // Always enabled, nextPage() handles limits
                 icon: Icon(
                   Icons.navigate_next,
-                  color: state.isLastPage
-                      ? Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.38)
-                      : Theme.of(context).colorScheme.onSurface,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],
@@ -1489,6 +1599,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
       return;
     }
 
+    // 🔍 DEBUG: Log current chapter info
+    Logger().i('📋 Chapter Selector opened:');
+    Logger().i('  state.content.id: ${state.content?.id}');
+    Logger().i(
+        '  state.currentChapter: ${state.currentChapter?.title} (${state.currentChapter?.id})');
+    Logger().i('  Total chapters: ${_readerCubit.allChapters!.length}');
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1506,7 +1623,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
             itemCount: _readerCubit.allChapters!.length,
             itemBuilder: (context, index) {
               final chapter = _readerCubit.allChapters![index];
-              final isCurrentChapter = chapter.id == state.content?.id;
+
+              // 🐛 FIX: Use state.currentChapter for more reliable detection
+              // Fallback to state.content.id if currentChapter not available
+              final isCurrentChapter = state.currentChapter != null
+                  ? chapter.id == state.currentChapter!.id
+                  : chapter.id == state.content?.id;
+
+              // 🔍 DEBUG: Log each chapter comparison
+              if (index < 3) {
+                // Only log first 3 to avoid spam
+                Logger().t('  Chapter[$index]: ${chapter.title}');
+                Logger().t('    chapter.id: ${chapter.id}');
+                Logger().t('    isCurrentChapter: $isCurrentChapter');
+              }
 
               return ListTile(
                 title: Text(

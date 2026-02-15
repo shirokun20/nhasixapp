@@ -98,7 +98,7 @@ class ReaderState extends Equatable {
   /// Check if this is the first page
   bool get isFirstPage => (currentPage ?? 1) <= 1;
 
-  /// Check if this is the last page
+  /// Check if this is the last page (of actual content, not including navigation page)
   bool get isLastPage => (currentPage ?? 1) >= (content?.pageCount ?? 1);
 
   /// Get current image URL

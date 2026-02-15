@@ -293,16 +293,29 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   /// Navigate to next page
   void nextPage() {
-    if (!state.isLastPage && !isClosed && state.content != null) {
+    if (!isClosed && state.content != null) {
       final currentPage = state.currentPage ?? 1;
-      final newPage = (currentPage + 1).clamp(1, state.content!.pageCount);
+      final pageCount = state.content!.pageCount;
 
-      _logger.d(
-          'Next page: $currentPage -> $newPage (total: ${state.content!.pageCount})');
+      // Check if navigation page should be shown
+      final hasNavigationPage = !(state.isOfflineMode ?? false) &&
+          state.content!.imageUrls.isNotEmpty;
 
-      emit(state.copyWith(currentPage: newPage));
-      _saveReaderPosition();
-      _saveToHistory();
+      // If we're at last page and navigation page exists, allow +1 to show navigation
+      final maxPage = hasNavigationPage ? pageCount + 1 : pageCount;
+
+      if (currentPage < maxPage) {
+        final newPage = (currentPage + 1).clamp(1, maxPage);
+
+        _logger.d(
+            'Next page: $currentPage -> $newPage (total: $pageCount, max with nav: $maxPage)');
+
+        emit(state.copyWith(currentPage: newPage));
+        _saveReaderPosition();
+        _saveToHistory();
+      } else {
+        _logger.d('Already at last page ($currentPage), cannot go further');
+      }
     }
   }
 
@@ -434,9 +447,16 @@ class ReaderCubit extends Cubit<ReaderState> {
     if (!isClosed && state.content != null) {
       // Validate page range
       final totalPages = state.content!.pageCount;
-      final validPage = page.clamp(1, totalPages);
 
-      _logger.d('Updating page from swipe: $validPage (total: $totalPages)');
+      // Allow +1 for navigation page (if exists)
+      final hasNavigationPage = !(state.isOfflineMode ?? false) &&
+          state.content!.imageUrls.isNotEmpty;
+      final maxPage = hasNavigationPage ? totalPages + 1 : totalPages;
+
+      final validPage = page.clamp(1, maxPage);
+
+      _logger.d(
+          'Updating page from swipe: $validPage (total: $totalPages, max with nav: $maxPage)');
 
       // Only emit state change, don't trigger sync navigation
       emit(state.copyWith(currentPage: validPage));
@@ -961,7 +981,9 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       _logger.d(
           '📤 Saving history with contentId: ${params.contentId.value}, parentId: ${params.parentId}, chapterId: ${params.chapterId}');
-      await addToHistoryUseCase(params);
+      if (params.page <= params.totalPages) {
+        await addToHistoryUseCase(params);
+      }
     } catch (e, stackTrace) {
       _logger.e('Failed to save reading progress to history',
           error: e, stackTrace: stackTrace);
@@ -984,8 +1006,10 @@ class ReaderCubit extends Cubit<ReaderState> {
       );
 
       await readerRepository.saveReaderPosition(position);
-      _logger.i(
-          '✅ Saved reader position: ${state.content!.id} at page ${state.currentPage}/${state.content!.pageCount}');
+      if (position.currentPage <= position.totalPages) {
+        _logger.i(
+            '✅ Saved reader position: ${state.content!.id} at page ${state.currentPage}/${state.content!.pageCount}');
+      }
     } catch (e) {
       _logger.e('Failed to save reader position: $e');
       // Don't emit error state for position saving
