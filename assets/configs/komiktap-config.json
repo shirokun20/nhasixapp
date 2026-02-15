@@ -118,7 +118,7 @@
     "search": true,
     "random": false,
     "related": false,
-    "download": false,
+    "download": true,
     "favorite": true,
     "chapters": true,
     "bookmark": false,
