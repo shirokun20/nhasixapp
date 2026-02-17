@@ -55,6 +55,8 @@ class KomiktapScraper {
     // reader
     'reader_container': '#readerarea',
     'reader_images': 'img',
+    'reader_next': '.nextprev a.next, .nav-links a.next, .ch-next-btn',
+    'reader_prev': '.nextprev a.prev, .nav-links a.prev, .ch-prev-btn',
 
     // List pages (manga/manhua/manhwa)
     'list_container': '.listupd.cp',

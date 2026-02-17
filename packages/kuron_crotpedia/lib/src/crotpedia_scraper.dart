@@ -45,6 +45,8 @@ class CrotpediaScraper {
     // reader
     'reader_container': '.reader-area',
     'reader_images': 'p img',
+    'reader_next': '.next-btn',
+    'reader_prev': '.prev-btn',
   };
 
   final Map<String, String> _selectors;

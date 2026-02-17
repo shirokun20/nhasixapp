@@ -409,7 +409,8 @@ void main() {
           .thenAnswer((_) async => searchResponse);
       when(mockScraper.parseSeriesDetail(any)).thenReturn(mockSeriesDetail);
       when(mockScraper.parseSearchResults(any)).thenReturn(mockSearchResults);
-      when(mockScraper.parseChapterImages(any)).thenReturn([]);
+      when(mockScraper.parseChapterImages(any))
+          .thenReturn(const ChapterData(images: []));
 
       final result = await source.getRelated('original');
 
@@ -481,11 +482,15 @@ void main() {
 
   group('getChapterImages', () {
     test('fetches and parses chapter images', () async {
-      final mockImages = [
-        'https://example.com/img1.jpg',
-        'https://example.com/img2.jpg',
-        'https://example.com/img3.jpg',
-      ];
+      final mockChapterData = ChapterData(
+        images: [
+          'https://example.com/img1.jpg',
+          'https://example.com/img2.jpg',
+          'https://example.com/img3.jpg',
+        ],
+        prevChapterId: 'chapter-0',
+        nextChapterId: 'chapter-2',
+      );
 
       final response = Response(
         requestOptions: RequestOptions(path: '/baca/chapter-slug/'),
@@ -494,21 +499,24 @@ void main() {
       );
 
       when(mockDio.get(any)).thenAnswer((_) async => response);
-      when(mockScraper.parseChapterImages(any)).thenReturn(mockImages);
+      when(mockScraper.parseChapterImages(any)).thenReturn(mockChapterData);
 
       final result = await source.getChapterImages('chapter-slug');
 
-      expect(result.length, equals(3));
-      expect(result, equals(mockImages));
+      expect(result.images.length, equals(3));
+      expect(result.images, equals(mockChapterData.images));
+      expect(result.prevChapterId, equals('chapter-0'));
+      expect(result.nextChapterId, equals('chapter-2'));
       verify(mockDio.get(argThat(contains('chapter-slug')))).called(1);
     });
 
-    test('returns empty list on error', () async {
+    test('returns empty ChapterData on error', () async {
       when(mockDio.get(any)).thenThrow(Exception('Chapter error'));
 
       final result = await source.getChapterImages('chapter-slug');
 
-      expect(result, isEmpty);
+      expect(result.images, isEmpty);
+      expect(result, isA<ChapterData>());
       verify(mockLogger.e(any)).called(1);
     });
   });
