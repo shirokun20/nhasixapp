@@ -783,8 +783,7 @@ class LocalDataSource {
     } catch (e, stackTrace) {
       _logger.e('Error getting user preferences: $e');
       _logger.e('Stack trace: $stackTrace');
-      final defaultPrefs = UserPreferences(); // Return default preferences
-      return defaultPrefs;
+      return UserPreferences(); // Return default preferences
     }
   }
 

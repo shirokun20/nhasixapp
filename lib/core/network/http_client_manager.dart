@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
-import '../constants/app_constants.dart';
 import 'dns_resolver.dart'; // NEW
 import 'dns_interceptor.dart'; // NEW
 
@@ -21,7 +20,12 @@ class HttpClientManager {
 
   /// Initialize the HTTP client with proper configuration
   /// Optional dnsResolver enables DNS-over-HTTPS for all requests via interceptor
-  static Dio initializeHttpClient({Logger? logger, DnsResolver? dnsResolver}) {
+  /// Optional timeout parameter (defaults to 30 seconds if not specified)
+  static Dio initializeHttpClient({
+    Logger? logger,
+    DnsResolver? dnsResolver,
+    Duration? timeout,
+  }) {
     _logger = logger ?? Logger();
 
     if (_httpClient != null) {
@@ -48,9 +52,10 @@ class HttpClientManager {
     };
 
     // Set default timeouts
-    _httpClient!.options.connectTimeout = AppDurations.networkTimeout;
-    _httpClient!.options.receiveTimeout = AppDurations.networkTimeout;
-    _httpClient!.options.sendTimeout = AppDurations.networkTimeout;
+    final defaultTimeout = timeout ?? const Duration(seconds: 30);
+    _httpClient!.options.connectTimeout = defaultTimeout;
+    _httpClient!.options.receiveTimeout = defaultTimeout;
+    _httpClient!.options.sendTimeout = defaultTimeout;
     _httpClient!.options.followRedirects = true;
     _httpClient!.options.maxRedirects = 5;
     _httpClient!.options.responseType = ResponseType.plain;

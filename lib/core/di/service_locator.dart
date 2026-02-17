@@ -135,27 +135,27 @@ Future<void> _setupExternalDependencies() async {
 
 /// Setup core utilities and services
 void _setupCore() {
-  // Logger
-  getIt.registerLazySingleton<Logger>(() => Logger(
-        printer: PrettyPrinter(
-          methodCount: 2,
-          errorMethodCount: 8,
-          lineLength: 120,
-          colors: true,
-          printEmojis: true,
-          dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
-        ),
-      ));
+  // Logger - Using Singleton (not LazySingleton) to ensure it's immediately available
+  final logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 2,
+      errorMethodCount: 8,
+      lineLength: 120,
+      colors: true,
+      printEmojis: true,
+      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+    ),
+  );
+  getIt.registerSingleton<Logger>(logger);
 
   // HTTP Client (Dio) - Using singleton manager
   // DNS-over-HTTPS is DISABLED because it's incompatible with HTTPS/SSL
   // (SNI and certificate validation fail when using IP addresses)
-  getIt.registerLazySingleton<Dio>(() {
-    return HttpClientManager.initializeHttpClient(
-      logger: getIt<Logger>(),
-      // dnsResolver: getIt<DnsResolver>(),  // DISABLED - incompatible with HTTPS
-    );
-  });
+  final dio = HttpClientManager.initializeHttpClient(
+    logger: logger,
+    // dnsResolver: getIt<DnsResolver>(),  // DISABLED - incompatible with HTTPS
+  );
+  getIt.registerSingleton<Dio>(dio);
 
   // Cache Manager
   getIt.registerLazySingleton<CacheManager>(() => DefaultCacheManager());

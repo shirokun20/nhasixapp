@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
@@ -87,6 +88,137 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SplashBloc>().add(SplashStartedEvent());
     });
+  }
+
+  void _showOfflineOptionsDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: theme.colorScheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.errorContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.wifi_off,
+                color: theme.colorScheme.onErrorContainer,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              l10n.offlineMode,
+              style: TextStyleConst.headingMedium.copyWith(
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.noInternetConnection,
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.youAreOffline,
+              style: TextStyleConst.bodySmall.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              context.read<SplashBloc>().add(SplashRetryBypassEvent());
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.refresh,
+                  size: 18,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  l10n.retry,
+                  style: TextStyle(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              context.read<SplashBloc>().add(SplashForceOfflineModeEvent());
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.arrow_forward,
+                  size: 18,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  l10n.continueReading,
+                  style: TextStyle(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              SystemNavigator.pop();
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.exit_to_app,
+                  size: 18,
+                  color: theme.colorScheme.error,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  l10n.exitApp,
+                  style: TextStyle(
+                    color: theme.colorScheme.error,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -450,36 +582,14 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           ElevatedButton.icon(
-                            onPressed: () => context
-                                .read<SplashBloc>()
-                                .add(SplashRetryBypassEvent()),
-                            icon: const Icon(Icons.refresh),
-                            label: Text(AppLocalizations.of(context)!.retry),
+                            onPressed: () => _showOfflineOptionsDialog(context),
+                            icon: const Icon(Icons.wifi_off),
+                            label: const Text('Offline Mode'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor:
                                   Theme.of(context).colorScheme.primary,
                               foregroundColor:
                                   Theme.of(context).colorScheme.onPrimary,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 12,
-                              ),
-                              textStyle: TextStyleConst.buttonMedium,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          OutlinedButton.icon(
-                            onPressed: () => context
-                                .read<SplashBloc>()
-                                .add(SplashForceOfflineModeEvent()),
-                            icon: const Icon(Icons.arrow_forward),
-                            label: const Text('Continue Anyway'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor:
-                                  Theme.of(context).colorScheme.primary,
-                              side: BorderSide(
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 24,
                                 vertical: 12,

@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
-import '../../core/constants/app_constants.dart';
 
 /// User preferences entity for app customization
+/// NOTE: Default values are hardcoded to avoid dependency on get_it during initialization
 class UserPreferences extends Equatable {
   UserPreferences({
     this.theme = 'dark',
@@ -49,12 +49,10 @@ class UserPreferences extends Equatable {
     int? timeoutDurationSeconds,
     this.enableNotifications = true,
     this.wifiOnly = false,
-  })  : columnsPortrait = columnsPortrait ?? AppUI.gridColumnsPortrait,
-        columnsLandscape = columnsLandscape ?? AppUI.gridColumnsLandscape,
-        maxConcurrentDownloads =
-            maxConcurrentDownloads ?? AppLimits.maxConcurrentDownloads,
-        readerAutoHideDelay =
-            readerAutoHideDelay ?? AppDurations.readerAutoHideDelay.inSeconds,
+  })  : columnsPortrait = columnsPortrait ?? 2,
+        columnsLandscape = columnsLandscape ?? 3,
+        maxConcurrentDownloads = maxConcurrentDownloads ?? 3,
+        readerAutoHideDelay = readerAutoHideDelay ?? 3,
         retryDelaySeconds = retryDelaySeconds ?? 5,
         timeoutDurationSeconds = timeoutDurationSeconds ?? 300;
 

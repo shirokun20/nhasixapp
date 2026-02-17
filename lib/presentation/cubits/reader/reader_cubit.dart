@@ -132,28 +132,44 @@ class ReaderCubit extends Cubit<ReaderState> {
       // 3. Determine Loading Strategy
 
       // Strategy A: Preloaded Content (Navigation from specialized screens)
-      bool shouldUsePreloaded =
+      // If preloaded content has local paths (starting with /), use it directly - it's offline content
+      final shouldUsePreloaded =
           preloadedContent != null && preloadedContent.imageUrls.isNotEmpty;
 
-      if (shouldUsePreloaded && isOfflineAvailable) {
-        // Prefer offline path if available, even if we have preloaded content with remote URLs
-        final hasRemoteUrls =
-            preloadedContent.imageUrls.any((url) => url.startsWith('http'));
-        if (hasRemoteUrls) {
-          shouldUsePreloaded = false;
+      if (shouldUsePreloaded) {
+        // Check if preloaded content has local paths (offline content)
+        final hasLocalPaths =
+            preloadedContent.imageUrls.any((url) => url.startsWith('/'));
+        if (hasLocalPaths) {
+          // ✅ Preloaded content IS offline content - use it directly
+          _logger
+              .i('✅ Strategy A: Using preloaded OFFLINE content: $contentId');
+          content = preloadedContent;
+          isOfflineMode = true;
+        } else {
+          // Has http URLs - check if offline is available first
+          final hasRemoteUrls =
+              preloadedContent.imageUrls.any((url) => url.startsWith('http'));
+
+          if (isOfflineAvailable && hasRemoteUrls) {
+            // Prefer offline path if available, even if we have preloaded content with remote URLs
+            _logger.i(
+                '💾 Strategy A2: Found offline available, loading from local storage');
+            content =
+                await offlineContentManager.createOfflineContent(contentId);
+            isOfflineMode = true;
+          } else if (hasRemoteUrls) {
+            // Use preloaded content with remote URLs (will load from network)
+            _logger.i(
+                '✅ Strategy A3: Using preloaded content with remote URLs: $contentId');
+            content = preloadedContent;
+            isOfflineMode = !isConnected;
+          }
         }
       }
 
-      if (shouldUsePreloaded) {
-        _logger.i('✅ Strategy A: Using preloaded content: $contentId');
-        content = preloadedContent;
-        // Check if it's local paths
-        final hasLocalPaths =
-            content!.imageUrls.any((url) => url.startsWith('/'));
-        isOfflineMode = hasLocalPaths || !isConnected;
-      }
-      // Strategy B: Offline Content (Primary Performance Path)
-      else if (isOfflineAvailable) {
+      // Strategy B: Offline Content (Primary Performance Path) - only if content not set yet
+      if (content == null && isOfflineAvailable) {
         _logger.i(
             '💾 Strategy B: Loading content from offline storage: $contentId');
         content = await offlineContentManager.createOfflineContent(contentId);
@@ -165,8 +181,10 @@ class ReaderCubit extends Cubit<ReaderState> {
           await _fetchOnlineDetailsInBackground(contentId);
         }
       }
-      // Strategy C: Online Content (Fallback)
-      else if (isConnected && !_isCrotpediaChapterId(contentId)) {
+      // Strategy C: Online Content (Fallback) - only if content not set yet
+      else if (content == null &&
+          isConnected &&
+          !_isCrotpediaChapterId(contentId)) {
         _logger.i('🌐 Strategy C: Fetching online content: $contentId');
         try {
           content = await getContentDetailUseCase(

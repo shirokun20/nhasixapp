@@ -71,20 +71,22 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       final hasCache = await _remoteConfigService.hasValidCache('nhentai');
 
       if (!hasCache) {
-        // Condition 1: No Cache (Fresh Install) -> STRICT MODE
-        // Must verify internet first
+        // Condition 1: No Cache (Fresh Install)
+        // Check internet first
         final connectivityResults = await _connectivity.checkConnectivity();
         final hasInternet = connectivityResults.isNotEmpty &&
             connectivityResults.first != ConnectivityResult.none;
 
         if (!hasInternet) {
-          _logger.i('SplashBloc: First run requires internet connection');
-          emit(SplashError(
-            message:
-                'First run requires internet connection to download configuration.',
-            canRetry: true,
-            canUseOffline: false,
-          ));
+          // No cache and no internet - go to offline mode
+          _logger
+              .i('SplashBloc: No cache and no internet, enabling offline mode');
+          AppStateManager().enableOfflineMode();
+          AppStateManager().updateOfflineContentInfo(
+            hasContent: false,
+            contentCount: 0,
+          );
+          emit(SplashSuccess(message: 'Ready (Offline Mode - First Run)'));
           return;
         }
 
@@ -255,20 +257,18 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
     SplashRetryBypassEvent event,
     Emitter<SplashState> emit,
   ) async {
-    emit(SplashBypassInProgress(message: 'Retrying bypass...'));
     try {
-      _logger.i('SplashBloc: Retrying Cloudflare bypass...');
+      _logger.i('SplashBloc: Retrying - checking connectivity first...');
 
-      // Attempt bypass again
-
-      // Check connectivity again
+      // Check connectivity first
       final connectivityResults = await _connectivity.checkConnectivity();
       final connectivityResult = connectivityResults.isNotEmpty
           ? connectivityResults.first
           : ConnectivityResult.none;
+
       if (connectivityResult == ConnectivityResult.none) {
         _logger.i(
-            'SplashBloc: No internet connection during retry, checking offline content...');
+            'SplashBloc: No internet connection during retry, going to offline mode...');
 
         // Check if there are downloaded contents for offline use
         final downloadedContents = await _userDataRepository.getAllDownloads(
@@ -280,41 +280,100 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
         if (completedDownloads.isNotEmpty) {
           _logger.i(
               'SplashBloc: Found ${completedDownloads.length} offline contents');
-          emit(SplashOfflineSuccess(
-            downloadCount: completedDownloads.length,
+          AppStateManager().enableOfflineMode();
+          emit(SplashSuccess(
             message:
-                'Offline mode: ${completedDownloads.length} downloaded contents available',
+                'Ready (Offline Mode - ${completedDownloads.length} contents)',
           ));
-          return;
         } else {
-          emit(SplashError(
-            message:
-                'No internet connection and no offline content available.\nPlease connect to internet or download content when online.',
-            canRetry: true,
-            canUseOffline: false,
-          ));
-          return;
+          // No offline content but still force offline mode
+          _logger.i(
+              'SplashBloc: No offline content, forcing limited offline mode');
+          AppStateManager().enableOfflineMode();
+          AppStateManager().updateOfflineContentInfo(
+            hasContent: false,
+            contentCount: 0,
+          );
+          emit(SplashSuccess(message: 'Ready (Offline Mode - Limited)'));
         }
+        return;
       }
 
-      final result = await _remoteDataSource.bypassCloudflare();
+      // There is internet - try to connect but with timeout
+      _logger.i('SplashBloc: Has internet, attempting to connect...');
+
+      // Check if we have valid cache
+      final hasCache = await _remoteConfigService.hasValidCache('nhentai');
+
+      if (!hasCache) {
+        // No cache - need to download initial config
+        _logger.i(
+            'SplashBloc: No cache found, downloading initial configuration...');
+        emit(SplashInitializing(
+            message: 'Downloading initial configuration...', progress: 0.05));
+
+        try {
+          await _remoteConfigService.smartInitialize(
+            isFirstRun: true,
+            onProgress: (progress, message) {
+              emit(SplashInitializing(message: message, progress: progress));
+            },
+          );
+          // Config downloaded successfully, now try to bypass
+          emit(SplashBypassInProgress(message: 'Connecting to nhentai.net...'));
+          final result = await _remoteDataSource.bypassCloudflare().timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              _logger
+                  .w('SplashBloc: Connection timeout, going to offline mode');
+              return false;
+            },
+          );
+
+          if (result) {
+            emit(SplashSuccess(
+                message: 'Successfully connected to nhentai.net'));
+          } else {
+            AppStateManager().enableOfflineMode();
+            emit(SplashSuccess(message: 'Ready (Offline Mode)'));
+          }
+        } catch (e) {
+          _logger.w('SplashBloc: Failed to download config: $e');
+          AppStateManager().enableOfflineMode();
+          AppStateManager().updateOfflineContentInfo(
+            hasContent: false,
+            contentCount: 0,
+          );
+          emit(SplashSuccess(message: 'Ready (Offline Mode)'));
+        }
+        return;
+      }
+
+      // Has cache - try to bypass cloudflare
+      emit(SplashBypassInProgress(message: 'Connecting...'));
+
+      final result = await _remoteDataSource.bypassCloudflare().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          _logger.w('SplashBloc: Connection timeout, going to offline mode');
+          return false;
+        },
+      );
 
       if (result) {
         emit(SplashSuccess(message: 'Successfully connected to nhentai.net'));
       } else {
-        _logger.w('SplashBloc: Retry failed, forcing offline mode');
+        // Connection failed - go to offline mode instead of showing error
+        _logger.w('SplashBloc: Connection failed, forcing offline mode');
         AppStateManager().enableOfflineMode();
-        emit(SplashSuccess(message: 'Offline Mode (Retry Failed)'));
+        emit(SplashSuccess(message: 'Ready (Offline Mode)'));
       }
-      // Restart the bypass process
-      // add(SplashInitializeBypassEvent());
     } catch (e, stackTrace) {
-      _logger.e('SplashBloc: Error during retry',
+      _logger.e('SplashBloc: Error during retry - going to offline mode',
           error: e, stackTrace: stackTrace);
-      emit(SplashError(
-        message: 'Retry failed: ${e.toString()}',
-        canRetry: true,
-      ));
+      // Instead of showing error, go to offline mode
+      AppStateManager().enableOfflineMode();
+      emit(SplashSuccess(message: 'Ready (Offline Mode)'));
     }
   }
 
