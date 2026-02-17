@@ -162,7 +162,28 @@ class DownloadContentUseCase
       await _userDataRepository.saveDownloadStatus(currentStatus);
 
       // Convert thumbnail URLs to full image URLs
-      final fullImageUrls = content.imageUrls.map((url) => url).toList();
+      final allImageUrls = content.imageUrls.map((url) => url).toList();
+
+      // 🐛 CRITICAL FIX: Apply range filtering BEFORE sending to native layer
+      // Without this, the native downloader receives ALL URLs and downloads everything,
+      // ignoring the user's selected range (e.g., pages 1-22 would download all 100+ pages).
+      final effectiveStartPage = startPage ?? 1;
+      final effectiveEndPage = endPage ?? allImageUrls.length;
+      final isRangeDownload = startPage != null || endPage != null;
+
+      // Validate range bounds
+      final clampedStart = effectiveStartPage.clamp(1, allImageUrls.length);
+      final clampedEnd =
+          effectiveEndPage.clamp(clampedStart, allImageUrls.length);
+
+      // Slice URLs: convert 1-based page numbers to 0-based indices
+      final rangeImageUrls = allImageUrls.sublist(clampedStart - 1, clampedEnd);
+
+      _logger.i(
+        'Download range: pages $clampedStart-$clampedEnd '
+        '(${rangeImageUrls.length}/${allImageUrls.length} images)'
+        '${isRangeDownload ? ' [RANGE]' : ' [FULL]'}',
+      );
 
       final String destination = savePath ?? '';
 
@@ -176,14 +197,15 @@ class DownloadContentUseCase
         coverUrl: content.coverUrl,
         url: content.url,
         language: content.language,
-        totalImages: content.imageUrls.length,
+        totalImages: rangeImageUrls.length, // Use range count, not total
       );
 
       // Start Native Download (Fire and Forget)
+      // Pass only the range-filtered URLs so native layer downloads the correct subset
       await _nativeDownloadService.startDownload(
         contentId: content.id,
         sourceId: content.sourceId,
-        imageUrls: fullImageUrls,
+        imageUrls: rangeImageUrls,
         destinationPath: destination,
         cookies: cookies,
         title: content.title,

@@ -36,6 +36,7 @@ _No items in this stage._
 ## 🐛 Active Issues
 | Issue | Date | Status |
 |---|---|---|
+| download range ignores page bounds | 2026-02-17 | 🔴 Open |
 | download metadata chapter parentid | 2026-02-15 | 🔴 Open |
 
 ---
