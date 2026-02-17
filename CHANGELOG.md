@@ -6,6 +6,118 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.0.1] - 2026-02-17
+
+### 🐛 Perbaikan Bug
+
+#### Navigasi Chapter
+- **Perbaikan navigasi chapter KomikTap**: Tombol next/prev sekarang berfungsi dengan benar
+  - Tombol Next menuju chapter lebih baru
+  - Tombol Previous menuju chapter lebih lama  
+  - Chapter terakhir (misal Chapter 24) sekarang disable tombol Next dengan benar
+  - Chapter pertama disable tombol Previous
+- **Implementasi ChapterData**: Navigasi sekarang pakai data dari API, bukan index
+  - Menambahkan field `prevChapterId` dan `nextChapterId`
+  - KomiktapScraper dan CrotpediaScraper ekstrak data navigasi dari HTML
+
+#### Performa Reader
+- **Perbaikan loading ulang gambar saat scroll**: Gambar tidak reload lagi saat scroll naik/turun
+  - Cache ListView diperbesar dari 1000px ke 10000px
+  - Tambah `AutomaticKeepAliveClientMixin` agar gambar tetap di memory
+  - Gambar tetap cached saat scroll, tidak perlu load ulang
+
+#### Lokalisasi
+- **Halaman navigasi reader sekarang Bahasa Indonesia**:
+  - "End of Chapter" → "Akhir Halaman"
+  - "Next Chapter" → "Chapter Berikutnya"
+  - "Prev Chapter" → "Chapter Sebelumnya"
+  - Icon berubah dari `arrow_back` ke `info_outline` agar tidak rancu
+  - Layout berubah dari horizontal ke vertikal dengan tombol full-width
+
+### 🎨 Peningkatan UI/UX
+- **Redesign halaman navigasi reader**: Layout vertikal lebih mudah diakses
+  - Tombol full-width lebih besar dan mudah diklik
+  - Tombol hanya muncul jika chapter tersedia
+  - Tombol Next di-highlight sebagai aksi utama
+
+### 🛠 Refactoring
+- **Optimasi ReaderState**: Simplifikasi logika navigasi chapter
+  - Ganti `parentContent` dan `allChapters` dengan `chapterData` terpadu
+  - Update metode kalkulasi progress
+  - Bersihkan logika navigasi chapter yang redundan
+
+### 📦 Legal & Branding
+- **Update nama app di dokumen legal**: Kuron → KomikTap
+- **Sentralisasi pengecekan fitur premium**: Pakai LicenseService
+- **Pindah dokumen legal**: FAQ dan legal file ke `assets/` dengan unit test
+- **Update StartApp application ID**: Konfigurasi untuk branding KomikTap
+
+### 🔧 Lainnya
+- **Version bump**: Update ke 1.0.1+3
+- **Hapus favorites dari drawer**: Simplifikasi menu navigasi
+- **Update URL download**: Ganti ke halaman portal terpusat
+
+---
+
+## [1.0.1] - 2026-02-17
+
+### 🐛 Bug Fixes
+
+#### Chapter Navigation
+- **Fixed chapter navigation bug in KomikTap**: Corrected prevUrl/nextUrl mapping to match proper navigation semantics
+  - Next button now correctly navigates to newer chapters
+  - Previous button navigates to older chapters
+  - Last chapter (e.g., Chapter 24) now properly disables next button instead of incorrectly showing Chapter 23
+  - First chapter properly disables previous button
+- **Implemented ChapterData entity**: Replaced index-based navigation with API-based navigation data
+  - Added `prevChapterId` and `nextChapterId` fields for reliable chapter detection
+  - KomiktapScraper and CrotpediaScraper now extract navigation data from HTML
+  - Fixes bug where next button appeared on last chapter
+
+#### Reader Performance
+- **Enhanced image loading performance**: Fixed image re-loading issue when scrolling
+  - Increased ListView cache extent from 1000px to 10000px
+  - Added `AutomaticKeepAliveClientMixin` to keep images alive in memory
+  - Enabled `addAutomaticKeepAlives` and `addRepaintBoundaries` for better performance
+  - Images now stay cached when scrolling up/down, eliminating unnecessary reloads
+
+#### Localization
+- **Updated reader navigation to Indonesian**: Changed navigation labels for better UX
+  - "End of Chapter" → "Akhir Halaman"
+  - "What would you like to do?" → "Apa yang ingin Anda lakukan?"
+  - "Next Chapter" → "Chapter Berikutnya"
+  - "Prev Chapter" → "Chapter Sebelumnya"
+  - "Back" → "Kembali ke Detail Content"
+  - Changed icon from `arrow_back` to `info_outline` to avoid confusion with back navigation
+  - Improved layout from Row to Column with full-width buttons for better accessibility
+
+### 🎨 UI/UX Improvements
+- **Reader Navigation Page**: Redesigned with vertical layout
+  - Full-width buttons for easier interaction
+  - Conditional rendering (buttons only show when chapters are available)
+  - Icon + text aligned horizontally for clarity
+  - Primary button highlighted for next chapter action
+
+### 🛠 Refactoring
+- **ReaderState optimization**: Simplified chapter navigation logic
+  - Replaced `parentContent` and `allChapters` with unified `chapterData`
+  - Updated progress calculation methods
+  - Cleaned up redundant chapter navigation logic
+  - StreamAppBar now uses `chapterData` for navigation
+
+### 📦 Legal & Branding
+- **Updated app name in legal documents**: Changed references from Kuron to KomikTap
+- **Centralized premium feature checks**: Refactored to use LicenseService
+- **Relocated legal documents**: Moved FAQ and legal files to `assets/` with unit tests
+- **Updated StartApp application ID**: Configured for KomikTap branding
+
+### 🔧 Other Changes
+- **Version bump**: Updated to 1.0.1+3
+- **Removed favorites from drawer**: Simplified navigation items
+- **Update download URL**: Changed to centralized portal download page
+
+---
+
 ## [1.0.0] - 2026-02-08
 
 ### 🚀 Official Release & Rebranding
