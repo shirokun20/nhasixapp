@@ -383,7 +383,7 @@ class KomiktapSource implements ContentSource {
   // ============ Helper Methods ============
 
   /// Get images from a specific chapter
-  Future<List<String>> getChapterImages(String chapterSlug) async {
+  Future<ChapterData> getChapterImages(String chapterSlug) async {
     try {
       final url = KomiktapUrlBuilder.buildChapterUrlFromSlug(chapterSlug,
           baseUrl: baseUrl);
@@ -400,14 +400,14 @@ class KomiktapSource implements ContentSource {
         ),
       );
 
-      final images = _scraper.parseChapterImages(response.data);
+      final chapterData = _scraper.parseChapterImages(response.data);
 
-      _logger?.i('Found ${images.length} images in chapter');
+      _logger?.i('Found ${chapterData.images.length} images in chapter');
 
-      return images;
+      return chapterData;
     } catch (e, stack) {
       _logger?.e('Failed to get chapter pages', error: e, stackTrace: stack);
-      rethrow;
+      return const ChapterData(images: []);
     }
   }
 

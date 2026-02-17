@@ -5,6 +5,7 @@ import '../../../core/di/service_locator.dart';
 import '../../../core/routing/app_route.dart';
 import '../../cubits/genre_list/genre_list_cubit.dart';
 import '../../widgets/genre_card_widget.dart';
+import '../../widgets/app_main_drawer_widget.dart';
 
 /// Genre list screen for KomikTap
 /// Displays all genres with counts (no pagination)
@@ -42,12 +43,15 @@ class _GenreListView extends StatelessWidget {
         }
       },
       child: Scaffold(
+        drawer: AppMainDrawerWidget(context: context),
         appBar: AppBar(
           title: const Text('Genres'),
           centerTitle: true,
-          leading: IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
+          leading: Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
           ),
         ),
         body: BlocBuilder<GenreListCubit, GenreListState>(

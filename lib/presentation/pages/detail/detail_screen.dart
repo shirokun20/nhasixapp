@@ -27,11 +27,13 @@ import 'widgets/chapter_list_bottom_sheet.dart';
 class DetailScreen extends StatefulWidget {
   final String contentId;
   final String? sourceId;
+  final String? autoOpenChapterId;
 
   const DetailScreen({
     super.key,
     required this.contentId,
     this.sourceId,
+    this.autoOpenChapterId,
   });
 
   @override
@@ -82,6 +84,21 @@ class _DetailScreenState extends State<DetailScreen> {
     // Second call: Load related content independently
     if (mounted && _detailCubit.state is DetailLoaded) {
       _detailCubit.loadRelatedContent();
+
+      // Auto-open chapter if specified in route
+      if (widget.autoOpenChapterId != null) {
+        final loadedState = _detailCubit.state as DetailLoaded;
+        final chapters = loadedState.content.chapters;
+        if (chapters != null && chapters.isNotEmpty) {
+          final chapterToOpen = chapters.firstWhere(
+            (c) => c.id == widget.autoOpenChapterId,
+            orElse: () => chapters.first,
+          );
+          Logger().i(
+              'Auto-opening chapter: ${chapterToOpen.title} (${chapterToOpen.id})');
+          _detailCubit.openChapter(chapterToOpen);
+        }
+      }
     }
   }
 
@@ -190,8 +207,19 @@ class _DetailScreenState extends State<DetailScreen> {
               return BlocListener<DetailCubit, DetailState>(
                 listener: (context, state) {
                   if (state is DetailReaderReady) {
+                    // Find the current chapter from parent's chapters list
+                    final parentChapters = state.content.chapters;
+                    Chapter? currentChapter;
+                    if (parentChapters != null && parentChapters.isNotEmpty) {
+                      currentChapter = parentChapters.firstWhere(
+                        (c) => c.id == state.chapterContent.id,
+                        orElse: () => parentChapters.first,
+                      );
+                    }
                     _readContent(state.chapterContent,
-                        forceStartFromBeginning: true);
+                        forceStartFromBeginning: true,
+                        chapter: currentChapter,
+                        parentContent: state.content);
                     context.read<DetailCubit>().resetToLoaded();
                   } else if (state is DetailActionFailure) {
                     if (state.needsLogin) {
@@ -1633,7 +1661,9 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   void _readContent(Content content,
-      {bool forceStartFromBeginning = false}) async {
+      {bool forceStartFromBeginning = false,
+      Chapter? chapter,
+      Content? parentContent}) async {
     // Show Interstitial Ad before reading
     try {
       final adService = getIt<AdService>();
@@ -1647,6 +1677,26 @@ class _DetailScreenState extends State<DetailScreen> {
     final currentState = _detailCubit.state;
     final imageMetadata =
         currentState is DetailLoaded ? currentState.imageMetadata : null;
+
+    // Get parent content and chapters for navigation
+    Content? parentContentForNav;
+    List<Chapter>? allChaptersForNav;
+    Chapter? currentChapterForNav;
+
+    if (currentState is DetailReaderReady) {
+      // This is when opening a chapter from detail screen
+      parentContentForNav = currentState.content;
+      allChaptersForNav = currentState.content.chapters;
+      currentChapterForNav = chapter;
+    } else if (parentContent != null) {
+      // Use provided parent content
+      parentContentForNav = parentContent;
+      allChaptersForNav = parentContent.chapters;
+      currentChapterForNav = chapter;
+    }
+
+    Logger().i(
+        'Chapter navigation - parentContent: ${parentContentForNav?.title}, chapters: ${allChaptersForNav?.length}, currentChapter: ${currentChapterForNav?.title}');
 
     // Validate content before passing to reader
     // Always pass content if it has chapters, even if no images yet
@@ -1667,7 +1717,10 @@ class _DetailScreenState extends State<DetailScreen> {
       content.id,
       forceStartFromBeginning: forceStartFromBeginning,
       content: contentToPass,
-      imageMetadata: imageMetadata, // Pass metadata to reader
+      imageMetadata: imageMetadata,
+      parentContent: parentContentForNav,
+      allChapters: allChaptersForNav,
+      currentChapter: currentChapterForNav,
     );
   }
 

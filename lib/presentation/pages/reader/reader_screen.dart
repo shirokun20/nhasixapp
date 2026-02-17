@@ -8,6 +8,7 @@ import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/models/image_metadata.dart';
 import '../../../core/utils/offline_content_manager.dart';
+import '../../../core/routing/app_router.dart';
 import '../../../data/models/reader_settings_model.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../../services/local_image_preloader.dart';
@@ -28,6 +29,10 @@ class ReaderScreen extends StatefulWidget {
     this.forceStartFromBeginning = false,
     this.preloadedContent,
     this.imageMetadata,
+    this.parentContent,
+    this.allChapters,
+    this.currentChapter,
+    this.onNavigateToChapter,
   });
 
   final String contentId;
@@ -35,6 +40,14 @@ class ReaderScreen extends StatefulWidget {
   final bool forceStartFromBeginning;
   final Content? preloadedContent;
   final List<ImageMetadata>? imageMetadata;
+  final Content? parentContent;
+  final List<Chapter>? allChapters;
+  final Chapter? currentChapter;
+
+  /// Callback to navigate to a specific chapter
+  /// Used for next/prev chapter navigation
+  /// Parameters: chapterId, sourceId
+  final void Function(String chapterId, String sourceId)? onNavigateToChapter;
 
   @override
   State<ReaderScreen> createState() => _ReaderScreenState();
@@ -60,6 +73,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Content? _preloadedContent;
   List<ImageMetadata>? _preloadedImageMetadata;
   bool _isPreloading = false;
+
+  // Chapter navigation parameters
+  Content? _parentContent;
+  List<Chapter>? _allChapters;
+  Chapter? _currentChapter;
 
   @override
   void initState() {
@@ -106,6 +124,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
           widget.imageMetadata == null) {
         _preloadedImageMetadata =
             routeExtra['imageMetadata'] as List<ImageMetadata>;
+      }
+      // Extract chapter navigation parameters
+      if (routeExtra['parentContent'] is Content) {
+        _parentContent = routeExtra['parentContent'] as Content;
+      }
+      if (routeExtra['allChapters'] is List<Chapter>) {
+        _allChapters = routeExtra['allChapters'] as List<Chapter>;
+      }
+      if (routeExtra['currentChapter'] is Chapter) {
+        _currentChapter = routeExtra['currentChapter'] as Chapter;
       }
     } else if (routeExtra is Content && widget.preloadedContent == null) {
       // Fallback for direct Content object (backward compatibility)
@@ -377,6 +405,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
         final effectiveImageMetadata =
             _preloadedImageMetadata ?? widget.imageMetadata;
 
+        // Use chapter navigation parameters from widget or extracted from route extra
+        final effectiveParentContent = _parentContent ?? widget.parentContent;
+        final effectiveAllChapters = _allChapters ?? widget.allChapters;
+        final effectiveCurrentChapter =
+            _currentChapter ?? widget.currentChapter;
+
         // Always call loadContent with preloaded content if available
         return _readerCubit
           ..loadContent(
@@ -385,6 +419,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
             forceStartFromBeginning: widget.forceStartFromBeginning,
             preloadedContent: effectivePreloadedContent,
             imageMetadata: effectiveImageMetadata,
+            parentContent: effectiveParentContent,
+            allChapters: effectiveAllChapters,
+            currentChapter: effectiveCurrentChapter,
           );
       },
       child: BlocListener<ReaderCubit, ReaderState>(
@@ -447,6 +484,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
             forceStartFromBeginning: widget.forceStartFromBeginning,
             preloadedContent: widget.preloadedContent,
             imageMetadata: widget.imageMetadata,
+            parentContent: widget.parentContent,
+            allChapters: widget.allChapters,
+            currentChapter: widget.currentChapter,
           ),
         ),
       );
@@ -522,11 +562,35 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
           // If this is the last item, show navigation page
           if (index >= imageUrls.length) {
+            // Navigate back to detail with next chapter ID to auto-open
+            final sourceId =
+                state.parentContent?.sourceId ?? state.content?.sourceId ?? '';
+            final parentId = state.parentContent?.id ?? state.content?.id ?? '';
             return ReaderNavigationPage(
               hasPreviousChapter: state.hasPreviousChapter,
               hasNextChapter: state.hasNextChapter,
-              onPreviousChapter: () => _readerCubit.goToPreviousChapter(),
-              onNextChapter: () => _readerCubit.goToNextChapter(),
+              onPreviousChapter: state.previousChapter != null
+                  ? () {
+                      context.pop();
+                      AppRouter.goToContentDetailWithChapter(
+                        context,
+                        parentId,
+                        sourceId,
+                        autoOpenChapterId: state.previousChapter!.id,
+                      );
+                    }
+                  : () => _readerCubit.goToPreviousChapter(),
+              onNextChapter: state.nextChapter != null
+                  ? () {
+                      context.pop();
+                      AppRouter.goToContentDetailWithChapter(
+                        context,
+                        parentId,
+                        sourceId,
+                        autoOpenChapterId: state.nextChapter!.id,
+                      );
+                    }
+                  : () => _readerCubit.goToNextChapter(),
               contentId: state.content?.id,
             );
           }
@@ -588,11 +652,35 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
           // If this is the last item, show navigation page
           if (index >= imageUrls.length) {
+            // Navigate back to detail with next chapter ID to auto-open
+            final sourceId =
+                state.parentContent?.sourceId ?? state.content?.sourceId ?? '';
+            final parentId = state.parentContent?.id ?? state.content?.id ?? '';
             return ReaderNavigationPage(
               hasPreviousChapter: state.hasPreviousChapter,
               hasNextChapter: state.hasNextChapter,
-              onPreviousChapter: () => _readerCubit.goToPreviousChapter(),
-              onNextChapter: () => _readerCubit.goToNextChapter(),
+              onPreviousChapter: state.previousChapter != null
+                  ? () {
+                      context.pop();
+                      AppRouter.goToContentDetailWithChapter(
+                        context,
+                        parentId,
+                        sourceId,
+                        autoOpenChapterId: state.previousChapter!.id,
+                      );
+                    }
+                  : () => _readerCubit.goToPreviousChapter(),
+              onNextChapter: state.nextChapter != null
+                  ? () {
+                      context.pop();
+                      AppRouter.goToContentDetailWithChapter(
+                        context,
+                        parentId,
+                        sourceId,
+                        autoOpenChapterId: state.nextChapter!.id,
+                      );
+                    }
+                  : () => _readerCubit.goToNextChapter(),
               contentId: state.content?.id,
             );
           }
@@ -626,14 +714,38 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
         // If this is the last item, show navigation page
         if (index >= imageUrls.length) {
+          // Navigate back to detail with next chapter ID to auto-open
+          final sourceId =
+              state.parentContent?.sourceId ?? state.content?.sourceId ?? '';
+          final parentId = state.parentContent?.id ?? state.content?.id ?? '';
           return SizedBox(
             height:
                 MediaQuery.of(context).size.height * 0.8, // Give it some height
             child: ReaderNavigationPage(
               hasPreviousChapter: state.hasPreviousChapter,
               hasNextChapter: state.hasNextChapter,
-              onPreviousChapter: () => _readerCubit.goToPreviousChapter(),
-              onNextChapter: () => _readerCubit.goToNextChapter(),
+              onPreviousChapter: state.previousChapter != null
+                  ? () {
+                      context.pop();
+                      AppRouter.goToContentDetailWithChapter(
+                        context,
+                        parentId,
+                        sourceId,
+                        autoOpenChapterId: state.previousChapter!.id,
+                      );
+                    }
+                  : () => _readerCubit.goToPreviousChapter(),
+              onNextChapter: state.nextChapter != null
+                  ? () {
+                      context.pop();
+                      AppRouter.goToContentDetailWithChapter(
+                        context,
+                        parentId,
+                        sourceId,
+                        autoOpenChapterId: state.nextChapter!.id,
+                      );
+                    }
+                  : () => _readerCubit.goToNextChapter(),
               contentId: state.content?.id,
             ),
           );

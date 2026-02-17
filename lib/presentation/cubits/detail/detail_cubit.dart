@@ -106,7 +106,7 @@ class DetailCubit extends BaseCubit<DetailState> {
 
       final errorType = determineErrorType(e);
       final message = ErrorMessageUtils.getFriendlyErrorMessage(e);
-      
+
       emit(DetailError(
         message: message,
         errorType: errorType,
@@ -373,11 +373,14 @@ class DetailCubit extends BaseCubit<DetailState> {
           _contentSourceRegistry.getSource(currentState.content.sourceId);
 
       List<String> images = [];
+      ChapterData? chapterData;
 
       if (source is CrotpediaSource) {
-        images = await source.getChapterImages(chapter.id);
+        chapterData = await source.getChapterImages(chapter.id);
+        images = chapterData.images;
       } else if (source is KomiktapSource) {
-        images = await source.getChapterImages(chapter.id);
+        chapterData = await source.getChapterImages(chapter.id);
+        images = chapterData.images;
       } else {
         logWarning(
             'Source ${source?.displayName} does not support getChapterImages direct call');
@@ -429,7 +432,7 @@ class DetailCubit extends BaseCubit<DetailState> {
     } catch (e) {
       logger.e('Failed to open chapter: $e');
       final message = ErrorMessageUtils.getFriendlyErrorMessage(e);
-      
+
       emit(DetailActionFailure(
         message: 'Failed to open chapter: $message',
         content: currentState.content,

@@ -83,9 +83,8 @@ abstract class ContentRepository {
   ///
   /// [chapterId] - Chapter ID
   /// [sourceId] - Optional source ID
-  /// Returns list of image URLs for the chapter
-  Future<List<String>> getChapterImages(ContentId chapterId,
-      {String? sourceId});
+  /// Returns ChapterData with image URLs and navigation info
+  Future<ChapterData> getChapterImages(ContentId chapterId, {String? sourceId});
 
   // ==================== KomikTap List Page Methods (NEW) ====================
 

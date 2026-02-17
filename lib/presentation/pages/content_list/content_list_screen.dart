@@ -9,6 +9,7 @@ import '../../cubits/content_list/content_list_cubit.dart';
 import '../../widgets/alphabet_filter_widget.dart';
 import '../../widgets/content_grid.dart';
 import '../../widgets/pagination_widget.dart';
+import '../../widgets/app_main_drawer_widget.dart';
 
 /// Generic content list screen for KomikTap
 /// Used for: Manga, Manhua, Manhwa, A-Z, Project
@@ -64,12 +65,15 @@ class _ContentListView extends StatelessWidget {
         }
       },
       child: Scaffold(
+        drawer: AppMainDrawerWidget(context: context),
         appBar: AppBar(
           title: Text(title),
           centerTitle: true,
-          leading: IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
+          leading: Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
           ),
         ),
         body: Column(

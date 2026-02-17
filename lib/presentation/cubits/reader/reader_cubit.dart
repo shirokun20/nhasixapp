@@ -52,7 +52,10 @@ class ReaderCubit extends Cubit<ReaderState> {
       {int initialPage = 1,
       bool forceStartFromBeginning = false,
       Content? preloadedContent,
-      List<ImageMetadata>? imageMetadata}) async {
+      List<ImageMetadata>? imageMetadata,
+      Content? parentContent,
+      List<Chapter>? allChapters,
+      Chapter? currentChapter}) async {
     try {
       _stopAutoHideTimer();
       emit(ReaderLoading(state));
@@ -168,6 +171,9 @@ class ReaderCubit extends Cubit<ReaderState> {
         readingTimer: Duration.zero,
         isOfflineMode: isOfflineMode,
         imageMetadata: imageMetadata,
+        parentContent: parentContent,
+        allChapters: allChapters,
+        currentChapter: currentChapter,
       ));
 
       _logImageUrlMapping(content);
@@ -311,11 +317,14 @@ class ReaderCubit extends Cubit<ReaderState> {
     _logger.i(
         'Navigating to previous chapter: ${prevChapter.id} - ${prevChapter.title}');
 
-    // Load the previous chapter content
+    // Load the previous chapter content with chapter navigation data
     await loadContent(
       prevChapter.id,
       initialPage: 1,
       forceStartFromBeginning: true,
+      parentContent: state.parentContent,
+      allChapters: state.allChapters,
+      currentChapter: prevChapter,
     );
 
     return true;
@@ -342,11 +351,14 @@ class ReaderCubit extends Cubit<ReaderState> {
 
     _logger.i('Navigating to next chapter: ${nextChap.id} - ${nextChap.title}');
 
-    // Load the next chapter content
+    // Load the next chapter content with chapter navigation data
     await loadContent(
       nextChap.id,
       initialPage: 1,
       forceStartFromBeginning: true,
+      parentContent: state.parentContent,
+      allChapters: state.allChapters,
+      currentChapter: nextChap,
     );
 
     return true;

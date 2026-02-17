@@ -317,7 +317,7 @@ class ContentRepositoryImpl implements ContentRepository {
   }
 
   @override
-  Future<List<String>> getChapterImages(ContentId chapterId,
+  Future<core.ChapterData> getChapterImages(ContentId chapterId,
       {String? sourceId}) async {
     try {
       _logger.d(
@@ -346,10 +346,10 @@ class ContentRepositoryImpl implements ContentRepository {
       // If source doesn't support it or is standard source without chapters
       // We could try getDetail as fallback? No, chapter images are specific.
       _logger.w('Source ${source.displayName} does not support chapter images');
-      return [];
+      return const core.ChapterData(images: []);
     } catch (e) {
       _logger.e('Failed to get chapter images: $e');
-      return [];
+      return const core.ChapterData(images: []);
     }
   }
 

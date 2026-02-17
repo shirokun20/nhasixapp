@@ -13,6 +13,9 @@ class ReaderState extends Equatable {
     this.message,
     this.isOfflineMode,
     this.imageMetadata,
+    this.parentContent,
+    this.allChapters,
+    this.currentChapter,
   });
 
   final Content? content;
@@ -26,6 +29,10 @@ class ReaderState extends Equatable {
   final bool? isOfflineMode;
   final List<ImageMetadata>? imageMetadata;
 
+  final Content? parentContent;
+  final List<Chapter>? allChapters;
+  final Chapter? currentChapter;
+
   @override
   List<Object?> get props => [
         content,
@@ -38,6 +45,9 @@ class ReaderState extends Equatable {
         message,
         isOfflineMode,
         imageMetadata,
+        parentContent,
+        allChapters,
+        currentChapter,
       ];
 
   static const _undefined = Object();
@@ -53,6 +63,9 @@ class ReaderState extends Equatable {
     Object? message = _undefined,
     Object? isOfflineMode = _undefined,
     List<ImageMetadata>? imageMetadata,
+    Content? parentContent,
+    Object? allChapters = _undefined,
+    Object? currentChapter = _undefined,
   }) {
     return ReaderState(
       content: content ?? this.content,
@@ -71,71 +84,57 @@ class ReaderState extends Equatable {
           ? this.isOfflineMode
           : isOfflineMode as bool?,
       imageMetadata: imageMetadata ?? this.imageMetadata,
+      parentContent: parentContent ?? this.parentContent,
+      allChapters: allChapters == _undefined
+          ? this.allChapters
+          : allChapters as List<Chapter>?,
+      currentChapter: currentChapter == _undefined
+          ? this.currentChapter
+          : currentChapter as Chapter?,
     );
   }
 
-  /// Get reading progress as percentage (0.0 to 1.0)
   double get progress {
     if (content?.pageCount == null || content!.pageCount == 0) return 0.0;
     return (currentPage ?? 1) / content!.pageCount;
   }
 
-  /// Get reading progress as percentage (0 to 100)
   int get progressPercentage {
     return (progress * 100).round();
   }
 
-  /// Check if this is the first page
   bool get isFirstPage => (currentPage ?? 1) <= 1;
 
-  /// Check if this is the last page
   bool get isLastPage => (currentPage ?? 1) >= (content?.pageCount ?? 1);
 
-  /// Get current chapter index (if chapters available)
   int get currentChapterIndex {
-    if (content?.chapters == null || content!.chapters!.isEmpty) return 0;
-
-    // Find chapter containing current page
-    // For now, assume each chapter is a separate content
-    // This logic may need adjustment based on actual data structure
-    return 0;
+    if (allChapters == null || allChapters!.isEmpty) return -1;
+    if (currentChapter == null) return -1;
+    return allChapters!.indexWhere((c) => c.id == currentChapter!.id);
   }
 
-  /// Check if has previous chapter
   bool get hasPreviousChapter {
-    if (content?.chapters == null || content!.chapters!.isEmpty) return false;
-    return currentChapterIndex > 0;
-  }
-
-  /// Check if has next chapter
-  bool get hasNextChapter {
-    if (content?.chapters == null || content!.chapters!.isEmpty) return false;
-    return currentChapterIndex < content!.chapters!.length - 1;
-  }
-
-  /// Get current chapter
-  Chapter? get currentChapter {
-    if (content?.chapters == null || content!.chapters!.isEmpty) return null;
+    if (allChapters == null || allChapters!.isEmpty) return false;
     final index = currentChapterIndex;
-    if (index >= 0 && index < content!.chapters!.length) {
-      return content!.chapters![index];
-    }
-    return null;
+    return index > 0;
   }
 
-  /// Get previous chapter
+  bool get hasNextChapter {
+    if (allChapters == null || allChapters!.isEmpty) return false;
+    final index = currentChapterIndex;
+    return index >= 0 && index < allChapters!.length - 1;
+  }
+
   Chapter? get previousChapter {
     if (!hasPreviousChapter) return null;
-    return content!.chapters![currentChapterIndex - 1];
+    return allChapters![currentChapterIndex - 1];
   }
 
-  /// Get next chapter
   Chapter? get nextChapter {
     if (!hasNextChapter) return null;
-    return content!.chapters![currentChapterIndex + 1];
+    return allChapters![currentChapterIndex + 1];
   }
 
-  /// Get current image URL
   String get currentImageUrl {
     if (content == null ||
         currentPage == null ||
@@ -147,12 +146,10 @@ class ReaderState extends Equatable {
   }
 }
 
-/// Initial state
 class ReaderInitial extends ReaderState {
   const ReaderInitial();
 }
 
-/// Loading state
 class ReaderLoading extends ReaderState {
   ReaderLoading(ReaderState prevState)
       : super(
@@ -166,10 +163,12 @@ class ReaderLoading extends ReaderState {
           message: prevState.message,
           isOfflineMode: prevState.isOfflineMode,
           imageMetadata: prevState.imageMetadata,
+          parentContent: prevState.parentContent,
+          allChapters: prevState.allChapters,
+          currentChapter: prevState.currentChapter,
         );
 }
 
-/// Loaded state with content and basic reading functionality
 class ReaderLoaded extends ReaderState {
   ReaderLoaded(ReaderState prevState)
       : super(
@@ -183,10 +182,12 @@ class ReaderLoaded extends ReaderState {
           message: prevState.message,
           isOfflineMode: prevState.isOfflineMode ?? false,
           imageMetadata: prevState.imageMetadata,
+          parentContent: prevState.parentContent,
+          allChapters: prevState.allChapters,
+          currentChapter: prevState.currentChapter,
         );
 }
 
-/// Error state
 class ReaderError extends ReaderState {
   ReaderError(ReaderState prevState)
       : super(
@@ -200,5 +201,8 @@ class ReaderError extends ReaderState {
           message: prevState.message,
           isOfflineMode: prevState.isOfflineMode,
           imageMetadata: prevState.imageMetadata,
+          parentContent: prevState.parentContent,
+          allChapters: prevState.allChapters,
+          currentChapter: prevState.currentChapter,
         );
 }

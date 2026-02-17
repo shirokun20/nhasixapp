@@ -23,6 +23,7 @@ import 'package:nhasixapp/presentation/pages/content_list/content_list_screen.da
 import 'package:nhasixapp/presentation/pages/genre_list/genre_list_screen.dart';
 import 'package:nhasixapp/core/models/image_metadata.dart';
 import 'package:nhasixapp/core/utils/app_animations.dart';
+import 'package:kuron_core/kuron_core.dart' hide FilterItem, SearchFilter;
 
 class AppRouter {
   /// Global navigator key untuk Cloudflare bypass dialog
@@ -129,12 +130,14 @@ class AppRouter {
         pageBuilder: (context, state) {
           final contentId = state.pathParameters['id']!;
           final sourceId = state.uri.queryParameters['sourceId'];
+          final autoChapterId = state.uri.queryParameters['autoChapter'];
           return AppAnimations.animatedPageBuilder(
             context,
             state,
             DetailScreen(
               contentId: contentId,
               sourceId: sourceId,
+              autoOpenChapterId: autoChapterId,
             ),
             type: RouteTransitionType.fadeSlide,
           );
@@ -498,10 +501,30 @@ class AppRouter {
       {int page = 1,
       bool forceStartFromBeginning = false,
       Content? content,
-      List<ImageMetadata>? imageMetadata}) {
+      List<ImageMetadata>? imageMetadata,
+      Content? parentContent,
+      List<Chapter>? allChapters,
+      Chapter? currentChapter,
+      String? autoOpenChapterId}) {
     context.push(
         '/reader/$contentId?page=$page&forceStartFromBeginning=$forceStartFromBeginning',
-        extra: {'content': content, 'imageMetadata': imageMetadata});
+        extra: {
+          'content': content,
+          'imageMetadata': imageMetadata,
+          'parentContent': parentContent,
+          'allChapters': allChapters,
+          'currentChapter': currentChapter,
+          'autoOpenChapterId': autoOpenChapterId,
+        });
+  }
+
+  /// Navigate to content detail with optional auto-open chapter
+  static void goToContentDetailWithChapter(
+      BuildContext context, String contentId, String sourceId,
+      {String? autoOpenChapterId}) {
+    final query =
+        '?sourceId=$sourceId${autoOpenChapterId != null ? '&autoChapter=$autoOpenChapterId' : ''}';
+    context.push('/content/$contentId$query');
   }
 
   static void goToReaderPdf(BuildContext context,
