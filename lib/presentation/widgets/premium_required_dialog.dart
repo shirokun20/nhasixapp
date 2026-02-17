@@ -39,6 +39,7 @@ class PremiumRequiredDialog extends StatelessWidget {
           children: [
             // Header with gradient
             Container(
+              width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -107,8 +108,8 @@ class PremiumRequiredDialog extends StatelessWidget {
                   const SizedBox(height: 12),
                   _buildFeatureItem(
                     context,
-                    Icons.offline_bolt,
-                    'Offline Access',
+                    Icons.more_horiz_outlined,
+                    'Dan Lainnya...',
                   ),
 
                   const SizedBox(height: 24),

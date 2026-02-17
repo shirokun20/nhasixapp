@@ -1967,10 +1967,10 @@
   "backupNotFound": "Cadangan Tidak Ditemukan",
   "backupNotFoundMessage": "Folder cadangan 'komikTapXKuron' tidak ditemukan di lokasi default. Apakah Anda ingin memilih folder kustom yang berisi cadangan Anda?",
   "selectFolder": "Pilih Folder",
-  "premiumFeature": "Fitur Premium",
+  "premiumFeature": "Fitur Berbayar",
   "premiumRequired": "Memerlukan Premium",
-  "premiumRequiredMessage": "Fitur ini hanya tersedia untuk pengguna premium. Upgrade sekarang untuk membuka semua fitur!",
-  "upgradeToPremium": "Upgrade ke Premium",
+  "premiumRequiredMessage": "Fitur ini hanya tersedia untuk pengguna berbayar. Upgrade sekarang untuk membuka semua fitur!",
+  "upgradeToPremium": "Upgrade ke fitur Berbayar",
   "currentSubscription": "Kamu sedang menggunakan paket {planName} dengan masa aktif sampai {expiryDate}",
   "@currentSubscription": {
     "placeholders": {

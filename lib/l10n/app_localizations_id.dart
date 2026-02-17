@@ -3338,17 +3338,17 @@ class AppLocalizationsId extends AppLocalizations {
   String get selectFolder => 'Pilih Folder';
 
   @override
-  String get premiumFeature => 'Fitur Premium';
+  String get premiumFeature => 'Fitur Berbayar';
 
   @override
   String get premiumRequired => 'Memerlukan Premium';
 
   @override
   String get premiumRequiredMessage =>
-      'Fitur ini hanya tersedia untuk pengguna premium. Upgrade sekarang untuk membuka semua fitur!';
+      'Fitur ini hanya tersedia untuk pengguna berbayar. Upgrade sekarang untuk membuka semua fitur!';
 
   @override
-  String get upgradeToPremium => 'Upgrade ke Premium';
+  String get upgradeToPremium => 'Upgrade ke fitur Berbayar';
 
   @override
   String currentSubscription(String planName, String expiryDate) {
