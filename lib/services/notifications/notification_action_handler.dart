@@ -248,11 +248,11 @@ class NotificationActionHandler {
       }
 
       _logger.i('✅ File exists, opening in native PDF reader: $filePath');
-      
+
       // Use native PDF reader
       final pdfReaderService = getIt<NativePdfReaderService>();
       await pdfReaderService.openPdf(filePath);
-      
+
       _logger.i('✅ PDF opened successfully in native reader');
     } catch (e) {
       _logger.e('💥 Exception opening PDF file: $e');

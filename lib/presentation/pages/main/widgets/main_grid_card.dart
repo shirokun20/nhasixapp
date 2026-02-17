@@ -273,27 +273,30 @@ class MainGridCard extends StatelessWidget {
           ),
         ),
       ),
-      errorWidget: 
-        // Try fallback URL if available
-        (fallbackUrl != null && fallbackUrl != coverUrl) ? ProgressiveImageWidget(
-            networkUrl: fallbackUrl,
-            httpHeaders: getIt<ContentSourceRegistry>()
-                .getSource(content.sourceId)
-                ?.getImageDownloadHeaders(imageUrl: fallbackUrl),
-            fit: BoxFit.cover,
-            memCacheWidth: 400,
-            memCacheHeight: 600,
-            placeholder: Container(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: Center(
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ),
-            errorWidget: _buildErrorPlaceholder(context),
-          ) : _buildErrorPlaceholder(context),
+      errorWidget:
+          // Try fallback URL if available
+          (fallbackUrl != null && fallbackUrl != coverUrl)
+              ? ProgressiveImageWidget(
+                  networkUrl: fallbackUrl,
+                  httpHeaders: getIt<ContentSourceRegistry>()
+                      .getSource(content.sourceId)
+                      ?.getImageDownloadHeaders(imageUrl: fallbackUrl),
+                  fit: BoxFit.cover,
+                  memCacheWidth: 400,
+                  memCacheHeight: 600,
+                  placeholder: Container(
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                  errorWidget: _buildErrorPlaceholder(context),
+                )
+              : _buildErrorPlaceholder(context),
     );
   }
 

@@ -14,7 +14,7 @@ class AppMainHeaderWidget extends StatelessWidget
   final VoidCallback? onExport;
   final Future<Map<String, dynamic>>? offlineStats;
   final String? title;
-  final String? sourceId;  // For feature flag checking
+  final String? sourceId; // For feature flag checking
 
   const AppMainHeaderWidget({
     super.key,
@@ -28,7 +28,7 @@ class AppMainHeaderWidget extends StatelessWidget
     this.onExport,
     this.offlineStats,
     this.title,
-    this.sourceId,  // Optional sourceId for feature checking
+    this.sourceId, // Optional sourceId for feature checking
   });
 
   final BuildContext context;
@@ -153,7 +153,8 @@ class AppMainHeaderWidget extends StatelessWidget
                       // Check feature flag before downloading
                       if (sourceId != null) {
                         final remoteConfig = getIt<RemoteConfigService>();
-                        if (!remoteConfig.isFeatureEnabled(sourceId!, (f) => f.download)) {
+                        if (!remoteConfig.isFeatureEnabled(
+                            sourceId!, (f) => f.download)) {
                           _showFeatureDisabledDialog(context);
                           return;
                         }
@@ -191,7 +192,7 @@ class AppMainHeaderWidget extends StatelessWidget
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
-  
+
   void _showFeatureDisabledDialog(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     showDialog(

@@ -19,26 +19,26 @@ class ReaderPosition extends Equatable {
 
   /// Content ID (unique identifier)
   final String contentId;
-  
+
   /// Current page being read (1-indexed)
   final int currentPage;
-  
+
   /// Total pages in content
   final int totalPages;
-  
+
   /// Last accessed timestamp
   final DateTime lastAccessed;
-  
+
   /// Reading progress (0.0 to 1.0)
   final double readingProgress;
-  
+
   /// Reading time in minutes
   final int readingTimeMinutes;
-  
+
   /// Optional content title for display
   final String? title;
-  
-  /// Optional cover URL for display  
+
+  /// Optional cover URL for display
   final String? coverUrl;
 
   /// Optional chapter ID for chapter-based content

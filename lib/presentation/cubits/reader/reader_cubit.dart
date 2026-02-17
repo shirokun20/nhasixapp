@@ -368,18 +368,68 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       _logger.i('Loading chapter: ${chapter.title} (${chapter.id})');
 
-      // Fetch chapter images and navigation data
-      final chapterData =
-          await getChapterImagesUseCase(GetChapterImagesParams.fromString(
-        chapterId,
-        sourceId: _parentContent?.sourceId ?? state.content?.sourceId,
-      ));
+      // 🚀 OFFLINE-FIRST: Check if chapter is available offline
+      final isOfflineAvailable =
+          await offlineContentManager.isContentAvailableOffline(chapterId);
 
-      if (chapterData.images.isEmpty) {
-        emit(ReaderError(state.copyWith(
-          message: 'Failed to load chapter images',
-        )));
-        return;
+      List<String> chapterImages = [];
+      bool loadedFromOffline = false;
+
+      if (isOfflineAvailable) {
+        _logger.i(
+            '✅ Chapter $chapterId found offline, loading from local storage');
+        chapterImages =
+            await offlineContentManager.getOfflineImageUrls(chapterId);
+
+        if (chapterImages.isNotEmpty) {
+          loadedFromOffline = true;
+          _logger.i(
+              '✅ Loaded ${chapterImages.length} images from offline storage');
+        } else {
+          _logger.w('⚠️ Offline chapter directory exists but no images found');
+        }
+      }
+
+      // Fallback to online API if offline content not available or failed
+      ChapterData? chapterData;
+      if (!loadedFromOffline) {
+        _logger.i('📡 Fetching chapter from online API');
+
+        // Check connectivity before making online request
+        final hasConnection = networkCubit.isConnected;
+
+        if (!hasConnection) {
+          _logger
+              .e('❌ No internet connection and chapter not available offline');
+          emit(ReaderError(state.copyWith(
+            message:
+                'Cannot load chapter: No internet connection and chapter not downloaded',
+          )));
+          return;
+        }
+
+        try {
+          chapterData =
+              await getChapterImagesUseCase(GetChapterImagesParams.fromString(
+            chapterId,
+            sourceId: _parentContent?.sourceId ?? state.content?.sourceId,
+          ));
+
+          if (chapterData.images.isEmpty) {
+            emit(ReaderError(state.copyWith(
+              message: 'Failed to load chapter images',
+            )));
+            return;
+          }
+
+          chapterImages = chapterData.images;
+        } catch (e) {
+          _logger.e('Failed to load chapter from online API: $e');
+          emit(ReaderError(state.copyWith(
+            message: 'Failed to load chapter: ${e.toString()}',
+          )));
+          return;
+        }
       }
 
       // Extract the parent series title (before the ' - Chapter' part)
@@ -390,8 +440,8 @@ class ReaderCubit extends Cubit<ReaderState> {
       final newContent = (_parentContent ?? state.content!).copyWith(
         id: chapterId,
         title: fullTitle,
-        imageUrls: chapterData.images,
-        pageCount: chapterData.images.length,
+        imageUrls: chapterImages,
+        pageCount: chapterImages.length,
         chapters: _allChapters ?? [], // Include all chapters for navigation
       );
 
@@ -401,6 +451,8 @@ class ReaderCubit extends Cubit<ReaderState> {
         chapterData: chapterData,
         currentChapter: chapter,
         readingTimer: Duration.zero,
+        isOfflineMode:
+            loadedFromOffline, // Mark as offline if loaded from local storage
       )));
 
       // Save to history

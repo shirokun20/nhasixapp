@@ -88,7 +88,7 @@ class FavoriteLoaded extends FavoriteState {
     if (localizations == null) {
       return _getFallbackEmptyMessage();
     }
-    
+
     if (isSearching) {
       return 'No favorites found for "$searchQuery"'; // Keep dynamic for now
     }
@@ -157,7 +157,7 @@ class FavoriteError extends FavoriteState {
     if (localizations == null) {
       return _getFallbackUserMessage();
     }
-    
+
     switch (errorType) {
       case 'network':
         return localizations.networkError;

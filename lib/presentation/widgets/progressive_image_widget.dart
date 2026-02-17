@@ -266,11 +266,12 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
           }
           if (snapshot.hasError || snapshot.data == null) {
             if (kDebugMode) {
-              _logger.e('❌ Error loading GIF as static image: ${snapshot.error}');
+              _logger
+                  .e('❌ Error loading GIF as static image: ${snapshot.error}');
             }
             return widget.errorWidget ?? _buildErrorWidget();
           }
-          
+
           final imageWidget = Image.file(
             snapshot.data!,
             width: widget.width,

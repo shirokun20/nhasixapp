@@ -19,7 +19,7 @@ class FilterTypeTabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surface,
@@ -71,7 +71,7 @@ class FilterTypeTabBarModern extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       height: 56,
       padding: const EdgeInsets.all(8),
@@ -124,7 +124,7 @@ class FilterTypeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -134,7 +134,9 @@ class FilterTypeTab extends StatelessWidget {
           vertical: 8,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary : colorScheme.surfaceContainerHighest,
+          color: isSelected
+              ? colorScheme.primary
+              : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? colorScheme.primary : colorScheme.outline,
@@ -144,7 +146,7 @@ class FilterTypeTab extends StatelessWidget {
         child: Center(
           child: Text(
             text,
-            style: isSelected 
+            style: isSelected
                 ? TextStyleConst.labelMedium.copyWith(
                     color: colorScheme.onPrimary,
                   )
@@ -174,7 +176,7 @@ class FilterTypeSegmentedControl extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -196,8 +198,7 @@ class FilterTypeSegmentedControl extends StatelessWidget {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color:
-                      isSelected ? colorScheme.primary : Colors.transparent,
+                  color: isSelected ? colorScheme.primary : Colors.transparent,
                   borderRadius: BorderRadius.horizontal(
                     left: isFirst ? const Radius.circular(12) : Radius.zero,
                     right: isLast ? const Radius.circular(12) : Radius.zero,
@@ -206,7 +207,7 @@ class FilterTypeSegmentedControl extends StatelessWidget {
                 child: Center(
                   child: Text(
                     TagType.getDisplayName(type),
-                    style: isSelected 
+                    style: isSelected
                         ? TextStyleConst.labelMedium.copyWith(
                             color: colorScheme.onPrimary,
                           )
@@ -240,7 +241,7 @@ class FilterTypeChipBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       height: 56,
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -269,7 +270,7 @@ class FilterTypeChipBar extends StatelessWidget {
               onSelected: (selected) => onChanged(index),
               selectedColor: colorScheme.primary.withValues(alpha: 0.2),
               checkmarkColor: colorScheme.primary,
-              labelStyle: isSelected 
+              labelStyle: isSelected
                   ? TextStyleConst.labelMedium.copyWith(
                       color: colorScheme.primary,
                     )
@@ -277,9 +278,7 @@ class FilterTypeChipBar extends StatelessWidget {
                       color: colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
               side: BorderSide(
-                color: isSelected
-                    ? colorScheme.primary
-                    : colorScheme.outline,
+                color: isSelected ? colorScheme.primary : colorScheme.outline,
               ),
             ),
           );

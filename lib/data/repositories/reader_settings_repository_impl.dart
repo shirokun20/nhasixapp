@@ -135,8 +135,6 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
     }
   }
 
-
-
   /// Retry operation with exponential backoff
   Future<T> _retryOperation<T>(
     String operationName,

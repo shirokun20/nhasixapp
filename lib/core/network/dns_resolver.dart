@@ -51,15 +51,16 @@ class DnsResolver {
     try {
       // Perform DoH lookup
       final addresses = await _performDohLookup(host, settings);
-      
+
       // Cache result
       _cache[host] = _CachedDnsResult(addresses);
       _logger.d('DNS resolved $host to ${addresses.length} addresses via DoH');
-      
+
       return addresses;
     } catch (e) {
-      _logger.w('DoH lookup failed for $host, falling back to system DNS', error: e);
-      
+      _logger.w('DoH lookup failed for $host, falling back to system DNS',
+          error: e);
+
       // Fallback to system DNS on error
       return _systemLookup(host);
     }
@@ -100,13 +101,11 @@ class DnsResolver {
     }
 
     // Extract A records (type 1)
-    final addresses = answers
-        .where((answer) => answer['type'] == 1)
-        .map((answer) {
-          final ip = answer['data'] as String;
-          return InternetAddress(ip);
-        })
-        .toList();
+    final addresses =
+        answers.where((answer) => answer['type'] == 1).map((answer) {
+      final ip = answer['data'] as String;
+      return InternetAddress(ip);
+    }).toList();
 
     if (addresses.isEmpty) {
       throw Exception('No A records found for $host');

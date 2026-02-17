@@ -120,7 +120,9 @@ void main() {
       expect(result.currentPage, equals(1));
       expect(result.hasNext, isTrue);
 
-      verify(mockDio.get(argThat(contains('crotpedia.net')), options: anyNamed('options'))).called(1);
+      verify(mockDio.get(argThat(contains('crotpedia.net')),
+              options: anyNamed('options')))
+          .called(1);
       verify(mockScraper.parseLatestSeries(any)).called(1);
     });
 
@@ -140,7 +142,8 @@ void main() {
         statusCode: 200,
       );
 
-      when(mockDio.get(argThat(contains('page/2')), options: anyNamed('options')))
+      when(mockDio.get(argThat(contains('page/2')),
+              options: anyNamed('options')))
           .thenAnswer((_) async => response);
       when(mockScraper.parseLatestSeries(any)).thenReturn(mockSeriesList);
       when(mockScraper.parsePagination(any)).thenReturn((
@@ -154,11 +157,14 @@ void main() {
 
       expect(result.contents.length, equals(1));
       expect(result.currentPage, equals(2));
-      verify(mockDio.get(argThat(contains('page/2')), options: anyNamed('options'))).called(1);
+      verify(mockDio.get(argThat(contains('page/2')),
+              options: anyNamed('options')))
+          .called(1);
     });
 
     test('getList returns empty list on error', () async {
-      when(mockDio.get(any, options: anyNamed('options'))).thenThrow(Exception('Network error'));
+      when(mockDio.get(any, options: anyNamed('options')))
+          .thenThrow(Exception('Network error'));
 
       final result = await source.getList(page: 1);
 
@@ -186,18 +192,22 @@ void main() {
         statusCode: 200,
       );
 
-      when(mockDio.get(any, options: anyNamed('options'))).thenAnswer((_) async => response);
+      when(mockDio.get(any, options: anyNamed('options')))
+          .thenAnswer((_) async => response);
       when(mockScraper.parseSearchResults(any)).thenReturn(mockSeriesList);
 
       final result = await source.getPopular(page: 1);
 
       expect(result.contents.length, equals(1));
       expect(result.contents[0].title, equals('Popular Series'));
-      verify(mockDio.get(argThat(contains('order=popular')), options: anyNamed('options'))).called(1);
+      verify(mockDio.get(argThat(contains('order=popular')),
+              options: anyNamed('options')))
+          .called(1);
     });
 
     test('returns empty list on error', () async {
-      when(mockDio.get(any, options: anyNamed('options'))).thenThrow(Exception('Error'));
+      when(mockDio.get(any, options: anyNamed('options')))
+          .thenThrow(Exception('Error'));
 
       final result = await source.getPopular();
 
@@ -228,14 +238,17 @@ void main() {
         page: 1,
       );
 
-      when(mockDio.get(any, options: anyNamed('options'))).thenAnswer((_) async => response);
+      when(mockDio.get(any, options: anyNamed('options')))
+          .thenAnswer((_) async => response);
       when(mockScraper.parseSearchResults(any)).thenReturn(mockSeriesList);
 
       final result = await source.search(filter);
 
       expect(result.contents.length, equals(1));
       expect(result.contents[0].title, equals('Search Result'));
-      verify(mockDio.get(argThat(contains('?s=')), options: anyNamed('options'))).called(1);
+      verify(mockDio.get(argThat(contains('?s=')),
+              options: anyNamed('options')))
+          .called(1);
     });
 
     test('performs advanced search with tags', () async {
@@ -262,17 +275,21 @@ void main() {
         ],
       );
 
-      when(mockDio.get(any, options: anyNamed('options'))).thenAnswer((_) async => response);
+      when(mockDio.get(any, options: anyNamed('options')))
+          .thenAnswer((_) async => response);
       when(mockScraper.parseSearchResults(any)).thenReturn(mockSeriesList);
 
       final result = await source.search(filter);
 
       expect(result.contents.length, equals(1));
-      verify(mockDio.get(argThat(contains('genre')), options: anyNamed('options'))).called(1);
+      verify(mockDio.get(argThat(contains('genre')),
+              options: anyNamed('options')))
+          .called(1);
     });
 
     test('returns empty list on search error', () async {
-      when(mockDio.get(any, options: anyNamed('options'))).thenThrow(Exception('Search error'));
+      when(mockDio.get(any, options: anyNamed('options')))
+          .thenThrow(Exception('Search error'));
 
       const filter = SearchFilter(query: 'test', page: 1);
       final result = await source.search(filter);
@@ -339,7 +356,8 @@ void main() {
     });
 
     test('throws on detail fetch error', () async {
-      when(mockDio.get(any, options: anyNamed('options'))).thenThrow(Exception('Detail error'));
+      when(mockDio.get(any, options: anyNamed('options')))
+          .thenThrow(Exception('Detail error'));
 
       expect(
         () => source.getDetail('test-slug'),
@@ -408,7 +426,8 @@ void main() {
           .thenAnswer((_) async => searchResponse);
       when(mockScraper.parseSeriesDetail(any)).thenReturn(mockSeriesDetail);
       when(mockScraper.parseSearchResults(any)).thenReturn(mockSearchResults);
-      when(mockScraper.parseChapterImages(any)).thenReturn(const ChapterData(images: []));
+      when(mockScraper.parseChapterImages(any))
+          .thenReturn(const ChapterData(images: []));
 
       final result = await source.getRelated('original');
 
@@ -442,7 +461,8 @@ void main() {
     });
 
     test('returns empty list on error', () async {
-      when(mockDio.get(any, options: anyNamed('options'))).thenThrow(Exception('Related error'));
+      when(mockDio.get(any, options: anyNamed('options')))
+          .thenThrow(Exception('Related error'));
 
       final result = await source.getRelated('test-slug');
 
@@ -494,12 +514,14 @@ void main() {
 
       final mockChapterData = ChapterData(images: mockImages);
 
-      when(mockDio.get(any, options: anyNamed('options'))).thenAnswer((_) async => response);
+      when(mockDio.get(any, options: anyNamed('options')))
+          .thenAnswer((_) async => response);
       when(mockScraper.parseChapterImages(any)).thenReturn(mockChapterData);
     });
 
     test('returns empty list on error', () async {
-      when(mockDio.get(any, options: anyNamed('options'))).thenThrow(Exception('Chapter error'));
+      when(mockDio.get(any, options: anyNamed('options')))
+          .thenThrow(Exception('Chapter error'));
 
       final result = await source.getChapterImages('chapter-slug');
 

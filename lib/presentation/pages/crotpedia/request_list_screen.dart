@@ -76,8 +76,9 @@ class _RequestListBodyState extends State<_RequestListBody> {
             child: AppErrorWidget(
               title: 'Error Loading Requests',
               message: state.message,
-              onRetry: () =>
-                  context.read<CrotpediaFeatureCubit>().loadRequestList(page: 1),
+              onRetry: () => context
+                  .read<CrotpediaFeatureCubit>()
+                  .loadRequestList(page: 1),
             ),
           );
         } else if (state is RequestListLoaded) {
@@ -99,8 +100,7 @@ class _RequestListBodyState extends State<_RequestListBody> {
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              itemCount:
-                  state.requests.length + (state.isLoadingMore ? 1 : 0),
+              itemCount: state.requests.length + (state.isLoadingMore ? 1 : 0),
               itemBuilder: (context, index) {
                 if (index >= state.requests.length) {
                   // Bottom loading shimmer

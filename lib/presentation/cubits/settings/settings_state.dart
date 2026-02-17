@@ -37,7 +37,8 @@ class SettingsLoaded extends SettingsState {
     return SettingsLoaded(
       preferences: preferences ?? this.preferences,
       lastUpdated: lastUpdated ?? this.lastUpdated,
-      isUpdatingDisguiseMode: isUpdatingDisguiseMode ?? this.isUpdatingDisguiseMode,
+      isUpdatingDisguiseMode:
+          isUpdatingDisguiseMode ?? this.isUpdatingDisguiseMode,
     );
   }
 
@@ -46,7 +47,7 @@ class SettingsLoaded extends SettingsState {
     if (localizations == null) {
       return _getFallbackThemeDisplayName();
     }
-    
+
     switch (preferences.theme) {
       case 'light':
         return localizations.lightTheme;
@@ -77,7 +78,7 @@ class SettingsLoaded extends SettingsState {
     if (localizations == null) {
       return _getFallbackImageQualityDisplayName();
     }
-    
+
     switch (preferences.imageQuality) {
       case 'low':
         return localizations.lowQuality;
@@ -112,7 +113,7 @@ class SettingsLoaded extends SettingsState {
     if (localizations == null) {
       return _getFallbackReadingDirectionDisplayName();
     }
-    
+
     switch (preferences.readingDirection) {
       case ReadingDirection.leftToRight:
         return localizations.horizontalPages;
@@ -139,7 +140,7 @@ class SettingsLoaded extends SettingsState {
     if (localizations == null) {
       return _getFallbackDefaultLanguageDisplayName();
     }
-    
+
     switch (preferences.defaultLanguage.toLowerCase()) {
       case 'english':
         return localizations.english;
@@ -241,7 +242,7 @@ class SettingsError extends SettingsState {
     if (localizations == null) {
       return _getFallbackUserFriendlyMessage();
     }
-    
+
     switch (errorType) {
       case 'network':
         return localizations.unableToSyncSettings;

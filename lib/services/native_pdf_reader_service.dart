@@ -6,11 +6,10 @@ import 'package:kuron_native/kuron_native.dart';
 class NativePdfReaderService {
   final Logger _logger;
 
-  NativePdfReaderService({Logger? logger}) 
-      : _logger = logger ?? Logger();
+  NativePdfReaderService({Logger? logger}) : _logger = logger ?? Logger();
 
   /// Open PDF file in native reader
-  /// 
+  ///
   /// [filePath] - Absolute path to PDF file
   /// [title] - Optional title for the reader
   /// [startPage] - Optional starting page number (NOT SUPPORTED by current KuronNative but kept for API compatibility)
@@ -21,13 +20,13 @@ class NativePdfReaderService {
   }) async {
     try {
       _logger.i('📄 Opening PDF with native reader: $filePath');
-      
+
       await KuronNative.instance.openPdf(
         filePath: filePath,
         title: title ?? '',
         startPage: startPage,
       );
-      
+
       _logger.i('✅ PDF opened successfully');
     } catch (e) {
       _logger.e('❌ Unexpected error opening PDF: $e', error: e);
@@ -43,4 +42,3 @@ class NativePdfReaderService {
     _logger.d('closePdf called (no action needed for KuronNative reader)');
   }
 }
-

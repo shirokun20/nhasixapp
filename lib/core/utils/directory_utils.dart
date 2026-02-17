@@ -22,9 +22,10 @@ class DirectoryUtils {
           final customDir = Directory(customPath);
           // Trust the setting regardless of immediate existence check (similar to DownloadService fix)
           if (!await customDir.exists()) {
-             _logger.w('DirectoryUtils: Custom storage root set but does not exist: $customPath. Using it anyway.');
+            _logger.w(
+                'DirectoryUtils: Custom storage root set but does not exist: $customPath. Using it anyway.');
           } else {
-             _logger.i('DirectoryUtils: Using custom storage root: $customPath');
+            _logger.i('DirectoryUtils: Using custom storage root: $customPath');
           }
           return customPath;
         }
@@ -123,9 +124,12 @@ class DirectoryUtils {
       return documentsDownloadsDir.path;
       */
       _logger.e('DirectoryUtils: No custom storage root found!');
-      debugPrint('📁 DIRECTORY_UTILS: CRITICAL - No custom storage root selected');
-      debugPrint('📁 DIRECTORY_UTILS: This should not happen if user previously set storage location');
-      throw Exception('No custom storage root selected. Please select a storage location in settings.');
+      debugPrint(
+          '📁 DIRECTORY_UTILS: CRITICAL - No custom storage root selected');
+      debugPrint(
+          '📁 DIRECTORY_UTILS: This should not happen if user previously set storage location');
+      throw Exception(
+          'No custom storage root selected. Please select a storage location in settings.');
     } catch (e) {
       _logger.e('DirectoryUtils: Error detecting Downloads directory: $e');
 
@@ -152,7 +156,7 @@ class DirectoryUtils {
   static Future<String?> findNhasixBackupFolder() async {
     try {
       debugPrint('DIRECTORY_UTILS: Starting findNhasixBackupFolder...');
-      
+
       // PRIORITY 1: Check custom storage root first
       final customRoot = await StorageSettings.getCustomRootPath();
       if (customRoot != null && customRoot.isNotEmpty) {
@@ -160,27 +164,33 @@ class DirectoryUtils {
         final customDir = Directory(customRoot);
         final customExists = await customDir.exists();
         debugPrint('DIRECTORY_UTILS: Custom storage exists: $customExists');
-        
+
         if (customExists) {
           // Check if 'nhasix' subfolder exists inside custom root (Standard structure)
           final nhasixInCustom = Directory(path.join(customRoot, 'nhasix'));
           if (await nhasixInCustom.exists()) {
-             _logger.d('DirectoryUtils: Found nhasix folder in custom root: ${nhasixInCustom.path}');
-             debugPrint('DIRECTORY_UTILS: Found nhasix folder in custom root: ${nhasixInCustom.path}');
-             return nhasixInCustom.path;
+            _logger.d(
+                'DirectoryUtils: Found nhasix folder in custom root: ${nhasixInCustom.path}');
+            debugPrint(
+                'DIRECTORY_UTILS: Found nhasix folder in custom root: ${nhasixInCustom.path}');
+            return nhasixInCustom.path;
           }
 
           // If 'nhasix' subfolder doesn't exist, assume custom root IS the backup folder (User selected the 'nhasix' folder itself or a custom named folder)
-          _logger.d('DirectoryUtils: nhasix subfolder not found, using custom root as base: $customRoot');
-          debugPrint('DIRECTORY_UTILS: nhasix subfolder not found, using custom root as base: $customRoot');
+          _logger.d(
+              'DirectoryUtils: nhasix subfolder not found, using custom root as base: $customRoot');
+          debugPrint(
+              'DIRECTORY_UTILS: nhasix subfolder not found, using custom root as base: $customRoot');
           return customRoot;
         } else {
-          debugPrint('DIRECTORY_UTILS: Custom storage root does not exist, falling back to Downloads/nhasix');
+          debugPrint(
+              'DIRECTORY_UTILS: Custom storage root does not exist, falling back to Downloads/nhasix');
         }
       } else {
-        debugPrint('DIRECTORY_UTILS: No custom storage root set, checking Downloads/nhasix');
+        debugPrint(
+            'DIRECTORY_UTILS: No custom storage root set, checking Downloads/nhasix');
       }
-      
+
       // PRIORITY 2: Fallback to Downloads/nhasix for backward compatibility
       final downloadsPath = await getDownloadsDirectory();
       debugPrint(
@@ -194,13 +204,14 @@ class DirectoryUtils {
       debugPrint('DIRECTORY_UTILS: Downloads/nhasix directory exists: $exists');
 
       if (exists) {
-        _logger.d('DirectoryUtils: Found nhasix backup folder in Downloads: $nhasixPath');
-        debugPrint('DIRECTORY_UTILS: Found nhasix backup folder in Downloads: $nhasixPath');
+        _logger.d(
+            'DirectoryUtils: Found nhasix backup folder in Downloads: $nhasixPath');
+        debugPrint(
+            'DIRECTORY_UTILS: Found nhasix backup folder in Downloads: $nhasixPath');
         return nhasixPath;
       }
 
-      debugPrint(
-          'DIRECTORY_UTILS: nhasix backup folder not found anywhere');
+      debugPrint('DIRECTORY_UTILS: nhasix backup folder not found anywhere');
       _logger.d('DirectoryUtils: nhasix backup folder not found');
       return null;
     } catch (e) {

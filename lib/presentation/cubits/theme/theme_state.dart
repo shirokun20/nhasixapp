@@ -1,6 +1,6 @@
 part of 'theme_cubit.dart';
 
-/// State for theme management  
+/// State for theme management
 class ThemeState {
   const ThemeState({
     required this.themeData,
@@ -75,7 +75,7 @@ class ThemeState {
     );
   }
 
-    @override
+  @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is ThemeState &&
@@ -86,7 +86,5 @@ class ThemeState {
 
   @override
   int get hashCode =>
-      themeMode.hashCode ^
-      currentTheme.hashCode ^
-      lastUpdated.hashCode;
+      themeMode.hashCode ^ currentTheme.hashCode ^ lastUpdated.hashCode;
 }

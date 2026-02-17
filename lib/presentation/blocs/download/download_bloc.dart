@@ -827,7 +827,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
           // Build path: [Root]/[backupFolderName]/[sourceId]/[safeContentId]
           // Use safe content ID to avoid filesystem issues with long titles
-          final safeContentId = DownloadStorageUtils.getSafeContentId(event.contentId);
+          final safeContentId =
+              DownloadStorageUtils.getSafeContentId(event.contentId);
           savePath = path.join(baseDownloadPath, backupFolderName,
               content.sourceId, safeContentId);
         } else {
@@ -854,14 +855,16 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         // we MUST save it to the database immediately. Otherwise, if the download fails early (e.g. network),
         // the next retry might pick up the old unsafe path or no path at all.
         if (savePath != null && (updatedDownload.downloadPath != savePath)) {
-            _logger.i('💾 Saving new safe download path to DB: $savePath');
-            final newPathDownload = updatedDownload.copyWith(
-              downloadPath: savePath,
-            );
-            // Fire and forget save to avoid blocking
-            await _userDataRepository.saveDownloadStatus(newPathDownload).catchError((e) {
-               _logger.w('Failed to save new download path to DB: $e');
-            });
+          _logger.i('💾 Saving new safe download path to DB: $savePath');
+          final newPathDownload = updatedDownload.copyWith(
+            downloadPath: savePath,
+          );
+          // Fire and forget save to avoid blocking
+          await _userDataRepository
+              .saveDownloadStatus(newPathDownload)
+              .catchError((e) {
+            _logger.w('Failed to save new download path to DB: $e');
+          });
         }
 
         // Only save resume state if we have a path, or rely on native worker's own resume capability
@@ -1792,17 +1795,18 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       String? downloadPath = currentDownload.downloadPath;
 
       // FALLBACK: If downloadPath is missing or invalid, use smart lookup
-      if (downloadPath == null || downloadPath.isEmpty || !File(downloadPath).parent.existsSync()) {
-         _logger.w('⚠️ Download path missing or invalid, using smart lookup');
-         try {
-           downloadPath = await DownloadStorageUtils.getContentDirectory(
-             event.contentId, 
-             sourceId: currentDownload.sourceId
-           );
-           _logger.i('✅ Resolved path via smart lookup: $downloadPath');
-         } catch (e) {
-           _logger.e('Failed to resolve path via smart lookup', error: e);
-         }
+      if (downloadPath == null ||
+          downloadPath.isEmpty ||
+          !File(downloadPath).parent.existsSync()) {
+        _logger.w('⚠️ Download path missing or invalid, using smart lookup');
+        try {
+          downloadPath = await DownloadStorageUtils.getContentDirectory(
+              event.contentId,
+              sourceId: currentDownload.sourceId);
+          _logger.i('✅ Resolved path via smart lookup: $downloadPath');
+        } catch (e) {
+          _logger.e('Failed to resolve path via smart lookup', error: e);
+        }
       }
 
       // Calculate final size if path exists
@@ -1815,34 +1819,36 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           try {
             final dir = Directory(currentPath);
             if (!dir.existsSync()) {
-               _logger.w('Directory does not exist (attempt $attempt): $currentPath');
-               
-               // LAST RESORT: Try to find ANY valid directory for this content
-               // This handles cases where downloadPath might point to "images" subdir or parent
-               final smartPath = await DownloadStorageUtils.getContentDirectory(
-                 event.contentId, 
-                 sourceId: currentDownload.sourceId
-               );
-               
-               if (Directory(smartPath).existsSync()) {
-                 currentPath = smartPath; // Update checks to use this valid path
-                 downloadPath = smartPath; // Update main variable too
-                 _logger.i('Found valid directory via smart lookup recovery: $smartPath');
-                 // Don't continue, just let the next lines use this new path
-               } else {
-                 if (attempt < 3) {
-                   await Future.delayed(Duration(milliseconds: 500 * attempt));
-                   continue;
-                 }
-               }
+              _logger.w(
+                  'Directory does not exist (attempt $attempt): $currentPath');
+
+              // LAST RESORT: Try to find ANY valid directory for this content
+              // This handles cases where downloadPath might point to "images" subdir or parent
+              final smartPath = await DownloadStorageUtils.getContentDirectory(
+                  event.contentId,
+                  sourceId: currentDownload.sourceId);
+
+              if (Directory(smartPath).existsSync()) {
+                currentPath = smartPath; // Update checks to use this valid path
+                downloadPath = smartPath; // Update main variable too
+                _logger.i(
+                    'Found valid directory via smart lookup recovery: $smartPath');
+                // Don't continue, just let the next lines use this new path
+              } else {
+                if (attempt < 3) {
+                  await Future.delayed(Duration(milliseconds: 500 * attempt));
+                  continue;
+                }
+              }
             }
 
             // Double check existence after potential recovery
             if (Directory(currentPath).existsSync()) {
-               totalSize = await DownloadStorageUtils.getDirectorySize(Directory(currentPath));
-               _logger.i(
-                   '💾 Calculated final size for ${event.contentId}: ${DownloadStorageUtils.formatBytes(totalSize)} ($totalSize bytes)');
-               break; // Success
+              totalSize = await DownloadStorageUtils.getDirectorySize(
+                  Directory(currentPath));
+              _logger.i(
+                  '💾 Calculated final size for ${event.contentId}: ${DownloadStorageUtils.formatBytes(totalSize)} ($totalSize bytes)');
+              break; // Success
             }
           } catch (e) {
             _logger.w('Failed to calculate size (attempt $attempt/3): $e');

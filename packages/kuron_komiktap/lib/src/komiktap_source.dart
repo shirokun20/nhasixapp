@@ -153,29 +153,27 @@ class KomiktapSource implements ContentSource {
       if (filter.includeTags.isNotEmpty) {
         final firstTag = filter.includeTags.first;
         final genreSlug = firstTag.name.toLowerCase().replaceAll(' ', '-');
-        
+
         url = KomiktapUrlBuilder.buildGenreUrl(
           genreSlug,
           page: filter.page,
           baseUrl: baseUrl,
         );
-        
-        _logger?.d(
-          'Searching by genre slug: $genreSlug, page: ${filter.page}');
-      } 
+
+        _logger?.d('Searching by genre slug: $genreSlug, page: ${filter.page}');
+      }
       // Priority 2: Text-based search
       else {
         // Use standard search for any query
         final query = filter.query.trim();
-        
+
         url = KomiktapUrlBuilder.buildSearchUrl(
           query,
           page: filter.page,
           baseUrl: baseUrl,
         );
 
-        _logger?.d(
-          'Searching with query: "$query", page: ${filter.page}');
+        _logger?.d('Searching with query: "$query", page: ${filter.page}');
       }
 
       final response = await _dio.get(
@@ -415,45 +413,44 @@ class KomiktapSource implements ContentSource {
   }
 
   /// Convert KomiktapSeriesDetail to Content (for detail view)
-Content _convertDetailToContent(KomiktapSeriesDetail detail) {
-  // Map chapters
-  final chapters = (detail.chapters ?? [])
-      .map((c) => Chapter(
-            id: c.id,
-            title: c.title,
-            // ✅ FIX: Use real URL from scraper instead of reconstructing
-            // This fixes irregular URLs like "chapter-1.5" or "special-chapter"
-            url: c.url,
-            uploadDate: c.publishDate,
-          ))
-      .toList();
-
-  return Content(
-    id: detail.id,
-    sourceId: id,
-    title: detail.title,
-    coverUrl: detail.coverImageUrl,
-    pageCount: 0, // Dynamic per chapter
-    imageUrls: const [], // Empty initially
-    chapters: chapters,
-    tags: detail.tags
-        .map((tag) => Tag(
-              id: tag.hashCode,
-              name: tag,
-              type: TagType.tag,
-              count: 0,
-              slug: tag.toLowerCase().replaceAll(' ', '-'),
+  Content _convertDetailToContent(KomiktapSeriesDetail detail) {
+    // Map chapters
+    final chapters = (detail.chapters ?? [])
+        .map((c) => Chapter(
+              id: c.id,
+              title: c.title,
+              // ✅ FIX: Use real URL from scraper instead of reconstructing
+              // This fixes irregular URLs like "chapter-1.5" or "special-chapter"
+              url: c.url,
+              uploadDate: c.publishDate,
             ))
-        .toList(),
-    artists: detail.author != null ? [detail.author!] : [],
-    characters: [],
-    parodies: [],
-    groups: [],
-    language: 'indonesian',
-    uploadDate: detail.lastUpdate ?? DateTime.now(),
-    favorites: detail.favorites ?? 0,
-    englishTitle: detail.alternativeTitle,
-  );
-}
+        .toList();
 
+    return Content(
+      id: detail.id,
+      sourceId: id,
+      title: detail.title,
+      coverUrl: detail.coverImageUrl,
+      pageCount: 0, // Dynamic per chapter
+      imageUrls: const [], // Empty initially
+      chapters: chapters,
+      tags: detail.tags
+          .map((tag) => Tag(
+                id: tag.hashCode,
+                name: tag,
+                type: TagType.tag,
+                count: 0,
+                slug: tag.toLowerCase().replaceAll(' ', '-'),
+              ))
+          .toList(),
+      artists: detail.author != null ? [detail.author!] : [],
+      characters: [],
+      parodies: [],
+      groups: [],
+      language: 'indonesian',
+      uploadDate: detail.lastUpdate ?? DateTime.now(),
+      favorites: detail.favorites ?? 0,
+      englishTitle: detail.alternativeTitle,
+    );
+  }
 }

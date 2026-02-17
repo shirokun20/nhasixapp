@@ -11,7 +11,7 @@ class DownloadTask {
   final String contentId;
   final String title;
   final CancelToken cancelToken;
-  
+
   bool _isPaused = false;
   bool _isCancelled = false;
   DateTime? _pausedAt;
@@ -53,7 +53,7 @@ class DownloadTask {
     if (!_isCancelled) {
       _isCancelled = true;
       _cancelledAt = DateTime.now();
-      
+
       if (!cancelToken.isCancelled) {
         cancelToken.cancel(reason ?? 'Download cancelled by user');
       }

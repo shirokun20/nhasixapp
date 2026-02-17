@@ -21,9 +21,14 @@ class CloudflareBypassNoWebView {
   /// Attempt to bypass Cloudflare protection without WebView
   Future<bool> attemptBypass({String? targetUrl}) async {
     // Only Android platform is supported
-    if (kIsWeb || Platform.isIOS || Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    if (kIsWeb ||
+        Platform.isIOS ||
+        Platform.isWindows ||
+        Platform.isLinux ||
+        Platform.isMacOS) {
       _logger.e('CloudflareBypass only supported on Android platform');
-      throw UnsupportedError('Kuron is only supported on Android devices. Current platform: ${Platform.operatingSystem}');
+      throw UnsupportedError(
+          'Kuron is only supported on Android devices. Current platform: ${Platform.operatingSystem}');
     }
 
     final urlToCheck = targetUrl ?? defaultBaseUrl;

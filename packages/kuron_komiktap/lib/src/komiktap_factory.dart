@@ -35,7 +35,7 @@ class KomiktapFactory {
   }
 
   /// Create a KomiktapSource from remote config JSON
-  /// 
+  ///
   /// Expected JSON structure:
   /// ```json
   /// {

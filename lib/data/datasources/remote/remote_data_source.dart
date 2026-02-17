@@ -1096,7 +1096,8 @@ class RemoteDataSource {
             '✅ [API SUCCESS] Fetched ${comments.length} comments for ID: $contentId');
         return comments;
       } catch (e) {
-        _logger.w('⚠️ [API FAILED] Falling back to HTML scraping for comments: $e');
+        _logger.w(
+            '⚠️ [API FAILED] Falling back to HTML scraping for comments: $e');
         // Fall through to scraping
       }
     } else {

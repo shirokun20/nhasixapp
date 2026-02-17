@@ -44,8 +44,7 @@ void main() {
   }
 
   group('CrotpediaGenreListScreen', () {
-    testWidgets('shows shimmer loading when state is loading',
-        (tester) async {
+    testWidgets('shows shimmer loading when state is loading', (tester) async {
       when(() => mockCubit.state).thenReturn(CrotpediaFeatureLoading());
       when(() => mockCubit.loadGenreList()).thenAnswer((_) async {});
 
@@ -68,8 +67,10 @@ void main() {
 
     testWidgets('shows list of genres when state is loaded', (tester) async {
       final genres = [
-        GenreItem(name: 'Action', count: 10, url: '/genre/action', slug: 'action'),
-        GenreItem(name: 'Romance', count: 5, url: '/genre/romance', slug: 'romance'),
+        GenreItem(
+            name: 'Action', count: 10, url: '/genre/action', slug: 'action'),
+        GenreItem(
+            name: 'Romance', count: 5, url: '/genre/romance', slug: 'romance'),
       ];
       when(() => mockCubit.state).thenReturn(GenreListLoaded(genres));
       when(() => mockCubit.loadGenreList()).thenAnswer((_) async {});
@@ -84,7 +85,8 @@ void main() {
 
     testWidgets('shows header with genre count when loaded', (tester) async {
       final genres = [
-        GenreItem(name: 'Action', count: 10, url: '/genre/action', slug: 'action'),
+        GenreItem(
+            name: 'Action', count: 10, url: '/genre/action', slug: 'action'),
       ];
       when(() => mockCubit.state).thenReturn(GenreListLoaded(genres));
       when(() => mockCubit.loadGenreList()).thenAnswer((_) async {});

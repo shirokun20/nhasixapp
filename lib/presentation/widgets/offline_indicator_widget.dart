@@ -37,7 +37,8 @@ class OfflineIndicatorWidget extends StatelessWidget {
           decoration: BoxDecoration(
             color: isOffline
                 ? Theme.of(context).colorScheme.error.withValues(alpha: 0.2)
-                : _getConnectionColor(context, connectionType).withValues(alpha: 0.2),
+                : _getConnectionColor(context, connectionType)
+                    .withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(compact ? 4 : 6),
             border: Border.all(
               color: isOffline
@@ -61,9 +62,12 @@ class OfflineIndicatorWidget extends StatelessWidget {
               if (!compact) ...[
                 const SizedBox(width: 4),
                 Text(
-                  isOffline ? AppLocalizations.of(context)!.offlineStatus : 
-                    (connectionType == NetworkConnectionType.other ? AppLocalizations.of(context)!.onlineStatus : _getConnectionText(connectionType)),
-                  style: compact 
+                  isOffline
+                      ? AppLocalizations.of(context)!.offlineStatus
+                      : (connectionType == NetworkConnectionType.other
+                          ? AppLocalizations.of(context)!.onlineStatus
+                          : _getConnectionText(connectionType)),
+                  style: compact
                       ? TextStyleConst.overline.copyWith(
                           color: isOffline
                               ? Theme.of(context).colorScheme.error
@@ -177,7 +181,8 @@ class OfflineBanner extends StatelessWidget {
             color: Theme.of(context).colorScheme.errorContainer,
             border: Border(
               bottom: BorderSide(
-                color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
+                color:
+                    Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
@@ -265,9 +270,13 @@ class OfflineModeToggle extends StatelessWidget {
                 Text(
                   isOfflineMode
                       ? AppLocalizations.of(context)!.usingDownloadedContentOnly
-                      : AppLocalizations.of(context)!.onlineModeWithNetworkAccess,
+                      : AppLocalizations.of(context)!
+                          .onlineModeWithNetworkAccess,
                   style: TextStyleConst.bodySmall.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurfaceVariant
+                        .withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -278,7 +287,8 @@ class OfflineModeToggle extends StatelessWidget {
             onChanged: onToggle,
             activeThumbColor: Theme.of(context).colorScheme.tertiary,
             inactiveThumbColor: Theme.of(context).colorScheme.onSurfaceVariant,
-            inactiveTrackColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+            inactiveTrackColor:
+                Theme.of(context).colorScheme.surfaceContainerHighest,
           ),
         ],
       ),

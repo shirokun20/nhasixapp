@@ -78,7 +78,7 @@ class CrotpediaAuthCubit extends Cubit<CrotpediaAuthState> {
     try {
       // Clear Native WebView cookies (replacing CookieManager)
       await KuronNative.instance.clearCookies();
-      
+
       await _source.logout();
       emit(CrotpediaAuthInitial());
     } catch (e) {

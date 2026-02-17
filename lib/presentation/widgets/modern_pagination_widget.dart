@@ -81,15 +81,18 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
                 fillColor: Theme.of(context).colorScheme.surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  borderSide:
+                      BorderSide(color: Theme.of(context).colorScheme.outline),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  borderSide:
+                      BorderSide(color: Theme.of(context).colorScheme.outline),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+                  borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary, width: 2),
                 ),
               ),
               autofocus: true,
@@ -159,7 +162,7 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -183,7 +186,7 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
                 : Theme.of(context).colorScheme.onSurfaceVariant,
             tooltip: l10n.previousPage,
           ),
-          
+
           // Page info with tap-to-jump functionality
           GestureDetector(
             onTap: _showPageJumpDialog,
@@ -192,7 +195,8 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surfaceContainer,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Theme.of(context).colorScheme.outline),
+                border:
+                    Border.all(color: Theme.of(context).colorScheme.outline),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -216,7 +220,7 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
               ),
             ),
           ),
-          
+
           // Next button
           IconButton(
             onPressed: widget.hasNext ? widget.onNextPage : null,

@@ -22,7 +22,7 @@ class DnsInterceptor extends Interceptor {
     RequestInterceptorHandler handler,
   ) async {
     final uri = options.uri;
-    
+
     // Skip DNS resolution for IP addresses
     if (_isIpAddress(uri.host)) {
       return handler.next(options);
@@ -47,16 +47,17 @@ class DnsInterceptor extends Interceptor {
 
       // Replace host with IP in URL
       final resolvedUri = uri.replace(host: resolvedIp);
-      
+
       // Update request with resolved IP
       options.path = resolvedUri.toString();
-      
+
       // Preserve original hostname in Host header for SNI and virtual hosting
       options.headers[HttpHeaders.hostHeader] = uri.host;
 
       handler.next(options);
     } catch (e) {
-      _logger.w('DoH resolution failed for ${uri.host}, using system DNS', error: e);
+      _logger.w('DoH resolution failed for ${uri.host}, using system DNS',
+          error: e);
       // Fallback to default behavior (system DNS)
       handler.next(options);
     }

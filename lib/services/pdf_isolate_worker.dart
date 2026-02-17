@@ -7,12 +7,11 @@ import 'package:pdf/widgets.dart' as pw;
 /// Isolate worker untuk PDF processing
 /// Isolate worker for PDF processing
 class PdfIsolateWorker {
-  
   /// Main entry point for isolate worker
   static void isolateEntryPoint(SendPort sendPort) {
     final receivePort = ReceivePort();
     sendPort.send(receivePort.sendPort);
-    
+
     receivePort.listen((message) async {
       if (message is PdfProcessingTask) {
         try {
@@ -31,22 +30,22 @@ class PdfIsolateWorker {
       }
     });
   }
-  
+
   /// Process PDF creation in isolate
   static Future<_PdfResult> _processPdfInIsolate(PdfProcessingTask task) async {
     final processedImages = <Uint8List>[];
-    
+
     // Process each image
     for (int i = 0; i < task.imagePaths.length; i++) {
       final imagePath = task.imagePaths[i];
-      
+
       try {
         final imageBytes = await _processImageInIsolate(
           imagePath,
           maxWidth: task.maxWidth,
           quality: task.quality,
         );
-        
+
         if (imageBytes != null) {
           processedImages.add(imageBytes);
         }
@@ -57,27 +56,27 @@ class PdfIsolateWorker {
         continue;
       }
     }
-    
+
     if (processedImages.isEmpty) {
       throw Exception('No images could be processed for PDF');
     }
-    
+
     // Create PDF
     final pdfBytes = await _createPdfInIsolate(processedImages, task.title);
-    
+
     // Save PDF file
     final pdfFile = File(task.outputPath);
     await pdfFile.writeAsBytes(pdfBytes);
-    
+
     final fileSize = await pdfFile.length();
-    
+
     return _PdfResult(
       pdfPath: task.outputPath,
       fileSize: fileSize,
       pageCount: processedImages.length,
     );
   }
-  
+
   /// Process single image in isolate
   static Future<Uint8List?> _processImageInIsolate(
     String imagePath, {
@@ -121,7 +120,7 @@ class PdfIsolateWorker {
       return null;
     }
   }
-  
+
   /// Create PDF bytes in isolate
   static Future<Uint8List> _createPdfInIsolate(
     List<Uint8List> images,

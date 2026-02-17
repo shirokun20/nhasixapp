@@ -1,6 +1,4 @@
-
 import 'kuron_native_platform_interface.dart';
-
 
 export 'utils/backup_utils.dart'; // Export for users
 export 'widgets/kuron_widgets.dart'; // Export Widgets
@@ -8,7 +6,7 @@ export 'widgets/kuron_widgets.dart'; // Export Widgets
 class KuronNative {
   /// Singleton instance
   static final KuronNative instance = KuronNative();
-  
+
   Future<String?> getPlatformVersion() {
     return KuronNativePlatform.instance.getPlatformVersion();
   }
@@ -87,14 +85,15 @@ class KuronNative {
     bool clearCookies = false,
   }) {
     return KuronNativePlatform.instance.showLoginWebView(
-        url: url,
-        successUrlFilters: successUrlFilters,
-        initialCookie: initialCookie,
-        userAgent: userAgent,
-        autoCloseOnCookie: autoCloseOnCookie,
-        ssoRedirectUrl: ssoRedirectUrl,
-        enableAdBlock: enableAdBlock,
-        clearCookies: clearCookies);
+      url: url,
+      successUrlFilters: successUrlFilters,
+      initialCookie: initialCookie,
+      userAgent: userAgent,
+      autoCloseOnCookie: autoCloseOnCookie,
+      ssoRedirectUrl: ssoRedirectUrl,
+      enableAdBlock: enableAdBlock,
+      clearCookies: clearCookies,
+    );
   }
 
   Future<void> openPdf({

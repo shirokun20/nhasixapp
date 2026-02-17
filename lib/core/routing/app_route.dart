@@ -26,7 +26,7 @@ class AppRoute {
   static const String status = '/status';
   static const String about = '/about';
   static const String crotpediaLogin = '/crotpedia-login';
-  
+
   // Crotpedia Routes
   static const String crotpediaGenreList = '/crotpedia/genres';
   static const String crotpediaDoujinList = '/crotpedia/doujins';
@@ -57,7 +57,7 @@ class AppRoute {
   static const String statusName = 'status';
   static const String aboutName = 'about';
   static const String mainName = 'main';
-  
+
   static const String crotpediaGenreListName = 'crotpedia-genres';
   static const String crotpediaDoujinListName = 'crotpedia-doujins';
   static const String crotpediaRequestListName = 'crotpedia-requests';

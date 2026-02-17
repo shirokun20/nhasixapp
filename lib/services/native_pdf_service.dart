@@ -1,15 +1,13 @@
-
 import 'package:logger/logger.dart';
 import 'package:kuron_native/kuron_native.dart';
 
 class NativePdfService {
   final Logger _logger = Logger();
 
-
   /// Generate PDF using native high-performance implementation
   ///
   /// This is ~5x faster than Flutter for large webtoon sets
-  /// 
+  ///
   /// **Parameters**:
   /// - [imagePaths]: List of absolute paths to image files
   /// - [outputPath]: Absolute path where PDF should be saved
@@ -37,9 +35,9 @@ class NativePdfService {
       if (result == null) {
         throw Exception('Native PDF generation returned null');
       }
-      
+
       _logger.i('✅ Native PDF completed: ${result['pageCount']} pages');
-      
+
       return result;
     } catch (e) {
       _logger.e('Native PDF generation failed: $e');
@@ -48,7 +46,7 @@ class NativePdfService {
   }
 
   /// Open PDF in native high-performance reader (Activity)
-  /// 
+  ///
   /// This launches a separate Android Activity for 120Hz smooth reading
   Future<void> openPdf({
     required String path,

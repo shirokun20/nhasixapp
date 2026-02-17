@@ -2,6 +2,7 @@ import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 
 import '../../../core/di/service_locator.dart';
+import '../../../core/utils/offline_content_manager.dart';
 import '../../../domain/usecases/content/content_usecases.dart';
 import '../../../domain/usecases/favorites/favorites_usecases.dart';
 import '../../../domain/repositories/repositories.dart';
@@ -22,6 +23,7 @@ class DetailCubitFactory {
       imageMetadataService: getIt<ImageMetadataService>(),
       contentRepository: getIt<ContentRepository>(),
       contentSourceRegistry: getIt<ContentSourceRegistry>(),
+      offlineContentManager: getIt<OfflineContentManager>(),
       logger: getIt<Logger>(),
     );
   }

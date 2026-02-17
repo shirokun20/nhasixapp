@@ -12,49 +12,49 @@ class MockRemoteConfigService extends RemoteConfigService {
 
   @override
   cfg.AppConfig? get appConfig => cfg.AppConfig(
-    limits: cfg.AppLimits(
-      defaultPageSize: 20,
-      maxBatchSize: 1000,
-      maxConcurrentDownloads: 3,
-      searchHistoryLimit: 50,
-      imagePreloadBuffer: 5,
-    ),
-    durations: cfg.AppDurations(
-      splashDelayMs: 1000,
-      snackbarShortMs: 2000,
-      snackbarLongMs: 4000,
-      pageTransitionMs: 300,
-      searchDebounceMs: 300,
-      networkTimeoutMs: 30000,
-      cacheExpirationHours: 24,
-      readerAutoHideDelaySeconds: 3,
-      progressUpdateIntervalMs: 100,
-    ),
-    storage: cfg.AppStorage(
-      folders: cfg.StorageFolders(
-        backup: 'nhasix',
-        images: 'images',
-        pdf: 'pdf',
-      ),
-      files: cfg.StorageFiles(
-        metadata: 'metadata.json',
-        config: 'config.json',
-      ),
-      limits: cfg.StorageLimits(
-        maxImageSizeKb: 200,
-        pdfPartsSizePages: 100,
-      ),
-    ),
-    ui: cfg.AppUiConfig(
-      gridColumnsPortrait: 2,
-      gridColumnsLandscape: 3,
-      minCardWidth: 150.0,
-      cardAspectRatio: 0.65,
-      cardBorderRadius: 12.0,
-      defaultPadding: 16.0,
-      titleMaxLength: 40,
-    ),
-  );
+        limits: cfg.AppLimits(
+          defaultPageSize: 20,
+          maxBatchSize: 1000,
+          maxConcurrentDownloads: 3,
+          searchHistoryLimit: 50,
+          imagePreloadBuffer: 5,
+        ),
+        durations: cfg.AppDurations(
+          splashDelayMs: 1000,
+          snackbarShortMs: 2000,
+          snackbarLongMs: 4000,
+          pageTransitionMs: 300,
+          searchDebounceMs: 300,
+          networkTimeoutMs: 30000,
+          cacheExpirationHours: 24,
+          readerAutoHideDelaySeconds: 3,
+          progressUpdateIntervalMs: 100,
+        ),
+        storage: cfg.AppStorage(
+          folders: cfg.StorageFolders(
+            backup: 'nhasix',
+            images: 'images',
+            pdf: 'pdf',
+          ),
+          files: cfg.StorageFiles(
+            metadata: 'metadata.json',
+            config: 'config.json',
+          ),
+          limits: cfg.StorageLimits(
+            maxImageSizeKb: 200,
+            pdfPartsSizePages: 100,
+          ),
+        ),
+        ui: cfg.AppUiConfig(
+          gridColumnsPortrait: 2,
+          gridColumnsLandscape: 3,
+          minCardWidth: 150.0,
+          cardAspectRatio: 0.65,
+          cardBorderRadius: 12.0,
+          defaultPadding: 16.0,
+          titleMaxLength: 40,
+        ),
+      );
 }
 
 void main() {

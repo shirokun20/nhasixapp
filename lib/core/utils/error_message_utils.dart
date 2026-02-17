@@ -9,11 +9,12 @@ import 'package:nhasixapp/l10n/app_localizations.dart';
 
 class ErrorMessageUtils {
   /// generate a user-friendly error message from any error object
-  static String getFriendlyErrorMessage(dynamic error, [AppLocalizations? l10n]) {
+  static String getFriendlyErrorMessage(dynamic error,
+      [AppLocalizations? l10n]) {
     if (l10n != null) {
       return _getLocalizedMessage(error, l10n);
     }
-    
+
     // Fallback to English/Default behavior if l10n is not provided (e.g. for logging)
     if (error is DioException) {
       return _handleDioError(error);
@@ -45,13 +46,15 @@ class ErrorMessageUtils {
     } else if (error is FormatException) {
       return l10n.errorParsing;
     } else if (error is AppException) {
-      return error.message; // Custom app exceptions might already be localized or raw strings
+      return error
+          .message; // Custom app exceptions might already be localized or raw strings
     } else {
       return l10n.errorUnknown;
     }
   }
 
-  static String _handleLocalizedDioError(DioException error, AppLocalizations l10n) {
+  static String _handleLocalizedDioError(
+      DioException error, AppLocalizations l10n) {
     switch (error.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
@@ -68,14 +71,15 @@ class ErrorMessageUtils {
           case 502:
           case 503:
           case 504:
-            return l10n.errorServer; // Simplified for now, can be more specific if needed
+            return l10n
+                .errorServer; // Simplified for now, can be more specific if needed
           default:
             return l10n.errorServer;
         }
       case DioExceptionType.cancel:
         return l10n.errorUnknown;
       case DioExceptionType.connectionError:
-         if (error.error is SocketException) {
+        if (error.error is SocketException) {
           return l10n.errorNetwork;
         }
         return l10n.errorConnectionRefused;
@@ -86,8 +90,9 @@ class ErrorMessageUtils {
           return l10n.errorNetwork;
         }
         final msg = error.message ?? '';
-        if (msg.contains('SocketException') || msg.contains('Connection reset')) {
-           return l10n.errorNetwork;
+        if (msg.contains('SocketException') ||
+            msg.contains('Connection reset')) {
+          return l10n.errorNetwork;
         }
         return l10n.errorNetwork;
     }
@@ -131,8 +136,9 @@ class ErrorMessageUtils {
           return 'No internet connection. Please check your network settings.';
         }
         final msg = error.message ?? 'Unknown network error';
-        if (msg.contains('SocketException') || msg.contains('Connection reset')) {
-           return 'Network connection interrupted. Please try again.';
+        if (msg.contains('SocketException') ||
+            msg.contains('Connection reset')) {
+          return 'Network connection interrupted. Please try again.';
         }
         return 'Network error occurred. Please try again.';
     }

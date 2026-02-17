@@ -17,4 +17,3 @@ export 'src/komiktap_search_capabilities.dart';
 
 // Factory (convenience)
 export 'src/komiktap_factory.dart';
-

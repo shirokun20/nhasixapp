@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 
 import '../../../core/constants/text_style_const.dart';
 import '../../../l10n/app_localizations.dart';
@@ -519,7 +520,10 @@ class _DownloadsScreenState extends State<DownloadsScreen>
               return DownloadItemWidget(
                 download: download,
                 onTap: () => _handleDownloadTap(download),
-                onAction: (action) => _handleDownloadAction(action, download, ),
+                onAction: (action) => _handleDownloadAction(
+                  action,
+                  download,
+                ),
                 isSelectionMode: isSelectionMode,
                 isSelected: isSelected,
               );
@@ -586,11 +590,34 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     }
   }
 
-  void _navigateToReader(DownloadStatus download) {
-    // 🚀 OPTIMIZATION: Non-blocking navigation
-    // Construct lightweight content directly from download status
-    // ReaderCubit will handle the actual loading/verification
+  Future<void> _navigateToReader(DownloadStatus download) async {
+    // 🚀 OFFLINE-FIRST: Preload content from OfflineContentManager
+    // This ensures the reader screen receives fully-populated Content with local imageUrls
+    // Matching the pattern used by offline_content_body.dart (_openReader)
 
+    if (!mounted) return;
+
+    final offlineManager = getIt<OfflineContentManager>();
+
+    // Try to get offline content directly - more robust than checking DB status first
+    // This handles cases where DB might be out of sync
+    try {
+      final offlineContent =
+          await offlineManager.createOfflineContent(download.contentId);
+
+      if (offlineContent != null && offlineContent.imageUrls.isNotEmpty) {
+        // ✅ Offline content loaded successfully, navigate with preloaded data
+        if (!mounted) return;
+        await context.push('/reader/${download.contentId}',
+            extra: offlineContent);
+        return;
+      }
+    } catch (e) {
+      debugPrint('⚠️ Failed to load offline content: $e');
+    }
+
+    // Fallback: Use lightweight content (ReaderCubit will handle loading)
+    // This maintains backward compatibility if offline loading fails
     final content = Content(
       id: download.contentId,
       title: download.title ?? download.contentId,
@@ -610,10 +637,13 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       favorites: 0,
     );
 
-    context.push('/reader/${download.contentId}', extra: content);
+    if (!mounted) return;
+    await context.push('/reader/${download.contentId}', extra: content);
   }
 
-  void _handleDownloadAction(String action, DownloadStatus download, {
+  void _handleDownloadAction(
+    String action,
+    DownloadStatus download, {
     String? sourceId,
   }) {
     final downloadBloc = context.read<DownloadBloc>();

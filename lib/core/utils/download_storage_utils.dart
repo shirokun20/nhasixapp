@@ -5,7 +5,6 @@ import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:crypto/crypto.dart';
 
-
 import '../constants/app_constants.dart';
 import 'package:kuron_core/kuron_core.dart'; // Import ContentMetadata
 import 'storage_settings.dart';
@@ -34,10 +33,11 @@ class DownloadStorageUtils {
           _logger.d('Using custom storage root: $customRoot');
           return customRoot;
         } else {
-          _logger.w('Custom storage root set but does not exist: $customRoot, falling back to Downloads');
+          _logger.w(
+              'Custom storage root set but does not exist: $customRoot, falling back to Downloads');
         }
       }
-      
+
       /*
       // PRIORITY 2: Fallback to Downloads folder for backward compatibility
       // First, try to get external storage directory
@@ -107,7 +107,8 @@ class DownloadStorageUtils {
           'Using app documents downloads directory: ${documentsDownloadsDir.path}');
       return documentsDownloadsDir.path;
       */
-      throw Exception('No custom storage root selected. Please select a storage location in settings.');
+      throw Exception(
+          'No custom storage root selected. Please select a storage location in settings.');
     } catch (e) {
       _logger.e('Error detecting Downloads directory: $e');
 
@@ -121,7 +122,6 @@ class DownloadStorageUtils {
       rethrow;
     }
   }
-
 
   /// Calculate total size of a directory recursively
   static Future<int> getDirectorySize(Directory directory) async {
@@ -218,7 +218,7 @@ class DownloadStorageUtils {
   }
 
   /// Save metadata to file
-  /// 
+  ///
   /// This is CRITICAL for the Safe ID strategy.
   /// The metadata.json file acts as the "decoder key" to identify content
   /// when the folder name is a hashed "Safe ID".
@@ -319,33 +319,33 @@ class DownloadStorageUtils {
     }
   }
 
-
-
-
   /// Get "Elegant" Content ID (Short & Deterministic)
   /// Uses SHA-1 hash converted to Base36 for short, filesystem-safe folder names.
   /// Example: "very-long-title..." -> "a1b2c3d4"
   static String getElegantId(String contentId) {
-    if (contentId.length <= 20 && RegExp(r'^[a-zA-Z0-9.\-_]+$').hasMatch(contentId)) {
+    if (contentId.length <= 20 &&
+        RegExp(r'^[a-zA-Z0-9.\-_]+$').hasMatch(contentId)) {
       return contentId; // Keep short, safe IDs as is (e.g. nhentai numbers)
     }
 
     final bytes = utf8.encode(contentId);
     final digest = sha1.convert(bytes);
-    
+
     // Convert first 6 bytes of hash to Base36 (alphanumeric)
     // 6 bytes = 48 bits, enough to avoid collisions for this use case
     // while keeping string very short (approx 8-10 chars max)
     final bigInt = BigInt.parse(
-      digest.bytes.sublist(0, 6).map((b) => b.toRadixString(16).padLeft(2, '0')).join(), 
-      radix: 16
-    );
-    
+        digest.bytes
+            .sublist(0, 6)
+            .map((b) => b.toRadixString(16).padLeft(2, '0'))
+            .join(),
+        radix: 16);
+
     return bigInt.toRadixString(36);
   }
 
   /// Get safe content ID for folder usage
-  /// 
+  ///
   /// UPDATE: Now uses "Elegant ID" strategy (Base36 Hash)
   /// Legacy strategy (Truncate + Hash) is deprecated but supported for readout.
   static String getSafeContentId(String contentId) {
@@ -353,18 +353,20 @@ class DownloadStorageUtils {
   }
 
   /// Get content directory
-  /// 
+  ///
   /// This checks locations in the following order:
   /// 1. Elegant ID (New Standard)
   /// 2. Safe ID (Truncated - Migration Interim)
   /// 3. Original ID (Legacy)
-  static Future<String> getContentDirectory(String contentId, {String? sourceId}) async {
+  static Future<String> getContentDirectory(String contentId,
+      {String? sourceId}) async {
     final downloadsDir = await getDownloadsDirectory();
     final effectiveSourceId = sourceId ?? AppStorage.defaultSourceId;
-    
+
     // 1. Check Elegant ID Path (New Standard)
     final elegantId = getElegantId(contentId);
-    final elegantPath = path.join(downloadsDir, AppStorage.backupFolderName, effectiveSourceId, elegantId);
+    final elegantPath = path.join(downloadsDir, AppStorage.backupFolderName,
+        effectiveSourceId, elegantId);
     if (await Directory(elegantPath).exists()) {
       return elegantPath;
     }
@@ -376,19 +378,21 @@ class DownloadStorageUtils {
       final digest = sha1.convert(bytes);
       final hash = digest.toString().substring(0, 8);
       final truncatedId = '${contentId.substring(0, 40)}_$hash';
-      
-      final truncatedPath = path.join(downloadsDir, AppStorage.backupFolderName, effectiveSourceId, truncatedId);
+
+      final truncatedPath = path.join(downloadsDir, AppStorage.backupFolderName,
+          effectiveSourceId, truncatedId);
       if (await Directory(truncatedPath).exists()) {
         return truncatedPath; // Found interim folder
       }
     }
-    
+
     // 3. Check Original ID Path (Legacy / Standard for short IDs)
     if (elegantId != contentId) {
-       final originalPath = path.join(downloadsDir, AppStorage.backupFolderName, effectiveSourceId, contentId);
-       if (await Directory(originalPath).exists()) {
-         return originalPath;
-       }
+      final originalPath = path.join(downloadsDir, AppStorage.backupFolderName,
+          effectiveSourceId, contentId);
+      if (await Directory(originalPath).exists()) {
+        return originalPath;
+      }
     }
 
     // 4. Check Legacy Safe Path (No Source ID, if applicable)
@@ -397,14 +401,16 @@ class DownloadStorageUtils {
     // Default to the Elegant ID path for new content
     return elegantPath;
   }
-  
+
   /// Get NEW directory for content (always uses safe ID)
-  static Future<String> getNewContentDirectory(String contentId, {String? sourceId}) async {
+  static Future<String> getNewContentDirectory(String contentId,
+      {String? sourceId}) async {
     final downloadsDir = await getDownloadsDirectory();
     final effectiveSourceId = sourceId ?? AppStorage.defaultSourceId;
     final safeId = getSafeContentId(contentId);
-    
-    return path.join(downloadsDir, AppStorage.backupFolderName, effectiveSourceId, safeId);
+
+    return path.join(
+        downloadsDir, AppStorage.backupFolderName, effectiveSourceId, safeId);
   }
 
   /// Get the source directory path

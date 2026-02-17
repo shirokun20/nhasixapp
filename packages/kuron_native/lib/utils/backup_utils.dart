@@ -6,23 +6,23 @@ import '../kuron_native.dart'; // Access KuronNative singleton
 class BackupUtils {
   /// Save JSON string to a file in the specified directory or user's Downloads.
   /// Returns the path if successful, null otherwise.
-  /// 
+  ///
   /// [jsonContent] - The JSON string to save
   /// [fileName] - Name of the file to create
   /// [customDirectory] - Optional custom directory path. If null, uses default Downloads folder
   static Future<String?> exportJson(
-    String jsonContent, 
+    String jsonContent,
     String fileName, {
     String? customDirectory,
   }) async {
     try {
       Directory? directory;
-      
+
       if (customDirectory != null && customDirectory.isNotEmpty) {
         // Use custom directory if provided (e.g., from StorageSettings)
         directory = Directory(customDirectory);
       } else if (Platform.isAndroid) {
-         directory = await getExternalStorageDirectory();
+        directory = await getExternalStorageDirectory();
       } else {
         directory = await getApplicationDocumentsDirectory();
       }
@@ -40,13 +40,13 @@ class BackupUtils {
 
   /// Pick a directory using native picker and read a JSON backup file from it.
   /// Returns the JSON content as string if successful, null otherwise.
-  /// 
+  ///
   /// [fileName] - Name of the backup file to read (default: 'backup.json')
   static Future<String?> importJson({String fileName = 'backup.json'}) async {
     try {
       // Use native directory picker (Android SAF compatible)
       final directoryPath = await KuronNative.instance.pickDirectory();
-      
+
       if (directoryPath == null) {
         debugPrint('Import cancelled by user');
         return null;
@@ -54,7 +54,7 @@ class BackupUtils {
 
       // Read the backup file from selected directory
       final file = File('$directoryPath/$fileName');
-      
+
       if (!await file.exists()) {
         debugPrint('Import Error: $fileName not found in selected directory');
         return null;

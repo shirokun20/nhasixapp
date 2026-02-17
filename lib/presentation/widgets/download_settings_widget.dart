@@ -44,7 +44,8 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
             child: Row(
               children: [
                 Text(
-                  AppLocalizations.of(context)?.downloadSettingsTitle ?? 'Download Settings',
+                  AppLocalizations.of(context)?.downloadSettingsTitle ??
+                      'Download Settings',
                   style: TextStyleConst.headlineSmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
@@ -71,7 +72,9 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Concurrent downloads
-                    _buildSectionTitle(AppLocalizations.of(context)?.performanceSection ?? 'Performance'),
+                    _buildSectionTitle(
+                        AppLocalizations.of(context)?.performanceSection ??
+                            'Performance'),
                     _buildConcurrentDownloadsSlider(),
                     const SizedBox(height: 16),
 
@@ -80,7 +83,9 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
                     const SizedBox(height: 24),
 
                     // Auto retry settings
-                    _buildSectionTitle(AppLocalizations.of(context)?.autoRetrySection ?? 'Auto Retry'),
+                    _buildSectionTitle(
+                        AppLocalizations.of(context)?.autoRetrySection ??
+                            'Auto Retry'),
                     _buildAutoRetrySwitch(),
                     if (_settings.autoRetry) ...[
                       const SizedBox(height: 8),
@@ -89,19 +94,25 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
                     const SizedBox(height: 24),
 
                     // Network settings
-                    _buildSectionTitle(AppLocalizations.of(context)?.networkSection ?? 'Network'),
+                    _buildSectionTitle(
+                        AppLocalizations.of(context)?.networkSection ??
+                            'Network'),
                     _buildWifiOnlySwitch(),
                     const SizedBox(height: 16),
                     _buildTimeoutSlider(),
                     const SizedBox(height: 24),
 
                     // Notifications
-                    _buildSectionTitle(AppLocalizations.of(context)?.notificationsSection ?? 'Notifications'),
+                    _buildSectionTitle(
+                        AppLocalizations.of(context)?.notificationsSection ??
+                            'Notifications'),
                     _buildNotificationsSwitch(),
                     const SizedBox(height: 24),
 
                     // Storage
-                    _buildSectionTitle(AppLocalizations.of(context)?.storageSection ?? 'Storage Location'),
+                    _buildSectionTitle(
+                        AppLocalizations.of(context)?.storageSection ??
+                            'Storage Location'),
                     _buildStorageSection(),
                     const SizedBox(height: 32),
                   ],
@@ -119,7 +130,10 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: TextButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                      foregroundColor: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.7),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(
@@ -172,7 +186,8 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
         Row(
           children: [
             Text(
-              AppLocalizations.of(context)?.maxConcurrentDownloads ?? 'Max Concurrent Downloads',
+              AppLocalizations.of(context)?.maxConcurrentDownloads ??
+                  'Max Concurrent Downloads',
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
               ),
@@ -193,7 +208,8 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
           max: 10,
           divisions: 9,
           activeColor: Theme.of(context).colorScheme.primary,
-          inactiveColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+          inactiveColor:
+              Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           onChanged: (value) {
             setState(() {
               _settings = _settings.copyWith(
@@ -203,9 +219,11 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
           },
         ),
         Text(
-          AppLocalizations.of(context)?.concurrentDownloadsWarning ?? 'Higher values may consume more bandwidth and device resources',
+          AppLocalizations.of(context)?.concurrentDownloadsWarning ??
+              'Higher values may consume more bandwidth and device resources',
           style: TextStyleConst.bodySmall.copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -238,21 +256,28 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+              borderSide:
+                  BorderSide(color: Theme.of(context).colorScheme.primary),
             ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
           dropdownColor: Theme.of(context).colorScheme.surface,
-          style:
-              TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface),
+          style: TextStyleConst.bodyMedium
+              .copyWith(color: Theme.of(context).colorScheme.onSurface),
           items: [
-            DropdownMenuItem(value: 'low', child: Text(AppLocalizations.of(context)!.lowQuality)),
-            DropdownMenuItem(value: 'medium', child: Text(AppLocalizations.of(context)!.mediumQuality)),
             DropdownMenuItem(
-                value: 'high', child: Text(AppLocalizations.of(context)!.highQuality)),
+                value: 'low',
+                child: Text(AppLocalizations.of(context)!.lowQuality)),
             DropdownMenuItem(
-                value: 'original', child: Text(AppLocalizations.of(context)!.originalQuality)),
+                value: 'medium',
+                child: Text(AppLocalizations.of(context)!.mediumQuality)),
+            DropdownMenuItem(
+                value: 'high',
+                child: Text(AppLocalizations.of(context)!.highQuality)),
+            DropdownMenuItem(
+                value: 'original',
+                child: Text(AppLocalizations.of(context)!.originalQuality)),
           ],
           onChanged: (value) {
             if (value != null) {
@@ -274,15 +299,20 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                AppLocalizations.of(context)?.autoRetryFailedDownloads ?? 'Auto Retry Failed Downloads',
+                AppLocalizations.of(context)?.autoRetryFailedDownloads ??
+                    'Auto Retry Failed Downloads',
                 style: TextStyleConst.bodyMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               Text(
-                AppLocalizations.of(context)?.autoRetryDescription ?? 'Automatically retry failed downloads',
+                AppLocalizations.of(context)?.autoRetryDescription ??
+                    'Automatically retry failed downloads',
                 style: TextStyleConst.bodySmall.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -308,7 +338,8 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
         Row(
           children: [
             Text(
-              AppLocalizations.of(context)?.maxRetryAttempts ?? 'Max Retry Attempts',
+              AppLocalizations.of(context)?.maxRetryAttempts ??
+                  'Max Retry Attempts',
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
               ),
@@ -329,7 +360,8 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
           max: 10,
           divisions: 9,
           activeColor: Theme.of(context).colorScheme.primary,
-          inactiveColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+          inactiveColor:
+              Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           onChanged: (value) {
             setState(() {
               _settings = _settings.copyWith(retryAttempts: value.toInt());
@@ -354,9 +386,13 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
                 ),
               ),
               Text(
-                AppLocalizations.of(context)?.wifiOnlyDescription ?? 'Only download when connected to WiFi',
+                AppLocalizations.of(context)?.wifiOnlyDescription ??
+                    'Only download when connected to WiFi',
                 style: TextStyleConst.bodySmall.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -382,7 +418,8 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
         Row(
           children: [
             Text(
-              AppLocalizations.of(context)?.downloadTimeoutLabel ?? 'Download Timeout',
+              AppLocalizations.of(context)?.downloadTimeoutLabel ??
+                  'Download Timeout',
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
               ),
@@ -403,7 +440,8 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
           max: 30,
           divisions: 29,
           activeColor: Theme.of(context).colorScheme.primary,
-          inactiveColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+          inactiveColor:
+              Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           onChanged: (value) {
             setState(() {
               _settings = _settings.copyWith(
@@ -424,15 +462,20 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                AppLocalizations.of(context)?.enableNotificationsLabel ?? 'Enable Notifications',
+                AppLocalizations.of(context)?.enableNotificationsLabel ??
+                    'Enable Notifications',
                 style: TextStyleConst.bodyMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               Text(
-                AppLocalizations.of(context)?.enableNotificationsDescription ?? 'Show notifications for download progress',
+                AppLocalizations.of(context)?.enableNotificationsDescription ??
+                    'Show notifications for download progress',
                 style: TextStyleConst.bodySmall.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -487,9 +530,11 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    (_settings.customStorageRoot != null && _settings.customStorageRoot!.isNotEmpty)
+                    (_settings.customStorageRoot != null &&
+                            _settings.customStorageRoot!.isNotEmpty)
                         ? _settings.customStorageRoot!
-                        : (AppLocalizations.of(context)?.defaultStorage ?? 'Default (Internal)'),
+                        : (AppLocalizations.of(context)?.defaultStorage ??
+                            'Default (Internal)'),
                     style: TextStyleConst.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
@@ -500,7 +545,10 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
                 Icon(
                   Icons.edit,
                   size: 16,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.5),
                 ),
               ],
             ),
@@ -508,9 +556,11 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
         ),
         const SizedBox(height: 4),
         Text(
-          AppLocalizations.of(context)?.storageDescription ?? 'Select a custom folder for downloads',
+          AppLocalizations.of(context)?.storageDescription ??
+              'Select a custom folder for downloads',
           style: TextStyleConst.bodySmall.copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -526,7 +576,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
         setState(() {
           _settings = _settings.copyWith(customStorageRoot: savedPath);
         });
-        
+
         // 🚀 AUTO-APPLY: Immediately notify parent to update DownloadBloc
         // This ensures custom storage is active right away without requiring "Save" button click
         widget.onSettingsChanged(_settings);

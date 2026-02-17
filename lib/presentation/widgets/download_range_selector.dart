@@ -25,7 +25,7 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
   late int startPage;
   late int endPage;
   late RangeValues _currentRangeValues;
-  
+
   final TextEditingController _startController = TextEditingController();
   final TextEditingController _endController = TextEditingController();
 
@@ -61,9 +61,12 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
   void _updateFromTextFields() {
     final start = int.tryParse(_startController.text);
     final end = int.tryParse(_endController.text);
-    
-    if (start != null && end != null && 
-        start >= 1 && end <= widget.totalPages && start <= end) {
+
+    if (start != null &&
+        end != null &&
+        start >= 1 &&
+        end <= widget.totalPages &&
+        start <= end) {
       setState(() {
         startPage = start;
         endPage = end;
@@ -73,12 +76,13 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
   }
 
   int get selectedPageCount => endPage - startPage + 1;
-  double get selectionPercentage => (selectedPageCount / widget.totalPages) * 100;
+  double get selectionPercentage =>
+      (selectedPageCount / widget.totalPages) * 100;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return AlertDialog(
       backgroundColor: colorScheme.surface,
       title: Text(
@@ -129,19 +133,23 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
               decoration: BoxDecoration(
                 color: colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
+                border: Border.all(
+                    color: colorScheme.primary.withValues(alpha: 0.3)),
               ),
               child: Column(
                 children: [
                   Text(
-                    AppLocalizations.of(context)!.selectedPagesTo(startPage, endPage),
+                    AppLocalizations.of(context)!
+                        .selectedPagesTo(startPage, endPage),
                     style: TextStyleConst.headingSmall.copyWith(
                       color: colorScheme.primary,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    AppLocalizations.of(context)!.pagesPercentage(selectedPageCount, selectionPercentage.toStringAsFixed(1)),
+                    AppLocalizations.of(context)!.pagesPercentage(
+                        selectedPageCount,
+                        selectionPercentage.toStringAsFixed(1)),
                     style: TextStyleConst.bodySmall.copyWith(
                       color: colorScheme.primary,
                     ),
@@ -162,7 +170,8 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
             SliderTheme(
               data: SliderTheme.of(context).copyWith(
                 activeTrackColor: colorScheme.primary,
-                inactiveTrackColor: colorScheme.onSurface.withValues(alpha: 0.4),
+                inactiveTrackColor:
+                    colorScheme.onSurface.withValues(alpha: 0.4),
                 thumbColor: colorScheme.primary,
                 overlayColor: colorScheme.primary.withValues(alpha: 0.2),
                 valueIndicatorColor: colorScheme.primary,
@@ -227,7 +236,8 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                        borderSide:
+                            BorderSide(color: colorScheme.primary, width: 2),
                       ),
                     ),
                     onChanged: (_) => _updateFromTextFields(),
@@ -262,7 +272,8 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                        borderSide:
+                            BorderSide(color: colorScheme.primary, width: 2),
                       ),
                     ),
                     onChanged: (_) => _updateFromTextFields(),
@@ -284,11 +295,25 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _buildQuickSelectChip(AppLocalizations.of(context)!.allPages, 1, widget.totalPages, context),
-                _buildQuickSelectChip(AppLocalizations.of(context)!.firstHalf, 1, (widget.totalPages / 2).round(), context),
-                _buildQuickSelectChip(AppLocalizations.of(context)!.secondHalf, (widget.totalPages / 2).round() + 1, widget.totalPages, context),
-                _buildQuickSelectChip(AppLocalizations.of(context)!.first10, 1, (widget.totalPages >= 10) ? 10 : widget.totalPages, context),
-                _buildQuickSelectChip(AppLocalizations.of(context)!.last10, (widget.totalPages >= 10) ? widget.totalPages - 9 : 1, widget.totalPages, context),
+                _buildQuickSelectChip(AppLocalizations.of(context)!.allPages, 1,
+                    widget.totalPages, context),
+                _buildQuickSelectChip(AppLocalizations.of(context)!.firstHalf,
+                    1, (widget.totalPages / 2).round(), context),
+                _buildQuickSelectChip(
+                    AppLocalizations.of(context)!.secondHalf,
+                    (widget.totalPages / 2).round() + 1,
+                    widget.totalPages,
+                    context),
+                _buildQuickSelectChip(
+                    AppLocalizations.of(context)!.first10,
+                    1,
+                    (widget.totalPages >= 10) ? 10 : widget.totalPages,
+                    context),
+                _buildQuickSelectChip(
+                    AppLocalizations.of(context)!.last10,
+                    (widget.totalPages >= 10) ? widget.totalPages - 9 : 1,
+                    widget.totalPages,
+                    context),
               ],
             ),
           ],
@@ -321,10 +346,11 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
     );
   }
 
-  Widget _buildQuickSelectChip(String label, int start, int end, BuildContext context) {
+  Widget _buildQuickSelectChip(
+      String label, int start, int end, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isSelected = startPage == start && endPage == end;
-    
+
     return FilterChip(
       label: Text(label),
       selected: isSelected,
@@ -338,7 +364,7 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
       },
       backgroundColor: colorScheme.surfaceContainerHighest,
       selectedColor: colorScheme.primary.withValues(alpha: 0.2),
-      labelStyle: isSelected 
+      labelStyle: isSelected
           ? TextStyleConst.headingSmall.copyWith(
               color: colorScheme.primary,
             )

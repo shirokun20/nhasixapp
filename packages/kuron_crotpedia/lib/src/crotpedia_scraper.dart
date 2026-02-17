@@ -61,8 +61,10 @@ class CrotpediaScraper {
     // reader
     'reader_container': '.reader-area',
     'reader_images': 'p img',
-    'reader_next': '.nextprev a.next, .nav-links a.next, a.next_page, .navigation .rightnav a',
-    'reader_prev': '.nextprev a.prev, .nav-links a.prev, a.prev_page, .navigation .leftnav a',
+    'reader_next':
+        '.nextprev a.next, .nav-links a.next, a.next_page, .navigation .rightnav a',
+    'reader_prev':
+        '.nextprev a.prev, .nav-links a.prev, a.prev_page, .navigation .leftnav a',
   };
 
   final Map<String, String> _selectors;
@@ -151,16 +153,16 @@ class CrotpediaScraper {
   /// Parse doujin list page (alphabetical)
   List<CrotpediaSeries> parseDoujinList(String htmlContent) {
     final document = html_parser.parse(htmlContent);
-    
+
     // Get ALL alphabet section containers (-, #, A, B, C, etc.)
     final containers = document.querySelectorAll('.mangalist-blc');
     final allItems = <CrotpediaSeries>[];
-    
+
     // Iterate through each alphabet section
     for (final container in containers) {
       // Get all series links in this section
       final items = container.querySelectorAll('a.series');
-      
+
       for (final item in items) {
         allItems.add(CrotpediaSeries(
           slug: _extractSlug(item.attributes['href']),
@@ -172,42 +174,43 @@ class CrotpediaScraper {
         ));
       }
     }
-    
+
     return allItems;
   }
 
   /// Parse genre list page
   List<CrotpediaGenre> parseGenreList(String htmlContent) {
     final document = html_parser.parse(htmlContent);
-    
-    final container = document.querySelector(_getSelector('genreList_container'));
+
+    final container =
+        document.querySelector(_getSelector('genreList_container'));
     if (container == null) return [];
-    
+
     final items = container.querySelectorAll(_getSelector('genreList_item'));
     final results = <CrotpediaGenre>[];
 
     for (final item in items) {
       final link = item.querySelector(_getSelector('genreList_link'));
       if (link == null) continue;
-      
+
       final url = link.attributes['href'] ?? '';
-      
+
       // Extract count and clean name
       final countEl = item.querySelector(_getSelector('genreList_count'));
       final countText = countEl?.text ?? '0';
       final count = int.tryParse(countText) ?? 0;
-      
+
       String name = link.text;
       if (countEl != null) {
         name = name.replaceAll(countEl.text, '').trim();
       }
-      
+
       // Slug
       final uri = Uri.parse(url);
-      final slug = uri.pathSegments.isNotEmpty 
-          ? uri.pathSegments.where((s) => s.isNotEmpty).last 
+      final slug = uri.pathSegments.isNotEmpty
+          ? uri.pathSegments.where((s) => s.isNotEmpty).last
           : name.toLowerCase().replaceAll(' ', '-');
-          
+
       results.add(CrotpediaGenre(
         name: name,
         slug: slug,
@@ -221,21 +224,22 @@ class CrotpediaScraper {
   /// Parse request list page
   List<CrotpediaSeries> parseRequestList(String htmlContent) {
     final document = html_parser.parse(htmlContent);
-    final container = document.querySelector(_getSelector('requestList_container'));
-    
+    final container =
+        document.querySelector(_getSelector('requestList_container'));
+
     if (container == null) return [];
-    
+
     final items = container.querySelectorAll(_getSelector('requestList_item'));
-    
+
     return items.map((item) {
       final link = item.querySelector(_getSelector('requestList_link'));
       final img = item.querySelector(_getSelector('requestList_cover'));
       final titleEl = item.querySelector(_getSelector('requestList_title'));
       final statusEl = item.querySelector(_getSelector('requestList_status'));
-      
+
       final title = titleEl?.text.trim() ?? 'Unknown';
       final url = link?.attributes['href'] ?? '';
-      
+
       // Parse genres from the .genres div
       final genresContainer = item.querySelector('.flexbox2-side .genres span');
       final genres = <String, String>{};
@@ -251,10 +255,10 @@ class CrotpediaScraper {
           }
         }
       }
-      
+
       // Generate ID or extract if possible (hashcode as fallback)
       final id = title.hashCode.toString();
-      
+
       return CrotpediaSeries(
         slug: _extractSlug(url),
         title: title,
@@ -376,11 +380,12 @@ class CrotpediaScraper {
 
     // Get reader container using configured selector
     final container = document.querySelector(_getSelector('reader_container'));
-    
+
     // Images
     final List<String> images;
     if (container != null) {
-      final imgElements = container.querySelectorAll(_getSelector('reader_images'));
+      final imgElements =
+          container.querySelectorAll(_getSelector('reader_images'));
       images = imgElements
           .map((img) => img.attributes['src'] ?? '')
           .where((src) => src.isNotEmpty)
@@ -435,17 +440,20 @@ class CrotpediaScraper {
         if (seriesIndex != -1 && seriesIndex + 1 < pathSegments.length) {
           return _finalizeSlug(pathSegments[seriesIndex + 1]);
         }
-        
+
         // Check for /baca/genre/slug/ pattern
         final genreIndex = pathSegments.indexOf('genre');
         if (genreIndex != -1 && genreIndex + 1 < pathSegments.length) {
           return _finalizeSlug(pathSegments[genreIndex + 1]);
         }
-        
+
         // Also check for /baca/slug/ (older/alternate structure)
         final bacaIndex = pathSegments.indexOf('baca');
-        if (bacaIndex != -1 && bacaIndex + 1 < pathSegments.length && pathSegments[bacaIndex + 1] != 'series' && pathSegments[bacaIndex + 1] != 'genre') {
-             return _finalizeSlug(pathSegments[bacaIndex + 1]);
+        if (bacaIndex != -1 &&
+            bacaIndex + 1 < pathSegments.length &&
+            pathSegments[bacaIndex + 1] != 'series' &&
+            pathSegments[bacaIndex + 1] != 'genre') {
+          return _finalizeSlug(pathSegments[bacaIndex + 1]);
         }
 
         // Otherwise assume it's a chapter URL or other resource where the ID is the last segment
@@ -458,7 +466,7 @@ class CrotpediaScraper {
     // Fallback: Legacy regex matching
     final regex = RegExp(r'/baca/(?:series/)?([^/]+)/?$');
     final slug = regex.firstMatch(url)?.group(1) ?? '';
-    
+
     return _finalizeSlug(slug);
   }
 
@@ -578,7 +586,7 @@ class CrotpediaScraper {
   }
 
   /// Detects if the page requires login/authentication
-  /// 
+  ///
   /// Checks for multiple indicators:
   /// 1. Login form presence (#koi_login_form)
   /// 2. Canonical URL containing /login/
@@ -587,20 +595,20 @@ class CrotpediaScraper {
     // Check for login form
     final loginForm = document.querySelector('#koi_login_form');
     if (loginForm != null) return true;
-    
+
     // Check canonical URL
     final canonical = document.querySelector('link[rel="canonical"]');
     if (canonical != null) {
       final href = canonical.attributes['href'] ?? '';
       if (href.contains('/login/')) return true;
     }
-    
+
     // Check page title
     final title = document.querySelector('title');
     if (title != null && title.text.toLowerCase().contains('login')) {
       return true;
     }
-    
+
     return false;
   }
 }

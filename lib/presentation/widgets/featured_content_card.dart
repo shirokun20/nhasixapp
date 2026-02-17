@@ -310,7 +310,8 @@ class FeaturedContentCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(3),
             border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
+              color:
+                  Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
               width: 0.5,
             ),
           ),
@@ -340,11 +341,12 @@ class FeaturedContentCard extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Text(
-          content.language.length > 1 
+          content.language.length > 1
               ? '${content.language[0].toUpperCase()}${content.language.substring(1)}'
               : content.language.toUpperCase(),
           style: TextStyleConst.labelSmall.copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
             fontWeight: FontWeight.w600,
           ),
         ),

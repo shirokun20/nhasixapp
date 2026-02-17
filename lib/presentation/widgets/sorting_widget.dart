@@ -32,7 +32,9 @@ class SortingWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+        border: Border.all(
+            color:
+                Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -81,7 +83,10 @@ class SortingWidget extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(
@@ -115,20 +120,27 @@ class SortingWidget extends StatelessWidget {
                         onSortChanged(sort);
                       }
                     },
-                    backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
-                    selectedColor:
-                        Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                    backgroundColor:
+                        Theme.of(context).colorScheme.surfaceContainerHigh,
+                    selectedColor: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.2),
                     labelStyle: isSelected
                         ? TextStyleConst.headingSmall.copyWith(
                             color: Theme.of(context).colorScheme.primary,
                           )
                         : TextStyleConst.bodySmall.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     side: BorderSide(
                       color: isSelected
                           ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                          : Theme.of(context)
+                              .colorScheme
+                              .outline
+                              .withValues(alpha: 0.3),
                       width: isSelected ? 2 : 1,
                     ),
                     elevation: isSelected ? 2 : 0,
@@ -163,14 +175,18 @@ class SortingDropdown extends StatelessWidget {
       color: Theme.of(context).colorScheme.surfaceContainerLow,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+        side: BorderSide(
+            color:
+                Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
       ),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+          border: Border.all(
+              color:
+                  Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

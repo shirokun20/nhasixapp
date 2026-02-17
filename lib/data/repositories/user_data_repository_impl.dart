@@ -314,7 +314,8 @@ class UserDataRepositoryImpl implements UserDataRepository {
   @override
   Future<History?> getChapterHistoryEntry(String id, String chapterId) async {
     try {
-      final historyModel = await localDataSource.getChapterHistory(id, chapterId);
+      final historyModel =
+          await localDataSource.getChapterHistory(id, chapterId);
       return historyModel?.toEntity();
     } catch (e, stackTrace) {
       _logger.e('Failed to get chapter history entry',

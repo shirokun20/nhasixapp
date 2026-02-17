@@ -44,7 +44,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
   final Map<String, String> offlineSizes;
   final int storageUsage;
   final String formattedStorageUsage;
-  
+
   // NEW: Pagination fields
   final int currentPage;
   final int totalPages;
@@ -97,7 +97,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
       return '$totalResults items found';
     }
   }
-  
+
   /// Create a copy with updated fields
   OfflineSearchLoaded copyWith({
     String? query,
@@ -119,14 +119,14 @@ class OfflineSearchLoaded extends OfflineSearchState {
       totalResults: totalResults ?? this.totalResults,
       offlineSizes: offlineSizes ?? this.offlineSizes,
       storageUsage: storageUsage ?? this.storageUsage,
-      formattedStorageUsage: formattedStorageUsage ?? this.formattedStorageUsage,
+      formattedStorageUsage:
+          formattedStorageUsage ?? this.formattedStorageUsage,
       currentPage: currentPage ?? this.currentPage,
       totalPages: totalPages ?? this.totalPages,
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      selectedSourceId: clearSourceId 
-          ? null 
-          : (selectedSourceId ?? this.selectedSourceId),
+      selectedSourceId:
+          clearSourceId ? null : (selectedSourceId ?? this.selectedSourceId),
     );
   }
 }

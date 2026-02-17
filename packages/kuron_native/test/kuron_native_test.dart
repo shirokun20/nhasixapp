@@ -7,12 +7,12 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 class MockKuronNativePlatform
     with MockPlatformInterfaceMixin
     implements KuronNativePlatform {
-
   @override
   Future<String?> getPlatformVersion() => Future.value('42');
 
   @override
-  Future<Map<Object?, Object?>?> getSystemInfo(String type) => Future.value({'ram': 100});
+  Future<Map<Object?, Object?>?> getSystemInfo(String type) =>
+      Future.value({'ram': 100});
 
   @override
   Future<String?> pickDirectory() => Future.value('picked_path');
@@ -57,6 +57,7 @@ class MockKuronNativePlatform
   }) async {
     return;
   }
+
   @override
   Future<Map<String, dynamic>?> showLoginWebView({
     required String url,
@@ -68,7 +69,11 @@ class MockKuronNativePlatform
     bool enableAdBlock = false,
     bool clearCookies = false,
   }) {
-    return Future.value({'cookies': ['cookie'], 'userAgent': 'ua', 'success': true});
+    return Future.value({
+      'cookies': ['cookie'],
+      'userAgent': 'ua',
+      'success': true,
+    });
   }
 
   @override

@@ -65,11 +65,11 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
             final firstImagePath = content.imageUrls.first;
             final file = File(firstImagePath);
             final parentDir = file.parent;
-             if (await parentDir.exists()) {
-                final sizeInBytes = await _getDirectorySize(parentDir);
-                sizes[content.id] =
-                    OfflineContentManager.formatStorageSize(sizeInBytes);
-             }
+            if (await parentDir.exists()) {
+              final sizeInBytes = await _getDirectorySize(parentDir);
+              sizes[content.id] =
+                  OfflineContentManager.formatStorageSize(sizeInBytes);
+            }
           }
         }
       } catch (e) {

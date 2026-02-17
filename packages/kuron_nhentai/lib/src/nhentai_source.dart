@@ -53,7 +53,8 @@ class NhentaiSource implements ContentSource {
   }) {
     return {
       'Referer': NhentaiUrlBuilder.refererHeader,
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
     };
   }
 
@@ -68,7 +69,6 @@ class NhentaiSource implements ContentSource {
 
   @override
   bool get supportsBookmarks => false; // No bookmark feature
-
 
   @override
   Future<ContentListResult> search(SearchFilter filter) async {

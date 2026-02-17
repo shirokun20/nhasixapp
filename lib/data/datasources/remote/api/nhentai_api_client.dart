@@ -156,7 +156,8 @@ class NhentaiApiClient {
   /// Returns [NhentaiListResponse] with list of galleries
   Future<NhentaiListResponse> getAllGalleries({int page = 1}) async {
     final url = _getAllGalleriesEndpoint(page: page);
-    _logger.d('NhentaiApiClient: Fetching all galleries page $page with url $url');
+    _logger
+        .d('NhentaiApiClient: Fetching all galleries page $page with url $url');
 
     try {
       await _waitForRateLimit();

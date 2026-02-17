@@ -365,10 +365,11 @@ class AppRouter {
         path: AppRoute.crotpediaDonation,
         name: AppRoute.crotpediaDonationName,
         redirect: (context, state) {
-            // This is a bit hacky for a route, but useful for menu consistency
-            // Better handled in the onTap handler, but here for completeness if deep linked
-            launchUrl(Uri.parse('https://trakteer.id/crotpedia/tip'), mode: LaunchMode.externalApplication);
-            return null; 
+          // This is a bit hacky for a route, but useful for menu consistency
+          // Better handled in the onTap handler, but here for completeness if deep linked
+          launchUrl(Uri.parse('https://trakteer.id/crotpedia/tip'),
+              mode: LaunchMode.externalApplication);
+          return null;
         },
       ),
     ],
@@ -424,9 +425,10 @@ class AppRouter {
       Content? content,
       List<ImageMetadata>? imageMetadata,
       ChapterData? chapterData,
-      Content? parentContent,          // Parent series for chapter mode
-      List<Chapter>? allChapters,      // All chapters for navigation
-      Chapter? currentChapter}) {      // Current chapter being read
+      Content? parentContent, // Parent series for chapter mode
+      List<Chapter>? allChapters, // All chapters for navigation
+      Chapter? currentChapter}) {
+    // Current chapter being read
     context.push(
         '/reader/$contentId?page=$page&forceStartFromBeginning=$forceStartFromBeginning',
         extra: {

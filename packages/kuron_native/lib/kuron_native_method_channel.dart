@@ -19,30 +19,34 @@ class MethodChannelKuronNative extends KuronNativePlatform {
 
   Future<void> _handleMethodCall(MethodCall call) async {
     if (call.method == 'onProgress') {
-       if (_onPdfProgress != null) {
-          try {
-            final args = call.arguments as Map;
-            final progress = (args['progress'] as num).toInt();
-            final message = args['message'] as String;
-            
-            _onPdfProgress!(progress, message);
-          } catch (e) {
-            // Silently ignore or log if needed
-            // print('Error handling onProgress: $e');
-          }
-       }
+      if (_onPdfProgress != null) {
+        try {
+          final args = call.arguments as Map;
+          final progress = (args['progress'] as num).toInt();
+          final message = args['message'] as String;
+
+          _onPdfProgress!(progress, message);
+        } catch (e) {
+          // Silently ignore or log if needed
+          // print('Error handling onProgress: $e');
+        }
+      }
     }
   }
 
   @override
   Future<String?> getPlatformVersion() async {
-    final version = await methodChannel.invokeMethod<String>('getPlatformVersion');
+    final version = await methodChannel.invokeMethod<String>(
+      'getPlatformVersion',
+    );
     return version;
   }
 
   @override
   Future<Map<Object?, Object?>?> getSystemInfo(String type) async {
-    final result = await methodChannel.invokeMethod('getSystemInfo', {'type': type});
+    final result = await methodChannel.invokeMethod('getSystemInfo', {
+      'type': type,
+    });
     return result as Map<Object?, Object?>?;
   }
 
@@ -64,17 +68,18 @@ class MethodChannelKuronNative extends KuronNativePlatform {
     String? cookie,
     String? userAgent,
   }) async {
-    final downloadId = await methodChannel.invokeMethod<String>('startDownload', {
-      'url': url,
-      'fileName': fileName,
-      'destinationDir': destinationDir,
-      'savePath': savePath,
-      'title': title,
-      'description': description,
-      'mimeType': mimeType,
-      'cookie': cookie,
-      'userAgent': userAgent,
-    });
+    final downloadId = await methodChannel
+        .invokeMethod<String>('startDownload', {
+          'url': url,
+          'fileName': fileName,
+          'destinationDir': destinationDir,
+          'savePath': savePath,
+          'title': title,
+          'description': description,
+          'mimeType': mimeType,
+          'cookie': cookie,
+          'userAgent': userAgent,
+        });
     return downloadId;
   }
 
@@ -86,11 +91,10 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }) async {
     _onPdfProgress = onProgress;
     try {
-      final result =
-          await methodChannel.invokeMapMethod<String, dynamic>('convertImagesToPdf', {
-        'imagePaths': imagePaths,
-        'outputPath': outputPath,
-      });
+      final result = await methodChannel.invokeMapMethod<String, dynamic>(
+        'convertImagesToPdf',
+        {'imagePaths': imagePaths, 'outputPath': outputPath},
+      );
       return result;
     } finally {
       _onPdfProgress = null;
@@ -120,6 +124,7 @@ class MethodChannelKuronNative extends KuronNativePlatform {
       'startPage': startPage,
     });
   }
+
   @override
   Future<void> clearCookies() async {
     await methodChannel.invokeMethod<void>('clearCookies');
@@ -136,16 +141,17 @@ class MethodChannelKuronNative extends KuronNativePlatform {
     bool enableAdBlock = false,
     bool clearCookies = false,
   }) async {
-    final result = await methodChannel.invokeMapMethod<String, dynamic>('showLoginWebView', {
-      'url': url,
-      'successUrlFilters': successUrlFilters,
-      'initialCookie': initialCookie,
-      'userAgent': userAgent,
-      'autoCloseOnCookie': autoCloseOnCookie,
-      'ssoRedirectUrl': ssoRedirectUrl,
-      'enableAdBlock': enableAdBlock,
-      'clearCookies': clearCookies,
-    });
+    final result = await methodChannel
+        .invokeMapMethod<String, dynamic>('showLoginWebView', {
+          'url': url,
+          'successUrlFilters': successUrlFilters,
+          'initialCookie': initialCookie,
+          'userAgent': userAgent,
+          'autoCloseOnCookie': autoCloseOnCookie,
+          'ssoRedirectUrl': ssoRedirectUrl,
+          'enableAdBlock': enableAdBlock,
+          'clearCookies': clearCookies,
+        });
     return result;
   }
 }

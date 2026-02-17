@@ -473,10 +473,8 @@ class DownloadItemWidget extends StatelessWidget {
       // Use sourceId from download, fallback to 'nhentai' if null
       final source = download.sourceId ?? SourceType.nhentai.id;
 
-      final isEnabled = remoteConfig.isFeatureEnabled(
-        source,
-        (f) => f.generatePdf
-      );
+      final isEnabled =
+          remoteConfig.isFeatureEnabled(source, (f) => f.generatePdf);
 
       if (!isEnabled) {
         return const SizedBox.shrink();
@@ -542,7 +540,7 @@ class DownloadItemWidget extends StatelessWidget {
     try {
       final remoteConfig = GetIt.I<RemoteConfigService>();
       final config = remoteConfig.getConfig(sourceId.toLowerCase());
-      
+
       if (config?.ui?.themeColor != null) {
         final hexColor = config!.ui!.themeColor.replaceFirst('#', '0xFF');
         return Color(int.parse(hexColor));
@@ -550,7 +548,7 @@ class DownloadItemWidget extends StatelessWidget {
     } catch (e) {
       // Fallback to default
     }
-    
+
     return colorScheme.secondary;
   }
 

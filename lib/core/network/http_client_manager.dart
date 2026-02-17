@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 import '../constants/app_constants.dart';
-import 'dns_resolver.dart';  // NEW
-import 'dns_interceptor.dart';  // NEW
+import 'dns_resolver.dart'; // NEW
+import 'dns_interceptor.dart'; // NEW
 
 /// Singleton HTTP client manager to ensure proper lifecycle management
 /// and prevent disposal issues across the application

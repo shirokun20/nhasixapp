@@ -86,7 +86,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   ) async {
     try {
       _currentSourceId = event.sourceId;
-      _logger.i('SearchBloc: Initializing search for source: $_currentSourceId');
+      _logger
+          .i('SearchBloc: Initializing search for source: $_currentSourceId');
 
       // Load search history
       _searchHistory = await _localDataSource.getSearchHistory();
@@ -108,18 +109,20 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         'romance',
         'school',
         'uniform',
-        ];
+      ];
 
       // Load search presets (from preferences)
       await _loadSearchPresets();
 
       // Load last search filter state if exists for this source
       if (_currentSourceId != null) {
-        final lastFilterData = await _localDataSource.getLastSearchFilter(_currentSourceId!);
+        final lastFilterData =
+            await _localDataSource.getLastSearchFilter(_currentSourceId!);
         if (lastFilterData != null) {
           try {
             _currentFilter = SearchFilter.fromJson(lastFilterData);
-            _logger.i('SearchBloc: Loaded last search filter state for $_currentSourceId');
+            _logger.i(
+                'SearchBloc: Loaded last search filter state for $_currentSourceId');
 
             // If there was a previous search, emit the filter updated state
             if (_currentFilter.hasFilters) {
@@ -354,11 +357,15 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
       // Save search filter state to local datasource for persistence
       // BUT EXCLUDE tag clicks from detail screen to prevent unwanted saving
-      if (_currentFilter.source != SearchSource.detailScreen && _currentSourceId != null) {
-        await _localDataSource.saveSearchFilter(_currentSourceId!, _currentFilter.toJson());
-        _logger.d('SearchBloc: Saved search filter to local storage (source: ${_currentFilter.source.displayName}, sourceId: $_currentSourceId)');
+      if (_currentFilter.source != SearchSource.detailScreen &&
+          _currentSourceId != null) {
+        await _localDataSource.saveSearchFilter(
+            _currentSourceId!, _currentFilter.toJson());
+        _logger.d(
+            'SearchBloc: Saved search filter to local storage (source: ${_currentFilter.source.displayName}, sourceId: $_currentSourceId)');
       } else {
-        _logger.d('SearchBloc: Skipped saving search filter - tag click from detail screen or no sourceId');
+        _logger.d(
+            'SearchBloc: Skipped saving search filter - tag click from detail screen or no sourceId');
       }
 
       // Perform search
@@ -966,7 +973,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       if (_currentSourceId == null) {
         return null;
       }
-      final filterData = await _localDataSource.getLastSearchFilter(_currentSourceId!);
+      final filterData =
+          await _localDataSource.getLastSearchFilter(_currentSourceId!);
       if (filterData != null) {
         return SearchFilter.fromJson(filterData);
       }

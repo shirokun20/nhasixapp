@@ -384,8 +384,6 @@ void _setupDataSources() {
             ?.displayName,
       ));
 
-
-
   // KomikTap Scraper
   getIt.registerLazySingleton<KomiktapScraper>(() => KomiktapScraper(
         customSelectors: getIt<RemoteConfigService>()
@@ -652,6 +650,7 @@ void _setupCubits() {
         imageMetadataService: getIt<ImageMetadataService>(),
         contentRepository: getIt<ContentRepository>(),
         contentSourceRegistry: getIt<ContentSourceRegistry>(),
+        offlineContentManager: getIt<OfflineContentManager>(),
         logger: getIt<Logger>(),
       ));
 

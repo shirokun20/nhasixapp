@@ -82,6 +82,7 @@ abstract class KuronNativePlatform extends PlatformInterface {
   }) {
     throw UnimplementedError('openPdf() has not been implemented.');
   }
+
   /// Open a native WebView Activity for login/verification
   ///
   /// [url] The initial URL to load.

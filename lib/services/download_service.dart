@@ -4,7 +4,6 @@ import 'package:dio/dio.dart';
 import 'package:path/path.dart' as path;
 import 'package:logger/logger.dart';
 
-
 import 'package:kuron_core/kuron_core.dart'; // NEW: For ContentSourceRegistry
 
 import '../domain/entities/entities.dart';
@@ -57,7 +56,8 @@ class DownloadService {
       Directory downloadDir;
       if (savePath != null && savePath.isNotEmpty) {
         // Appending 'images' for consistency with _createDownloadDirectory structure
-        downloadDir = Directory(path.join(savePath, app_constants.AppStorage.imagesSubfolder));
+        downloadDir = Directory(
+            path.join(savePath, app_constants.AppStorage.imagesSubfolder));
         if (!await downloadDir.exists()) {
           await downloadDir.create(recursive: true);
         }
@@ -216,7 +216,7 @@ class DownloadService {
       // ✅ Phase 2: File Verification (90-95%)
       // CRITICAL: Strict file-by-file existence check
       _logger.i('Starting strict file verification phase...');
-      
+
       // Emit -2 to signal verification start to DownloadBloc
       onProgress(DownloadProgress(
         contentId: content.id,
@@ -239,11 +239,12 @@ class DownloadService {
           missingPages.add(pageNum);
           _logger.w('Missing file: $fileName (page $pageNum)');
         }
-        
+
         // Report verification progress every 20 files or so to avoid spamming
         if (pageNum % 20 == 0) {
-           final verifyProgress = ((pageNum - actualStartPage) / expectedBatchCount * 100).toInt();
-           onProgress(DownloadProgress(
+          final verifyProgress =
+              ((pageNum - actualStartPage) / expectedBatchCount * 100).toInt();
+          onProgress(DownloadProgress(
             contentId: content.id,
             downloadedPages: -2, // SIGNAL: Verification Progress
             totalPages: verifyProgress, // 0-100% verification
@@ -261,7 +262,7 @@ class DownloadService {
         _logger.e(errorMsg);
         throw Exception(errorMsg);
       }
-      
+
       // Update verification to 100%
       onProgress(DownloadProgress(
         contentId: content.id,
@@ -276,7 +277,7 @@ class DownloadService {
       // ✅ Phase 3: Metadata Generation (95-98%)
       _logger.i('Starting metadata generation phase...');
       // No specific notification for metadata, just log it
-      
+
       // Save metadata with range information
       await _saveDownloadMetadata(content, downloadDir, downloadedFiles,
           actualStartPage, actualEndPage);
@@ -364,7 +365,7 @@ class DownloadService {
   }
 
   /// Get headers for source based on source ID
-  /// 
+  ///
   /// NEW: Uses ContentSource.getImageDownloadHeaders() instead of hardcoded logic
   Map<String, dynamic> _getHeadersForSource(
     String sourceId,
@@ -374,25 +375,27 @@ class DownloadService {
     try {
       // Get source from registry
       final source = _sourceRegistry.getSource(sourceId);
-      
+
       // Null check - should not happen but fallback if it does
       if (source == null) {
         throw Exception('Source $sourceId not found in registry');
       }
-      
+
       // Use source's method to get headers
       final headers = source.getImageDownloadHeaders(
         imageUrl: imageUrl,
         cookies: cookies,
       );
-      
-      _logger.d('Got headers from source $sourceId: ${headers.keys.join(", ")}');
+
+      _logger
+          .d('Got headers from source $sourceId: ${headers.keys.join(", ")}');
       return headers;
     } catch (e) {
       // Fallback if source not found
       _logger.w('Failed to get headers from source $sourceId: $e');
       return {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       };
     }
   }
@@ -430,13 +433,15 @@ class DownloadService {
       String contentId, String sourceId) async {
     // Use smart Downloads directory detection
     final downloadsPath = await _getDownloadsDirectory();
-    final nhasixDir = Directory(path.join(downloadsPath, app_constants.AppStorage.backupFolderName));
+    final nhasixDir = Directory(
+        path.join(downloadsPath, app_constants.AppStorage.backupFolderName));
 
     // Use source-based path
     final sourceDir = Directory(path.join(nhasixDir.path, sourceId));
 
     final contentDir = Directory(path.join(sourceDir.path, contentId));
-    final imagesDir = Directory(path.join(contentDir.path, app_constants.AppStorage.imagesSubfolder));
+    final imagesDir = Directory(
+        path.join(contentDir.path, app_constants.AppStorage.imagesSubfolder));
 
     // Create directories if they don't exist
     if (!await imagesDir.exists()) {
@@ -476,7 +481,8 @@ class DownloadService {
   Future<void> ensurePrivacyProtection() async {
     try {
       final downloadsPath = await _getDownloadsDirectory();
-      final nhasixDir = Directory(path.join(downloadsPath, app_constants.AppStorage.backupFolderName));
+      final nhasixDir = Directory(
+          path.join(downloadsPath, app_constants.AppStorage.backupFolderName));
 
       if (await nhasixDir.exists()) {
         await _createNoMediaFile(nhasixDir);
@@ -498,10 +504,11 @@ class DownloadService {
         if (customPath != null && customPath.isNotEmpty) {
           final dir = Directory(customPath);
           if (!await dir.exists()) {
-             _logger.w('Custom storage root set but does not exist: $customPath. Using it anyway as per user setting.');
-             // Attempt to verify/create if possible, but return it regardless
+            _logger.w(
+                'Custom storage root set but does not exist: $customPath. Using it anyway as per user setting.');
+            // Attempt to verify/create if possible, but return it regardless
           } else {
-             _logger.i('Using custom storage root: $customPath');
+            _logger.i('Using custom storage root: $customPath');
           }
           return customPath;
         }
@@ -596,7 +603,8 @@ class DownloadService {
           'Using app documents downloads directory: ${documentsDownloadsDir.path}');
       return documentsDownloadsDir.path;
       */
-      throw Exception('No custom storage root selected. Please select a storage location in settings.');
+      throw Exception(
+          'No custom storage root selected. Please select a storage location in settings.');
     } catch (e) {
       _logger.e('Error detecting Downloads directory: $e');
 
@@ -642,8 +650,8 @@ class DownloadService {
       'pages_downloaded': endPage - startPage + 1,
     };
 
-    final metadataFile =
-        File(path.join(downloadDir.parent.path, app_constants.AppStorage.metadataFileName));
+    final metadataFile = File(path.join(
+        downloadDir.parent.path, app_constants.AppStorage.metadataFileName));
     await metadataFile.writeAsString(
       const JsonEncoder.withIndent('  ').convert(metadata),
     );
@@ -663,7 +671,8 @@ class DownloadService {
   Future<String?> getDownloadPath(String contentId) async {
     try {
       final downloadsPath = await _getDownloadsDirectory();
-      final nhasixDir = Directory(path.join(downloadsPath, app_constants.AppStorage.backupFolderName));
+      final nhasixDir = Directory(
+          path.join(downloadsPath, app_constants.AppStorage.backupFolderName));
 
       if (!await nhasixDir.exists()) return null;
 
@@ -716,7 +725,8 @@ class DownloadService {
     final downloadPath = await getDownloadPath(contentId);
     if (downloadPath == null) return false;
 
-    final imagesDir = Directory(path.join(downloadPath, app_constants.AppStorage.imagesSubfolder));
+    final imagesDir = Directory(
+        path.join(downloadPath, app_constants.AppStorage.imagesSubfolder));
     if (!await imagesDir.exists()) return false;
 
     final files = await imagesDir.list().toList();
@@ -729,7 +739,8 @@ class DownloadService {
       final downloadPath = await getDownloadPath(contentId);
       if (downloadPath == null) return [];
 
-      final imagesDir = Directory(path.join(downloadPath, app_constants.AppStorage.imagesSubfolder));
+      final imagesDir = Directory(
+          path.join(downloadPath, app_constants.AppStorage.imagesSubfolder));
       if (!await imagesDir.exists()) return [];
 
       final files = await imagesDir

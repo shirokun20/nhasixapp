@@ -428,8 +428,8 @@ class GenreListShimmer extends StatelessWidget {
                       color: colorScheme.surfaceContainerHigh,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: colorScheme.outlineVariant
-                            .withValues(alpha: 0.3),
+                        color:
+                            colorScheme.outlineVariant.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -488,7 +488,8 @@ class SimpleListShimmer extends StatelessWidget {
                   child: Container(
                     height: 20,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -498,7 +499,8 @@ class SimpleListShimmer extends StatelessWidget {
                   width: 16,
                   height: 16,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
                     shape: BoxShape.circle,
                   ),
                 ),

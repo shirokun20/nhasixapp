@@ -5,8 +5,8 @@ import 'package:kuron_crotpedia/src/crotpedia_scraper.dart';
 String fixture(String name) {
   final dir = Directory.current;
   // If running from root, verify if we need to append package path
-  final path = dir.path.endsWith('kuron_crotpedia') 
-      ? 'test/fixtures/$name' 
+  final path = dir.path.endsWith('kuron_crotpedia')
+      ? 'test/fixtures/$name'
       : 'packages/kuron_crotpedia/test/fixtures/$name';
   return File(path).readAsStringSync();
 }
@@ -188,10 +188,10 @@ void main() {
         final chapterData = scraper.parseChapterImages(html);
 
         // Should not contain saweria/donation images
-        expect(chapterData.images.any((url) => url.contains('saweria')),
-            isFalse);
-        expect(chapterData.images.any((url) => url.contains('donasi')),
-            isFalse);
+        expect(
+            chapterData.images.any((url) => url.contains('saweria')), isFalse);
+        expect(
+            chapterData.images.any((url) => url.contains('donasi')), isFalse);
       });
 
       test('returns empty list if no images found', () {

@@ -16,18 +16,19 @@ class PdfService {
 
   /// Static function untuk compute() - berjalan di isolate terpisah
   /// Static function for compute() - runs in separate isolate
-  static Future<PdfProcessingResult> _processPdfTask(PdfProcessingTask task) async {
+  static Future<PdfProcessingResult> _processPdfTask(
+      PdfProcessingTask task) async {
     try {
       final processedImages = <Uint8List>[];
-      
+
       // Process each image (with auto-split for webtoons)
       for (int i = 0; i < task.imagePaths.length; i++) {
         final imagePath = task.imagePaths[i];
-        
+
         try {
           // ✅ NEW: Auto-split webtoon images into chunks
           final imageChunks = await ImageSplitter.splitImage(imagePath);
-          
+
           // Process each chunk
           for (final chunkBytes in imageChunks) {
             try {
@@ -37,7 +38,7 @@ class PdfService {
                 maxWidth: task.maxWidth,
                 quality: task.quality,
               );
-              
+
               if (processedBytes != null) {
                 processedImages.add(processedBytes);
               }
@@ -53,20 +54,20 @@ class PdfService {
           continue;
         }
       }
-      
+
       if (processedImages.isEmpty) {
         throw Exception('No images could be processed for PDF');
       }
-      
+
       // Create PDF
       final pdfBytes = await _createPdfStatic(processedImages, task.title);
-      
+
       // Save PDF file
       final pdfFile = File(task.outputPath);
       await pdfFile.writeAsBytes(pdfBytes);
-      
+
       final fileSize = await pdfFile.length();
-      
+
       return PdfProcessingResult.success(
         pdfPath: task.outputPath,
         fileSize: fileSize,
@@ -182,7 +183,7 @@ class PdfService {
 
       // Create safe filename with part number support
       final safeTitle = _createSafeFilename(title);
-      final pdfFileName = partNumber != null 
+      final pdfFileName = partNumber != null
           ? '${contentId}_${safeTitle}_part$partNumber.pdf'
           : '${contentId}_$safeTitle.pdf';
       final pdfPath = path.join(outputDir, pdfFileName);
@@ -199,9 +200,9 @@ class PdfService {
       // Use compute() to run heavy processing in isolate
       _logger.i('🚀 Starting compute() for ${imagePaths.length} images...');
       final stopwatch = Stopwatch()..start();
-      
+
       final result = await compute(_processPdfTask, task);
-      
+
       stopwatch.stop();
       _logger.i('✅ compute() completed in ${stopwatch.elapsed.inSeconds}s');
       _logger.i('📄 Pages generated: ${result.pageCount ?? 0}');
@@ -224,9 +225,9 @@ class PdfService {
       } else {
         throw Exception(result.error ?? 'Unknown error in compute processing');
       }
-
     } catch (e) {
-      _logger.e('PDF conversion failed using compute() for content: $contentId', error: e);
+      _logger.e('PDF conversion failed using compute() for content: $contentId',
+          error: e);
 
       return PdfResult(
         success: false,
@@ -257,7 +258,7 @@ class PdfService {
 
       // Create safe filename with part number support
       final safeTitle = _createSafeFilename(title);
-      final pdfFileName = partNumber != null 
+      final pdfFileName = partNumber != null
           ? '${contentId}_${safeTitle}_part$partNumber.pdf'
           : '${contentId}_$safeTitle.pdf';
       final pdfPath = path.join(outputDir, pdfFileName);
@@ -431,13 +432,14 @@ class PdfService {
   }
 
   /// Check if PDF exists for content
-  Future<bool> pdfExists(String contentId, String outputDir, {int? partNumber}) async {
+  Future<bool> pdfExists(String contentId, String outputDir,
+      {int? partNumber}) async {
     try {
       final directory = Directory(outputDir);
       if (!await directory.exists()) return false;
 
       final files = await directory.list().toList();
-      
+
       if (partNumber != null) {
         // Check for specific part
         return files.any((file) =>
@@ -459,13 +461,14 @@ class PdfService {
   }
 
   /// Get PDF path for content (returns first found PDF or specific part)
-  Future<String?> getPdfPath(String contentId, String outputDir, {int? partNumber}) async {
+  Future<String?> getPdfPath(String contentId, String outputDir,
+      {int? partNumber}) async {
     try {
       final directory = Directory(outputDir);
       if (!await directory.exists()) return null;
 
       final files = await directory.list().toList();
-      
+
       if (partNumber != null) {
         // Look for specific part
         final pdfFile = files.firstWhere(
@@ -489,13 +492,15 @@ class PdfService {
         return (pdfFile as File).path;
       }
     } catch (e) {
-      _logger.d('PDF not found for content: $contentId${partNumber != null ? ' part $partNumber' : ''}');
+      _logger.d(
+          'PDF not found for content: $contentId${partNumber != null ? ' part $partNumber' : ''}');
       return null;
     }
   }
 
   /// Delete PDF for content (all parts or specific part)
-  Future<bool> deletePdf(String contentId, String outputDir, {int? partNumber}) async {
+  Future<bool> deletePdf(String contentId, String outputDir,
+      {int? partNumber}) async {
     try {
       final directory = Directory(outputDir);
       if (!await directory.exists()) return false;
@@ -507,7 +512,6 @@ class PdfService {
         if (file is File &&
             path.basename(file.path).startsWith('${contentId}_') &&
             path.extension(file.path).toLowerCase() == '.pdf') {
-          
           if (partNumber != null) {
             // Delete specific part only
             if (path.basename(file.path).contains('_part$partNumber')) {
@@ -532,7 +536,8 @@ class PdfService {
   }
 
   /// Get all PDF paths for content (useful for multi-part PDFs)
-  Future<List<String>> getAllPdfPaths(String contentId, String outputDir) async {
+  Future<List<String>> getAllPdfPaths(
+      String contentId, String outputDir) async {
     try {
       final directory = Directory(outputDir);
       if (!await directory.exists()) return [];
@@ -550,7 +555,7 @@ class PdfService {
 
       // Sort paths to ensure correct part order (part1, part2, etc.)
       pdfPaths.sort();
-      
+
       _logger.d('Found ${pdfPaths.length} PDF file(s) for content: $contentId');
       return pdfPaths;
     } catch (e) {

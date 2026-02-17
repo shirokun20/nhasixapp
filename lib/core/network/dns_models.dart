@@ -4,37 +4,37 @@ import 'package:equatable/equatable.dart';
 enum DnsProvider {
   /// Use system default DNS resolver
   system('System Default', [], ''),
-  
+
   /// Cloudflare DNS (1.1.1.1)
   cloudflare(
     'Cloudflare (1.1.1.1)',
     ['1.1.1.1', '1.0.0.1'],
     'https://cloudflare-dns.com/dns-query',
   ),
-  
+
   /// Google Public DNS (8.8.8.8)
   google(
     'Google (8.8.8.8)',
     ['8.8.8.8', '8.8.4.4'],
     'https://dns.google/dns-query',
   ),
-  
+
   /// Quad9 DNS (9.9.9.9)
   quad9(
     'Quad9 (9.9.9.9)',
     ['9.9.9.9', '149.112.112.112'],
     'https://dns.quad9.net/dns-query',
   ),
-  
+
   /// Custom DNS server
   custom('Custom DNS', [], '');
 
   /// Human-readable display name
   final String displayName;
-  
+
   /// DNS server IP addresses (for bootstrap)
   final List<String> dnsServers;
-  
+
   /// DNS-over-HTTPS URL endpoint
   final String dohUrl;
 
@@ -53,13 +53,13 @@ enum DnsProvider {
 class DnsSettings extends Equatable {
   /// Selected DNS provider
   final DnsProvider provider;
-  
+
   /// Custom DNS server address (only used when provider is custom)
   final String? customDnsServer;
-  
+
   /// Custom DoH URL (only used when provider is custom)
   final String? customDohUrl;
-  
+
   /// Whether DNS-over-HTTPS is enabled
   final bool enabled;
 
@@ -130,5 +130,6 @@ class DnsSettings extends Equatable {
   List<Object?> get props => [provider, customDnsServer, customDohUrl, enabled];
 
   @override
-  String toString() => 'DnsSettings(provider: ${provider.name}, enabled: $enabled)';
+  String toString() =>
+      'DnsSettings(provider: ${provider.name}, enabled: $enabled)';
 }

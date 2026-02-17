@@ -45,10 +45,12 @@ class DownloadStatsWidget extends StatelessWidget {
                       const SizedBox(height: 8),
                       LinearProgressIndicator(
                         value: state.totalProgress,
-                        backgroundColor:
-                            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.1),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.primary),
                         minHeight: 8,
                       ),
                     ],
@@ -148,10 +150,14 @@ class DownloadStatsWidget extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
+                color:
+                    Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .error
+                      .withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -166,9 +172,8 @@ class DownloadStatsWidget extends StatelessWidget {
                   Expanded(
                     child: Text(
                       AppLocalizations.of(context)!.downloadsFailed(
-                        state.failedDownloads.length,
-                        state.failedDownloads.length == 1 ? '' : 's'
-                      ),
+                          state.failedDownloads.length,
+                          state.failedDownloads.length == 1 ? '' : 's'),
                       style: TextStyleConst.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.error,
                       ),
@@ -206,8 +211,8 @@ class DownloadStatsWidget extends StatelessWidget {
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                        Theme.of(context).colorScheme.primary),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -216,7 +221,10 @@ class DownloadStatsWidget extends StatelessWidget {
                       ? (state as DownloadProcessing).operation
                       : AppLocalizations.of(context)!.processing,
                   style: TextStyleConst.bodySmall.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -286,7 +294,8 @@ class DownloadStatsWidget extends StatelessWidget {
         Text(
           '$label: ',
           style: TextStyleConst.bodySmall.copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
         Text(

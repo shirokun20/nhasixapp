@@ -1,4 +1,3 @@
-
 import 'package:sqflite/sqflite.dart';
 import 'database_helper.dart';
 import '../../../../domain/entities/crotpedia/crotpedia_entities.dart';
@@ -14,7 +13,7 @@ class DoujinListDao {
     final db = await _db;
     final batch = db.batch();
     final now = DateTime.now().millisecondsSinceEpoch;
-    
+
     for (final item in items) {
       batch.insert(
         'doujin_list',
@@ -30,7 +29,8 @@ class DoujinListDao {
     await batch.commit(noResult: true);
   }
 
-  Future<List<DoujinListItem>> search(String query, {int? limit, int? offset}) async {
+  Future<List<DoujinListItem>> search(String query,
+      {int? limit, int? offset}) async {
     final db = await _db;
     final List<Map<String, dynamic>> maps = await db.query(
       'doujin_list',
@@ -67,10 +67,12 @@ class DoujinListDao {
       );
     });
   }
-  
+
   Future<int> count() async {
     final db = await _db;
-    return Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM doujin_list')) ?? 0;
+    return Sqflite.firstIntValue(
+            await db.rawQuery('SELECT COUNT(*) FROM doujin_list')) ??
+        0;
   }
 
   Future<void> clear() async {

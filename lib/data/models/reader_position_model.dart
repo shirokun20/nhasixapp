@@ -48,7 +48,8 @@ class ReaderPositionModel extends ReaderPosition {
       contentId: map['content_id'] as String,
       currentPage: map['current_page'] as int,
       totalPages: map['total_pages'] as int,
-      lastAccessed: DateTime.fromMillisecondsSinceEpoch(map['last_accessed'] as int),
+      lastAccessed:
+          DateTime.fromMillisecondsSinceEpoch(map['last_accessed'] as int),
       readingProgress: (map['reading_progress'] as num).toDouble(),
       readingTimeMinutes: map['reading_time_minutes'] as int,
       title: map['title'] as String?,

@@ -28,8 +28,7 @@ void main() {
     );
     final tDownloadStatusList = [tDownloadStatusModel];
 
-    test(
-        'getAllDownloads should pass pagination parameters to localDataSource',
+    test('getAllDownloads should pass pagination parameters to localDataSource',
         () async {
       // Arrange
       const limit = 10;
@@ -68,7 +67,8 @@ void main() {
       expect(result.first.contentId, tContentId);
     });
 
-    test('getDownloadsCount should return count from localDataSource', () async {
+    test('getDownloadsCount should return count from localDataSource',
+        () async {
       // Arrange
       const tCount = 42;
       const state = DownloadState.completed;
@@ -80,12 +80,12 @@ void main() {
       final result = await repository.getDownloadsCount(state: state);
 
       // Assert
-      verify(() => mockLocalDataSource.getDownloadsCount(state: state)).called(1);
+      verify(() => mockLocalDataSource.getDownloadsCount(state: state))
+          .called(1);
       expect(result, tCount);
     });
 
-    test(
-        'searchDownloads should pass pagination parameters to localDataSource',
+    test('searchDownloads should pass pagination parameters to localDataSource',
         () async {
       // Arrange
       const query = 'test';

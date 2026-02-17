@@ -540,7 +540,8 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                         showOfflineIndicator: true,
                         isHighlighted: false,
                         offlineSize: state.offlineSizes[content.id],
-                        highlightQuery: state.query, // Pass search query for highlighting
+                        highlightQuery:
+                            state.query, // Pass search query for highlighting
                       );
                     },
                   ),

@@ -234,25 +234,23 @@ class CrotpediaAuthManager {
     if (cookies.isEmpty) return false;
     return await _verifyLogin();
   }
-  
+
   /// Manually set logged in state (e.g. after WebView login)
-  Future<void> setExternalLogin({
-    required String email, 
-    required List<Cookie> cookies
-  }) async {
+  Future<void> setExternalLogin(
+      {required String email, required List<Cookie> cookies}) async {
     // 1. Save cookies to jar
     final uri = Uri.parse(CrotpediaUrlBuilder.baseUrl);
     await _cookieJar.saveFromResponse(uri, cookies);
-    
+
     // 2. Verify (double check)
     // If we just got these from WebView, they should be valid.
     // But verification requires a request, which might fail 403 if using Dio.
     // So we assume valid if passed here, or do a lightweight check.
-    
+
     _state = CrotpediaAuthState.loggedIn;
     _email = email;
     _username = email.split('@').first;
-    
+
     await _saveCredentials(email, 'external'); // Password unknown or hidden
   }
 

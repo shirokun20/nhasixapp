@@ -1,4 +1,3 @@
-
 import '../../entities/crotpedia/crotpedia_entities.dart';
 
 abstract class CrotpediaFeatureRepository {

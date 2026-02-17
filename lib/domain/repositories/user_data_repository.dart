@@ -114,7 +114,7 @@ abstract class UserDataRepository {
     int limit = 20,
     int offset = 0,
   });
-  
+
   /// Get search results count
   ///
   /// [query] - Search query to match against content ID, title, or source ID

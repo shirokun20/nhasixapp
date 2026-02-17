@@ -12,7 +12,7 @@ class HistoryEmptyWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return EmptyStateWidget(
       title: l10n.noReadingHistory,
       message: l10n.readingHistoryMessage,

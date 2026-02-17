@@ -10,7 +10,6 @@ import '../core/utils/download_storage_utils.dart';
 import 'notification_service.dart';
 import 'native_pdf_service.dart';
 
-
 /// Service yang menangani konversi PDF di background dengan fitur splitting dan notifikasi
 /// Handles background PDF conversion with splitting, progress tracking, and notifications
 class PdfConversionService {
@@ -144,7 +143,6 @@ class PdfConversionService {
       _logger.i('Performance: ~5x faster than Flutter');
       _logger.i('========================================');
 
-
       // Generate PDF using native implementation
       await _generatePdfNative(
         contentId: contentId,
@@ -153,7 +151,6 @@ class PdfConversionService {
         sourceId: sourceId,
         pdfOutputDir: pdfOutputDir,
       );
-
 
       _logger.i(
           'PdfConversionService: PDF conversion completed successfully for $contentId');
@@ -211,27 +208,26 @@ class PdfConversionService {
         outputPath: pdfPath,
         title: title,
         onProgress: (progress, message) async {
-            final now = DateTime.now();
-            // Update if:
-            // 1. Progress changed significantly (>= 5%)
-            // 2. OR enough time passed (>= 500ms)
-            // 3. OR it's start (0%) or completion (100%)
-            if (progress == 0 || 
-                progress == 100 || 
-                (progress - lastProgress).abs() >= 5 || 
-                now.difference(lastUpdateTime).inMilliseconds >= 500) {
-              
-              lastProgress = progress;
-              lastUpdateTime = now;
+          final now = DateTime.now();
+          // Update if:
+          // 1. Progress changed significantly (>= 5%)
+          // 2. OR enough time passed (>= 500ms)
+          // 3. OR it's start (0%) or completion (100%)
+          if (progress == 0 ||
+              progress == 100 ||
+              (progress - lastProgress).abs() >= 5 ||
+              now.difference(lastUpdateTime).inMilliseconds >= 500) {
+            lastProgress = progress;
+            lastUpdateTime = now;
 
-              // Update notification with real-time progress from native
-              await _notificationService.updatePdfConversionProgress(
-                contentId: contentId,
-                progress: progress,
-                title: message,
-              );
-              _logger.d('Native progress: $progress% - $message');
-            }
+            // Update notification with real-time progress from native
+            await _notificationService.updatePdfConversionProgress(
+              contentId: contentId,
+              progress: progress,
+              title: message,
+            );
+            _logger.d('Native progress: $progress% - $message');
+          }
         },
       );
 
@@ -297,15 +293,17 @@ class PdfConversionService {
           if (sourceId != null) {
             // New structure: Downloads/nhasix/[sourceId]/[contentId]/pdf/
             // FIX: Use Safe ID for folder creation to handle long titles
-            final safeContentId = DownloadStorageUtils.getSafeContentId(contentId);
-            outputDir = Directory(
-                path.join(downloadsPath, 'nhasix', sourceId, safeContentId, 'pdf'));
+            final safeContentId =
+                DownloadStorageUtils.getSafeContentId(contentId);
+            outputDir = Directory(path.join(
+                downloadsPath, 'nhasix', sourceId, safeContentId, 'pdf'));
           } else {
             // Legacy/Fallback: Downloads/nhasix/[contentId]/pdf/
             // FIX: Use Safe ID for folder creation
-            final safeContentId = DownloadStorageUtils.getSafeContentId(contentId);
-            outputDir =
-                Directory(path.join(downloadsPath, 'nhasix', safeContentId, 'pdf'));
+            final safeContentId =
+                DownloadStorageUtils.getSafeContentId(contentId);
+            outputDir = Directory(
+                path.join(downloadsPath, 'nhasix', safeContentId, 'pdf'));
           }
         } else {
           // Fallback ke folder umum: Downloads/nhasix-generate/pdf/
@@ -346,7 +344,8 @@ class PdfConversionService {
               'PdfConversionService: Using fallback directory: ${fallbackDir.path}'));
       return fallbackDir;
       */
-      throw Exception('Failed to create PDF output directory in custom storage. Please check storage permissions and settings.');
+      throw Exception(
+          'Failed to create PDF output directory in custom storage. Please check storage permissions and settings.');
     }
   }
 
@@ -364,30 +363,30 @@ class PdfConversionService {
       // Cek apakah ada file PDF dengan prefix contentId
       // Check if PDF files with contentId prefix exist in primary location
       if (await _hasPdfInDirectory(pdfDir, contentId)) {
-         _logger.d('PDF found in primary location: ${pdfDir.path}');
-         return true;
+        _logger.d('PDF found in primary location: ${pdfDir.path}');
+        return true;
       }
 
       // 2. Check Legacy Path (Original ID) if different
       // Only if we are using default storage (outputDir is null) and have a sourceId
       if (outputDir == null && sourceId != null) {
-          final safeId = DownloadStorageUtils.getSafeContentId(contentId);
-          if (safeId != contentId) {
-             // Reconstruct legacy path manually to avoid _createPdfOutputDirectory using safeId
-             final downloadsPath = await DirectoryUtils.getDownloadsDirectory();
-             final legacyPdfDir = Directory(path.join(downloadsPath, 'nhasix', contentId, 'pdf'));
-             
-             if (await _hasPdfInDirectory(legacyPdfDir, contentId)) {
-                _logger.d('PDF found in legacy location: ${legacyPdfDir.path}');
-                return true;
-             }
+        final safeId = DownloadStorageUtils.getSafeContentId(contentId);
+        if (safeId != contentId) {
+          // Reconstruct legacy path manually to avoid _createPdfOutputDirectory using safeId
+          final downloadsPath = await DirectoryUtils.getDownloadsDirectory();
+          final legacyPdfDir =
+              Directory(path.join(downloadsPath, 'nhasix', contentId, 'pdf'));
+
+          if (await _hasPdfInDirectory(legacyPdfDir, contentId)) {
+            _logger.d('PDF found in legacy location: ${legacyPdfDir.path}');
+            return true;
           }
+        }
       }
 
       _logger.d(_getLocalized('pdfExistsForContent',
           args: {'contentId': contentId, 'exists': 'false'},
-          fallback:
-              'PdfConversionService: PDF NOT found for $contentId'));
+          fallback: 'PdfConversionService: PDF NOT found for $contentId'));
       return false;
     } catch (e) {
       _logger.e(
@@ -427,17 +426,19 @@ class PdfConversionService {
 
       // 2. Check Legacy Path (Original ID) if found nothing in primary
       if (pdfPaths.isEmpty && outputDir == null) {
-          final safeId = DownloadStorageUtils.getSafeContentId(contentId);
-          if (safeId != contentId) {
-             final downloadsPath = await DirectoryUtils.getDownloadsDirectory();
-             final legacyPdfDir = Directory(path.join(downloadsPath, 'nhasix', contentId, 'pdf'));
-             
-             final legacyPaths = await _getPdfsInDirectory(legacyPdfDir, contentId);
-             if (legacyPaths.isNotEmpty) {
-                 _logger.d('PDFs found in legacy location: ${legacyPdfDir.path}');
-                 pdfPaths = legacyPaths;
-             }
+        final safeId = DownloadStorageUtils.getSafeContentId(contentId);
+        if (safeId != contentId) {
+          final downloadsPath = await DirectoryUtils.getDownloadsDirectory();
+          final legacyPdfDir =
+              Directory(path.join(downloadsPath, 'nhasix', contentId, 'pdf'));
+
+          final legacyPaths =
+              await _getPdfsInDirectory(legacyPdfDir, contentId);
+          if (legacyPaths.isNotEmpty) {
+            _logger.d('PDFs found in legacy location: ${legacyPdfDir.path}');
+            pdfPaths = legacyPaths;
           }
+        }
       }
 
       // Sort berdasarkan nama file untuk urutan part yang benar
@@ -457,20 +458,22 @@ class PdfConversionService {
   }
 
   /// Helper untuk mendapatkan list PDF dalam direktori
-  Future<List<String>> _getPdfsInDirectory(Directory dir, String contentId) async {
-      final pdfPaths = <String>[];
-      if (!await dir.exists()) return pdfPaths;
-      
-      final files = await dir.list().toList();
-      for (final file in files) {
-        if (file is File &&
-            path.basename(file.path).startsWith('${contentId}_') &&
-            path.extension(file.path).toLowerCase() == '.pdf') {
-          pdfPaths.add(file.path);
-        }
+  Future<List<String>> _getPdfsInDirectory(
+      Directory dir, String contentId) async {
+    final pdfPaths = <String>[];
+    if (!await dir.exists()) return pdfPaths;
+
+    final files = await dir.list().toList();
+    for (final file in files) {
+      if (file is File &&
+          path.basename(file.path).startsWith('${contentId}_') &&
+          path.extension(file.path).toLowerCase() == '.pdf') {
+        pdfPaths.add(file.path);
       }
-      return pdfPaths;
+    }
+    return pdfPaths;
   }
+
   /// Delete all PDF files for specific content
   ///
   /// Returns: true jika berhasil dihapus, false jika gagal
@@ -685,8 +688,6 @@ class PdfConversionService {
       return fallback ?? key;
     }
   }
-
-
 }
 
 /// Result object untuk tracking hasil konversi PDF dengan multiple parts

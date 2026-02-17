@@ -551,7 +551,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               final contentId = favorite['id'].toString();
               final isSelected = _selectedItems.contains(contentId);
 
-              return _buildFavoriteCard(favorite, isSelected, state.searchQuery);
+              return _buildFavoriteCard(
+                  favorite, isSelected, state.searchQuery);
             },
           );
         },
@@ -559,7 +560,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 
-  Widget _buildFavoriteCard(Map<String, dynamic> favorite, bool isSelected, [String? searchQuery]) {
+  Widget _buildFavoriteCard(Map<String, dynamic> favorite, bool isSelected,
+      [String? searchQuery]) {
     final contentId = favorite['id'].toString();
     final coverUrl = favorite['cover_url']?.toString() ?? '';
 

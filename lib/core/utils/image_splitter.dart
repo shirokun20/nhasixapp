@@ -97,7 +97,10 @@ class ImageSplitter {
 
       if (!WebtoonDetector.isWebtoon(dimensions)) {
         // Normal image, return as-is
-        return [Uint8List.fromList(img.encodeJpg(processedImage, quality: jpegQuality))];
+        return [
+          Uint8List.fromList(
+              img.encodeJpg(processedImage, quality: jpegQuality))
+        ];
       }
 
       // Step 3: Split into chunks
@@ -117,7 +120,8 @@ class ImageSplitter {
           height: yEnd - yStart,
         );
 
-        chunks.add(Uint8List.fromList(img.encodeJpg(chunk, quality: jpegQuality)));
+        chunks.add(
+            Uint8List.fromList(img.encodeJpg(chunk, quality: jpegQuality)));
       }
 
       return chunks;
@@ -226,7 +230,7 @@ class ImageSplitter {
   /// ```dart
   /// final images = ['page1.jpg', 'page2.jpg', ...];
   /// final webtoonCount = await ImageSplitter.countWebtoonImages(images);
-  /// 
+  ///
   /// if (webtoonCount >= 50) {
   ///   // Use native PDF generator (faster)
   /// } else {
@@ -262,7 +266,7 @@ class ImageSplitter {
   /// final images = ['page1.jpg', 'page2.jpg', ...];
   /// final totalPages = await ImageSplitter.estimateTotalPages(images);
   /// print('PDF will have approximately $totalPages pages');
-  /// 
+  ///
   /// // Estimate processing time
   /// final estimatedSeconds = totalPages * 0.5;
   /// ```
@@ -277,4 +281,3 @@ class ImageSplitter {
     return totalPages;
   }
 }
-

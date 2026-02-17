@@ -36,7 +36,8 @@ class MockKuronNativePlatform extends Mock
   }
 
   @override
-  Future<Map<Object?, Object?>?> getSystemInfo(String type) => Future.value(null);
+  Future<Map<Object?, Object?>?> getSystemInfo(String type) =>
+      Future.value(null);
 }
 
 void main() {
@@ -66,10 +67,10 @@ void main() {
         'cookies': ['key=value; Path=/'],
         'userAgent': 'MockUA',
       };
-      
+
       // Use specific arguments matchers to satisfy non-nullable types
       when(mockPlatform.showLoginWebView(
-        url: 'https://crotpedia.net', 
+        url: 'https://crotpedia.net',
         successUrlFilters: anyNamed('successUrlFilters'),
         initialCookie: anyNamed('initialCookie'),
         userAgent: anyNamed('userAgent'),
@@ -87,21 +88,22 @@ void main() {
         successUrlFilters: anyNamed('successUrlFilters'),
         initialCookie: anyNamed('initialCookie'),
         userAgent: anyNamed('userAgent'),
-        autoCloseOnCookie: anyNamed('autoCloseOnCookie'), 
+        autoCloseOnCookie: anyNamed('autoCloseOnCookie'),
         clearCookies: true, // Expect true for bypass
       )).called(1);
     });
 
-    test('attemptLogin calls showLoginWebView with correct login url', () async {
-       // Arrange
+    test('attemptLogin calls showLoginWebView with correct login url',
+        () async {
+      // Arrange
       final successResult = {
         'success': true,
         'cookies': ['session=123'],
         'userAgent': 'MockUA',
       };
-       
-       // Using generic argument matcher for url if we want, but explicit is safer for null safety without code gen
-       when(mockPlatform.showLoginWebView(
+
+      // Using generic argument matcher for url if we want, but explicit is safer for null safety without code gen
+      when(mockPlatform.showLoginWebView(
         url: 'https://crotpedia.net/login/',
         successUrlFilters: anyNamed('successUrlFilters'),
         initialCookie: anyNamed('initialCookie'),

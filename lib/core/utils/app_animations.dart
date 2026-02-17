@@ -21,7 +21,7 @@ enum StaggeredAnimationType {
 }
 
 /// Standardized Animation System for Consistent UI Transitions
-/// 
+///
 /// Provides pre-configured animations and transitions that follow
 /// Material Design guidelines and ensure consistent user experience.
 class AppAnimations {
@@ -30,7 +30,7 @@ class AppAnimations {
   static const Duration medium = Duration(milliseconds: 300);
   static const Duration slow = Duration(milliseconds: 500);
   static const Duration extraSlow = Duration(milliseconds: 800);
-  
+
   // Standard curves
   static const Curve easeIn = Curves.easeIn;
   static const Curve easeOut = Curves.easeOut;
@@ -39,7 +39,7 @@ class AppAnimations {
   static const Curve bounceOut = Curves.bounceOut;
   static const Curve elasticIn = Curves.elasticIn;
   static const Curve elasticOut = Curves.elasticOut;
-  
+
   /// Fade transition animation
   static Widget fadeTransition({
     required Widget child,
@@ -52,7 +52,7 @@ class AppAnimations {
       child: child,
     );
   }
-  
+
   /// Scale transition animation
   static Widget scaleTransition({
     required Widget child,
@@ -67,7 +67,7 @@ class AppAnimations {
       child: child,
     );
   }
-  
+
   /// Slide transition animation
   static Widget slideTransition({
     required Widget child,
@@ -84,7 +84,7 @@ class AppAnimations {
       child: child,
     );
   }
-  
+
   /// Combined fade + slide transition
   static Widget fadeSlideTransition({
     required Widget child,
@@ -104,7 +104,7 @@ class AppAnimations {
       ),
     );
   }
-  
+
   /// Page route transition
   static PageRouteBuilder<T> createRoute<T>({
     required Widget page,
@@ -118,9 +118,11 @@ class AppAnimations {
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         switch (type) {
           case RouteTransitionType.fade:
-            return fadeTransition(child: child, animation: animation, curve: curve);
+            return fadeTransition(
+                child: child, animation: animation, curve: curve);
           case RouteTransitionType.scale:
-            return scaleTransition(child: child, animation: animation, curve: curve);
+            return scaleTransition(
+                child: child, animation: animation, curve: curve);
           case RouteTransitionType.slideLeft:
             return slideTransition(
               child: child,
@@ -150,7 +152,8 @@ class AppAnimations {
               curve: curve,
             );
           case RouteTransitionType.fadeSlide:
-            return fadeSlideTransition(child: child, animation: animation, curve: curve);
+            return fadeSlideTransition(
+                child: child, animation: animation, curve: curve);
         }
       },
     );
@@ -292,7 +295,7 @@ class AnimatedAppContainer extends StatefulWidget {
     this.height,
     this.alignment,
   });
-  
+
   final Widget child;
   final Duration duration;
   final Curve curve;
@@ -303,7 +306,7 @@ class AnimatedAppContainer extends StatefulWidget {
   final double? width;
   final double? height;
   final AlignmentGeometry? alignment;
-  
+
   @override
   State<AnimatedAppContainer> createState() => _AnimatedAppContainerState();
 }
@@ -312,26 +315,26 @@ class _AnimatedAppContainerState extends State<AnimatedAppContainer>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
-  
+
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(duration: widget.duration, vsync: this);
     _animation = CurvedAnimation(parent: _controller, curve: widget.curve);
-    
+
     if (widget.animateOnInit) {
       _controller.forward();
     } else {
       _controller.value = 1.0;
     }
   }
-  
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -372,7 +375,7 @@ class StaggeredAnimationHelper {
       final index = entry.key;
       final child = entry.value;
       final delay = itemDelay * index;
-      
+
       return StaggeredAnimationWidget(
         delay: delay,
         duration: itemDuration,
@@ -394,15 +397,16 @@ class StaggeredAnimationWidget extends StatefulWidget {
     this.curve = AppAnimations.easeInOut,
     this.type = StaggeredAnimationType.fadeSlide,
   });
-  
+
   final Widget child;
   final Duration delay;
   final Duration duration;
   final Curve curve;
   final StaggeredAnimationType type;
-  
+
   @override
-  State<StaggeredAnimationWidget> createState() => _StaggeredAnimationWidgetState();
+  State<StaggeredAnimationWidget> createState() =>
+      _StaggeredAnimationWidgetState();
 }
 
 class _StaggeredAnimationWidgetState extends State<StaggeredAnimationWidget>
@@ -410,7 +414,7 @@ class _StaggeredAnimationWidgetState extends State<StaggeredAnimationWidget>
   late AnimationController _controller;
   late Animation<double> _animation;
   late Animation<Offset> _slideAnimation;
-  
+
   @override
   void initState() {
     super.initState();
@@ -420,7 +424,7 @@ class _StaggeredAnimationWidgetState extends State<StaggeredAnimationWidget>
       begin: const Offset(0.3, 0.0),
       end: Offset.zero,
     ).animate(_animation);
-    
+
     // Start animation after delay
     Future.delayed(widget.delay, () {
       if (mounted) {
@@ -428,13 +432,13 @@ class _StaggeredAnimationWidgetState extends State<StaggeredAnimationWidget>
       }
     });
   }
-  
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     switch (widget.type) {
@@ -477,13 +481,14 @@ class AppHeroHelper {
     return Hero(
       tag: tag,
       transitionOnUserGestures: true,
-      createRectTween: createRectTween ?? (begin, end) {
-        return RectTween(begin: begin, end: end);
-      },
+      createRectTween: createRectTween ??
+          (begin, end) {
+            return RectTween(begin: begin, end: end);
+          },
       child: child,
     );
   }
-  
+
   /// Create a hero animation for images
   static Widget createImageHero({
     required String tag,
@@ -502,24 +507,25 @@ class AppHeroHelper {
 }
 
 /// Mixin for widgets that need animation capabilities
-mixin AnimationMixin<T extends StatefulWidget> on State<T>, TickerProviderStateMixin<T> {
+mixin AnimationMixin<T extends StatefulWidget>
+    on State<T>, TickerProviderStateMixin<T> {
   late AnimationController animationController;
   late Animation<double> fadeAnimation;
   late Animation<double> scaleAnimation;
   late Animation<Offset> slideAnimation;
-  
+
   @override
   void initState() {
     super.initState();
     setupAnimations();
   }
-  
+
   void setupAnimations({
     Duration duration = AppAnimations.medium,
     Curve curve = AppAnimations.easeInOut,
   }) {
     animationController = AnimationController(duration: duration, vsync: this);
-    
+
     fadeAnimation = CurvedAnimation(parent: animationController, curve: curve);
     scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(fadeAnimation);
     slideAnimation = Tween<Offset>(
@@ -527,13 +533,13 @@ mixin AnimationMixin<T extends StatefulWidget> on State<T>, TickerProviderStateM
       end: Offset.zero,
     ).animate(fadeAnimation);
   }
-  
+
   @override
   void dispose() {
     animationController.dispose();
     super.dispose();
   }
-  
+
   void startAnimation() => animationController.forward();
   void reverseAnimation() => animationController.reverse();
   void resetAnimation() => animationController.reset();

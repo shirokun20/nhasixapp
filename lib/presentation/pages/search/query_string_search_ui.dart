@@ -64,9 +64,11 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
     if (widget.initialQuery != null) {
       _searchController.text = widget.initialQuery!;
     }
-    
+
     // Initialize SearchBloc with current source
-    context.read<SearchBloc>().add(SearchInitializeEvent(sourceId: widget.sourceId));
+    context
+        .read<SearchBloc>()
+        .add(SearchInitializeEvent(sourceId: widget.sourceId));
 
     // Set default sort from config
     final defaultSort = _sortOptions.where((o) => o.isDefault).firstOrNull;
@@ -222,7 +224,8 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
     final filter = _buildSearchFilter();
 
     try {
-      await getIt<LocalDataSource>().saveSearchFilter(widget.sourceId, filter.toJson());
+      await getIt<LocalDataSource>()
+          .saveSearchFilter(widget.sourceId, filter.toJson());
 
       if (mounted) {
         context.read<SearchBloc>().add(SearchUpdateFilterEvent(filter));
@@ -276,7 +279,8 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
     // If detail screen returned a filter, apply it to search
     if (returnedFilter != null && mounted) {
       try {
-        await getIt<LocalDataSource>().saveSearchFilter(widget.sourceId, returnedFilter.toJson());
+        await getIt<LocalDataSource>()
+            .saveSearchFilter(widget.sourceId, returnedFilter.toJson());
         if (!mounted) return;
         context.read<SearchBloc>().add(SearchUpdateFilterEvent(returnedFilter));
         context.read<SearchBloc>().add(const SearchSubmittedEvent());
@@ -454,8 +458,9 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
 
   Widget _buildAdvancedToggle(ColorScheme colorScheme) {
     // Check if any filters are available
-    final hasFilters = _singleSelectFilters.isNotEmpty || 
-                       _multiSelectFilters2.isNotEmpty; // Use _multiSelectFilters2 from config getter
+    final hasFilters = _singleSelectFilters.isNotEmpty ||
+        _multiSelectFilters2
+            .isNotEmpty; // Use _multiSelectFilters2 from config getter
 
     if (!hasFilters) {
       return const SizedBox.shrink();

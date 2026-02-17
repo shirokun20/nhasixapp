@@ -12,11 +12,11 @@ class AppErrorWidget extends StatelessWidget {
     this.icon,
     this.iconColor,
     this.onRetry,
-  this.retryText,
+    this.retryText,
     this.onSecondaryAction,
     this.secondaryActionText,
-  this.showDetails = false,
-  this.details,
+    this.showDetails = false,
+    this.details,
     this.suggestions = const [],
   });
 
@@ -71,7 +71,7 @@ class AppErrorWidget extends StatelessWidget {
           // Suggestions
           if (suggestions.isNotEmpty) ...[
             const SizedBox(height: 16),
-              _buildSuggestions(context),
+            _buildSuggestions(context),
           ],
 
           // Error details (expandable)
@@ -104,7 +104,7 @@ class AppErrorWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-              AppLocalizations.of(context)!.suggestions,
+            AppLocalizations.of(context)!.suggestions,
             style: TextStyleConst.labelMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
@@ -140,7 +140,7 @@ class AppErrorWidget extends StatelessWidget {
   Widget _buildErrorDetails(BuildContext context) {
     return ExpansionTile(
       title: Text(
-    AppLocalizations.of(context)!.error,
+        AppLocalizations.of(context)!.error,
         style: TextStyleConst.bodyMedium.copyWith(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
@@ -203,7 +203,10 @@ class AppErrorWidget extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
                 side: BorderSide(
-                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .outline
+                      .withValues(alpha: 0.3),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -211,7 +214,7 @@ class AppErrorWidget extends StatelessWidget {
                 ),
               ),
               child: Text(
-                  secondaryActionText!,
+                secondaryActionText!,
                 style: TextStyleConst.buttonMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -271,9 +274,9 @@ class ServerErrorWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppErrorWidget(
       title: AppLocalizations.of(context)!.serverError,
-    message: statusCode != null
-      ? AppLocalizations.of(context)!.serverReturnedError(statusCode!)
-      : AppLocalizations.of(context)!.serverUnavailable,
+      message: statusCode != null
+          ? AppLocalizations.of(context)!.serverReturnedError(statusCode!)
+          : AppLocalizations.of(context)!.serverUnavailable,
       icon: Icons.dns,
       iconColor: Theme.of(context).colorScheme.error,
       onRetry: onRetry,
@@ -301,14 +304,13 @@ class CloudflareErrorWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppErrorWidget(
       title: AppLocalizations.of(context)!.error,
-      message:
-      AppLocalizations.of(context)!.cloudflareBypassMessage,
+      message: AppLocalizations.of(context)!.cloudflareBypassMessage,
       icon: Icons.security,
       iconColor: Theme.of(context).colorScheme.tertiary,
       onRetry: onRetry,
       retryText: AppLocalizations.of(context)!.tryAgain,
       onSecondaryAction: onBypass,
-    secondaryActionText: AppLocalizations.of(context)!.forceBypass,
+      secondaryActionText: AppLocalizations.of(context)!.forceBypass,
       suggestions: [
         AppLocalizations.of(context)!.waitForBypass,
         AppLocalizations.of(context)!.tryUsingVpn,
@@ -333,14 +335,13 @@ class ParseErrorWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppErrorWidget(
       title: AppLocalizations.of(context)!.error,
-      message:
-      AppLocalizations.of(context)!.unableToProcessData,
+      message: AppLocalizations.of(context)!.unableToProcessData,
       icon: Icons.code_off,
       iconColor: Theme.of(context).colorScheme.error,
       onRetry: onRetry,
       retryText: AppLocalizations.of(context)!.retryAction,
       onSecondaryAction: onReport,
-    secondaryActionText: AppLocalizations.of(context)!.reportIssue,
+      secondaryActionText: AppLocalizations.of(context)!.reportIssue,
       suggestions: [
         AppLocalizations.of(context)!.tryRefreshingContent,
         AppLocalizations.of(context)!.checkForAppUpdate,
@@ -485,8 +486,7 @@ class MaintenanceWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppErrorWidget(
       title: AppLocalizations.of(context)!.underMaintenanceTitle,
-      message:
-          AppLocalizations.of(context)!.underMaintenanceMessage,
+      message: AppLocalizations.of(context)!.underMaintenanceMessage,
       icon: Icons.build,
       iconColor: Theme.of(context).colorScheme.tertiary,
       onRetry: onCheckAgain,

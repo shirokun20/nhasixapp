@@ -103,17 +103,17 @@ void main() {
 
       expect(detail.title, equals('Adabana Boku No Onee-chan after (MTL)'));
       expect(detail.favorites, equals(21));
-      
+
       // Check author extraction
       expect(detail.author, equals('Tirotata'));
-      
+
       // Check date extraction (Updated On preference)
       // 2026-01-23T11:06:17+08:00
       expect(detail.lastUpdate, isNotNull);
       expect(detail.lastUpdate!.year, equals(2026));
       expect(detail.lastUpdate!.month, equals(1));
       expect(detail.lastUpdate!.day, equals(23));
-      
+
       // Check other metadata
       expect(detail.status, equals('Ongoing'));
       expect(detail.type, equals('Manga'));

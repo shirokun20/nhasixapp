@@ -89,7 +89,10 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                 ),
                 border: OutlineInputBorder(
                   borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .outline
+                        .withValues(alpha: 0.3),
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
@@ -146,7 +149,8 @@ class _PaginationWidgetState extends State<PaginationWidget> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            AppLocalizations.of(context)!.validPageNumberError(widget.totalPages),
+            AppLocalizations.of(context)!
+                .validPageNumberError(widget.totalPages),
             style: TextStyleConst.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onError,
             ),
@@ -183,7 +187,10 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                 icon: const Icon(Icons.chevron_left),
                 color: widget.hasPrevious
                     ? Theme.of(context).colorScheme.onSurface
-                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                    : Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.4),
                 tooltip: AppLocalizations.of(context)!.previousPageTooltip,
               ),
 
@@ -213,7 +220,10 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                         Container(
                           height: 4,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .outline
+                                .withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(2),
                           ),
                           child: FractionallySizedBox(
@@ -244,7 +254,8 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                         Text(
                           AppLocalizations.of(context)!.tapToJumpToPage,
                           style: TextStyleConst.overline.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -263,7 +274,10 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                 icon: const Icon(Icons.chevron_right),
                 color: widget.hasNext
                     ? Theme.of(context).colorScheme.onSurface
-                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                    : Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.4),
                 tooltip: AppLocalizations.of(context)!.nextPageTooltip,
               ),
 
@@ -324,7 +338,10 @@ class SimplePaginationWidget extends StatelessWidget {
             style: TextButton.styleFrom(
               foregroundColor: hasPrevious
                   ? Theme.of(context).colorScheme.onSurface
-                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                  : Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.4),
             ),
           ),
 
@@ -344,7 +361,10 @@ class SimplePaginationWidget extends StatelessWidget {
             style: TextButton.styleFrom(
               foregroundColor: hasNext
                   ? Theme.of(context).colorScheme.onSurface
-                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                  : Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.4),
             ),
           ),
         ],

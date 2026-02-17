@@ -117,6 +117,26 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                 }
               });
             });
+          } else if (state is SplashOfflineReady) {
+            // Has offline content - auto navigate to main
+            _dotsAnimationController.stop();
+            _successAnimationController.forward().then((_) {
+              Timer(const Duration(milliseconds: 200), () {
+                if (mounted) {
+                  context.go(AppRoute.main);
+                }
+              });
+            });
+          } else if (state is SplashOfflineMode) {
+            // Limited offline mode - still can navigate
+            _dotsAnimationController.stop();
+            _successAnimationController.forward().then((_) {
+              Timer(const Duration(milliseconds: 200), () {
+                if (mounted) {
+                  context.go(AppRoute.main);
+                }
+              });
+            });
           } else if (state is SplashError) {
             // Stop dots animation on error
             _dotsAnimationController.stop();
@@ -307,6 +327,220 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
 
                 // Success State
                 if (state is SplashSuccess) _buildSuccessState(state),
+
+                // Offline States
+                if (state is SplashOfflineDetected)
+                  Column(
+                    children: [
+                      SizedBox(
+                        width: 60,
+                        height: 60,
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.primary,
+                          ),
+                          strokeWidth: 4,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Icon(
+                        Icons.wifi_off,
+                        size: 48,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(height: 16),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Text(
+                          state.message,
+                          style: TextStyleConst.headingSmall.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildProgressDots(),
+                    ],
+                  ),
+
+                if (state is SplashOfflineReady)
+                  Column(
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primaryContainer
+                              .withValues(alpha: 0.3),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.3),
+                            width: 2,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.offline_bolt,
+                          size: 48,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Offline Content Available',
+                        style: TextStyleConst.headingMedium.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Text(
+                          state.message,
+                          style: TextStyleConst.bodyMedium.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildProgressDots(),
+                    ],
+                  ),
+
+                if (state is SplashOfflineEmpty)
+                  Column(
+                    children: [
+                      Icon(
+                        Icons.cloud_off,
+                        size: 64,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(height: 24),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Text(
+                          'No Internet Connection',
+                          style: TextStyleConst.headingMedium.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Text(
+                          state.message,
+                          style: TextStyleConst.bodyMedium.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: () => context
+                                .read<SplashBloc>()
+                                .add(SplashRetryBypassEvent()),
+                            icon: const Icon(Icons.refresh),
+                            label: Text(AppLocalizations.of(context)!.retry),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.primary,
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.onPrimary,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              textStyle: TextStyleConst.buttonMedium,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          OutlinedButton.icon(
+                            onPressed: () => context
+                                .read<SplashBloc>()
+                                .add(SplashForceOfflineModeEvent()),
+                            icon: const Icon(Icons.arrow_forward),
+                            label: const Text('Continue Anyway'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.primary,
+                              side: BorderSide(
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              textStyle: TextStyleConst.buttonMedium,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                if (state is SplashOfflineMode)
+                  Column(
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .secondaryContainer
+                              .withValues(alpha: 0.3),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .secondary
+                                .withValues(alpha: 0.3),
+                            width: 2,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.offline_pin,
+                          size: 48,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Offline Mode Enabled',
+                        style: TextStyleConst.headingMedium.copyWith(
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Text(
+                          state.message,
+                          style: TextStyleConst.bodyMedium.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildProgressDots(),
+                    ],
+                  ),
 
                 // Error State with Retry Button
                 if (state is SplashError && state.canRetry)

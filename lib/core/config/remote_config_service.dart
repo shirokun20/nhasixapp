@@ -209,7 +209,7 @@ class RemoteConfigService {
 
   AppConfig? get appConfig => _appConfig;
   TagsManifest? get tagsManifest => _tagsManifest;
-  
+
   /// Get raw config json (useful for dynamic properties not yet in model)
   Map<String, dynamic>? getRawConfig(String source) {
     return _rawSourceConfigs[source];

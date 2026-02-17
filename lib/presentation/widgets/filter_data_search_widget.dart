@@ -43,19 +43,28 @@ class FilterDataSearchWidget extends StatelessWidget {
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyleConst.bodyLarge.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+            color: Theme.of(context)
+                .colorScheme
+                .onSurfaceVariant
+                .withValues(alpha: 0.6),
           ),
           prefixIcon: Icon(
             Icons.search,
             color: focusNode.hasFocus
                 ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                : Theme.of(context)
+                    .colorScheme
+                    .onSurfaceVariant
+                    .withValues(alpha: 0.6),
           ),
           suffixIcon: controller.text.isNotEmpty
               ? IconButton(
                   icon: Icon(
                     Icons.clear,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurfaceVariant
+                        .withValues(alpha: 0.6),
                   ),
                   onPressed: () {
                     controller.clear();
@@ -187,7 +196,10 @@ class _FilterDataSearchWithSuggestionsState
             leading: Icon(
               Icons.search,
               size: 20,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.7),
             ),
             title: Text(
               suggestion,

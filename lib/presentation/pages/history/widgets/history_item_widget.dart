@@ -36,17 +36,16 @@ class HistoryItemWidget extends StatelessWidget {
             children: [
               // Thumbnail
               _buildThumbnail(context),
-              
+
               const SizedBox(width: 16),
-              
+
               // Content info
               Expanded(
                 child: _buildContentInfo(context),
               ),
-              
+
               // Actions
-              if (showRemoveButton && onRemove != null)
-                _buildActions(context),
+              if (showRemoveButton && onRemove != null) _buildActions(context),
             ],
           ),
         ),
@@ -84,7 +83,7 @@ class HistoryItemWidget extends StatelessWidget {
   }
 
   Widget _buildContentInfo(BuildContext context) {
-    final progressPercentage = history.totalPages > 0 
+    final progressPercentage = history.totalPages > 0
         ? (history.lastPage / history.totalPages).clamp(0.0, 1.0)
         : 0.0;
 
@@ -101,9 +100,9 @@ class HistoryItemWidget extends StatelessWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
-        
+
         const SizedBox(height: 8),
-        
+
         // Progress info
         Row(
           children: [
@@ -136,34 +135,38 @@ class HistoryItemWidget extends StatelessWidget {
             ],
           ],
         ),
-        
+
         const SizedBox(height: 8),
-        
+
         // Progress bar
         ClipRRect(
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
             value: progressPercentage,
-            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+            backgroundColor:
+                Theme.of(context).colorScheme.surfaceContainerHighest,
             valueColor: AlwaysStoppedAnimation<Color>(
-              history.isCompleted 
+              history.isCompleted
                   ? Theme.of(context).colorScheme.primary
                   : Theme.of(context).colorScheme.secondary,
             ),
             minHeight: 4,
           ),
         ),
-        
+
         const SizedBox(height: 8),
-        
+
         // Last viewed
         Text(
           _formatLastViewed(context, history.lastViewed),
           style: TextStyleConst.caption.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+            color: Theme.of(context)
+                .colorScheme
+                .onSurfaceVariant
+                .withValues(alpha: 0.8),
           ),
         ),
-        
+
         // Time spent (if available)
         if (history.timeSpent.inMinutes > 0) ...[
           const SizedBox(height: 4),
@@ -172,13 +175,19 @@ class HistoryItemWidget extends StatelessWidget {
               Icon(
                 Icons.schedule,
                 size: 12,
-                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurfaceVariant
+                    .withValues(alpha: 0.8),
               ),
               const SizedBox(width: 4),
               Text(
                 _formatTimeSpent(context, history.timeSpent),
                 style: TextStyleConst.caption.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withValues(alpha: 0.8),
                 ),
               ),
             ],
@@ -198,15 +207,17 @@ class HistoryItemWidget extends StatelessWidget {
             history.isCompleted ? Icons.replay : Icons.play_arrow,
             color: Theme.of(context).colorScheme.primary,
           ),
-          tooltip: history.isCompleted ? AppLocalizations.of(context)!.readAgain : AppLocalizations.of(context)!.continueReading,
+          tooltip: history.isCompleted
+              ? AppLocalizations.of(context)!.readAgain
+              : AppLocalizations.of(context)!.continueReading,
           style: IconButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.primaryContainer,
             foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
           ),
         ),
-        
+
         const SizedBox(height: 8),
-        
+
         // Remove button
         IconButton(
           onPressed: onRemove,
@@ -232,9 +243,11 @@ class HistoryItemWidget extends StatelessWidget {
     if (difference.inDays > 0) {
       return l10n.daysAgo(difference.inDays, difference.inDays == 1 ? '' : 's');
     } else if (difference.inHours > 0) {
-      return l10n.hoursAgo(difference.inHours, difference.inHours == 1 ? '' : 's');
+      return l10n.hoursAgo(
+          difference.inHours, difference.inHours == 1 ? '' : 's');
     } else if (difference.inMinutes > 0) {
-      return l10n.minutesAgo(difference.inMinutes, difference.inMinutes == 1 ? '' : 's');
+      return l10n.minutesAgo(
+          difference.inMinutes, difference.inMinutes == 1 ? '' : 's');
     } else {
       return l10n.justNow;
     }

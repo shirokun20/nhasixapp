@@ -52,8 +52,7 @@ void main() {
     // Default Stubs
     when(() => mockRemoteConfigService.getAllSourceConfigs()).thenReturn([]);
     when(() => mockSettingsCubit.state).thenReturn(const SettingsInitial());
-    when(() => mockSettingsCubit.getColumnsForOrientation(any()))
-        .thenReturn(2);
+    when(() => mockSettingsCubit.getColumnsForOrientation(any())).thenReturn(2);
     when(() => mockDownloadBloc.state).thenReturn(const DownloadInitial());
   });
 
@@ -138,6 +137,7 @@ void main() {
 
     // Assert
     // Verify loadMoreContent was called at least once
-    verify(() => mockOfflineSearchCubit.loadMoreContent()).called(greaterThan(0));
+    verify(() => mockOfflineSearchCubit.loadMoreContent())
+        .called(greaterThan(0));
   });
 }

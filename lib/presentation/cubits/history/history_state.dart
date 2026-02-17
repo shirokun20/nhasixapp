@@ -37,7 +37,8 @@ class HistoryLoaded extends HistoryState {
   final bool isLoadingMore;
 
   @override
-  List<Object?> get props => [history, hasReachedMax, currentPage, isLoadingMore];
+  List<Object?> get props =>
+      [history, hasReachedMax, currentPage, isLoadingMore];
 
   HistoryLoaded copyWith({
     List<History>? history,

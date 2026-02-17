@@ -43,7 +43,8 @@ void main() {
   }
 
   group('CrotpediaRequestListScreen', () {
-    testWidgets('shows loading indicator when state is loading', (tester) async {
+    testWidgets('shows loading indicator when state is loading',
+        (tester) async {
       when(() => mockCubit.state).thenReturn(CrotpediaFeatureLoading());
       when(() => mockCubit.loadRequestList()).thenAnswer((_) async {});
 
@@ -55,7 +56,8 @@ void main() {
 
     testWidgets('shows error widget when state is error', (tester) async {
       const errorMessage = 'Failed to load requests';
-      when(() => mockCubit.state).thenReturn(const CrotpediaFeatureError(errorMessage));
+      when(() => mockCubit.state)
+          .thenReturn(const CrotpediaFeatureError(errorMessage));
       when(() => mockCubit.loadRequestList()).thenAnswer((_) async {});
 
       await tester.pumpWidget(createWidgetUnderTest());

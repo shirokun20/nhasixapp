@@ -303,7 +303,11 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
                 child: const Icon(Icons.expand_more),
               ),
               color: Theme.of(context).colorScheme.onSurfaceVariant,
-              tooltip: _isExpanded ? (AppLocalizations.of(context)?.hideFiltersTooltip ?? 'Hide filters') : (AppLocalizations.of(context)?.showMoreFiltersTooltip ?? 'Show more filters'),
+              tooltip: _isExpanded
+                  ? (AppLocalizations.of(context)?.hideFiltersTooltip ??
+                      'Hide filters')
+                  : (AppLocalizations.of(context)?.showMoreFiltersTooltip ??
+                      'Show more filters'),
             ),
           ],
         ],
@@ -361,7 +365,8 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
-              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
+              color:
+                  Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
               width: 1,
             ),
           ),
@@ -372,7 +377,8 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
             const SizedBox(height: 16),
 
             Text(
-              AppLocalizations.of(context)?.advancedFiltersTitle ?? 'Advanced Filters',
+              AppLocalizations.of(context)?.advancedFiltersTitle ??
+                  'Advanced Filters',
               style: TextStyleConst.headingSmall.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 16,
@@ -442,7 +448,8 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
       onSelected: (selected) {
         widget.onFilterChanged(widget.filter.copyWith(popular: selected));
       },
-      selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+      selectedColor:
+          Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
       checkmarkColor: Theme.of(context).colorScheme.primary,
       labelStyle: TextStyleConst.bodySmall.copyWith(
         color: widget.filter.popular
@@ -525,7 +532,8 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          AppLocalizations.of(context)?.recentSearchesTitle ?? 'Recent Searches',
+          AppLocalizations.of(context)?.recentSearchesTitle ??
+              'Recent Searches',
           style: TextStyleConst.label,
         ),
         const SizedBox(height: 8),
@@ -681,7 +689,8 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          AppLocalizations.of(context)?.pageCountRangeTitle ?? 'Page Count Range',
+          AppLocalizations.of(context)?.pageCountRangeTitle ??
+              'Page Count Range',
           style: TextStyleConst.label,
         ),
         const SizedBox(height: 8),
@@ -774,7 +783,8 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
                       .copyWith(tags: [...includeTags, ...excludeTags]),
                 );
               },
-              selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+              selectedColor:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
               checkmarkColor: Theme.of(context).colorScheme.primary,
               labelStyle: TextStyleConst.bodySmall.copyWith(
                 color: isIncluded

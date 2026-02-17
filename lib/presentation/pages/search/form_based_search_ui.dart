@@ -71,7 +71,9 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
     _restoreSavedFilter();
 
     // Initialize SearchBloc with current source
-    context.read<SearchBloc>().add(SearchInitializeEvent(sourceId: widget.sourceId));
+    context
+        .read<SearchBloc>()
+        .add(SearchInitializeEvent(sourceId: widget.sourceId));
   }
 
   Future<void> _restoreSavedFilter() async {
@@ -234,7 +236,8 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
 
     try {
       // Save filter to local storage for MainScreen to pick up
-      await getIt<LocalDataSource>().saveSearchFilter(widget.sourceId, filter.toJson());
+      await getIt<LocalDataSource>()
+          .saveSearchFilter(widget.sourceId, filter.toJson());
 
       if (mounted) {
         // Return true to indicate search was applied

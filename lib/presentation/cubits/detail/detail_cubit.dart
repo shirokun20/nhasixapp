@@ -6,6 +6,7 @@ import '../../../domain/usecases/content/get_content_detail_usecase.dart';
 import '../../../domain/usecases/favorites/favorites_usecases.dart';
 import '../../../domain/repositories/repositories.dart';
 import '../../../core/models/image_metadata.dart';
+import '../../../core/utils/offline_content_manager.dart';
 import '../../../services/image_metadata_service.dart';
 import '../base/base_cubit.dart';
 import 'package:kuron_core/kuron_core.dart';
@@ -26,6 +27,7 @@ class DetailCubit extends BaseCubit<DetailState> {
     required ImageMetadataService imageMetadataService,
     required ContentRepository contentRepository,
     required ContentSourceRegistry contentSourceRegistry,
+    required OfflineContentManager offlineContentManager,
     required super.logger,
   })  : _getContentDetailUseCase = getContentDetailUseCase,
         _addToFavoritesUseCase = addToFavoritesUseCase,
@@ -34,6 +36,7 @@ class DetailCubit extends BaseCubit<DetailState> {
         _imageMetadataService = imageMetadataService,
         _contentRepository = contentRepository,
         _contentSourceRegistry = contentSourceRegistry,
+        _offlineContentManager = offlineContentManager,
         super(
           initialState: const DetailInitial(),
         );
@@ -45,6 +48,7 @@ class DetailCubit extends BaseCubit<DetailState> {
   final ImageMetadataService _imageMetadataService;
   final ContentRepository _contentRepository;
   final ContentSourceRegistry _contentSourceRegistry;
+  final OfflineContentManager _offlineContentManager;
 
   /// Load content detail by ID
   Future<void> loadContentDetail(String contentId, {String? sourceId}) async {
@@ -397,15 +401,36 @@ class DetailCubit extends BaseCubit<DetailState> {
       List<String> images = [];
       ChapterData? chapterData;
 
-      if (source is CrotpediaSource) {
-        chapterData = await source.getChapterImages(chapter.id);
-        images = chapterData.images;
-      } else if (source is KomiktapSource) {
-        chapterData = await source.getChapterImages(chapter.id);
-        images = chapterData.images;
-      } else {
-        logWarning(
-            'Source ${source?.displayName} does not support getChapterImages direct call');
+      // 🚀 OFFLINE-FIRST: Check if chapter is available offline
+      final isOfflineAvailable =
+          await _offlineContentManager.isContentAvailableOffline(chapter.id);
+
+      if (isOfflineAvailable) {
+        logInfo(
+            'Chapter ${chapter.id} found offline, loading from local storage');
+        images = await _offlineContentManager.getOfflineImageUrls(chapter.id);
+
+        if (images.isNotEmpty) {
+          logInfo('✅ Loaded ${images.length} images from offline storage');
+        } else {
+          logWarning('⚠️ Offline chapter directory exists but no images found');
+        }
+      }
+
+      // Fallback to online API if offline content not available or failed
+      if (images.isEmpty) {
+        logInfo('📡 Fetching chapter from online API');
+
+        if (source is CrotpediaSource) {
+          chapterData = await source.getChapterImages(chapter.id);
+          images = chapterData.images;
+        } else if (source is KomiktapSource) {
+          chapterData = await source.getChapterImages(chapter.id);
+          images = chapterData.images;
+        } else {
+          logWarning(
+              'Source ${source?.displayName} does not support getChapterImages direct call');
+        }
       }
 
       if (isClosed) return;

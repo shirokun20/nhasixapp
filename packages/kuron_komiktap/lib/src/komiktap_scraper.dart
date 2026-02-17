@@ -254,7 +254,7 @@ class KomiktapScraper {
 
     // Parse chapters
     final chapters = _parseChapterList(document);
-    
+
     // Parse favorites
     final favorites = _parseFavorites(document);
 
@@ -266,8 +266,11 @@ class KomiktapScraper {
       status: status,
       type: contentType,
       tags: genres,
-      author: (metadata['author'] ?? metadata['artist'] ?? metadata['posted_by']) as String?,
-      lastUpdate: (metadata['updated_on'] ?? metadata['posted_on']) as DateTime?,
+      author: (metadata['author'] ??
+          metadata['artist'] ??
+          metadata['posted_by']) as String?,
+      lastUpdate:
+          (metadata['updated_on'] ?? metadata['posted_on']) as DateTime?,
       chapters: chapters,
       favorites: favorites,
     );
@@ -306,7 +309,7 @@ class KomiktapScraper {
             date = DateTime.tryParse(datetime);
           }
         }
-        
+
         // Fallback to text parsing
         date ??= _parseDate(value);
 
@@ -358,7 +361,6 @@ class KomiktapScraper {
       return null;
     }
   }
-  
 
   List<KomiktapChapterInfo> _parseChapterList(Document document) {
     final items = document.querySelectorAll(_getSelector('detail_chapterList'));
@@ -391,7 +393,7 @@ class KomiktapScraper {
   /// Parse chapter page to extract image URLs and navigation
   ChapterData parseChapterImages(String htmlContent) {
     List<String> imageUrls = [];
-    
+
     try {
       // Try to extract from ts_reader.run() JavaScript
       final tsReaderRegex = RegExp(
@@ -436,10 +438,12 @@ class KomiktapScraper {
 
     // Fallback: Try DOM parsing if JS extraction failed
     if (imageUrls.isEmpty) {
-      final container = document.querySelector(_getSelector('reader_container'));
+      final container =
+          document.querySelector(_getSelector('reader_container'));
 
       if (container != null) {
-        final images = container.querySelectorAll(_getSelector('reader_images'));
+        final images =
+            container.querySelectorAll(_getSelector('reader_images'));
         imageUrls = images
             .map((img) => img.attributes['src'] ?? '')
             .where((src) => src.isNotEmpty)
@@ -461,22 +465,22 @@ class KomiktapScraper {
       final scriptContent = script.text;
       if (scriptContent.contains('ts_reader.run')) {
         debugPrint('🔍 KomiktapScraper: Found ts_reader.run script');
-        
+
         // Extract prevUrl and nextUrl directly from the script content
         // Pattern matches: "prevUrl":"https://..." or "prevUrl":""
         final prevUrlPattern = RegExp(r'"prevUrl"\s*:\s*"([^"]*)"');
         final nextUrlPattern = RegExp(r'"nextUrl"\s*:\s*"([^"]*)"');
-        
+
         final prevMatch = prevUrlPattern.firstMatch(scriptContent);
         final nextMatch = nextUrlPattern.firstMatch(scriptContent);
-        
+
         if (prevMatch != null) {
           var prevUrl = prevMatch.group(1) ?? '';
           // Unescape the URL (replace \/ with /)
           prevUrl = prevUrl.replaceAll(r'\/', '/');
-          
+
           debugPrint('🔍 Found prevUrl: $prevUrl');
-          
+
           if (prevUrl.isNotEmpty && !prevUrl.startsWith('#')) {
             prevId = _extractSlugFromUrl(prevUrl);
             debugPrint('✅   Prev chapter ID: $prevId');
@@ -486,14 +490,14 @@ class KomiktapScraper {
         } else {
           debugPrint('⚠️   prevUrl not found in script');
         }
-        
+
         if (nextMatch != null) {
           var nextUrl = nextMatch.group(1) ?? '';
           // Unescape the URL (replace \/ with /)
           nextUrl = nextUrl.replaceAll(r'\/', '/');
-          
+
           debugPrint('🔍 Found nextUrl: $nextUrl');
-          
+
           if (nextUrl.isNotEmpty && !nextUrl.startsWith('#')) {
             nextId = _extractSlugFromUrl(nextUrl);
             debugPrint('✅   Next chapter ID: $nextId');
@@ -503,7 +507,7 @@ class KomiktapScraper {
         } else {
           debugPrint('⚠️   nextUrl not found in script');
         }
-        
+
         break; // Found ts_reader.run, exit loop
       }
     }
@@ -511,7 +515,7 @@ class KomiktapScraper {
     // Fallback: Try button hrefs (in case ts_reader.run is not found)
     if (nextId == null || prevId == null) {
       debugPrint('� Falling back to button href parsing');
-      
+
       final nextEl = document.querySelector(_getSelector('reader_next'));
       if (nextEl != null && !nextEl.classes.contains('disabled')) {
         final href = nextEl.attributes['href'];
@@ -601,9 +605,9 @@ class KomiktapScraper {
         String numStr = match.group(1)!;
         // Fix common OCR/formatting issues or hyphenated decimals
         if (numStr.contains('-')) {
-             // Only replace hyphen if it likely acts as a decimal separator (not a range)
-             // For single chapter context, we assume it's substitution
-             numStr = numStr.replaceAll('-', '.');
+          // Only replace hyphen if it likely acts as a decimal separator (not a range)
+          // For single chapter context, we assume it's substitution
+          numStr = numStr.replaceAll('-', '.');
         }
         return double.tryParse(numStr);
       }

@@ -2,8 +2,10 @@ import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 
 class NativePdfService {
-  static const MethodChannel _channel = MethodChannel('id.nhasix.app/pdf_conversion');
-  static const MethodChannel _readerChannel = MethodChannel('id.nhasix.app/pdf_reader');
+  static const MethodChannel _channel =
+      MethodChannel('id.nhasix.app/pdf_conversion');
+  static const MethodChannel _readerChannel =
+      MethodChannel('id.nhasix.app/pdf_reader');
   final Logger _logger = Logger();
 
   /// Start PDF generation via native layer (WorkManager)
@@ -27,7 +29,7 @@ class NativePdfService {
   /// Generate PDF using native high-performance implementation
   ///
   /// This is ~5x faster than Flutter for large webtoon sets
-  /// 
+  ///
   /// **Parameters**:
   /// - [imagePaths]: List of absolute paths to image files
   /// - [outputPath]: Absolute path where PDF should be saved
@@ -62,9 +64,9 @@ class NativePdfService {
       });
 
       final resultMap = Map<String, dynamic>.from(result as Map);
-      
+
       _logger.i('✅ Native PDF completed: ${resultMap['pageCount']} pages');
-      
+
       return resultMap;
     } on PlatformException catch (e) {
       _logger.e('Native PDF failed: ${e.message}');
@@ -75,7 +77,7 @@ class NativePdfService {
   }
 
   /// Open PDF in native high-performance reader (Activity)
-  /// 
+  ///
   /// This launches a separate Android Activity for 120Hz smooth reading
   Future<void> openPdf({
     required String path,

@@ -6,23 +6,23 @@ import 'dart:async';
 
 /// Global application state manager for handling offline/online modes
 /// and other app-wide state management needs.
-/// 
+///
 /// This singleton class provides centralized state management for:
 /// - Offline/online mode tracking
 /// - Network connectivity state
 /// - Offline content availability and count
 /// - App-wide settings that affect multiple screens
-/// 
+///
 /// Usage:
 /// ```dart
 /// // Enable offline mode
 /// AppStateManager().enableOfflineMode();
-/// 
+///
 /// // Listen to mode changes
 /// AppStateManager().offlineModeStream.listen((isOffline) {
 ///   print('Offline mode: $isOffline');
 /// });
-/// 
+///
 /// // Check current state
 /// bool isOffline = AppStateManager().isOfflineMode;
 /// ```
@@ -35,30 +35,31 @@ class AppStateManager {
   bool _isOfflineMode = false;
   bool _hasOfflineContent = false;
   int _offlineContentCount = 0;
-  
+
   // Stream controllers for reactive updates
-  final StreamController<bool> _offlineModeController = 
+  final StreamController<bool> _offlineModeController =
       StreamController<bool>.broadcast();
-  final StreamController<OfflineStateUpdate> _offlineStateController = 
+  final StreamController<OfflineStateUpdate> _offlineStateController =
       StreamController<OfflineStateUpdate>.broadcast();
 
   // Public getters
   bool get isOfflineMode => _isOfflineMode;
   bool get hasOfflineContent => _hasOfflineContent;
   int get offlineContentCount => _offlineContentCount;
-  
+
   // Public streams
   Stream<bool> get offlineModeStream => _offlineModeController.stream;
-  Stream<OfflineStateUpdate> get offlineStateStream => _offlineStateController.stream;
+  Stream<OfflineStateUpdate> get offlineStateStream =>
+      _offlineStateController.stream;
 
   /// Set the offline mode state and notify listeners
-  /// 
+  ///
   /// [offline] - true to enable offline mode, false for online mode
   void setOfflineMode(bool offline) {
     if (_isOfflineMode != offline) {
       _isOfflineMode = offline;
       _offlineModeController.add(offline);
-      
+
       // Emit state update with additional context
       _offlineStateController.add(OfflineStateUpdate(
         isOfflineMode: offline,
@@ -76,7 +77,7 @@ class AppStateManager {
   void enableOnlineMode() => setOfflineMode(false);
 
   /// Update offline content information
-  /// 
+  ///
   /// [hasContent] - whether offline content is available
   /// [contentCount] - number of offline content items
   void updateOfflineContentInfo({
@@ -85,7 +86,7 @@ class AppStateManager {
   }) {
     _hasOfflineContent = hasContent;
     _offlineContentCount = contentCount;
-    
+
     // Emit updated state
     _offlineStateController.add(OfflineStateUpdate(
       isOfflineMode: _isOfflineMode,
@@ -110,7 +111,7 @@ class AppStateManager {
     _isOfflineMode = false;
     _hasOfflineContent = false;
     _offlineContentCount = 0;
-    
+
     _offlineModeController.add(false);
     _offlineStateController.add(OfflineStateUpdate(
       isOfflineMode: false,
@@ -144,9 +145,9 @@ class OfflineStateUpdate {
   @override
   String toString() {
     return 'OfflineStateUpdate(isOfflineMode: $isOfflineMode, '
-           'hasOfflineContent: $hasOfflineContent, '
-           'offlineContentCount: $offlineContentCount, '
-           'timestamp: $timestamp)';
+        'hasOfflineContent: $hasOfflineContent, '
+        'offlineContentCount: $offlineContentCount, '
+        'timestamp: $timestamp)';
   }
 
   @override

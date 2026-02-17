@@ -5,19 +5,21 @@ import 'package:kuron_native/utils/backup_utils.dart';
 import 'package:kuron_native/kuron_native_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-class MockKuronNativePlatform with MockPlatformInterfaceMixin implements KuronNativePlatform {
+class MockKuronNativePlatform
+    with MockPlatformInterfaceMixin
+    implements KuronNativePlatform {
   String? mockPickedDirectory;
-  
+
   @override
   Future<String?> pickDirectory() async => mockPickedDirectory;
-  
+
   @override
   Future<String?> getPlatformVersion() => Future.value('1.0.0');
-  
+
   @override
-  Future<Map<Object?, Object?>?> getSystemInfo(String type) => 
+  Future<Map<Object?, Object?>?> getSystemInfo(String type) =>
       Future.value({'ram': 8192});
-  
+
   @override
   Future<String?> startDownload({
     required String url,
@@ -30,24 +32,27 @@ class MockKuronNativePlatform with MockPlatformInterfaceMixin implements KuronNa
     String? cookie,
     String? userAgent,
   }) => Future.value('download_id');
-  
+
   @override
   Future<Map<String, dynamic>?> convertImagesToPdf({
     required List<String> imagePaths,
     required String outputPath,
     Function(int progress, String message)? onProgress,
   }) => Future.value({'success': true, 'pdfPath': outputPath});
-  
+
   @override
-  Future<void> openWebView({required String url, bool enableJavaScript = true}) async {}
-  
+  Future<void> openWebView({
+    required String url,
+    bool enableJavaScript = true,
+  }) async {}
+
   @override
   Future<void> openPdf({
     required String filePath,
     String? title,
     int? startPage,
   }) async {}
-  
+
   @override
   Future<Map<String, dynamic>?> showLoginWebView({
     required String url,
@@ -59,7 +64,7 @@ class MockKuronNativePlatform with MockPlatformInterfaceMixin implements KuronNa
     bool enableAdBlock = false,
     bool clearCookies = false,
   }) => Future.value({'success': true, 'cookies': []});
-  
+
   @override
   Future<void> clearCookies() async {}
 }
@@ -71,7 +76,7 @@ void main() {
   setUp(() async {
     // Create temporary test directory
     testDir = await Directory.systemTemp.createTemp('backup_utils_test_');
-    
+
     // Setup mock platform
     mockPlatform = MockKuronNativePlatform();
     KuronNativePlatform.instance = mockPlatform;
@@ -98,25 +103,28 @@ void main() {
 
       expect(result, isNotNull);
       expect(result, contains(fileName));
-      
+
       final file = File('$customDir/$fileName');
       expect(await file.exists(), isTrue);
       expect(await file.readAsString(), equals(testData));
     });
 
-    test('exports JSON to default Downloads when custom directory is null', () async {
-      final testData = '{"test": "data"}';
-      final fileName = 'default_backup.json';
+    test(
+      'exports JSON to default Downloads when custom directory is null',
+      () async {
+        final testData = '{"test": "data"}';
+        final fileName = 'default_backup.json';
 
-      // This will use hardcoded /storage/emulated/0/Download or fallback
-      // We can't easily test this without actual Android environment
-      // So we just verify it doesn't throw
-      final result = await BackupUtils.exportJson(testData, fileName);
-      
-      // Result may be null on non-Android platforms in test environment
-      // but shouldn't throw an exception
-      expect(result, isA<String?>());
-    });
+        // This will use hardcoded /storage/emulated/0/Download or fallback
+        // We can't easily test this without actual Android environment
+        // So we just verify it doesn't throw
+        final result = await BackupUtils.exportJson(testData, fileName);
+
+        // Result may be null on non-Android platforms in test environment
+        // but shouldn't throw an exception
+        expect(result, isA<String?>());
+      },
+    );
 
     test('handles export errors gracefully', () async {
       final testData = '{"test": "data"}';
@@ -214,7 +222,7 @@ void main() {
       // Create a larger test data (1000 entries)
       final entries = List.generate(1000, (i) => '"item$i": "value$i"');
       final testData = '{${entries.join(',')}}';
-      
+
       final file = File('${testDir.path}/$fileName');
       await file.writeAsString(testData);
 

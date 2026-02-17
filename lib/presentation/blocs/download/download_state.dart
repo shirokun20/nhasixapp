@@ -6,19 +6,19 @@ abstract class DownloadBlocState extends Equatable {
 
   @override
   List<Object?> get props => [];
-  
+
   /// Get all downloads - Implemented by subclasses
   List<DownloadStatus> get downloads => [];
-  
+
   /// Get download settings - Implemented by subclasses
   DownloadSettings get settings => DownloadSettings.defaultSettings();
-  
+
   /// Get lastUpdated - Implemented by subclasses
   DateTime? get lastUpdated => null;
-  
+
   /// Get isProcessing - Implemented by subclasses
   bool get isProcessing => false;
-  
+
   /// Get download by content ID - Implemented by subclasses
   DownloadStatus? getDownload(String contentId) => null;
 }
@@ -68,14 +68,14 @@ class DownloadLoaded extends DownloadBlocState {
 
   @override
   List<Object?> get props => [
-         downloads,
-         settings,
-         lastUpdated,
-         isProcessing,
-         isSelectionMode,
-         selectedItems,
-         isBulkDeleting,
-       ];
+        downloads,
+        settings,
+        lastUpdated,
+        isProcessing,
+        isSelectionMode,
+        selectedItems,
+        isBulkDeleting,
+      ];
 
   /// Get download by content ID
   @override
@@ -136,7 +136,8 @@ class DownloadLoaded extends DownloadBlocState {
   double get totalProgress {
     if (activeDownloads.isEmpty) return 0.0;
 
-    final totalPages = activeDownloads.fold<int>(0, (sum, d) => sum + d.totalPages);
+    final totalPages =
+        activeDownloads.fold<int>(0, (sum, d) => sum + d.totalPages);
     final downloadedPages =
         activeDownloads.fold<int>(0, (sum, d) => sum + d.downloadedPages);
 
@@ -224,15 +225,15 @@ class DownloadProcessing extends DownloadLoaded {
 
   @override
   List<Object?> get props => [
-         downloads,
-         settings,
-         lastUpdated,
-         isProcessing,
-         operation,
-         isSelectionMode,
-         selectedItems,
-         isBulkDeleting,
-       ];
+        downloads,
+        settings,
+        lastUpdated,
+        isProcessing,
+        operation,
+        isSelectionMode,
+        selectedItems,
+        isBulkDeleting,
+      ];
 
   @override
   DownloadProcessing copyWith({
@@ -281,23 +282,24 @@ class DownloadError extends DownloadBlocState {
         previousState,
         stackTrace,
       ];
-      
+
   /// Keeps access to downloads from previous state
   @override
   List<DownloadStatus> get downloads => previousState?.downloads ?? [];
-  
+
   /// Keeps access to settings from previous state
   @override
-  DownloadSettings get settings => previousState?.settings ?? DownloadSettings.defaultSettings();
-  
+  DownloadSettings get settings =>
+      previousState?.settings ?? DownloadSettings.defaultSettings();
+
   /// Keeps access to lastUpdated from previous state
   @override
   DateTime? get lastUpdated => previousState?.lastUpdated;
-  
+
   /// Keeps access to isProcessing - always false for errors
   @override
   bool get isProcessing => false;
-  
+
   /// Get download by content ID - preserved from previous state
   @override
   DownloadStatus? getDownload(String contentId) {

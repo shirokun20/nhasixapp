@@ -84,8 +84,7 @@ abstract class ContentRepository {
   /// [chapterId] - Chapter ID
   /// [sourceId] - Optional source ID
   /// Returns chapter data containing images and navigation
-  Future<ChapterData> getChapterImages(ContentId chapterId,
-      {String? sourceId});
+  Future<ChapterData> getChapterImages(ContentId chapterId, {String? sourceId});
 
   /// Get comments for a specific gallery
   ///

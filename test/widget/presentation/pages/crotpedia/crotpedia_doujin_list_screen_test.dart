@@ -55,9 +55,11 @@ void main() {
       expect(find.byType(ListView), findsOneWidget);
     });
 
-    testWidgets('shows syncing indicator when state is syncing', (tester) async {
+    testWidgets('shows syncing indicator when state is syncing',
+        (tester) async {
       const syncMessage = 'Syncing data...';
-      when(() => mockCubit.state).thenReturn(const CrotpediaFeatureSyncing(syncMessage));
+      when(() => mockCubit.state)
+          .thenReturn(const CrotpediaFeatureSyncing(syncMessage));
       when(() => mockCubit.loadDoujinList()).thenAnswer((_) async {});
 
       await tester.pumpWidget(createWidgetUnderTest());
@@ -68,7 +70,8 @@ void main() {
 
     testWidgets('shows error widget when state is error', (tester) async {
       const errorMessage = 'Failed to load doujins';
-      when(() => mockCubit.state).thenReturn(const CrotpediaFeatureError(errorMessage));
+      when(() => mockCubit.state)
+          .thenReturn(const CrotpediaFeatureError(errorMessage));
       when(() => mockCubit.loadDoujinList()).thenAnswer((_) async {});
 
       await tester.pumpWidget(createWidgetUnderTest());

@@ -5,7 +5,8 @@ class AppDisguiseService {
 
   static Future<void> setDisguiseMode(String mode) async {
     try {
-      final result = await platform.invokeMethod('setDisguiseMode', {'mode': mode});
+      final result =
+          await platform.invokeMethod('setDisguiseMode', {'mode': mode});
       return result;
     } catch (e) {
       rethrow;

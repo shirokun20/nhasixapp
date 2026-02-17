@@ -662,7 +662,6 @@ class StorageLimits {
   Map<String, dynamic> toJson() => _$StorageLimitsToJson(this);
 }
 
-
 @JsonSerializable()
 class AppReader {
   final bool preloadNextChapter;

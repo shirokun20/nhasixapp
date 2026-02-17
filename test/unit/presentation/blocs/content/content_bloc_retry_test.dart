@@ -7,9 +7,14 @@ import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
 import 'package:nhasixapp/presentation/blocs/content/content_bloc.dart';
 
 class MockGetContentListUseCase extends Mock implements GetContentListUseCase {}
+
 class MockSearchContentUseCase extends Mock implements SearchContentUseCase {}
-class MockGetRandomContentUseCase extends Mock implements GetRandomContentUseCase {}
+
+class MockGetRandomContentUseCase extends Mock
+    implements GetRandomContentUseCase {}
+
 class MockContentRepository extends Mock implements ContentRepository {}
+
 class MockLogger extends Mock implements Logger {}
 
 void main() {
@@ -55,14 +60,15 @@ void main() {
       ));
 
       // Mock successful reload
-      when(() => mockGetContentListUseCase(any())).thenAnswer((_) async => const ContentListResult(
-        contents: [],
-        currentPage: tPage,
-        totalPages: 5,
-        totalCount: 0,
-        hasNext: true,
-        hasPrevious: true,
-      ));
+      when(() => mockGetContentListUseCase(any()))
+          .thenAnswer((_) async => const ContentListResult(
+                contents: [],
+                currentPage: tPage,
+                totalPages: 5,
+                totalCount: 0,
+                hasNext: true,
+                hasPrevious: true,
+              ));
 
       // Act
       contentBloc.add(const ContentRetryEvent());
@@ -72,12 +78,10 @@ void main() {
 
       // Assert
       // Verify that GetContentListUseCase was called with page 3
-      verify(() => mockGetContentListUseCase(
-        any(that: isA<GetContentListParams>()
-          .having((p) => p.page, 'page', tPage)
-          .having((p) => p.sortBy, 'sortBy', tSort)
-        )
-      )).called(1);
+      verify(() => mockGetContentListUseCase(any(
+          that: isA<GetContentListParams>()
+              .having((p) => p.page, 'page', tPage)
+              .having((p) => p.sortBy, 'sortBy', tSort)))).called(1);
     });
   });
 }

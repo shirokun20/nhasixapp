@@ -1,4 +1,3 @@
-
 class GenreItem {
   final String name;
   final String slug;

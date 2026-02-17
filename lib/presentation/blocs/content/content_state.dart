@@ -253,7 +253,7 @@ class ContentError extends ContentState {
   final List<Content>? previousContents;
   final ContentErrorType errorType;
   final StackTrace? stackTrace;
-  
+
   // Context fields
   final int? currentPage;
   final int? totalPages;
@@ -339,7 +339,7 @@ class ContentEmpty extends ContentState {
   final SearchFilter? searchFilter;
   final Tag? tag;
   final bool canRetry;
-  
+
   // Context fields
   final int? currentPage;
   final int? totalPages;
@@ -349,9 +349,9 @@ class ContentEmpty extends ContentState {
 
   @override
   List<Object?> get props => [
-        message, 
-        searchFilter, 
-        tag, 
+        message,
+        searchFilter,
+        tag,
         canRetry,
         currentPage,
         totalPages,

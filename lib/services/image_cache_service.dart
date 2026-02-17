@@ -36,7 +36,8 @@ class ImageCacheService {
 
   /// Get cached image data by URL
   /// If [isStaticGif] is true, it looks for the processed static version of the GIF
-  Future<File?> getCachedImage(String imageUrl, {bool isStaticGif = false}) async {
+  Future<File?> getCachedImage(String imageUrl,
+      {bool isStaticGif = false}) async {
     try {
       final cacheKey = _generateCacheKey(imageUrl, isStaticGif: isStaticGif);
 

@@ -559,7 +559,8 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
 
       // Clear saved search filter from local storage
       await localDataSource.removeLastSearchFilter(event.sourceId);
-      _logger.i('ContentBloc: Cleared search filter from local storage for source: ${event.sourceId}');
+      _logger.i(
+          'ContentBloc: Cleared search filter from local storage for source: ${event.sourceId}');
 
       // Load normal content with specified sort option
       final params = GetContentListParams(

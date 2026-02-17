@@ -1,9 +1,9 @@
 import 'package:nhasixapp/domain/entities/entities.dart';
 
 /// @deprecated Use SearchFilter.toQueryString() instead
-/// This utility is kept for backward compatibility but SearchFilter 
+/// This utility is kept for backward compatibility but SearchFilter
 /// provides more comprehensive URL building capabilities.
-/// 
+///
 /// SearchFilter already includes:
 /// - Complete query building with toQueryString()
 /// - Built-in validation with isEmpty property
@@ -42,12 +42,26 @@ class UrlNhentaiUtil {
     return UrlNhentaiUtil(
       baseUrl,
       language: filter.language,
-      includeTags: filter.tags.where((t) => !t.isExcluded).map((t) => t.value).toList(),
-      excludeTags: filter.tags.where((t) => t.isExcluded).map((t) => t.value).toList(),
-      artists: filter.artists.where((a) => !a.isExcluded).map((a) => a.value).toList(),
-      characters: filter.characters.where((c) => !c.isExcluded).map((c) => c.value).toList(),
-      parodies: filter.parodies.where((p) => !p.isExcluded).map((p) => p.value).toList(),
-      groups: filter.groups.where((g) => !g.isExcluded).map((g) => g.value).toList(),
+      includeTags:
+          filter.tags.where((t) => !t.isExcluded).map((t) => t.value).toList(),
+      excludeTags:
+          filter.tags.where((t) => t.isExcluded).map((t) => t.value).toList(),
+      artists: filter.artists
+          .where((a) => !a.isExcluded)
+          .map((a) => a.value)
+          .toList(),
+      characters: filter.characters
+          .where((c) => !c.isExcluded)
+          .map((c) => c.value)
+          .toList(),
+      parodies: filter.parodies
+          .where((p) => !p.isExcluded)
+          .map((p) => p.value)
+          .toList(),
+      groups: filter.groups
+          .where((g) => !g.isExcluded)
+          .map((g) => g.value)
+          .toList(),
       category: filter.category,
       textQuery: filter.query,
       page: filter.page,
@@ -153,11 +167,11 @@ class UrlNhentaiUtil {
 // print(builtUrl);
 
 // Contoh penggunaan withSearch manual (backward compatibility)
-// UrlNhentaiUtil urlUtil = UrlNhentaiUtil('https://nhentai.net', 
-//   language: 'english', 
-//   includeTags: ['tag1'], 
-//   excludeTags: ['tag2'], 
-//   artists: ['artist1'], 
+// UrlNhentaiUtil urlUtil = UrlNhentaiUtil('https://nhentai.net',
+//   language: 'english',
+//   includeTags: ['tag1'],
+//   excludeTags: ['tag2'],
+//   artists: ['artist1'],
 //   page: 1
 // );
 // final builtUrl = urlUtil.buildWithSearch();

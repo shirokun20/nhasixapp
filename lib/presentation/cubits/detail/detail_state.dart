@@ -217,7 +217,8 @@ class DetailReaderReady extends DetailLoaded {
   final Chapter? currentChapter;
 
   @override
-  List<Object?> get props => [...super.props, chapterContent, chapterData, currentChapter];
+  List<Object?> get props =>
+      [...super.props, chapterContent, chapterData, currentChapter];
 }
 
 /// State when login is required for an action

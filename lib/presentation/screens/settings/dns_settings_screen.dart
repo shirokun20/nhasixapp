@@ -37,7 +37,8 @@ class _DnsSettingsViewState extends State<_DnsSettingsView> {
   void initState() {
     super.initState();
     final settings = context.read<DnsSettingsCubit>().state;
-    _dnsServerController = TextEditingController(text: settings.customDnsServer);
+    _dnsServerController =
+        TextEditingController(text: settings.customDnsServer);
     _dohUrlController = TextEditingController(text: settings.customDohUrl);
   }
 
@@ -84,7 +85,8 @@ class _DnsSettingsViewState extends State<_DnsSettingsView> {
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Card(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
                     child: const Padding(
                       padding: EdgeInsets.all(12.0),
                       child: Row(
@@ -174,7 +176,9 @@ class _DnsSettingsViewState extends State<_DnsSettingsView> {
                           onChanged: (value) {
                             context.read<DnsSettingsCubit>().setCustomDns(
                                   value.isNotEmpty ? value : null,
-                                  _dohUrlController.text.isNotEmpty ? _dohUrlController.text : null,
+                                  _dohUrlController.text.isNotEmpty
+                                      ? _dohUrlController.text
+                                      : null,
                                 );
                           },
                         ),
@@ -190,7 +194,9 @@ class _DnsSettingsViewState extends State<_DnsSettingsView> {
                           keyboardType: TextInputType.url,
                           onChanged: (value) {
                             context.read<DnsSettingsCubit>().setCustomDns(
-                                  _dnsServerController.text.isNotEmpty ? _dnsServerController.text : null,
+                                  _dnsServerController.text.isNotEmpty
+                                      ? _dnsServerController.text
+                                      : null,
                                   value.isNotEmpty ? value : null,
                                 );
                           },
