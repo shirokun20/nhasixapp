@@ -660,6 +660,7 @@ void _setupCubits() {
   // ReaderCubit - Reader screen management
   getIt.registerFactory<ReaderCubit>(() => ReaderCubit(
         getContentDetailUseCase: getIt<GetContentDetailUseCase>(),
+        getChapterImagesUseCase: getIt<GetChapterImagesUseCase>(),
         addToHistoryUseCase: getIt<AddToHistoryUseCase>(),
         readerSettingsRepository: getIt<ReaderSettingsRepository>(),
         readerRepository: getIt<ReaderRepository>(),

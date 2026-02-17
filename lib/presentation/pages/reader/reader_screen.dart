@@ -8,7 +8,6 @@ import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/models/image_metadata.dart';
 import '../../../core/utils/offline_content_manager.dart';
-import '../../../core/routing/app_router.dart';
 import '../../../data/models/reader_settings_model.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../../services/local_image_preloader.dart';
@@ -562,43 +561,17 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
           // If this is the last item, show navigation page
           if (index >= imageUrls.length) {
-            // Navigate back to detail with next chapter ID to auto-open
-            final sourceId =
-                state.parentContent?.sourceId ?? state.content?.sourceId ?? '';
-            final parentId = state.parentContent?.id ?? state.content?.id ?? '';
             return ReaderNavigationPage(
-              hasPreviousChapter: state.hasPreviousChapter,
-              hasNextChapter: state.hasNextChapter,
-              onPreviousChapter: state.previousChapter != null
-                  ? () {
-                      context.pop();
-                      AppRouter.goToContentDetailWithChapter(
-                        context,
-                        parentId,
-                        sourceId,
-                        autoOpenChapterId: state.previousChapter!.id,
-                      );
-                    }
-                  : () => _readerCubit.goToPreviousChapter(),
-              onNextChapter: state.nextChapter != null
-                  ? () {
-                      context.pop();
-                      AppRouter.goToContentDetailWithChapter(
-                        context,
-                        parentId,
-                        sourceId,
-                        autoOpenChapterId: state.nextChapter!.id,
-                      );
-                    }
-                  : () => _readerCubit.goToNextChapter(),
+              hasPreviousChapter: state.chapterData?.prevChapterId != null,
+              hasNextChapter: state.chapterData?.nextChapterId != null,
+              onPreviousChapter: () => _readerCubit.loadPreviousChapter(),
+              onNextChapter: () => _readerCubit.loadNextChapter(),
               contentId: state.content?.id,
             );
           }
 
           final imageUrl = imageUrls[index];
           final pageNumber = index + 1;
-
-          // Debug logging removed to prevent false positives with 0-indexed filenames
 
           return _buildImageViewer(imageUrl, pageNumber);
         },
@@ -652,35 +625,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
           // If this is the last item, show navigation page
           if (index >= imageUrls.length) {
-            // Navigate back to detail with next chapter ID to auto-open
-            final sourceId =
-                state.parentContent?.sourceId ?? state.content?.sourceId ?? '';
-            final parentId = state.parentContent?.id ?? state.content?.id ?? '';
             return ReaderNavigationPage(
-              hasPreviousChapter: state.hasPreviousChapter,
-              hasNextChapter: state.hasNextChapter,
-              onPreviousChapter: state.previousChapter != null
-                  ? () {
-                      context.pop();
-                      AppRouter.goToContentDetailWithChapter(
-                        context,
-                        parentId,
-                        sourceId,
-                        autoOpenChapterId: state.previousChapter!.id,
-                      );
-                    }
-                  : () => _readerCubit.goToPreviousChapter(),
-              onNextChapter: state.nextChapter != null
-                  ? () {
-                      context.pop();
-                      AppRouter.goToContentDetailWithChapter(
-                        context,
-                        parentId,
-                        sourceId,
-                        autoOpenChapterId: state.nextChapter!.id,
-                      );
-                    }
-                  : () => _readerCubit.goToNextChapter(),
+              hasPreviousChapter: state.chapterData?.prevChapterId != null,
+              hasNextChapter: state.chapterData?.nextChapterId != null,
+              onPreviousChapter: () => _readerCubit.loadPreviousChapter(),
+              onNextChapter: () => _readerCubit.loadNextChapter(),
               contentId: state.content?.id,
             );
           }
@@ -714,38 +663,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
         // If this is the last item, show navigation page
         if (index >= imageUrls.length) {
-          // Navigate back to detail with next chapter ID to auto-open
-          final sourceId =
-              state.parentContent?.sourceId ?? state.content?.sourceId ?? '';
-          final parentId = state.parentContent?.id ?? state.content?.id ?? '';
           return SizedBox(
             height:
                 MediaQuery.of(context).size.height * 0.8, // Give it some height
             child: ReaderNavigationPage(
-              hasPreviousChapter: state.hasPreviousChapter,
-              hasNextChapter: state.hasNextChapter,
-              onPreviousChapter: state.previousChapter != null
-                  ? () {
-                      context.pop();
-                      AppRouter.goToContentDetailWithChapter(
-                        context,
-                        parentId,
-                        sourceId,
-                        autoOpenChapterId: state.previousChapter!.id,
-                      );
-                    }
-                  : () => _readerCubit.goToPreviousChapter(),
-              onNextChapter: state.nextChapter != null
-                  ? () {
-                      context.pop();
-                      AppRouter.goToContentDetailWithChapter(
-                        context,
-                        parentId,
-                        sourceId,
-                        autoOpenChapterId: state.nextChapter!.id,
-                      );
-                    }
-                  : () => _readerCubit.goToNextChapter(),
+              hasPreviousChapter: state.chapterData?.prevChapterId != null,
+              hasNextChapter: state.chapterData?.nextChapterId != null,
+              onPreviousChapter: () => _readerCubit.loadPreviousChapter(),
+              onNextChapter: () => _readerCubit.loadNextChapter(),
               contentId: state.content?.id,
             ),
           );
@@ -1063,71 +988,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
               ),
             ],
           ),
-
-          // Chapter navigation (only show if chapters are available)
-          if (state.content?.chapters != null &&
-              state.content!.chapters!.length > 1) ...[
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-
-            // Chapter info
-            Text(
-              'Chapter ${state.currentChapterIndex + 1} of ${state.content!.chapters!.length}',
-              style: TextStyleConst.bodySmall.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // Chapter navigation buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                // Previous chapter
-                ElevatedButton.icon(
-                  onPressed: state.hasPreviousChapter
-                      ? () => _readerCubit.goToPreviousChapter()
-                      : null,
-                  icon: const Icon(Icons.skip_previous, size: 18),
-                  label: const Text('Previous Chapter'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        Theme.of(context).colorScheme.primaryContainer,
-                    foregroundColor:
-                        Theme.of(context).colorScheme.onPrimaryContainer,
-                    disabledBackgroundColor:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
-                    disabledForegroundColor: Theme.of(context)
-                        .colorScheme
-                        .onSurfaceVariant
-                        .withValues(alpha: 0.38),
-                  ),
-                ),
-
-                // Next chapter
-                ElevatedButton.icon(
-                  onPressed: state.hasNextChapter
-                      ? () => _readerCubit.goToNextChapter()
-                      : null,
-                  icon: const Icon(Icons.skip_next, size: 18),
-                  label: const Text('Next Chapter'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        Theme.of(context).colorScheme.primaryContainer,
-                    foregroundColor:
-                        Theme.of(context).colorScheme.onPrimaryContainer,
-                    disabledBackgroundColor:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
-                    disabledForegroundColor: Theme.of(context)
-                        .colorScheme
-                        .onSurfaceVariant
-                        .withValues(alpha: 0.38),
-                  ),
-                ),
-              ],
-            ),
-          ],
         ],
       ),
     );

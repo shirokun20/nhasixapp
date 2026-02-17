@@ -7,6 +7,7 @@ import 'package:equatable/equatable.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../../domain/entities/reader_position.dart';
 import '../../../domain/usecases/content/get_content_detail_usecase.dart';
+import '../../../domain/usecases/content/get_chapter_images_usecase.dart';
 import '../../../domain/usecases/history/add_to_history_usecase.dart';
 import '../../../domain/repositories/reader_settings_repository.dart';
 import '../../../domain/repositories/reader_repository.dart';
@@ -24,6 +25,7 @@ part 'reader_state.dart';
 class ReaderCubit extends Cubit<ReaderState> {
   ReaderCubit({
     required this.getContentDetailUseCase,
+    required this.getChapterImagesUseCase,
     required this.addToHistoryUseCase,
     required this.readerSettingsRepository,
     required this.readerRepository,
@@ -33,6 +35,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   }) : super(const ReaderInitial());
 
   final GetContentDetailUseCase getContentDetailUseCase;
+  final GetChapterImagesUseCase getChapterImagesUseCase;
   final AddToHistoryUseCase addToHistoryUseCase;
   final ReaderSettingsRepository readerSettingsRepository;
   final ReaderRepository readerRepository;
@@ -47,23 +50,45 @@ class ReaderCubit extends Cubit<ReaderState> {
   // Webtoon/manhwa auto-detection
   bool _hasDetectedWebtoon = false;
 
+  // Chapter navigation context (stored as instance vars, NOT in state)
+  Content? _parentContent;
+  List<Chapter>? _allChapters;
+
+  // Public getters for chapter navigation
+  Content? get parentContent => _parentContent;
+  List<Chapter>? get allChapters => _allChapters;
+
   /// Load content for reading with offline support - OPTIMIZED VERSION
-  Future<void> loadContent(String contentId,
-      {int initialPage = 1,
-      bool forceStartFromBeginning = false,
-      Content? preloadedContent,
-      List<ImageMetadata>? imageMetadata,
-      Content? parentContent,
-      List<Chapter>? allChapters,
-      Chapter? currentChapter}) async {
+  Future<void> loadContent(
+    String contentId, {
+    int initialPage = 1,
+    bool forceStartFromBeginning = false,
+    Content? preloadedContent,
+    List<ImageMetadata>? imageMetadata,
+    ChapterData? chapterData,
+    Content? parentContent,
+    List<Chapter>? allChapters,
+    Chapter? currentChapter,
+  }) async {
     try {
       _stopAutoHideTimer();
       emit(ReaderLoading(state));
 
+      // Store chapter navigation context as instance vars
+      _parentContent = parentContent;
+      _allChapters = allChapters;
+
+      _logger.i('ReaderCubit.loadContent - Received:');
+      _logger.i('  contentId: $contentId');
+      _logger.i('  parentContent: ${parentContent?.title ?? "NULL"}');
+      _logger.i('  allChapters: ${allChapters?.length ?? 0} chapters');
+      _logger.i('  currentChapter: ${currentChapter?.title ?? "NULL"}');
+      _logger.i(
+          '  chapterData: prev=${chapterData?.prevChapterId}, next=${chapterData?.nextChapterId}');
+
       final isConnected = networkCubit.isConnected;
 
       // 1. Check offline availability first (Fastest)
-      // This uses the new caching in OfflineContentManager so it's very fast
       final isOfflineAvailable =
           await offlineContentManager.isContentAvailableOffline(contentId);
 
@@ -79,8 +104,6 @@ class ReaderCubit extends Cubit<ReaderState> {
       final savedSettings = localResults[0] as ReaderSettings;
       final restoredPage = localResults[1] as int;
 
-      // Use initialPage if user explicitly requested a specific page (initialPage > 1)
-      // Otherwise use restored page if available, fallback to initialPage
       final startPage = initialPage > 1
           ? initialPage
           : (restoredPage > 1 ? restoredPage : initialPage);
@@ -95,7 +118,6 @@ class ReaderCubit extends Cubit<ReaderState> {
           preloadedContent != null && preloadedContent.imageUrls.isNotEmpty;
 
       if (shouldUsePreloaded && isOfflineAvailable) {
-        // Prefer offline path if available, even if we have preloaded content with remote URLs
         final hasRemoteUrls =
             preloadedContent.imageUrls.any((url) => url.startsWith('http'));
         if (hasRemoteUrls) {
@@ -104,29 +126,26 @@ class ReaderCubit extends Cubit<ReaderState> {
       }
 
       if (shouldUsePreloaded) {
-        _logger.i("✅ Strategy A: Using preloaded content: $contentId");
+        _logger.i("Strategy A: Using preloaded content: $contentId");
         content = preloadedContent;
-        // Check if it's local paths
         final hasLocalPaths =
             content!.imageUrls.any((url) => url.startsWith('/'));
         isOfflineMode = hasLocalPaths || !isConnected;
       }
       // Strategy B: Offline Content (Primary Performance Path)
       else if (isOfflineAvailable) {
-        _logger.i(
-            "💾 Strategy B: Loading content from offline storage: $contentId");
+        _logger
+            .i("Strategy B: Loading content from offline storage: $contentId");
         content = await offlineContentManager.createOfflineContent(contentId);
         isOfflineMode = true;
 
-        // 🚀 OPTIONAL: Trigger background online update if connected
-        // This updates metadata/details silently without blocking UI
         if (isConnected && !_isCrotpediaChapterId(contentId)) {
           _fetchOnlineDetailsInBackground(contentId);
         }
       }
       // Strategy C: Online Content (Fallback)
       else if (isConnected && !_isCrotpediaChapterId(contentId)) {
-        _logger.i("🌐 Strategy C: Fetching online content: $contentId");
+        _logger.i("Strategy C: Fetching online content: $contentId");
         try {
           content = await getContentDetailUseCase(
               GetContentDetailParams.fromString(contentId));
@@ -136,15 +155,14 @@ class ReaderCubit extends Cubit<ReaderState> {
         }
       }
 
-      // Strategy D: Last Resort Fallback (Partial Preloaded or Offline Retry)
+      // Strategy D: Last Resort Fallback
       if (content == null) {
         if (preloadedContent != null && preloadedContent.imageUrls.isNotEmpty) {
-          _logger.w(
-              "⚠️ Strategy D: Using preloaded content as fallback: $contentId");
+          _logger
+              .w("Strategy D: Using preloaded content as fallback: $contentId");
           content = preloadedContent;
           isOfflineMode = !isConnected;
         } else {
-          // Try offline creation one last time (maybe cache missed?)
           try {
             content =
                 await offlineContentManager.createOfflineContent(contentId);
@@ -161,6 +179,23 @@ class ReaderCubit extends Cubit<ReaderState> {
         throw Exception('Content not available online or offline');
       }
 
+      // 3.5. Fetch ChapterData if missing (for navigation)
+      if (chapterData == null &&
+          isConnected &&
+          _isCrotpediaChapterId(contentId)) {
+        try {
+          _logger.i('Fetching missing chapter data for navigation: $contentId');
+          final fetchedChapterData =
+              await getChapterImagesUseCase(GetChapterImagesParams.fromString(
+            contentId,
+            sourceId: content.sourceId,
+          ));
+          chapterData = fetchedChapterData;
+        } catch (e) {
+          _logger.w('Failed to fetch chapter navigation data: $e');
+        }
+      }
+
       // 4. Emit Loaded State Immediately
       emit(state.copyWith(
         content: content,
@@ -171,8 +206,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         readingTimer: Duration.zero,
         isOfflineMode: isOfflineMode,
         imageMetadata: imageMetadata,
-        parentContent: parentContent,
-        allChapters: allChapters,
+        chapterData: chapterData,
         currentChapter: currentChapter,
       ));
 
@@ -197,35 +231,28 @@ class ReaderCubit extends Cubit<ReaderState> {
     try {
       await getContentDetailUseCase(
           GetContentDetailParams.fromString(contentId));
-      // Results are cached by repository, so next load handles it.
-      // We don't update current UI to avoid jarring changes while reading.
     } catch (e) {
       // Ignore background errors
     }
   }
 
-  /// 🚀 OPTIMIZATION: Simplified reader settings loading
+  /// Simplified reader settings loading
   Future<ReaderSettings> _loadReaderSettingsOptimized() async {
     try {
       return await readerSettingsRepository.getReaderSettings();
     } catch (e) {
       _logger.w("Failed to load reader settings, using defaults: $e");
-      return const ReaderSettings(); // Use defaults
+      return const ReaderSettings();
     }
   }
 
-  /// 🚀 OPTIMIZATION: Handle post-load setup asynchronously
+  /// Handle post-load setup asynchronously
   Future<void> _handlePostLoadSetup(ReaderSettings savedSettings) async {
     try {
-      // Apply keep screen on setting
       if (savedSettings.keepScreenOn) {
         await WakelockPlus.enable();
       }
-
-      // Start reading timer
       _startReadingTimer();
-
-      // Save to history (don't await to avoid blocking)
       _saveToHistory();
     } catch (e) {
       _logger.w("Post-load setup failed: $e");
@@ -234,16 +261,27 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   /// Navigate to next page
   void nextPage() {
-    if (!state.isLastPage && !isClosed && state.content != null) {
+    if (!isClosed && state.content != null) {
       final currentPage = state.currentPage ?? 1;
-      final newPage = (currentPage + 1).clamp(1, state.content!.pageCount);
+      final pageCount = state.content!.pageCount;
 
-      _logger.d(
-          'Next page: $currentPage -> $newPage (total: ${state.content!.pageCount})');
+      // Allow +1 for navigation page (if not offline)
+      final hasNavigationPage = !(state.isOfflineMode ?? false) &&
+          state.content!.imageUrls.isNotEmpty;
+      final maxPage = hasNavigationPage ? pageCount + 1 : pageCount;
 
-      emit(state.copyWith(currentPage: newPage));
-      _saveReaderPosition();
-      _saveToHistory();
+      if (currentPage < maxPage) {
+        final newPage = (currentPage + 1).clamp(1, maxPage);
+
+        _logger.d(
+            'Next page: $currentPage -> $newPage (total: $pageCount, max with nav: $maxPage)');
+
+        emit(state.copyWith(currentPage: newPage));
+        _saveReaderPosition();
+        _saveToHistory();
+      } else {
+        _logger.d('Already at last page ($currentPage), cannot go further');
+      }
     }
   }
 
@@ -262,6 +300,141 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
+  /// Load next chapter using chapterData from API
+  Future<void> loadNextChapter() async {
+    if (state.chapterData?.nextChapterId == null) return;
+    await loadChapter(state.chapterData!.nextChapterId!);
+  }
+
+  /// Load previous chapter using chapterData from API
+  Future<void> loadPreviousChapter() async {
+    if (state.chapterData?.prevChapterId == null) return;
+    await loadChapter(state.chapterData!.prevChapterId!);
+  }
+
+  /// Load a specific chapter by ID - fetches images online
+  Future<void> loadChapter(String chapterId) async {
+    try {
+      if (_allChapters == null || _allChapters!.isEmpty) {
+        _logger.e('Cannot navigate: No chapter list available');
+        emit(ReaderError(state.copyWith(
+          message: 'Chapter navigation not available',
+        )));
+        return;
+      }
+
+      emit(ReaderLoading(state));
+
+      // Find chapter in allChapters list
+      final chapter = _allChapters!.firstWhere(
+        (ch) => ch.id == chapterId,
+        orElse: () =>
+            Chapter(id: chapterId, title: 'Unknown Chapter', url: chapterId),
+      );
+
+      _logger.i('Loading chapter: ${chapter.title} (${chapter.id})');
+
+      // Fetch chapter images and navigation data from API
+      final chapterData =
+          await getChapterImagesUseCase(GetChapterImagesParams.fromString(
+        chapterId,
+        sourceId: _parentContent?.sourceId ?? state.content?.sourceId,
+      ));
+
+      if (chapterData.images.isEmpty) {
+        emit(ReaderError(state.copyWith(
+          message: 'Failed to load chapter images',
+        )));
+        return;
+      }
+
+      // Build full title
+      final parentTitle =
+          _parentContent?.title ?? state.content?.title.split(' - ')[0] ?? '';
+      final fullTitle = '$parentTitle - ${chapter.title}';
+
+      final newContent = (_parentContent ?? state.content!).copyWith(
+        id: chapterId,
+        title: fullTitle,
+        imageUrls: chapterData.images,
+        pageCount: chapterData.images.length,
+        chapters: _allChapters ?? [],
+      );
+
+      emit(ReaderLoaded(state.copyWith(
+        content: newContent,
+        currentPage: 1,
+        chapterData: chapterData,
+        currentChapter: chapter,
+        readingTimer: Duration.zero,
+      )));
+
+      // Save to history
+      await _saveToHistory();
+    } catch (e) {
+      _logger.e('Failed to load chapter: $e');
+      emit(ReaderError(state.copyWith(
+        message: 'Failed to load chapter: ${e.toString()}',
+      )));
+    }
+  }
+
+  // ==================== LEGACY Chapter Navigation (kept for backward compat) ====================
+
+  /// Navigate to previous chapter using allChapters list
+  /// Deprecated: prefer loadPreviousChapter() which uses chapterData from API
+  Future<bool> goToPreviousChapter() async {
+    // First try API-based navigation (more reliable)
+    if (state.chapterData?.prevChapterId != null) {
+      await loadChapter(state.chapterData!.prevChapterId!);
+      return true;
+    }
+
+    // Fallback to allChapters list navigation
+    if (isClosed || state.content == null) return false;
+    if (_allChapters == null || _allChapters!.isEmpty) return false;
+    if (state.currentChapter == null) return false;
+
+    final currentIndex =
+        _allChapters!.indexWhere((c) => c.id == state.currentChapter!.id);
+    if (currentIndex <= 0) return false;
+
+    final prevChapter = _allChapters![currentIndex - 1];
+    _logger.i(
+        'Navigating to previous chapter (list): ${prevChapter.id} - ${prevChapter.title}');
+
+    await loadChapter(prevChapter.id);
+    return true;
+  }
+
+  /// Navigate to next chapter using allChapters list
+  /// Deprecated: prefer loadNextChapter() which uses chapterData from API
+  Future<bool> goToNextChapter() async {
+    // First try API-based navigation (more reliable)
+    if (state.chapterData?.nextChapterId != null) {
+      await loadChapter(state.chapterData!.nextChapterId!);
+      return true;
+    }
+
+    // Fallback to allChapters list navigation
+    if (isClosed || state.content == null) return false;
+    if (_allChapters == null || _allChapters!.isEmpty) return false;
+    if (state.currentChapter == null) return false;
+
+    final currentIndex =
+        _allChapters!.indexWhere((c) => c.id == state.currentChapter!.id);
+    if (currentIndex < 0 || currentIndex >= _allChapters!.length - 1) {
+      return false;
+    }
+
+    final nextChap = _allChapters![currentIndex + 1];
+    _logger.i(
+        'Navigating to next chapter (list): ${nextChap.id} - ${nextChap.title}');
+
+    await loadChapter(nextChap.id);
+    return true;
+  }
+
   /// Jump to specific page
   void jumpToPage(int page) {
     goToPage(page);
@@ -270,7 +443,6 @@ class ReaderCubit extends Cubit<ReaderState> {
   /// Navigate to specific page
   void goToPage(int page) {
     if (!isClosed && state.content != null) {
-      // Validate page range
       final totalPages = state.content!.pageCount;
       final validPage = page.clamp(1, totalPages);
 
@@ -291,89 +463,21 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  // ==================== Chapter Navigation (NEW) ====================
-
-  /// Navigate to previous chapter
-  /// Returns true if navigation was successful, false otherwise
-  Future<bool> goToPreviousChapter() async {
-    if (isClosed || state.content == null) {
-      _logger.w(
-          'Cannot navigate to previous chapter - cubit closed or no content');
-      return false;
-    }
-
-    if (!state.hasPreviousChapter) {
-      _logger.w('No previous chapter available');
-      return false;
-    }
-
-    final prevChapter = state.previousChapter;
-    if (prevChapter == null) {
-      _logger
-          .e('Previous chapter is null despite hasPreviousChapter being true');
-      return false;
-    }
-
-    _logger.i(
-        'Navigating to previous chapter: ${prevChapter.id} - ${prevChapter.title}');
-
-    // Load the previous chapter content with chapter navigation data
-    await loadContent(
-      prevChapter.id,
-      initialPage: 1,
-      forceStartFromBeginning: true,
-      parentContent: state.parentContent,
-      allChapters: state.allChapters,
-      currentChapter: prevChapter,
-    );
-
-    return true;
-  }
-
-  /// Navigate to next chapter
-  /// Returns true if navigation was successful, false otherwise
-  Future<bool> goToNextChapter() async {
-    if (isClosed || state.content == null) {
-      _logger.w('Cannot navigate to next chapter - cubit closed or no content');
-      return false;
-    }
-
-    if (!state.hasNextChapter) {
-      _logger.w('No next chapter available');
-      return false;
-    }
-
-    final nextChap = state.nextChapter;
-    if (nextChap == null) {
-      _logger.e('Next chapter is null despite hasNextChapter being true');
-      return false;
-    }
-
-    _logger.i('Navigating to next chapter: ${nextChap.id} - ${nextChap.title}');
-
-    // Load the next chapter content with chapter navigation data
-    await loadContent(
-      nextChap.id,
-      initialPage: 1,
-      forceStartFromBeginning: true,
-      parentContent: state.parentContent,
-      allChapters: state.allChapters,
-      currentChapter: nextChap,
-    );
-
-    return true;
-  }
-
   /// Update current page from user swipe (without triggering navigation sync)
   void updateCurrentPageFromSwipe(int page) {
     if (!isClosed && state.content != null) {
-      // Validate page range
       final totalPages = state.content!.pageCount;
-      final validPage = page.clamp(1, totalPages);
 
-      _logger.d('Updating page from swipe: $validPage (total: $totalPages)');
+      // Allow +1 for navigation page (if exists)
+      final hasNavigationPage = !(state.isOfflineMode ?? false) &&
+          state.content!.imageUrls.isNotEmpty;
+      final maxPage = hasNavigationPage ? totalPages + 1 : totalPages;
 
-      // Only emit state change, don't trigger sync navigation
+      final validPage = page.clamp(1, maxPage);
+
+      _logger.d(
+          'Updating page from swipe: $validPage (total: $totalPages, max with nav: $maxPage)');
+
       emit(state.copyWith(currentPage: validPage));
       _saveReaderPosition();
       _saveToHistory();
@@ -381,7 +485,6 @@ class ReaderCubit extends Cubit<ReaderState> {
   }
 
   /// Update current page for continuous scroll (silent update without state emission)
-  /// This prevents re-rendering all ListView items when page changes
   void updateCurrentPageSilent(int page) async {
     if (!isClosed && state.content == null) return;
 
@@ -389,12 +492,9 @@ class ReaderCubit extends Cubit<ReaderState> {
     final validPage = page.clamp(1, totalPages);
 
     _logger.d(
-        '📍 Silent page update for continuous scroll: $validPage (total: $totalPages)');
+        'Silent page update for continuous scroll: $validPage (total: $totalPages)');
 
-    // DON'T emit state - this prevents BlocBuilder rebuilds
-    // But still save position and history for persistence
     try {
-      // Update internal tracking without state emission
       final position = ReaderPosition.create(
         contentId: state.content!.id,
         currentPage: validPage,
@@ -403,8 +503,6 @@ class ReaderCubit extends Cubit<ReaderState> {
         coverUrl: state.content!.coverUrl,
         readingTimeMinutes: (state.readingTimer?.inMinutes ?? 0),
       );
-
-      await readerRepository.saveReaderPosition(position);
 
       await readerRepository.saveReaderPosition(position);
 
@@ -424,7 +522,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     } catch (e, stackTrace) {
       _logger.e('Failed to save silent page update to history',
           error: e, stackTrace: stackTrace);
-      // Don't emit error state
     }
   }
 
@@ -434,16 +531,13 @@ class ReaderCubit extends Cubit<ReaderState> {
       final newShowUI = !(state.showUI ?? true);
       emit(state.copyWith(showUI: newShowUI));
 
-      // Save to preferences with error handling
       readerSettingsRepository
           .saveShowUI(newShowUI)
           .catchError((e, stackTrace) {
         _logger.e("Failed to save show UI setting: $e",
             error: e, stackTrace: stackTrace);
-        // Settings will still apply for current session
       });
 
-      // Start auto-hide timer if UI is shown
       if (newShowUI) {
         _startAutoHideTimer();
       } else {
@@ -469,9 +563,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   }
 
   /// Handle image loaded and detect webtoon/manhwa format
-  /// Auto-switches to continuous scroll for vertical images
   void onImageLoaded(int pageNumber, Size imageSize) {
-    // Only check first few images to avoid performance overhead
     if (pageNumber > 3 || _hasDetectedWebtoon) return;
 
     final isWebtoon = WebtoonDetector.isWebtoon(imageSize);
@@ -481,23 +573,15 @@ class ReaderCubit extends Cubit<ReaderState> {
       _hasDetectedWebtoon = true;
       final currentMode = state.readingMode ?? ReadingMode.singlePage;
 
-      // Only auto-switch if not already in continuous scroll
       if (currentMode != ReadingMode.continuousScroll) {
-        _logger.i('🎨 Webtoon/Manhwa detected on page $pageNumber! '
+        _logger.i('Webtoon/Manhwa detected on page $pageNumber! '
             'AR=${aspectRatio?.toStringAsFixed(2)} (${imageSize.width.toInt()}x${imageSize.height.toInt()}px) '
-            '→ Auto-switching from ${currentMode.name} to continuousScroll');
+            'Auto-switching from ${currentMode.name} to continuousScroll');
 
-        // Switch to continuous scroll (best for vertical images)
         if (!isClosed) {
           emit(state.copyWith(readingMode: ReadingMode.continuousScroll));
         }
-
-        // Note: We don't save this to preferences to preserve user's choice
-        // The auto-switch only applies to current reading session
       }
-    } else {
-      // _logger.d('📖 Normal image detected on page $pageNumber: '
-      //     'AR=${aspectRatio?.toStringAsFixed(2)} (${imageSize.width.toInt()}x${imageSize.height.toInt()}px)');
     }
   }
 
@@ -507,17 +591,14 @@ class ReaderCubit extends Cubit<ReaderState> {
       emit(state.copyWith(readingMode: mode));
     }
 
-    // Reset webtoon detection if user manually changes mode
     _hasDetectedWebtoon = false;
 
-    // Save to preferences with error handling
     try {
       await readerSettingsRepository.saveReadingMode(mode);
       _logger.i("Successfully saved reading mode: ${mode.name}");
     } catch (e, stackTrace) {
       _logger.e("Failed to save reading mode: $e",
           error: e, stackTrace: stackTrace);
-      // Settings will still apply for current session
     }
   }
 
@@ -536,52 +617,45 @@ class ReaderCubit extends Cubit<ReaderState> {
         emit(state.copyWith(keepScreenOn: newKeepScreenOn));
       }
 
-      // Save to preferences with error handling
       try {
         await readerSettingsRepository.saveKeepScreenOn(newKeepScreenOn);
         _logger.i("Successfully saved keep screen on: $newKeepScreenOn");
       } catch (e, stackTrace) {
         _logger.e("Failed to save keep screen on setting: $e",
             error: e, stackTrace: stackTrace);
-        // Settings will still apply for current session
       }
     } catch (e, stackTrace) {
       _logger.e("Failed to toggle wakelock: $e",
           error: e, stackTrace: stackTrace);
-      // Don't update state if wakelock operation failed
     }
   }
 
-  /// Clear reader position for specific content (useful for debugging)
+  /// Clear reader position for specific content
   Future<void> clearReaderPosition(String contentId) async {
     try {
       await readerRepository.deleteReaderPosition(contentId);
-      _logger.i('🗑️ Cleared reader position for content: $contentId');
+      _logger.i('Cleared reader position for content: $contentId');
     } catch (e) {
       _logger.e('Failed to clear reader position: $e');
     }
   }
 
-  /// Clear all reader positions (useful for debugging)
+  /// Clear all reader positions
   Future<void> clearAllReaderPositions() async {
     try {
       await readerRepository.clearAllReaderPositions();
-      _logger.i('🗑️ Cleared all reader positions');
+      _logger.i('Cleared all reader positions');
     } catch (e) {
       _logger.e('Failed to clear all reader positions: $e');
     }
   }
 
-  /// Clear image cache for specific content (useful for debugging)
+  /// Clear image cache for specific content
   Future<void> clearImageCache(String contentId) async {
     try {
       await LocalImagePreloader.clearContentCache(contentId);
-      _logger.i('🖼️ Cleared image cache for content: $contentId');
-
-      // Note: CachedNetworkImage cache clearing requires DefaultCacheManager
-      // Users can manually clear app data if needed
-      _logger
-          .i('ℹ️ To clear network image cache, clear app data or restart app');
+      _logger.i('Cleared image cache for content: $contentId');
+      _logger.i('To clear network image cache, clear app data or restart app');
     } catch (e) {
       _logger.e('Failed to clear image cache: $e');
     }
@@ -590,27 +664,25 @@ class ReaderCubit extends Cubit<ReaderState> {
   /// Debug: Log image URL mapping for current content
   void _logImageUrlMapping(Content content) {
     if (content.imageUrls.isEmpty) {
-      _logger.w('⚠️ No image URLs found for content: ${content.id}');
+      _logger.w('No image URLs found for content: ${content.id}');
       return;
     }
 
     _logger.i(
-        '🖼️ Image URL Mapping for ${content.id} (${content.imageUrls.length} pages):');
+        'Image URL Mapping for ${content.id} (${content.imageUrls.length} pages):');
 
     for (int i = 0; i < content.imageUrls.length && i < 10; i++) {
       final pageNumber = i + 1;
       final url = content.imageUrls[i];
 
-      // Extract page number from URL if possible
       final urlPageNumber = _extractPageNumberFromUrl(url);
 
       final isMatch = urlPageNumber == pageNumber;
-      final status = isMatch ? '✅' : '❌';
+      final status = isMatch ? 'OK' : 'MISMATCH';
 
       _logger.i('  Page $pageNumber: $status URL contains page $urlPageNumber');
       _logger.d('    URL: $url');
 
-      // Additional validation for first few pages
       if (i < 3) {
         _validateImageUrl(url, pageNumber, content.id);
       }
@@ -620,40 +692,36 @@ class ReaderCubit extends Cubit<ReaderState> {
       _logger.i('  ... and ${content.imageUrls.length - 10} more pages');
     }
 
-    // Check for duplicate URLs in first few pages
     _checkForDuplicateUrls(content);
   }
 
   /// Validate individual image URL
   void _validateImageUrl(String url, int expectedPage, String contentId) {
     try {
-      // Check if URL is accessible (basic validation)
-      // Allow local file paths (start with /)
       if (url.startsWith('/')) {
         _logger.d(
-            '✅ Local file path validation passed for page $expectedPage: $url');
+            'Local file path validation passed for page $expectedPage: $url');
         return;
       }
 
       final uri = Uri.parse(url);
       if (!uri.hasScheme || !uri.hasAuthority) {
-        _logger.w('⚠️ Invalid URL format for page $expectedPage: $url');
+        _logger.w('Invalid URL format for page $expectedPage: $url');
         return;
       }
 
-      // Extract gallery ID from URL
       final galleryMatch = RegExp(r'/galleries/(\d+)/').firstMatch(url);
       if (galleryMatch != null) {
         final galleryId = galleryMatch.group(1);
         if (galleryId != contentId) {
           _logger.w(
-              '⚠️ URL gallery ID mismatch! Expected $contentId, got $galleryId in URL: $url');
+              'URL gallery ID mismatch! Expected $contentId, got $galleryId in URL: $url');
         }
       }
 
-      _logger.d('✅ URL validation passed for page $expectedPage: $url');
+      _logger.d('URL validation passed for page $expectedPage: $url');
     } catch (e) {
-      _logger.w('⚠️ URL validation failed for page $expectedPage: $e');
+      _logger.w('URL validation failed for page $expectedPage: $e');
     }
   }
 
@@ -669,32 +737,28 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
 
     if (duplicates.isNotEmpty) {
-      _logger.e('🚨 DUPLICATE URLs FOUND in content ${content.id}:');
+      _logger.e('DUPLICATE URLs FOUND in content ${content.id}:');
       for (final duplicate in duplicates) {
         final indices = <int>[];
         for (int i = 0; i < content.imageUrls.length; i++) {
           if (content.imageUrls[i] == duplicate) {
-            indices.add(i + 1); // Convert to 1-based page numbers
+            indices.add(i + 1);
           }
         }
         _logger.e('  URL: $duplicate appears on pages: ${indices.join(", ")}');
       }
     } else {
-      _logger.i('✅ No duplicate URLs found in content ${content.id}');
+      _logger.i('No duplicate URLs found in content ${content.id}');
     }
   }
 
   /// Extract page number from image URL
   int? _extractPageNumberFromUrl(String url) {
-    // Try to extract page number from patterns like:
-    // https://i.nhentai.net/galleries/123456/1.jpg -> 1
-    // https://i.nhentai.net/galleries/123456/86.jpg -> 86
     final match = RegExp(r'/galleries/\d+/(\d+)\.[^/]+$').firstMatch(url);
     if (match != null) {
       return int.tryParse(match.group(1)!);
     }
 
-    // Try other patterns if needed
     final match2 = RegExp(r'/(\d+)\.[^/]*$').firstMatch(url);
     if (match2 != null) {
       return int.tryParse(match2.group(1)!);
@@ -709,7 +773,6 @@ class ReaderCubit extends Cubit<ReaderState> {
       await readerSettingsRepository.resetToDefaults();
       _logger.i("Successfully reset reader settings to defaults");
 
-      // Apply default settings to current state
       if (!isClosed) {
         emit(state.copyWith(
           readingMode: ReadingMode.singlePage,
@@ -718,7 +781,6 @@ class ReaderCubit extends Cubit<ReaderState> {
         ));
       }
 
-      // Disable wakelock
       try {
         await WakelockPlus.disable();
       } catch (e, stackTrace) {
@@ -729,7 +791,6 @@ class ReaderCubit extends Cubit<ReaderState> {
       _logger.e("Failed to reset reader settings: $e",
           error: e, stackTrace: stackTrace);
 
-      // Still apply default settings to current state even if persistence failed
       if (!isClosed) {
         emit(state.copyWith(
           readingMode: ReadingMode.singlePage,
@@ -738,7 +799,6 @@ class ReaderCubit extends Cubit<ReaderState> {
         ));
       }
 
-      // Try to disable wakelock anyway
       try {
         await WakelockPlus.disable();
       } catch (wakelockError) {
@@ -746,7 +806,6 @@ class ReaderCubit extends Cubit<ReaderState> {
             .e("Failed to disable wakelock after reset error: $wakelockError");
       }
 
-      // Re-throw to let UI handle the error
       rethrow;
     }
   }
@@ -755,7 +814,6 @@ class ReaderCubit extends Cubit<ReaderState> {
   /// Only save history for nhentai source (as requested)
   Future<void> _saveToHistory() async {
     try {
-      // Only allow nhentai source to be saved in history
       if (state.content != null &&
           state.content!.sourceId != SourceType.nhentai.id) {
         _logger.d(
@@ -776,7 +834,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     } catch (e, stackTrace) {
       _logger.e('Failed to save reading progress to history',
           error: e, stackTrace: stackTrace);
-      // Log error but don't emit error state for history saving
     }
   }
 
@@ -795,11 +852,8 @@ class ReaderCubit extends Cubit<ReaderState> {
       );
 
       await readerRepository.saveReaderPosition(position);
-      _logger.i(
-          '✅ Saved reader position: ${state.content!.id} at page ${state.currentPage}/${state.content!.pageCount}');
     } catch (e) {
       _logger.e('Failed to save reader position: $e');
-      // Don't emit error state for position saving
     }
   }
 
@@ -809,14 +863,13 @@ class ReaderCubit extends Cubit<ReaderState> {
       final position = await readerRepository.getReaderPosition(contentId);
       if (position != null) {
         _logger.i(
-            '📖 Restored reader position: $contentId at page ${position.currentPage}/${position.totalPages}');
+            'Restored reader position: $contentId at page ${position.currentPage}/${position.totalPages}');
         return position.currentPage;
       }
     } catch (e) {
       _logger.e('Failed to restore reader position: $e');
     }
 
-    // Return first page as default
     return 1;
   }
 
@@ -825,14 +878,12 @@ class ReaderCubit extends Cubit<ReaderState> {
     _logger.i("start reading timer");
     _readingTimer?.cancel();
     _readingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      // Check if cubit is still active before emitting state
       if (!isClosed) {
         final currentTimer = state.readingTimer ?? Duration.zero;
         emit(state.copyWith(
           readingTimer: currentTimer + const Duration(seconds: 1),
         ));
       } else {
-        // Cancel timer if cubit is closed
         timer.cancel();
       }
     });
@@ -849,7 +900,6 @@ class ReaderCubit extends Cubit<ReaderState> {
   void _startAutoHideTimer() {
     _stopAutoHideTimer();
     _autoHideTimer = Timer(const Duration(seconds: 3), () {
-      // Check if cubit is still active before calling hideUI
       if (!isClosed && (state.showUI ?? false)) {
         hideUI();
       }
@@ -857,26 +907,17 @@ class ReaderCubit extends Cubit<ReaderState> {
   }
 
   /// Check if contentId is a Crotpedia chapter ID
-  /// Crotpedia chapter IDs typically contain "chapter" in the slug
-  /// e.g., "manga-name-chapter-1-bahasa-indonesia"
   bool _isCrotpediaChapterId(String contentId) {
-    // Nhentai IDs are pure numbers (e.g., "123456")
-    // Crotpedia chapter IDs are slugs with "chapter" keyword or multiple dashes
-
-    // If it's purely numeric, it's definitely not a Crotpedia chapter
     if (RegExp(r'^\d+$').hasMatch(contentId)) {
       return false;
     }
 
-    // If it contains "chapter" or "ch-", it's likely a Crotpedia chapter
     if (contentId.contains('chapter') || contentId.contains('ch-')) {
       return true;
     }
 
-    // Additional check: Crotpedia slugs typically have multiple dashes
-    // and contain language indicators like "bahasa-indonesia"
     final dashCount = '-'.allMatches(contentId).length;
-    return dashCount >= 3; // e.g., "series-name-chapter-1" has 3 dashes minimum
+    return dashCount >= 3;
   }
 
   /// Stop auto-hide UI timer
@@ -887,14 +928,11 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   @override
   Future<void> close() async {
-    // Stop timers
     _stopReadingTimer();
     _stopAutoHideTimer();
 
-    // Save final reading progress
     await _saveToHistory();
 
-    // Disable wakelock
     await WakelockPlus.disable();
 
     return super.close();

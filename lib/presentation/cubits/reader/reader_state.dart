@@ -13,8 +13,7 @@ class ReaderState extends Equatable {
     this.message,
     this.isOfflineMode,
     this.imageMetadata,
-    this.parentContent,
-    this.allChapters,
+    this.chapterData,
     this.currentChapter,
   });
 
@@ -28,9 +27,7 @@ class ReaderState extends Equatable {
   final String? message;
   final bool? isOfflineMode;
   final List<ImageMetadata>? imageMetadata;
-
-  final Content? parentContent;
-  final List<Chapter>? allChapters;
+  final ChapterData? chapterData;
   final Chapter? currentChapter;
 
   @override
@@ -45,8 +42,7 @@ class ReaderState extends Equatable {
         message,
         isOfflineMode,
         imageMetadata,
-        parentContent,
-        allChapters,
+        chapterData,
         currentChapter,
       ];
 
@@ -63,9 +59,8 @@ class ReaderState extends Equatable {
     Object? message = _undefined,
     Object? isOfflineMode = _undefined,
     List<ImageMetadata>? imageMetadata,
-    Content? parentContent,
-    Object? allChapters = _undefined,
-    Object? currentChapter = _undefined,
+    ChapterData? chapterData,
+    Chapter? currentChapter,
   }) {
     return ReaderState(
       content: content ?? this.content,
@@ -84,57 +79,29 @@ class ReaderState extends Equatable {
           ? this.isOfflineMode
           : isOfflineMode as bool?,
       imageMetadata: imageMetadata ?? this.imageMetadata,
-      parentContent: parentContent ?? this.parentContent,
-      allChapters: allChapters == _undefined
-          ? this.allChapters
-          : allChapters as List<Chapter>?,
-      currentChapter: currentChapter == _undefined
-          ? this.currentChapter
-          : currentChapter as Chapter?,
+      chapterData: chapterData ?? this.chapterData,
+      currentChapter: currentChapter ?? this.currentChapter,
     );
   }
 
+  /// Get reading progress as percentage (0.0 to 1.0)
   double get progress {
     if (content?.pageCount == null || content!.pageCount == 0) return 0.0;
     return (currentPage ?? 1) / content!.pageCount;
   }
 
+  /// Get reading progress as percentage (0 to 100)
   int get progressPercentage {
     return (progress * 100).round();
   }
 
+  /// Check if this is the first page
   bool get isFirstPage => (currentPage ?? 1) <= 1;
 
+  /// Check if this is the last page (of actual content, not including navigation page)
   bool get isLastPage => (currentPage ?? 1) >= (content?.pageCount ?? 1);
 
-  int get currentChapterIndex {
-    if (allChapters == null || allChapters!.isEmpty) return -1;
-    if (currentChapter == null) return -1;
-    return allChapters!.indexWhere((c) => c.id == currentChapter!.id);
-  }
-
-  bool get hasPreviousChapter {
-    if (allChapters == null || allChapters!.isEmpty) return false;
-    final index = currentChapterIndex;
-    return index > 0;
-  }
-
-  bool get hasNextChapter {
-    if (allChapters == null || allChapters!.isEmpty) return false;
-    final index = currentChapterIndex;
-    return index >= 0 && index < allChapters!.length - 1;
-  }
-
-  Chapter? get previousChapter {
-    if (!hasPreviousChapter) return null;
-    return allChapters![currentChapterIndex - 1];
-  }
-
-  Chapter? get nextChapter {
-    if (!hasNextChapter) return null;
-    return allChapters![currentChapterIndex + 1];
-  }
-
+  /// Get current image URL
   String get currentImageUrl {
     if (content == null ||
         currentPage == null ||
@@ -146,10 +113,12 @@ class ReaderState extends Equatable {
   }
 }
 
+/// Initial state
 class ReaderInitial extends ReaderState {
   const ReaderInitial();
 }
 
+/// Loading state
 class ReaderLoading extends ReaderState {
   ReaderLoading(ReaderState prevState)
       : super(
@@ -163,12 +132,12 @@ class ReaderLoading extends ReaderState {
           message: prevState.message,
           isOfflineMode: prevState.isOfflineMode,
           imageMetadata: prevState.imageMetadata,
-          parentContent: prevState.parentContent,
-          allChapters: prevState.allChapters,
+          chapterData: prevState.chapterData,
           currentChapter: prevState.currentChapter,
         );
 }
 
+/// Loaded state with content and basic reading functionality
 class ReaderLoaded extends ReaderState {
   ReaderLoaded(ReaderState prevState)
       : super(
@@ -182,12 +151,12 @@ class ReaderLoaded extends ReaderState {
           message: prevState.message,
           isOfflineMode: prevState.isOfflineMode ?? false,
           imageMetadata: prevState.imageMetadata,
-          parentContent: prevState.parentContent,
-          allChapters: prevState.allChapters,
+          chapterData: prevState.chapterData,
           currentChapter: prevState.currentChapter,
         );
 }
 
+/// Error state
 class ReaderError extends ReaderState {
   ReaderError(ReaderState prevState)
       : super(
@@ -201,8 +170,7 @@ class ReaderError extends ReaderState {
           message: prevState.message,
           isOfflineMode: prevState.isOfflineMode,
           imageMetadata: prevState.imageMetadata,
-          parentContent: prevState.parentContent,
-          allChapters: prevState.allChapters,
+          chapterData: prevState.chapterData,
           currentChapter: prevState.currentChapter,
         );
 }
