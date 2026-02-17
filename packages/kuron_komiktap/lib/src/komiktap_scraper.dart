@@ -565,18 +565,16 @@ class KomiktapScraper {
       }
     }
 
-    // IMPORTANT: KomikTap has prevUrl/nextUrl SWAPPED in their HTML!
-    // Their "prevUrl" actually points to the NEXT chapter (newer)
-    // Their "nextUrl" actually points to the PREV chapter (older)
-    // So we need to swap them here to match the correct semantic meaning
+    // KomikTap uses standard prev/next semantics:
+    // - "prevUrl" points to the PREVIOUS chapter (older, lower chapter number)
+    // - "nextUrl" points to the NEXT chapter (newer, higher chapter number)
+    // Map them directly without swapping
     return ChapterData(
       images: imageUrls,
-      nextChapterId:
-          prevId != null && prevId.isNotEmpty ? prevId : null, // SWAPPED!
-      prevChapterId:
-          nextId != null && nextId.isNotEmpty ? nextId : null, // SWAPPED!
-      nextChapterTitle: prevTitle, // SWAPPED!
-      prevChapterTitle: nextTitle, // SWAPPED!
+      prevChapterId: prevId != null && prevId.isNotEmpty ? prevId : null,
+      nextChapterId: nextId != null && nextId.isNotEmpty ? nextId : null,
+      prevChapterTitle: prevTitle,
+      nextChapterTitle: nextTitle,
     );
   }
 

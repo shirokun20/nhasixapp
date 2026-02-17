@@ -837,10 +837,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   Row(
                     children: [
                       Text(
-                        AppLocalizations.of(context)?.pageOfPages(
-                                state.currentPage ?? 1,
-                                state.content?.pageCount ?? 1) ??
-                            'Page ${state.currentPage ?? 1} of ${state.content?.pageCount ?? 1}',
+                        (state.currentPage ?? 1) >
+                                (state.content?.pageCount ?? 1)
+                            ? 'Complete'
+                            : AppLocalizations.of(context)?.pageOfPages(
+                                    state.currentPage ?? 1,
+                                    state.content?.pageCount ?? 1) ??
+                                'Page ${state.currentPage ?? 1} of ${state.content?.pageCount ?? 1}',
                         style: TextStyleConst.bodySmall.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -902,6 +905,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   Widget _buildBottomBar(ReaderState state) {
+    if (state.progressPercentage > 100) {
+      return const SizedBox
+          .shrink(); // Hide bottom bar if progress is invalid (e.g. page count mismatch)
+    }
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(

@@ -1707,6 +1707,9 @@ class _DetailScreenState extends State<DetailScreen> {
         (content.imageUrls.isNotEmpty || hasChapters) ? content : null;
     Logger().w('Content to pass: $contentToPass (hasChapters: $hasChapters)');
 
+    // Logger().i(
+    //     "JSON Chapters: ${content.chapters != null ? content.chapters?.toList() : 'No chapters'}");
+
     if (contentToPass == null) {
       Logger().w(
           '⚠️ Content passed from DetailScreen has no images or chapters, forcing reader to fetch fresh data: ${content.id}');
