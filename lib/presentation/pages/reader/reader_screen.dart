@@ -16,6 +16,7 @@ import '../../cubits/reader/reader_cubit.dart';
 import '../../widgets/progress_indicator_widget.dart';
 import '../../widgets/error_widget.dart';
 import '../../widgets/extended_image_reader_widget.dart';
+import '../../widgets/reader_navigation_page.dart';
 import 'package:nhasixapp/services/ad_service.dart';
 
 /// Simple reader screen for reading manga/doujinshi content
@@ -171,8 +172,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
   }
 
-
-
   @override
   void dispose() {
     _scrollController.removeListener(_onScrollChanged);
@@ -218,7 +217,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             // Fallback to URL validation if no metadata found
             // We TRUST the URL list from the source. Removing brittle filename parsing validation.
             // checks that caused false positives (e.g. 0-indexed filenames).
-            isValid = true; 
+            isValid = true;
           }
         } else {
           // No metadata available. Trust the URL list order.
@@ -412,7 +411,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 backgroundColor: Theme.of(context).colorScheme.surface,
                 body: LayoutBuilder(
                   builder: (context, constraints) {
-                    if (constraints.maxWidth < 50 || constraints.maxHeight < 50) {
+                    if (constraints.maxWidth < 50 ||
+                        constraints.maxHeight < 50) {
                       return const SizedBox.shrink();
                     }
                     return _buildBody(state);
@@ -515,12 +515,24 @@ class _ReaderScreenState extends State<ReaderScreen> {
             _readerCubit.updateCurrentPageFromSwipe(newPage);
           }
         },
-        itemCount: state.content?.imageUrls.length ?? 0,
+        itemCount: (state.content?.imageUrls.length ?? 0) +
+            1, // +1 for navigation page
         itemBuilder: (context, index) {
-          final imageUrl = state.content?.imageUrls[index] ?? '';
+          final imageUrls = state.content?.imageUrls ?? [];
+
+          // If this is the last item, show navigation page
+          if (index >= imageUrls.length) {
+            return ReaderNavigationPage(
+              hasPreviousChapter: state.hasPreviousChapter,
+              hasNextChapter: state.hasNextChapter,
+              onPreviousChapter: () => _readerCubit.goToPreviousChapter(),
+              onNextChapter: () => _readerCubit.goToNextChapter(),
+              contentId: state.content?.id,
+            );
+          }
+
+          final imageUrl = imageUrls[index];
           final pageNumber = index + 1;
-
-
 
           // Debug logging removed to prevent false positives with 0-indexed filenames
 
@@ -569,9 +581,23 @@ class _ReaderScreenState extends State<ReaderScreen> {
             _readerCubit.updateCurrentPageFromSwipe(newPage);
           }
         },
-        itemCount: state.content?.imageUrls.length ?? 0,
+        itemCount: (state.content?.imageUrls.length ?? 0) +
+            1, // +1 for navigation page
         itemBuilder: (context, index) {
-          final imageUrl = state.content?.imageUrls[index] ?? '';
+          final imageUrls = state.content?.imageUrls ?? [];
+
+          // If this is the last item, show navigation page
+          if (index >= imageUrls.length) {
+            return ReaderNavigationPage(
+              hasPreviousChapter: state.hasPreviousChapter,
+              hasNextChapter: state.hasNextChapter,
+              onPreviousChapter: () => _readerCubit.goToPreviousChapter(),
+              onNextChapter: () => _readerCubit.goToNextChapter(),
+              contentId: state.content?.id,
+            );
+          }
+
+          final imageUrl = imageUrls[index];
           return _buildImageViewer(imageUrl, index + 1);
         },
       ),
@@ -593,9 +619,27 @@ class _ReaderScreenState extends State<ReaderScreen> {
       physics: const BouncingScrollPhysics(), // Smoother scroll
       cacheExtent:
           1000.0, // 🐛 FIX: Keep 1000px of items in memory to prevent re-loading images
-      itemCount: state.content?.imageUrls.length ?? 0,
+      itemCount:
+          (state.content?.imageUrls.length ?? 0) + 1, // +1 for navigation page
       itemBuilder: (context, index) {
-        final imageUrl = state.content?.imageUrls[index] ?? '';
+        final imageUrls = state.content?.imageUrls ?? [];
+
+        // If this is the last item, show navigation page
+        if (index >= imageUrls.length) {
+          return SizedBox(
+            height:
+                MediaQuery.of(context).size.height * 0.8, // Give it some height
+            child: ReaderNavigationPage(
+              hasPreviousChapter: state.hasPreviousChapter,
+              hasNextChapter: state.hasNextChapter,
+              onPreviousChapter: () => _readerCubit.goToPreviousChapter(),
+              onNextChapter: () => _readerCubit.goToNextChapter(),
+              contentId: state.content?.id,
+            ),
+          );
+        }
+
+        final imageUrl = imageUrls[index];
         return _buildImageViewer(
           imageUrl,
           index + 1,
@@ -907,6 +951,71 @@ class _ReaderScreenState extends State<ReaderScreen> {
               ),
             ],
           ),
+
+          // Chapter navigation (only show if chapters are available)
+          if (state.content?.chapters != null &&
+              state.content!.chapters!.length > 1) ...[
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+
+            // Chapter info
+            Text(
+              'Chapter ${state.currentChapterIndex + 1} of ${state.content!.chapters!.length}',
+              style: TextStyleConst.bodySmall.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // Chapter navigation buttons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                // Previous chapter
+                ElevatedButton.icon(
+                  onPressed: state.hasPreviousChapter
+                      ? () => _readerCubit.goToPreviousChapter()
+                      : null,
+                  icon: const Icon(Icons.skip_previous, size: 18),
+                  label: const Text('Previous Chapter'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        Theme.of(context).colorScheme.primaryContainer,
+                    foregroundColor:
+                        Theme.of(context).colorScheme.onPrimaryContainer,
+                    disabledBackgroundColor:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    disabledForegroundColor: Theme.of(context)
+                        .colorScheme
+                        .onSurfaceVariant
+                        .withValues(alpha: 0.38),
+                  ),
+                ),
+
+                // Next chapter
+                ElevatedButton.icon(
+                  onPressed: state.hasNextChapter
+                      ? () => _readerCubit.goToNextChapter()
+                      : null,
+                  icon: const Icon(Icons.skip_next, size: 18),
+                  label: const Text('Next Chapter'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        Theme.of(context).colorScheme.primaryContainer,
+                    foregroundColor:
+                        Theme.of(context).colorScheme.onPrimaryContainer,
+                    disabledBackgroundColor:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    disabledForegroundColor: Theme.of(context)
+                        .colorScheme
+                        .onSurfaceVariant
+                        .withValues(alpha: 0.38),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

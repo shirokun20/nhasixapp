@@ -7,6 +7,14 @@ class KomiktapSeriesMetadata {
   final DateTime? lastUpdate;
   final List<String> tags; // genre names
 
+  // NEW: Additional fields for list pages
+  final String? status; // "Completed", "Ongoing"
+  final String? contentType; // "Manga", "Manhua", "Manhwa"
+  final double? rating; // Numeric rating
+  final bool isHot; // Has hot badge
+  final bool isColored; // Has colored badge (project list)
+  final String? timeAgo; // Time ago text (project list only)
+
   const KomiktapSeriesMetadata({
     required this.id,
     required this.title,
@@ -14,6 +22,27 @@ class KomiktapSeriesMetadata {
     this.subtitle,
     this.lastUpdate,
     this.tags = const [],
+    this.status,
+    this.contentType,
+    this.rating,
+    this.isHot = false,
+    this.isColored = false,
+    this.timeAgo,
+  });
+}
+
+/// Genre metadata for genre list page
+class KomiktapGenreMetadata {
+  final String slug; // "action", "adult", etc.
+  final String name; // "Action", "Adult", etc.
+  final int count; // Number of series in genre
+  final String url; // Full URL
+
+  const KomiktapGenreMetadata({
+    required this.slug,
+    required this.name,
+    required this.count,
+    required this.url,
   });
 }
 

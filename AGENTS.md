@@ -1,5 +1,23 @@
 # NhasixApp Agent Rules
 
+## 🤖 Custom Agents & Skills
+
+This project includes custom OpenCode agents and skills in `.opencode/`:
+
+### Agents (invoke with @)
+- `@flutter-architect` - Clean Architecture guidance and reviews
+- `@feature-dev` - Development workflow coordinator
+- `@code-reviewer` - Flutter code quality reviews
+- `@ui-designer` - UI/UX and responsive design guidance
+
+### Skills (loaded via skill tool)
+- `clean-arch` - Clean Architecture implementation patterns
+- `bloc-pattern` - BLoC/Cubit state management patterns
+- `project-workflow` - Development workflow phases and processes
+- `di-setup` - Dependency Injection with GetIt setup
+
+---
+
 ## ⚡ Core Commands
 - **Build/Run**: `flutter clean && flutter pub get` | `flutter run --debug` | `flutter build apk --release`
 - **Test/Lint**: `flutter test` | `flutter analyze` | `dart run build_runner build`

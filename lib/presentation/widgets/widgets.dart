@@ -19,3 +19,10 @@ export 'download_item_widget.dart';
 export 'download_stats_widget.dart';
 export 'download_settings_widget.dart';
 export 'download_button_widget.dart';
+
+// KomikTap Navigation List widgets (NEW)
+export 'alphabet_filter_widget.dart';
+export 'genre_card_widget.dart';
+
+// Reader widgets
+export 'reader_navigation_page.dart';

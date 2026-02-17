@@ -84,6 +84,12 @@ class _AppDrawerContentState extends State<AppDrawerContent>
     }
   }
 
+  /// Check if current source is KomikTap
+  bool _isKomiktapSource(BuildContext context) {
+    final sourceCubit = context.read<SourceCubit>();
+    return sourceCubit.state.activeSource?.id == 'komiktap';
+  }
+
   void _handleNavigation(BuildContext context, String route) {
     if (widget.isDrawer) {
       Navigator.pop(context); // Close drawer first
@@ -100,7 +106,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
       return;
     }
 
-    if (route == AppRoute.crotpediaLogin) {
+    if (route != AppRoute.home) {
       context.push(route);
     } else {
       context.go(route);
@@ -211,12 +217,9 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                     ),
                     // Downloaded Galleries
                     Builder(builder: (context) {
-                        final sourceId = context
-                              .read<SourceCubit>()
-                              .state
-                              .activeSource
-                              ?.id ??
-                          'nhentai';
+                      final sourceId =
+                          context.read<SourceCubit>().state.activeSource?.id ??
+                              'nhentai';
                       final config = getIt<RemoteConfigService>();
                       if (config.isFeatureEnabled(
                           sourceId, (f) => f.download?.enabled ?? false)) {
@@ -233,12 +236,9 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                     }),
                     // Offline Content (Linked to Download feature)
                     Builder(builder: (context) {
-                        final sourceId = context
-                              .read<SourceCubit>()
-                              .state
-                              .activeSource
-                              ?.id ??
-                          'nhentai';
+                      final sourceId =
+                          context.read<SourceCubit>().state.activeSource?.id ??
+                              'nhentai';
                       final config = getIt<RemoteConfigService>();
                       if (config.isFeatureEnabled(
                           sourceId, (f) => f.download?.enabled ?? false)) {
@@ -311,6 +311,62 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                         }
                         return const SizedBox.shrink();
                       }),
+
+                      // KomikTap Navigation Lists (NEW) - Only show for KomikTap source
+                      if (_isKomiktapSource(context)) ...[
+                        const SizedBox(height: 16),
+                        _buildSectionLabel('KOMIKTAP', theme),
+                        const SizedBox(height: 8),
+                        _buildNavItem(
+                          context,
+                          icon: Icons.menu_book,
+                          label: 'List Manga',
+                          route: AppRoute.komiktapListManga,
+                          isSelected: isSelected(AppRoute.komiktapListManga),
+                          theme: theme,
+                        ),
+                        _buildNavItem(
+                          context,
+                          icon: Icons.auto_stories,
+                          label: 'List Manhua',
+                          route: AppRoute.komiktapListManhua,
+                          isSelected: isSelected(AppRoute.komiktapListManhua),
+                          theme: theme,
+                        ),
+                        _buildNavItem(
+                          context,
+                          icon: Icons.import_contacts,
+                          label: 'List Manhwa',
+                          route: AppRoute.komiktapListManhwa,
+                          isSelected: isSelected(AppRoute.komiktapListManhwa),
+                          theme: theme,
+                        ),
+                        _buildNavItem(
+                          context,
+                          icon: Icons.sort_by_alpha,
+                          label: 'List A-Z',
+                          route: AppRoute.komiktapListAZ,
+                          isSelected: isSelected(AppRoute.komiktapListAZ),
+                          theme: theme,
+                        ),
+                        _buildNavItem(
+                          context,
+                          icon: Icons.category,
+                          label: 'List Genre',
+                          route: AppRoute.komiktapListGenre,
+                          isSelected: isSelected(AppRoute.komiktapListGenre),
+                          theme: theme,
+                        ),
+                        _buildNavItem(
+                          context,
+                          icon: Icons.workspaces,
+                          label: 'List Project',
+                          route: AppRoute.komiktapListProject,
+                          isSelected: isSelected(AppRoute.komiktapListProject),
+                          theme: theme,
+                        ),
+                      ],
+
                       // _buildNavItem(
                       //   context,
                       //   icon: Icons.history_rounded,
@@ -456,21 +512,21 @@ class _AppDrawerContentState extends State<AppDrawerContent>
           ),
           const SizedBox(height: 6),
 
-        // Subtitle / Premium Badge
-        Builder(
-          builder: (context) {
+          // Subtitle / Premium Badge
+          Builder(builder: (context) {
             final licenseService = getIt<LicenseService>();
             final isPremium = licenseService.isPremiumActive;
             final expiry = licenseService.expiresAt;
             final planName = licenseService.planName ?? 'PREMIUM ACTIVE';
 
             if (isPremium) {
-              final activeDate = expiry != null 
-                  ? DateFormat('dd MMM yyyy').format(expiry) 
+              final activeDate = expiry != null
+                  ? DateFormat('dd MMM yyyy').format(expiry)
                   : 'Lifetime';
-              
+
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -488,7 +544,8 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.workspace_premium, size: 14, color: Color(0xFFE65100)),
+                        const Icon(Icons.workspace_premium,
+                            size: 14, color: Color(0xFFE65100)),
                         const SizedBox(width: 4),
                         Text(
                           planName.toUpperCase(),
@@ -533,8 +590,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                 ),
               ),
             );
-          }
-        ),
+          }),
         ],
       ),
     );

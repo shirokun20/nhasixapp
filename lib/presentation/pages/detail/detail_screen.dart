@@ -758,8 +758,8 @@ class _DetailScreenState extends State<DetailScreen> {
   Widget _buildActionButtons(Content content) {
     // Check if chapters feature is enabled for this source
     final remoteConfig = getIt<RemoteConfigService>();
-    final hasChaptersFeature =
-        remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.chapters?.enabled ?? false);
+    final hasChaptersFeature = remoteConfig.isFeatureEnabled(
+        content.sourceId, (f) => f.chapters?.enabled ?? false);
 
     // If content has chapters AND feature is enabled, show chapter list
     if (hasChaptersFeature &&
@@ -831,9 +831,13 @@ class _DetailScreenState extends State<DetailScreen> {
                       icon: const Icon(Icons.lock, size: 20),
                       label: Text(AppLocalizations.of(context)!.download),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        foregroundColor:
-                            Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
+                        foregroundColor: Theme.of(context)
+                            .colorScheme
+                            .onSurfaceVariant
+                            .withValues(alpha: 0.5),
                       ),
                     ),
             ),
@@ -1109,7 +1113,8 @@ class _DetailScreenState extends State<DetailScreen> {
                                       )
                                     : IconButton(
                                         onPressed: () async {
-                                          await PremiumRequiredDialog.show(context);
+                                          await PremiumRequiredDialog.show(
+                                              context);
                                           if (mounted) setState(() {});
                                         },
                                         icon: const Icon(Icons.lock, size: 18),
@@ -1184,7 +1189,7 @@ class _DetailScreenState extends State<DetailScreen> {
               );
             },
           ),
-          
+
           if (chapters.length > 5)
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -1298,8 +1303,8 @@ class _DetailScreenState extends State<DetailScreen> {
   Widget _buildRelatedContentSection(Content content) {
     // Check if related content feature is enabled for this source
     final remoteConfig = getIt<RemoteConfigService>();
-    final hasRelatedFeature =
-        remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.related?.enabled ?? false);
+    final hasRelatedFeature = remoteConfig.isFeatureEnabled(
+        content.sourceId, (f) => f.related?.enabled ?? false);
 
     if (!hasRelatedFeature || content.relatedContent.isEmpty) {
       return const SizedBox.shrink();
@@ -1644,13 +1649,17 @@ class _DetailScreenState extends State<DetailScreen> {
         currentState is DetailLoaded ? currentState.imageMetadata : null;
 
     // Validate content before passing to reader
-    // If content has no images, pass null to force reader to fetch fresh content
-    final contentToPass = content.imageUrls.isNotEmpty ? content : null;
-    Logger().w('Content to pass: $contentToPass');
+    // Always pass content if it has chapters, even if no images yet
+    // This ensures chapter navigation works in reader
+    final hasChapters =
+        content.chapters != null && content.chapters!.isNotEmpty;
+    final contentToPass =
+        (content.imageUrls.isNotEmpty || hasChapters) ? content : null;
+    Logger().w('Content to pass: $contentToPass (hasChapters: $hasChapters)');
 
     if (contentToPass == null) {
       Logger().w(
-          '⚠️ Content passed from DetailScreen has no images, forcing reader to fetch fresh data: ${content.id}');
+          '⚠️ Content passed from DetailScreen has no images or chapters, forcing reader to fetch fresh data: ${content.id}');
     }
 
     AppRouter.goToReader(
@@ -1662,8 +1671,6 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-
-
   /// Get base URL for active source
   String _getSourceBaseUrl() {
     final sourceState = context.read<SourceCubit>().state;
@@ -1674,7 +1681,7 @@ class _DetailScreenState extends State<DetailScreen> {
   String _buildContentUrl(Content content) {
     // Helper to get base URL for a specific source
     final baseUrl = _getSourceBaseUrl();
-    
+
     if (content.sourceId == SourceType.komiktap.id) {
       // KomikTap uses /manga/{slug}/
       return '$baseUrl/manga/${content.id}/';
@@ -1816,7 +1823,8 @@ class _DetailScreenState extends State<DetailScreen> {
   Future<void> _startDownload(Content content) async {
     // Check if download feature is enabled
     final remoteConfig = getIt<RemoteConfigService>();
-    if (!remoteConfig.isContentFeatureAccessible(content.sourceId, 'download')) {
+    if (!remoteConfig.isContentFeatureAccessible(
+        content.sourceId, 'download')) {
       PremiumRequiredDialog.show(context);
       return;
     }

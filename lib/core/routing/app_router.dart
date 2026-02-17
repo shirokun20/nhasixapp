@@ -19,6 +19,8 @@ import 'package:nhasixapp/presentation/pages/random/random_gallery_screen.dart';
 import 'package:nhasixapp/presentation/pages/about/about_screen.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/pages/crotpedia/crotpedia_login_page.dart';
+import 'package:nhasixapp/presentation/pages/content_list/content_list_screen.dart';
+import 'package:nhasixapp/presentation/pages/genre_list/genre_list_screen.dart';
 import 'package:nhasixapp/core/models/image_metadata.dart';
 import 'package:nhasixapp/core/utils/app_animations.dart';
 
@@ -327,6 +329,122 @@ class AppRouter {
           state,
           const CrotpediaLoginPage(),
           type: RouteTransitionType.fadeSlide,
+        ),
+      ),
+
+      // ==================== KomikTap List Routes (NEW) ====================
+
+      // List Manga
+      GoRoute(
+        path: AppRoute.komiktapListManga,
+        name: AppRoute.komiktapListMangaName,
+        pageBuilder: (context, state) {
+          final page =
+              int.tryParse(state.uri.queryParameters['page'] ?? '1') ?? 1;
+          return AppAnimations.animatedPageBuilder(
+            context,
+            state,
+            ContentListScreen(
+              listType: ContentListType.manga,
+              sourceId: 'komiktap',
+              initialPage: page,
+            ),
+            type: RouteTransitionType.fade,
+          );
+        },
+      ),
+
+      // List Manhua
+      GoRoute(
+        path: AppRoute.komiktapListManhua,
+        name: AppRoute.komiktapListManhuaName,
+        pageBuilder: (context, state) {
+          final page =
+              int.tryParse(state.uri.queryParameters['page'] ?? '1') ?? 1;
+          return AppAnimations.animatedPageBuilder(
+            context,
+            state,
+            ContentListScreen(
+              listType: ContentListType.manhua,
+              sourceId: 'komiktap',
+              initialPage: page,
+            ),
+            type: RouteTransitionType.fade,
+          );
+        },
+      ),
+
+      // List Manhwa
+      GoRoute(
+        path: AppRoute.komiktapListManhwa,
+        name: AppRoute.komiktapListManhwaName,
+        pageBuilder: (context, state) {
+          final page =
+              int.tryParse(state.uri.queryParameters['page'] ?? '1') ?? 1;
+          return AppAnimations.animatedPageBuilder(
+            context,
+            state,
+            ContentListScreen(
+              listType: ContentListType.manhwa,
+              sourceId: 'komiktap',
+              initialPage: page,
+            ),
+            type: RouteTransitionType.fade,
+          );
+        },
+      ),
+
+      // List A-Z
+      GoRoute(
+        path: AppRoute.komiktapListAZ,
+        name: AppRoute.komiktapListAZName,
+        pageBuilder: (context, state) {
+          final page =
+              int.tryParse(state.uri.queryParameters['page'] ?? '1') ?? 1;
+          final letter = state.uri.queryParameters['show'];
+          return AppAnimations.animatedPageBuilder(
+            context,
+            state,
+            ContentListScreen(
+              listType: ContentListType.az,
+              sourceId: 'komiktap',
+              initialPage: page,
+              initialFilter: letter,
+            ),
+            type: RouteTransitionType.fade,
+          );
+        },
+      ),
+
+      // List Project
+      GoRoute(
+        path: AppRoute.komiktapListProject,
+        name: AppRoute.komiktapListProjectName,
+        pageBuilder: (context, state) {
+          final page =
+              int.tryParse(state.uri.queryParameters['page'] ?? '1') ?? 1;
+          return AppAnimations.animatedPageBuilder(
+            context,
+            state,
+            ContentListScreen(
+              listType: ContentListType.project,
+              sourceId: 'komiktap',
+              initialPage: page,
+            ),
+            type: RouteTransitionType.fade,
+          );
+        },
+      ),
+
+      // List Genre
+      GoRoute(
+        path: AppRoute.komiktapListGenre,
+        name: AppRoute.komiktapListGenreName,
+        pageBuilder: (context, state) => AppAnimations.animatedPageBuilder(
+          context,
+          state,
+          const GenreListScreen(sourceId: 'komiktap'),
+          type: RouteTransitionType.fade,
         ),
       ),
     ],

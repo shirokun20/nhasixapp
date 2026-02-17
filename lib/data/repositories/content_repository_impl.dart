@@ -434,4 +434,137 @@ class ContentRepositoryImpl implements ContentRepository {
       category: appFilter.category,
     );
   }
+
+  // ==================== KomikTap List Page Methods (NEW) ====================
+
+  @override
+  Future<ContentListResult> getContentListByType({
+    required String sourceId,
+    required ContentListType listType,
+    int page = 1,
+    String? filter,
+  }) async {
+    _logger.i('Getting content list by type: $listType, page: $page');
+
+    try {
+      // Get the source
+      final source = contentSourceRegistry.getSource(sourceId);
+
+      if (source == null) {
+        throw Exception('Source not found: $sourceId');
+      }
+
+      // Check if source is KomikTap
+      if (source is! KomiktapSource) {
+        throw UnsupportedError('List pages only supported for KomikTap source');
+      }
+
+      // Build URL based on list type
+      late String url;
+      switch (listType) {
+        case ContentListType.manga:
+          url = KomiktapUrlBuilder.buildListMangaUrl(page: page);
+          break;
+        case ContentListType.manhua:
+          url = KomiktapUrlBuilder.buildListManhuaUrl(page: page);
+          break;
+        case ContentListType.manhwa:
+          url = KomiktapUrlBuilder.buildListManhwaUrl(page: page);
+          break;
+        case ContentListType.project:
+          url = KomiktapUrlBuilder.buildListProjectUrl(page: page);
+          break;
+        case ContentListType.az:
+          url = KomiktapUrlBuilder.buildListAZUrl(
+            page: page,
+            letter: filter,
+          );
+          break;
+        case ContentListType.genre:
+          throw ArgumentError('Use getGenreList for genre list');
+      }
+
+      // Fetch HTML
+      final html = await source.fetchHtml(url);
+
+      // Parse content based on list type
+      late List<KomiktapSeriesMetadata> seriesMetadata;
+      if (listType == ContentListType.az) {
+        seriesMetadata = source.scraper.parseAZList(html);
+      } else if (listType == ContentListType.project) {
+        seriesMetadata = source.scraper.parseProjectList(html);
+      } else {
+        seriesMetadata = source.scraper.parseListPage(html);
+      }
+
+      // Parse pagination
+      final paginationMetadata = source.scraper.parsePagination(html);
+
+      // Convert to app Content entities
+      final contents =
+          seriesMetadata.map((meta) => source.convertToContent(meta)).toList();
+
+      _logger.i('Fetched ${contents.length} items for $listType');
+
+      return ContentListResult(
+        contents: contents,
+        currentPage: paginationMetadata.currentPage,
+        totalPages: paginationMetadata.totalPages,
+        totalCount: paginationMetadata.totalPages * defaultPageSize,
+        hasNext: paginationMetadata.hasNext,
+        hasPrevious: paginationMetadata.hasPrevious,
+      );
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get content list by type',
+          error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<Genre>> getGenreList({
+    required String sourceId,
+  }) async {
+    _logger.i('Getting genre list for source: $sourceId');
+
+    try {
+      // Get the source
+      final source = contentSourceRegistry.getSource(sourceId);
+
+      if (source == null) {
+        throw Exception('Source not found: $sourceId');
+      }
+
+      // Check if source is KomikTap
+      if (source is! KomiktapSource) {
+        throw UnsupportedError('Genre list only supported for KomikTap source');
+      }
+
+      // Build URL
+      final url = KomiktapUrlBuilder.buildListGenreUrl();
+
+      // Fetch HTML
+      final html = await source.fetchHtml(url);
+
+      // Parse genre list
+      final genresMetadata = source.scraper.parseGenreList(html);
+
+      // Convert to Genre entities
+      final genres = genresMetadata
+          .map((meta) => Genre(
+                slug: meta.slug,
+                name: meta.name,
+                count: meta.count,
+                url: meta.url,
+              ))
+          .toList();
+
+      _logger.i('Fetched ${genres.length} genres');
+
+      return genres;
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get genre list', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
 }

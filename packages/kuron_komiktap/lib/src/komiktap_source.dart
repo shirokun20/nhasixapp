@@ -56,6 +56,54 @@ class KomiktapSource implements ContentSource {
   @override
   String get refererHeader => baseUrlValue;
 
+  // ============ Public Accessors for List Pages (NEW) ============
+
+  /// Access to scraper for list page parsing
+  KomiktapScraper get scraper => _scraper;
+
+  /// Access to dio for custom requests
+  Dio get dio => _dio;
+
+  /// Fetch HTML from URL
+  Future<String> fetchHtml(String url) async {
+    final response = await _dio.get(
+      url,
+      options: Options(
+        headers: {
+          'Referer': '$baseUrlValue/',
+          'User-Agent': 'Mozilla/5.0 (compatible; KuronApp/1.0)',
+        },
+      ),
+    );
+    return response.data as String;
+  }
+
+  /// Convert KomiktapSeriesMetadata to Content entity
+  Content convertToContent(KomiktapSeriesMetadata metadata) {
+    return Content(
+      id: metadata.id,
+      sourceId: id,
+      title: metadata.title,
+      coverUrl: metadata.coverImageUrl,
+      tags: metadata.tags
+          .map((tag) => Tag(
+                id: tag.hashCode,
+                name: tag,
+                type: TagType.category,
+                count: 0,
+              ))
+          .toList(),
+      artists: metadata.contentType != null ? [metadata.contentType!] : [],
+      characters: const [],
+      parodies: const [],
+      groups: const [],
+      language: 'unknown',
+      pageCount: 0, // Will be fetched when viewing detail
+      imageUrls: const [],
+      uploadDate: metadata.lastUpdate ?? DateTime.now(),
+    );
+  }
+
   // ============ Download & Display Customization ============
 
   @override
@@ -153,29 +201,27 @@ class KomiktapSource implements ContentSource {
       if (filter.includeTags.isNotEmpty) {
         final firstTag = filter.includeTags.first;
         final genreSlug = firstTag.name.toLowerCase().replaceAll(' ', '-');
-        
+
         url = KomiktapUrlBuilder.buildGenreUrl(
           genreSlug,
           page: filter.page,
           baseUrl: baseUrl,
         );
-        
-        _logger?.d(
-          'Searching by genre slug: $genreSlug, page: ${filter.page}');
-      } 
+
+        _logger?.d('Searching by genre slug: $genreSlug, page: ${filter.page}');
+      }
       // Priority 2: Text-based search
       else {
         // Use standard search for any query
         final query = filter.query.trim();
-        
+
         url = KomiktapUrlBuilder.buildSearchUrl(
           query,
           page: filter.page,
           baseUrl: baseUrl,
         );
 
-        _logger?.d(
-          'Searching with query: "$query", page: ${filter.page}');
+        _logger?.d('Searching with query: "$query", page: ${filter.page}');
       }
 
       final response = await _dio.get(
@@ -448,6 +494,4 @@ class KomiktapSource implements ContentSource {
       englishTitle: detail.alternativeTitle,
     );
   }
-
-
 }

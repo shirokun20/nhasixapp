@@ -86,6 +86,30 @@ abstract class ContentRepository {
   /// Returns list of image URLs for the chapter
   Future<List<String>> getChapterImages(ContentId chapterId,
       {String? sourceId});
+
+  // ==================== KomikTap List Page Methods (NEW) ====================
+
+  /// Get content list by type with pagination
+  ///
+  /// [sourceId] - Source identifier (e.g., 'komiktap')
+  /// [listType] - Type of list (manga, manhua, manhwa, project, az)
+  /// [page] - Page number (1-based)
+  /// [filter] - Optional filter (e.g., alphabet letter for A-Z list)
+  /// Returns content list with pagination info
+  Future<ContentListResult> getContentListByType({
+    required String sourceId,
+    required ContentListType listType,
+    int page = 1,
+    String? filter,
+  });
+
+  /// Get genre list for a source
+  ///
+  /// [sourceId] - Source identifier (e.g., 'komiktap')
+  /// Returns list of genres with counts
+  Future<List<Genre>> getGenreList({
+    required String sourceId,
+  });
 }
 
 /// Result wrapper for paginated content lists

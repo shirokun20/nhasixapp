@@ -13,3 +13,8 @@ export 'download_status.dart';
 export 'history.dart';
 export 'reading_statistics.dart';
 export 'reader_position.dart';
+
+// KomikTap Navigation List entities (NEW)
+export 'content_list_type.dart';
+export 'genre.dart';
+export 'pagination_info.dart';

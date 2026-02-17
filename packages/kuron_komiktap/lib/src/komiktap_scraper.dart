@@ -53,6 +53,36 @@ class KomiktapScraper {
     // reader
     'reader_container': '#readerarea',
     'reader_images': 'img',
+
+    // List pages (manga/manhua/manhwa)
+    'list_container': '.listupd.cp',
+    'list_item': '.bs',
+    'list_link': '.bsx > a[href]',
+    'list_cover': '.limit img',
+    'list_type': '.type',
+    'list_status': '.status',
+    'list_hot': '.hotx',
+    'list_colored': '.colored',
+    'list_title': '.bigor .tt',
+    'list_chapter': '.bigor .epxs',
+    'list_rating': '.bigor .numscore',
+
+    // Project list (variant)
+    'project_item': '.bs.styletere',
+    'project_timeago': '.bigor .epxdate',
+
+    // A-Z list
+    'az_container': '.listo',
+    'az_item': '.listo .bs',
+    'az_alphabet_container': '.lista',
+    'az_alphabet_link': '.lista > a',
+
+    // Genre list
+    'genre_container': 'ul.taxindex',
+    'genre_item': 'ul.taxindex > li',
+    'genre_link': 'li > a[href]',
+    'genre_name': 'span',
+    'genre_count': 'i',
   };
 
   final Map<String, String> _selectors;
@@ -250,7 +280,7 @@ class KomiktapScraper {
 
     // Parse chapters
     final chapters = _parseChapterList(document);
-    
+
     // Parse favorites
     final favorites = _parseFavorites(document);
 
@@ -262,8 +292,11 @@ class KomiktapScraper {
       status: status,
       type: contentType,
       tags: genres,
-      author: (metadata['author'] ?? metadata['artist'] ?? metadata['posted_by']) as String?,
-      lastUpdate: (metadata['updated_on'] ?? metadata['posted_on']) as DateTime?,
+      author: (metadata['author'] ??
+          metadata['artist'] ??
+          metadata['posted_by']) as String?,
+      lastUpdate:
+          (metadata['updated_on'] ?? metadata['posted_on']) as DateTime?,
       chapters: chapters,
       favorites: favorites,
     );
@@ -302,7 +335,7 @@ class KomiktapScraper {
             date = DateTime.tryParse(datetime);
           }
         }
-        
+
         // Fallback to text parsing
         date ??= _parseDate(value);
 
@@ -354,7 +387,6 @@ class KomiktapScraper {
       return null;
     }
   }
-  
 
   List<KomiktapChapterInfo> _parseChapterList(Document document) {
     final items = document.querySelectorAll(_getSelector('detail_chapterList'));
@@ -499,9 +531,9 @@ class KomiktapScraper {
         String numStr = match.group(1)!;
         // Fix common OCR/formatting issues or hyphenated decimals
         if (numStr.contains('-')) {
-             // Only replace hyphen if it likely acts as a decimal separator (not a range)
-             // For single chapter context, we assume it's substitution
-             numStr = numStr.replaceAll('-', '.');
+          // Only replace hyphen if it likely acts as a decimal separator (not a range)
+          // For single chapter context, we assume it's substitution
+          numStr = numStr.replaceAll('-', '.');
         }
         return double.tryParse(numStr);
       }
@@ -583,5 +615,194 @@ class KomiktapScraper {
       }
     } catch (_) {}
     return null;
+  }
+
+  // ============ List Page Parsing (NEW) ============
+
+  /// Parse standard list pages (Manga, Manhua, Manhwa)
+  List<KomiktapSeriesMetadata> parseListPage(String htmlContent) {
+    final document = html_parser.parse(htmlContent);
+    final items = document.querySelectorAll(_getSelector('list_container'));
+    final listItems = items.isNotEmpty
+        ? items.first.querySelectorAll('.bs')
+        : document.querySelectorAll('.bs');
+
+    return listItems
+        .map((item) {
+          final link = item.querySelector(_getSelector('list_link'));
+          final img = item.querySelector(_getSelector('list_cover'));
+          final titleEl = item.querySelector(_getSelector('list_title'));
+          final typeEl = item.querySelector(_getSelector('list_type'));
+          final statusEl = item.querySelector(_getSelector('list_status'));
+          final hotEl = item.querySelector(_getSelector('list_hot'));
+          final chapterEl = item.querySelector(_getSelector('list_chapter'));
+          final ratingEl = item.querySelector(_getSelector('list_rating'));
+
+          final url = link?.attributes['href'] ?? '';
+          final slug = _extractSlugFromUrl(url);
+          final title = titleEl?.text.trim() ?? '';
+          final typeText = typeEl?.text.trim() ?? '';
+
+          // Skip items without proper data
+          if (slug.isEmpty || title.isEmpty) {
+            return null;
+          }
+
+          return KomiktapSeriesMetadata(
+            id: slug,
+            title: title,
+            coverImageUrl: img?.attributes['src'] ?? '',
+            subtitle: chapterEl?.text.trim(),
+            contentType: typeText.isNotEmpty ? typeText : null,
+            status: statusEl?.text.trim(),
+            rating: double.tryParse(ratingEl?.text.trim() ?? ''),
+            isHot: hotEl != null,
+            tags: typeText.isNotEmpty ? [typeText] : [],
+          );
+        })
+        .whereType<KomiktapSeriesMetadata>()
+        .toList();
+  }
+
+  /// Parse A-Z list page with alphabet filter
+  List<KomiktapSeriesMetadata> parseAZList(String htmlContent) {
+    final document = html_parser.parse(htmlContent);
+    // A-Z list uses .listo container instead of .listupd
+    final items = document.querySelectorAll(_getSelector('az_item'));
+
+    return items
+        .map((item) {
+          final link = item.querySelector(_getSelector('list_link'));
+          final img = item.querySelector(_getSelector('list_cover'));
+          final titleEl = item.querySelector(_getSelector('list_title'));
+          final typeEl = item.querySelector(_getSelector('list_type'));
+          final statusEl = item.querySelector(_getSelector('list_status'));
+          final hotEl = item.querySelector(_getSelector('list_hot'));
+          final chapterEl = item.querySelector(_getSelector('list_chapter'));
+          final ratingEl = item.querySelector(_getSelector('list_rating'));
+
+          final url = link?.attributes['href'] ?? '';
+          final slug = _extractSlugFromUrl(url);
+          final title = titleEl?.text.trim() ?? '';
+          final typeText = typeEl?.text.trim() ?? '';
+
+          // Skip items without proper data
+          if (slug.isEmpty || title.isEmpty) {
+            return null;
+          }
+
+          return KomiktapSeriesMetadata(
+            id: slug,
+            title: title,
+            coverImageUrl: img?.attributes['src'] ?? '',
+            subtitle: chapterEl?.text.trim(),
+            contentType: typeText.isNotEmpty ? typeText : null,
+            status: statusEl?.text.trim(),
+            rating: double.tryParse(ratingEl?.text.trim() ?? ''),
+            isHot: hotEl != null,
+            tags: typeText.isNotEmpty ? [typeText] : [],
+          );
+        })
+        .whereType<KomiktapSeriesMetadata>()
+        .toList();
+  }
+
+  /// Parse Project list page with time metadata
+  List<KomiktapSeriesMetadata> parseProjectList(String htmlContent) {
+    final document = html_parser.parse(htmlContent);
+    // Project list uses .bs.styletere selector
+    final items = document.querySelectorAll(_getSelector('project_item'));
+
+    return items
+        .map((item) {
+          final link = item.querySelector(_getSelector('list_link'));
+          final img = item.querySelector(_getSelector('list_cover'));
+          final titleEl = item.querySelector(_getSelector('list_title'));
+          final typeEl = item.querySelector(_getSelector('list_type'));
+          final coloredEl = item.querySelector(_getSelector('list_colored'));
+          final hotEl = item.querySelector(_getSelector('list_hot'));
+          final chapterEl = item.querySelector(_getSelector('list_chapter'));
+          final timeAgoEl = item.querySelector(_getSelector('project_timeago'));
+
+          final url = link?.attributes['href'] ?? '';
+          final slug = _extractSlugFromUrl(url);
+          final title = titleEl?.text.trim() ?? '';
+          final typeText = typeEl?.text.trim() ?? '';
+
+          // Skip items without proper data
+          if (slug.isEmpty || title.isEmpty) {
+            return null;
+          }
+
+          return KomiktapSeriesMetadata(
+            id: slug,
+            title: title,
+            coverImageUrl: img?.attributes['src'] ?? '',
+            subtitle: chapterEl?.text.trim(),
+            contentType: typeText.isNotEmpty ? typeText : null,
+            isHot: hotEl != null,
+            isColored: coloredEl != null,
+            timeAgo: timeAgoEl?.text.trim(),
+            tags: typeText.isNotEmpty ? [typeText] : [],
+          );
+        })
+        .whereType<KomiktapSeriesMetadata>()
+        .toList();
+  }
+
+  /// Parse Genre list page (no pagination)
+  List<KomiktapGenreMetadata> parseGenreList(String htmlContent) {
+    final document = html_parser.parse(htmlContent);
+    final items = document.querySelectorAll(_getSelector('genre_item'));
+
+    return items
+        .map((item) {
+          final link = item.querySelector(_getSelector('genre_link'));
+          final nameEl = item.querySelector(_getSelector('genre_name'));
+          final countEl = item.querySelector(_getSelector('genre_count'));
+
+          final url = link?.attributes['href'] ?? '';
+          final name = nameEl?.text.trim() ?? '';
+          final count = int.tryParse(countEl?.text.trim() ?? '0') ?? 0;
+
+          // Skip empty entries (first genre has empty name)
+          if (name.isEmpty) {
+            return null;
+          }
+
+          // Extract slug from URL
+          // https://komiktap.info/genres/action/ -> "action"
+          String slug = '';
+          try {
+            final uri = Uri.parse(url);
+            final pathSegments =
+                uri.pathSegments.where((s) => s.isNotEmpty).toList();
+            final genresIndex = pathSegments.indexOf('genres');
+            if (genresIndex != -1 && genresIndex + 1 < pathSegments.length) {
+              slug = pathSegments[genresIndex + 1];
+            } else if (pathSegments.isNotEmpty) {
+              slug = pathSegments.last;
+            }
+          } catch (_) {
+            // Fallback: extract from URL string
+            final match = RegExp(r'/genres/([^/]+)').firstMatch(url);
+            if (match != null) {
+              slug = match.group(1) ?? '';
+            }
+          }
+
+          if (slug.isEmpty) {
+            return null;
+          }
+
+          return KomiktapGenreMetadata(
+            slug: slug,
+            name: name,
+            count: count,
+            url: url,
+          );
+        })
+        .whereType<KomiktapGenreMetadata>()
+        .toList();
   }
 }

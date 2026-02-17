@@ -295,8 +295,7 @@ void _setupServices() {
   );
 
   // Legal Content Service - Fetch legal docs from local assets
-  getIt.registerLazySingleton<LegalContentService>(
-      () => LegalContentService());
+  getIt.registerLazySingleton<LegalContentService>(() => LegalContentService());
 
   // License Service
   getIt.registerLazySingleton<LicenseService>(() => LicenseService(
@@ -509,6 +508,12 @@ void _setupUseCases() {
       () => GetRandomContentUseCase(getIt()));
   getIt.registerLazySingleton<GetChapterImagesUseCase>(
       () => GetChapterImagesUseCase(getIt()));
+
+  // KomikTap List Page Use Cases (NEW)
+  getIt.registerLazySingleton<GetContentListByTypeUseCase>(
+      () => GetContentListByTypeUseCase(getIt()));
+  getIt.registerLazySingleton<GetGenreListUseCase>(
+      () => GetGenreListUseCase(getIt()));
 
   // Favorites Use Cases
   getIt.registerLazySingleton<AddToFavoritesUseCase>(

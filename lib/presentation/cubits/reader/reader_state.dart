@@ -91,6 +91,50 @@ class ReaderState extends Equatable {
   /// Check if this is the last page
   bool get isLastPage => (currentPage ?? 1) >= (content?.pageCount ?? 1);
 
+  /// Get current chapter index (if chapters available)
+  int get currentChapterIndex {
+    if (content?.chapters == null || content!.chapters!.isEmpty) return 0;
+
+    // Find chapter containing current page
+    // For now, assume each chapter is a separate content
+    // This logic may need adjustment based on actual data structure
+    return 0;
+  }
+
+  /// Check if has previous chapter
+  bool get hasPreviousChapter {
+    if (content?.chapters == null || content!.chapters!.isEmpty) return false;
+    return currentChapterIndex > 0;
+  }
+
+  /// Check if has next chapter
+  bool get hasNextChapter {
+    if (content?.chapters == null || content!.chapters!.isEmpty) return false;
+    return currentChapterIndex < content!.chapters!.length - 1;
+  }
+
+  /// Get current chapter
+  Chapter? get currentChapter {
+    if (content?.chapters == null || content!.chapters!.isEmpty) return null;
+    final index = currentChapterIndex;
+    if (index >= 0 && index < content!.chapters!.length) {
+      return content!.chapters![index];
+    }
+    return null;
+  }
+
+  /// Get previous chapter
+  Chapter? get previousChapter {
+    if (!hasPreviousChapter) return null;
+    return content!.chapters![currentChapterIndex - 1];
+  }
+
+  /// Get next chapter
+  Chapter? get nextChapter {
+    if (!hasNextChapter) return null;
+    return content!.chapters![currentChapterIndex + 1];
+  }
+
   /// Get current image URL
   String get currentImageUrl {
     if (content == null ||

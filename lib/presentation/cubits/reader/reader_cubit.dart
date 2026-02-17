@@ -285,6 +285,73 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
+  // ==================== Chapter Navigation (NEW) ====================
+
+  /// Navigate to previous chapter
+  /// Returns true if navigation was successful, false otherwise
+  Future<bool> goToPreviousChapter() async {
+    if (isClosed || state.content == null) {
+      _logger.w(
+          'Cannot navigate to previous chapter - cubit closed or no content');
+      return false;
+    }
+
+    if (!state.hasPreviousChapter) {
+      _logger.w('No previous chapter available');
+      return false;
+    }
+
+    final prevChapter = state.previousChapter;
+    if (prevChapter == null) {
+      _logger
+          .e('Previous chapter is null despite hasPreviousChapter being true');
+      return false;
+    }
+
+    _logger.i(
+        'Navigating to previous chapter: ${prevChapter.id} - ${prevChapter.title}');
+
+    // Load the previous chapter content
+    await loadContent(
+      prevChapter.id,
+      initialPage: 1,
+      forceStartFromBeginning: true,
+    );
+
+    return true;
+  }
+
+  /// Navigate to next chapter
+  /// Returns true if navigation was successful, false otherwise
+  Future<bool> goToNextChapter() async {
+    if (isClosed || state.content == null) {
+      _logger.w('Cannot navigate to next chapter - cubit closed or no content');
+      return false;
+    }
+
+    if (!state.hasNextChapter) {
+      _logger.w('No next chapter available');
+      return false;
+    }
+
+    final nextChap = state.nextChapter;
+    if (nextChap == null) {
+      _logger.e('Next chapter is null despite hasNextChapter being true');
+      return false;
+    }
+
+    _logger.i('Navigating to next chapter: ${nextChap.id} - ${nextChap.title}');
+
+    // Load the next chapter content
+    await loadContent(
+      nextChap.id,
+      initialPage: 1,
+      forceStartFromBeginning: true,
+    );
+
+    return true;
+  }
+
   /// Update current page from user swipe (without triggering navigation sync)
   void updateCurrentPageFromSwipe(int page) {
     if (!isClosed && state.content != null) {
@@ -328,7 +395,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       await readerRepository.saveReaderPosition(position);
 
       await readerRepository.saveReaderPosition(position);
-      
+
       // Also update history - ONLY for nhentai
       if (state.content!.sourceId == SourceType.nhentai.id) {
         final params = AddToHistoryParams.fromString(
@@ -677,8 +744,10 @@ class ReaderCubit extends Cubit<ReaderState> {
   Future<void> _saveToHistory() async {
     try {
       // Only allow nhentai source to be saved in history
-      if (state.content != null && state.content!.sourceId != SourceType.nhentai.id) {
-        _logger.d('Skipping history save for non-nhentai source: ${state.content!.sourceId}');
+      if (state.content != null &&
+          state.content!.sourceId != SourceType.nhentai.id) {
+        _logger.d(
+            'Skipping history save for non-nhentai source: ${state.content!.sourceId}');
         return;
       }
 

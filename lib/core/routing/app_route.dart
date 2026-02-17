@@ -31,6 +31,14 @@ class AppRoute {
   static const String main = '/main';
   static const String defaultRoute = splash;
 
+  // KomikTap List Routes (with source prefix to avoid conflicts)
+  static const String komiktapListManga = '/komiktap-list-manga';
+  static const String komiktapListManhua = '/komiktap-list-manhua';
+  static const String komiktapListManhwa = '/komiktap-list-manhwa';
+  static const String komiktapListGenre = '/komiktap-list-genre';
+  static const String komiktapListAZ = '/komiktap-list-az';
+  static const String komiktapListProject = '/komiktap-list-project';
+
   // Route names for navigation
   static const String splashName = 'splash';
   static const String homeName = 'home';
@@ -51,4 +59,12 @@ class AppRoute {
   static const String statusName = 'status';
   static const String aboutName = 'about';
   static const String mainName = 'main';
+
+  // KomikTap List Route Names (with source prefix)
+  static const String komiktapListMangaName = 'komiktap-list-manga';
+  static const String komiktapListManhuaName = 'komiktap-list-manhua';
+  static const String komiktapListManhwaName = 'komiktap-list-manhwa';
+  static const String komiktapListGenreName = 'komiktap-list-genre';
+  static const String komiktapListAZName = 'komiktap-list-az';
+  static const String komiktapListProjectName = 'komiktap-list-project';
 }

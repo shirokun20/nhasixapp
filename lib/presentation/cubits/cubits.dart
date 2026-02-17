@@ -15,3 +15,7 @@ export 'source/source_state.dart';
 // as they are screen-specific and provided locally rather than app-wide
 
 export 'crotpedia_auth/crotpedia_auth_cubit.dart';
+
+// KomikTap Navigation List Cubits (NEW)
+export 'content_list/content_list_cubit.dart';
+export 'genre_list/genre_list_cubit.dart';
