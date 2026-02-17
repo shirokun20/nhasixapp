@@ -654,8 +654,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
     return ListView.builder(
       controller: _scrollController,
       physics: const BouncingScrollPhysics(), // Smoother scroll
+      addAutomaticKeepAlives:
+          true, // 🔥 Keep widgets alive to prevent re-loading
+      addRepaintBoundaries: true, // Optimize repaint performance
       cacheExtent:
-          1000.0, // 🐛 FIX: Keep 1000px of items in memory to prevent re-loading images
+          10000.0, // 🔥 Large cache to keep many images in memory (prevents re-load on scroll)
       itemCount:
           (state.content?.imageUrls.length ?? 0) + 1, // +1 for navigation page
       itemBuilder: (context, index) {
@@ -697,19 +700,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
     // Pass enableZoom as parameter instead of reading from state
     if (isContinuous) {
       final zoom = enableZoom ?? true;
-      return Container(
+      // 🔥 FIX: Wrap with KeepAliveImageViewer to prevent re-loading on scroll
+      return KeepAliveImageViewer(
         key: ValueKey(
-            'image_viewer_$pageNumber'), // 🐛 FIX: Preserve widget identity to prevent re-loading
-        // margin: const EdgeInsets.only(bottom: 8.0), // REMOVED GAP
-        child: ExtendedImageReaderWidget(
-          imageUrl: imageUrl,
-          contentId: widget.contentId,
-          pageNumber: pageNumber,
-          readingMode: ReadingMode.continuousScroll,
-          enableZoom: zoom,
-          onImageLoaded:
-              _readerCubit.onImageLoaded, // 🎨 Auto-detect webtoon/manhwa
-        ),
+            'keep_alive_image_$pageNumber'), // Unique key for each page
+        imageUrl: imageUrl,
+        contentId: widget.contentId,
+        pageNumber: pageNumber,
+        enableZoom: zoom,
+        onImageLoaded: _readerCubit.onImageLoaded,
       );
     }
 
@@ -1341,5 +1340,48 @@ class _ReaderScreenState extends State<ReaderScreen> {
         );
       }
     }
+  }
+}
+
+/// Widget wrapper with AutomaticKeepAlive to prevent image re-loading on scroll
+/// This ensures images stay in memory when scrolling in continuous mode
+class KeepAliveImageViewer extends StatefulWidget {
+  const KeepAliveImageViewer({
+    super.key,
+    required this.imageUrl,
+    required this.contentId,
+    required this.pageNumber,
+    required this.enableZoom,
+    this.onImageLoaded,
+  });
+
+  final String imageUrl;
+  final String contentId;
+  final int pageNumber;
+  final bool enableZoom;
+  final Function(int pageNumber, Size imageSize)? onImageLoaded;
+
+  @override
+  State<KeepAliveImageViewer> createState() => _KeepAliveImageViewerState();
+}
+
+class _KeepAliveImageViewerState extends State<KeepAliveImageViewer>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true; // 🔥 Keep widget alive to prevent disposal
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(
+        context); // MUST call super.build when using AutomaticKeepAliveClientMixin
+
+    return ExtendedImageReaderWidget(
+      imageUrl: widget.imageUrl,
+      contentId: widget.contentId,
+      pageNumber: widget.pageNumber,
+      readingMode: ReadingMode.continuousScroll,
+      enableZoom: widget.enableZoom,
+      onImageLoaded: widget.onImageLoaded,
+    );
   }
 }

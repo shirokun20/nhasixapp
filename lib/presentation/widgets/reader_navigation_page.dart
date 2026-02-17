@@ -33,7 +33,7 @@ class ReaderNavigationPage extends StatelessWidget {
             children: [
               // Title
               Text(
-                'End of Chapter',
+                'Akhir Halaman',
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: theme.colorScheme.onSurface,
@@ -41,7 +41,7 @@ class ReaderNavigationPage extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'What would you like to do?',
+                'Apa yang ingin Anda lakukan?',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -49,38 +49,45 @@ class ReaderNavigationPage extends StatelessWidget {
               const SizedBox(height: 48),
 
               // Navigation buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              Column(
                 children: [
-                  // Previous Chapter
-                  _buildNavButton(
-                    context: context,
-                    icon: Icons.skip_previous,
-                    label: 'Prev Chapter',
-                    onPressed: hasPreviousChapter ? onPreviousChapter : null,
-                    isEnabled: hasPreviousChapter,
-                  ),
+                  // Next Chapter
+                  if (hasNextChapter)
+                    _buildNavButton(
+                      context: context,
+                      icon: Icons.skip_next,
+                      label: 'Chapter Berikutnya',
+                      onPressed: onNextChapter,
+                      isEnabled: true,
+                      isPrimary: true,
+                    ),
+
+                  const SizedBox(height: 16),
 
                   // Back to Detail
                   _buildNavButton(
                     context: context,
-                    icon: Icons.arrow_back,
-                    label: 'Back',
+                    icon: Icons.info_outline,
+                    label: 'Kembali ke Detail Content',
                     onPressed: () {
                       context.pop();
                     },
                     isEnabled: true,
-                    isPrimary: true,
+                    isPrimary: false,
                   ),
 
-                  // Next Chapter
-                  _buildNavButton(
-                    context: context,
-                    icon: Icons.skip_next,
-                    label: 'Next Chapter',
-                    onPressed: hasNextChapter ? onNextChapter : null,
-                    isEnabled: hasNextChapter,
-                  ),
+                  const SizedBox(height: 16),
+
+                  // Previous Chapter
+                  if (hasPreviousChapter)
+                    _buildNavButton(
+                      context: context,
+                      icon: Icons.skip_previous,
+                      label: 'Chapter Sebelumnya',
+                      onPressed: onPreviousChapter,
+                      isEnabled: true,
+                      isPrimary: false,
+                    ),
                 ],
               ),
             ],
@@ -100,44 +107,50 @@ class ReaderNavigationPage extends StatelessWidget {
   }) {
     final theme = Theme.of(context);
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ElevatedButton(
-          onPressed: onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isPrimary
-                ? theme.colorScheme.primary
-                : isEnabled
-                    ? theme.colorScheme.primaryContainer
-                    : theme.colorScheme.surfaceContainerHighest,
-            foregroundColor: isPrimary
-                ? theme.colorScheme.onPrimary
-                : isEnabled
-                    ? theme.colorScheme.onPrimaryContainer
-                    : theme.colorScheme.onSurfaceVariant
-                        .withValues(alpha: 0.38),
-            disabledBackgroundColor: theme.colorScheme.surfaceContainerHighest,
-            disabledForegroundColor:
-                theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.38),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isPrimary
+              ? theme.colorScheme.primary
+              : isEnabled
+                  ? theme.colorScheme.primaryContainer
+                  : theme.colorScheme.surfaceContainerHighest,
+          foregroundColor: isPrimary
+              ? theme.colorScheme.onPrimary
+              : isEnabled
+                  ? theme.colorScheme.onPrimaryContainer
+                  : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.38),
+          disabledBackgroundColor: theme.colorScheme.surfaceContainerHighest,
+          disabledForegroundColor:
+              theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.38),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: isPrimary ? 2 : 0,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 24),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: isPrimary
+                    ? theme.colorScheme.onPrimary
+                    : isEnabled
+                        ? theme.colorScheme.onPrimaryContainer
+                        : theme.colorScheme.onSurfaceVariant
+                            .withValues(alpha: 0.38),
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-          child: Icon(icon, size: 32),
+          ],
         ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: isEnabled
-                ? theme.colorScheme.onSurface
-                : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.38),
-            fontWeight: isEnabled ? FontWeight.w600 : FontWeight.normal,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
