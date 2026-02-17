@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/utils/offline_content_manager.dart';
 import '../../../core/utils/download_storage_utils.dart';
@@ -17,15 +18,20 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   OfflineSearchCubit({
     required OfflineContentManager offlineContentManager,
     required UserDataRepository userDataRepository,
+    required SharedPreferences prefs,
     required super.logger,
   })  : _offlineContentManager = offlineContentManager,
         _userDataRepository = userDataRepository,
+        _prefs = prefs,
         super(
           initialState: const OfflineSearchInitial(),
         );
 
   final OfflineContentManager _offlineContentManager;
   final UserDataRepository _userDataRepository;
+  final SharedPreferences _prefs;
+  static const String _keySelectedSourceFilter =
+      'offline_selected_source_filter';
 
   /// Helper to calculate directory size recursively
   Future<int> _getDirectorySize(Directory directory) async {
@@ -84,6 +90,13 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   /// Apply source filter
   Future<void> filterBySource(String? sourceId) async {
     logInfo('Filtering offline content by source: $sourceId');
+
+    // Save selected source filter to preferences
+    if (sourceId != null) {
+      await _prefs.setString(_keySelectedSourceFilter, sourceId);
+    } else {
+      await _prefs.remove(_keySelectedSourceFilter);
+    }
 
     // Update state with new filter immediately
     final currentState = state;
@@ -370,7 +383,10 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       // Determine effective source ID
       String? effectiveSourceId = sourceId;
       if (effectiveSourceId == null && state is OfflineSearchLoaded) {
+        // If in loaded state, preserve current filter
         effectiveSourceId = (state as OfflineSearchLoaded).selectedSourceId;
+      } else {
+        effectiveSourceId ??= _prefs.getString(_keySelectedSourceFilter);
       }
 
       // If loading more, check current state

@@ -65,53 +65,19 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
     try {
       _logger.i('SplashBloc: Starting initialization...');
 
-      // Smart Config Sync
-      // 1. Check if we have valid cache (Condition 1 vs Condition 2)
-      // We check nhentai as valid proxy for "has config"
-      final hasCache = await _remoteConfigService.hasValidCache('nhentai');
+      // CRITICAL FIX: Always load config from assets first (offline-ready)
+      // smartInitialize() only loads from bundled assets, no internet required
+      emit(SplashInitializing(
+          message: 'Loading configuration...', progress: 0.1));
 
-      if (!hasCache) {
-        // Condition 1: No Cache (Fresh Install)
-        // Check internet first
-        final connectivityResults = await _connectivity.checkConnectivity();
-        final hasInternet = connectivityResults.isNotEmpty &&
-            connectivityResults.first != ConnectivityResult.none;
+      await _remoteConfigService.smartInitialize(
+        isFirstRun: true,
+        onProgress: (progress, message) {
+          emit(SplashInitializing(message: message, progress: progress));
+        },
+      );
 
-        if (!hasInternet) {
-          // No cache and no internet - go to offline mode
-          _logger
-              .i('SplashBloc: No cache and no internet, enabling offline mode');
-          AppStateManager().enableOfflineMode();
-          AppStateManager().updateOfflineContentInfo(
-            hasContent: false,
-            contentCount: 0,
-          );
-          emit(SplashSuccess(message: 'Ready (Offline Mode - First Run)'));
-          return;
-        }
-
-        emit(SplashInitializing(
-            message: 'Downloading initial configuration...', progress: 0.05));
-        // Will throw if download fails
-        await _remoteConfigService.smartInitialize(
-          isFirstRun: true,
-          onProgress: (progress, message) {
-            emit(SplashInitializing(message: message, progress: progress));
-          },
-        );
-      } else {
-        // Condition 2: Has Cache (Normal Run) -> SMART UPDATE
-        emit(SplashInitializing(
-            message: 'Checking for updates...', progress: 0.1));
-
-        // This won't throw on error, keeps old config
-        await _remoteConfigService.smartInitialize(
-          isFirstRun: false,
-          onProgress: (progress, message) {
-            emit(SplashInitializing(message: message, progress: progress));
-          },
-        );
-      }
+      _logger.i('SplashBloc: Config loaded from assets successfully');
 
       // Get last sync time for UI
       final lastSync = await _remoteConfigService.getLastSyncTime();

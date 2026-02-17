@@ -3,7 +3,7 @@ import 'package:equatable/equatable.dart';
 /// User preferences entity for app customization
 /// NOTE: Default values are hardcoded to avoid dependency on get_it during initialization
 class UserPreferences extends Equatable {
-  UserPreferences({
+  const UserPreferences({
     this.theme = 'dark',
     this.defaultLanguage = 'english',
     this.imageQuality = 'high',
@@ -11,14 +11,14 @@ class UserPreferences extends Equatable {
     this.showTitles = true,
     this.blurThumbnails = true,
     this.usePagination = true,
-    int? columnsPortrait,
-    int? columnsLandscape,
+    this.columnsPortrait = 2,
+    this.columnsLandscape = 3,
     this.useVolumeKeys = false,
     this.readingDirection = ReadingDirection.vertical,
     this.keepScreenOn = false,
     this.showSystemUI = true,
     this.downloadPath,
-    int? maxConcurrentDownloads,
+    this.maxConcurrentDownloads = 3,
     this.autoBackup = false,
     this.showNsfwContent = true,
     this.blacklistedTags = const [],
@@ -29,7 +29,7 @@ class UserPreferences extends Equatable {
     this.readerShowPageNumbers = true,
     this.readerShowProgressBar = true,
     this.readerAutoHideUI = true,
-    int? readerAutoHideDelay,
+    this.readerAutoHideDelay = 3,
     this.readerHideOnTap = true,
     this.readerHideOnSwipe = true,
     // History cleanup settings
@@ -45,16 +45,11 @@ class UserPreferences extends Equatable {
     // Download settings
     this.autoRetry = true,
     this.retryAttempts = 3,
-    int? retryDelaySeconds,
-    int? timeoutDurationSeconds,
+    this.retryDelaySeconds = 5,
+    this.timeoutDurationSeconds = 300,
     this.enableNotifications = true,
     this.wifiOnly = false,
-  })  : columnsPortrait = columnsPortrait ?? 2,
-        columnsLandscape = columnsLandscape ?? 3,
-        maxConcurrentDownloads = maxConcurrentDownloads ?? 3,
-        readerAutoHideDelay = readerAutoHideDelay ?? 3,
-        retryDelaySeconds = retryDelaySeconds ?? 5,
-        timeoutDurationSeconds = timeoutDurationSeconds ?? 300;
+  });
 
   final String theme; // light, dark, amoled
   final String defaultLanguage;

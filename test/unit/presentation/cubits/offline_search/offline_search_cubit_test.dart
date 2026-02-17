@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/domain/entities/download_status.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
@@ -14,21 +15,26 @@ class MockUserDataRepository extends Mock implements UserDataRepository {}
 
 class MockLogger extends Mock implements Logger {}
 
+class MockSharedPreferences extends Mock implements SharedPreferences {}
+
 void main() {
   late OfflineSearchCubit cubit;
   late MockOfflineContentManager mockOfflineContentManager;
   late MockUserDataRepository mockUserDataRepository;
   late MockLogger mockLogger;
+  late MockSharedPreferences mockPrefs;
 
   setUp(() {
     mockOfflineContentManager = MockOfflineContentManager();
     mockUserDataRepository = MockUserDataRepository();
     mockLogger = MockLogger();
+    mockPrefs = MockSharedPreferences();
 
     cubit = OfflineSearchCubit(
       offlineContentManager: mockOfflineContentManager,
       userDataRepository: mockUserDataRepository,
       logger: mockLogger,
+      prefs: mockPrefs,
     );
   });
 

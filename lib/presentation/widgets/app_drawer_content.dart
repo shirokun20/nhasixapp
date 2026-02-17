@@ -6,6 +6,7 @@ import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/network/network_cubit.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/presentation/cubits/crotpedia_auth/crotpedia_auth_cubit.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
@@ -27,7 +28,6 @@ class AppDrawerContent extends StatefulWidget {
 
 class _AppDrawerContentState extends State<AppDrawerContent>
     with SingleTickerProviderStateMixin {
-  bool _isOffline = false;
   String _appVersion = '';
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -50,9 +50,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
 
     Connectivity().onConnectivityChanged.listen((results) {
       if (mounted) {
-        setState(() {
-          _isOffline = results.contains(ConnectivityResult.none);
-        });
+        setState(() {});
       }
     });
   }
@@ -64,12 +62,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
   }
 
   Future<void> _checkConnectivity() async {
-    final results = await Connectivity().checkConnectivity();
-    if (mounted) {
-      setState(() {
-        _isOffline = results.contains(ConnectivityResult.none);
-      });
-    }
+    await Connectivity().checkConnectivity();
   }
 
   Future<void> _loadAppVersion() async {
@@ -276,51 +269,13 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                       isSelected: isSelected(AppRoute.home),
                       theme: theme,
                     ),
-                    // Downloaded Galleries
-                    Builder(builder: (context) {
-                      final sourceId =
-                          context.read<SourceCubit>().state.activeSource?.id ??
-                              'nhentai';
-                      final config = getIt<RemoteConfigService>();
-                      if (config.isFeatureEnabled(
-                          sourceId, (f) => f.download)) {
-                        return _buildNavItem(
-                          context,
-                          icon: Icons.download_rounded,
-                          label: l10n.downloadedGalleries,
-                          route: AppRoute.downloads,
-                          isSelected: isSelected(AppRoute.downloads),
-                          theme: theme,
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    }),
-                    // Offline Content (Linked to Download feature)
-                    Builder(builder: (context) {
-                      final sourceId =
-                          context.read<SourceCubit>().state.activeSource?.id ??
-                              'nhentai';
-                      final config = getIt<RemoteConfigService>();
-                      if (config.isFeatureEnabled(
-                          sourceId, (f) => f.offlineMode)) {
-                        return _buildNavItem(
-                          context,
-                          icon: Icons.offline_bolt_rounded,
-                          label: l10n.offlineContent,
-                          route: AppRoute.offline,
-                          isSelected: isSelected(AppRoute.offline),
-                          theme: theme,
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    }),
-                    if (!_isOffline) ...[
-                      const SizedBox(height: 16),
-                      _buildSectionLabel('EXPLORE', theme),
-                      const SizedBox(height: 8),
 
-                      // Random Gallery
-                      Builder(builder: (context) {
+                    // NETWORK-AWARE MENU ITEMS: Auto-rebuild when connectivity changes
+                    BlocBuilder<NetworkCubit, NetworkState>(
+                      builder: (context, networkState) {
+                        final isOffline = networkState is! NetworkConnected;
+
+                        // Get active source ID once for all feature checks
                         final sourceId = context
                                 .read<SourceCubit>()
                                 .state
@@ -328,59 +283,77 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                                 ?.id ??
                             'nhentai';
                         final config = getIt<RemoteConfigService>();
-                        if (config.isFeatureEnabled(
-                            sourceId, (f) => f.random)) {
-                          return _buildNavItem(
-                            context,
-                            icon: Icons.shuffle_rounded,
-                            label: l10n.randomGallery,
-                            route: AppRoute.random,
-                            isSelected: isSelected(AppRoute.random),
-                            theme: theme,
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      }),
 
-                      // Favorite Galleries
-                      Builder(builder: (context) {
-                        final sourceId = context
-                                .read<SourceCubit>()
-                                .state
-                                .activeSource
-                                ?.id ??
-                            'nhentai';
-                        final config = getIt<RemoteConfigService>();
-                        // Favorites page should generally be accessible, but if we want to be strict:
-                        // checking if ANY source has favorites enabled?
-                        // For now, let's keep Favorites always visible or check current source?
-                        // Favorites usually contains mixed content. Let's start with checking current source or just keep it.
-                        // User JSON "favorite": true.
-                        // If feature disabled, maybe we hide it?
-                        // But favorites are local. Even if source disables LOOKING UP favorites, local DB still exists.
-                        // Let's safe-guard it anyway with the flag if desired, but primarily Random is the one that breaks if API missing.
-                        if (config.isFeatureEnabled(
-                            sourceId, (f) => f.favorite)) {
-                          return _buildNavItem(
-                            context,
-                            icon: Icons.favorite_rounded,
-                            label: l10n.favoriteGalleries,
-                            route: AppRoute.favorites,
-                            isSelected: isSelected(AppRoute.favorites),
-                            theme: theme,
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      }),
-                      _buildNavItem(
-                        context,
-                        icon: Icons.history_rounded,
-                        label: l10n.viewHistory,
-                        route: AppRoute.history,
-                        isSelected: isSelected(AppRoute.history),
-                        theme: theme,
-                      ),
-                    ],
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Downloaded Galleries
+                            if (config.isFeatureEnabled(
+                                sourceId, (f) => f.download))
+                              _buildNavItem(
+                                context,
+                                icon: Icons.download_rounded,
+                                label: l10n.downloadedGalleries,
+                                route: AppRoute.downloads,
+                                isSelected: isSelected(AppRoute.downloads),
+                                theme: theme,
+                              ),
+
+                            // Offline Content (Linked to Download feature)
+                            if (config.isFeatureEnabled(
+                                sourceId, (f) => f.offlineMode))
+                              _buildNavItem(
+                                context,
+                                icon: Icons.offline_bolt_rounded,
+                                label: l10n.offlineContent,
+                                route: AppRoute.offline,
+                                isSelected: isSelected(AppRoute.offline),
+                                theme: theme,
+                              ),
+
+                            // EXPLORE section (only when online)
+                            if (!isOffline) ...[
+                              const SizedBox(height: 16),
+                              _buildSectionLabel('EXPLORE', theme),
+                              const SizedBox(height: 8),
+
+                              // Random Gallery
+                              if (config.isFeatureEnabled(
+                                  sourceId, (f) => f.random))
+                                _buildNavItem(
+                                  context,
+                                  icon: Icons.shuffle_rounded,
+                                  label: l10n.randomGallery,
+                                  route: AppRoute.random,
+                                  isSelected: isSelected(AppRoute.random),
+                                  theme: theme,
+                                ),
+
+                              // Favorite Galleries
+                              if (config.isFeatureEnabled(
+                                  sourceId, (f) => f.favorite))
+                                _buildNavItem(
+                                  context,
+                                  icon: Icons.favorite_rounded,
+                                  label: l10n.favoriteGalleries,
+                                  route: AppRoute.favorites,
+                                  isSelected: isSelected(AppRoute.favorites),
+                                  theme: theme,
+                                ),
+
+                              _buildNavItem(
+                                context,
+                                icon: Icons.history_rounded,
+                                label: l10n.viewHistory,
+                                route: AppRoute.history,
+                                isSelected: isSelected(AppRoute.history),
+                                theme: theme,
+                              ),
+                            ],
+                          ],
+                        );
+                      },
+                    ),
                     const SizedBox(height: 16),
                     _buildSectionLabel('MORE', theme),
                     const SizedBox(height: 8),

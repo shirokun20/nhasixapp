@@ -86,7 +86,7 @@ void main() {
       when(() => mockRepo.getAllDownloads(limit: any(named: 'limit')))
           .thenAnswer((_) async => [testDownloadStatus]);
       when(() => mockRepo.getUserPreferences()).thenAnswer(
-          (_) async => UserPreferences()); // Use default constructor
+          (_) async => const UserPreferences()); // Use default constructor
       when(() => mockRepo.saveDownloadStatus(any()))
           .thenAnswer((_) async => {});
       when(() => mockRepo.getDownloadStatus(any()))

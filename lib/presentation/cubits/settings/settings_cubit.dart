@@ -340,7 +340,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
 
   /// Get default preferences
   UserPreferences _getDefaultPreferences() {
-    return UserPreferences(
+    return const UserPreferences(
       theme: 'dark',
       defaultLanguage: 'english',
       imageQuality: 'high',

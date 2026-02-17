@@ -25,7 +25,7 @@ import '../../../presentation/blocs/download/download_bloc_test.dart';
 class MockUserDataRepository extends Fake implements UserDataRepository {
   @override
   Future<UserPreferences> getUserPreferences() async {
-    return UserPreferences(
+    return const UserPreferences(
       autoRetry: true,
       retryAttempts: 3,
       retryDelaySeconds: 2,

@@ -751,7 +751,7 @@ class LocalDataSource {
       final db = await _getSafeDatabase();
       if (db == null) {
         _logger.e('Database not available, returning default preferences');
-        return UserPreferences();
+        return const UserPreferences();
       }
 
       final result = await db.query('preferences');
@@ -783,7 +783,7 @@ class LocalDataSource {
     } catch (e, stackTrace) {
       _logger.e('Error getting user preferences: $e');
       _logger.e('Stack trace: $stackTrace');
-      return UserPreferences(); // Return default preferences
+      return const UserPreferences(); // Return default preferences
     }
   }
 
