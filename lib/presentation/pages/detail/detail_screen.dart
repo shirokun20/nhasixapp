@@ -1065,14 +1065,10 @@ class _DetailScreenState extends State<DetailScreen> {
                               ],
                             ),
                             child: Center(
-                              child: Text(
-                                '${index + 1}',
-                                style: TextStyleConst.headingSmall.copyWith(
-                                  color:
-                                      Theme.of(context).colorScheme.onPrimary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
+                              child: Icon(
+                                Icons.menu_book_rounded,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                size: 24,
                               ),
                             ),
                           ),

@@ -32,7 +32,7 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final chapters = widget.content.chapters ?? [];
-    
+
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
       minChildSize: 0.5,
@@ -87,7 +87,8 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                       child: Text(
                         l10n.chapterCount(chapters.length),
                         style: TextStyleConst.labelMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          color:
+                              Theme.of(context).colorScheme.onPrimaryContainer,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -106,9 +107,7 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                   itemCount: chapters.length,
                   itemBuilder: (context, index) {
                     final chapter = chapters[index];
-                    // Find original index for display number
-                    final originalIndex = index;
-                    
+
                     // Create Content object for download widget (reusing from DetailScreen logic)
                     final chapterContent = Content(
                       id: chapter.id,
@@ -131,10 +130,14 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerLow,
+                        color:
+                            Theme.of(context).colorScheme.surfaceContainerLow,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .outlineVariant
+                              .withValues(alpha: 0.5),
                         ),
                       ),
                       child: Material(
@@ -154,31 +157,37 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                   width: 44,
                                   height: 44,
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.primaryContainer,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primaryContainer,
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Center(
-                                    child: Text(
-                                      '${originalIndex + 1}',
-                                      style: TextStyleConst.titleMedium.copyWith(
-                                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                    child: Icon(
+                                      Icons.menu_book_rounded,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimaryContainer,
+                                      size: 20,
                                     ),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
-                                
+
                                 // Info
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         chapter.title,
-                                        style: TextStyleConst.bodyLarge.copyWith(
+                                        style:
+                                            TextStyleConst.bodyLarge.copyWith(
                                           fontWeight: FontWeight.w600,
-                                          color: Theme.of(context).colorScheme.onSurface,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
                                         ),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
@@ -187,8 +196,11 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                         const SizedBox(height: 4),
                                         Text(
                                           _formatDate(chapter.uploadDate!),
-                                          style: TextStyleConst.bodySmall.copyWith(
-                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                          style:
+                                              TextStyleConst.bodySmall.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
                                           ),
                                         ),
                                       ],
@@ -206,7 +218,8 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                       height: 36,
                                       child: getIt<RemoteConfigService>()
                                               .isContentFeatureAccessible(
-                                                  widget.content.sourceId, 'download')
+                                                  widget.content.sourceId,
+                                                  'download')
                                           ? DownloadButtonWidget(
                                               content: chapterContent,
                                               size: DownloadButtonSize.small,
@@ -216,11 +229,14 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                           : IconButton(
                                               onPressed: () async {
                                                 Navigator.pop(context);
-                                                await PremiumRequiredDialog.show(context);
+                                                await PremiumRequiredDialog
+                                                    .show(context);
                                                 // Trigger parent refresh by rebuilding
-                                                widget.detailCubit.refreshContent();
+                                                widget.detailCubit
+                                                    .refreshContent();
                                               },
-                                              icon: const Icon(Icons.lock, size: 18),
+                                              icon: const Icon(Icons.lock,
+                                                  size: 18),
                                               color: Theme.of(context)
                                                   .colorScheme
                                                   .onSurfaceVariant
@@ -232,7 +248,9 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                     Icon(
                                       Icons.arrow_forward_ios,
                                       size: 16,
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
                                     ),
                                   ],
                                 ),
