@@ -77,19 +77,21 @@ class ThemeCubit extends Cubit<ThemeState> {
     }
   }
 
-  /// Create light theme with paper-like warm tones
+  /// Create light theme with KomikTap brand colors
   ThemeData _createLightTheme() {
-    // Paper-like warm color palette
-    const paperBackground = Color(0xFFFAF8F5); // Warm off-white
-    const paperSurface = Color(0xFFF5F2ED); // Cream
+    // KomikTap brand orange
+    const komikTapOrange = Color(0xFFFF6B00);
+    const paperBackground =
+        Color(0xFFFFFBF7); // Warm off-white with orange tint
+    const paperSurface = Color(0xFFFFF5EC); // Light warm cream
     const paperCard = Color(0xFFFFFFFF); // Pure white for cards (contrast)
-    const paperBorder = Color(0xFFE8E4DC); // Warm grey border
-    const textPrimary = Color(0xFF2D2A26); // Warm dark brown
-    const textSecondary = Color(0xFF6B6560); // Muted brown
+    const paperBorder = Color(0xFFE8DDD0); // Warm orange-tinted border
+    const textPrimary = Color(0xFF2D2219); // Warm dark brown
+    const textSecondary = Color(0xFF6B5D50); // Muted warm brown
 
     return ThemeData(
       brightness: Brightness.light,
-      primaryColor: ColorsConst.primaryColor,
+      primaryColor: komikTapOrange,
       scaffoldBackgroundColor: paperBackground,
       appBarTheme: const AppBarTheme(
         backgroundColor: paperBackground,
@@ -115,27 +117,27 @@ class ThemeCubit extends Cubit<ThemeState> {
       ),
       dividerColor: paperBorder,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: ColorsConst.primaryColor,
+        seedColor: komikTapOrange,
         brightness: Brightness.light,
         surface: paperSurface,
         onSurface: textPrimary,
         onSurfaceVariant: textSecondary,
         surfaceContainer: paperCard,
-        surfaceContainerLow:
-            const Color(0xFFFCFAF7), // Slightly warmer than white
-        surfaceContainerHigh: const Color(0xFFF5F2ED), // Cream
-        surfaceContainerHighest: const Color(0xFFF0EDE6), // Deeper cream
+        surfaceContainerLow: const Color(0xFFFFF8F2),
+        surfaceContainerHigh: const Color(0xFFFFF5EC),
+        surfaceContainerHighest: const Color(0xFFFFF0E2),
         outline: paperBorder,
       ),
       useMaterial3: true,
     );
   }
 
-  /// Create dark theme
+  /// Create dark theme with KomikTap brand colors
   ThemeData _createDarkTheme() {
+    const komikTapOrange = Color(0xFFFF6B00);
     return ThemeData(
       brightness: Brightness.dark,
-      primaryColor: ColorsConst.primaryColor,
+      primaryColor: komikTapOrange,
       scaffoldBackgroundColor: ColorsConst.background,
       appBarTheme: const AppBarTheme(
         backgroundColor: ColorsConst.surface,
@@ -159,7 +161,7 @@ class ThemeCubit extends Cubit<ThemeState> {
         textColor: ColorsConst.darkTextPrimary,
       ),
       colorScheme: ColorScheme.fromSeed(
-        seedColor: ColorsConst.primaryColor,
+        seedColor: komikTapOrange,
         brightness: Brightness.dark,
         surface: ColorsConst.surface,
       ),

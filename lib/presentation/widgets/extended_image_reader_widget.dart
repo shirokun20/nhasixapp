@@ -50,8 +50,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
-
-
   @override
   void initState() {
     super.initState();
@@ -85,19 +83,19 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   /// for better vertical scrolling experience.
   BoxFit _getAdaptiveBoxFit() {
     // 🐛 BUG FIX: Always use BoxFit.contain for ALL images
-    // 
+    //
     // PROBLEM: BoxFit.fitWidth was causing aspect ratio distortion on different screens:
     // - On Infinix Smart 7 (HD+ 720×1612, ~267 ppi): Images looked "fat"/stretched
     // - On POCO X6 Pro (1.5K 1220×2712, ~446 ppi): Images looked "slim"/correct
-    // 
+    //
     // ROOT CAUSE: BoxFit.fitWidth scales to screen width, but different screen aspect
     // ratios (wider vs narrower) can cause the image to appear distorted when the
     // height is constrained differently.
-    // 
+    //
     // SOLUTION: BoxFit.contain ensures the ENTIRE image fits within the view while
     // preserving its aspect ratio, regardless of screen dimensions. This provides
     // consistent rendering across all devices.
-    // 
+    //
     // TRADE-OFF: Users may see small letterboxing (black bars) on sides for images
     // that don't perfectly match screen aspect ratio, but this is preferable to
     // distorted/stretched images.
@@ -332,7 +330,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         image: const DecorationImage(
-                          image: AssetImage('assets/icons/logo_app.png'),
+                          image: AssetImage('assets/icons/komiktap.png'),
                           fit: BoxFit.cover,
                         ),
                         border: Border.all(
@@ -387,7 +385,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         image: const DecorationImage(
-                          image: AssetImage('assets/icons/logo_app.png'),
+                          image: AssetImage('assets/icons/komiktap.png'),
                           fit: BoxFit.cover,
                         ),
                         border: Border.all(

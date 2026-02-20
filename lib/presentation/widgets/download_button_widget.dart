@@ -8,7 +8,7 @@ import '../../l10n/app_localizations.dart';
 import '../../core/routing/app_router.dart';
 import '../../domain/entities/entities.dart';
 import '../blocs/download/download_bloc.dart';
-import 'download_range_selector.dart';
+
 import 'download_settings_widget.dart';
 
 /// Widget untuk tombol download dengan status dan progress
@@ -29,7 +29,7 @@ class DownloadButtonWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return BlocBuilder<DownloadBloc, DownloadBlocState>(
       builder: (context, state) {
         if (state is! DownloadLoaded) {
@@ -47,8 +47,14 @@ class DownloadButtonWidget extends StatelessWidget {
             state.downloads.where((d) => d.contentId == content.id).firstOrNull;
 
         if (download == null) {
-          // Not downloaded, show download options with dropdown
-          return _buildDownloadOptionsButton(context);
+          // Not downloaded, show download button (no range option for chapters mode)
+          return _buildButton(
+            context: context,
+            icon: Icons.download,
+            text: AppLocalizations.of(context)!.download,
+            onPressed: () => _startDownload(context),
+            color: colorScheme.tertiary,
+          );
         }
 
         // Show status based on download state
@@ -244,7 +250,7 @@ class DownloadButtonWidget extends StatelessWidget {
   }) {
     // For download state, use outlined style to match DetailScreen design
     final isDownloadButton = icon == Icons.download;
-    
+
     return SizedBox(
       width: double.infinity,
       height: 48,
@@ -280,7 +286,8 @@ class DownloadButtonWidget extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
             )
           else
@@ -292,7 +299,8 @@ class DownloadButtonWidget extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: color,
                 foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -311,7 +319,7 @@ class DownloadButtonWidget extends StatelessWidget {
     final progress = download.progressPercentage / 100;
     final isLarge = size == DownloadButtonSize.large;
     final buttonHeight = isLarge ? 48.0 : 40.0;
-    
+
     // Use more vibrant colors for better visibility
     final progressColor = Theme.of(context).colorScheme.primary;
     final backgroundColor = progressColor.withValues(alpha: 0.15);
@@ -351,7 +359,7 @@ class DownloadButtonWidget extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: onPressed,
               icon: Icon(
-                Icons.pause, 
+                Icons.pause,
                 size: isLarge ? 20 : 18,
                 color: Colors.white,
               ),
@@ -370,7 +378,8 @@ class DownloadButtonWidget extends StatelessWidget {
                 elevation: 2,
                 shadowColor: progressColor.withValues(alpha: 0.3),
                 padding: EdgeInsets.symmetric(
-                  horizontal: showText ? (isLarge ? 24 : 16) : (isLarge ? 16 : 12),
+                  horizontal:
+                      showText ? (isLarge ? 24 : 16) : (isLarge ? 16 : 12),
                   vertical: isLarge ? 12 : 8,
                 ),
                 shape: RoundedRectangleBorder(
@@ -389,7 +398,8 @@ class DownloadButtonWidget extends StatelessWidget {
 
     // Check if download feature is enabled
     final remoteConfig = getIt<RemoteConfigService>();
-    if (!remoteConfig.isContentFeatureAccessible(content.sourceId, 'download')) {
+    if (!remoteConfig.isContentFeatureAccessible(
+        content.sourceId, 'download')) {
       _showFeatureDisabledDialog(context);
       return;
     }
@@ -490,84 +500,6 @@ class DownloadButtonWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildDownloadOptionsButton(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    
-    return PopupMenuButton<String>(
-      onSelected: (value) {
-        if (value == 'download_all') {
-          _startDownload(context);
-        } else if (value == 'download_range') {
-          _showRangeSelector(context);
-        }
-      },
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: 'download_all',
-          child: Row(
-            children: [
-              Icon(Icons.download, color: colorScheme.tertiary),
-              const SizedBox(width: 8),
-              Text(AppLocalizations.of(context)!.downloadAll),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'download_range',
-          child: Row(
-            children: [
-              Icon(Icons.folder_open, color: colorScheme.primary),
-              const SizedBox(width: 8),
-              Text(AppLocalizations.of(context)!.downloadRange),
-            ],
-          ),
-        ),
-      ],
-      child: _buildButton(
-        context: context,
-        icon: Icons.download,
-        text: AppLocalizations.of(context)!.download,
-        onPressed: null, // Handled by PopupMenuButton
-        color: colorScheme.tertiary,
-      ),
-    );
-  }
-
-  void _showRangeSelector(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => DownloadRangeSelector(
-        totalPages: content.pageCount,
-        contentTitle: content.title,
-        onRangeSelected: (startPage, endPage) {
-          _startRangeDownload(context, startPage, endPage);
-        },
-      ),
-    );
-  }
-
-  void _startRangeDownload(BuildContext context, int startPage, int endPage) {
-    if (!_checkStorageAndProceed(context)) return;
-
-    context.read<DownloadBloc>().add(DownloadRangeEvent(
-          content: content,
-          startPage: startPage,
-          endPage: endPage,
-        ));
-    context.read<DownloadBloc>().add(DownloadStartEvent(content.id));
-
-    final pageText = startPage == endPage 
-        ? AppLocalizations.of(context)!.pageText(startPage)
-        : AppLocalizations.of(context)!.pagesText(startPage, endPage);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(AppLocalizations.of(context)!.rangeDownloadStarted(content.title, pageText)),
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
   void _pauseDownload(BuildContext context) {
     context.read<DownloadBloc>().add(DownloadPauseEvent(content.id));
   }
@@ -587,7 +519,7 @@ class DownloadButtonWidget extends StatelessWidget {
   void _openDownload(BuildContext context) {
     // Navigate to reader screen with the downloaded content
     AppRouter.goToReader(context, content.id);
-    
+
     // Show confirmation that content is being opened
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

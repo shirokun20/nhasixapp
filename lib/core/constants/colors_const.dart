@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 /// Designed for eye comfort and reduced strain during extended usage
 class ColorsConst {
   // ===== EXISTING COLORS (Maintained for compatibility) =====
-  static const Color primaryColor = Color(0xff1f1f1f);
+  /// KomikTap brand orange - derived from the logo
+  static const Color primaryColor = Color(0xFFFF6B00);
   static const Color secondaryColor = Color(0xfffdfdfd);
   static const Color thirdColor = Color.fromARGB(255, 54, 54, 54);
   static const Color primaryTextColor = secondaryColor;
@@ -30,11 +31,11 @@ class ColorsConst {
       Color(0xFF6E7681); // Tertiary text (dimmer gray)
   static const Color darkTextDisabled = Color(0xFF484F58); // Disabled text
 
-  /// Accent Colors - Vibrant but not overwhelming
-  static const Color accentBlue = Color(0xFF58A6FF); // GitHub blue
+  /// Accent Colors - KomikTap orange-centric palette
+  static const Color accentBlue = Color(0xFF58A6FF); // Info blue
   static const Color accentGreen = Color(0xFF3FB950); // Success green
   static const Color accentYellow = Color(0xFFD29922); // Yellow accent
-  static const Color accentOrange = Color(0xFFD29922); // Warning orange
+  static const Color accentOrange = Color(0xFFFF6B00); // KomikTap brand orange
   static const Color accentRed = Color(0xFFF85149); // Error red
   static const Color accentPurple = Color(0xFFA5A2FF); // Purple accent
   static const Color accentPink =
@@ -201,8 +202,8 @@ class ColorsConst {
 
   // ===== MATERIAL DESIGN 3 COLORS (For consistency with Flutter widgets) =====
 
-  /// Primary colors
-  static const Color primary = accentBlue;
+  /// Primary colors - KomikTap orange
+  static const Color primary = primaryColor;
   static const Color onPrimary = Color(0xFFFFFFFF);
   static const Color primaryContainer = Color(0xFF1C2128);
   static const Color onPrimaryContainer = accentBlue;

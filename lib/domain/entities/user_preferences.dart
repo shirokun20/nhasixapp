@@ -98,7 +98,7 @@ class UserPreferences extends Equatable {
   final String
       disguiseMode; // App disguise mode: default, calculator, notes, weather
   final String customStorageRoot;
-  
+
   // Download settings
   final bool autoRetry;
   final int retryAttempts;
@@ -246,7 +246,8 @@ class UserPreferences extends Equatable {
       autoRetry: autoRetry ?? this.autoRetry,
       retryAttempts: retryAttempts ?? this.retryAttempts,
       retryDelaySeconds: retryDelaySeconds ?? this.retryDelaySeconds,
-      timeoutDurationSeconds: timeoutDurationSeconds ?? this.timeoutDurationSeconds,
+      timeoutDurationSeconds:
+          timeoutDurationSeconds ?? this.timeoutDurationSeconds,
       enableNotifications: enableNotifications ?? this.enableNotifications,
       wifiOnly: wifiOnly ?? this.wifiOnly,
     );
@@ -322,7 +323,6 @@ class UserPreferences extends Equatable {
 
   /// Get timeout duration as Duration
   Duration get timeoutDuration => Duration(seconds: timeoutDurationSeconds);
-
 
   /// Convert to JSON map
   Map<String, dynamic> toJson() {
@@ -430,7 +430,8 @@ class UserPreferences extends Equatable {
       autoRetry: _safeParseBool(json['autoRetry'], true),
       retryAttempts: _safeParseInt(json['retryAttempts'], 3),
       retryDelaySeconds: _safeParseInt(json['retryDelaySeconds'], 5),
-      timeoutDurationSeconds: _safeParseInt(json['timeoutDurationSeconds'], 300),
+      timeoutDurationSeconds:
+          _safeParseInt(json['timeoutDurationSeconds'], 300),
       enableNotifications: _safeParseBool(json['enableNotifications'], true),
       wifiOnly: _safeParseBool(json['wifiOnly'], false),
     );
@@ -521,7 +522,7 @@ class ThemeOption {
   static const String dark = 'dark';
   static const String amoled = 'amoled';
 
-  static const List<String> all = [light, dark, amoled];
+  static const List<String> all = [light, dark];
 
   static String getDisplayName(String theme) {
     switch (theme.toLowerCase()) {

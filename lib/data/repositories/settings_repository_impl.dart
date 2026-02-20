@@ -231,26 +231,20 @@ class SettingsRepositoryImpl implements SettingsRepository {
         ThemeOption(
           id: 'light',
           name: 'Light',
-          description: 'Light theme with bright colors',
-          previewColors: ['#FFFFFF', '#000000', '#2196F3'],
+          description: 'Light theme with warm KomikTap colors',
+          previewColors: ['#FFFBF7', '#2D2219', '#FF6B00'],
         ),
         ThemeOption(
           id: 'dark',
           name: 'Dark',
-          description: 'Dark theme with muted colors',
-          previewColors: ['#121212', '#FFFFFF', '#BB86FC'],
-        ),
-        ThemeOption(
-          id: 'amoled',
-          name: 'AMOLED Black',
-          description: 'Pure black theme for AMOLED displays',
-          previewColors: ['#000000', '#FFFFFF', '#03DAC6'],
+          description: 'Dark theme with KomikTap orange accents',
+          previewColors: ['#0D1117', '#F0F6FC', '#FF6B00'],
         ),
         ThemeOption(
           id: 'system',
           name: 'System',
           description: 'Follow system theme settings',
-          previewColors: ['#FFFFFF', '#000000', '#2196F3'],
+          previewColors: ['#FFFFFF', '#000000', '#FF6B00'],
         ),
       ];
     } catch (e, stackTrace) {
@@ -885,34 +879,33 @@ class SettingsRepositoryImpl implements SettingsRepository {
 
       // 1. Export Settings
       final settingsJson = await exportSettings();
-      
+
       // 2. Get DB Path
       final dbPath = await databaseHelper.getDatabasePath();
-      
+
       // 3. Create Backup Zip
       final zipPath = await nativeBackupService.createBackup(
         dbPath: dbPath,
         settingsJson: settingsJson,
       );
-      
+
       if (zipPath.isEmpty) {
         throw Exception("Native backup failed to return a path");
       }
-      
+
       // 4. Share/Save
       final xFile = XFile(zipPath);
       // Use shareXFiles to let user save/share the backup file
       await SharePlus.instance.share(ShareParams(
-        files: [xFile], 
-        text: 'KomikTap Backup ${DateTime.now()}'
-      ));
-      
+          files: [xFile], text: 'KomikTap Backup ${DateTime.now()}'));
+
       final size = await File(zipPath).length();
-      
+
       return BackupResult(
         success: true,
         backupId: path.basename(zipPath),
-        size: size, // You might want to convert to appropriate unit or keep as bytes
+        size:
+            size, // You might want to convert to appropriate unit or keep as bytes
       );
     } catch (e, stackTrace) {
       _logger.e('Failed to create backup', error: e, stackTrace: stackTrace);
@@ -931,43 +924,44 @@ class SettingsRepositoryImpl implements SettingsRepository {
       _logger.i('Restoring from backup request (id: $backupId)');
 
       // 1. Pick file (Native)
-      // We ignore backupId for now and always trigger picker because the UI 
+      // We ignore backupId for now and always trigger picker because the UI
       // typically calls this when user clicks "Restore".
       // If we wanted to support restoring from a known path, we'd check if backupId is a path.
-      
+
       // Trigger Native Picker
       final contentUri = await nativeBackupService.pickBackupFile();
       if (contentUri == null) {
-          _logger.i('Restore cancelled by user');
-          return const RestoreResult(success: false, restoredItems: 0, error: 'Cancelled');
+        _logger.i('Restore cancelled by user');
+        return const RestoreResult(
+            success: false, restoredItems: 0, error: 'Cancelled');
       }
-      
+
       // 2. Extract Data
       final data = await nativeBackupService.extractBackupData(contentUri);
       final settingsJson = data['settingsJson'];
       final dbPath = data['dbPath'];
-      
+
       if (settingsJson == null || dbPath == null) {
-         throw Exception("Failed to extract backup data");
+        throw Exception("Failed to extract backup data");
       }
-      
+
       // 3. Import Settings
       await importSettings(jsonData: settingsJson as String);
-      
+
       // 4. Restore DB
       // Close current DB
       await databaseHelper.close();
-      
+
       // Get target DB path
       final targetPath = await databaseHelper.getDatabasePath();
-      
-      // Force overwrite 
+
+      // Force overwrite
       final sourceFile = File(dbPath as String);
       await sourceFile.copy(targetPath);
-      
+
       // Re-initialize DB (will be done automatically on next access, but good to verify)
       await databaseHelper.database; // Open it to verify
-      
+
       return const RestoreResult(
         success: true,
         restoredItems: 1, // Represents "1 backup restored"

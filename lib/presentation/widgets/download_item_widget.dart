@@ -91,32 +91,12 @@ class DownloadItemWidget extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 4),
-                        // ID + Status
-                        Row(
-                          children: [
-                            Text(
-                              _getDisplayId(download),
-                              style: TextStyleConst.caption.copyWith(
-                                color: colorScheme.onSurface
-                                    .withValues(alpha: 0.5),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '•',
-                              style: TextStyleConst.caption.copyWith(
-                                color: colorScheme.onSurface
-                                    .withValues(alpha: 0.3),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              download.statusText,
-                              style: TextStyleConst.bodySmall.copyWith(
-                                color: _getStatusColor(context),
-                              ),
-                            ),
-                          ],
+                        // Status
+                        Text(
+                          download.statusText,
+                          style: TextStyleConst.bodySmall.copyWith(
+                            color: _getStatusColor(context),
+                          ),
                         ),
                       ],
                     ),
@@ -469,7 +449,8 @@ class DownloadItemWidget extends StatelessWidget {
       final remoteConfig = GetIt.I<RemoteConfigService>();
       // Use sourceId from download, fallback to 'nhentai' if null
       final source = download.sourceId ?? SourceType.nhentai.id;
-      final isEnabled = remoteConfig.isContentFeatureAccessible(source, 'generatePdf');
+      final isEnabled =
+          remoteConfig.isContentFeatureAccessible(source, 'generatePdf');
 
       if (!isEnabled) {
         return const SizedBox.shrink();
@@ -535,7 +516,7 @@ class DownloadItemWidget extends StatelessWidget {
     try {
       final remoteConfig = GetIt.I<RemoteConfigService>();
       final config = remoteConfig.getConfig(sourceId.toLowerCase());
-      
+
       if (config?.ui?.themeColor != null) {
         final hexColor = config!.ui!.themeColor.replaceFirst('#', '0xFF');
         return Color(int.parse(hexColor));
@@ -543,7 +524,7 @@ class DownloadItemWidget extends StatelessWidget {
     } catch (e) {
       // Fallback to default
     }
-    
+
     return colorScheme.secondary;
   }
 
@@ -689,22 +670,22 @@ class DownloadItemWidget extends StatelessWidget {
 
   /// Get display ID string
   /// Returns condensed ID for long slug-based IDs (like Crotpedia)
-  String _getDisplayId(DownloadStatus download) {
-    // If nhentai (numeric), show full ID
-    if (download.sourceId == SourceType.nhentai.id ||
-        download.sourceId == null) {
-      return '#${download.contentId}';
-    }
+  // String _getDisplayId(DownloadStatus download) {
+  //   // If nhentai (numeric), show full ID
+  //   if (download.sourceId == SourceType.nhentai.id ||
+  //       download.sourceId == null) {
+  //     return '#${download.contentId}';
+  //   }
 
-    // For Crotpedia (slugs), show truncated hash
-    if (download.sourceId == SourceType.crotpedia.id) {
-      // Create a short 6-char hex code from the slug
-      final hash = download.contentId.hashCode.toRadixString(16).toUpperCase();
-      final shortCode = hash.padLeft(6, '0').substring(0, 6);
-      return '#$shortCode';
-    }
+  //   // For Crotpedia (slugs), show truncated hash
+  //   if (download.sourceId == SourceType.crotpedia.id) {
+  //     // Create a short 6-char hex code from the slug
+  //     final hash = download.contentId.hashCode.toRadixString(16).toUpperCase();
+  //     final shortCode = hash.padLeft(6, '0').substring(0, 6);
+  //     return '#$shortCode';
+  //   }
 
-    // Default fallback
-    return '#${download.contentId}';
-  }
+  //   // Default fallback
+  //   return '#${download.contentId}';
+  // }
 }
