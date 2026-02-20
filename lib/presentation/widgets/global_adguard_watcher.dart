@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nhasixapp/core/routing/app_router.dart';
 import 'adguard_warning_dialog.dart';
 
 class GlobalAdGuardWatcher extends StatefulWidget {
@@ -41,7 +42,10 @@ class _GlobalAdGuardWatcherState extends State<GlobalAdGuardWatcher>
     if (_isShowingDialog || !mounted) return;
 
     _isShowingDialog = true;
-    await AdGuardWarningDialog.showNonBypassable(context);
+    final navContext = AppRouter.navigatorKey.currentContext;
+    if (navContext != null) {
+      await AdGuardWarningDialog.showNonBypassable(navContext);
+    }
     if (mounted) {
       _isShowingDialog = false;
     }
