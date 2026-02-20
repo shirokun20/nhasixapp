@@ -11,6 +11,7 @@ import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/theme/theme_cubit.dart';
 import 'package:nhasixapp/presentation/widgets/platform_not_supported_dialog.dart';
 import 'package:nhasixapp/presentation/widgets/lifecycle_watcher.dart';
+import 'package:nhasixapp/presentation/widgets/global_adguard_watcher.dart';
 import 'package:nhasixapp/services/analytics_service.dart';
 import 'package:nhasixapp/services/history_cleanup_service.dart';
 import 'package:nhasixapp/services/app_update_service.dart';
@@ -24,7 +25,7 @@ void main() async {
   // Catch platform-level errors early
   try {
     WidgetsFlutterBinding.ensureInitialized();
-    
+
     // Setup error handlers to prevent app crashes (especially Impeller/Vulkan issues)
     FlutterError.onError = (FlutterErrorDetails details) {
       debugPrint('🔥 Flutter Error: ${details.exception}');
@@ -51,10 +52,14 @@ void main() async {
 
     // Initialize License Service (Security & Revalidation)
     // CRITICAL: Timeout to prevent blank screen if storage hangs
-    await getIt<LicenseService>().initialize().timeout(
-      const Duration(seconds: 2),
-      onTimeout: () => debugPrint('⚠️ LicenseService init timed out - proceeding'),
-    ).catchError((e) {
+    await getIt<LicenseService>()
+        .initialize()
+        .timeout(
+          const Duration(seconds: 2),
+          onTimeout: () =>
+              debugPrint('⚠️ LicenseService init timed out - proceeding'),
+        )
+        .catchError((e) {
       debugPrint('⚠️ LicenseService init failed: $e');
       return; // Continue startup
     });
@@ -76,7 +81,6 @@ void main() async {
 
     // Initialize WorkManager for background downloads
     await initializeWorkManager(isDebugMode: kDebugMode);
-
   } catch (e, stack) {
     debugPrint('🔥 CRITICAL STARTUP ERROR: $e');
     debugPrint('Stack: $stack');
@@ -163,7 +167,9 @@ class MyApp extends StatelessWidget {
                         PlatformNotSupportedDialog.show(context);
                       });
                     }
-                    return child ?? const SizedBox.shrink();
+                    return GlobalAdGuardWatcher(
+                      child: child ?? const SizedBox.shrink(),
+                    );
                   },
                 );
               },
@@ -178,7 +184,7 @@ class MyApp extends StatelessWidget {
   Locale _getLocaleFromSettings(SettingsState settingsState) {
     // FORCE INDONESIAN as per user feedback
     return const Locale('id');
-    
+
     /* Previous logic preserved for reference but disabled
     if (settingsState is SettingsLoaded) {
       switch (settingsState.preferences.defaultLanguage) {

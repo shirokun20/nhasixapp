@@ -6,56 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [1.0.1] - 2026-02-17
+## [1.1.0+4] - 2026-02-21
 
-### 🐛 Perbaikan Bug
+### ✨ Ditambahkan (Added)
+- **Start.io Ads Integration:** Menambahkan dukungan iklan tipe _Banner_, _Interstitial_, dan _Rewarded Video_ dengan *method channel* Native Kotlin demi menopang server dan operasional aplikasi.
+- **Deteksi AdGuard & Private DNS:** Sistem proaktif yang akan memperingatkan pengguna apabila ada aplikasi pemblokir DNS yang berjalan, sekaligus memotivasi untuk menonaktifkan AdBlocker (atau beralih ke premium) untuk mendukung developer.
+- **Global AdGuard Blocker Watcher:** Pop-up Private DNS yang wajib (_non-bypassable_) kini diimplmentasikan secara global. Pop-up ini akan sigap menyela di layar mana pun pengguna berada apabila aplikasi baru saja di-_resume_ dari latar belakang dan AdGuard masih menyala.
 
-#### Navigasi Chapter
-- **Perbaikan navigasi chapter KomikTap**: Tombol next/prev sekarang berfungsi dengan benar
-  - Tombol Next menuju chapter lebih baru
-  - Tombol Previous menuju chapter lebih lama  
-  - Chapter terakhir (misal Chapter 24) sekarang disable tombol Next dengan benar
-  - Chapter pertama disable tombol Previous
-- **Implementasi ChapterData**: Navigasi sekarang pakai data dari API, bukan index
-  - Menambahkan field `prevChapterId` dan `nextChapterId`
-  - KomiktapScraper dan CrotpediaScraper ekstrak data navigasi dari HTML
+### 🐛 Diperbaiki (Fixed)
+- **Perbaikan Header Reader:** Memperbaiki malfungsi auto-hide *Header / AppBar* pada navigasi _Reader Screen_ sehingga Header kini otomatis muncul kembali dengan lancar kala pembaca menggulir (scroll) layar ke atas.
+- **Perbaikan Penomoran Chapter:** Mengganti angka indeks (1, 2, 3..) urutan bab yang membingungkan dengan Ikon Buku universal di _Detail Screen_ maupun _Daftar Bab_, sehingga lebih akurat dan elegan apalagi bila penomoran asli sumbernya melompat/acak (_newest-first_ order). 
+- **Pre-loading Interstitial Ads:** Menghaluskan alur transisi dari _Feed_ (Home) ke _Detail Screen_ tanpa efek _freeze_ (membeku) sekalipun iklan Start.io tertahan koneksi yang lambat.
+- **Perbaikan Path Download:** Menyempurnakan mekanisme _fallback_ alamat (_base URL_) pengunduhan servis _updater_ aplikasi.
 
-#### Performa Reader
-- **Perbaikan loading ulang gambar saat scroll**: Gambar tidak reload lagi saat scroll naik/turun
-  - Cache ListView diperbesar dari 1000px ke 10000px
-  - Tambah `AutomaticKeepAliveClientMixin` agar gambar tetap di memory
-  - Gambar tetap cached saat scroll, tidak perlu load ulang
-
-#### Lokalisasi
-- **Halaman navigasi reader sekarang Bahasa Indonesia**:
-  - "End of Chapter" → "Akhir Halaman"
-  - "Next Chapter" → "Chapter Berikutnya"
-  - "Prev Chapter" → "Chapter Sebelumnya"
-  - Icon berubah dari `arrow_back` ke `info_outline` agar tidak rancu
-  - Layout berubah dari horizontal ke vertikal dengan tombol full-width
-
-### 🎨 Peningkatan UI/UX
-- **Redesign halaman navigasi reader**: Layout vertikal lebih mudah diakses
-  - Tombol full-width lebih besar dan mudah diklik
-  - Tombol hanya muncul jika chapter tersedia
-  - Tombol Next di-highlight sebagai aksi utama
-
-### 🛠 Refactoring
-- **Optimasi ReaderState**: Simplifikasi logika navigasi chapter
-  - Ganti `parentContent` dan `allChapters` dengan `chapterData` terpadu
-  - Update metode kalkulasi progress
-  - Bersihkan logika navigasi chapter yang redundan
-
-### 📦 Legal & Branding
-- **Update nama app di dokumen legal**: Kuron → KomikTap
-- **Sentralisasi pengecekan fitur premium**: Pakai LicenseService
-- **Pindah dokumen legal**: FAQ dan legal file ke `assets/` dengan unit test
-- **Update StartApp application ID**: Konfigurasi untuk branding KomikTap
-
-### 🔧 Lainnya
-- **Version bump**: Update ke 1.0.1+3
-- **Hapus favorites dari drawer**: Simplifikasi menu navigasi
-- **Update URL download**: Ganti ke halaman portal terpusat
+### 🎨 Peningkatan UI/UX (Improvements)
+- **KomikTap Brand Identity:** Mengaplikasikan warna _brand_ oranye terang ciri khas KomikTap pada UI keseluruhan (baik di _Light Mode_ maupun _Dark Mode_) serta memperbarui ikon aplikasi secara selaras.
+- **Penyederhanaan UI Kartu:** Melakukan perampingan tampilan kartu komik (_Content Card_) dengan me-nonaktifkan (_disable_) lambang bendera bahasa (_language flag_) beserta penghitung halaman untuk estetika beranda yang lebih lega.
+- **Penyederhanaan UI Download:** Menghapus fungsi seleksi rentang (_range selection_) yang tidak efisien dari menu tombol Download demi memangkas _flow_ pengguna.
 
 ---
 

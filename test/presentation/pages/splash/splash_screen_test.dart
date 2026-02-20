@@ -69,8 +69,11 @@ void main() {
     testWidgets(
         'shows AdGuard warning dialog when isAdGuardDnsActive is true on SplashSuccess',
         (tester) async {
-      when(() => mockAdService.isAdGuardDnsActive())
-          .thenAnswer((_) async => true);
+      int callCount = 0;
+      when(() => mockAdService.isAdGuardDnsActive()).thenAnswer((_) async {
+        callCount++;
+        return callCount == 1; // true on 1st call, false on 2nd call
+      });
 
       final streamController = StreamController<SplashState>.broadcast();
 
@@ -92,10 +95,10 @@ void main() {
       await tester.pumpAndSettle(); // process showDialog and its animation
 
       expect(find.byType(AlertDialog), findsOneWidget);
-      expect(find.text('Peringatan'), findsOneWidget);
+      expect(find.text('Peringatan Private DNS'), findsOneWidget);
 
-      // Tap OK
-      await tester.tap(find.text('OK'));
+      // Tap Cek Ulang
+      await tester.tap(find.text('Cek Ulang'));
       await tester.pumpAndSettle(); // process dialog dismiss animation
 
       expect(find.byType(AlertDialog), findsNothing);
