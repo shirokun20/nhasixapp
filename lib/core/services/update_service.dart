@@ -19,7 +19,7 @@ class UpdateService {
   final Logger _logger;
 
   // New API details
-  static const String _baseUrl = 'https://portal.konterkt.com';
+  static const String _baseUrl = 'https://ktapk.org';
   static const String _checkUpdateEndpoint = '/api/check-update';
 
   UpdateService({
@@ -35,10 +35,12 @@ class UpdateService {
 
       // Get current app version info
       final packageInfo = await PackageInfo.fromPlatform();
-      final currentVersionCode = packageInfo.buildNumber; // e.g., 1 (integer as string)
+      final currentVersionCode =
+          packageInfo.buildNumber; // e.g., 1 (integer as string)
       final currentVersionName = packageInfo.version;
 
-      _logger.d('UpdateService: Current version: $currentVersionName ($currentVersionCode)');
+      _logger.d(
+          'UpdateService: Current version: $currentVersionName ($currentVersionCode)');
 
       // Call API with version_code
       final response = await _dio.get(
@@ -48,7 +50,7 @@ class UpdateService {
 
       if (response.statusCode == 200) {
         final data = response.data;
-        
+
         // Validate response status
         if (data['status'] != 'success') {
           _logger.w('UpdateService: API returned status ${data['status']}');
@@ -62,7 +64,8 @@ class UpdateService {
           final latestVersion = updateData['latest_version'];
           final String versionCode = latestVersion['code']?.toString() ?? '';
           final String versionName = latestVersion['name'] ?? '';
-          final String changelog = latestVersion['changelog'] ?? 'No changelog available.';
+          final String changelog =
+              latestVersion['changelog'] ?? 'No changelog available.';
           // Handle relative URL (preserved for potential future use or logging)
           // String downloadUrl = downloadPath;
           // if (downloadPath.isNotEmpty && !downloadPath.startsWith('http')) {
@@ -70,11 +73,13 @@ class UpdateService {
           // }
 
           // User requested to always redirect to the general download page
-          const String downloadUrl = 'https://portal.konterkt.com/download';
+          const String downloadUrl = 'https://ktapk.org/download';
 
-          _logger.i('UpdateService: New version found: $versionName ($versionCode)');
+          _logger.i(
+              'UpdateService: New version found: $versionName ($versionCode)');
           return UpdateInfo(
-            tagName: versionName, // Using version name as tagName for UI compatibility
+            tagName:
+                versionName, // Using version name as tagName for UI compatibility
             content: changelog,
             downloadUrl: downloadUrl,
           );

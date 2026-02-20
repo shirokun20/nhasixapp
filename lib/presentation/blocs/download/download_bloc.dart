@@ -1755,16 +1755,43 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       int totalSize = currentDownload.fileSize;
       String? downloadPath = currentDownload.downloadPath;
 
-      // FALLBACK: If downloadPath is missing, try to get it from NativeDownloadService
-      if (downloadPath == null || downloadPath.isEmpty) {
-        _logger.w(
-            '⚠️ Download path is missing, attempting fallback via NativeDownloadService');
+      // FALLBACK: If downloadPath is missing or invalid, try multiple strategies
+      if (downloadPath == null ||
+          downloadPath.isEmpty ||
+          !Directory(downloadPath).existsSync()) {
+        _logger
+            .w('⚠️ Download path missing or invalid, attempting fallbacks...');
+
+        // Strategy 1: Try NativeDownloadService
         try {
-          downloadPath =
+          final nativePath =
               await NativeDownloadService().getDownloadPath(event.contentId);
-          _logger.i('✅ Retrieved path from native: $downloadPath');
+          if (nativePath != null &&
+              nativePath.isNotEmpty &&
+              Directory(nativePath).existsSync()) {
+            downloadPath = nativePath;
+            _logger.i('✅ Retrieved valid path from native: $downloadPath');
+          }
         } catch (e) {
-          _logger.e('Failed to get download path from native', error: e);
+          _logger.w('Native path lookup failed: $e');
+        }
+
+        // Strategy 2: Smart lookup via DownloadStorageUtils
+        if (downloadPath == null ||
+            downloadPath.isEmpty ||
+            !Directory(downloadPath).existsSync()) {
+          try {
+            final smartPath = await DownloadStorageUtils.getContentDirectory(
+              event.contentId,
+              sourceId: currentDownload.sourceId,
+            );
+            if (Directory(smartPath).existsSync()) {
+              downloadPath = smartPath;
+              _logger.i('✅ Resolved path via smart lookup: $downloadPath');
+            }
+          } catch (e) {
+            _logger.w('Smart path lookup failed: $e');
+          }
         }
       }
 

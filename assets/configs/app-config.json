@@ -92,7 +92,7 @@
             "enabled": true,
             "activation": {
                 "type": "license_key",
-                "validateEndpoint": "https://portal.konterkt.com/api/check-license",
+                "validateEndpoint": "https://ktapk.org/api/check-license",
                 "maxDevices": 3,
                 "deviceLimitMessage": "License limit reached. Unlink other devices to continue."
             }
