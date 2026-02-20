@@ -12,8 +12,14 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 
 import com.startapp.sdk.adsbase.Ad
+import com.startapp.sdk.adsbase.StartAppAd.AdMode
 import com.startapp.sdk.adsbase.adlisteners.AdDisplayListener
 import com.startapp.sdk.adsbase.adlisteners.AdEventListener
+import com.startapp.sdk.adsbase.adlisteners.VideoListener
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.Build
 
 /** KuronAdsPlugin */
 class KuronAdsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -68,7 +74,7 @@ class KuronAdsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 if (currentActivity != null) {
                     val startAppAd = StartAppAd(currentActivity)
                     // Load ad with listener to know when to show
-                    startAppAd.loadAd(object : AdEventListener {
+                    startAppAd.loadAd(StartAppAd.AdMode.AUTOMATIC, object : AdEventListener {
                         override fun onReceiveAd(ad: Ad) {
                             // Ad received, now show it with display listener
                             startAppAd.showAd(object : AdDisplayListener {
@@ -92,6 +98,48 @@ class KuronAdsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     })
                 } else {
                     result.error("NO_ACTIVITY", "Activity is null", null)
+                }
+            }
+            "showRewardedVideo" -> {
+                val currentActivity = activity
+                if (currentActivity != null) {
+                    val startAppAd = StartAppAd(currentActivity)
+                    startAppAd.setVideoListener(VideoListener {
+                        result.success(true)
+                    })
+                    startAppAd.loadAd(StartAppAd.AdMode.REWARDED_VIDEO, object : AdEventListener {
+                        override fun onReceiveAd(ad: Ad) {
+                            startAppAd.showAd(object : AdDisplayListener {
+                                override fun adHidden(ad: Ad) {}
+                                override fun adDisplayed(ad: Ad) {}
+                                override fun adClicked(ad: Ad) {}
+                                override fun adNotDisplayed(ad: Ad) { result.success(false) }
+                            })
+                        }
+                        override fun onFailedToReceiveAd(ad: Ad?) { result.success(false) }
+                    })
+                } else {
+                    result.error("NO_ACTIVITY", "Activity is null", null)
+                }
+            }
+            "checkPrivateDns" -> {
+                val currentActivity = activity
+                if (currentActivity != null) {
+                    try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            val cm = currentActivity.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                            val network = cm.activeNetwork
+                            val linkProps = cm.getLinkProperties(network)
+                            val dns = linkProps?.privateDnsServerName ?: ""
+                            result.success(dns)
+                        } else {
+                            result.success("")
+                        }
+                    } catch (e: Exception) {
+                        result.success("")
+                    }
+                } else {
+                    result.success("")
                 }
             }
             else -> {

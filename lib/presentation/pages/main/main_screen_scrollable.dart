@@ -23,6 +23,7 @@ import 'package:nhasixapp/presentation/cubits/update/update_state.dart';
 import 'package:nhasixapp/presentation/widgets/update_available_sheet.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/widgets/offline_content_body.dart';
+import 'package:nhasixapp/services/ad_service.dart';
 import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
 import 'package:nhasixapp/presentation/mixins/offline_management_mixin.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
@@ -42,7 +43,6 @@ import 'package:nhasixapp/presentation/cubits/source/source_state.dart';
 import 'package:kuron_core/kuron_core.dart' hide SearchFilter, SortOption;
 import 'package:nhasixapp/presentation/widgets/welcome_onboarding_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:nhasixapp/services/ad_service.dart'; // NEW
 // NEW
 
 // New imports for dynamic sorting
@@ -418,7 +418,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                   child: _buildScrollableContent(state),
                 ),
               ),
-              
+
               // Sticky Banner Ad
               _buildBannerAd(),
             ],
@@ -895,6 +895,11 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
   /// Handle content tap to navigate to detail screen
   void _onContentTap(Content content) async {
+    // Tampilkan interstitial ad sebelum navigasi ke detail (Isu 4)
+    await getIt<AdService>().showInterstitial();
+
+    if (!mounted) return;
+
     final searchFilter = await AppRouter.goToContentDetail(
       context,
       content.id,

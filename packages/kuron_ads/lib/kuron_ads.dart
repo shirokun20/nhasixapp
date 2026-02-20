@@ -5,7 +5,10 @@ class KuronAds {
   static const MethodChannel _channel = MethodChannel('kuron_ads');
 
   /// Initialize the SDK with App ID
-  static Future<void> initialize({required String appId, bool testMode = false}) async {
+  static Future<void> initialize({
+    required String appId,
+    bool testMode = false,
+  }) async {
     await _channel.invokeMethod('initialize', {
       'appId': appId,
       'testMode': testMode,
@@ -23,6 +26,29 @@ class KuronAds {
       return false;
     }
   }
+
+  /// Trigger a Rewarded Video Ad
+  /// Returns true if user completed watching the video
+  static Future<bool> showRewardedVideo() async {
+    try {
+      final result = await _channel.invokeMethod('showRewardedVideo');
+      return result == true;
+    } catch (e) {
+      debugPrint("KuronAds: Failed to show rewarded video: $e");
+      return false;
+    }
+  }
+
+  /// Check Private DNS string to detect AdGuard and other blockers
+  static Future<String> getPrivateDnsServer() async {
+    try {
+      final result = await _channel.invokeMethod('checkPrivateDns');
+      return result?.toString() ?? '';
+    } catch (e) {
+      debugPrint("KuronAds: Failed to check private DNS: $e");
+      return '';
+    }
+  }
 }
 
 /// Widget that renders the Native Android Banner View
@@ -33,7 +59,7 @@ class KuronBannerAd extends StatelessWidget {
   Widget build(BuildContext context) {
     // Only Android is supported for now
     if (Theme.of(context).platform != TargetPlatform.android) {
-        return const SizedBox.shrink();
+      return const SizedBox.shrink();
     }
 
     return const SizedBox(

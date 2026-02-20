@@ -196,6 +196,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
           (state.showUI ?? false)) {
         _readerCubit.hideUI();
       }
+
+      // ✨ NEW: Auto-show UI on scroll up
+      // If scrolling up (user moving finger down) and UI is hidden -> show it
+      if (_scrollController.position.userScrollDirection.toString() ==
+              'ScrollDirection.forward' &&
+          !(state.showUI ?? false)) {
+        _readerCubit.showUI();
+      }
     }
   }
 
@@ -564,8 +572,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
             return ReaderNavigationPage(
               hasPreviousChapter: state.chapterData?.prevChapterId != null,
               hasNextChapter: state.chapterData?.nextChapterId != null,
-              onPreviousChapter: () => _readerCubit.loadPreviousChapter(),
-              onNextChapter: () => _readerCubit.loadNextChapter(),
+              onPreviousChapter: () async {
+                await getIt<AdService>().showInterstitial();
+                _readerCubit.loadPreviousChapter();
+              },
+              onNextChapter: () async {
+                await getIt<AdService>().showInterstitial();
+                _readerCubit.loadNextChapter();
+              },
               contentId: state.content?.id,
             );
           }
@@ -628,8 +642,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
             return ReaderNavigationPage(
               hasPreviousChapter: state.chapterData?.prevChapterId != null,
               hasNextChapter: state.chapterData?.nextChapterId != null,
-              onPreviousChapter: () => _readerCubit.loadPreviousChapter(),
-              onNextChapter: () => _readerCubit.loadNextChapter(),
+              onPreviousChapter: () async {
+                await getIt<AdService>().showInterstitial();
+                _readerCubit.loadPreviousChapter();
+              },
+              onNextChapter: () async {
+                await getIt<AdService>().showInterstitial();
+                _readerCubit.loadNextChapter();
+              },
               contentId: state.content?.id,
             );
           }
@@ -672,8 +692,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
             child: ReaderNavigationPage(
               hasPreviousChapter: state.chapterData?.prevChapterId != null,
               hasNextChapter: state.chapterData?.nextChapterId != null,
-              onPreviousChapter: () => _readerCubit.loadPreviousChapter(),
-              onNextChapter: () => _readerCubit.loadNextChapter(),
+              onPreviousChapter: () async {
+                await getIt<AdService>().showInterstitial();
+                _readerCubit.loadPreviousChapter();
+              },
+              onNextChapter: () async {
+                await getIt<AdService>().showInterstitial();
+                _readerCubit.loadNextChapter();
+              },
               contentId: state.content?.id,
             ),
           );

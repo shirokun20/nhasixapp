@@ -8,6 +8,7 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/presentation/blocs/splash/splash_bloc.dart';
+import 'package:nhasixapp/services/ad_service.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
@@ -102,16 +103,40 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: BlocConsumer<SplashBloc, SplashState>(
         listenWhen: (previous, current) => previous != current,
-        listener: (_, state) {
-          if (!mounted) return;
+        listener: (context, state) {
+          if (!context.mounted) return;
 
           if (state is SplashSuccess) {
             // Stop dots animation and start success animation
             _dotsAnimationController.stop();
-            _successAnimationController.forward().then((_) {
+            _successAnimationController.forward().then((_) async {
+              if (context.mounted) {
+                // Check AdGuard before navigating
+                final isAdGuard = await getIt<AdService>().isAdGuardDnsActive();
+                if (isAdGuard && context.mounted) {
+                  await showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Peringatan'),
+                      content: const Text(
+                        'Terdeteksi penggunaan Private DNS (AdGuard) blocker. '
+                        'Iklan diperlukan untuk membantu operasional aplikasi gratis ini. '
+                        'Mohon pertimbangkan untuk menonaktifkan DNS AdBlocker atau upgrade ke Premium.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          child: Text(AppLocalizations.of(ctx)?.ok ?? 'OK'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              }
+
               // Navigate after success animation completes
               Timer(const Duration(milliseconds: 200), () {
-                // Optimized from 1200ms
                 if (mounted) {
                   context.go(AppRoute.main);
                 }

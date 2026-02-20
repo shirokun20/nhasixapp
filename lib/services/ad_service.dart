@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:kuron_ads/kuron_ads.dart';
@@ -26,8 +27,8 @@ class AdService {
       // Setting testMode to true for development
       // TODO: Replace with your actual StartApp App ID
       const String appId = "201356049"; // Example StartApp Test ID
-      await KuronAds.initialize(appId: appId, testMode: false);
-      
+      await KuronAds.initialize(appId: appId, testMode: kDebugMode);
+
       _logger.i('AdService: Logic initialized. Native Plugin Ready.');
     } catch (e) {
       _logger.e('AdService: Failed to initialize ad logic', error: e);
@@ -54,6 +55,23 @@ class AdService {
     }
   }
 
+  /// Show Rewarded Video Ad
+  Future<void> showRewardedVideo({VoidCallback? onRewardEarned}) async {
+    if (!shouldShowAds) {
+      _logger.d('AdService: Skipping rewarded video (Premium active)');
+      return;
+    }
+
+    _logger.d('AdService: Requesting Rewarded Video...');
+    final result = await KuronAds.showRewardedVideo();
+    if (result) {
+      _logger.d('AdService: Rewarded video completed successfully');
+      onRewardEarned?.call();
+    } else {
+      _logger.w('AdService: Rewarded video failed or not ready');
+    }
+  }
+
   /// Get Banner Ad Widget
   /// Returns a Widget that renders the native Android View
   Widget getBannerAdWidget() {
@@ -62,5 +80,11 @@ class AdService {
     // The native view handles its own loading lifecycle
     return const KuronBannerAd();
   }
-}
 
+  /// Check if AdGuard DNS is active for non-premium users
+  Future<bool> isAdGuardDnsActive() async {
+    if (_licenseService.isPremiumActive) return false;
+    final dns = await KuronAds.getPrivateDnsServer();
+    return dns.toLowerCase().contains('adguard');
+  }
+}
