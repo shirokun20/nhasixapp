@@ -46,7 +46,8 @@ class ContentGrid extends StatelessWidget {
                   return ContentCard(
                     content: content,
                     onTap: () => onContentTap?.call(content),
-                    // Add other properties if needed (blur, highlight)
+                    showLanguageFlag: false,
+                    showPageCount: false,
                   );
                 },
                 childCount: contents.length,
