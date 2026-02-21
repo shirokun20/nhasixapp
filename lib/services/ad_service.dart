@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logger/logger.dart';
 import 'package:kuron_ads/kuron_ads.dart';
 import 'package:nhasixapp/services/license_service.dart';
@@ -12,18 +13,28 @@ class AdService {
   final Logger _logger;
   final LicenseService _licenseService;
 
-  // --- Unity Ads Configuration ---
-  // Replace with real Unity Game IDs from Unity Dashboard
-  final String _androidGameId = '6049979';
-  final String _iosGameId = '6049978';
+  // --- Unity Ads Configuration (dari .env) ---
+  String get _androidGameId =>
+      dotenv.get('UNITY_GAME_ID_ANDROID', fallback: '');
+  String get _iosGameId => dotenv.get('UNITY_GAME_ID_IOS', fallback: '');
 
-  // Replace with real Placement IDs based on OS
-  final String _rewardedVideoPlacementId =
-      Platform.isAndroid ? 'Rewarded_Android' : 'Rewarded_iOS';
-  final String _interstitialPlacementId =
-      Platform.isAndroid ? 'Interstitial_Android' : 'Interstitial_iOS';
-  final String _bannerPlacementId =
-      Platform.isAndroid ? 'Banner_Android' : 'Banner_iOS';
+  String get _rewardedVideoPlacementId => Platform.isAndroid
+      ? dotenv.get('UNITY_PLACEMENT_REWARDED_ANDROID',
+          fallback: 'Rewarded_Android')
+      : dotenv.get('UNITY_PLACEMENT_REWARDED_IOS', fallback: 'Rewarded_iOS');
+
+  String get _interstitialPlacementId => Platform.isAndroid
+      ? dotenv.get('UNITY_PLACEMENT_INTERSTITIAL_ANDROID',
+          fallback: 'Interstitial_Android')
+      : dotenv.get('UNITY_PLACEMENT_INTERSTITIAL_IOS',
+          fallback: 'Interstitial_iOS');
+
+  String get _bannerPlacementId => Platform.isAndroid
+      ? dotenv.get('UNITY_PLACEMENT_BANNER_ANDROID', fallback: 'Banner_Android')
+      : dotenv.get('UNITY_PLACEMENT_BANNER_IOS', fallback: 'Banner_iOS');
+
+  // --- StartApp Configuration (dari .env) ---
+  String get _startAppId => dotenv.get('STARTAPP_APP_ID', fallback: '');
 
   // Internal state: whether Unity Ads SDK is ready
   bool _isUnityInitialized = false;
@@ -55,9 +66,14 @@ class AdService {
 
     try {
       // Initialize StartApp (Fallback layer)
-      const String appId = "201356049"; // Replace with actual StartApp ID
+      final appId = _startAppId;
+      if (appId.isEmpty) {
+        _logger.w(
+            'AdService: STARTAPP_APP_ID not set in .env, skipping StartApp init.');
+        return;
+      }
       await KuronAds.initialize(appId: appId, testMode: kDebugMode);
-      _logger.i('AdService: StartApp (KuronAds) initialized.');
+      _logger.i('AdService: StartApp (KuronAds) initialized with appId=$appId');
     } catch (e) {
       _logger.e('AdService: Failed to initialize StartApp', error: e);
     }
@@ -74,6 +90,11 @@ class AdService {
 
     try {
       final gameId = Platform.isAndroid ? _androidGameId : _iosGameId;
+      if (gameId.isEmpty) {
+        _logger.w(
+            'UnityAds: Game ID not set in .env (UNITY_GAME_ID_ANDROID / UNITY_GAME_ID_IOS), skipping init.');
+        return;
+      }
       _initCompleter = Completer<void>();
 
       _logger.i('UnityAds: Starting initialization with gameId=$gameId...');

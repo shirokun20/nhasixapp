@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:nhasixapp/core/config/multi_bloc_provider_config.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -25,6 +26,9 @@ void main() async {
   // Catch platform-level errors early
   try {
     WidgetsFlutterBinding.ensureInitialized();
+
+    // Load environment variables dari .env
+    await dotenv.load(fileName: '.env');
 
     // Setup error handlers to prevent app crashes (especially Impeller/Vulkan issues)
     FlutterError.onError = (FlutterErrorDetails details) {

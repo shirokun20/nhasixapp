@@ -53,6 +53,9 @@ projects/
 
 # APK files (should not be tracked in git)
 *.apk
+
+# Environment configuration (contains sensitive keys)
+.env
 # Project documentation and assets
 /docs/technical/*
 /docs/assets/*
