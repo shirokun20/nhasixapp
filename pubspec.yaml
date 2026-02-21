@@ -96,6 +96,7 @@ dependencies:
   package_info_plus: ^9.0.0
   markdown_widget: ^2.3.2+8
   flutter_svg: ^2.2.3
+  unity_ads_plugin: ^0.3.28
 
 dev_dependencies:
   flutter_test:

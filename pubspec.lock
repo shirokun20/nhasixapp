@@ -1611,6 +1611,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
+  unity_ads_plugin:
+    dependency: "direct main"
+    description:
+      name: unity_ads_plugin
+      sha256: f35ddd27a3323a462a2ccf20721da99a0b13a4335f11a0cdadbb03db1d17a57b
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.28"
   universal_io:
     dependency: transitive
     description:
