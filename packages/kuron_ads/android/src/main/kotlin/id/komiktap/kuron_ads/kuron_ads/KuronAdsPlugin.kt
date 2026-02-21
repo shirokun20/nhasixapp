@@ -104,19 +104,43 @@ class KuronAdsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 val currentActivity = activity
                 if (currentActivity != null) {
                     val startAppAd = StartAppAd(currentActivity)
+                    
+                    // Gunakan variabel state untuk mencegah double result
+                    var isResultSent = false
+
                     startAppAd.setVideoListener(VideoListener {
-                        result.success(true)
+                        if (!isResultSent) {
+                            isResultSent = true
+                            result.success(true) // Video berhasil ditonton sampai selesai
+                        }
                     })
+
                     startAppAd.loadAd(StartAppAd.AdMode.REWARDED_VIDEO, object : AdEventListener {
                         override fun onReceiveAd(ad: Ad) {
                             startAppAd.showAd(object : AdDisplayListener {
-                                override fun adHidden(ad: Ad) {}
+                                override fun adHidden(ad: Ad) {
+                                    // Iklan ditutup (bisa karena selesai atau di-skip)
+                                    if (!isResultSent) {
+                                        isResultSent = true
+                                        result.success(false) // Dianggap false jika belum selesai
+                                    }
+                                }
                                 override fun adDisplayed(ad: Ad) {}
                                 override fun adClicked(ad: Ad) {}
-                                override fun adNotDisplayed(ad: Ad) { result.success(false) }
+                                override fun adNotDisplayed(ad: Ad) { 
+                                    if (!isResultSent) {
+                                        isResultSent = true
+                                        result.success(false) 
+                                    }
+                                }
                             })
                         }
-                        override fun onFailedToReceiveAd(ad: Ad?) { result.success(false) }
+                        override fun onFailedToReceiveAd(ad: Ad?) { 
+                            if (!isResultSent) {
+                                isResultSent = true
+                                result.success(false) 
+                            }
+                        }
                     })
                 } else {
                     result.error("NO_ACTIVITY", "Activity is null", null)

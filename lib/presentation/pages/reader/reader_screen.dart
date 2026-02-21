@@ -507,21 +507,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
         // Main reader content
         _buildReaderContent(state),
 
-        // ✨ NEW: Sticky Banner for PageView modes (only when UI is hidden to prevent overlap)
-        if (state.readingMode != ReadingMode.continuousScroll &&
-            !(state.showUI ?? false))
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: getIt<AdService>().getBannerAdWidget(),
-              ),
-            ),
-          ),
-
         // UI overlay
         if (state.showUI ?? false) _buildUIOverlay(state),
       ],
@@ -588,11 +573,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
               hasPreviousChapter: state.chapterData?.prevChapterId != null,
               hasNextChapter: state.chapterData?.nextChapterId != null,
               onPreviousChapter: () async {
-                await getIt<AdService>().showInterstitial();
+                final adService = getIt<AdService>();
+                final videoSuccess = await adService.showRewardedVideo();
+                if (!videoSuccess) {
+                  await adService.showInterstitial();
+                }
                 _readerCubit.loadPreviousChapter();
               },
               onNextChapter: () async {
-                await getIt<AdService>().showInterstitial();
+                final adService = getIt<AdService>();
+                final videoSuccess = await adService.showRewardedVideo();
+                if (!videoSuccess) {
+                  await adService.showInterstitial();
+                }
                 _readerCubit.loadNextChapter();
               },
               contentId: state.content?.id,
@@ -1066,6 +1059,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
               ),
             ],
           ),
+
+          // ✨ NEW: Sticky Banner integrated inside BottomBar
+          if (state.readingMode != ReadingMode.continuousScroll)
+            Padding(
+              padding: const EdgeInsets.only(top: 16.0),
+              child: Center(
+                child: getIt<AdService>().getBannerAdWidget(),
+              ),
+            ),
         ],
       ),
     );
