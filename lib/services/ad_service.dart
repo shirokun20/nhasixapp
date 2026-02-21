@@ -56,10 +56,10 @@ class AdService {
   }
 
   /// Show Rewarded Video Ad
-  Future<void> showRewardedVideo({VoidCallback? onRewardEarned}) async {
+  Future<bool> showRewardedVideo({VoidCallback? onRewardEarned}) async {
     if (!shouldShowAds) {
       _logger.d('AdService: Skipping rewarded video (Premium active)');
-      return;
+      return true;
     }
 
     _logger.d('AdService: Requesting Rewarded Video...');
@@ -67,8 +67,10 @@ class AdService {
     if (result) {
       _logger.d('AdService: Rewarded video completed successfully');
       onRewardEarned?.call();
+      return true;
     } else {
       _logger.w('AdService: Rewarded video failed or not ready');
+      return false;
     }
   }
 

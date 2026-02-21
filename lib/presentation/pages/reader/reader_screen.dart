@@ -507,6 +507,21 @@ class _ReaderScreenState extends State<ReaderScreen> {
         // Main reader content
         _buildReaderContent(state),
 
+        // ✨ NEW: Sticky Banner for PageView modes (only when UI is hidden to prevent overlap)
+        if (state.readingMode != ReadingMode.continuousScroll &&
+            !(state.showUI ?? false))
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: getIt<AdService>().getBannerAdWidget(),
+              ),
+            ),
+          ),
+
         // UI overlay
         if (state.showUI ?? false) _buildUIOverlay(state),
       ],
@@ -643,11 +658,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
               hasPreviousChapter: state.chapterData?.prevChapterId != null,
               hasNextChapter: state.chapterData?.nextChapterId != null,
               onPreviousChapter: () async {
-                await getIt<AdService>().showInterstitial();
+                final adService = getIt<AdService>();
+                final videoSuccess = await adService.showRewardedVideo();
+                if (!videoSuccess) {
+                  await adService.showInterstitial();
+                }
                 _readerCubit.loadPreviousChapter();
               },
               onNextChapter: () async {
-                await getIt<AdService>().showInterstitial();
+                final adService = getIt<AdService>();
+                final videoSuccess = await adService.showRewardedVideo();
+                if (!videoSuccess) {
+                  await adService.showInterstitial();
+                }
                 _readerCubit.loadNextChapter();
               },
               contentId: state.content?.id,
@@ -679,13 +702,18 @@ class _ReaderScreenState extends State<ReaderScreen> {
       addRepaintBoundaries: true, // Optimize repaint performance
       cacheExtent:
           10000.0, // 🔥 Large cache to keep many images in memory (prevents re-load on scroll)
-      itemCount:
-          (state.content?.imageUrls.length ?? 0) + 1, // +1 for navigation page
+      itemCount: (() {
+        final imagesCount = state.content?.imageUrls.length ?? 0;
+        final adsCount = imagesCount ~/ 5;
+        return imagesCount + adsCount + 1; // +1 for navigation page
+      })(),
       itemBuilder: (context, index) {
         final imageUrls = state.content?.imageUrls ?? [];
+        final imagesCount = imageUrls.length;
+        final totalItems = imagesCount + (imagesCount ~/ 5);
 
         // If this is the last item, show navigation page
-        if (index >= imageUrls.length) {
+        if (index >= totalItems) {
           return SizedBox(
             height:
                 MediaQuery.of(context).size.height * 0.8, // Give it some height
@@ -693,11 +721,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
               hasPreviousChapter: state.chapterData?.prevChapterId != null,
               hasNextChapter: state.chapterData?.nextChapterId != null,
               onPreviousChapter: () async {
-                await getIt<AdService>().showInterstitial();
+                final adService = getIt<AdService>();
+                final videoSuccess = await adService.showRewardedVideo();
+                if (!videoSuccess) {
+                  await adService.showInterstitial();
+                }
                 _readerCubit.loadPreviousChapter();
               },
               onNextChapter: () async {
-                await getIt<AdService>().showInterstitial();
+                final adService = getIt<AdService>();
+                final videoSuccess = await adService.showRewardedVideo();
+                if (!videoSuccess) {
+                  await adService.showInterstitial();
+                }
                 _readerCubit.loadNextChapter();
               },
               contentId: state.content?.id,
@@ -705,10 +741,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
           );
         }
 
-        final imageUrl = imageUrls[index];
+        // Insert Banner Ad every 5 images (at index 5, 11, 17...)
+        if ((index + 1) % 6 == 0) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24.0),
+            child: getIt<AdService>().getBannerAdWidget(),
+          );
+        }
+
+        // Calculate the actual image index
+        final imageIndex = index - (index ~/ 6);
+        final imageUrl = imageUrls[imageIndex];
         return _buildImageViewer(
           imageUrl,
-          index + 1,
+          imageIndex + 1,
           isContinuous: true,
           enableZoom: enableZoom,
         );
