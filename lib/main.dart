@@ -64,7 +64,7 @@ void main() async {
       return; // Continue startup
     });
 
-    // Initialize AdService
+    // Initialize AdService (StartApp only — Unity diinit setelah runApp)
     // Depends on LicenseService for premium check
     try {
       await getIt<AdService>().initialize();
@@ -127,6 +127,12 @@ void main() async {
   };
 
   runApp(const MyApp());
+
+  // Panggil Unity Ads init SETELAH runApp() — Unity butuh Android Activity
+  // context yang hanya tersedia setelah widget tree terbentuk.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    getIt<AdService>().initUnity();
+  });
 }
 
 class MyApp extends StatelessWidget {
