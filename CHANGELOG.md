@@ -9,8 +9,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [1.1.1+5] - 2026-02-21
 
 ### 📝 Ringkas (Summary)
-- **Version:** Bumped to 1.1.1+5
-- **Perubahan:** Minor fixes and alignment with configuration files
+- **Version:** 1.1.1+5 (patch)
+- **Perubahan Utama:** Perbaikan bug minor dan penyelarasan konfigurasi.
+- **Detail:**
+  - Memperbaiki masalah auto-hide Header/AppBar di Reader agar kembali muncul konsisten saat menggulir.
+  - Memperbaiki navigasi chapter (prev/next) untuk mencegah tombol salah aktif pada chapter pertama/terakhir.
+  - Menyempurnakan path fallback untuk mekanisme pengunduhan updater sehingga lebih andal pada kondisi jaringan buruk.
+  - Menyelaraskan file konfigurasi (`assets/configs/version.json`, `configs/version.json`) agar versi dan changelog konsisten.
+  - Perbaikan kecil pada UI kartu konten dan alur download untuk pengalaman pengguna lebih halus.
+  - Peningkatan stabilitas preload iklan dan fallback ketika iklan gagal dimuat.
+- **Catatan:** Build number dinaikkan (+5). Tidak ada perubahan API besar atau fitur baru pada rilis ini.
 
 ---
 
