@@ -503,6 +503,17 @@ class DownloadButtonWidget extends StatelessWidget {
 
   Widget _buildDownloadOptionsButton(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final hasValidPageCount = content.pageCount > 0;
+
+    if (!hasValidPageCount) {
+      return _buildButton(
+        context: context,
+        icon: Icons.download,
+        text: AppLocalizations.of(context)!.download,
+        onPressed: () => _startDownload(context),
+        color: colorScheme.tertiary,
+      );
+    }
 
     return PopupMenuButton<String>(
       onSelected: (value) {
@@ -538,7 +549,7 @@ class DownloadButtonWidget extends StatelessWidget {
         context: context,
         icon: Icons.download,
         text: AppLocalizations.of(context)!.download,
-        onPressed: null, // Handled by PopupMenuButton
+        onPressed: null,
         color: colorScheme.tertiary,
       ),
     );

@@ -15,7 +15,12 @@
 ## 📋 Analysis Phase
 | Project Name | Progress | % | Status |
 |---|---|---|---|
+| **app_audit_hardcode_ui_desktop** | `..........` | 0% | Pending |
 | **download_metadata_revamp** | `..........` | 0% | Pending |
+| **flutter-desktop-migration** | `..........` | 0% | Pending |
+| **komiktap_navigation_lists** | `..........` | 0% | Pending |
+| **multi_provider_integration** | `..........` | 0% | Pending |
+| **reader-ads** | `..........` | 0% | Pending |
 
 ## 🚧 On Progress
 _No items in this stage._
@@ -28,9 +33,11 @@ _No items in this stage._
 | **doujin_search_highlight** | `██████████` | 100% | ✅ Ready |
 | **favorites_bug_fix** | `██████████` | 100% | ✅ Ready |
 | **fix_app_drawer_transparency_on_list_screens** | `██████████` | 100% | ✅ Ready |
+| **komiktap_navigation_lists** | `██████████` | 100% | ✅ Merged |
 | **offline_search_highlight** | `██████████` | 100% | ✅ Ready |
 | **reader_header_auto_show** | `██████████` | 100% | ✅ Ready |
 | **smart-caching-and-fixes** | `██████████` | 100% | ✅ Ready |
+| **unity-ads-fix** | `██████████` | 100% | ✅ Merged |
 | **view_comments** | `██████████` | 100% | ✅ Ready |
 
 ## 🐛 Active Issues
