@@ -316,7 +316,6 @@
     },
     "features": {
         "search": true,
-        "random": false,
         "related": false,
         "download": false,
         "favorite": true,

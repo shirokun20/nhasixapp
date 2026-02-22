@@ -12,8 +12,7 @@
             "allGalleries": "/api/galleries/all?page={page}",
             "search": "/api/galleries/search?query={query}&page={page}&sort={sort}",
             "tagSearch": "/api/galleries/tagged?tag_id={tagId}&page={page}",
-            "related": "/api/gallery/{id}/related",
-            "random": "/random"
+            "related": "/api/gallery/{id}/related"
         },
         "images": {
             "fullSize": "https://i.nhentai.net/galleries/{mediaId}/{page}.{ext}",
@@ -137,7 +136,6 @@
     },
     "features": {
         "search": true,
-        "random": true,
         "related": true,
         "download": true,
         "favorite": true,
