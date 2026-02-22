@@ -101,18 +101,6 @@ class ContentLoadPopularEvent extends ContentEvent {
   List<Object?> get props => [timeframe, forceRefresh];
 }
 
-/// Event to load random content
-class ContentLoadRandomEvent extends ContentEvent {
-  const ContentLoadRandomEvent({
-    this.count = 20,
-  });
-
-  final int count;
-
-  @override
-  List<Object?> get props => [count];
-}
-
 /// Event to load content by tag
 class ContentLoadByTagEvent extends ContentEvent {
   const ContentLoadByTagEvent({

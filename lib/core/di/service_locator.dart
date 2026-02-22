@@ -516,8 +516,6 @@ void _setupUseCases() {
       () => GetContentDetailUseCase(getIt()));
   getIt.registerLazySingleton<SearchContentUseCase>(
       () => SearchContentUseCase(getIt()));
-  getIt.registerLazySingleton<GetRandomContentUseCase>(
-      () => GetRandomContentUseCase(getIt()));
   getIt.registerLazySingleton<GetChapterImagesUseCase>(
       () => GetChapterImagesUseCase(getIt()));
   getIt.registerLazySingleton<GetCommentsUseCase>(
@@ -579,7 +577,6 @@ void _setupBlocs() {
   getIt.registerLazySingleton<ContentBloc>(() => ContentBloc(
         getContentListUseCase: getIt<GetContentListUseCase>(),
         searchContentUseCase: getIt<SearchContentUseCase>(),
-        getRandomContentUseCase: getIt<GetRandomContentUseCase>(),
         contentRepository: getIt<ContentRepository>(),
         logger: getIt<Logger>(),
       ));
@@ -691,15 +688,6 @@ void _setupCubits() {
         offlineContentManager: getIt<OfflineContentManager>(),
         userDataRepository: getIt<UserDataRepository>(),
         prefs: getIt<SharedPreferences>(),
-        logger: getIt<Logger>(),
-      ));
-
-  // RandomGalleryCubit - Random gallery management
-  getIt.registerFactory<RandomGalleryCubit>(() => RandomGalleryCubit(
-        getRandomContentUseCase: getIt<GetRandomContentUseCase>(),
-        addToFavoritesUseCase: getIt<AddToFavoritesUseCase>(),
-        removeFromFavoritesUseCase: getIt<RemoveFromFavoritesUseCase>(),
-        userDataRepository: getIt<UserDataRepository>(),
         logger: getIt<Logger>(),
       ));
 

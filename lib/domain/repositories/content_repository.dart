@@ -25,12 +25,6 @@ abstract class ContentRepository {
   /// Returns filtered content list with pagination
   Future<ContentListResult> searchContent(SearchFilter filter);
 
-  /// Get random content
-  ///
-  /// [count] - Number of random content to fetch (default: 1)
-  /// Returns list of random content
-  Future<List<Content>> getRandomContent({int count = 1});
-
   /// Get popular content
   ///
   /// [timeframe] - Popularity timeframe (all-time, week, today)

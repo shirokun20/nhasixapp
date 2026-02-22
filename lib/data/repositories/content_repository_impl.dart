@@ -183,19 +183,6 @@ class ContentRepositoryImpl implements ContentRepository {
   }
 
   @override
-  Future<List<Content>> getRandomContent({int count = 1}) async {
-    try {
-      _logger.i('Getting $count random content(s)');
-      final coreContents = await _activeSource.getRandom(count: count);
-      return coreContents.map(_mapToAppContent).toList();
-    } catch (e, stackTrace) {
-      _logger.e('Failed to get random content',
-          error: e, stackTrace: stackTrace);
-      rethrow;
-    }
-  }
-
-  @override
   Future<ContentListResult> getPopularContent({
     PopularTimeframe timeframe = PopularTimeframe.allTime,
     int page = 1,

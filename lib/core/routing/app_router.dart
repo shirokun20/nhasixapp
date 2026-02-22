@@ -15,7 +15,6 @@ import 'package:nhasixapp/presentation/pages/favorites/favorites_screen.dart';
 import 'package:nhasixapp/presentation/pages/downloads/downloads_screen.dart';
 import 'package:nhasixapp/presentation/pages/offline/offline_content_screen.dart';
 import 'package:nhasixapp/presentation/pages/history/history_screen.dart';
-import 'package:nhasixapp/presentation/pages/random/random_gallery_screen.dart';
 import 'package:nhasixapp/presentation/pages/about/about_screen.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/pages/crotpedia/crotpedia_login_page.dart';
@@ -280,18 +279,6 @@ class AppRouter {
         ),
       ),
 
-      // Random Screen
-      GoRoute(
-        path: AppRoute.random,
-        name: AppRoute.randomName,
-        pageBuilder: (context, state) => AppAnimations.animatedPageBuilder(
-          context,
-          state,
-          const RandomGalleryScreen(),
-          type: RouteTransitionType.fadeSlide,
-        ),
-      ),
-
       // Status Screen
       GoRoute(
         path: AppRoute.status,
@@ -475,10 +462,6 @@ class AppRouter {
 
   static void goToArtists(BuildContext context) {
     context.go(AppRoute.artists);
-  }
-
-  static void goToRandom(BuildContext context) {
-    context.go(AppRoute.random);
   }
 
   static void goToStatus(BuildContext context) {

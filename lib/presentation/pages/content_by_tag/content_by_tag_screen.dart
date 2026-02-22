@@ -48,7 +48,6 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
     _contentBloc = ContentBloc(
       getContentListUseCase: getIt<GetContentListUseCase>(),
       searchContentUseCase: getIt<SearchContentUseCase>(),
-      getRandomContentUseCase: getIt<GetRandomContentUseCase>(),
       contentRepository: getIt<ContentRepository>(),
       logger: getIt<Logger>(),
     );

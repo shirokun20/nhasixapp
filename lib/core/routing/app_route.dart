@@ -22,7 +22,6 @@ class AppRoute {
   static const String filterData = '/filter-data';
 
   // Utility routes
-  static const String random = '/random';
   static const String status = '/status';
   static const String about = '/about';
   static const String crotpediaLogin = '/crotpedia-login';
@@ -53,7 +52,6 @@ class AppRoute {
   static const String tagsName = 'tags';
   static const String artistsName = 'artists';
   static const String filterDataName = 'filter-data';
-  static const String randomName = 'random';
   static const String statusName = 'status';
   static const String aboutName = 'about';
   static const String mainName = 'main';

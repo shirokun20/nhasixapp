@@ -317,18 +317,6 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                               _buildSectionLabel('EXPLORE', theme),
                               const SizedBox(height: 8),
 
-                              // Random Gallery
-                              if (config.isFeatureEnabled(
-                                  sourceId, (f) => f.random))
-                                _buildNavItem(
-                                  context,
-                                  icon: Icons.shuffle_rounded,
-                                  label: l10n.randomGallery,
-                                  route: AppRoute.random,
-                                  isSelected: isSelected(AppRoute.random),
-                                  theme: theme,
-                                ),
-
                               // Favorite Galleries
                               if (config.isFeatureEnabled(
                                   sourceId, (f) => f.favorite))

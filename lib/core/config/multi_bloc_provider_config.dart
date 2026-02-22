@@ -59,10 +59,6 @@ class MultiBlocProviderConfig {
       create: (context) => getIt<ReaderCubit>(),
     ),
 
-    BlocProvider<RandomGalleryCubit>(
-      create: (context) => getIt<RandomGalleryCubit>(),
-    ),
-
     BlocProvider<CrotpediaAuthCubit>(
       create: (context) => getIt<CrotpediaAuthCubit>(),
     ),

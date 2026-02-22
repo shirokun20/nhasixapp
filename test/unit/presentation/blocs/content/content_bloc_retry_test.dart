@@ -10,9 +10,6 @@ class MockGetContentListUseCase extends Mock implements GetContentListUseCase {}
 
 class MockSearchContentUseCase extends Mock implements SearchContentUseCase {}
 
-class MockGetRandomContentUseCase extends Mock
-    implements GetRandomContentUseCase {}
-
 class MockContentRepository extends Mock implements ContentRepository {}
 
 class MockLogger extends Mock implements Logger {}
@@ -21,21 +18,18 @@ void main() {
   late ContentBloc contentBloc;
   late MockGetContentListUseCase mockGetContentListUseCase;
   late MockSearchContentUseCase mockSearchContentUseCase;
-  late MockGetRandomContentUseCase mockGetRandomContentUseCase;
   late MockContentRepository mockContentRepository;
   late MockLogger mockLogger;
 
   setUp(() {
     mockGetContentListUseCase = MockGetContentListUseCase();
     mockSearchContentUseCase = MockSearchContentUseCase();
-    mockGetRandomContentUseCase = MockGetRandomContentUseCase();
     mockContentRepository = MockContentRepository();
     mockLogger = MockLogger();
 
     contentBloc = ContentBloc(
       getContentListUseCase: mockGetContentListUseCase,
       searchContentUseCase: mockSearchContentUseCase,
-      getRandomContentUseCase: mockGetRandomContentUseCase,
       contentRepository: mockContentRepository,
       logger: mockLogger,
     );

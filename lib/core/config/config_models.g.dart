@@ -183,7 +183,6 @@ Map<String, dynamic> _$CloudflareConfigToJson(CloudflareConfig instance) =>
 FeatureConfig _$FeatureConfigFromJson(Map<String, dynamic> json) =>
     FeatureConfig(
       search: json['search'] as bool? ?? false,
-      random: json['random'] as bool? ?? false,
       related: json['related'] as bool? ?? false,
       download: json['download'] as bool? ?? false,
       favorite: json['favorite'] as bool? ?? false,
@@ -198,7 +197,6 @@ FeatureConfig _$FeatureConfigFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$FeatureConfigToJson(FeatureConfig instance) =>
     <String, dynamic>{
       'search': instance.search,
-      'random': instance.random,
       'related': instance.related,
       'download': instance.download,
       'favorite': instance.favorite,

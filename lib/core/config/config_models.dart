@@ -332,7 +332,6 @@ class CloudflareConfig {
 @JsonSerializable()
 class FeatureConfig {
   final bool search;
-  final bool random;
   final bool related;
   final bool download;
   final bool favorite;
@@ -345,7 +344,6 @@ class FeatureConfig {
 
   FeatureConfig({
     this.search = false,
-    this.random = false,
     this.related = false,
     this.download = false,
     this.favorite = false,

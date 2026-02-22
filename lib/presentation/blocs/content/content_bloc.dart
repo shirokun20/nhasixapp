@@ -17,12 +17,10 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
   ContentBloc({
     required GetContentListUseCase getContentListUseCase,
     required SearchContentUseCase searchContentUseCase,
-    required GetRandomContentUseCase getRandomContentUseCase,
     required ContentRepository contentRepository,
     required Logger logger,
   })  : _getContentListUseCase = getContentListUseCase,
         _searchContentUseCase = searchContentUseCase,
-        _getRandomContentUseCase = getRandomContentUseCase,
         _contentRepository = contentRepository,
         _logger = logger,
         super(const ContentInitial()) {
@@ -36,7 +34,6 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     on<ContentClearSearchEvent>(_onContentClearSearch);
     on<ContentSearchEvent>(_onContentSearch);
     on<ContentLoadPopularEvent>(_onContentLoadPopular);
-    on<ContentLoadRandomEvent>(_onContentLoadRandom);
     on<ContentLoadByTagEvent>(_onContentLoadByTag);
     on<ContentNextPageEvent>(_onContentNextPage);
     on<ContentPreviousPageEvent>(_onContentPreviousPage);
@@ -45,7 +42,6 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
 
   final GetContentListUseCase _getContentListUseCase;
   final SearchContentUseCase _searchContentUseCase;
-  final GetRandomContentUseCase _getRandomContentUseCase;
   final ContentRepository _contentRepository;
   final Logger _logger;
 
@@ -751,55 +747,6 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         timeframe: event.timeframe,
         sortBy: SortOption.popular,
         currentPage: 1, // Popular always starts at page 1 unless paginated
-      ));
-    }
-  }
-
-  /// Load random content
-  Future<void> _onContentLoadRandom(
-    ContentLoadRandomEvent event,
-    Emitter<ContentState> emit,
-  ) async {
-    try {
-      _logger.i('ContentBloc: Loading ${event.count} random contents');
-
-      emit(const ContentLoading(message: 'Loading random content...'));
-
-      final contents = await _getRandomContentUseCase(event.count);
-
-      if (contents.isEmpty) {
-        emit(const ContentEmpty(
-          message: 'No random content available at the moment.',
-        ));
-        return;
-      }
-
-      // Update fetch time when we load random content from server
-      _lastFetchTime = DateTime.now();
-
-      // Create a single page result for random content
-      emit(ContentLoaded(
-        contents: contents,
-        currentPage: 1,
-        totalPages: 1,
-        totalCount: contents.length,
-        hasNext: false,
-        hasPrevious: false,
-        sortBy: SortOption.newest,
-        lastUpdated: _lastFetchTime,
-      ));
-
-      _logger.i('ContentBloc: Loaded ${contents.length} random contents');
-    } catch (e, stackTrace) {
-      _logger.e('ContentBloc: Error loading random content',
-          error: e, stackTrace: stackTrace);
-
-      final errorType = _determineErrorType(e);
-      emit(ContentError(
-        message: e.toString(),
-        canRetry: errorType.isRetryable,
-        errorType: errorType,
-        stackTrace: stackTrace,
       ));
     }
   }
