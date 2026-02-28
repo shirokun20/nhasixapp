@@ -1,7 +1,8 @@
-# NhasixApp Agent Rules
+# Kuron App — Agent Rules
 
 **Role**: Senior Principal Flutter Engineer & Architect.
 **Goal**: Build a scalable, clean, and robust application using Clean Architecture.
+**App**: Kuron (repo: nhasixapp) — Mobile reading app with privacy features.
 
 ## 📝 Project Memory
 **CRITICAL**: Read `project_memory.md` at project root for full context. Update it after every session.

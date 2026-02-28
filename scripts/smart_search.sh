@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# smart_search.sh — Intelligent search wrapper for NhasixApp
+# smart_search.sh — Intelligent search wrapper for Kuron
 # Uses: ripgrep (rg), ugrep, semgrep
 # ============================================================
 
@@ -19,7 +19,7 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 usage() {
-    echo -e "${CYAN}🔍 NhasixApp Smart Search${NC}"
+    echo -e "${CYAN}🔍 Kuron Smart Search${NC}"
     echo ""
     echo -e "Usage: $0 ${GREEN}<mode>${NC} ${YELLOW}<pattern>${NC} [directory]"
     echo ""
@@ -88,7 +88,7 @@ search_fuzzy() {
 
 audit_architecture() {
     check_tool rg ripgrep
-    echo -e "${CYAN}🏗 Architecture Audit — NhasixApp${NC}"
+    echo -e "${CYAN}🏗 Architecture Audit — Kuron${NC}"
     echo "═══════════════════════════════════════════"
     
     echo ""

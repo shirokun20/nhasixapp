@@ -1,7 +1,7 @@
-# NhasixApp — GitHub Copilot Instructions
+# Kuron App — GitHub Copilot Instructions
 
 ## Project Context
-NhasixApp (Kuron) is a Flutter Android application built with **Clean Architecture**.
+Kuron (repo: nhasixapp) is a Flutter Android reading app built with **Clean Architecture**.
 Read `project_memory.md` in root for full context.
 
 ## Architecture Rules (STRICT)

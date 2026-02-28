@@ -1,4 +1,4 @@
-# 🧠 NhasixApp — Project Memory
+# 🧠 Kuron — Project Memory
 
 > **Unified context file** untuk tracking progress lintas AI tools.
 > Dibaca oleh: **OpenCode** | **GitHub Copilot** | **Antigravity** | **Manual Review**
@@ -9,15 +9,35 @@
 
 | Key | Value |
 |---|---|
-| **App Name** | NhasixApp (Kuron) |
+| **App Name** | **Kuron** (formerly NhasixApp) |
+| **Repo** | `shirokun20/nhasixapp` |
 | **Platform** | Android (Flutter) |
-| **Flutter SDK** | Stable (via FVM) |
-| **Min Android SDK** | See `android/app/build.gradle` |
+| **Flutter SDK** | Stable (3.24+, Dart 3.5+ via FVM) |
+| **Version** | 0.9.12+20 |
 | **Architecture** | Clean Architecture (Domain → Data → Presentation) |
 | **State Management** | `flutter_bloc` / `Cubit` (extending `BaseCubit`) |
-| **DI** | `GetIt` + `Injectable` (`core/di/`) |
+| **DI** | `GetIt` (`core/di/`) |
+| **Networking** | `Dio` + `native_dio_adapter` |
 | **Routing** | GoRouter (`go_router`) |
+| **Database** | SQLite (`sqflite`) + `SharedPreferences` |
 | **Logging** | `logger` package (`.t` to `.f`) — NO `print`/`debugPrint` |
+
+### Packages (Internal)
+| Package | Description |
+|---|---|
+| `kuron_core` | Shared core utilities |
+| `kuron_nhentai` | Nhentai source implementation |
+| `kuron_crotpedia` | Crotpedia source implementation |
+| `kuron_komiktap` | KomikTap source implementation |
+| `kuron_native` | Native Android (Kotlin) integrations |
+
+### Key Features
+- 🎯 Immersive Reader with smooth page transitions
+- 🛡️ App Disguise mode (Calculator, Notes, Weather)
+- 📥 Offline-first with background downloading
+- 🔍 Smart Search with advanced filtering
+- 🎨 Material 3, Dark/Light modes, responsive UI
+- 💬 Community comments on detail pages
 
 ---
 
@@ -26,8 +46,8 @@
 ```
 lib/
 ├── core/              # Shared utilities, DI, constants, themes
-│   ├── di/            # GetIt + Injectable setup
-│   ├── network/       # API clients, interceptors
+│   ├── di/            # GetIt setup
+│   ├── network/       # Dio clients, interceptors
 │   └── utils/         # Helpers, extensions
 ├── domain/            # Pure Dart — entities, use cases, repo interfaces
 ├── data/              # Implementations — models, sources, repos
@@ -35,18 +55,16 @@ lib/
 │   ├── datasources/   # Remote/Local data sources
 │   └── repositories/  # Repository implementations
 ├── presentation/      # Flutter UI — BLoC/Cubit, pages, widgets
-│   ├── blocs/         # State management
+│   ├── blocs/         # State management (cubits)
 │   ├── pages/         # Screen-level widgets
 │   └── widgets/       # Reusable components
-└── packages/          # Internal packages / feature modules
+└── packages/          # Internal packages (kuron_core, kuron_nhentai, etc.)
 ```
 
 ### Layer Rules
 - **Domain**: Pure Dart. ZERO dependencies on Data/Presentation.
 - **Data**: Depends only on Domain. JSON parsing, API calls, DB storage.
 - **Presentation**: Depends only on Domain (+ DI). BLoC/Cubit + UI widgets.
-
----
 
 ---
 
@@ -90,7 +108,7 @@ Project ini menggunakan search tools modern sebagai pengganti `grep`:
 
 | Tool | Use Case | Command |
 |---|---|---|
-| `rg` (ripgrep) | Pencarian teks cepat, regex | `rg "pattern" lib/` |
+| `rg` (ripgrep) | Pencarian teks cepat, regex | `rg "pattern" lib/ -t dart` |
 | `ugrep` | Interactive, fuzzy, hex search | `ugrep -Q "pattern" lib/` |
 | `semgrep` | AST-aware Dart patterns | `semgrep --lang dart -e '$PATTERN' lib/` |
 
@@ -159,10 +177,12 @@ flutter analyze
 dart run build_runner build --delete-conflicting-outputs
 
 # Search (Modern)
-rg "pattern" lib/                          # Fast text search
+rg "pattern" lib/ -t dart                  # Fast text search
 ugrep -rn "pattern" lib/                   # Interactive search
 semgrep --lang dart -e '$X.find()' lib/    # AST-aware search
 
 # Project Management
 dart scripts/project_status.dart           # Update dashboards
+./scripts/smart_search.sh audit            # Architecture audit
+./scripts/smart_search.sh debugprint       # Find print violations
 ```
