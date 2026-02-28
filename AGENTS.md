@@ -3,6 +3,9 @@
 **Role**: Senior Principal Flutter Engineer & Architect.
 **Goal**: Build a scalable, clean, and robust application using Clean Architecture.
 
+## 📝 Project Memory
+**CRITICAL**: Read `project_memory.md` at project root for full context. Update it after every session.
+
 ## ⚡ Core Commands
 - **Build/Run**: `flutter clean && flutter pub get` | `flutter run --debug` | `flutter build apk --release`
 - **Build Optimized**: `./build_optimized.sh debug` | `release`
@@ -19,8 +22,45 @@ Located in `scripts/` folder. **ALWAYS run after project changes:**
 |---|---|---|
 | **Project Status** | `dart scripts/project_status.dart` | After creating issue, moving project phase, or updating progress |
 | **Create Feature** | `dart scripts/create_feature.dart [name]` | Scaffold new feature structure |
+| **Smart Search** | `./scripts/smart_search.sh <mode> <pattern>` | Code search, audit, violations |
 
 **Note**: `project_status.dart` auto-updates all README dashboards with progress bars and statistics.
+
+## 🔍 Search Tools (Modern — replaces grep)
+
+All installed via Homebrew. **NEVER use basic `grep`** — use these instead:
+
+| Tool | Best For | Command |
+|---|---|---|
+| **`rg`** (ripgrep) | Fast text search, regex | `rg "pattern" lib/ -t dart` |
+| **`ugrep`** | Interactive TUI, fuzzy search | `ugrep -Q "pattern" lib/` |
+| **`semgrep`** | AST-aware Dart patterns, security | `semgrep --lang dart -e '$PATTERN' lib/` |
+
+### Smart Search Script
+```bash
+./scripts/smart_search.sh text "pattern"         # ripgrep
+./scripts/smart_search.sh ast '$X.find()'         # semgrep
+./scripts/smart_search.sh interactive "pattern"   # ugrep TUI
+./scripts/smart_search.sh fuzzy "patern"           # ugrep fuzzy
+./scripts/smart_search.sh audit                    # Architecture audit
+./scripts/smart_search.sh debugprint                 # DebugPrint violation scan
+./scripts/smart_search.sh violations               # Code standard check
+```
+
+### Quick Reference
+```bash
+# Find print violations
+rg "(print|debugPrint)\(" lib/ -t dart
+
+# Find all TODOs
+rg "(TODO|FIXME|HACK)" lib/ -t dart
+
+# Find unused imports
+rg "import '" lib/ -t dart --stats
+
+# AST: find direct API calls in UI (violation)
+semgrep --lang dart -e 'http.get($URL)' lib/presentation/
+```
 
 ## 🧠 Development Workflow (CRITICAL)
 
@@ -31,10 +71,11 @@ We operate with professional discipline. Code is ephemeral; Architecture is perm
 
 #### 🧭 Active Steering (Automatic Context)
 **CRITICAL**: At the start of every session, YOU MUST:
-1. Check `projects/onprogress-plan/`.
-2. If a project exists there, READ its `progress.md` and main Spec file immediately.
-3. **Treat `progress.md` as the Master Plan**. Do not implement features not listed there.
-4. **Update `progress.md`** automatically as tasks are completed.
+1. Read `project_memory.md` for cross-session context.
+2. Check `projects/onprogress-plan/`.
+3. If a project exists there, READ its `progress.md` and main Spec file immediately.
+4. **Treat `progress.md` as the Master Plan**. Do not implement features not listed there.
+5. **Update `progress.md`** automatically as tasks are completed.
 
 #### Phases:
 
@@ -96,15 +137,23 @@ Use these specialized tools to maintain velocity and quality.
 ### Agents (Use `@` to invoke)
 - **`@planner`**: Creates detailed architectural plans in `projects/analysis-plan`.
 - **`@architect`**: Reviews code for Clean Architecture violations.
+- **`@flutter-architect`**: Clean Architecture guidance and reviews.
+- **`@feature-dev`**: Development workflow coordinator.
+- **`@code-reviewer`**: Flutter code quality reviews.
+- **`@ui-designer`**: UI/UX and responsive design guidance.
 - **`@test-engineer`**: Writes comprehensive unit and widget tests.
 - **`@test-writer`**: Writes comprehensive test coverage.
 
 ### Skills (Loaded automatically when needed)
+- **`clean-arch`**: Clean Architecture implementation patterns.
+- **`bloc-pattern`**: BLoC/Cubit state management patterns (Freezed + Injectable).
 - **`create-bloc`**: Scaffolds a new Bloc component with Freezed and Injectable.
 - **`create-feature`**: Scaffolds complete Clean Architecture feature structure.
+- **`di-setup`**: Dependency Injection with GetIt setup.
 - **`run-codegen`**: Run Flutter build_runner to regenerate code.
 - **`project-management`**: Manage project lifecycle (init, start, finish, progress, issue).
 - **`gen-test`**: Generate unit tests for Dart classes.
+- **`search-tools`**: Modern search tools guide (rg, ugrep, semgrep).
 
 ## 🚀 Quality & Performance
 - **Git**: Conventional Commits (`feat(auth): msg`). Branches: `master` (prod), `develop`, `feature/`.

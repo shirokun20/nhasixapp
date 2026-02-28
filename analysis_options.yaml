@@ -18,7 +18,6 @@ linter:
 
     # Style & Readability
     - always_declare_return_types
-    - always_require_non_null_named_parameters
     - annotate_overrides
     - avoid_init_to_null
     - avoid_null_checks_in_equality_operators
