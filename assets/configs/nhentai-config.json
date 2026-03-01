@@ -279,14 +279,7 @@
         "supportsAdvancedSearch": true,
         "generatePdf": true,
         "offlineMode": true,
-        "maintenanceFeatures": {
-            "comments": {
-                "active": true,
-                "reason": "API komentar sedang dalam pemeliharaan.",
-                "estimatedRecovery": "Beberapa jam lagi",
-                "contactUrl": ""
-            }
-        }
+        "maintenanceFeatures": {}
     },
     "ui": {
         "displayName": "NHentai",
