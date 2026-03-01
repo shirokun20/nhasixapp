@@ -153,7 +153,8 @@ Project ini menggunakan search tools modern sebagai pengganti `grep`:
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
-| 2026-03-01 | Copilot | nhentai_test Bug Fixes: Search Filters + Comment Avatar | ⚠️ Partial (avatar sebagian belum show) | [→](projects/sessions/2026-03-01-copilot-nhentai-bugfixes.md) |
+| 2026-03-02 | Copilot | nhentai Tag Display Fix (`detail_screen` + `generic_rest_adapter`) | ✅ Done | — |
+| 2026-03-01 | Copilot | nhentai_test Bug Fixes: Search Filters + Comment Avatar | ✅ Done | [→](projects/sessions/2026-03-01-copilot-nhentai-bugfixes.md) |
 | 2026-03-01 | OpenCode | Phase 2 Bug Fixes: Cover URL & Pagination | ✅ Done | [→](projects/sessions/2026-03-01-opencode-cover-pagination.md) |
 | 2026-03-01 | OpenCode | multi_provider_integration Phase 2 Wiring | ✅ Done | [→](projects/sessions/2026-03-01-opencode-phase2-wiring.md) |
 | 2026-03-01 | OpenCode | multi_provider_integration Phase 0 + 0B + 1 | ✅ Done | [→](projects/sessions/2026-03-01-opencode-phase0-phase1.md) |
