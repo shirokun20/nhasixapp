@@ -76,7 +76,11 @@
             "type": "jsonpath"
         },
         "tags": {
-            "selector": "$.tags[*].name",
+            "selector": "$.tags[?(@.type=='tag')].name",
+            "type": "jsonpath"
+        },
+        "tagObjects": {
+            "selector": "$.tags[*]",
             "type": "jsonpath"
         },
         "artists": {

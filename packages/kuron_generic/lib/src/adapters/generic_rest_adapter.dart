@@ -402,33 +402,54 @@ class GenericRestAdapter implements GenericAdapter {
         _buildCoverUrl(data, selectors, mediaId) ??
         (imageUrls.isNotEmpty ? imageUrls.first : '');
 
-    final tagsRaw = _parser.extractList(
-      data,
-      _selectorOrDefault(
-          selectors, 'tags', const FieldSelector(selector: r'$.tags[*].name')),
-    );
-    final tags = _stringsToTags(tagsRaw, 'tag');
+    // If the source puts ALL metadata (artists, characters, etc.) into a
+    // single `tags[]` array differentiated by a `type` field (e.g. nhentai),
+    // the config can declare a `tagObjects` selector pointing to that array.
+    // The adapter will parse full objects and split by type, preserving id/count.
+    final tagObjectsSel = _selectorOrNull(selectors, 'tagObjects');
+    late List<Tag> tags;
+    late List<String> artistsRaw;
+    late List<String> charactersRaw;
+    late List<String> parodiesRaw;
+    late List<String> groupsRaw;
+    String? splitLanguage;
 
-    final artistsRaw = _parser.extractList(
-      data,
-      _selectorOrDefault(selectors, 'artists',
-          const FieldSelector(selector: r'$.artists[*].name')),
-    );
-    final charactersRaw = _parser.extractList(
-      data,
-      _selectorOrDefault(selectors, 'characters',
-          const FieldSelector(selector: r'$.characters[*].name')),
-    );
-    final parodiesRaw = _parser.extractList(
-      data,
-      _selectorOrDefault(selectors, 'parodies',
-          const FieldSelector(selector: r'$.parodies[*].name')),
-    );
-    final groupsRaw = _parser.extractList(
-      data,
-      _selectorOrDefault(selectors, 'groups',
-          const FieldSelector(selector: r'$.groups[*].name')),
-    );
+    if (tagObjectsSel != null) {
+      final split = _parseTagObjects(data, tagObjectsSel);
+      tags = split.tags;
+      artistsRaw = split.artists;
+      charactersRaw = split.characters;
+      parodiesRaw = split.parodies;
+      groupsRaw = split.groups;
+      splitLanguage = split.language.isNotEmpty ? split.language : null;
+    } else {
+      final tagsRaw = _parser.extractList(
+        data,
+        _selectorOrDefault(selectors, 'tags',
+            const FieldSelector(selector: r'$.tags[*].name')),
+      );
+      tags = _stringsToTags(tagsRaw, 'tag');
+      artistsRaw = _parser.extractList(
+        data,
+        _selectorOrDefault(selectors, 'artists',
+            const FieldSelector(selector: r'$.artists[*].name')),
+      );
+      charactersRaw = _parser.extractList(
+        data,
+        _selectorOrDefault(selectors, 'characters',
+            const FieldSelector(selector: r'$.characters[*].name')),
+      );
+      parodiesRaw = _parser.extractList(
+        data,
+        _selectorOrDefault(selectors, 'parodies',
+            const FieldSelector(selector: r'$.parodies[*].name')),
+      );
+      groupsRaw = _parser.extractList(
+        data,
+        _selectorOrDefault(selectors, 'groups',
+            const FieldSelector(selector: r'$.groups[*].name')),
+      );
+    }
 
     final pageCountStr = _extract(data, selectors, 'pageCount');
     final pageCount = int.tryParse(pageCountStr ?? '') ?? imageUrls.length;
@@ -443,7 +464,7 @@ class GenericRestAdapter implements GenericAdapter {
       characters: charactersRaw,
       parodies: parodiesRaw,
       groups: groupsRaw,
-      language: _extractLanguage(data, selectors),
+      language: splitLanguage ?? _extractLanguage(data, selectors),
       pageCount: pageCount,
       imageUrls: imageUrls,
       uploadDate: _parseDate(_extract(data, selectors, 'uploadDate')),
@@ -631,6 +652,55 @@ class GenericRestAdapter implements GenericAdapter {
         .toList();
   }
 
+  /// Parse full tag objects from a selector that points to an array like
+  /// `[{"id":1,"name":"english","type":"language","count":12345}, …]`.
+  ///
+  /// Splits the list by `type` field so callers can populate separate
+  /// entity fields (artists, characters, etc.) while keeping proper
+  /// id/count on the pure-tag entries.
+  _TagSplit _parseTagObjects(dynamic data, FieldSelector selector) {
+    final objects = _parser.extractItems(data, selector);
+    final tags = <Tag>[];
+    final artists = <String>[];
+    final characters = <String>[];
+    final parodies = <String>[];
+    final groups = <String>[];
+    final languages = <String>[];
+
+    for (final obj in objects) {
+      final name = obj['name']?.toString() ?? '';
+      if (name.isEmpty) continue;
+      final type = obj['type']?.toString() ?? 'tag';
+      final id = (obj['id'] as num?)?.toInt() ?? 0;
+      final count = (obj['count'] as num?)?.toInt() ?? 0;
+
+      switch (type) {
+        case 'artist':
+          artists.add(name);
+        case 'character':
+          characters.add(name);
+        case 'parody':
+          parodies.add(name);
+        case 'group':
+          groups.add(name);
+        case 'language':
+          if (name != 'translated') languages.add(name);
+        default:
+          // 'tag', 'category', any unknown type — include in tag chips
+          tags.add(Tag(id: id, name: name, type: type, count: count));
+      }
+    }
+
+    return _TagSplit(
+      tags: tags,
+      artists: artists,
+      characters: characters,
+      parodies: parodies,
+      groups: groups,
+      language: languages.isNotEmpty ? languages.first : '',
+    );
+  }
+
   /// Parse a date string, defaulting to epoch on failure.
   DateTime _parseDate(String? raw) {
     if (raw == null) return DateTime.fromMillisecondsSinceEpoch(0);
@@ -807,4 +877,24 @@ class GenericRestAdapter implements GenericAdapter {
     }
     return urls;
   }
+}
+
+/// Internal DTO used by [GenericRestAdapter._parseTagObjects] to return the
+/// result of splitting a unified tags array by type.
+class _TagSplit {
+  const _TagSplit({
+    required this.tags,
+    required this.artists,
+    required this.characters,
+    required this.parodies,
+    required this.groups,
+    required this.language,
+  });
+
+  final List<Tag> tags;
+  final List<String> artists;
+  final List<String> characters;
+  final List<String> parodies;
+  final List<String> groups;
+  final String language;
 }

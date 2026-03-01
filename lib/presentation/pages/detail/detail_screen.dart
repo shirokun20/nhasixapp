@@ -748,7 +748,22 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Widget _buildTagsSection(Content content) {
-    if (content.tags.isEmpty) return const SizedBox.shrink();
+    // Merge all metadata fields into a unified typed tag list for display
+    final allTags = <Tag>[
+      if (content.language.isNotEmpty)
+        Tag(id: 0, name: content.language, type: 'language', count: 0),
+      ...content.artists
+          .map((a) => Tag(id: 0, name: a, type: 'artist', count: 0)),
+      ...content.characters
+          .map((c) => Tag(id: 0, name: c, type: 'character', count: 0)),
+      ...content.parodies
+          .map((p) => Tag(id: 0, name: p, type: 'parody', count: 0)),
+      ...content.groups
+          .map((g) => Tag(id: 0, name: g, type: 'group', count: 0)),
+      ...content.tags,
+    ];
+
+    if (allTags.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -763,7 +778,7 @@ class _DetailScreenState extends State<DetailScreen> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: content.tags.map((tag) {
+          children: allTags.map((tag) {
             return GestureDetector(
               onTap: () => _searchByTag(
                 tag.name,

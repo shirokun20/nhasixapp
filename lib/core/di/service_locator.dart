@@ -16,11 +16,9 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart'
     hide ImageCacheManager;
 
 import 'package:kuron_core/kuron_core.dart';
-import 'package:kuron_nhentai/kuron_nhentai.dart';
 import 'package:kuron_crotpedia/kuron_crotpedia.dart';
 import 'package:kuron_komiktap/kuron_komiktap.dart';
 import 'package:kuron_generic/kuron_generic.dart';
-import 'package:nhasixapp/core/adapters/nhentai_scraper_adapter_impl.dart';
 
 // Core Network
 import 'package:nhasixapp/core/network/http_client_manager.dart';
@@ -37,7 +35,6 @@ import 'package:nhasixapp/core/network/dns_resolver.dart'; // NEW
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/anti_detection.dart';
 import 'package:nhasixapp/data/datasources/remote/nhentai_scraper.dart';
-import 'package:nhasixapp/data/datasources/remote/api/nhentai_api_client.dart';
 import 'package:nhasixapp/data/datasources/local/tag_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/request_rate_manager.dart';
 import 'package:nhasixapp/data/datasources/local/doujin_list_dao.dart';
@@ -332,13 +329,7 @@ void _setupDataSources() {
         remoteConfigService: getIt<RemoteConfigService>(),
       ));
 
-  // nhentai API Client (for API-first approach)
-  getIt.registerLazySingleton<NhentaiApiClient>(() => NhentaiApiClient(
-        rateManager: getIt<RequestRateManager>(),
-        remoteConfigService: getIt<RemoteConfigService>(),
-      ));
-
-  // Remote Data Source (with API client for fallback support)
+  // Remote Data Source (scraper-only — NhentaiApiClient removed in Step 3)
   getIt.registerLazySingleton<RemoteDataSource>(() => RemoteDataSource(
         httpClient: getIt<Dio>(),
         scraper: getIt<NhentaiScraper>(),
@@ -346,19 +337,7 @@ void _setupDataSources() {
         antiDetection: getIt<AntiDetection>(),
         rateManager: getIt<RequestRateManager>(),
         remoteConfigService: getIt<RemoteConfigService>(),
-        apiClient: getIt<NhentaiApiClient>(),
         logger: getIt<Logger>(),
-      ));
-
-  // Nhentai Scraper Adapter
-  getIt.registerLazySingleton<NhentaiScraperAdapter>(
-      () => NhentaiScraperAdapterImpl(getIt<RemoteDataSource>()));
-
-  // Nhentai Source
-  getIt.registerLazySingleton<NhentaiSource>(() => NhentaiSource(
-        scraper: getIt<NhentaiScraperAdapter>(),
-        displayName:
-            getIt<RemoteConfigService>().getConfig('nhentai')?.ui?.displayName,
       ));
 
   // Crotpedia Cookie Store

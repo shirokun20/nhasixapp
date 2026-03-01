@@ -823,13 +823,6 @@ packages:
       relative: true
     source: path
     version: "0.0.1"
-  kuron_nhentai:
-    dependency: "direct main"
-    description:
-      path: "packages/kuron_nhentai"
-      relative: true
-    source: path
-    version: "0.1.0"
   leak_tracker:
     dependency: transitive
     description:
