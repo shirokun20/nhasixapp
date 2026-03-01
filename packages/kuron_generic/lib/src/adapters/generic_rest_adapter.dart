@@ -674,19 +674,28 @@ class GenericRestAdapter implements GenericAdapter {
       final id = (obj['id'] as num?)?.toInt() ?? 0;
       final count = (obj['count'] as num?)?.toInt() ?? 0;
 
+      // Always add to tags list (preserves id/count for display).
+      // Also populate the typed string lists used by metadata section.
       switch (type) {
         case 'artist':
           artists.add(name);
+          tags.add(Tag(id: id, name: name, type: type, count: count));
         case 'character':
           characters.add(name);
+          tags.add(Tag(id: id, name: name, type: type, count: count));
         case 'parody':
           parodies.add(name);
+          tags.add(Tag(id: id, name: name, type: type, count: count));
         case 'group':
           groups.add(name);
+          tags.add(Tag(id: id, name: name, type: type, count: count));
         case 'language':
-          if (name != 'translated') languages.add(name);
+          if (name != 'translated') {
+            languages.add(name);
+            tags.add(Tag(id: id, name: name, type: type, count: count));
+          }
         default:
-          // 'tag', 'category', any unknown type — include in tag chips
+          // 'tag', 'category', any unknown type
           tags.add(Tag(id: id, name: name, type: type, count: count));
       }
     }

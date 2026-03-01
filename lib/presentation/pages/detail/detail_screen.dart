@@ -748,20 +748,37 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Widget _buildTagsSection(Content content) {
-    // Merge all metadata fields into a unified typed tag list for display
-    final allTags = <Tag>[
-      if (content.language.isNotEmpty)
-        Tag(id: 0, name: content.language, type: 'language', count: 0),
-      ...content.artists
-          .map((a) => Tag(id: 0, name: a, type: 'artist', count: 0)),
-      ...content.characters
-          .map((c) => Tag(id: 0, name: c, type: 'character', count: 0)),
-      ...content.parodies
-          .map((p) => Tag(id: 0, name: p, type: 'parody', count: 0)),
-      ...content.groups
-          .map((g) => Tag(id: 0, name: g, type: 'group', count: 0)),
-      ...content.tags,
-    ];
+    // Build a unified tag list. New API data has all types in content.tags;
+    // old cached data may only have type='tag' there, with artist/language
+    // stored in separate string fields. Always merge and deduplicate.
+    final seen = <String>{};
+    final allTags = <Tag>[];
+
+    void addTag(Tag tag) {
+      final key = '${tag.type}:${tag.name.toLowerCase()}';
+      if (seen.add(key)) allTags.add(tag);
+    }
+
+    for (final tag in content.tags) {
+      addTag(tag);
+    }
+
+    // Supplement from typed string fields (no-op if already present from tags)
+    if (content.language.isNotEmpty && content.language != 'unknown') {
+      addTag(Tag(id: 0, name: content.language, type: 'language', count: 0));
+    }
+    for (final a in content.artists) {
+      addTag(Tag(id: 0, name: a, type: 'artist', count: 0));
+    }
+    for (final c in content.characters) {
+      addTag(Tag(id: 0, name: c, type: 'character', count: 0));
+    }
+    for (final p in content.parodies) {
+      addTag(Tag(id: 0, name: p, type: 'parody', count: 0));
+    }
+    for (final g in content.groups) {
+      addTag(Tag(id: 0, name: g, type: 'group', count: 0));
+    }
 
     if (allTags.isEmpty) return const SizedBox.shrink();
 
@@ -809,7 +826,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     if (tag.count > 0) ...[
                       const SizedBox(width: 4),
                       Text(
-                        '${tag.count}',
+                        _formatNumber(tag.count),
                         style: TextStyleConst.overline.copyWith(
                           color: _getTagColor(context, tag.type)
                               .withValues(alpha: 0.7),
