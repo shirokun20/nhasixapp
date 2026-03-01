@@ -15,12 +15,22 @@ import '../parsers/generic_json_parser.dart';
 import '../url_builder/generic_url_builder.dart';
 import 'generic_adapter.dart';
 
+/// Function type for generating anti-detection headers dynamically.
+/// Returns a map of HTTP headers. Optional [referer] parameter can be passed.
+typedef HeadersGenerator = Map<String, String> Function({String? referer});
+
+/// Function type for applying rate limiting delays before HTTP requests.
+/// Used to prevent IP banning by spreading out requests over time.
+typedef DelayApplier = Future<void> Function();
+
 class GenericRestAdapter implements GenericAdapter {
   final Dio _dio;
   final GenericUrlBuilder _urlBuilder;
   final GenericJsonParser _parser;
   final Logger _logger;
   final String _sourceId;
+  final HeadersGenerator? _headersGenerator;
+  final DelayApplier? _delayApplier;
 
   GenericRestAdapter({
     required Dio dio,
@@ -28,11 +38,15 @@ class GenericRestAdapter implements GenericAdapter {
     required GenericJsonParser parser,
     required Logger logger,
     required String sourceId,
+    HeadersGenerator? headersGenerator,
+    DelayApplier? delayApplier,
   })  : _dio = dio,
         _urlBuilder = urlBuilder,
         _parser = parser,
         _logger = logger,
-        _sourceId = sourceId;
+        _sourceId = sourceId,
+        _headersGenerator = headersGenerator,
+        _delayApplier = delayApplier;
 
   @override
   Future<AdapterSearchResult> search(
@@ -43,28 +57,126 @@ class GenericRestAdapter implements GenericAdapter {
     final endpoints =
         (api?['endpoints'] as Map<String, dynamic>?)?.cast<String, String>() ??
             {};
-    final searchTemplate = endpoints['search'] ?? '';
+
+    // Build effective query from all active filters using `queryTokenTemplates`
+    // declared in the source config's `searchConfig`.
+    //
+    // Template variables:
+    //   `{type}` — the filter type (tag, artist, language, category, etc.)
+    //   `{name}` — the filter value
+    //
+    // Example nhentai config:
+    //   include: `{type}:"{name}"` → `tag:"big breasts"`, `language:"english"`
+    //   exclude: `-{type}:"{name}"` → `-tag:"netorare"`
+    //
+    // Covers: includeTags, excludeTags (all typed) + language + category fields.
+    final searchConfig =
+        (rawConfig['searchConfig'] as Map<String, dynamic>?) ?? {};
+    final tokenTemplates =
+        searchConfig['queryTokenTemplates'] as Map<String, dynamic>?;
+    final includeTemplate = tokenTemplates?['include'] as String?;
+    final excludeTemplate = tokenTemplates?['exclude'] as String?;
+
+    String effectiveQuery = filter.query.trim();
+    final embeddedTokens = <String>[];
+
+    if (includeTemplate != null) {
+      // Build tokens for included filter items (tags, artists, characters, etc.)
+      for (final item in filter.includeTags) {
+        embeddedTokens.add(
+          includeTemplate
+              .replaceAll('{type}', item.type.toLowerCase())
+              .replaceAll('{name}', item.name),
+        );
+      }
+
+      // Build tokens for excluded filter items
+      final excl = excludeTemplate ?? '-$includeTemplate';
+      for (final item in filter.excludeTags) {
+        embeddedTokens.add(
+          excl
+              .replaceAll('{type}', item.type.toLowerCase())
+              .replaceAll('{name}', item.name),
+        );
+      }
+
+      // Embed language and category as typed tokens (e.g. language:"english")
+      if (filter.language != null && filter.language!.isNotEmpty) {
+        embeddedTokens.add(
+          includeTemplate
+              .replaceAll('{type}', 'language')
+              .replaceAll('{name}', filter.language!),
+        );
+      }
+      if (filter.category != null && filter.category!.isNotEmpty) {
+        embeddedTokens.add(
+          includeTemplate
+              .replaceAll('{type}', 'category')
+              .replaceAll('{name}', filter.category!),
+        );
+      }
+    }
+
+    if (embeddedTokens.isNotEmpty) {
+      effectiveQuery = [effectiveQuery, ...embeddedTokens]
+          .where((s) => s.isNotEmpty)
+          .join(' ');
+    }
+
+    // Use 'allGalleries' endpoint ONLY when there are truly no active filters.
+    // If language/category/tags are set (even with empty text query), use 'search'.
+    final isEmptyQuery = effectiveQuery.isEmpty && !filter.hasFilters;
+
+    final searchTemplate = isEmptyQuery
+        ? (endpoints['allGalleries'] ?? endpoints['search'] ?? '')
+        : (endpoints['search'] ?? '');
+
+    _logger.d('$_sourceId REST search config: api=$api');
+    _logger.d(
+        '$_sourceId REST search: effectiveQuery="$effectiveQuery", useAllGalleries=$isEmptyQuery, template="$searchTemplate"');
+
     if (searchTemplate.isEmpty) {
       _logger.w('$_sourceId: no search endpoint configured');
       return const AdapterSearchResult(items: [], hasNextPage: false);
     }
 
-    final url = _urlBuilder.buildSearchUrl(searchTemplate, filter);
-    _logger.d('$_sourceId REST search: $url');
+    // Build URL using the effective query (with embedded filter tokens)
+    final adjustedFilter = effectiveQuery != filter.query.trim()
+        ? filter.copyWith(query: effectiveQuery)
+        : filter;
+    final url = _urlBuilder.buildSearchUrl(searchTemplate, adjustedFilter);
+    _logger.d('$_sourceId REST search: Built URL: $url');
 
     try {
+      // Prepare request: apply delays + set anti-detection headers
+      await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
+
+      _logger.d('$_sourceId REST search: Fetching URL: $url');
       final response = await _dio.get<dynamic>(url);
+      _logger.d(
+          '$_sourceId REST search: Got response status=${response.statusCode}');
+
       final data = response.data is String
           ? jsonDecode(response.data as String)
           : response.data;
 
       final selectors = (rawConfig['selectors'] as Map<String, dynamic>?) ?? {};
       final items = _parseItemList(data, selectors);
-      final hasNext = _parseHasNextPage(data, selectors);
+      _logger.d('$_sourceId REST search: Parsed ${items.length} items');
 
-      return AdapterSearchResult(items: items, hasNextPage: hasNext);
-    } catch (e) {
-      _logger.e('$_sourceId REST search failed', error: e);
+      final hasNext = _parseHasNextPage(data, selectors);
+      final totalPages = _parseTotalPages(data, selectors);
+      final totalItems = _parseTotalItems(data, selectors);
+
+      return AdapterSearchResult(
+        items: items,
+        hasNextPage: hasNext,
+        totalPages: totalPages,
+        totalItems: totalItems,
+      );
+    } catch (e, stackTrace) {
+      _logger.e('$_sourceId REST search failed',
+          error: e, stackTrace: stackTrace);
       return const AdapterSearchResult(items: [], hasNextPage: false);
     }
   }
@@ -92,6 +204,10 @@ class GenericRestAdapter implements GenericAdapter {
     _logger.d('$_sourceId REST detail: $url');
 
     try {
+      // Prepare request: apply delays + set anti-detection headers
+      await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
+
+      _logger.d('$_sourceId REST detail: Fetching URL: $url');
       final response = await _dio.get<dynamic>(url);
       final data = response.data is String
           ? jsonDecode(response.data as String)
@@ -126,6 +242,10 @@ class GenericRestAdapter implements GenericAdapter {
 
     final url = _urlBuilder.buildDetailUrl(relatedTemplate, contentId);
     try {
+      // Prepare request: apply delays + set anti-detection headers
+      await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
+
+      _logger.d('$_sourceId REST related: Fetching URL: $url');
       final response = await _dio.get<dynamic>(url);
       final data = response.data is String
           ? jsonDecode(response.data as String)
@@ -134,6 +254,36 @@ class GenericRestAdapter implements GenericAdapter {
       return _parseItemList(data, selectors);
     } catch (e) {
       _logger.w('$_sourceId: fetchRelated failed for $contentId', error: e);
+      return const [];
+    }
+  }
+
+  @override
+  Future<List<Comment>> fetchComments(
+    String contentId,
+    Map<String, dynamic> rawConfig,
+  ) async {
+    final api = rawConfig['api'] as Map<String, dynamic>?;
+    final endpoints =
+        (api?['endpoints'] as Map<String, dynamic>?)?.cast<String, String>() ??
+            {};
+    final commentsTemplate = endpoints['comments'] ?? '';
+    if (commentsTemplate.isEmpty) return const [];
+
+    final url = _urlBuilder.buildDetailUrl(commentsTemplate, contentId);
+    try {
+      // Prepare request: apply delays + set anti-detection headers
+      await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
+
+      _logger.d('$_sourceId REST comments: Fetching URL: $url');
+      final response = await _dio.get<dynamic>(url);
+      final data = response.data is String
+          ? jsonDecode(response.data as String)
+          : response.data;
+      final selectors = (rawConfig['selectors'] as Map<String, dynamic>?) ?? {};
+      return _parseCommentList(data, selectors, rawConfig);
+    } catch (e) {
+      _logger.w('$_sourceId: fetchComments failed for $contentId', error: e);
       return const [];
     }
   }
@@ -149,12 +299,58 @@ class GenericRestAdapter implements GenericAdapter {
     return items.map((item) => _parseItem(item, selectors)).toList();
   }
 
+  List<Comment> _parseCommentList(dynamic data, Map<String, dynamic> selectors,
+      Map<String, dynamic> rawConfig) {
+    final commentsSelector = _selectorOrNull(selectors, 'comments');
+    if (commentsSelector == null) return const [];
+
+    final baseUrl = _getBaseUrl(rawConfig);
+    final avatarBaseUrl = rawConfig['avatarBaseUrl'] as String? ?? baseUrl;
+    final items = _parser.extractItems(data, commentsSelector);
+    return items
+        .map((item) => _parseComment(item, selectors, avatarBaseUrl))
+        .toList();
+  }
+
+  Comment _parseComment(
+      Map<String, dynamic> item, Map<String, dynamic> selectors,
+      [String? baseUrl]) {
+    final id = _extract(item, selectors, 'commentId') ?? '';
+    final username =
+        _extract(item, selectors, 'commentUsername') ?? 'Anonymous';
+    final body = _extract(item, selectors, 'commentBody') ?? '';
+    final rawAvatarUrl = _extract(item, selectors, 'commentAvatarUrl');
+    final avatarUrl = _resolveAvatarUrl(rawAvatarUrl, baseUrl);
+    final postDateStr = _extract(item, selectors, 'commentPostDate');
+
+    DateTime? postDate;
+    if (postDateStr != null) {
+      // Unix timestamp (seconds)
+      final timestamp = int.tryParse(postDateStr);
+      if (timestamp != null) {
+        postDate = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
+      }
+    }
+
+    return Comment(
+      id: id,
+      username: username,
+      body: body,
+      avatarUrl: avatarUrl,
+      postDate: postDate,
+    );
+  }
+
   Content _parseItem(
       Map<String, dynamic> item, Map<String, dynamic> selectors) {
     final id = _extract(item, selectors, 'id') ?? '';
     final title = _extract(item, selectors, 'title') ?? 'Unknown';
+    final mediaId = _extract(item, selectors, 'mediaId');
+
+    // Build cover URL: prefer explicit selector, then coverUrlBuilder, then empty
     final coverUrl = _extract(item, selectors, 'thumbnail') ??
         _extract(item, selectors, 'coverUrl') ??
+        _buildCoverUrl(item, selectors, mediaId) ??
         '';
 
     final tagsRaw = _parser.extractList(
@@ -185,6 +381,7 @@ class GenericRestAdapter implements GenericAdapter {
           int.tryParse(_extract(item, selectors, 'pageCount') ?? '') ?? 0,
       imageUrls: const [],
       uploadDate: _parseDate(_extract(item, selectors, 'uploadDate')),
+      mediaId: mediaId,
     );
   }
 
@@ -197,8 +394,10 @@ class GenericRestAdapter implements GenericAdapter {
   ) {
     final id = _extract(data, selectors, 'id') ?? contentId;
     final title = _extract(data, selectors, 'title') ?? 'Unknown';
+    final mediaId = _extract(data, selectors, 'mediaId');
     final coverUrl = _extract(data, selectors, 'thumbnail') ??
         _extract(data, selectors, 'coverUrl') ??
+        _buildCoverUrl(data, selectors, mediaId) ??
         (imageUrls.isNotEmpty ? imageUrls.first : '');
 
     final tagsRaw = _parser.extractList(
@@ -248,14 +447,28 @@ class GenericRestAdapter implements GenericAdapter {
       uploadDate: _parseDate(_extract(data, selectors, 'uploadDate')),
       englishTitle: _extract(data, selectors, 'englishTitle'),
       japaneseTitle: _extract(data, selectors, 'japaneseTitle'),
+      mediaId: mediaId,
     );
   }
 
+  /// Extract image URLs from the response.
+  ///
+  /// Supports two modes:
+  /// 1. Direct JSONPath selector under `selectors['imageUrls']` or `selectors['images']`
+  /// 2. Template-based URL building via `selectors['imageUrlBuilder']` — used for sources
+  ///    like nhentai where image URLs must be constructed from `media_id` + page extensions.
   List<String> _parseImageUrls(
     dynamic data,
     Map<String, dynamic> selectors,
     Map<String, dynamic> rawConfig,
   ) {
+    // Mode 2: imageUrlBuilder (template + per-page extension list)
+    final builder = selectors['imageUrlBuilder'] as Map<String, dynamic>?;
+    if (builder != null) {
+      return _buildImageUrlsFromTemplate(data, builder);
+    }
+
+    // Mode 1: direct JSONPath selector
     final imageSelector = _selectorOrNull(selectors, 'imageUrls') ??
         _selectorOrNull(selectors, 'images');
     if (imageSelector == null) return const [];
@@ -274,7 +487,140 @@ class GenericRestAdapter implements GenericAdapter {
     return true;
   }
 
+  int? _parseTotalPages(dynamic data, Map<String, dynamic> selectors) {
+    final totalPagesStr = _extract(data, selectors, 'totalPages');
+    if (totalPagesStr != null) {
+      return int.tryParse(totalPagesStr);
+    }
+    return null;
+  }
+
+  int? _parseTotalItems(dynamic data, Map<String, dynamic> selectors) {
+    final totalItemsStr = _extract(data, selectors, 'totalItems') ??
+        _extract(data, selectors, 'totalCount');
+    if (totalItemsStr != null) {
+      return int.tryParse(totalItemsStr);
+    }
+    return null;
+  }
+
   // ── Helpers ────────────────────────────────────────────────────────────────
+
+  /// Extract headers from network.headers configuration block.
+  Map<String, String> _extractHeaders(Map<String, dynamic> rawConfig) {
+    _logger.d(
+        '$_sourceId: _extractHeaders called, rawConfig keys: ${rawConfig.keys.toList()}');
+
+    final network = rawConfig['network'] as Map<String, dynamic>?;
+    if (network == null) {
+      _logger.w('$_sourceId: network config is null');
+      return const {};
+    }
+
+    _logger.d('$_sourceId: network keys: ${network.keys.toList()}');
+
+    final headersRaw = network['headers'] as Map<String, dynamic>?;
+    if (headersRaw == null) {
+      _logger.w('$_sourceId: network.headers is null');
+      return const {};
+    }
+
+    _logger.d('$_sourceId: Found ${headersRaw.length} headers in config');
+
+    // Convert all values to strings
+    final headers =
+        headersRaw.map((key, value) => MapEntry(key, value.toString()));
+    _logger.d('$_sourceId: Extracted headers: ${headers.keys.toList()}');
+    return headers;
+  }
+
+  /// Merge Dio's default headers with configured headers.
+  /// Configured headers take precedence for conflicts (e.g., override User-Agent).
+  /// Preserves critical headers like cookies from Cloudflare bypass.
+  Map<String, dynamic> _mergeHeaders(
+    Map<String, dynamic> dioDefaultHeaders,
+    Map<String, String> configuredHeaders,
+  ) {
+    final merged = <String, dynamic>{...dioDefaultHeaders};
+    configuredHeaders.forEach((key, value) {
+      merged[key] = value;
+    });
+    _logger.d(
+        '$_sourceId: Merged headers - Dio: ${dioDefaultHeaders.length}, Configured: ${configuredHeaders.length}, Total: ${merged.length}');
+    return merged;
+  }
+
+  /// Get request headers with proper priority:
+  /// 1. If HeadersGenerator provided (AntiDetection), use it (highest priority)
+  /// 2. Otherwise, merge config headers with Dio defaults
+  /// 3. If no config headers, use Dio defaults only
+  /// Prepare HTTP request by applying delays and setting anti-detection headers.
+  ///
+  /// This method mimics NhentaiApiClient's per-request preparation:
+  /// 1. Apply rate limiting delay (if configured)
+  /// 2. Generate and apply fresh headers to Dio instance (if configured)
+  ///
+  /// CRITICAL: Headers are set DIRECTLY on `_dio.options.headers`, not via `Options()`,
+  /// to match the behavior of specialized sources like NhentaiSource.
+  Future<void> _prepareRequest(
+    Map<String, dynamic> rawConfig, {
+    String? referer,
+  }) async {
+    // Step 1: Apply rate limiting delay (mimics AntiDetection.applyRandomDelay)
+    if (_delayApplier != null) {
+      await _delayApplier();
+    }
+
+    // Step 2: Apply anti-detection headers (mimics NhentaiApiClient behavior)
+    if (_headersGenerator != null) {
+      final generatedHeaders = _headersGenerator(referer: referer);
+      _logger.d(
+          '$_sourceId: Using dynamic headers generator (${generatedHeaders.length} headers)');
+
+      // SET headers directly on Dio instance (not via Options)
+      _dio.options.headers =
+          _mergeHeaders(_dio.options.headers, generatedHeaders);
+      return;
+    }
+
+    // Fallback: Use static config headers if no generator provided
+    final configHeaders = _extractHeaders(rawConfig);
+    if (configHeaders.isNotEmpty) {
+      _logger.d(
+          '$_sourceId: Using config headers (${configHeaders.length} headers)');
+      _dio.options.headers = _mergeHeaders(_dio.options.headers, configHeaders);
+      return;
+    }
+
+    // Priority 3: Dio defaults only (no modification needed)
+    _logger.d('$_sourceId: Using Dio default headers only');
+  }
+
+  /// Extract base URL from config for referer header.
+  String? _getBaseUrl(Map<String, dynamic> rawConfig) {
+    return rawConfig['baseUrl'] as String?;
+  }
+
+  /// Resolves an avatar URL that may be:
+  ///  - protocol-relative  (`//i1.nhentai.net/avatars/…`)
+  ///  - root-relative      (`/avatars/…`)
+  ///  - bare relative      (`avatars/177627.png?_=…`)  ← nhentai API format
+  ///  - already absolute   (`https://…`)
+  ///
+  /// [avatarBaseUrl] should be the CDN origin declared in the source config
+  /// as `avatarBaseUrl` (e.g. `https://i1.nhentai.net`).
+  String? _resolveAvatarUrl(String? raw, String? avatarBaseUrl) {
+    if (raw == null || raw.isEmpty) return null;
+    if (raw.startsWith('https://') || raw.startsWith('http://')) return raw;
+    if (raw.startsWith('//')) return 'https:$raw';
+
+    final base = (avatarBaseUrl ?? '').replaceAll(RegExp(r'/+$'), '');
+    if (raw.startsWith('/')) {
+      return base.isNotEmpty ? '$base$raw' : 'https:/$raw';
+    }
+    // Bare relative path (nhentai: `avatars/3407292.png?_=…`)
+    return base.isNotEmpty ? '$base/$raw' : raw;
+  }
 
   /// Convert raw string tag names to [Tag] entities with default values.
   List<Tag> _stringsToTags(List<String> names, String type) {
@@ -328,4 +674,122 @@ class GenericRestAdapter implements GenericAdapter {
         imageUrls: const [],
         uploadDate: DateTime.fromMillisecondsSinceEpoch(0),
       );
+
+  // ── URL builder helpers ────────────────────────────────────────────────────
+
+  /// Build a cover/thumbnail URL for a list item using the `coverUrlBuilder`
+  /// config block. Returns null if the block is absent or required data is
+  /// missing.
+  ///
+  /// Config shape:
+  /// ```json
+  /// "coverUrlBuilder": {
+  ///   "mediaIdSelector": "$.media_id",
+  ///   "coverExtSelector": "$.images.cover.t",
+  ///   "template": "https://t.nhentai.net/galleries/{mediaId}/cover.{ext}",
+  ///   "extensionMapping": { "j": "jpg", "p": "png", "g": "gif", "w": "webp" }
+  /// }
+  /// ```
+  String? _buildCoverUrl(
+    dynamic data,
+    Map<String, dynamic> selectors,
+    String? alreadyExtractedMediaId,
+  ) {
+    final builder = selectors['coverUrlBuilder'] as Map<String, dynamic>?;
+    if (builder == null) return null;
+
+    final template = builder['template'] as String?;
+    if (template == null) return null;
+
+    // Resolve media_id
+    final mediaIdSel = builder['mediaIdSelector'] as String?;
+    final mediaId = alreadyExtractedMediaId ??
+        (mediaIdSel != null
+            ? _parser.extractString(data, FieldSelector(selector: mediaIdSel))
+            : null);
+    if (mediaId == null) return null;
+
+    // Resolve extension
+    final extSel = builder['coverExtSelector'] as String?;
+    String ext = 'jpg'; // safe default
+    if (extSel != null) {
+      final extCode =
+          _parser.extractString(data, FieldSelector(selector: extSel));
+      if (extCode != null) {
+        final mapping = (builder['extensionMapping'] as Map<String, dynamic>?)
+            ?.cast<String, String>();
+        ext = mapping?[extCode] ?? ext;
+      }
+    }
+
+    // Smart webp handling: some CDNs (like nhentai) convert originals to webp
+    // and serve them with double extension (e.g., thumb.jpg.webp)
+    // If preferWebpSuffix is true, append .webp to the resolved extension
+    final preferWebp = builder['preferWebpSuffix'] as bool? ?? false;
+    String finalUrl =
+        template.replaceAll('{mediaId}', mediaId).replaceAll('{ext}', ext);
+
+    if (preferWebp && !finalUrl.endsWith('.webp')) {
+      finalUrl = '$finalUrl.webp';
+    }
+
+    return finalUrl;
+  }
+
+  /// Build the full list of image URLs for a detail response using the
+  /// `imageUrlBuilder` config block.
+  ///
+  /// Config shape:
+  /// ```json
+  /// "imageUrlBuilder": {
+  ///   "mediaIdSelector": "$.media_id",
+  ///   "pageExtSelector": "$.images.pages[*].t",
+  ///   "template": "https://i.nhentai.net/galleries/{mediaId}/{page}.{ext}",
+  ///   "extensionMapping": { "j": "jpg", "p": "png", "g": "gif", "w": "webp" }
+  /// }
+  /// ```
+  List<String> _buildImageUrlsFromTemplate(
+    dynamic data,
+    Map<String, dynamic> builder,
+  ) {
+    final template = builder['template'] as String?;
+    if (template == null) return const [];
+
+    final mediaIdSel = builder['mediaIdSelector'] as String?;
+    final mediaId = mediaIdSel != null
+        ? _parser.extractString(data, FieldSelector(selector: mediaIdSel))
+        : null;
+    if (mediaId == null) {
+      _logger.w('$_sourceId: imageUrlBuilder — media_id not found');
+      return const [];
+    }
+
+    final pageExtSel = builder['pageExtSelector'] as String?;
+    if (pageExtSel == null) return const [];
+
+    final extCodes = _parser.extractList(
+      data,
+      FieldSelector(selector: pageExtSel),
+    );
+    if (extCodes.isEmpty) {
+      _logger.w('$_sourceId: imageUrlBuilder — no page extensions found');
+      return const [];
+    }
+
+    final mapping = (builder['extensionMapping'] as Map<String, dynamic>?)
+            ?.cast<String, String>() ??
+        const {};
+
+    final urls = <String>[];
+    for (int i = 0; i < extCodes.length; i++) {
+      final extCode = extCodes[i];
+      final ext = mapping[extCode] ?? 'jpg';
+      final url = template
+          .replaceAll('{mediaId}', mediaId)
+          .replaceAll('{page}', (i + 1).toString())
+          .replaceAll('{ext}', ext);
+      urls.add(url);
+    }
+    return urls;
+  }
 }

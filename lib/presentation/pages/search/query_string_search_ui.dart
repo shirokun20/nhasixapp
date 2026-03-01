@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:kuron_core/kuron_core.dart' show Tag;
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/config/config_models.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/utils/tag_data_manager.dart';
@@ -242,16 +243,22 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
     }
   }
 
-  /// Check if query should trigger direct navigation to Nhentai gallery detail
+  /// Check if query should trigger direct navigation to gallery detail by ID.
   /// Returns true only if:
-  /// 1. Source is Nhentai
+  /// 1. Source config has a `galleryDetail` endpoint (supports fetch-by-ID)
   /// 2. Query contains only digits (no spaces, no special characters)
+  ///
+  /// This works for both `nhentai` and `nhentai_test` (and any future source
+  /// that declares a `galleryDetail` endpoint in its API config).
   bool _isNhentaiDirectNavigation(String query) {
-    // Only for Nhentai source
-    if (widget.sourceId != 'nhentai') return false;
-
     // Empty query should use normal search
     if (query.isEmpty) return false;
+
+    // Check via config: only sources with a galleryDetail endpoint support direct ID nav
+    final config = getIt<RemoteConfigService>().getConfig(widget.sourceId);
+    if (config?.api?.endpoints?.containsKey('galleryDetail') != true) {
+      return false;
+    }
 
     // Check if query is purely numeric
     final numericPattern = RegExp(r'^\d+$');
@@ -264,7 +271,8 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
     // Normalize: remove leading zeros (00123 -> 123)
     final normalizedId = int.tryParse(galleryId)?.toString() ?? galleryId;
 
-    _logger.i('Direct navigation to Nhentai gallery: $normalizedId');
+    _logger.i(
+        'Direct navigation to gallery: $normalizedId (source: ${widget.sourceId})');
 
     if (!mounted) return;
 
@@ -273,7 +281,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
     final returnedFilter = await AppRouter.goToContentDetail(
       context,
       normalizedId,
-      sourceId: 'nhentai',
+      sourceId: widget.sourceId,
     );
 
     // If detail screen returned a filter, apply it to search

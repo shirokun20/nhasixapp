@@ -13,7 +13,7 @@ import 'adapters/generic_adapter.dart';
 import 'adapters/generic_rest_adapter.dart';
 import 'adapters/generic_scraper_adapter.dart';
 import 'filters/generic_filter_transformer.dart';
-import 'parsers/generic_html_parser.dart';
+// import 'parsers/generic_html_parser.dart';
 import 'parsers/generic_json_parser.dart';
 import 'url_builder/generic_url_builder.dart';
 
@@ -42,6 +42,8 @@ class GenericHttpSource implements ContentSource {
     required Map<String, dynamic> rawConfig,
     required Dio dio,
     required Logger logger,
+    HeadersGenerator? headersGenerator,
+    DelayApplier? delayApplier,
   })  : _rawConfig = rawConfig,
         _logger = logger,
         _filterTransformer = const GenericFilterTransformer(),
@@ -55,7 +57,8 @@ class GenericHttpSource implements ContentSource {
             false,
         _defaultHeaders = _resolveHeaders(rawConfig),
         _brandColorValue = _resolveBrandColor(rawConfig),
-        _adapter = _buildAdapter(rawConfig, dio, logger);
+        _adapter = _buildAdapter(
+            rawConfig, dio, logger, headersGenerator, delayApplier);
 
   // ── ContentSource identity ─────────────────────────────────────────────────
 
@@ -113,8 +116,9 @@ class GenericHttpSource implements ContentSource {
     return ContentListResult(
       contents: result.items,
       currentPage: filter.page,
-      totalPages: result.hasNextPage ? filter.page + 1 : filter.page,
-      totalCount: result.items.length,
+      totalPages: result.totalPages ??
+          (result.hasNextPage ? filter.page + 1 : filter.page),
+      totalCount: result.totalItems ?? result.items.length,
       hasNext: result.hasNextPage,
       hasPrevious: filter.page > 1,
     );
@@ -157,7 +161,9 @@ class GenericHttpSource implements ContentSource {
   }
 
   @override
-  Future<List<Comment>> getComments(String contentId) async => const [];
+  Future<List<Comment>> getComments(String contentId) async {
+    return _adapter.fetchComments(contentId, _rawConfig);
+  }
 
   @override
   bool get participatesInGlobalSearch => true;
@@ -275,30 +281,30 @@ class GenericHttpSource implements ContentSource {
   }
 
   static GenericAdapter _buildAdapter(
-    Map<String, dynamic> config,
+    Map<String, dynamic> rawConfig,
     Dio dio,
     Logger logger,
+    HeadersGenerator? headersGenerator,
+    DelayApplier? delayApplier,
   ) {
-    final sourceId = config['source'] as String? ?? 'unknown';
-    final baseUrl = config['baseUrl'] as String? ?? '';
+    final sourceId = rawConfig['source'] as String? ?? 'unknown';
+    final baseUrl = rawConfig['baseUrl'] as String? ?? '';
+    logger.d('[$sourceId] Adapter baseUrl: "$baseUrl"');
+
     final urlBuilder = GenericUrlBuilder(baseUrl: baseUrl);
 
-    // Prefer REST/JSON adapter if `api` block exists, else fall back to scraper.
-    if (config.containsKey('api')) {
-      return GenericRestAdapter(
-        dio: dio,
-        urlBuilder: urlBuilder,
-        parser: GenericJsonParser(logger: logger),
-        logger: logger,
-        sourceId: sourceId,
-      );
-    }
-    return GenericScraperAdapter(
+    // Build selectors → GenericJsonParser
+    // final selectors = rawConfig['selectors'] as Map<String, dynamic>? ?? {};
+    final parser = GenericJsonParser(logger: logger);
+
+    return GenericRestAdapter(
       dio: dio,
       urlBuilder: urlBuilder,
-      parser: GenericHtmlParser(logger: logger),
+      parser: parser,
       logger: logger,
       sourceId: sourceId,
+      headersGenerator: headersGenerator,
+      delayApplier: delayApplier,
     );
   }
 

@@ -1,18 +1,19 @@
 {
     "source": "nhentai",
-    "version": "1.0.1",
-    "lastUpdated": "2026-01-25T23:20:00+07:00",
+    "version": "1.0.2",
+    "lastUpdated": "2026-03-01T00:00:00+07:00",
+    "baseUrl": "https://nhentai.net",
+    "avatarBaseUrl": "https://i1.nhentai.net",
     "api": {
         "enabled": true,
-        "baseUrl": "https://nhentai.net",
-        "apiBase": "https://nhentai.net/api",
         "timeout": 30000,
         "endpoints": {
             "galleryDetail": "/api/gallery/{id}",
             "allGalleries": "/api/galleries/all?page={page}",
             "search": "/api/galleries/search?query={query}&page={page}&sort={sort}",
             "tagSearch": "/api/galleries/tagged?tag_id={tagId}&page={page}",
-            "related": "/api/gallery/{id}/related"
+            "related": "/api/gallery/{id}/related",
+            "comments": "/api/gallery/{id}/comments"
         },
         "images": {
             "fullSize": "https://i.nhentai.net/galleries/{mediaId}/{page}.{ext}",
@@ -32,10 +33,127 @@
         ],
         "useMirrors": false
     },
+    "selectors": {
+        "items": {
+            "selector": "$.result[*]",
+            "type": "jsonpath"
+        },
+        "totalPages": {
+            "selector": "$.num_pages",
+            "type": "jsonpath"
+        },
+        "currentPage": {
+            "selector": "$.page",
+            "type": "jsonpath"
+        },
+        "id": {
+            "selector": "$.id",
+            "type": "jsonpath"
+        },
+        "title": {
+            "selector": "$.title.english",
+            "type": "jsonpath"
+        },
+        "englishTitle": {
+            "selector": "$.title.english",
+            "type": "jsonpath"
+        },
+        "japaneseTitle": {
+            "selector": "$.title.japanese",
+            "type": "jsonpath"
+        },
+        "mediaId": {
+            "selector": "$.media_id",
+            "type": "jsonpath"
+        },
+        "pageCount": {
+            "selector": "$.num_pages",
+            "type": "jsonpath"
+        },
+        "uploadDate": {
+            "selector": "$.upload_date",
+            "type": "jsonpath"
+        },
+        "tags": {
+            "selector": "$.tags[*].name",
+            "type": "jsonpath"
+        },
+        "artists": {
+            "selector": "$.tags[?(@.type=='artist')].name",
+            "type": "jsonpath"
+        },
+        "characters": {
+            "selector": "$.tags[?(@.type=='character')].name",
+            "type": "jsonpath"
+        },
+        "parodies": {
+            "selector": "$.tags[?(@.type=='parody')].name",
+            "type": "jsonpath"
+        },
+        "groups": {
+            "selector": "$.tags[?(@.type=='group')].name",
+            "type": "jsonpath"
+        },
+        "language": {
+            "selector": "$.tags[?(@.type=='language')].name",
+            "type": "jsonpath"
+        },
+        "coverUrlBuilder": {
+            "mediaIdSelector": "$.media_id",
+            "coverExtSelector": "$.images.pages[0].t",
+            "preferWebpSuffix": true,
+            "template": "https://t.nhentai.net/galleries/{mediaId}/thumb.{ext}",
+            "extensionMapping": {
+                "j": "jpg",
+                "p": "png",
+                "g": "gif",
+                "w": "webp"
+            }
+        },
+        "imageUrlBuilder": {
+            "mediaIdSelector": "$.media_id",
+            "pageExtSelector": "$.images.pages[*].t",
+            "template": "https://i.nhentai.net/galleries/{mediaId}/{page}.{ext}",
+            "extensionMapping": {
+                "j": "jpg",
+                "p": "png",
+                "g": "gif",
+                "w": "webp"
+            }
+        },
+        "comments": {
+            "selector": "$[*]",
+            "type": "jsonpath"
+        },
+        "commentId": {
+            "selector": "$.id",
+            "type": "jsonpath"
+        },
+        "commentUsername": {
+            "selector": "$.poster.username",
+            "type": "jsonpath"
+        },
+        "commentBody": {
+            "selector": "$.body",
+            "type": "jsonpath"
+        },
+        "commentAvatarUrl": {
+            "selector": "$.poster.avatar_url",
+            "type": "jsonpath"
+        },
+        "commentPostDate": {
+            "selector": "$.post_date",
+            "type": "jsonpath"
+        }
+    },
     "searchConfig": {
         "searchMode": "query-string",
         "endpoint": "/search/",
         "queryParam": "q",
+        "queryTokenTemplates": {
+            "include": "{type}:\"{name}\"",
+            "exclude": "-{type}:\"{name}\""
+        },
         "filterSupport": {
             "singleSelect": [
                 "language",
@@ -132,6 +250,20 @@
         "cloudflare": {
             "bypassEnabled": true,
             "antiDetection": true
+        },
+        "headers": {
+            "User-Agent": "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate",
+            "DNT": "1",
+            "Upgrade-Insecure-Requests": "1",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "Cache-Control": "max-age=0",
+            "Referer": "https://nhentai.net/"
         }
     },
     "features": {

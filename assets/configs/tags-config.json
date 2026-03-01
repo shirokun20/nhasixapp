@@ -39,6 +39,10 @@
                 "cacheTtlSeconds": 86400
             }
         },
+        "nhentai_test": {
+            "type": "alias",
+            "parentSource": "nhentai"
+        },
         "crotpedia": {
             "type": "remote",
             "format": "array",

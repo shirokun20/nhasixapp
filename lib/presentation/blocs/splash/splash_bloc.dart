@@ -10,6 +10,7 @@ import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/core/utils/directory_utils.dart';
 import 'package:nhasixapp/core/utils/tag_data_manager.dart';
 import 'package:nhasixapp/core/constants/app_constants.dart';
+import 'package:nhasixapp/core/di/service_locator.dart' show getIt;
 
 import 'package:kuron_core/kuron_core.dart'; // For ContentSourceRegistry
 
@@ -29,14 +30,14 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
     required Logger logger,
     required Connectivity connectivity,
     required TagDataManager tagDataManager,
-    required ContentSourceRegistry contentSourceRegistry,
+    // REMOVED: ContentSourceRegistry injection to fix lazy loading order
+    // Registry will be accessed via getIt after config is loaded
   })  : _remoteConfigService = remoteConfigService,
         _remoteDataSource = remoteDataSource,
         _userDataRepository = userDataRepository,
         _logger = logger,
         _connectivity = connectivity,
         _tagDataManager = tagDataManager,
-        _contentSourceRegistry = contentSourceRegistry,
         super(SplashInitial()) {
     on<SplashStartedEvent>(_onSplashStarted);
     on<SplashInitializeBypassEvent>(_onInitializeBypass);
@@ -53,7 +54,6 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
   final Logger _logger;
   final Connectivity _connectivity;
   final TagDataManager _tagDataManager;
-  final ContentSourceRegistry _contentSourceRegistry;
 
   // static const Duration _initialDelay = Duration(seconds: 1); // Removed for optimization
 
@@ -89,7 +89,9 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
           message: 'Initializing tags database...', progress: 1.0));
 
       // Initialize sources
-      final sources = _contentSourceRegistry.sourceIds;
+      // CRITICAL: Access registry AFTER smartInitialize() completes to ensure config is loaded
+      final contentSourceRegistry = getIt<ContentSourceRegistry>();
+      final sources = contentSourceRegistry.sourceIds;
       final tagsManifest = _remoteConfigService.tagsManifest;
 
       for (final source in sources) {

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
@@ -416,12 +418,77 @@ void _setupDataSources() {
         logger: getIt<Logger>(),
       ));
 
+  // nhentai_test — GenericHttpSource parallel instance alongside NhentaiSource.
+  // Used to verify the generic adapter produces correct results before full migration.
+  // Source ID 'nhentai_test' avoids collisions with the existing 'nhentai' source.
+  //
+  // CRITICAL: This assumes RemoteConfigService.smartInitialize() has already completed.
+  // If called before initialization, getRawConfig() returns empty and construction fails.
+  // The app must ensure config is loaded during splash screen before any source is accessed.
+  //
+  // ANTI-DETECTION: Injects AntiDetection.getRandomHeaders() as HeadersGenerator to bypass
+  // Cloudflare protection without relying on CloudflareBypassNoWebView cookies.
+  getIt.registerLazySingleton<GenericHttpSource>(
+    () {
+      final logger = getIt<Logger>();
+      final rawConfig = getIt<RemoteConfigService>().getRawConfig('nhentai');
+
+      if (rawConfig == null || rawConfig.isEmpty) {
+        logger.e(
+            'nhentai_test DI: Config not ready! RemoteConfigService.smartInitialize() must be called first.');
+        throw StateError(
+            'nhentai config not loaded. Ensure RemoteConfigService.smartInitialize() completes before accessing sources.');
+      }
+
+      logger.d('nhentai_test DI: rawConfig keys = ${rawConfig.keys.toList()}');
+      logger.d(
+          'nhentai_test DI: rawConfig.containsKey("api") = ${rawConfig.containsKey('api')}');
+
+      // Deep clone the config to avoid shallow copy issues with nested maps.
+      final testConfig =
+          jsonDecode(jsonEncode(rawConfig)) as Map<String, dynamic>;
+
+      logger.d(
+          'nhentai_test DI: testConfig.containsKey("api") = ${testConfig.containsKey('api')}');
+
+      // Override source ID so it coexists with NhentaiSource in the registry.
+      testConfig['source'] = 'nhentai_test';
+
+      // Give it a distinct display name so it is identifiable in the UI.
+      final ui = testConfig['ui'] as Map<String, dynamic>? ?? {};
+      ui['displayName'] = 'NHentai (Generic Test)';
+      testConfig['ui'] = ui;
+
+      // CRITICAL: Register config to RemoteConfigService so SearchScreen can access searchConfig
+      final remoteConfigService = getIt<RemoteConfigService>();
+      remoteConfigService.registerSourceConfig('nhentai_test', testConfig);
+
+      // Get AntiDetection instance for header generation and rate limiting
+      final antiDetection = getIt<AntiDetection>();
+
+      return GenericHttpSource(
+        rawConfig: testConfig,
+        dio: getIt<Dio>(),
+        logger: logger,
+        // Critical: Pass BOTH callbacks to match NhentaiApiClient behavior:
+        // 1. applyRandomDelay() — rate limiting to prevent IP ban
+        // 2. getRandomHeaders() — dynamic header rotation per-request
+        delayApplier: antiDetection.applyRandomDelay,
+        headersGenerator: ({String? referer}) =>
+            antiDetection.getRandomHeaders(referer: referer),
+      );
+    },
+  );
+
   // Content Source Registry
   getIt.registerLazySingleton<ContentSourceRegistry>(() {
     final registry = ContentSourceRegistry();
     registry.register(getIt<NhentaiSource>());
-    registry.register(getIt<CrotpediaSource>());
-    registry.register(getIt<KomiktapSource>()); // NEW
+    // TEMPORARY: Hide other sources during nhentai_test parallel testing (Phase 2)
+    // Uncomment after Phase 2 verification completes:
+    // registry.register(getIt<CrotpediaSource>());
+    // registry.register(getIt<KomiktapSource>());
+    registry.register(getIt<GenericHttpSource>()); // nhentai_test (parallel)
     return registry;
   });
 
@@ -579,7 +646,7 @@ void _setupBlocs() {
         logger: getIt<Logger>(),
         connectivity: getIt<Connectivity>(),
         tagDataManager: getIt<TagDataManager>(),
-        contentSourceRegistry: getIt<ContentSourceRegistry>(),
+        // REMOVED: contentSourceRegistry - accessed via getIt after config loads
       ));
 
   // Home BLoC

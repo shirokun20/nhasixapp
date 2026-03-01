@@ -50,12 +50,21 @@ class GenericUrlBuilder {
   }
 
   /// Build a content detail URL.
+  /// Supports both {contentId} and {id} placeholders for backward compatibility.
   String buildDetailUrl(String template, String contentId) =>
-      resolve(template, {'contentId': contentId});
+      resolve(template, {
+        'contentId': contentId,
+        'id': contentId, // Legacy support for configs using {id}
+      });
 
   /// Build a paginated gallery-of-pages URL.
+  /// Supports both {contentId} and {id} placeholders for backward compatibility.
   String buildPagesUrl(String template, String contentId, {int page = 1}) =>
-      resolve(template, {'contentId': contentId, 'page': page.toString()});
+      resolve(template, {
+        'contentId': contentId,
+        'id': contentId, // Legacy support for configs using {id}
+        'page': page.toString(),
+      });
 
   /// Build an image URL for a specific page.
   String buildImageUrl(

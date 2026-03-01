@@ -584,13 +584,22 @@ class _DetailScreenState extends State<DetailScreen> {
                     const SizedBox(height: 32),
 
                     // Related content section
-                    if (content.relatedContent.isNotEmpty) ...[
-                      _buildRelatedContentSection(content),
+                    if (state.relatedContent != null &&
+                        state.relatedContent!.isNotEmpty) ...[
+                      _buildRelatedContentSection(state),
                       const SizedBox(height: 20),
                     ],
 
-                    // Comments section
-                    CommentsSectionWidget(contentId: content.id),
+                    // Comments section (using state.comments from DetailLoaded)
+                    if (state.comments != null &&
+                        state.comments!.isNotEmpty) ...[
+                      _buildCommentsSection(state),
+                      const SizedBox(height: 20),
+                    ],
+
+                    // Legacy comments section widget (fallback for sources not using generic system)
+                    if (state.comments == null || state.comments!.isEmpty)
+                      CommentsSectionWidget(contentId: content.id),
                     const SizedBox(height: 32),
                   ],
                 ),
@@ -1614,13 +1623,16 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  Widget _buildRelatedContentSection(Content content) {
+  Widget _buildRelatedContentSection(DetailLoaded state) {
+    final content = state.content;
+    final relatedContent = state.relatedContent ?? [];
+
     // Check if related content feature is enabled for this source
     final remoteConfig = getIt<RemoteConfigService>();
     final hasRelatedFeature =
         remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.related);
 
-    if (!hasRelatedFeature || content.relatedContent.isEmpty) {
+    if (!hasRelatedFeature || relatedContent.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -1638,9 +1650,9 @@ class _DetailScreenState extends State<DetailScreen> {
           height: 280,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: content.relatedContent.length,
+            itemCount: relatedContent.length,
             itemBuilder: (context, index) {
-              final relatedItem = content.relatedContent[index];
+              final relatedItem = relatedContent[index];
               return _buildRelatedContentCard(relatedItem);
             },
           ),
@@ -1729,6 +1741,154 @@ class _DetailScreenState extends State<DetailScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildCommentsSection(DetailLoaded state) {
+    final comments = state.comments ?? [];
+    final content = state.content;
+
+    if (comments.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            children: [
+              Icon(
+                Icons.comment,
+                size: 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Comments (${comments.length})',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: comments.length,
+          itemBuilder: (context, index) {
+            final comment = comments[index];
+            return Container(
+              margin:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.all(12.0),
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .surfaceContainerHighest
+                    .withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Comment header with avatar and username
+                  Row(
+                    children: [
+                      if (comment.avatarUrl != null)
+                        CircleAvatar(
+                          radius: 16,
+                          backgroundImage: NetworkImage(
+                            comment.avatarUrl!.startsWith('http')
+                                ? comment.avatarUrl!
+                                : '${content.sourceId == 'nhentai' || content.sourceId == 'nhentai_test' ? 'https://nhentai.net' : state.content.url ?? ''}/${comment.avatarUrl}',
+                          ),
+                        )
+                      else
+                        CircleAvatar(
+                          radius: 16,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primaryContainer,
+                          child: Icon(
+                            Icons.person,
+                            size: 16,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onPrimaryContainer,
+                          ),
+                        ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              comment.username,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                  ),
+                            ),
+                            if (comment.postDate != null)
+                              Text(
+                                _formatCommentDate(comment.postDate!),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Comment body
+                  Text(
+                    comment.body,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  String _formatCommentDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays > 365) {
+      final years = (difference.inDays / 365).floor();
+      return '$years year${years > 1 ? 's' : ''} ago';
+    } else if (difference.inDays > 30) {
+      final months = (difference.inDays / 30).floor();
+      return '$months month${months > 1 ? 's' : ''} ago';
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
+    } else {
+      return 'Just now';
+    }
   }
 
   Widget _buildStatItem({

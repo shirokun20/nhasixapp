@@ -30,6 +30,8 @@ class DetailLoaded extends DetailState {
     this.isTogglingFavorite = false,
     this.imageMetadata,
     this.chapterHistory,
+    this.relatedContent,
+    this.comments,
   });
 
   final Content content;
@@ -38,6 +40,8 @@ class DetailLoaded extends DetailState {
   final DateTime lastUpdated;
   final List<ImageMetadata>? imageMetadata;
   final Map<String, History>? chapterHistory;
+  final List<Content>? relatedContent;
+  final List<Comment>? comments;
 
   @override
   List<Object?> get props => [
@@ -47,6 +51,8 @@ class DetailLoaded extends DetailState {
         lastUpdated,
         imageMetadata,
         chapterHistory,
+        relatedContent,
+        comments,
       ];
 
   /// Create a copy with updated properties
@@ -57,6 +63,8 @@ class DetailLoaded extends DetailState {
     DateTime? lastUpdated,
     List<ImageMetadata>? imageMetadata,
     Map<String, History>? chapterHistory,
+    List<Content>? relatedContent,
+    List<Comment>? comments,
   }) {
     return DetailLoaded(
       content: content ?? this.content,
@@ -65,6 +73,8 @@ class DetailLoaded extends DetailState {
       lastUpdated: lastUpdated ?? this.lastUpdated,
       imageMetadata: imageMetadata ?? this.imageMetadata,
       chapterHistory: chapterHistory ?? this.chapterHistory,
+      relatedContent: relatedContent ?? this.relatedContent,
+      comments: comments ?? this.comments,
     );
   }
 
@@ -196,6 +206,8 @@ class DetailOpeningChapter extends DetailLoaded {
     required super.lastUpdated,
     super.imageMetadata,
     super.chapterHistory,
+    super.relatedContent,
+    super.comments,
   });
 }
 
@@ -208,6 +220,8 @@ class DetailReaderReady extends DetailLoaded {
     required super.lastUpdated,
     super.imageMetadata,
     super.chapterHistory,
+    super.relatedContent,
+    super.comments,
     this.chapterData,
     this.currentChapter,
   });
@@ -238,6 +252,8 @@ class DetailActionFailure extends DetailLoaded {
     required super.lastUpdated,
     super.imageMetadata,
     super.chapterHistory,
+    super.relatedContent,
+    super.comments,
     this.needsLogin = false,
     this.error,
   });

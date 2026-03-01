@@ -184,6 +184,18 @@ class RemoteConfigService {
   Map<String, dynamic>? getRawConfig(String source) =>
       _rawSourceConfigs[source];
 
+  /// Manually register a source config (used for testing/generic sources)
+  void registerSourceConfig(String sourceId, Map<String, dynamic> rawConfig) {
+    try {
+      _rawSourceConfigs[sourceId] = rawConfig;
+      _sourceConfigs[sourceId] = SourceConfig.fromJson(rawConfig);
+      _logger.d('Manually registered config for $sourceId');
+    } catch (e) {
+      _logger.e('Failed to register config for $sourceId', error: e);
+      rethrow;
+    }
+  }
+
   RateLimitConfig getRateLimitConfig(String source) =>
       getConfig(source)?.network?.rateLimit ??
       RateLimitConfig(requestsPerMinute: 30, minDelayMs: 1500);

@@ -106,12 +106,47 @@ class DetailCubit extends BaseCubit<DetailState> {
 
       if (isClosed) return;
 
+      // Fetch related content and comments in parallel (non-blocking)
+      List<Content>? relatedContent;
+      List<Comment>? comments;
+
+      try {
+        // Get the content source to call getRelated and getComments
+        final source = _contentSourceRegistry.getSource(content.sourceId);
+        if (source != null) {
+          final relatedFuture =
+              source.getRelated(content.id).catchError((_) => <Content>[]);
+          final commentsFuture =
+              source.getComments(content.id).catchError((_) => <Comment>[]);
+
+          final results = await Future.wait([
+            relatedFuture,
+            commentsFuture,
+          ]);
+
+          relatedContent = results[0] as List<Content>;
+          comments = results[1] as List<Comment>;
+
+          logInfo(
+              'Fetched ${relatedContent.length} related, ${comments.length} comments for content: ${content.id}');
+        }
+      } catch (e, stackTrace) {
+        handleError(e, stackTrace, 'fetch related/comments');
+        logWarning(
+            'Failed to fetch related/comments for content: ${content.id}');
+        // Continue anyway - not critical
+      }
+
+      if (isClosed) return;
+
       emit(DetailLoaded(
         content: content,
         isFavorited: isFavorited,
         lastUpdated: DateTime.now(),
         imageMetadata: imageMetadata,
         chapterHistory: chapterHistory,
+        relatedContent: relatedContent,
+        comments: comments,
       ));
 
       logInfo('Successfully loaded content detail: ${content.title}');

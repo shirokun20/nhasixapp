@@ -282,6 +282,7 @@ TagSourceConfig _$TagSourceConfigFromJson(Map<String, dynamic> json) =>
       mappings: (json['mappings'] as Map<String, dynamic>?)?.map(
         (k, e) => MapEntry(k, e as String),
       ),
+      parentSource: json['parentSource'] as String?,
     );
 
 Map<String, dynamic> _$TagSourceConfigToJson(TagSourceConfig instance) =>
@@ -293,6 +294,7 @@ Map<String, dynamic> _$TagSourceConfigToJson(TagSourceConfig instance) =>
       'migration': instance.migration?.toJson(),
       'multiSelectSupport': instance.multiSelectSupport,
       'mappings': instance.mappings,
+      'parentSource': instance.parentSource,
     };
 
 TagMigrationConfig _$TagMigrationConfigFromJson(Map<String, dynamic> json) =>

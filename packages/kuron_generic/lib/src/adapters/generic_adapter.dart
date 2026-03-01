@@ -53,4 +53,10 @@ abstract class GenericAdapter {
     String contentId,
     Map<String, dynamic> rawConfig,
   );
+
+  /// Fetch comments for [contentId].
+  Future<List<Comment>> fetchComments(
+    String contentId,
+    Map<String, dynamic> rawConfig,
+  );
 }

@@ -443,6 +443,11 @@ class TagSourceConfig {
   final Map<String, bool>? multiSelectSupport;
   final Map<String, String>? mappings;
 
+  /// If set, this source is an alias/variant of another source and shares its
+  /// tag data. The value is the source ID to inherit tags from.
+  /// Example: `nhentai_test` sets `parentSource: "nhentai"` to reuse nhentai tags.
+  final String? parentSource;
+
   TagSourceConfig({
     required this.type,
     this.assetPath,
@@ -451,6 +456,7 @@ class TagSourceConfig {
     this.migration,
     this.multiSelectSupport,
     this.mappings,
+    this.parentSource,
   });
 
   factory TagSourceConfig.fromJson(Map<String, dynamic> json) =>

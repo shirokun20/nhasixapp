@@ -245,9 +245,12 @@ class TagDataManager {
         _cachedTagsBySource[tagSource] = tags;
         _lastCacheUpdateBySource[tagSource] = DateTime.now();
 
-        // If this is the primary source (e.g. nhentai/active), update generic cache
-        // For now, nhentai is primary backing for 'searchTags' without source params
-        if (tagSource == 'nhentai') {
+        // Update the global default tag cache for root sources (no parentSource).
+        // Root sources back the `searchTags` / `getTagsByType` calls that don't
+        // pass a source parameter. Alias sources rely on their parent's cache.
+        final manifest = getIt<RemoteConfigService>().tagsManifest;
+        final isRootSource = manifest?.sources[tagSource]?.parentSource == null;
+        if (isRootSource) {
           _cachedTags = tags;
           _buildTypeCache();
         }
@@ -324,6 +327,25 @@ class TagDataManager {
   }
 
   /// Get tags by type with pagination and search
+  /// Resolve the effective tag source.
+  ///
+  /// If [source] has no cached tags, checks the tags-config manifest for a
+  /// `parentSource` declaration. Sources with `parentSource` set (e.g. alias
+  /// or test variants) inherit tag data from their parent without loading
+  /// their own dataset.
+  String _resolveTagSource(String source) {
+    if (_cachedTagsBySource[source]?.isNotEmpty == true) return source;
+    final manifest = getIt<RemoteConfigService>().tagsManifest;
+    final parentSource = manifest?.sources[source]?.parentSource;
+    if (parentSource != null &&
+        _cachedTagsBySource[parentSource]?.isNotEmpty == true) {
+      _logger.d(
+          'TagDataManager: "$source" is alias for "$parentSource" (via config), using parent tags');
+      return parentSource;
+    }
+    return source;
+  }
+
   Future<List<Tag>> getTagsByType(
     String type, {
     int offset = 0,
@@ -334,7 +356,9 @@ class TagDataManager {
     // Determine list to search
     List<Tag> tags;
     if (source != null) {
-      tags = _cachedTagsBySource[source] ?? [];
+      // Resolve to base source if this source has no cached tags
+      final effectiveSource = _resolveTagSource(source);
+      tags = _cachedTagsBySource[effectiveSource] ?? [];
     } else {
       // use mapped cache for default
       final normalizedType = _normalizeTagType(type);

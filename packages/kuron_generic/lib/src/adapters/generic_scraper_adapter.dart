@@ -220,6 +220,16 @@ class GenericScraperAdapter implements GenericAdapter {
     return const [];
   }
 
+  @override
+  Future<List<Comment>> fetchComments(
+    String contentId,
+    Map<String, dynamic> rawConfig,
+  ) async {
+    // Most HTML scrapers don't have dedicated comments API endpoints.
+    // Return empty list for now; can be implemented per-source if needed.
+    return const [];
+  }
+
   // ── Private ─────────────────────────────────────────────────────────────────
 
   FieldSelector? _sel(Map<String, dynamic> selectors, String key) {
