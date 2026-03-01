@@ -3261,4 +3261,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get premiumFeature => 'Premium Feature';
+
+  @override
+  String get commentsMaintenance => '评论正在维护中';
+
+  @override
+  String get estimatedRecovery => '预计恢复时间';
 }

@@ -5765,6 +5765,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Premium Feature'**
   String get premiumFeature;
+
+  /// No description provided for @commentsMaintenance.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments Under Maintenance'**
+  String get commentsMaintenance;
+
+  /// No description provided for @estimatedRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated Recovery'**
+  String get estimatedRecovery;
 }
 
 class _AppLocalizationsDelegate

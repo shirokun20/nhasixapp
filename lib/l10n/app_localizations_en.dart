@@ -3344,4 +3344,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get premiumFeature => 'Premium Feature';
+
+  @override
+  String get commentsMaintenance => 'Comments Under Maintenance';
+
+  @override
+  String get estimatedRecovery => 'Estimated Recovery';
 }

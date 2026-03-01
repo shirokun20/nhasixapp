@@ -345,7 +345,7 @@ class CloudflareConfig {
   Map<String, dynamic> toJson() => _$CloudflareConfigToJson(this);
 }
 
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class FeatureConfig {
   final bool search;
   final bool related;
@@ -353,10 +353,16 @@ class FeatureConfig {
   final bool favorite;
   final bool chapters;
   final bool bookmark;
+  final bool comments;
   final bool supportsTagExclusion;
   final bool supportsAdvancedSearch;
   final bool generatePdf;
   final bool offlineMode;
+
+  /// Per-feature maintenance info keyed by feature name (e.g. `"comments"`).
+  /// When a key is present and its `active` flag is `true`, the feature is
+  /// shown as under maintenance instead of being fully hidden.
+  final Map<String, MaintenanceInfo>? maintenanceFeatures;
 
   FeatureConfig({
     this.search = false,
@@ -365,10 +371,12 @@ class FeatureConfig {
     this.favorite = false,
     this.chapters = false,
     this.bookmark = false,
+    this.comments = false,
     this.supportsTagExclusion = false,
     this.supportsAdvancedSearch = false,
     this.generatePdf = false,
     this.offlineMode = false,
+    this.maintenanceFeatures,
   });
 
   factory FeatureConfig.fromJson(Map<String, dynamic> json) =>

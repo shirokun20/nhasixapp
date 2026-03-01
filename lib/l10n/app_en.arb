@@ -2328,5 +2328,7 @@
   "backupNotFound": "Backup Not Found",
   "backupNotFoundMessage": "No 'nhasix' backup folder was found in the default location. Would you like to select a custom folder containing your backup?",
   "selectFolder": "Select Folder",
-  "premiumFeature": "Premium Feature"
+  "premiumFeature": "Premium Feature",
+  "commentsMaintenance": "Comments Under Maintenance",
+  "estimatedRecovery": "Estimated Recovery"
 }

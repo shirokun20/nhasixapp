@@ -579,10 +579,6 @@ class _DetailScreenState extends State<DetailScreen> {
                     _buildActionButtons(content),
                     const SizedBox(height: 24),
 
-                    // Statistics section
-                    _buildStatisticsSection(content),
-                    const SizedBox(height: 32),
-
                     // Related content section
                     if (state.relatedContent != null &&
                         state.relatedContent!.isNotEmpty) ...[
@@ -590,16 +586,8 @@ class _DetailScreenState extends State<DetailScreen> {
                       const SizedBox(height: 20),
                     ],
 
-                    // Comments section (using state.comments from DetailLoaded)
-                    if (state.comments != null &&
-                        state.comments!.isNotEmpty) ...[
-                      _buildCommentsSection(state),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // Legacy comments section widget (fallback for sources not using generic system)
-                    if (state.comments == null || state.comments!.isEmpty)
-                      CommentsSectionWidget(contentId: content.id),
+                    // Comments section — gated by feature flag + maintenance check
+                    _buildCommentsGate(content),
                     const SizedBox(height: 32),
                   ],
                 ),
@@ -1546,83 +1534,6 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  Widget _buildStatisticsSection(Content content) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            AppLocalizations.of(context)!.statistics,
-            style: TextStyleConst.headingSmall.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 12),
-          // First row of stats
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildStatItem(
-                icon: Icons.favorite,
-                label: AppLocalizations.of(context)!.favoritesLabel,
-                value: _formatNumber(content.favorites),
-                color: Theme.of(context).colorScheme.error,
-              ),
-              _buildStatItem(
-                icon: Icons.menu_book,
-                label: AppLocalizations.of(context)!.pagesLabel,
-                value: '${content.pageCount}',
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              _buildStatItem(
-                icon: Icons.label,
-                label: AppLocalizations.of(context)!.tagsLabel,
-                value: '${content.tags.length}',
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-            ],
-          ),
-
-          // Second row of stats (if there are artists or other relevant data)
-          if (content.artists.isNotEmpty || content.language.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                if (content.artists.isNotEmpty)
-                  _buildStatItem(
-                    icon: Icons.person,
-                    label: AppLocalizations.of(context)!.artistsLabel,
-                    value: '${content.artists.length}',
-                    color: Theme.of(context).colorScheme.tertiary,
-                  ),
-                _buildStatItem(
-                  icon: Icons.language,
-                  label: AppLocalizations.of(context)!.languageLabel,
-                  value: content.language.toUpperCase(),
-                  color: Theme.of(context).colorScheme.secondaryContainer,
-                ),
-                if (content.relatedContent.isNotEmpty)
-                  _buildStatItem(
-                    icon: Icons.recommend,
-                    label: AppLocalizations.of(context)!.relatedLabel,
-                    value: '${content.relatedContent.length}',
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
   Widget _buildRelatedContentSection(DetailLoaded state) {
     final content = state.content;
     final relatedContent = state.relatedContent ?? [];
@@ -1659,6 +1570,93 @@ class _DetailScreenState extends State<DetailScreen> {
         ),
       ],
     );
+  }
+
+  /// Gate widget for the comments section.
+  ///
+  /// Behaviour:
+  /// - Feature disabled in config → hidden (`SizedBox.shrink`)
+  /// - Feature enabled but under maintenance → shows maintenance banner
+  /// - Feature enabled and available → shows [CommentsSectionWidget]
+  Widget _buildCommentsGate(Content content) {
+    final remoteConfig = getIt<RemoteConfigService>();
+    final sourceId = content.sourceId;
+
+    // 1) Feature disabled entirely — hide
+    if (!remoteConfig.isFeatureEnabled(sourceId, (f) => f.comments)) {
+      return const SizedBox.shrink();
+    }
+
+    // 2) Feature enabled but under maintenance — show banner
+    final maintenance =
+        remoteConfig.getFeatureMaintenance(sourceId, 'comments');
+    if (maintenance != null) {
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color:
+                Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.construction_rounded,
+              color: Theme.of(context).colorScheme.onSecondaryContainer,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppLocalizations.of(context)!.commentsMaintenance,
+                    style: TextStyleConst.labelMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (maintenance.reason != null &&
+                      maintenance.reason!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      maintenance.reason!,
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSecondaryContainer
+                            .withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ],
+                  if (maintenance.estimatedRecovery != null &&
+                      maintenance.estimatedRecovery!.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '${AppLocalizations.of(context)!.estimatedRecovery}: ${maintenance.estimatedRecovery}',
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSecondaryContainer
+                            .withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 3) Feature enabled and available — show normally
+    return CommentsSectionWidget(contentId: content.id);
   }
 
   Widget _buildRelatedContentCard(Content relatedContent) {
@@ -1740,180 +1738,6 @@ class _DetailScreenState extends State<DetailScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildCommentsSection(DetailLoaded state) {
-    final comments = state.comments ?? [];
-    final content = state.content;
-
-    if (comments.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Row(
-            children: [
-              Icon(
-                Icons.comment,
-                size: 20,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Comments (${comments.length})',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: comments.length,
-          itemBuilder: (context, index) {
-            final comment = comments[index];
-            return Container(
-              margin:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              padding: const EdgeInsets.all(12.0),
-              decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .surfaceContainerHighest
-                    .withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Comment header with avatar and username
-                  Row(
-                    children: [
-                      if (comment.avatarUrl != null)
-                        CircleAvatar(
-                          radius: 16,
-                          backgroundImage: NetworkImage(
-                            comment.avatarUrl!.startsWith('http')
-                                ? comment.avatarUrl!
-                                : '${content.sourceId == 'nhentai' || content.sourceId == 'nhentai_test' ? 'https://nhentai.net' : state.content.url ?? ''}/${comment.avatarUrl}',
-                          ),
-                        )
-                      else
-                        CircleAvatar(
-                          radius: 16,
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primaryContainer,
-                          child: Icon(
-                            Icons.person,
-                            size: 16,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onPrimaryContainer,
-                          ),
-                        ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              comment.username,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
-                            ),
-                            if (comment.postDate != null)
-                              Text(
-                                _formatCommentDate(comment.postDate!),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  // Comment body
-                  Text(
-                    comment.body,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  String _formatCommentDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays > 365) {
-      final years = (difference.inDays / 365).floor();
-      return '$years year${years > 1 ? 's' : ''} ago';
-    } else if (difference.inDays > 30) {
-      final months = (difference.inDays / 30).floor();
-      return '$months month${months > 1 ? 's' : ''} ago';
-    } else if (difference.inDays > 0) {
-      return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
-    } else {
-      return 'Just now';
-    }
-  }
-
-  Widget _buildStatItem({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 24),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyleConst.headingSmall.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyleConst.bodySmall.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
     );
   }
 

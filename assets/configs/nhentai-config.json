@@ -13,7 +13,8 @@
             "search": "/api/galleries/search?query={query}&page={page}&sort={sort}",
             "tagSearch": "/api/galleries/tagged?tag_id={tagId}&page={page}",
             "related": "/api/gallery/{id}/related",
-            "comments": "/api/gallery/{id}/comments"
+            "comments": "/api/gallery/{id}/comments",
+            "contentUrl": "/g/{id}/"
         },
         "images": {
             "fullSize": "https://i.nhentai.net/galleries/{mediaId}/{page}.{ext}",
@@ -273,10 +274,19 @@
         "favorite": true,
         "chapters": false,
         "bookmark": false,
+        "comments": true,
         "supportsTagExclusion": true,
         "supportsAdvancedSearch": true,
         "generatePdf": true,
-        "offlineMode": true
+        "offlineMode": true,
+        "maintenanceFeatures": {
+            "comments": {
+                "active": true,
+                "reason": "API komentar sedang dalam pemeliharaan.",
+                "estimatedRecovery": "Beberapa jam lagi",
+                "contactUrl": ""
+            }
+        }
     },
     "ui": {
         "displayName": "NHentai",

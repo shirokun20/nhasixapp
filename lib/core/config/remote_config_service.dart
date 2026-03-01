@@ -206,6 +206,33 @@ class RemoteConfigService {
     return selector(config!.features!);
   }
 
+  /// Returns `true` when [featureName] is enabled and **not** under maintenance.
+  bool isFeatureAvailable(String source, String featureName) {
+    final features = getConfig(source)?.features;
+    if (features == null) return false;
+    final maintenance = features.maintenanceFeatures?[featureName];
+    if (maintenance?.active == true) return false;
+    return switch (featureName) {
+      'comments' => features.comments,
+      'related' => features.related,
+      'download' => features.download,
+      'favorite' => features.favorite,
+      'chapters' => features.chapters,
+      'bookmark' => features.bookmark,
+      'search' => features.search,
+      'generatePdf' => features.generatePdf,
+      'offlineMode' => features.offlineMode,
+      _ => false,
+    };
+  }
+
+  /// Returns the [MaintenanceInfo] for [featureName] if it is currently under
+  /// maintenance, otherwise `null`.
+  MaintenanceInfo? getFeatureMaintenance(String source, String featureName) {
+    final info = getConfig(source)?.features?.maintenanceFeatures?[featureName];
+    return (info?.active == true) ? info : null;
+  }
+
   bool supportsTagExclusion(String source) =>
       isFeatureEnabled(source, (f) => f.supportsTagExclusion);
 

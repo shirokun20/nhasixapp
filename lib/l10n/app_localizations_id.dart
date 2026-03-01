@@ -3358,4 +3358,10 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get premiumFeature => 'Fitur Premium';
+
+  @override
+  String get commentsMaintenance => 'Komentar Dalam Pemeliharaan';
+
+  @override
+  String get estimatedRecovery => 'Perkiraan Pemulihan';
 }

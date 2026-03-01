@@ -15,7 +15,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/config/remote_config_service.dart';
 
 import 'package:kuron_crotpedia/kuron_crotpedia.dart';
-import 'package:kuron_nhentai/kuron_nhentai.dart';
+import 'package:kuron_generic/kuron_generic.dart';
 import 'package:kuron_komiktap/kuron_komiktap.dart';
 
 import '../../../domain/entities/entities.dart';
@@ -131,7 +131,24 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   String _generateFallbackUrl(String? sourceId, String contentId) {
     if (sourceId == SourceType.nhentai.id ||
         (sourceId == null && contentId.length <= 6)) {
-      return NhentaiUrlBuilder.buildContentUrl(contentId);
+      // Config-driven URL via GenericHttpSource (nhentai primary source)
+      final sid = sourceId ?? SourceType.nhentai.id;
+      final source = getIt<ContentSourceRegistry>().getSource(sid);
+      if (source is GenericHttpSource) {
+        final url = source.buildContentUrl(contentId);
+        if (url.isNotEmpty) return url;
+      }
+      // Fallback: build from config template via RemoteConfigService
+      final raw = getIt<RemoteConfigService>().getRawConfig('nhentai');
+      final base = raw?['baseUrl'] as String? ?? '';
+      final api = raw?['api'] as Map<String, dynamic>?;
+      final template = ((api?['endpoints']
+              as Map<String, dynamic>?)?['contentUrl'] as String?) ??
+          '';
+      if (base.isNotEmpty && template.isNotEmpty) {
+        return '$base${template.replaceAll('{id}', contentId)}';
+      }
+      return '';
     } else if (sourceId == SourceType.crotpedia.id) {
       // Check if it's a chapter slug
       if (contentId.contains('chapter')) {

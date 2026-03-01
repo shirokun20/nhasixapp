@@ -2535,5 +2535,7 @@
   "backupNotFound": "未找到备份",
   "backupNotFoundMessage": "在默认位置未找到'nhasix'备份文件夹。您想选择包含备份的自定义文件夹吗？",
   "selectFolder": "选择文件夹",
-  "premiumFeature": "Premium Feature"
+  "premiumFeature": "Premium Feature",
+  "commentsMaintenance": "评论正在维护中",
+  "estimatedRecovery": "预计恢复时间"
 }

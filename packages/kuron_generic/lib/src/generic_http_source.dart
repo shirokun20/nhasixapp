@@ -165,6 +165,18 @@ class GenericHttpSource implements ContentSource {
     return _adapter.fetchComments(contentId, _rawConfig);
   }
 
+  /// Build the web-facing content URL from the `contentUrl` endpoint
+  /// template in config (e.g. `"/g/{id}/"`). Returns empty string if
+  /// the template is not defined in the config.
+  String buildContentUrl(String contentId) {
+    final api = _rawConfig['api'] as Map<String, dynamic>?;
+    final endpoints = (api?['endpoints'] as Map<String, dynamic>?) ?? {};
+    final template = endpoints['contentUrl'] as String? ?? '';
+    if (template.isEmpty) return '';
+    return GenericUrlBuilder(baseUrl: _baseUrl)
+        .buildDetailUrl(template, contentId);
+  }
+
   @override
   bool get participatesInGlobalSearch => true;
 

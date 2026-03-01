@@ -194,10 +194,16 @@ FeatureConfig _$FeatureConfigFromJson(Map<String, dynamic> json) =>
       favorite: json['favorite'] as bool? ?? false,
       chapters: json['chapters'] as bool? ?? false,
       bookmark: json['bookmark'] as bool? ?? false,
+      comments: json['comments'] as bool? ?? false,
       supportsTagExclusion: json['supportsTagExclusion'] as bool? ?? false,
       supportsAdvancedSearch: json['supportsAdvancedSearch'] as bool? ?? false,
       generatePdf: json['generatePdf'] as bool? ?? false,
       offlineMode: json['offlineMode'] as bool? ?? false,
+      maintenanceFeatures:
+          (json['maintenanceFeatures'] as Map<String, dynamic>?)?.map(
+        (k, e) =>
+            MapEntry(k, MaintenanceInfo.fromJson(e as Map<String, dynamic>)),
+      ),
     );
 
 Map<String, dynamic> _$FeatureConfigToJson(FeatureConfig instance) =>
@@ -208,10 +214,13 @@ Map<String, dynamic> _$FeatureConfigToJson(FeatureConfig instance) =>
       'favorite': instance.favorite,
       'chapters': instance.chapters,
       'bookmark': instance.bookmark,
+      'comments': instance.comments,
       'supportsTagExclusion': instance.supportsTagExclusion,
       'supportsAdvancedSearch': instance.supportsAdvancedSearch,
       'generatePdf': instance.generatePdf,
       'offlineMode': instance.offlineMode,
+      'maintenanceFeatures':
+          instance.maintenanceFeatures?.map((k, e) => MapEntry(k, e.toJson())),
     };
 
 UiConfig _$UiConfigFromJson(Map<String, dynamic> json) => UiConfig(
