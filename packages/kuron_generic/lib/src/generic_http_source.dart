@@ -51,6 +51,8 @@ class GenericHttpSource implements ContentSource {
         _displayName = _resolveDisplayName(rawConfig),
         _baseUrl = rawConfig['baseUrl'] as String? ?? '',
         _iconPath = rawConfig['iconPath'] as String? ??
+            (rawConfig['ui'] as Map<String, dynamic>?)?['iconPath']
+                as String? ??
             'assets/images/sources/generic.png',
         _requiresBypass = (rawConfig['network']
                 as Map<String, dynamic>?)?['requiresBypass'] as bool? ??

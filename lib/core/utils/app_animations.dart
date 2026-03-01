@@ -163,6 +163,7 @@ class AppAnimations {
   static Page<T> createPage<T>({
     required Widget child,
     required String name,
+    LocalKey? key,
     Object? arguments,
     RouteTransitionType type = RouteTransitionType.fadeSlide,
     Duration duration = medium,
@@ -170,7 +171,7 @@ class AppAnimations {
     String? restorationId,
   }) {
     return CustomTransitionPage<T>(
-      key: ValueKey(name),
+      key: key ?? ValueKey(name),
       name: name,
       arguments: arguments,
       restorationId: restorationId,
@@ -181,7 +182,11 @@ class AppAnimations {
     );
   }
 
-  /// Helper for GoRouter pageBuilder that applies animations
+  /// Helper for GoRouter pageBuilder that applies animations.
+  ///
+  /// Uses [GoRouterState.pageKey] as the page key so that the same route
+  /// path visited multiple times in the navigation stack (e.g. cyclical
+  /// related-content navigation) does not produce duplicate [ValueKey]s.
   static Page<T> animatedPageBuilder<T>(
     BuildContext context,
     GoRouterState state,
@@ -193,6 +198,7 @@ class AppAnimations {
     return createPage<T>(
       child: child,
       name: state.matchedLocation,
+      key: state.pageKey, // unique per navigation event, not just per path
       arguments: state.extra,
       type: type,
       duration: duration,
