@@ -321,6 +321,8 @@ class GenericRestAdapter implements GenericAdapter {
     final body = _extract(item, selectors, 'commentBody') ?? '';
     final rawAvatarUrl = _extract(item, selectors, 'commentAvatarUrl');
     final avatarUrl = _resolveAvatarUrl(rawAvatarUrl, baseUrl);
+    _logger.t(
+        '$_sourceId comment avatar: raw=$rawAvatarUrl → resolved=$avatarUrl');
     final postDateStr = _extract(item, selectors, 'commentPostDate');
 
     DateTime? postDate;
@@ -376,7 +378,7 @@ class GenericRestAdapter implements GenericAdapter {
       characters: const [],
       parodies: const [],
       groups: const [],
-      language: _extract(item, selectors, 'language') ?? 'unknown',
+      language: _extractLanguage(item, selectors),
       pageCount:
           int.tryParse(_extract(item, selectors, 'pageCount') ?? '') ?? 0,
       imageUrls: const [],
@@ -441,7 +443,7 @@ class GenericRestAdapter implements GenericAdapter {
       characters: charactersRaw,
       parodies: parodiesRaw,
       groups: groupsRaw,
-      language: _extract(data, selectors, 'language') ?? 'unknown',
+      language: _extractLanguage(data, selectors),
       pageCount: pageCount,
       imageUrls: imageUrls,
       uploadDate: _parseDate(_extract(data, selectors, 'uploadDate')),
@@ -644,6 +646,19 @@ class GenericRestAdapter implements GenericAdapter {
     final sel = _selectorOrNull(selectors, key);
     if (sel == null) return null;
     return _parser.extractString(data, sel);
+  }
+
+  /// Extract language, skipping "translated" — matches native CommentModel.fromApi logic.
+  /// nhentai tags often include both the real language (e.g. "chinese") AND "translated",
+  /// so the plain JSONPath selector may return "translated" first depending on tag order.
+  /// This method uses extractList and picks the first non-"translated" value.
+  String _extractLanguage(dynamic data, Map<String, dynamic> selectors) {
+    final sel = _selectorOrNull(selectors, 'language');
+    if (sel == null) return 'unknown';
+    final values = _parser.extractList(data, sel);
+    final language =
+        values.firstWhere((v) => v != 'translated', orElse: () => '');
+    return language.isNotEmpty ? language : 'unknown';
   }
 
   FieldSelector? _selectorOrNull(Map<String, dynamic> selectors, String key) {

@@ -3,7 +3,7 @@
     "version": "1.0.2",
     "lastUpdated": "2026-03-01T00:00:00+07:00",
     "baseUrl": "https://nhentai.net",
-    "avatarBaseUrl": "https://i1.nhentai.net",
+    "avatarBaseUrl": "https://i3.nhentai.net",
     "api": {
         "enabled": true,
         "timeout": 30000,
@@ -95,7 +95,7 @@
             "type": "jsonpath"
         },
         "language": {
-            "selector": "$.tags[?(@.type=='language')].name",
+            "selector": "$.tags[?(@.type=='language' && @.name!='translated')].name",
             "type": "jsonpath"
         },
         "coverUrlBuilder": {
