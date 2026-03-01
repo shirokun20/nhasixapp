@@ -21,6 +21,19 @@ class SourceConfig {
   final String version;
   final String? lastUpdated;
   final String? baseUrl;
+
+  /// Whether this source is enabled. Controlled by the remote manifest.
+  /// Defaults to true so bundled configs (which lack this field) remain active.
+  @JsonKey(defaultValue: true)
+  final bool enabled;
+
+  /// Whether this source is under maintenance (temporary unavailability).
+  @JsonKey(defaultValue: false)
+  final bool maintenance;
+
+  /// Human-readable maintenance message shown to users when [maintenance] is true.
+  final String? maintenanceMessage;
+
   final ApiConfig? api;
   final ScraperConfig? scraper;
   final NetworkConfig? network;
@@ -35,6 +48,9 @@ class SourceConfig {
     required this.version,
     this.lastUpdated,
     this.baseUrl,
+    this.enabled = true,
+    this.maintenance = false,
+    this.maintenanceMessage,
     this.api,
     this.scraper,
     this.network,
@@ -680,4 +696,170 @@ class AppPrivacy {
   factory AppPrivacy.fromJson(Map<String, dynamic> json) =>
       _$AppPrivacyFromJson(json);
   Map<String, dynamic> toJson() => _$AppPrivacyToJson(this);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Manifest Models (remote manifest.json entry point)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Top-level manifest downloaded from the CDN. Describes all available source
+/// configs and their current versions.
+@JsonSerializable(explicitToJson: true)
+class SourceManifest {
+  /// Bump this when the manifest JSON schema changes incompatibly.
+  final int schemaVersion;
+  final String lastUpdated;
+
+  /// Minimum app version required to use these configs.
+  final String? minimumAppVersion;
+
+  /// Metadata for the global app-config.json.
+  final SourceManifestAppEntry? appConfig;
+
+  /// Ordered list of source entries.
+  final List<SourceManifestEntry> sources;
+
+  SourceManifest({
+    required this.schemaVersion,
+    required this.lastUpdated,
+    this.minimumAppVersion,
+    this.appConfig,
+    required this.sources,
+  });
+
+  factory SourceManifest.fromJson(Map<String, dynamic> json) =>
+      _$SourceManifestFromJson(json);
+  Map<String, dynamic> toJson() => _$SourceManifestToJson(this);
+}
+
+/// Manifest entry for the global app-config.
+@JsonSerializable()
+class SourceManifestAppEntry {
+  final String version;
+
+  /// Relative URL to the config file (resolved against the CDN base URL).
+  final String url;
+  final String? checksum;
+
+  SourceManifestAppEntry({
+    required this.version,
+    required this.url,
+    this.checksum,
+  });
+
+  factory SourceManifestAppEntry.fromJson(Map<String, dynamic> json) =>
+      _$SourceManifestAppEntryFromJson(json);
+  Map<String, dynamic> toJson() => _$SourceManifestAppEntryToJson(this);
+}
+
+/// One source entry inside the manifest.
+@JsonSerializable(explicitToJson: true)
+class SourceManifestEntry {
+  /// Unique source identifier (e.g. "nhentai", "mangadex").
+  final String id;
+
+  /// Whether this source is bundled into the APK.
+  /// `true` only for nhentai — it is always available and cannot be uninstalled.
+  /// All other sources are installable: user downloads the config via Settings.
+  @JsonKey(defaultValue: false)
+  final bool bundled;
+
+  /// Whether this source should be loaded by the app.
+  @JsonKey(defaultValue: true)
+  final bool enabled;
+
+  /// Maintenance status for this source (fast gate from manifest level).
+  final MaintenanceInfo? maintenance;
+
+  /// Version string — used for cache invalidation against locally stored config.
+  final String version;
+
+  /// Relative URL to the source config file.
+  final String url;
+
+  /// Optional SHA-256 checksum for integrity validation.
+  final String? checksum;
+
+  /// Metadata used by the Source Manager UI before the full config is downloaded.
+  final SourceManifestMeta? meta;
+
+  SourceManifestEntry({
+    required this.id,
+    this.bundled = false,
+    this.enabled = true,
+    this.maintenance,
+    required this.version,
+    required this.url,
+    this.checksum,
+    this.meta,
+  });
+
+  factory SourceManifestEntry.fromJson(Map<String, dynamic> json) =>
+      _$SourceManifestEntryFromJson(json);
+  Map<String, dynamic> toJson() => _$SourceManifestEntryToJson(this);
+}
+
+/// Display metadata for a source shown in the Source Manager UI.
+/// Available from the manifest before the full per-source config is downloaded.
+@JsonSerializable()
+class SourceManifestMeta {
+  final String displayName;
+  final String? description;
+
+  /// For bundled sources (nhentai): local asset path.
+  /// For installable sources: CDN URL.
+  final String? iconUrl;
+
+  /// E.g. "manga", "doujinshi", "all"
+  final String? contentType;
+
+  /// Dominant language of the content, e.g. "id", "en", "all"
+  final String? language;
+
+  /// Whether the user must log in to use this source.
+  @JsonKey(defaultValue: false)
+  final bool requiresAuth;
+
+  /// Whether this source needs a special adapter (CF bypass, decryption, etc.)
+  @JsonKey(defaultValue: false)
+  final bool requiresSpecialAdapter;
+
+  /// Estimated config file size in KB.
+  final int? sizeKb;
+
+  SourceManifestMeta({
+    required this.displayName,
+    this.description,
+    this.iconUrl,
+    this.contentType,
+    this.language,
+    this.requiresAuth = false,
+    this.requiresSpecialAdapter = false,
+    this.sizeKb,
+  });
+
+  factory SourceManifestMeta.fromJson(Map<String, dynamic> json) =>
+      _$SourceManifestMetaFromJson(json);
+  Map<String, dynamic> toJson() => _$SourceManifestMetaToJson(this);
+}
+
+/// Maintenance status at the manifest level (fast gate, no full config needed).
+@JsonSerializable()
+class MaintenanceInfo {
+  @JsonKey(defaultValue: false)
+  final bool active;
+  final String? reason;
+  final String? estimatedRecovery;
+  final String? contactUrl;
+
+  MaintenanceInfo({
+    this.active = false,
+    this.reason,
+    this.estimatedRecovery,
+    this.contactUrl,
+  });
+
+  factory MaintenanceInfo.fromJson(Map<String, dynamic> json) =>
+      _$MaintenanceInfoFromJson(json);
+  Map<String, dynamic> toJson() => _$MaintenanceInfoToJson(this);
 }

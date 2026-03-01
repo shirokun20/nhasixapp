@@ -19,11 +19,12 @@
 | **download_metadata_revamp** | `..........` | 0% | Pending |
 | **flutter-desktop-migration** | `..........` | 0% | Pending |
 | **komiktap_navigation_lists** | `..........` | 0% | Pending |
-| **multi_provider_integration** | `..........` | 0% | Pending |
 | **reader-ads** | `..........` | 0% | Pending |
 
 ## 🚧 On Progress
-_No items in this stage._
+| Project Name | Progress | % | Status |
+|---|---|---|---|
+| **multi_provider_integration** | `█████░░░░░` | 45% | 🚧 Building |
 
 ## ✅ Success
 | Project Name | Progress | % | Status |

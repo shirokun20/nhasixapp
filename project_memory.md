@@ -85,12 +85,14 @@ lib/
 - unity-ads-fix
 - view_comments
 
-### 📋 Analysis Phase (6)
+### 🚧 In Progress (1)
+- **multi_provider_integration** — 40% — Phase 0 ✅, Phase 0B ✅, Phase 1 ✅, Phase 2 next
+
+### 📋 Analysis Phase (5)
 - app_audit_hardcode_ui_desktop
 - download_metadata_revamp
 - flutter-desktop-migration
 - komiktap_navigation_lists
-- multi_provider_integration
 - reader-ads
 
 ### 🔮 Future/Backlog (1)
@@ -146,6 +148,28 @@ Project ini menggunakan search tools modern sebagai pengganti `grep`:
 ```
 
 ### Recent Sessions
+
+#### 2026-03-01 — OpenCode — multi_provider_integration Phase 1 completion
+- **Done**:
+  - Confirmed `nhentai-config.json` already present in `assets/configs/` (Phase 0B fully closed)
+  - Registered `GenericSourceFactory` in `service_locator.dart` `_setupDataSources()`
+  - `dart analyze lib/` — No issues found
+  - `dart analyze packages/kuron_generic/lib/` — No issues found
+  - Updated `progress.md`: Phase 0B + Phase 1 all checkboxes marked complete
+- **Issues**: None
+- **Next**: Phase 2 — Migrate nhentai → GenericHttpSource (config already exists, need to wire up `GenericHttpSource` instead of `NhentaiSource` in registry, verify search/detail/image loading, then deprecate `kuron_nhentai`)
+
+#### 2026-03-01 — OpenCode — multi_provider_integration Phase 0 + 0B
+- **Done**:
+  - Phase 0 kuron_core: `ContentType`/`ContentStatus` enums, `Content` entity new fields, `SourceFilter` sealed hierarchy, `SourceFactory` interface, `AutocompleteSuggestion` entity, `RateLimiter`, new `ContentSource` optional methods
+  - Phase 0B: `SourceConfig` + manifest models (`SourceManifest`, `SourceManifestEntry`), `RemoteConfigService` rewrite (hybrid storage, manifest-driven, SHA-256 checksum, CDN URL resolution), `SourceLoader` service created, DI updated
+  - Bugfix: `ContentModel.copyWith` — added `contentType`, `status`, `sourceUrl`, `totalChapters` params
+  - Bugfix: Added 6 `ContentSource` override stubs to `NhentaiSource`, `KomiktapSource`, `CrotpediaSource` (stale pub-cache git resolution issue)
+  - All 3 provider packages + main app analyze clean
+- **Issues**:
+  - Stale git cache at `~/.pub-cache/git/kuron_packages-*/` causes LSP false positives in provider packages (dart CLI resolves correctly via `path:`, LSP does not). Workaround: explicit stubs.
+  - Bundled fallback configs (`assets/configs/nhentai-config.json`, etc.) not yet created
+- **Next**: Create bundled fallback asset configs (Phase 0B final item), then scaffold `kuron_generic` (Phase 1)
 
 #### 2026-03-01 — Antigravity — Project Memory & Tooling Setup
 - **Done**: Created `project_memory.md`, integrated search tools (rg/ugrep/semgrep), updated AI configs

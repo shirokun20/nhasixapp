@@ -17,6 +17,7 @@ import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_nhentai/kuron_nhentai.dart';
 import 'package:kuron_crotpedia/kuron_crotpedia.dart';
 import 'package:kuron_komiktap/kuron_komiktap.dart';
+import 'package:kuron_generic/kuron_generic.dart';
 import 'package:nhasixapp/core/adapters/nhentai_scraper_adapter_impl.dart';
 
 // Core Network
@@ -26,6 +27,7 @@ import 'package:nhasixapp/core/network/http_client_manager.dart';
 import 'package:nhasixapp/core/utils/tag_data_manager.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/config/source_loader.dart';
 import 'package:nhasixapp/core/network/dns_settings_service.dart';
 import 'package:nhasixapp/core/network/dns_resolver.dart'; // NEW
 
@@ -167,6 +169,12 @@ void _setupCore() {
   // Remote Config Service (Assets-based configs, Remote tags download)
   getIt.registerLazySingleton<RemoteConfigService>(() => RemoteConfigService(
         dio: getIt<Dio>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // Source Loader — applies manifest-driven enable/maintenance flags to registry
+  getIt.registerLazySingleton<SourceLoader>(() => SourceLoader(
+        configService: getIt<RemoteConfigService>(),
         logger: getIt<Logger>(),
       ));
 
@@ -400,6 +408,12 @@ void _setupDataSources() {
         baseUrl: getIt<RemoteConfigService>().getConfig('komiktap')?.baseUrl,
         displayName:
             getIt<RemoteConfigService>().getConfig('komiktap')?.ui?.displayName,
+      ));
+
+  // Generic Source Factory — catch-all factory for config-driven providers
+  getIt.registerLazySingleton<GenericSourceFactory>(() => GenericSourceFactory(
+        dio: getIt<Dio>(),
+        logger: getIt<Logger>(),
       ));
 
   // Content Source Registry

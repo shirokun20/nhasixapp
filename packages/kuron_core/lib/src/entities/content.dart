@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'tag.dart';
 import 'chapter.dart';
+import '../enums/content_type.dart';
 
 /// Core content entity representing a manga/doujinshi.
 ///
@@ -21,7 +22,7 @@ class Content extends Equatable {
     required this.pageCount,
     required this.imageUrls,
     required this.uploadDate,
-    this.url, // NEW: For reader navigation and history
+    this.url,
     this.favorites = 0,
     this.englishTitle,
     this.japaneseTitle,
@@ -29,6 +30,11 @@ class Content extends Equatable {
     this.mediaId,
     this.relatedContent = const [],
     this.chapters,
+    // Multi-provider additions (optional — backward compatible)
+    this.contentType = ContentType.doujinshi,
+    this.status = ContentStatus.unknown,
+    this.sourceUrl,
+    this.totalChapters,
   });
 
   /// Content ID (format varies by source)
@@ -94,6 +100,20 @@ class Content extends Equatable {
   /// URL to content page (for navigation and history tracking)
   final String? url;
 
+  // ========== Multi-Provider Additions ==========
+
+  /// Content type (doujinshi, manga, manhua, manhwa, artistCG, gameCG)
+  final ContentType contentType;
+
+  /// Publication status (for chapter-based sources like MangaDex)
+  final ContentStatus status;
+
+  /// Original URL at source website (e.g. https://nhentai.net/g/123456/)
+  final String? sourceUrl;
+
+  /// Total number of chapters (for chapter-based sources)
+  final int? totalChapters;
+
   @override
   List<Object?> get props => [
         id,
@@ -117,6 +137,10 @@ class Content extends Equatable {
         mediaId,
         relatedContent,
         chapters,
+        contentType,
+        status,
+        sourceUrl,
+        totalChapters,
       ];
 
   Content copyWith({
@@ -141,6 +165,10 @@ class Content extends Equatable {
     String? mediaId,
     List<Content>? relatedContent,
     List<Chapter>? chapters,
+    ContentType? contentType,
+    ContentStatus? status,
+    String? sourceUrl,
+    int? totalChapters,
   }) {
     return Content(
       id: id ?? this.id,
@@ -164,6 +192,10 @@ class Content extends Equatable {
       mediaId: mediaId ?? this.mediaId,
       relatedContent: relatedContent ?? this.relatedContent,
       chapters: chapters ?? this.chapters,
+      contentType: contentType ?? this.contentType,
+      status: status ?? this.status,
+      sourceUrl: sourceUrl ?? this.sourceUrl,
+      totalChapters: totalChapters ?? this.totalChapters,
     );
   }
 

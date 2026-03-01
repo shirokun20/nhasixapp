@@ -26,6 +26,9 @@ SourceConfig _$SourceConfigFromJson(Map<String, dynamic> json) => SourceConfig(
       version: json['version'] as String,
       lastUpdated: json['lastUpdated'] as String?,
       baseUrl: json['baseUrl'] as String?,
+      enabled: json['enabled'] as bool? ?? true,
+      maintenance: json['maintenance'] as bool? ?? false,
+      maintenanceMessage: json['maintenanceMessage'] as String?,
       api: json['api'] == null
           ? null
           : ApiConfig.fromJson(json['api'] as Map<String, dynamic>),
@@ -58,6 +61,9 @@ Map<String, dynamic> _$SourceConfigToJson(SourceConfig instance) =>
       'version': instance.version,
       'lastUpdated': instance.lastUpdated,
       'baseUrl': instance.baseUrl,
+      'enabled': instance.enabled,
+      'maintenance': instance.maintenance,
+      'maintenanceMessage': instance.maintenanceMessage,
       'api': instance.api?.toJson(),
       'scraper': instance.scraper?.toJson(),
       'network': instance.network?.toJson(),
@@ -504,6 +510,115 @@ AppPrivacy _$AppPrivacyFromJson(Map<String, dynamic> json) => AppPrivacy(
 Map<String, dynamic> _$AppPrivacyToJson(AppPrivacy instance) =>
     <String, dynamic>{
       'enableAnalytics': instance.enableAnalytics,
+    };
+
+SourceManifest _$SourceManifestFromJson(Map<String, dynamic> json) =>
+    SourceManifest(
+      schemaVersion: (json['schemaVersion'] as num).toInt(),
+      lastUpdated: json['lastUpdated'] as String,
+      minimumAppVersion: json['minimumAppVersion'] as String?,
+      appConfig: json['appConfig'] == null
+          ? null
+          : SourceManifestAppEntry.fromJson(
+              json['appConfig'] as Map<String, dynamic>),
+      sources: (json['sources'] as List<dynamic>)
+          .map((e) => SourceManifestEntry.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
+Map<String, dynamic> _$SourceManifestToJson(SourceManifest instance) =>
+    <String, dynamic>{
+      'schemaVersion': instance.schemaVersion,
+      'lastUpdated': instance.lastUpdated,
+      'minimumAppVersion': instance.minimumAppVersion,
+      'appConfig': instance.appConfig?.toJson(),
+      'sources': instance.sources.map((e) => e.toJson()).toList(),
+    };
+
+SourceManifestAppEntry _$SourceManifestAppEntryFromJson(
+        Map<String, dynamic> json) =>
+    SourceManifestAppEntry(
+      version: json['version'] as String,
+      url: json['url'] as String,
+      checksum: json['checksum'] as String?,
+    );
+
+Map<String, dynamic> _$SourceManifestAppEntryToJson(
+        SourceManifestAppEntry instance) =>
+    <String, dynamic>{
+      'version': instance.version,
+      'url': instance.url,
+      'checksum': instance.checksum,
+    };
+
+SourceManifestEntry _$SourceManifestEntryFromJson(Map<String, dynamic> json) =>
+    SourceManifestEntry(
+      id: json['id'] as String,
+      bundled: json['bundled'] as bool? ?? false,
+      enabled: json['enabled'] as bool? ?? true,
+      maintenance: json['maintenance'] == null
+          ? null
+          : MaintenanceInfo.fromJson(
+              json['maintenance'] as Map<String, dynamic>),
+      version: json['version'] as String,
+      url: json['url'] as String,
+      checksum: json['checksum'] as String?,
+      meta: json['meta'] == null
+          ? null
+          : SourceManifestMeta.fromJson(json['meta'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$SourceManifestEntryToJson(
+        SourceManifestEntry instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'bundled': instance.bundled,
+      'enabled': instance.enabled,
+      'maintenance': instance.maintenance?.toJson(),
+      'version': instance.version,
+      'url': instance.url,
+      'checksum': instance.checksum,
+      'meta': instance.meta?.toJson(),
+    };
+
+SourceManifestMeta _$SourceManifestMetaFromJson(Map<String, dynamic> json) =>
+    SourceManifestMeta(
+      displayName: json['displayName'] as String,
+      description: json['description'] as String?,
+      iconUrl: json['iconUrl'] as String?,
+      contentType: json['contentType'] as String?,
+      language: json['language'] as String?,
+      requiresAuth: json['requiresAuth'] as bool? ?? false,
+      requiresSpecialAdapter: json['requiresSpecialAdapter'] as bool? ?? false,
+      sizeKb: (json['sizeKb'] as num?)?.toInt(),
+    );
+
+Map<String, dynamic> _$SourceManifestMetaToJson(SourceManifestMeta instance) =>
+    <String, dynamic>{
+      'displayName': instance.displayName,
+      'description': instance.description,
+      'iconUrl': instance.iconUrl,
+      'contentType': instance.contentType,
+      'language': instance.language,
+      'requiresAuth': instance.requiresAuth,
+      'requiresSpecialAdapter': instance.requiresSpecialAdapter,
+      'sizeKb': instance.sizeKb,
+    };
+
+MaintenanceInfo _$MaintenanceInfoFromJson(Map<String, dynamic> json) =>
+    MaintenanceInfo(
+      active: json['active'] as bool? ?? false,
+      reason: json['reason'] as String?,
+      estimatedRecovery: json['estimatedRecovery'] as String?,
+      contactUrl: json['contactUrl'] as String?,
+    );
+
+Map<String, dynamic> _$MaintenanceInfoToJson(MaintenanceInfo instance) =>
+    <String, dynamic>{
+      'active': instance.active,
+      'reason': instance.reason,
+      'estimatedRecovery': instance.estimatedRecovery,
+      'contactUrl': instance.contactUrl,
     };
 
 _SearchConfig _$SearchConfigFromJson(Map<String, dynamic> json) =>

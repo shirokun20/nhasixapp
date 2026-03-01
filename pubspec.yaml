@@ -31,6 +31,8 @@ dependencies:
     path: ./packages/kuron_crotpedia
   kuron_komiktap:
     path: ./packages/kuron_komiktap
+  kuron_generic:
+    path: ./packages/kuron_generic
   kuron_native:
     path: ./packages/kuron_native
 

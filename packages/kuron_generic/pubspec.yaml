@@ -1,0 +1,18 @@
+name: kuron_generic
+description: Generic config-driven HTTP source for Kuron app (JSON API + HTML scraping)
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.5.4
+
+dependencies:
+  kuron_core:
+    path: ../kuron_core
+  dio: ^5.9.0
+  html: ^0.15.4
+  json_path: ^0.7.0
+  logger: ^2.6.2
+
+dev_dependencies:
+  flutter_lints: ^6.0.0

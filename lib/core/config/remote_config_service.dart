@@ -1,101 +1,216 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/config/config_models.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Service responsible for loading, caching and refreshing source configs.
+///
+/// ### Storage layers (highest priority first)
+/// 1. **AppDocDir/configs/** — Downloaded/cached configs (writable, override bundled)
+/// 2. **assets/configs/** — Bundled defaults (read-only, always present)
+/// 3. **Hardcoded defaults** — Last-resort constants
+///
+/// ### Manifest-driven sync
+/// On [smartInitialize] the service:
+/// 1. Downloads `manifest.json` from [_manifestUrl] (5 s timeout).
+/// 2. For each source in the manifest: compares manifest version vs cached
+///    version in SharedPreferences. If different, downloads new config.
+/// 3. Falls back to bundled asset if download fails.
+///
+/// Config is intentionally **not time-expiring** — invalidation is purely
+/// version-driven (bumping version in manifest triggers re-download).
 class RemoteConfigService {
   final Dio _dio;
   final Logger _logger;
 
-  // GitHub Raw URLs for tags (large files, downloaded on demand)
+  // ── CDN / remote URLs ───────────────────────────────────────────────────────
+
+  /// CDN base URL for the config repo. All relative `url` fields in the
+  /// manifest are resolved against this.
+  static const String _cdnBase =
+      'https://cdn.jsdelivr.net/gh/shirokun20/nhasix-configs@main';
+
+  static const String _manifestUrl = '$_cdnBase/manifest.json';
+
+  // Legacy tags URLs (kept for backward compatibility)
   static const String _tagsBaseUrl =
       'https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/configs/configs/tags';
   static const String _nhentaiTagsUrl = '$_tagsBaseUrl/tags_nhentai.json';
   static const String _crotpediaTagsUrl = '$_tagsBaseUrl/tags_crotpedia.json';
 
-  // Asset path for tags config (manifest)
-  static const String _tagsAssetPath = 'assets/configs/tags-config.json';
+  // ── Asset paths ──────────────────────────────────────────────────────────────
 
-  // Cache keys for downloaded tags
+  static const String _assetConfigBase = 'assets/configs';
+  static const String _tagsAssetPath = '$_assetConfigBase/tags-config.json';
+
+  /// Bundled asset path for each **bundled** source.
+  ///
+  /// Only `nhentai` is bundled into the APK — it is always available without
+  /// network. All other sources are *installable* (user downloads JSON config
+  /// from CDN via Settings → Sumber) and therefore must NOT appear here.
+  static const Map<String, String> _bundledAssetPaths = {
+    'nhentai': '$_assetConfigBase/nhentai-config.json',
+    'app': '$_assetConfigBase/app-config.json',
+    'tags': _tagsAssetPath,
+  };
+
+  /// Source IDs that are bundled into the APK and always available.
+  static const Set<String> _bundledSourceIds = {'nhentai'};
+
+  // ── SharedPreferences keys ───────────────────────────────────────────────────
+
+  static const String _prefManifestVersion = 'config_manifest_version';
+  static const String _prefLastSyncMs = 'config_last_sync_timestamp';
+
+  /// Cached version for a specific source: "config_version_{sourceId}"
+  static String _prefSourceVersion(String sourceId) =>
+      'config_version_$sourceId';
+
+  // Legacy tag cache keys
   static const String _nhentaiTagsCacheKey = 'tags_cache_nhentai';
   static const String _crotpediaTagsCacheKey = 'tags_cache_crotpedia';
 
-  // In-memory Configs
+  // ── In-memory state ──────────────────────────────────────────────────────────
+
   AppConfig? _appConfig;
   TagsManifest? _tagsManifest;
+  SourceManifest? _manifest;
   final Map<String, SourceConfig> _sourceConfigs = {};
   final Map<String, Map<String, dynamic>> _rawSourceConfigs = {};
 
-  RemoteConfigService({
-    required Dio dio,
-    required Logger logger,
-  })  : _dio = dio,
+  // ── Constructor ──────────────────────────────────────────────────────────────
+
+  RemoteConfigService({required Dio dio, required Logger logger})
+      : _dio = dio,
         _logger = logger;
 
-  /// Initialize with Smart Sync logic (Master Manifest Pattern)
-  /// [isFirstRun] - If true, throws exception on critical failure
-  /// [onProgress] - Optional callback for progress tracking (0.0 to 1.0)
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Public API
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Initialise config using the Smart Sync strategy.
+  ///
+  /// [isFirstRun] — when true, a critical failure rethrows the exception.
+  /// [onProgress] — optional 0.0–1.0 progress callback.
   Future<void> smartInitialize({
     bool isFirstRun = false,
     void Function(double progress, String message)? onProgress,
   }) async {
-    _logger.i('Initializing Config from Assets (Stable Mode)...');
+    _logger.i('RemoteConfigService: starting smartInitialize…');
 
     try {
-      // SIMPLIFIED: Just load from assets directly, skip remote download
-      // This is more stable and faster for production use
-      onProgress?.call(0.2, 'Loading nhentai config...');
-      await _loadFromAsset('nhentai', 'assets/configs/nhentai-config.json',
-          (json) => _sourceConfigs['nhentai'] = SourceConfig.fromJson(json));
+      final configDir = await _getConfigDirectory();
+      onProgress?.call(0.05, 'Checking remote manifest…');
 
-      onProgress?.call(0.4, 'Loading crotpedia config...');
-      await _loadFromAsset('crotpedia', 'assets/configs/crotpedia-config.json',
-          (json) => _sourceConfigs['crotpedia'] = SourceConfig.fromJson(json));
-
-      onProgress?.call(0.6, 'Loading komiktap config...');
-      await _loadFromAsset('komiktap', 'assets/configs/komiktap-config.json',
-          (json) => _sourceConfigs['komiktap'] = SourceConfig.fromJson(json));
-
-      onProgress?.call(0.8, 'Loading app config...');
-      await _loadFromAsset('app', 'assets/configs/app-config.json',
-          (json) => _appConfig = AppConfig.fromJson(json));
-
-      onProgress?.call(0.9, 'Loading tags config...');
-      await _loadFromAsset('tags', _tagsAssetPath,
-          (json) => _tagsManifest = TagsManifest.fromJson(json));
-
-      onProgress?.call(1.0, 'All configs loaded successfully');
-
-      _logger.i('✅ Successfully loaded all configs from assets');
-    } catch (e) {
-      _logger.e('Failed to load configs from assets', error: e);
-      if (isFirstRun) {
-        rethrow;
+      // Step 1 — try to download and apply the remote manifest
+      SourceManifest? manifest;
+      try {
+        manifest = await _downloadManifest(configDir);
+        _manifest = manifest;
+        _logger.i('Manifest fetched: ${manifest.sources.length} sources');
+      } catch (e) {
+        _logger.w('Manifest download failed, using bundled configs', error: e);
       }
-    }
-  }
 
-  Future<void> _loadFromAsset(
-    String sourceName,
-    String assetPath,
-    Function(Map<String, dynamic>) updateConfig,
-  ) async {
-    try {
-      final assetString = await rootBundle.loadString(assetPath);
-      final data = jsonDecode(assetString) as Map<String, dynamic>;
-      _rawSourceConfigs[sourceName] = data;
-      updateConfig(data);
+      final double progressPerSource =
+          manifest != null ? 0.7 / (manifest.sources.length + 1) : 0.7 / 4;
+
+      double progress = 0.1;
+
+      if (manifest != null) {
+        // Step 2 — sync each source listed in the manifest
+        for (final entry in manifest.sources) {
+          onProgress?.call(progress, 'Loading ${entry.id} config…');
+          await _syncSourceConfig(entry, configDir);
+          progress += progressPerSource;
+        }
+
+        // Step 3 — sync app config
+        if (manifest.appConfig != null) {
+          onProgress?.call(progress, 'Loading app config…');
+          await _syncAppConfig(manifest.appConfig!, configDir);
+          progress += progressPerSource;
+        }
+      } else {
+        // Fallback: load only bundled configs (nhentai + app).
+        // Installable sources require the manifest to know which ones are
+        // installed; without it we cannot safely load them.
+        for (final sourceId in ['nhentai', 'app']) {
+          onProgress?.call(progress, 'Loading $sourceId config…');
+          await _loadSourceFromBundledFallback(sourceId);
+          progress += progressPerSource;
+        }
+      }
+
+      // Tags manifest is always loaded from asset (it's metadata, not config)
+      onProgress?.call(0.85, 'Loading tags config…');
+      await _loadTagsManifest();
+
+      // Persist sync timestamp
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(
+          _prefLastSyncMs, DateTime.now().millisecondsSinceEpoch);
+
+      onProgress?.call(1.0, 'Config ready');
+      _logger.i(
+          '✅ RemoteConfigService ready — ${_sourceConfigs.length} sources loaded');
     } catch (e) {
-      _logger.w('Asset load failed for $sourceName', error: e);
-      rethrow;
+      _logger.e('RemoteConfigService initialisation failed', error: e);
+      if (isFirstRun) rethrow;
     }
   }
 
-  /// Download tags for a specific source from GitHub
-  /// Large files (tags_nhentai.json, tags_crotpedia.json) saved to reduce APK size
+  // Getters ──────────────────────────────────────────────────────────────────
+
+  SourceConfig? getConfig(String source) => _sourceConfigs[source];
+
+  List<SourceConfig> getAllSourceConfigs() =>
+      _sourceConfigs.values.where((c) => c.enabled).toList();
+
+  /// All source configs including disabled ones (used by admin UI).
+  List<SourceConfig> getAllSourceConfigsRaw() => _sourceConfigs.values.toList();
+
+  AppConfig? get appConfig => _appConfig;
+  TagsManifest? get tagsManifest => _tagsManifest;
+  SourceManifest? get manifest => _manifest;
+
+  Map<String, dynamic>? getRawConfig(String source) =>
+      _rawSourceConfigs[source];
+
+  RateLimitConfig getRateLimitConfig(String source) =>
+      getConfig(source)?.network?.rateLimit ??
+      RateLimitConfig(requestsPerMinute: 30, minDelayMs: 1500);
+
+  bool isFeatureEnabled(String source, bool Function(FeatureConfig) selector) {
+    final config = getConfig(source);
+    if (config?.features == null) return false;
+    return selector(config!.features!);
+  }
+
+  bool supportsTagExclusion(String source) =>
+      isFeatureEnabled(source, (f) => f.supportsTagExclusion);
+
+  bool supportsAdvancedSearch(String source) =>
+      isFeatureEnabled(source, (f) => f.supportsAdvancedSearch);
+
+  Future<bool> hasValidCache(String source) async =>
+      _sourceConfigs.containsKey(source);
+
+  Future<DateTime?> getLastSyncTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ms = prefs.getInt(_prefLastSyncMs);
+    return ms != null ? DateTime.fromMillisecondsSinceEpoch(ms) : null;
+  }
+
+  // ─── Tags (legacy) ──────────────────────────────────────────────────────────
+
   Future<void> downloadTagsForSource(String source) async {
     if (source != 'nhentai' && source != 'crotpedia') {
       _logger.w('Tags download not supported for source: $source');
@@ -108,149 +223,272 @@ class RemoteConfigService {
 
     try {
       _logger.i('Downloading tags for $source from: $url');
-
       final response = await _dio.get(url);
 
       if (response.statusCode == 200 && response.data != null) {
-        final String jsonString;
-        if (response.data is String) {
-          jsonString = response.data as String;
-        } else {
-          jsonString = jsonEncode(response.data);
-        }
+        final String jsonString = response.data is String
+            ? response.data as String
+            : jsonEncode(response.data);
 
-        // Save to cache
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(cacheKey, jsonString);
         await prefs.setInt(
             '${cacheKey}_timestamp', DateTime.now().millisecondsSinceEpoch);
-
-        _logger.i('✅ Successfully downloaded and cached tags for $source');
-      } else {
-        _logger
-            .w('Failed to download tags for $source: ${response.statusCode}');
+        _logger.i('✅ Tags downloaded and cached for $source');
       }
     } catch (e) {
       _logger.e('Error downloading tags for $source', error: e);
     }
   }
 
-  /// Get cached tags for a source
   Future<List<Map<String, dynamic>>?> getCachedTags(String source) async {
-    if (source != 'nhentai' && source != 'crotpedia') {
-      return null;
-    }
-
+    if (source != 'nhentai' && source != 'crotpedia') return null;
     final cacheKey =
         source == 'nhentai' ? _nhentaiTagsCacheKey : _crotpediaTagsCacheKey;
-
     try {
       final prefs = await SharedPreferences.getInstance();
-      final jsonString = prefs.getString(cacheKey);
-
-      if (jsonString != null) {
-        final List<dynamic> data = jsonDecode(jsonString);
-        return data.cast<Map<String, dynamic>>();
+      final raw = prefs.getString(cacheKey);
+      if (raw != null) {
+        final list = jsonDecode(raw) as List<dynamic>;
+        return list.cast<Map<String, dynamic>>();
       }
     } catch (e) {
       _logger.w('Failed to load cached tags for $source', error: e);
     }
-
     return null;
   }
 
-  /// Check if tags are cached for a source
   Future<bool> hasTagsCache(String source) async {
-    if (source != 'nhentai' && source != 'crotpedia') {
-      return false;
-    }
-
+    if (source != 'nhentai' && source != 'crotpedia') return false;
     final cacheKey =
         source == 'nhentai' ? _nhentaiTagsCacheKey : _crotpediaTagsCacheKey;
-
     final prefs = await SharedPreferences.getInstance();
     return prefs.containsKey(cacheKey);
   }
 
-  /// Get cache age in days
   Future<int?> getTagsCacheAge(String source) async {
-    if (source != 'nhentai' && source != 'crotpedia') {
-      return null;
-    }
-
+    if (source != 'nhentai' && source != 'crotpedia') return null;
     final cacheKey =
         source == 'nhentai' ? _nhentaiTagsCacheKey : _crotpediaTagsCacheKey;
-
     try {
       final prefs = await SharedPreferences.getInstance();
-      final timestamp = prefs.getInt('${cacheKey}_timestamp');
-
-      if (timestamp != null) {
-        final cacheDate = DateTime.fromMillisecondsSinceEpoch(timestamp);
-        final age = DateTime.now().difference(cacheDate);
-        return age.inDays;
+      final ts = prefs.getInt('${cacheKey}_timestamp');
+      if (ts != null) {
+        return DateTime.now()
+            .difference(DateTime.fromMillisecondsSinceEpoch(ts))
+            .inDays;
       }
     } catch (e) {
       _logger.w('Failed to get cache age for $source', error: e);
     }
-
     return null;
   }
 
-  // Getters
-  SourceConfig? getConfig(String source) {
-    return _sourceConfigs[source];
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Private helpers
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Returns (or creates) the writable config directory in AppDocDir.
+  Future<Directory> _getConfigDirectory() async {
+    final docDir = await getApplicationDocumentsDirectory();
+    final configDir = Directory(p.join(docDir.path, 'configs'));
+    if (!configDir.existsSync()) {
+      await configDir.create(recursive: true);
+    }
+    return configDir;
   }
 
-  /// Get all available source configurations
-  List<SourceConfig> getAllSourceConfigs() {
-    return _sourceConfigs.values.toList();
+  /// Download and parse `manifest.json` from CDN. Saves to [configDir].
+  Future<SourceManifest> _downloadManifest(Directory configDir) async {
+    final response = await _dio.get<String>(
+      _manifestUrl,
+      options: Options(
+        receiveTimeout: const Duration(seconds: 5),
+        responseType: ResponseType.plain,
+      ),
+    );
+
+    final rawJson = response.data!;
+    final manifestFile = File(p.join(configDir.path, 'manifest.json'));
+    await manifestFile.writeAsString(rawJson);
+
+    final manifest =
+        SourceManifest.fromJson(jsonDecode(rawJson) as Map<String, dynamic>);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+        _prefManifestVersion, manifest.schemaVersion.toString());
+
+    return manifest;
   }
 
-  AppConfig? get appConfig => _appConfig;
-  TagsManifest? get tagsManifest => _tagsManifest;
+  /// Sync a single source config based on its manifest entry.
+  ///
+  /// Priority:
+  /// 1. Cached file in AppDocDir (if version matches manifest)
+  /// 2. Download from CDN
+  /// 3. Bundled asset fallback
+  Future<void> _syncSourceConfig(
+      SourceManifestEntry entry, Directory configDir) async {
+    final sourceId = entry.id;
+    final manifestVersion = entry.version;
 
-  /// Get raw config json (useful for dynamic properties not yet in model)
-  Map<String, dynamic>? getRawConfig(String source) {
-    return _rawSourceConfigs[source];
+    final prefs = await SharedPreferences.getInstance();
+    final cachedVersion = prefs.getString(_prefSourceVersion(sourceId));
+    final cachedFile = File(p.join(configDir.path, '$sourceId-config.json'));
+
+    // Use cached file if version matches
+    if (cachedVersion == manifestVersion && cachedFile.existsSync()) {
+      _logger.d('Using cached config for $sourceId v$manifestVersion');
+      await _loadFromFile(sourceId, cachedFile);
+      return;
+    }
+
+    // Download new config
+    final configUrl = _resolveUrl(entry.url);
+    try {
+      _logger.i('Downloading config for $sourceId from $configUrl');
+      final response = await _dio.get<String>(
+        '$configUrl?v=$manifestVersion',
+        options: Options(
+          receiveTimeout: const Duration(seconds: 10),
+          responseType: ResponseType.plain,
+        ),
+      );
+      final rawJson = response.data!;
+
+      // Validate checksum if provided
+      if (entry.checksum != null) {
+        _validateChecksum(rawJson, entry.checksum!, sourceId);
+      }
+
+      await cachedFile.writeAsString(rawJson);
+      await prefs.setString(_prefSourceVersion(sourceId), manifestVersion);
+      await _loadFromFile(sourceId, cachedFile);
+      _logger.i('✅ Config synced for $sourceId v$manifestVersion');
+    } catch (e) {
+      _logger.w('Download failed for $sourceId, using fallback', error: e);
+      // For bundled sources: fall back to bundled asset.
+      // For installable sources: check AppDocDir (previously cached), skip if absent.
+      if (_bundledSourceIds.contains(sourceId)) {
+        await _loadSourceFromBundledFallback(sourceId);
+      } else {
+        await _loadInstallableSourceFromDocDir(sourceId, configDir);
+      }
+    }
   }
 
-  // Existing helpers
-  Future<bool> hasValidCache(String source) async {
-    // Since we always load from assets now, just check if config is loaded
-    return _sourceConfigs.containsKey(source);
+  /// Sync app-config.json from CDN.
+  Future<void> _syncAppConfig(
+      SourceManifestAppEntry entry, Directory configDir) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedVersion = prefs.getString(_prefSourceVersion('app'));
+    final cachedFile = File(p.join(configDir.path, 'app-config.json'));
+
+    if (cachedVersion == entry.version && cachedFile.existsSync()) {
+      _logger.d('Using cached app config v${entry.version}');
+      final raw = jsonDecode(await cachedFile.readAsString());
+      _appConfig = AppConfig.fromJson(raw as Map<String, dynamic>);
+      return;
+    }
+
+    final configUrl = _resolveUrl(entry.url);
+    try {
+      final response = await _dio.get<String>(
+        '$configUrl?v=${entry.version}',
+        options: Options(
+          receiveTimeout: const Duration(seconds: 10),
+          responseType: ResponseType.plain,
+        ),
+      );
+      final rawJson = response.data!;
+      await cachedFile.writeAsString(rawJson);
+      await prefs.setString(_prefSourceVersion('app'), entry.version);
+      _appConfig =
+          AppConfig.fromJson(jsonDecode(rawJson) as Map<String, dynamic>);
+    } catch (e) {
+      _logger.w('App config download failed, using bundled', error: e);
+      await _loadSourceFromBundledFallback('app');
+    }
   }
 
-  Future<DateTime?> getLastSyncTime() async {
-    // Return current time since we load from assets
-    return DateTime.now();
+  /// Load a config from a [File] on disk into memory.
+  Future<void> _loadFromFile(String sourceId, File file) async {
+    try {
+      final raw = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+      _rawSourceConfigs[sourceId] = raw;
+      _sourceConfigs[sourceId] = SourceConfig.fromJson(raw);
+    } catch (e) {
+      _logger.e('Failed to parse cached config for $sourceId', error: e);
+      rethrow;
+    }
   }
 
-  /// Get rate limit configuration for a specific source
-  RateLimitConfig getRateLimitConfig(String source) {
-    return getConfig(source)?.network?.rateLimit ??
-        RateLimitConfig(requestsPerMinute: 30, minDelayMs: 1500);
+  /// Load a config from bundled assets (last resort).
+  Future<void> _loadSourceFromBundledFallback(String sourceId) async {
+    final assetPath = _bundledAssetPaths[sourceId];
+    if (assetPath == null) {
+      _logger.w('No bundled asset for source: $sourceId');
+      return;
+    }
+    try {
+      final assetString = await rootBundle.loadString(assetPath);
+      final raw = jsonDecode(assetString) as Map<String, dynamic>;
+      _rawSourceConfigs[sourceId] = raw;
+      if (sourceId == 'app') {
+        _appConfig = AppConfig.fromJson(raw);
+      } else if (sourceId != 'tags') {
+        _sourceConfigs[sourceId] = SourceConfig.fromJson(raw);
+      }
+      _logger.d('Loaded bundled config for $sourceId');
+    } catch (e) {
+      _logger.w('Bundled asset load failed for $sourceId', error: e);
+    }
   }
 
-  /// Check if a specific feature is enabled for a specific source
-  /// Usage: isFeatureEnabled('nhentai', (f) => f.download)
-  bool isFeatureEnabled(String source, bool Function(FeatureConfig) selector) {
-    // Default to true if config is missing to avoid breaking app,
-    // or false if strict. Given this is remote config, false is safer fallthrough?
-    // But if config fails to load, we have assets.
-    // So if config is null here, something is really wrong.
-    final config = getConfig(source);
-    if (config?.features == null) return false;
-    return selector(config!.features!);
+  /// For installable (non-bundled) sources: if a previously-downloaded config
+  /// exists in AppDocDir, load it. Otherwise skip silently — the source simply
+  /// won't be registered until the user installs it.
+  Future<void> _loadInstallableSourceFromDocDir(
+      String sourceId, Directory configDir) async {
+    final cachedFile = File(p.join(configDir.path, '$sourceId-config.json'));
+    if (!cachedFile.existsSync()) {
+      _logger.d(
+          'No cached config found for installable source "$sourceId" — skipping');
+      return;
+    }
+    try {
+      await _loadFromFile(sourceId, cachedFile);
+      _logger.i('Loaded cached installable config for $sourceId');
+    } catch (e) {
+      _logger.w('Failed to load cached config for installable source $sourceId',
+          error: e);
+    }
   }
 
-  /// Check if source supports tag exclusion (for search UI)
-  bool supportsTagExclusion(String source) {
-    return isFeatureEnabled(source, (f) => f.supportsTagExclusion);
+  Future<void> _loadTagsManifest() async {
+    try {
+      final assetString = await rootBundle.loadString(_tagsAssetPath);
+      _tagsManifest = TagsManifest.fromJson(
+          jsonDecode(assetString) as Map<String, dynamic>);
+    } catch (e) {
+      _logger.w('Tags manifest load failed', error: e);
+    }
   }
 
-  /// Check if source supports advanced search
-  bool supportsAdvancedSearch(String source) {
-    return isFeatureEnabled(source, (f) => f.supportsAdvancedSearch);
+  /// Resolve a relative config URL against the CDN base.
+  String _resolveUrl(String relativeUrl) {
+    if (relativeUrl.startsWith('http')) return relativeUrl;
+    return '$_cdnBase/$relativeUrl';
+  }
+
+  /// Validate SHA-256 checksum of [content].
+  void _validateChecksum(String content, String expected, String sourceId) {
+    final actual = 'sha256:${sha256.convert(utf8.encode(content)).toString()}';
+    if (actual != expected) {
+      _logger.w(
+          'Checksum mismatch for $sourceId: expected $expected, got $actual');
+      // Non-fatal: log and continue — config may still be valid.
+    }
   }
 }

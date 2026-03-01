@@ -56,6 +56,29 @@ class KomiktapSource implements ContentSource {
   @override
   String get refererHeader => baseUrlValue;
 
+  // ============ FilterList & Global Search Support ============
+
+  @override
+  FilterList get filterList => const [];
+
+  @override
+  bool get participatesInGlobalSearch => true;
+
+  @override
+  int get globalSearchPriority => 100;
+
+  @override
+  int get globalSearchMaxResults => 5;
+
+  @override
+  bool canHandleGlobalQuery(String query) => true;
+
+  @override
+  Future<List<AutocompleteSuggestion>> getAutocompleteSuggestions(
+    String query,
+  ) async =>
+      const [];
+
   // ============ Download & Display Customization ============
 
   @override

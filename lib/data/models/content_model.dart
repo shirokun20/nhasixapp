@@ -354,13 +354,17 @@ class ContentModel extends Content {
     int? pageCount,
     List<String>? imageUrls,
     DateTime? uploadDate,
-    String? url, // NEW: Added to match Content.copyWith
+    String? url,
     String? sourceId,
     int? favorites,
     List<Content>? relatedContent,
     DateTime? cachedAt,
     String? mediaId,
     List<Chapter>? chapters,
+    ContentType? contentType,
+    ContentStatus? status,
+    String? sourceUrl,
+    int? totalChapters,
   }) {
     return ContentModel(
       id: id ?? this.id,

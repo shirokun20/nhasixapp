@@ -2,6 +2,8 @@ import '../entities/content.dart';
 import '../entities/content_list_result.dart';
 import '../entities/comment.dart';
 import '../entities/search_filter.dart';
+import '../entities/autocomplete_suggestion.dart';
+import '../filters/source_filter.dart';
 import '../value_objects/sort_option.dart';
 import '../value_objects/popular_timeframe.dart';
 import 'search_capabilities.dart';
@@ -126,4 +128,54 @@ abstract class ContentSource {
   ///
   /// If true, bookmark buttons will be shown in detail screens.
   bool get supportsBookmarks => false;
+
+  // ============ NEW: FilterList & Global Search Support ============
+
+  /// Filters available for this source (for advanced search UI).
+  ///
+  /// Returns an empty list by default — backward compatible.
+  /// Override to expose source-specific filters.
+  ///
+  /// Example:
+  /// ```dart
+  /// @override
+  /// FilterList get filterList => [
+  ///   SortSourceFilter('Sort By', ['Newest', 'Popular']),
+  ///   SelectSourceFilter('Language', ['All', 'English', 'Japanese']),
+  /// ];
+  /// ```
+  FilterList get filterList => const [];
+
+  /// Whether this source participates in global search.
+  ///
+  /// Global search dispatches the same query to all enabled sources in parallel
+  /// and shows results per-source in a single scrollable screen.
+  bool get participatesInGlobalSearch => true;
+
+  /// Priority in global search results (lower number = shown first).
+  ///
+  /// Default 100. Override to boost or demote in global search ordering.
+  int get globalSearchPriority => 100;
+
+  /// Maximum results to return in global search context.
+  ///
+  /// Global search shows a preview (not full pagination) per source.
+  int get globalSearchMaxResults => 5;
+
+  /// Whether this source can handle the given query in global search.
+  ///
+  /// Use this to opt out of global search for certain query formats.
+  /// Default: always true.
+  bool canHandleGlobalQuery(String query) => true;
+
+  /// Get autocomplete suggestions for a partial search query.
+  ///
+  /// Returns empty list by default — backward compatible.
+  /// Override for sources that support tag/artist autocomplete (e.g., nhentai).
+  ///
+  /// [query] is the partial text typed by the user.
+  Future<List<AutocompleteSuggestion>> getAutocompleteSuggestions(
+    String query,
+  ) async =>
+      const [];
 }
