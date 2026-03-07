@@ -108,6 +108,11 @@ class RemoteConfigService {
       final configDir = await _getConfigDirectory();
       onProgress?.call(0.05, 'Checking remote manifest…');
 
+      // Preload guaranteed bundled defaults first so critical sources like
+      // nhentai are always available, even if manifest/installable parsing fails.
+      await _loadSourceFromBundledFallback('nhentai');
+      await _loadSourceFromBundledFallback('app');
+
       // Step 1 — try to download and apply the remote manifest
       SourceManifest? manifest;
       try {
@@ -136,6 +141,25 @@ class RemoteConfigService {
           onProgress?.call(progress, 'Loading app config…');
           await _syncAppConfig(manifest.appConfig!, configDir);
           progress += progressPerSource;
+        }
+
+        // Safety net: bundled sources must always be available even when
+        // manifest intentionally lists only installable providers.
+        for (final bundledId in _bundledSourceIds) {
+          if (!_rawSourceConfigs.containsKey(bundledId)) {
+            _logger.w(
+              'Bundled source "$bundledId" not present after manifest sync; loading asset fallback',
+            );
+            await _loadSourceFromBundledFallback(bundledId);
+          }
+        }
+
+        // Ensure app config exists as fallback if manifest omits appConfig.
+        if (_appConfig == null && !_rawSourceConfigs.containsKey('app')) {
+          _logger.w(
+            'App config missing after manifest sync; loading bundled app config',
+          );
+          await _loadSourceFromBundledFallback('app');
         }
       } else {
         // Fallback: load only bundled configs (nhentai + app).
@@ -286,7 +310,8 @@ class RemoteConfigService {
   /// Returns `true` if the config was refreshed, `false` otherwise.
   Future<bool> refreshSourceFromConfigUrl(String sourceId) async {
     final raw = _rawSourceConfigs[sourceId];
-    final configUrl = raw?['configUrl'] as String?;
+    final dynamic rawConfigUrl = raw?['configUrl'];
+    final configUrl = rawConfigUrl is String ? rawConfigUrl : null;
     if (configUrl == null || configUrl.isEmpty) {
       _logger.d('$sourceId: no configUrl field — skipping self-refresh');
       return false;
@@ -689,7 +714,16 @@ class RemoteConfigService {
     try {
       final raw = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
       _rawSourceConfigs[sourceId] = raw;
-      _sourceConfigs[sourceId] = SourceConfig.fromJson(raw);
+      try {
+        _sourceConfigs[sourceId] = SourceConfig.fromJson(raw);
+      } catch (e) {
+        // Some installable provider schemas can be richer than the typed
+        // SourceConfig model. Keep raw config so GenericHttpSource still works.
+        _logger.w(
+          'Typed SourceConfig parse failed for $sourceId; raw config kept for generic source usage',
+          error: e,
+        );
+      }
     } catch (e) {
       _logger.e('Failed to parse cached config for $sourceId', error: e);
       rethrow;
@@ -710,7 +744,14 @@ class RemoteConfigService {
       if (sourceId == 'app') {
         _appConfig = AppConfig.fromJson(raw);
       } else if (sourceId != 'tags') {
-        _sourceConfigs[sourceId] = SourceConfig.fromJson(raw);
+        try {
+          _sourceConfigs[sourceId] = SourceConfig.fromJson(raw);
+        } catch (e) {
+          _logger.w(
+            'Typed SourceConfig parse failed for bundled source $sourceId; raw config kept',
+            error: e,
+          );
+        }
       }
       _logger.d('Loaded bundled config for $sourceId');
     } catch (e) {
@@ -776,9 +817,10 @@ class RemoteConfigService {
 
     final futures = _rawSourceConfigs.keys
         .where((id) => !manifestIds.contains(id))
-        .where((id) =>
-            (_rawSourceConfigs[id]?['configUrl'] as String?)?.isNotEmpty ==
-            true)
+        .where((id) {
+          final dynamic configUrl = _rawSourceConfigs[id]?['configUrl'];
+          return configUrl is String && configUrl.isNotEmpty;
+        })
         .map((id) => refreshSourceFromConfigUrl(id))
         .toList();
 

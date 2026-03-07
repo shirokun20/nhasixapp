@@ -2,7 +2,7 @@
     "source": "nhentai",
     "version": "1.0.2",
     "lastUpdated": "2026-03-01T00:00:00+07:00",
-    "configUrl": "https://cdn.kuron.app/configs/nhentai.json",
+    "configUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/assets/configs/nhentai-config.json",
     "baseUrl": "https://nhentai.net",
     "avatarBaseUrl": "https://i3.nhentai.net",
     "api": {
