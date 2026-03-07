@@ -1,0 +1,297 @@
+# Analisis Bug Loan Prospect: GetX (1235) vs Riverpod (1234)
+
+Laporan mendalam perbandingan kode antara versi GetX (`feature/TASK-1235-Getx-upgrade`) dan versi Riverpod (`feature/TASK-1234-migrations-state-refactor`) terkait 8 bug yang dilaporkan pada fitur **Loan Prospect**.
+
+---
+
+## Ringkasan Temuan
+
+| Bug ID | Judul | Root Cause | Severity |
+|--------|-------|------------|----------|
+| M01.F01.12 | Birthdate tidak ada action | [CustomDateTimePicker](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/components/custom/custom_date_time_picker.dart#12-75) — kemungkinan issue di widget level atau state tidak ter-rebuild | 🟡 Medium |
+| M01.F01.13 | Industry Sub Sector tidak muncul | [CustomIndustry](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/components/custom/custom_industry.dart#11-33) menggunakan **global** LOV provider tanpa tag scoping | 🔴 High |
+| M01.F01.14 | Tidak bisa pindah form setelah Capacity | [onTabTapped](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/loanprospect/page/loanprospect_new_detail_entity_page.dart#127-145) validasi form blocking — `monthlyIncome` validator trigger | 🔴 High |
+| M01.F01.15 | Tidak bisa save — "Monthly Income cannot empty" | Validator `formUtil.veriftextFieldIsNotNull` pada Monthly Income form Capacity | 🔴 High |
+| M01.F01.16 | Pick point domisili entity tidak muncul | `pickLocation: false` pada `showMap()` entity — bukan pick, hanya view | 🟡 Medium |
+| M01.F01.17 | List kab/kota entity tidak muncul | LOV address detail dependency chain — provider scope entity | 🟡 Medium |
+| M01.F01.18 | Document form entity force closed | [doAdd()](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/common/widget/list_document.dart#97-119) di [ListDocument](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/common/widget/list_document.dart#30-36) — race condition provider initialization | 🔴 High |
+| M01.F01.19 | Document form tidak terbuka | [doRefresh()](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/common/widget/list_document.dart#53-92) fallback logic — provider try-catch silently fails | 🔴 High |
+
+---
+
+## M01.F01.12 — Birthdate Tidak Ada Action
+
+### Lokasi Kode
+- [individual_dtl.dart:437-465](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/bizpartner/widget/individual_dtl.dart#L437-L465)
+- [custom_date_time_picker.dart](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/components/custom/custom_date_time_picker.dart)
+
+### Analisis
+Di versi Riverpod, [CustomDateTimePicker](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/components/custom/custom_date_time_picker.dart#12-75) dipanggil dengan parameter:
+```dart
+CustomDateTimePicker(
+  fieldName: 'birthDate',
+  newDate: birthDate,           // local DateTime? variable
+  onDateChanged: (newDate) {
+    birthDate = newDate;
+    setState(() {});            // rebuild UI
+  },
+  firstState: birthDate == null,
+  onValidator: formUtil.verifDateNotNull,
+  onClear: () {
+    birthDate = null;
+    setState(() {});
+  },
+  enableClear: true,
+)
+```
+
+### Kemungkinan Root Cause
+1. **`setState` tanpa Riverpod rebuild**: `birthDate` adalah variabel lokal (`DateTime? birthDate` line 49), bukan bagian dari provider state. `setState` seharusnya cukup, tetapi jika widget tree di-rebuild dari parent via provider, local state bisa hilang.
+2. **[_syncRxFromProvider](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/bizpartner/widget/entity_dtl.dart#87-110) hanya satu arah**: Data dari provider state disinkronkan ke local field saat [initState](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/components/custom/custom_industry.dart#36-68), tapi perubahan local `birthDate` tidak di-push kembali ke provider state sampai [updateValue()](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/common/widget/list_document.dart#93-96) dipanggil.
+3. **Widget [CustomDateTimePicker](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/components/custom/custom_date_time_picker.dart#12-75) sendiri** — perlu cek apakah [_selectDate(context)](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/components/custom/custom_date_time_picker.dart#164-328) method berjalan dengan benar pasca migrasi.
+
+### Perbandingan GetX
+Di GetX, `birthDate` adalah **`Rx<DateTime?>`** — setiap perubahan otomatis merebuild widget melalui `Obx`. Di Riverpod, perubahan bergantung pada `setState` local yang lebih rapuh.
+
+---
+
+## M01.F01.13 — Industry Sub Sector Tidak Menampilkan Data
+
+### Lokasi Kode
+- [custom_industry.dart](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/components/custom/custom_industry.dart)
+- [individual_dtl_capacity.dart:543-549](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/bizpartner/widget/individual_dtl_capacity.dart#L543-L549)
+
+### Analisis
+```dart
+// individual_dtl_capacity.dart:543
+CustomIndustry(
+  tag: tagIndustry,
+  industrySectorVal: state.selectedIndustriSectore,
+  industrySubSectorVal: state.selectedIndustriSubSector,
+)
+```
+
+[CustomIndustry](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/components/custom/custom_industry.dart#11-33) internally menggunakan **global providers**:
+```dart
+// custom_industry.dart:initState
+ref.read(lovIndustrySectoreNotifierProvider.notifier)
+    .selectIndustrySectore(widget.industrySectorVal!);
+ref.read(lovIndustrySubSectoreNotifierProvider.notifier)
+    .setParentAndFetch(
+      parentIdParam: int.parse(widget.industrySectorVal!.id!),
+      ...
+    );
+```
+
+### Root Cause
+> **`lovIndustrySubSectoreNotifierProvider` adalah provider global tanpa tag/family parameter**. Jika widget lain (seperti entity capacity, employment, atau self-employee) juga menggunakan LOV Industry, state akan **saling menimpa**.
+
+Di GetX, setiap widget memiliki controller instance terpisah karena binding system. Di Riverpod, provider global yang sama di-share oleh semua consumer.
+
+Selain itu, `setParentAndFetch` dipanggil di [initState](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/components/custom/custom_industry.dart#36-68) via `Future.microtask`. Jika `selectedIndustriSectore` belum ter-populate karena provider belum siap, `parentIdParam` bisa null/invalid → sub sector list kosong.
+
+> [!CAUTION]
+> Tag `tagIndustry` pada `CustomIndustry.tag` diterima tapi **TIDAK DIGUNAKAN** di widget internal. LOV provider tetap global.
+
+---
+
+## M01.F01.14 — Navigation Terkunci di Form Capacity
+
+### Lokasi Kode
+- [loanprospect_new_detail_entity_page.dart:127-143](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/loanprospect/page/loanprospect_new_detail_entity_page.dart#L127-L143)
+
+### Analisis
+```dart
+void onTabTapped(int index) async {
+  if (_tabController!.previousIndex != index) {
+    bool isValidForm = await _updateAllForm();
+    if (!isValidForm) {
+      _tabController!.index = _tabController!.previousIndex;
+      alert.error('Error', 'Please fill out the form');
+    } else {
+      _tabController!.index = index;
+    }
+    ...
+  }
+}
+```
+
+### Root Cause
+[_updateAllForm()](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/loanprospect/page/loanprospect_new_detail_entity_page.dart#227-250) memanggil `entityDtlKey.currentState!.updateValue()` yang menjalankan **form validation**. Jika user pindah ke tab Capacity, form Detail di-validate. Masalahnya:
+
+1. [updateValue()](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/common/widget/list_document.dart#93-96) di [EntityDtlState](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/bizpartner/widget/entity_dtl.dart#34-1589) menjalankan `formKey.currentState?.validate()` yang mengevaluasi **semua field dengan validator terpasang**.
+2. Jika ada field yang belum terisi (misalnya Institution Type yang wajib `formUtil.verifDropdownNotNull`), navigasi diblokir.
+3. **Kunci masalah**: Setelah user sudah di tab Capacity, untuk kembali ke tab sebelumnya juga memanggil [_updateAllForm()](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/loanprospect/page/loanprospect_new_detail_entity_page.dart#227-250) → jika Capacity form juga invalid (misal Monthly Income kosong), user benar-benar terjebak.
+
+### Perbandingan GetX
+Logika tab validation identik antara GetX dan Riverpod. **Bug ini kemungkinan juga ada di GetX**, tetapi mungkin tertutupi karena:
+- GetX `Get.isRegistered<T>()` bisa return false jika controller belum di-bind
+- GlobalKey Riverpod selalu exist karena `TabBarView` merender semua tab sekaligus (non-lazy)
+
+> [!IMPORTANT]
+> `TabBarView` di kedua versi menggunakan `NeverScrollableScrollPhysics()`, artinya semua tab child widget sudah ter-instantiate. Di Riverpod, `globalKey.currentState` selalu non-null, sedangkan di GetX `isRegistered` bisa false jika binding belum execute.
+
+---
+
+## M01.F01.15 — Monthly Income Cannot Empty Saat Save
+
+### Lokasi Kode
+- [individual_dtl_capacity.dart:326-361](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/bizpartner/widget/individual_dtl_capacity.dart#L326-L361)
+
+### Analisis
+```dart
+CustomTextField(
+  fieldName: 'monthly-income',
+  ...
+  controller: monthlyIncomeController,
+  onValidator: formUtil.veriftextFieldIsNotNull,  // ← WAJIB!
+)
+```
+
+### Root Cause
+`Monthly Income` di tab Capacity memiliki validator `veriftextFieldIsNotNull` yang artinya **mandatory**. Masalah:
+
+1. User mengisi form di tab lain (Detail, dll.)
+2. User pindah ke Capacity tab (atau navigasi trigger [_updateAllForm](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/loanprospect/page/loanprospect_new_detail_entity_page.dart#227-250))
+3. [_updateAllForm()](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/loanprospect/page/loanprospect_new_detail_entity_page.dart#227-250) memanggil `entityDtlCapacityKey.currentState!.updateValue()`
+4. [updateValue()](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/common/widget/list_document.dart#93-96) menjalankan `formKey.currentState?.validate()` → validator `monthlyIncome` fire → fail karena kosong
+5. Return false → block save
+
+**Tapi ada inkonsistensi**: di [_updateAllForm](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/loanprospect/page/loanprospect_new_detail_entity_page.dart#227-250) entity page, hanya [EntityDtl](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/bizpartner/widget/entity_dtl.dart#27-33) yang return value-nya digunakan:
+```dart
+isValid = await entityDtlKey.currentState!.updateValue();
+// Capacity updateValue() dipanggil tapi return value-nya DIABAIKAN:
+await entityDtlCapacityKey.currentState!.updateValue();
+```
+
+Jadi **save seharusnya tetap bisa** karena Capacity validation result tidak mempengaruhi `isValid`. Bug mungkin terjadi karena:
+- Form validator menampilkan error visual "Monthly Income cannot empty" yang membingungkan user
+- Atau ada flow di **individual detail** (bukan entity) yang memiliki logic berbeda
+
+> [!WARNING]
+> Ini bug **UX** — validator visual muncul meskipun save tetap proceed. Atau ada code path lain yang memblock.
+
+---
+
+## M01.F01.16 — Pick Point Domisili Entity Tidak Muncul
+
+### Lokasi Kode
+- [entity_dtl.dart:316-335](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/bizpartner/widget/entity_dtl.dart#L316-L335)
+
+### Analisis
+```dart
+showMap() {
+  context.push(RouteName.addressMaps, extra: {
+    "pickLocation": false,    // ← HARDCODED FALSE!
+    "point": ...
+  });
+}
+```
+
+### Root Cause
+`pickLocation` di-set `false` artinya user hanya bisa **melihat** lokasi, tidak bisa pick/confirm titik baru. Ini mungkin sengaja (view-only) atau kesalahan migrasi.
+
+### Perbandingan
+Di [individual_dtl.dart](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/bizpartner/widget/individual_dtl.dart) line 532, `pickLocation: true` — user bisa pick. Tapi di entity, ini false. Untuk konfirmasi apakah GetX juga sama, perlu cek controller EntityDtl di GetX branch.
+
+> [!NOTE]
+> Form individual menggunakan `CustomPinLocation(pickLocation: true)` yang merupakan inline map picker, sedangkan entity menggunakan `showMap()` dengan push to separate page. Behavior yang berbeda.
+
+---
+
+## M01.F01.17 — List Kab/Kota Entity Tidak Muncul
+
+### Lokasi Kode
+- [entity_dtl.dart:376-449](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/bizpartner/widget/entity_dtl.dart#L376-L449) — Address detail navigation
+
+### Analisis
+Entity address (dom/identity) dibuka melalui `context.push(RouteName.addressDetail, extra: {...})`. Address detail page memiliki dependent LOV cascade: Province → Kab/Kota → Kecamatan → Kelurahan.
+
+### Root Cause
+Kemungkinan issue pada address detail page yang membaca data dari parent provider. Di Riverpod, jika address detail page membaca dari `loanprospectEntityPageNotifierProvider` tetapi dependency resolution untuk LOV kab/kota bergantung pada province ID yang belum di-set, dropdown akan kosong.
+
+Di GetX, cascade dependency di-handle melalui `LovKabKotaController` yang menerima `parentId` langsung. Di Riverpod, jika LOV controller dibuat global dan parentId belum ter-populate saat render, data tidak akan fetch.
+
+---
+
+## M01.F01.18 & M01.F01.19 — Document Form Tidak Terbuka / Force Close
+
+### Lokasi Kode
+- [list_document.dart:37-91](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/common/widget/list_document.dart#L37-L91) — [doRefresh()](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/common/widget/list_document.dart#53-92)
+- [list_document.dart:97-118](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/common/widget/list_document.dart#L97-L118) — [doAdd()](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/common/widget/list_document.dart#97-119)
+- [loanprospect_new_detail_entity_page.dart:165](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/loanprospect/page/loanprospect_new_detail_entity_page.dart#L165)
+
+### Analisis
+[ListDocument](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/common/widget/list_document.dart#30-36) di [initState](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/components/custom/custom_industry.dart#36-68) langsung memanggil [doRefresh()](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/common/widget/list_document.dart#53-92):
+```dart
+@override
+void initState() {
+  super.initState();
+  _documentService = ref.read(documentServiceProvider);
+  doRefresh();
+}
+```
+
+[doRefresh()](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/common/widget/list_document.dart#53-92) menggunakan **triple try-catch fallback**:
+```dart
+Future<void> doRefresh() async {
+  try {
+    // 1. Coba baca dari BizPartnerDetailNotifier
+    final bizPartnerState = ref.read(bizPartnerDetailNotifierProvider);
+    // ...
+  } catch (e) {}  // ← SILENTLY IGNORED
+  
+  try {
+    // 2. Coba baca dari LoanprospectEntityPage
+    final entityState = ref.read(loanprospectEntityPageNotifierProvider);
+    // ...
+  } catch (e) {}  // ← SILENTLY IGNORED
+  
+  try {
+    // 3. Coba baca dari ApplicationPageNotifier
+    final appState = ref.read(applicationPageNotifierProvider);
+    // ...
+  } catch (e) {}  // SILENTLY IGNORED
+}
+```
+
+### Root Cause
+> **Race Condition**: `loanprospectEntityPageNotifierProvider` di-init di `Future.microtask()` pada parent page (line 66 entity detail page), tetapi [ListDocument](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/common/widget/list_document.dart#30-36) (tab 6) juga menjalankan [initState](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/components/custom/custom_industry.dart#36-68) sebelum microtask selesai. Akibatnya, `entityState.entityModel` masih null → `reffNo` null.
+
+Ketika user menekan tombol add document:
+```dart
+void doAdd() async {
+  var reslt = await context.push(RouteName.documentDetail, extra: {
+    'doc-from': docFrom,  // null jika doRefresh gagal
+    'list-docs': models,  // kosong
+  });
+  if (reslt is DocsModel) {
+    docModel.docAttahReffno = reffNo;  // null → crash di service call!
+    lstDocResult = await _documentService.putAttachDoc(docModel); // BOOM!
+  }
+}
+```
+
+Flow crash:
+1. `reffNo = null` karena provider belum ready
+2. `putAttachDoc` API call dengan `reffNo = null` → error/crash
+3. **Force close** (unhandled exception)
+
+### Perbandingan GetX
+Di GetX, `ListDocumentController` membaca data dari `Get.find<>()` yang dijamin exist karena binding hierarchy. Di Riverpod, provider global autoDispose bisa belum ter-init saat child widget dibuat.
+
+> [!CAUTION]
+> Bug kritis — menyebabkan force close. [doAdd()](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/common/widget/list_document.dart#97-119) tidak memiliki null-check pada `reffNo` sebelum memanggil API.
+
+---
+
+## Rekomendasi Perbaikan
+
+| Priority | Bug | Fix |
+|----------|-----|-----|
+| 🔴 P0 | M01.F01.18/19 | Tambah null-check `reffNo` di [doAdd()](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/common/widget/list_document.dart#97-119), perbaiki timing init provider |
+| 🔴 P0 | M01.F01.14/15 | Ubah [onTabTapped](file:///Users/asix/Documents/proyek_flutter/mobile-los-new/lib/app/loanprospect/page/loanprospect_new_detail_entity_page.dart#127-145) agar tidak block navigasi, atau pisahkan validate vs save |
+| 🔴 P1 | M01.F01.13 | Implementasi `family` provider untuk `lovIndustrySubSectoreNotifierProvider` agar scoped per widget |
+| 🟡 P1 | M01.F01.12 | Investigasi `CustomDateTimePicker._selectDate` — cek apakah dialog builder bekerja |
+| 🟡 P2 | M01.F01.16 | Ubah `pickLocation: false` → `true` jika memang perlu pick, atau cek requirement |
+| 🟡 P2 | M01.F01.17 | Pastikan cascade LOV dependency (province→kab/kota) ter-init sebelum render |

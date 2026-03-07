@@ -1,0 +1,172 @@
+{
+  "source": "komiktap",
+  "version": "1.1.0",
+  "enabled": true,
+  "defaultLanguage": "indonesian",
+  "configUrl": "https://cdn.kuron.app/configs/komiktap.json",
+  "baseUrl": "https://komiktap.info",
+  "ui": {
+    "displayName": "KomikTap",
+    "iconPath": "assets/icons/komiktap.png",
+    "brandColor": "#4CAF50"
+  },
+  "network": {
+    "requiresBypass": false,
+    "headers": {
+      "Referer": "https://komiktap.info/",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+  },
+  "scraper": {
+    "enabled": true,
+    "urlPatterns": {
+      "home": {
+        "url": "/",
+        "list": {
+          "container": ".utao",
+          "fields": {
+            "id": {
+              "selector": "a.series",
+              "attribute": "href",
+              "transform": "slug"
+            },
+            "title": {
+              "selector": ".luf > a > h4"
+            },
+            "coverUrl": {
+              "selector": "img.ts-post-image",
+              "attribute": "src"
+            }
+          },
+          "pagination": {
+            "alt": ".hpage a.r"
+          }
+        }
+      },
+      "homePage": {
+        "url": "/page/{page}/",
+        "inherits": "home"
+      },
+      "search": {
+        "url": "/?s={query}&paged={page}",
+        "list": {
+          "container": "div.bsx",
+          "fields": {
+            "id": {
+              "selector": "a[href]",
+              "attribute": "href",
+              "transform": "slug"
+            },
+            "title": {
+              "selector": ".tt"
+            },
+            "coverUrl": {
+              "selector": ".limit img",
+              "attribute": "src"
+            }
+          },
+          "pagination": {
+            "next": ".pagination .next.page-numbers"
+          }
+        }
+      },
+      "genreSearch": {
+        "url": "/genre/{tag}/page/{page}/",
+        "inherits": "search"
+      },
+      "detail": "/manga/{id}/",
+      "chapter": "/{id}/"
+    },
+    "selectors": {
+      "detail": {
+        "fields": {
+          "title": {
+            "selector": ".entry-title"
+          },
+          "coverUrl": {
+            "selector": ".thumb img",
+            "attribute": "src"
+          },
+          "tags": {
+            "selector": ".seriestugenre a",
+            "multi": true
+          }
+        },
+        "chapters": {
+          "container": "#chapterlist li",
+          "fields": {
+            "id": {
+              "selector": ".chbox .eph-num a",
+              "attribute": "href",
+              "transform": "slug"
+            },
+            "title": {
+              "selector": ".chbox .chapternum"
+            },
+            "date": {
+              "selector": ".chbox .chapterdate"
+            }
+          }
+        }
+      },
+      "reader": {
+        "tsReaderRegex": "ts_reader\\.run\\((.*?)\\);",
+        "container": "#readerarea",
+        "images": {
+          "selector": "img",
+          "attribute": "src"
+        },
+        "nav": {
+          "next": ".nextprev a.next, .nav-links a.next, .ch-next-btn",
+          "prev": ".nextprev a.prev, .nav-links a.prev, .ch-prev-btn"
+        }
+      }
+    }
+  },
+  "searchForm": {
+    "urlPattern": "search",
+    "params": {
+      "query": {
+        "queryParam": "s",
+        "type": "text",
+        "placeholder": "Cari komik..."
+      },
+      "page": {
+        "queryParam": "paged",
+        "type": "page"
+      },
+      "genre": {
+        "queryParam": "genre",
+        "type": "tag",
+        "urlPattern": "genreSearch"
+      },
+      "status": {
+        "queryParam": "status",
+        "type": "select",
+        "options": [
+          "ongoing",
+          "completed",
+          "hiatus"
+        ]
+      },
+      "order": {
+        "queryParam": "order",
+        "type": "select",
+        "options": [
+          "update",
+          "title",
+          "rating",
+          "popular"
+        ]
+      }
+    }
+  },
+  "contentIdPattern": "/manga/([^/]+)",
+  "features": {
+    "comments": false,
+    "related": false,
+    "download": false,
+    "favorite": false,
+    "chapters": true
+  }
+}

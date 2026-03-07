@@ -53,13 +53,9 @@ class RemoteConfigService {
   /// Bundled asset path for each **bundled** source.
   ///
   /// Only `nhentai` is bundled into the APK as a permanent default — it is
-  /// always available without network.
-  ///
-  /// TODO(phase3): `komiktap` is temporarily bundled for dev testing.
-  /// Before release, remove it from here and deliver it via CDN manifest only.
+  /// always available without network. Other sources load via CDN/remote.
   static const Map<String, String> _bundledAssetPaths = {
     'nhentai': '$_assetConfigBase/nhentai-config.json',
-    'komiktap': '$_assetConfigBase/komiktap-config.json',
     'app': '$_assetConfigBase/app-config.json',
     'tags': _tagsAssetPath,
   };
@@ -142,11 +138,10 @@ class RemoteConfigService {
           progress += progressPerSource;
         }
       } else {
-        // Fallback: load only bundled configs (nhentai + komiktap + app).
+        // Fallback: load only bundled configs (nhentai + app).
         // Installable sources require the manifest to know which ones are
         // installed; without it we cannot safely load them.
-        // TODO(phase3): remove 'komiktap' once CDN manifest is updated.
-        for (final sourceId in ['nhentai', 'komiktap', 'app']) {
+        for (final sourceId in ['nhentai', 'app']) {
           onProgress?.call(progress, 'Loading $sourceId config…');
           await _loadSourceFromBundledFallback(sourceId);
           progress += progressPerSource;
