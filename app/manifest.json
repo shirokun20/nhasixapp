@@ -8,11 +8,11 @@
       "bundled": false,
       "enabled": true,
       "version": "1.1.0",
-      "url": "config/komiktap-config.json",
+      "url": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/config/komiktap-config.json",
       "meta": {
         "displayName": "KomikTap",
         "description": "Installable KomikTap provider config",
-        "iconUrl": "images/komiktap.png",
+        "iconUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/images/komiktap.png",
         "contentType": "manga",
         "language": "id",
         "requiresAuth": false,

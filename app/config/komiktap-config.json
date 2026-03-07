@@ -7,7 +7,7 @@
   "baseUrl": "https://komiktap.info",
   "ui": {
     "displayName": "KomikTap",
-    "iconPath": "assets/icons/komiktap.png",
+    "iconPath": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/images/komiktap.png",
     "brandColor": "#4CAF50"
   },
   "network": {
