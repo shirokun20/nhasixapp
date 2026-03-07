@@ -209,6 +209,11 @@ class RemoteConfigService {
   TagsManifest? get tagsManifest => _tagsManifest;
   SourceManifest? get manifest => _manifest;
 
+  /// Resolves manifest metadata paths (e.g., iconUrl) against the CDN base.
+  ///
+  /// Accepts both absolute URLs and relative paths.
+  String resolveRemotePath(String urlOrPath) => _resolveUrl(urlOrPath);
+
   Map<String, dynamic>? getRawConfig(String source) =>
       _rawSourceConfigs[source];
 

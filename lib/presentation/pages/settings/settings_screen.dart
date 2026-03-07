@@ -866,14 +866,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
     }
 
-    // Try to load from asset first (for bundled icons)
-    try {
-      return Image.asset(
-        iconUrl,
+    final remoteConfig = getIt<RemoteConfigService>();
+    final resolvedIconUrl = remoteConfig.resolveRemotePath(iconUrl);
+    final iconUri = Uri.tryParse(resolvedIconUrl);
+    final isRemote = iconUri != null &&
+        (iconUri.scheme == 'http' || iconUri.scheme == 'https');
+
+    if (isRemote) {
+      return Image.network(
+        resolvedIconUrl,
         width: 20,
         height: 20,
         errorBuilder: (context, error, stackTrace) {
-          // Fallback to generic icon
           return Icon(
             Icons.extension_outlined,
             size: 20,
@@ -881,13 +885,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
           );
         },
       );
-    } catch (e) {
-      return Icon(
-        Icons.extension_outlined,
-        size: 20,
-        color: theme.colorScheme.onSurfaceVariant,
-      );
     }
+
+    return Image.asset(
+      resolvedIconUrl,
+      width: 20,
+      height: 20,
+      errorBuilder: (context, error, stackTrace) {
+        return Icon(
+          Icons.extension_outlined,
+          size: 20,
+          color: theme.colorScheme.onSurfaceVariant,
+        );
+      },
+    );
   }
 
   /// Install a source from the manifest

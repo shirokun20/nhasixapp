@@ -52,25 +52,10 @@ class SourceSelector extends StatelessWidget {
                         color: colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: state.activeSource?.iconPath != null
-                          ? Image.asset(
-                              state.activeSource!.iconPath,
-                              width: 20,
-                              height: 20,
-                              errorBuilder: (context, error, stackTrace) {
-                                // Fallback to DNS icon if image fails to load
-                                return Icon(
-                                  Icons.dns_rounded,
-                                  size: 20,
-                                  color: colorScheme.onSurfaceVariant,
-                                );
-                              },
-                            )
-                          : Icon(
-                              Icons.dns_rounded,
-                              size: 20,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
+                      child: _buildSourceIconWidget(
+                        iconPath: state.activeSource?.iconPath,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                     const SizedBox(width: 14),
                     // Text - matches nav item
@@ -145,29 +130,12 @@ class SourceSelector extends StatelessWidget {
                       : colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: source.iconPath.isNotEmpty
-                    ? Image.asset(
-                        source.iconPath,
-                        width: 20,
-                        height: 20,
-                        errorBuilder: (context, error, stackTrace) {
-                          // Fallback to DNS icon if image fails to load
-                          return Icon(
-                            Icons.dns_rounded,
-                            size: 20,
-                            color: isActive
-                                ? colorScheme.primary
-                                : colorScheme.onSurfaceVariant,
-                          );
-                        },
-                      )
-                    : Icon(
-                        Icons.dns_rounded,
-                        size: 20,
-                        color: isActive
-                            ? colorScheme.primary
-                            : colorScheme.onSurfaceVariant,
-                      ),
+                child: _buildSourceIconWidget(
+                  iconPath: source.iconPath,
+                  color: isActive
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -195,5 +163,50 @@ class SourceSelector extends StatelessWidget {
         context.read<SourceCubit>().switchSource(selectedId);
       }
     });
+  }
+
+  Widget _buildSourceIconWidget({
+    required String? iconPath,
+    required Color color,
+  }) {
+    if (iconPath == null || iconPath.isEmpty) {
+      return Icon(
+        Icons.dns_rounded,
+        size: 20,
+        color: color,
+      );
+    }
+
+    final iconUri = Uri.tryParse(iconPath);
+    final isRemote = iconUri != null &&
+        (iconUri.scheme == 'http' || iconUri.scheme == 'https');
+
+    if (isRemote) {
+      return Image.network(
+        iconPath,
+        width: 20,
+        height: 20,
+        errorBuilder: (context, error, stackTrace) {
+          return Icon(
+            Icons.dns_rounded,
+            size: 20,
+            color: color,
+          );
+        },
+      );
+    }
+
+    return Image.asset(
+      iconPath,
+      width: 20,
+      height: 20,
+      errorBuilder: (context, error, stackTrace) {
+        return Icon(
+          Icons.dns_rounded,
+          size: 20,
+          color: color,
+        );
+      },
+    );
   }
 }
