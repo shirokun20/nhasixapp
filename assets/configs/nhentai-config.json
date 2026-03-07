@@ -2,6 +2,7 @@
     "source": "nhentai",
     "version": "1.0.2",
     "lastUpdated": "2026-03-01T00:00:00+07:00",
+    "configUrl": "https://cdn.kuron.app/configs/nhentai.json",
     "baseUrl": "https://nhentai.net",
     "avatarBaseUrl": "https://i3.nhentai.net",
     "api": {
@@ -216,28 +217,6 @@
         "pagination": {
             "urlPattern": "/search/?q={query}&page={page}",
             "paramName": "page"
-        }
-    },
-    "scraper": {
-        "enabled": true,
-        "selectors": {
-            "homepage": {
-                "container": ".index-container",
-                "galleryCard": ".gallery",
-                "cover": ".cover img",
-                "link": "a.cover",
-                "title": "caption"
-            },
-            "detail": {
-                "titleEnglish": "#info h1",
-                "titleJapanese": "#info h2",
-                "tags": "#info a.tag",
-                "tagContainer": ".tag-container"
-            },
-            "pagination": {
-                "pageLinks": ".pagination a.page",
-                "current": ".pagination .current"
-            }
         }
     },
     "network": {

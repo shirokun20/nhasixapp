@@ -438,15 +438,32 @@ void _setupDataSources() {
   );
 
   // Content Source Registry
-  // GenericHttpSource registered first → becomes currentSource (primary).
-  // NhentaiSource kept in DI but removed from registry (Step 2 promote).
-  // Step 3 will remove NhentaiSource/NhentaiApiClient DI registrations entirely.
+  // GenericHttpSource (nhentai) registered first → primary source.
+  // KomikTap registered as GenericHttpSource via inline creation (Phase 3).
   getIt.registerLazySingleton<ContentSourceRegistry>(() {
+    final logger = getIt<Logger>();
     final registry = ContentSourceRegistry();
-    registry.register(
-        getIt<GenericHttpSource>()); // nhentai — primary (config-driven)
+
+    // nhentai — primary (config-driven via GenericHttpSource)
+    registry.register(getIt<GenericHttpSource>());
+
+    // KomikTap — config-driven scraper source (Phase 3)
+    final komiktapRaw = getIt<RemoteConfigService>().getRawConfig('komiktap');
+    if (komiktapRaw != null && komiktapRaw.isNotEmpty) {
+      final config =
+          jsonDecode(jsonEncode(komiktapRaw)) as Map<String, dynamic>;
+      logger.d('Registering KomikTap as GenericHttpSource (scraper)');
+      registry.register(GenericHttpSource(
+        rawConfig: config,
+        dio: getIt<Dio>(),
+        logger: logger,
+      ));
+    } else {
+      logger.w('KomikTap config not loaded — source not registered. '
+          'Ensure RemoteConfigService.smartInitialize() has run.');
+    }
+
     // registry.register(getIt<CrotpediaSource>());
-    // registry.register(getIt<KomiktapSource>());
     return registry;
   });
 

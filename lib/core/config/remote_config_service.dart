@@ -52,11 +52,14 @@ class RemoteConfigService {
 
   /// Bundled asset path for each **bundled** source.
   ///
-  /// Only `nhentai` is bundled into the APK — it is always available without
-  /// network. All other sources are *installable* (user downloads JSON config
-  /// from CDN via Settings → Sumber) and therefore must NOT appear here.
+  /// Only `nhentai` is bundled into the APK as a permanent default — it is
+  /// always available without network.
+  ///
+  /// TODO(phase3): `komiktap` is temporarily bundled for dev testing.
+  /// Before release, remove it from here and deliver it via CDN manifest only.
   static const Map<String, String> _bundledAssetPaths = {
     'nhentai': '$_assetConfigBase/nhentai-config.json',
+    'komiktap': '$_assetConfigBase/komiktap-config.json',
     'app': '$_assetConfigBase/app-config.json',
     'tags': _tagsAssetPath,
   };
@@ -139,10 +142,11 @@ class RemoteConfigService {
           progress += progressPerSource;
         }
       } else {
-        // Fallback: load only bundled configs (nhentai + app).
+        // Fallback: load only bundled configs (nhentai + komiktap + app).
         // Installable sources require the manifest to know which ones are
         // installed; without it we cannot safely load them.
-        for (final sourceId in ['nhentai', 'app']) {
+        // TODO(phase3): remove 'komiktap' once CDN manifest is updated.
+        for (final sourceId in ['nhentai', 'komiktap', 'app']) {
           onProgress?.call(progress, 'Loading $sourceId config…');
           await _loadSourceFromBundledFallback(sourceId);
           progress += progressPerSource;
@@ -152,6 +156,13 @@ class RemoteConfigService {
       // Tags manifest is always loaded from asset (it's metadata, not config)
       onProgress?.call(0.85, 'Loading tags config…');
       await _loadTagsManifest();
+
+      // Attempt a background self-refresh for every source that carries a
+      // configUrl field but wasn't covered by the CDN manifest (or the
+      // manifest didn't update it). This keeps installable/dev configs fresh
+      // without requiring a full manifest bump.
+      onProgress?.call(0.92, 'Checking source self-updates…');
+      await _selfRefreshAllFromConfigUrl(manifest);
 
       // Persist sync timestamp
       final prefs = await SharedPreferences.getInstance();
@@ -202,7 +213,17 @@ class RemoteConfigService {
 
   bool isFeatureEnabled(String source, bool Function(FeatureConfig) selector) {
     final config = getConfig(source);
-    if (config?.features == null) return false;
+    if (config?.features == null) {
+      final raw = _rawSourceConfigs[source];
+      if (raw != null && raw['features'] != null) {
+        try {
+          final featureConfig =
+              FeatureConfig.fromJson(raw['features'] as Map<String, dynamic>);
+          return selector(featureConfig);
+        } catch (_) {}
+      }
+      return false;
+    }
     return selector(config!.features!);
   }
 
@@ -241,6 +262,70 @@ class RemoteConfigService {
 
   Future<bool> hasValidCache(String source) async =>
       _sourceConfigs.containsKey(source);
+
+  /// Attempts to refresh a source config from its own embedded `configUrl`
+  /// field (self-describing CDN reference).
+  ///
+  /// This is called by `GenericHttpSource` during initialization so each
+  /// source can describe its own update endpoint, independent of the CDN
+  /// manifest. The config is refreshed only if the remote version string
+  /// differs from the currently loaded one.
+  ///
+  /// Returns `true` if the config was refreshed, `false` otherwise.
+  Future<bool> refreshSourceFromConfigUrl(String sourceId) async {
+    final raw = _rawSourceConfigs[sourceId];
+    final configUrl = raw?['configUrl'] as String?;
+    if (configUrl == null || configUrl.isEmpty) {
+      _logger.d('$sourceId: no configUrl field — skipping self-refresh');
+      return false;
+    }
+
+    _logger.i('$sourceId: attempting self-refresh from $configUrl');
+    try {
+      final response = await _dio.get<String>(
+        configUrl,
+        options: Options(
+          receiveTimeout: const Duration(seconds: 8),
+          responseType: ResponseType.plain,
+        ),
+      );
+
+      final rawJson = response.data;
+      if (rawJson == null) return false;
+
+      final decoded = jsonDecode(rawJson) as Map<String, dynamic>;
+      final remoteVersion = decoded['version'] as String?;
+      final localVersion = raw?['version'] as String?;
+
+      if (remoteVersion == localVersion) {
+        _logger.d(
+            '$sourceId: configUrl version $remoteVersion == local — no update');
+        return false;
+      }
+
+      // Persist to AppDocDir so it survives app restarts.
+      final configDir = await _getConfigDirectory();
+      final cachedFile = File(p.join(configDir.path, '$sourceId-config.json'));
+      await cachedFile.writeAsString(rawJson);
+
+      // Also update the version pref so manifest sync skips re-download.
+      if (remoteVersion != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_prefSourceVersion(sourceId), remoteVersion);
+      }
+
+      _rawSourceConfigs[sourceId] = decoded;
+      _sourceConfigs[sourceId] = SourceConfig.fromJson(decoded);
+
+      _logger.i(
+          '✅ $sourceId refreshed via configUrl: $localVersion → $remoteVersion');
+      return true;
+    } catch (e) {
+      _logger.w('$sourceId: configUrl refresh failed — keeping existing config',
+          error: e);
+      return false;
+    }
+  }
 
   Future<DateTime?> getLastSyncTime() async {
     final prefs = await SharedPreferences.getInstance();
@@ -529,5 +614,27 @@ class RemoteConfigService {
           'Checksum mismatch for $sourceId: expected $expected, got $actual');
       // Non-fatal: log and continue — config may still be valid.
     }
+  }
+
+  /// For each loaded source that has a `configUrl` field and whose version
+  /// was NOT already refreshed by the manifest during this init cycle, try a
+  /// lightweight self-refresh.
+  ///
+  /// Sources that WERE handled by the manifest are skipped — the manifest
+  /// sync is authoritative and already fetched the latest version.
+  Future<void> _selfRefreshAllFromConfigUrl(SourceManifest? manifest) async {
+    // Build a set of source IDs whose versions were handled by the manifest.
+    final manifestIds = manifest?.sources.map((e) => e.id).toSet() ?? {};
+
+    final futures = _rawSourceConfigs.keys
+        .where((id) => !manifestIds.contains(id))
+        .where((id) =>
+            (_rawSourceConfigs[id]?['configUrl'] as String?)?.isNotEmpty ==
+            true)
+        .map((id) => refreshSourceFromConfigUrl(id))
+        .toList();
+
+    if (futures.isEmpty) return;
+    await Future.wait(futures, eagerError: false);
   }
 }

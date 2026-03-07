@@ -10,6 +10,7 @@ import 'package:dio/dio.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 
+import '../mappers/generic_content_mapper.dart';
 import '../models/source_config_runtime.dart';
 import '../parsers/generic_json_parser.dart';
 import '../url_builder/generic_url_builder.dart';
@@ -54,6 +55,14 @@ class GenericRestAdapter implements GenericAdapter {
     Map<String, dynamic> rawConfig,
   ) async {
     final api = rawConfig['api'] as Map<String, dynamic>?;
+    // ── Schema detection ────────────────────────────────────────────────────
+    // New schema: config has `api.list` block with `items` + `fields`.
+    // Old schema (nhentai): config uses flat `selectors` map.
+    final apiList = api?['list'] as Map<String, dynamic>?;
+    if (apiList != null) {
+      return _searchNewSchema(filter, rawConfig, api!, apiList);
+    }
+
     final endpoints =
         (api?['endpoints'] as Map<String, dynamic>?)?.cast<String, String>() ??
             {};
@@ -187,6 +196,12 @@ class GenericRestAdapter implements GenericAdapter {
     Map<String, dynamic> rawConfig,
   ) async {
     final api = rawConfig['api'] as Map<String, dynamic>?;
+    // ── Schema detection ────────────────────────────────────────────────────
+    final apiDetail = api?['detail'] as Map<String, dynamic>?;
+    if (apiDetail != null) {
+      return _fetchDetailNewSchema(contentId, rawConfig, api!, apiDetail);
+    }
+
     final endpoints =
         (api?['endpoints'] as Map<String, dynamic>?)?.cast<String, String>() ??
             {};
@@ -286,6 +301,213 @@ class GenericRestAdapter implements GenericAdapter {
       _logger.w('$_sourceId: fetchComments failed for $contentId', error: e);
       return const [];
     }
+  }
+
+  @override
+  Future<ChapterData?> fetchChapterImages(
+    String chapterId,
+    Map<String, dynamic> rawConfig,
+  ) async {
+    // REST APIs usually serve image URLs within the detail endpoint (like nhentai).
+    // If a source explicitly has a chapters/pages endpoint, it requires custom config.
+    // For now, return null as it is primarily used by manga scrapers.
+    return null;
+  }
+
+  // ── New schema: api.list / api.detail ─────────────────────────────────────
+  //
+  // When `rawConfig['api']['list']` is present the adapter uses the declarative
+  // field-map approach powered by [GenericContentMapper] instead of the
+  // legacy flat-selectors path used by nhentai.
+  //
+  // New config shape:
+  //   api.list.items      — JSONPath to items array   (e.g. "$.result[*]")
+  //   api.list.fields     — map of fieldName → fieldDef  (see below)
+  //   api.list.pagination — { totalPages: {path:…}, currentPage: {path:…} }
+  //   api.detail.fields   — same field-map approach
+  //   api.detail.images   — image URL builder config
+  //
+  // Field definitions (values in the `fields` map):
+  //   { "selector": "$.id" }                    — scalar JSONPath extraction
+  //   { "selector": "$.tags[*].name", "multi": true }  — list extraction
+  //   { "type": "tagObjects", "selector": "$.tags[*]" } — nhentai tag split
+  //   { "type": "coverBuilder", … }              — template cover URL
+
+  Future<AdapterSearchResult> _searchNewSchema(
+    SearchFilter filter,
+    Map<String, dynamic> rawConfig,
+    Map<String, dynamic> api,
+    Map<String, dynamic> apiList,
+  ) async {
+    final endpoints =
+        (api['endpoints'] as Map<String, dynamic>?)?.cast<String, String>() ??
+            {};
+    final isEmptyQuery = filter.query.trim().isEmpty && !filter.hasFilters;
+    final template = isEmptyQuery
+        ? (endpoints['allGalleries'] ?? endpoints['search'] ?? '')
+        : (endpoints['search'] ?? '');
+    if (template.isEmpty) {
+      _logger.w('$_sourceId (new schema): no search endpoint configured');
+      return const AdapterSearchResult(items: [], hasNextPage: false);
+    }
+
+    final url = _urlBuilder.buildSearchUrl(template, filter);
+    _logger.d('$_sourceId REST [new schema] search: $url');
+
+    try {
+      await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
+      final response = await _dio.get<dynamic>(url);
+      final data = response.data is String
+          ? jsonDecode(response.data as String)
+          : response.data;
+
+      final itemsPath = apiList['items'] as String?;
+      if (itemsPath == null) {
+        return const AdapterSearchResult(items: [], hasNextPage: false);
+      }
+
+      final rawItems =
+          _parser.extractItems(data, FieldSelector(selector: itemsPath));
+      final fieldsConfig = (apiList['fields'] as Map<String, dynamic>?) ?? {};
+      final items = rawItems
+          .map((item) {
+            final fields = _extractRestFields(item, fieldsConfig);
+            return GenericContentMapper.toListItem(fields, sourceId: _sourceId);
+          })
+          .where((c) => c.id.isNotEmpty)
+          .toList();
+
+      // Pagination
+      final paginationCfg =
+          (apiList['pagination'] as Map<String, dynamic>?) ?? {};
+      final totalPagesStr =
+          _extractRestScalar(data, paginationCfg['totalPages']);
+      final currentPageStr =
+          _extractRestScalar(data, paginationCfg['currentPage']);
+      bool hasNext = true;
+      int? totalPages;
+      if (totalPagesStr != null && currentPageStr != null) {
+        totalPages = int.tryParse(totalPagesStr);
+        final current = int.tryParse(currentPageStr);
+        if (totalPages != null && current != null) {
+          hasNext = current < totalPages;
+        }
+      }
+
+      return AdapterSearchResult(
+        items: items,
+        hasNextPage: hasNext,
+        totalPages: totalPages,
+      );
+    } catch (e, st) {
+      _logger.e('$_sourceId REST new schema search failed',
+          error: e, stackTrace: st);
+      return const AdapterSearchResult(items: [], hasNextPage: false);
+    }
+  }
+
+  Future<AdapterDetailResult> _fetchDetailNewSchema(
+    String contentId,
+    Map<String, dynamic> rawConfig,
+    Map<String, dynamic> api,
+    Map<String, dynamic> apiDetail,
+  ) async {
+    final endpoints =
+        (api['endpoints'] as Map<String, dynamic>?)?.cast<String, String>() ??
+            {};
+    final template = endpoints['detail'] ?? endpoints['galleryDetail'] ?? '';
+    if (template.isEmpty) {
+      _logger.w('$_sourceId (new schema): no detail endpoint configured');
+      return AdapterDetailResult(
+          content: _emptyContent(contentId), imageUrls: []);
+    }
+
+    final url = _urlBuilder.buildDetailUrl(template, contentId);
+    _logger.d('$_sourceId REST [new schema] detail: $url');
+
+    try {
+      await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
+      final response = await _dio.get<dynamic>(url);
+      final data = response.data is String
+          ? jsonDecode(response.data as String)
+          : response.data;
+
+      final fieldsConfig = (apiDetail['fields'] as Map<String, dynamic>?) ?? {};
+      final fields = _extractRestFields(data, fieldsConfig);
+
+      // Image URLs
+      List<String> imageUrls = const [];
+      final imagesCfg = apiDetail['images'] as Map<String, dynamic>?;
+      if (imagesCfg != null) {
+        imageUrls = _buildImageUrlsFromTemplate(data, imagesCfg);
+      }
+
+      final content = GenericContentMapper.toDetail(
+        contentId,
+        fields,
+        sourceId: _sourceId,
+        imageUrls: imageUrls,
+      );
+      return AdapterDetailResult(content: content, imageUrls: imageUrls);
+    } catch (e) {
+      _logger.e('$_sourceId REST new schema detail failed for $contentId',
+          error: e);
+      return AdapterDetailResult(
+          content: _emptyContent(contentId), imageUrls: []);
+    }
+  }
+
+  /// Extract all `fields` from a JSON [data] object according to `fieldsConfig`.
+  ///
+  /// Field def types:
+  /// - default (`path`)  — JSONPath scalar (or list if `multi: true`)
+  /// - `tagObjects`      — extract list of tag Maps and store as `tagObjects`
+  ///   key so [GenericContentMapper] can split by type.
+  /// - `coverBuilder`    — build cover URL via template (same as old adapter).
+  Map<String, dynamic> _extractRestFields(
+    dynamic data,
+    Map<String, dynamic> fieldsConfig,
+  ) {
+    final result = <String, dynamic>{};
+    for (final entry in fieldsConfig.entries) {
+      final fieldName = entry.key;
+      final def = entry.value;
+      if (def is! Map<String, dynamic>) continue;
+
+      final type = def['type'] as String? ?? 'path';
+      final path = def['selector'] as String? ?? def['path'] as String? ?? '';
+
+      switch (type) {
+        case 'tagObjects':
+          if (path.isNotEmpty) {
+            final objs =
+                _parser.extractItems(data, FieldSelector(selector: path));
+            result['tagObjects'] = objs;
+          }
+
+        case 'coverBuilder':
+          result[fieldName] = _buildCoverUrl(data, def, null) ?? '';
+
+        default:
+          if (path.isEmpty) continue;
+          final multi = def['multi'] as bool? ?? false;
+          final sel = FieldSelector(selector: path);
+          if (multi) {
+            result[fieldName] = _parser.extractList(data, sel);
+          } else {
+            result[fieldName] = _parser.extractString(data, sel) ?? '';
+          }
+      }
+    }
+    return result;
+  }
+
+  /// Extract a scalar string from [data] using a field def `{path: "…"}`.
+  String? _extractRestScalar(dynamic data, dynamic fieldDef) {
+    if (fieldDef == null) return null;
+    final path = fieldDef is Map ? fieldDef['path'] as String? ?? '' : '';
+    if (path.isEmpty) return null;
+    return _parser.extractString(data, FieldSelector(selector: path));
   }
 
   // ── Private parsers ────────────────────────────────────────────────────────

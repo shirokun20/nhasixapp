@@ -13,7 +13,7 @@ import 'adapters/generic_adapter.dart';
 import 'adapters/generic_rest_adapter.dart';
 import 'adapters/generic_scraper_adapter.dart';
 import 'filters/generic_filter_transformer.dart';
-// import 'parsers/generic_html_parser.dart';
+import 'parsers/generic_html_parser.dart';
 import 'parsers/generic_json_parser.dart';
 import 'url_builder/generic_url_builder.dart';
 
@@ -167,6 +167,11 @@ class GenericHttpSource implements ContentSource {
     return _adapter.fetchComments(contentId, _rawConfig);
   }
 
+  @override
+  Future<ChapterData?> getChapterImages(String chapterId) async {
+    return _adapter.fetchChapterImages(chapterId, _rawConfig);
+  }
+
   /// Build the web-facing content URL from the `contentUrl` endpoint
   /// template in config (e.g. `"/g/{id}/"`). Returns empty string if
   /// the template is not defined in the config.
@@ -307,19 +312,32 @@ class GenericHttpSource implements ContentSource {
 
     final urlBuilder = GenericUrlBuilder(baseUrl: baseUrl);
 
-    // Build selectors → GenericJsonParser
-    // final selectors = rawConfig['selectors'] as Map<String, dynamic>? ?? {};
-    final parser = GenericJsonParser(logger: logger);
-
-    return GenericRestAdapter(
-      dio: dio,
-      urlBuilder: urlBuilder,
-      parser: parser,
-      logger: logger,
-      sourceId: sourceId,
-      headersGenerator: headersGenerator,
-      delayApplier: delayApplier,
-    );
+    if (rawConfig.containsKey('scraper')) {
+      // HTML scraping path — uses CSS selectors from config's `scraper` block.
+      logger.d(
+          '[$sourceId] Using GenericScraperAdapter (scraper block detected)');
+      final htmlParser = GenericHtmlParser(logger: logger);
+      return GenericScraperAdapter(
+        dio: dio,
+        urlBuilder: urlBuilder,
+        parser: htmlParser,
+        logger: logger,
+        sourceId: sourceId,
+      );
+    } else {
+      // REST / JSON API path — uses JSONPath selectors from config's `api` block.
+      logger.d('[$sourceId] Using GenericRestAdapter (api block detected)');
+      final jsonParser = GenericJsonParser(logger: logger);
+      return GenericRestAdapter(
+        dio: dio,
+        urlBuilder: urlBuilder,
+        parser: jsonParser,
+        logger: logger,
+        sourceId: sourceId,
+        headersGenerator: headersGenerator,
+        delayApplier: delayApplier,
+      );
+    }
   }
 
   SortOption _timeframeToSort(PopularTimeframe timeframe) {

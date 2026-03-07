@@ -1,4 +1,3 @@
-/// Abstract adapter interface for [GenericHttpSource].
 ///
 /// An adapter handles the protocol-specific part of fetching and parsing
 /// content for a given source. The two built-in adapters are:
@@ -57,6 +56,12 @@ abstract class GenericAdapter {
   /// Fetch comments for [contentId].
   Future<List<Comment>> fetchComments(
     String contentId,
+    Map<String, dynamic> rawConfig,
+  );
+
+  /// Fetch chapter image URLs and navigation data for [chapterId].
+  Future<ChapterData?> fetchChapterImages(
+    String chapterId,
     Map<String, dynamic> rawConfig,
   );
 }

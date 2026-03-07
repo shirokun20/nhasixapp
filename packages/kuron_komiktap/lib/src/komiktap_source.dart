@@ -363,6 +363,7 @@ class KomiktapSource implements ContentSource {
   // ============ Helper Methods ============
 
   /// Get images and navigation from a specific chapter
+  @override
   Future<ChapterData> getChapterImages(String chapterSlug) async {
     try {
       final url = KomiktapUrlBuilder.buildChapterUrlFromSlug(chapterSlug,

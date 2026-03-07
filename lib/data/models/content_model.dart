@@ -275,6 +275,19 @@ class ContentModel extends Content {
       sourceId: map['source_id'] ?? 'nhentai',
       favorites: map['favorites'] ?? 0,
       tags: tags,
+      chapters: map['chapters'] != null
+          ? (map['chapters'] as List)
+              .map((c) => Chapter(
+                    id: c['id'],
+                    title: c['title'],
+                    url: c['url'],
+                    uploadDate: c['upload_date'] != null
+                        ? DateTime.fromMillisecondsSinceEpoch(c['upload_date'])
+                        : null,
+                    scanGroup: c['scan_group'],
+                  ))
+              .toList()
+          : null,
       cachedAt: map['cached_at'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['cached_at'])
           : null,
@@ -307,6 +320,15 @@ class ContentModel extends Content {
                 'count': t.count,
                 'url': t.url,
                 'slug': t.slug,
+              })
+          .toList(),
+      'chapters': chapters
+          ?.map((c) => {
+                'id': c.id,
+                'title': c.title,
+                'url': c.url,
+                'upload_date': c.uploadDate?.millisecondsSinceEpoch,
+                'scan_group': c.scanGroup,
               })
           .toList(),
       'cached_at': cachedAt?.millisecondsSinceEpoch ??

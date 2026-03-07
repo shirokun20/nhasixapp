@@ -2,6 +2,7 @@ import '../entities/content.dart';
 import '../entities/content_list_result.dart';
 import '../entities/comment.dart';
 import '../entities/search_filter.dart';
+import '../entities/chapter_data.dart';
 import '../entities/autocomplete_suggestion.dart';
 import '../filters/source_filter.dart';
 import '../value_objects/sort_option.dart';
@@ -57,6 +58,10 @@ abstract class ContentSource {
 
   /// Get comments for a specific content ID
   Future<List<Comment>> getComments(String contentId) async => [];
+
+  /// Get chapter image URLs and navigation data for a specific chapter ID.
+  /// Used primarily by manga/manhwa sources. Default implementation returns null.
+  Future<ChapterData?> getChapterImages(String chapterId) async => null;
 
   /// Build full image URL for this source
   String buildImageUrl({

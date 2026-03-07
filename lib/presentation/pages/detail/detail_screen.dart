@@ -849,6 +849,11 @@ class _DetailScreenState extends State<DetailScreen> {
     final hasChaptersFeature =
         remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.chapters);
 
+    Logger().i('content.sourceId: ${content.sourceId}');
+    Logger().i('hasChaptersFeature: $hasChaptersFeature');
+    Logger().i('content.chapters: ${content.chapters}');
+    Logger().i('content.chapters.isNotEmpty: ${content.chapters!.isNotEmpty}');
+
     // If content has chapters AND feature is enabled, show chapter list
     if (hasChaptersFeature &&
         content.chapters != null &&

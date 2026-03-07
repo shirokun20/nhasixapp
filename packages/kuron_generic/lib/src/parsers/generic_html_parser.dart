@@ -65,12 +65,19 @@ class GenericHtmlParser {
     }
   }
 
-  /// Extract attribute or text from a single [dom.Element] using [selector].
+  /// Extract attribute or text from an [element] using [selector].
+  ///
+  /// The CSS [FieldSelector.selector] is first evaluated as a child query
+  /// inside [element] (e.g. container = `.utao`, field selector = `a.series`).
+  /// If no child is found the value is read from [element] itself — this
+  /// handles the rare case where the container element IS the target node.
   String? extractFromElement(dom.Element element, FieldSelector selector) {
     try {
+      final child = element.querySelector(selector.selector);
+      final target = child ?? element;
       final value = selector.attribute != null
-          ? element.attributes[selector.attribute]
-          : element.text.trim();
+          ? target.attributes[selector.attribute]
+          : target.text.trim();
       if (value == null || value.isEmpty) return selector.fallback;
       if (selector.regex != null) return _applyRegex(value, selector.regex!);
       return value;

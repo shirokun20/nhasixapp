@@ -493,6 +493,7 @@ class CrotpediaSource implements ContentSource {
   // ============ Crotpedia-Specific Methods ============
 
   /// Get images and navigation from a specific chapter
+  @override
   Future<ChapterData> getChapterImages(String chapterSlug) async {
     try {
       final url = CrotpediaUrlBuilder.chapterReader(chapterSlug);

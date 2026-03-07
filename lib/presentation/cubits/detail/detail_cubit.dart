@@ -456,15 +456,16 @@ class DetailCubit extends BaseCubit<DetailState> {
       if (images.isEmpty) {
         logInfo('📡 Fetching chapter from online API');
 
-        if (source is CrotpediaSource) {
+        if (source != null) {
           chapterData = await source.getChapterImages(chapter.id);
-          images = chapterData.images;
-        } else if (source is KomiktapSource) {
-          chapterData = await source.getChapterImages(chapter.id);
-          images = chapterData.images;
+          if (chapterData != null) {
+            images = chapterData.images;
+          } else {
+            logWarning(
+                'Source ${source.displayName} returned null chapter data or does not support getChapterImages');
+          }
         } else {
-          logWarning(
-              'Source ${source?.displayName} does not support getChapterImages direct call');
+          logWarning('Source is null, cannot fetch chapter images directly');
         }
       }
 
@@ -475,12 +476,12 @@ class DetailCubit extends BaseCubit<DetailState> {
         String message = 'Failed to load chapter images';
         bool needsLogin = false;
 
-        // Crotpedia specific heuristic
-        if (source is CrotpediaSource) {
+        // Crotpedia specific heuristic (Generic source might need its own heuristic later)
+        if (source is CrotpediaSource ||
+            currentState.content.sourceId == 'crotpedia') {
           message = 'This chapter requires login or is unavailable.';
           needsLogin = true;
         }
-
         emit(DetailActionFailure(
           message: message,
           content: currentState.content,

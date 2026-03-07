@@ -135,6 +135,9 @@ class NhentaiSource implements ContentSource {
   }
 
   @override
+  Future<ChapterData?> getChapterImages(String chapterId) async => null;
+
+  @override
   String buildImageUrl({
     required String contentId,
     required String mediaId,
