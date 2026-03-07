@@ -110,6 +110,20 @@ class GenericScraperAdapter implements GenericAdapter {
     final urlPatternsCfg =
         (scraper['urlPatterns'] as Map?)?.cast<String, dynamic>() ?? {};
 
+    // ── Raw-param mode (from DynamicFormSearchUI) ──────────────────────────
+    // When query starts with "raw:", the form supplied all query-params
+    // directly. We build the URL from the searchForm.urlPattern base path and
+    // append the raw params instead of using the {query} template substitution.
+    if (filter.query.startsWith('raw:')) {
+      return _searchRaw(
+        rawParams: filter.query.substring(4),
+        page: filter.page,
+        rawConfig: rawConfig,
+        scraper: scraper,
+        urlPatternsCfg: urlPatternsCfg,
+      );
+    }
+
     // 1) Genre/tag filter → genreSearch
     // 2) Non-empty text   → search
     // 3) Empty query p>1  → homePage  (if defined)
@@ -147,7 +161,93 @@ class GenericScraperAdapter implements GenericAdapter {
     }
 
     _logger.d('$_sourceId scraper [$patternKey]: $url');
-    return _fetchListPage(url, listConfig);
+    return _fetchListPage(url, listConfig,
+        defaultLanguage: rawConfig['defaultLanguage'] as String?);
+  }
+
+  /// Handle `raw:` query format produced by [DynamicFormSearchUI].
+  ///
+  /// Parses the raw query-param string and builds the final URL by taking the
+  /// base path of the appropriate URL pattern (strip any `?…` template vars)
+  /// and appending all raw params + the page param.
+  Future<AdapterSearchResult> _searchRaw({
+    required String rawParams,
+    required int page,
+    required Map<String, dynamic> rawConfig,
+    required Map<String, dynamic> scraper,
+    required Map<String, dynamic> urlPatternsCfg,
+  }) async {
+    // Determine which URL pattern to use from searchForm config.
+    final searchFormCfg = rawConfig['searchForm'] as Map<String, dynamic>?;
+    final patternKey = (searchFormCfg?['urlPattern'] as String?) ?? 'search';
+    final formParamsCfg =
+        (searchFormCfg?['params'] as Map?)?.cast<String, dynamic>() ?? {};
+
+    if (!urlPatternsCfg.containsKey(patternKey)) {
+      _logger.w('$_sourceId: raw search — URL pattern "$patternKey" not found');
+      return const AdapterSearchResult(items: [], hasNextPage: false);
+    }
+
+    // Parse raw params (e.g. "s=manga&status=ongoing")
+    final rawMap = <String, String>{};
+    for (final pair in rawParams.split('&')) {
+      if (pair.isEmpty) continue;
+      final idx = pair.indexOf('=');
+      if (idx < 0) continue;
+      rawMap[Uri.decodeComponent(pair.substring(0, idx))] =
+          Uri.decodeComponent(pair.substring(idx + 1));
+    }
+
+    // Resolve list config from the URL pattern (for pagination/selector info).
+    // We use a dummy SearchFilter to call _resolvePattern just for the listConfig.
+    final (_, listConfig) = _resolvePattern(
+      scraper,
+      patternKey,
+      filter: SearchFilter(query: '', page: page),
+    );
+    if (listConfig == null) {
+      _logger.w(
+          '$_sourceId: raw search — no list config in pattern "$patternKey"');
+      return const AdapterSearchResult(items: [], hasNextPage: false);
+    }
+
+    // Derive the page param name from searchForm.params entry of type "page".
+    String pageParam = 'paged';
+    for (final entry in formParamsCfg.entries) {
+      final def = entry.value as Map<String, dynamic>?;
+      if ((def?['type'] as String?) == 'page') {
+        pageParam = (def?['queryParam'] as String?) ?? pageParam;
+        break;
+      }
+    }
+
+    // Build the base URL path — strip the query-string portion of the template
+    // so we append our own params cleanly.
+    final patternValue = urlPatternsCfg[patternKey];
+    String basePath = '';
+    if (patternValue is String) {
+      basePath = patternValue;
+    } else if (patternValue is Map<String, dynamic>) {
+      basePath = (patternValue['url'] as String?) ?? '';
+    }
+    // Remove everything from '?' onwards (we'll append our own query string).
+    final qIdx = basePath.indexOf('?');
+    if (qIdx >= 0) basePath = basePath.substring(0, qIdx);
+    // Substitute {page} if present in path (some sources embed page in path).
+    basePath = basePath.replaceAll('{page}', page.toString());
+
+    // Assemble the final query string: raw user params + page.
+    final queryParts = <String>[];
+    rawMap.forEach((k, v) => queryParts.add('$k=${Uri.encodeComponent(v)}'));
+    queryParts.add('$pageParam=${Uri.encodeComponent(page.toString())}');
+
+    final baseUrl = _urlBuilder.resolve(basePath, {});
+    final finalUrl =
+        queryParts.isEmpty ? baseUrl : '$baseUrl?${queryParts.join('&')}';
+
+    _logger.d('$_sourceId scraper [raw/$patternKey]: $finalUrl');
+    return _fetchListPage(finalUrl, listConfig,
+        defaultLanguage: rawConfig['defaultLanguage'] as String?);
   }
 
   // ── fetchDetail ────────────────────────────────────────────────────────────
@@ -201,12 +301,18 @@ class GenericScraperAdapter implements GenericAdapter {
         }
       }
 
-      final content = GenericContentMapper.toDetail(
+      var content = GenericContentMapper.toDetail(
         contentId,
         fields,
         sourceId: _sourceId,
         chapters: chapters,
       );
+
+      final defaultLang = rawConfig['defaultLanguage'] as String?;
+      if (defaultLang != null &&
+          (content.language.isEmpty || content.language == 'unknown')) {
+        content = content.copyWith(language: defaultLang);
+      }
 
       return AdapterDetailResult(content: content, imageUrls: const []);
     } catch (e) {
@@ -424,8 +530,9 @@ class GenericScraperAdapter implements GenericAdapter {
 
   Future<AdapterSearchResult> _fetchListPage(
     String url,
-    Map<String, dynamic> listConfig,
-  ) async {
+    Map<String, dynamic> listConfig, {
+    String? defaultLanguage,
+  }) async {
     try {
       final response = await _dio.get<String>(
         url,
@@ -443,8 +550,12 @@ class GenericScraperAdapter implements GenericAdapter {
       if (container != null) {
         for (final el in _parser.selectAll(doc, container)) {
           final fields = _extractElementFields(el, fieldsConfig);
-          final item =
+          var item =
               GenericContentMapper.toListItem(fields, sourceId: _sourceId);
+          if (defaultLanguage != null &&
+              (item.language.isEmpty || item.language == 'unknown')) {
+            item = item.copyWith(language: defaultLanguage);
+          }
           if (item.id.isNotEmpty) items.add(item);
         }
       }

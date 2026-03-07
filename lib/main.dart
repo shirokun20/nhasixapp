@@ -14,6 +14,7 @@ import 'package:nhasixapp/presentation/widgets/lifecycle_watcher.dart';
 import 'package:nhasixapp/services/analytics_service.dart';
 import 'package:nhasixapp/services/history_cleanup_service.dart';
 import 'package:nhasixapp/services/app_update_service.dart';
+import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:nhasixapp/services/workers/download_worker.dart';
 import 'package:nhasixapp/core/utils/performance_monitor.dart';
 import 'dart:io';
@@ -35,6 +36,9 @@ void main() async {
 
   // Initialize App Update Service (clears cache on app updates)
   await AppUpdateService.initialize();
+
+  // Load language metadata from assets/configs/languages.json
+  await getIt<LanguageService>().load();
 
   // Initialize WorkManager for background downloads
   await initializeWorkManager(isDebugMode: kDebugMode);

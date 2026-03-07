@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/config/config_models.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
@@ -8,6 +9,7 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_state.dart'; // Ensure correct path for state
+import 'package:nhasixapp/presentation/pages/search/dynamic_form_search_ui.dart';
 import 'package:nhasixapp/presentation/pages/search/form_based_search_ui.dart';
 import 'package:nhasixapp/presentation/pages/search/query_string_search_ui.dart';
 import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
@@ -32,26 +34,54 @@ class _SearchScreenState extends State<SearchScreen> {
       body: BlocBuilder<SourceCubit, SourceState>(
         builder: (context, sourceState) {
           final sourceId = sourceState.activeSource?.id ?? 'nhentai';
-          final sourceConfig = getIt<RemoteConfigService>().getConfig(sourceId);
+          final remoteConfig = getIt<RemoteConfigService>();
+          final sourceConfig = remoteConfig.getConfig(sourceId);
           final searchConfig = sourceConfig?.searchConfig;
 
-          if (searchConfig == null) {
-            return _buildFallbackUI(sourceId);
+          // Try parsed searchForm first; fall back to parsing from raw JSON map
+          // so the screen works even after hot-reload (singleton in memory may
+          // have been created before searchForm field was added to SourceConfig).
+          SearchFormConfig? searchForm = sourceConfig?.searchForm;
+          if (searchForm == null) {
+            final rawMap = remoteConfig.getRawConfig(sourceId);
+            final rawForm = rawMap?['searchForm'] as Map<String, dynamic>?;
+            if (rawForm != null) {
+              searchForm = SearchFormConfig.fromJson(rawForm);
+            }
           }
 
-          switch (searchConfig.searchMode) {
-            case SearchMode.queryString:
-              return QueryStringSearchUI(
-                config: searchConfig,
-                sourceId: sourceId,
-                initialQuery: widget.query,
-              );
-            case SearchMode.formBased:
-              return FormBasedSearchUI(
-                config: searchConfig,
-                sourceId: sourceId,
-              );
+          Logger().i('Building SearchScreen for source: $sourceId');
+          Logger().i(
+              'SearchConfig: ${searchConfig != null ? searchConfig.toJson() : 'null'}');
+          Logger().i(
+              'SearchForm: ${searchForm != null ? searchForm.toJson() : 'null'}');
+
+          // Priority: searchConfig (nhentai-style) → searchForm (komiktap-style)
+          // → fallback UI
+          if (searchConfig != null) {
+            switch (searchConfig.searchMode) {
+              case SearchMode.queryString:
+                return QueryStringSearchUI(
+                  config: searchConfig,
+                  sourceId: sourceId,
+                  initialQuery: widget.query,
+                );
+              case SearchMode.formBased:
+                return FormBasedSearchUI(
+                  config: searchConfig,
+                  sourceId: sourceId,
+                );
+            }
           }
+
+          if (searchForm != null) {
+            return DynamicFormSearchUI(
+              config: searchForm,
+              sourceId: sourceId,
+            );
+          }
+
+          return _buildFallbackUI(sourceId);
         },
       ),
     );

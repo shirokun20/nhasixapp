@@ -14,6 +14,7 @@ import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/core/utils/app_state_manager.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../../../core/utils/error_message_utils.dart';
 import '../../widgets/download_button_widget.dart';
@@ -676,11 +677,14 @@ class _DetailScreenState extends State<DetailScreen> {
           _buildMetadataRow('Source', content.source, Icons.dns_rounded),
           _buildMetadataRow(
               AppLocalizations.of(context)!.idLabel, content.id, Icons.tag),
-          if (content.pageCount > 0)
+          if (content.chapters != null && content.chapters!.isNotEmpty)
+            _buildMetadataRow(AppLocalizations.of(context)!.chaptersTitle,
+                '${content.chapters!.length}', Icons.menu_book)
+          else if (content.pageCount > 0)
             _buildMetadataRow(AppLocalizations.of(context)!.pagesLabel,
                 '${content.pageCount}', Icons.menu_book),
           _buildMetadataRow(AppLocalizations.of(context)!.languageLabel,
-              content.language.toLowerCase(), Icons.language),
+              _resolveDisplayLanguage(content), Icons.language),
           if (content.artists.isNotEmpty)
             _buildMetadataRow(AppLocalizations.of(context)!.artistLabel,
                 content.artists.join(', '), Icons.person),
@@ -1948,6 +1952,23 @@ class _DetailScreenState extends State<DetailScreen> {
         ),
       ),
     );
+  }
+
+  String _resolveDisplayLanguage(Content content) {
+    final langService = getIt<LanguageService>();
+    final lang = content.language.toLowerCase();
+    if (lang.isNotEmpty && lang != 'unknown') {
+      return langService.displayName(lang);
+    }
+    // Fallback: check source config for a defaultLanguage field
+    final remoteConfig = getIt<RemoteConfigService>();
+    final rawConfig = remoteConfig.getRawConfig(content.sourceId);
+    final defaultLang =
+        (rawConfig?['defaultLanguage'] as String?)?.toLowerCase();
+    if (defaultLang != null && defaultLang.isNotEmpty) {
+      return langService.displayName(defaultLang);
+    }
+    return lang;
   }
 
   String _formatDate(DateTime date) {

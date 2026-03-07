@@ -43,6 +43,11 @@ class SourceConfig {
   final Map<String, String>? typeMapping; // Map type code to display name
   final SearchConfig? searchConfig;
 
+  /// Dynamic search form definition (used by scraper-based sources like
+  /// KomikTap). Parsed from the top-level `searchForm` block in the source
+  /// config JSON.
+  final SearchFormConfig? searchForm;
+
   SourceConfig({
     required this.source,
     required this.version,
@@ -59,6 +64,7 @@ class SourceConfig {
     this.auth,
     this.typeMapping,
     this.searchConfig,
+    this.searchForm,
   });
 
   factory SourceConfig.fromJson(Map<String, dynamic> json) =>
@@ -876,4 +882,61 @@ class MaintenanceInfo {
   factory MaintenanceInfo.fromJson(Map<String, dynamic> json) =>
       _$MaintenanceInfoFromJson(json);
   Map<String, dynamic> toJson() => _$MaintenanceInfoToJson(this);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Dynamic Search Form — used by scraper-based sources (e.g. KomikTap)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Top-level `searchForm` block in a source config JSON.
+///
+/// Describes which URL pattern to use for search and what form fields are
+/// available so [DynamicFormSearchUI] can render them generically.
+@JsonSerializable(explicitToJson: true)
+class SearchFormConfig {
+  /// Key in `scraper.urlPatterns` to use for the search request.
+  final String urlPattern;
+
+  /// Map of logical field name → field definition.
+  /// Field names are arbitrary (e.g. "query", "status", "order", "genre").
+  final Map<String, SearchFormFieldConfig> params;
+
+  SearchFormConfig({required this.urlPattern, required this.params});
+
+  factory SearchFormConfig.fromJson(Map<String, dynamic> json) =>
+      _$SearchFormConfigFromJson(json);
+  Map<String, dynamic> toJson() => _$SearchFormConfigToJson(this);
+}
+
+/// Single field definition inside [SearchFormConfig.params].
+@JsonSerializable(explicitToJson: true)
+class SearchFormFieldConfig {
+  /// Field type: `"text"`, `"select"`, `"tag"`, or `"page"`.
+  final String type;
+
+  /// The actual HTTP query-parameter name sent to the server (e.g. `"s"`,
+  /// `"status"`, `"order"`, `"genre"`).
+  final String? queryParam;
+
+  /// Placeholder text (for `text` fields).
+  final String? placeholder;
+
+  /// Allowed option values (for `select` fields).
+  final List<String>? options;
+
+  /// Which URL pattern to use when this field drives navigation
+  /// (for `tag`/genre fields, e.g. `"genreSearch"`).
+  final String? urlPattern;
+
+  SearchFormFieldConfig({
+    required this.type,
+    this.queryParam,
+    this.placeholder,
+    this.options,
+    this.urlPattern,
+  });
+
+  factory SearchFormFieldConfig.fromJson(Map<String, dynamic> json) =>
+      _$SearchFormFieldConfigFromJson(json);
+  Map<String, dynamic> toJson() => _$SearchFormFieldConfigToJson(this);
 }

@@ -1,0 +1,20 @@
+{
+  "languages": {
+    "id":         { "displayName": "Indonesia",    "code": "id", "flagFile": "indonesian" },
+    "en":         { "displayName": "English",      "code": "en", "flagFile": "english"    },
+    "ja":         { "displayName": "Japanese",     "code": "ja", "flagFile": "japanese"   },
+    "zh":         { "displayName": "Chinese",      "code": "zh", "flagFile": "chinese"    },
+    "ko":         { "displayName": "Korean",       "code": "ko", "flagFile": null         },
+    "es":         { "displayName": "Spanish",      "code": "es", "flagFile": null         },
+    "fr":         { "displayName": "French",       "code": "fr", "flagFile": null         },
+    "de":         { "displayName": "German",       "code": "de", "flagFile": null         },
+    "pt":         { "displayName": "Portuguese",   "code": "pt", "flagFile": null         },
+    "ru":         { "displayName": "Russian",      "code": "ru", "flagFile": null         },
+    "ar":         { "displayName": "Arabic",       "code": "ar", "flagFile": null         },
+    "all":        { "displayName": "All Languages","code": "all","flagFile": null         },
+    "indonesian": { "displayName": "Indonesia",    "code": "id", "flagFile": "indonesian" },
+    "english":    { "displayName": "English",      "code": "en", "flagFile": "english"    },
+    "japanese":   { "displayName": "Japanese",     "code": "ja", "flagFile": "japanese"   },
+    "chinese":    { "displayName": "Chinese",      "code": "zh", "flagFile": "chinese"    }
+  }
+}

@@ -89,6 +89,7 @@ import 'package:nhasixapp/services/native_pdf_reader_service.dart';
 import 'package:nhasixapp/services/download_service.dart';
 
 import 'package:nhasixapp/core/services/update_service.dart';
+import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:nhasixapp/services/notification_service.dart';
 import 'package:nhasixapp/services/pdf_service.dart';
 import 'package:nhasixapp/services/pdf_conversion_service.dart';
@@ -164,6 +165,10 @@ void _setupCore() {
   // Tag Data Manager
   getIt.registerLazySingleton<TagDataManager>(
       () => TagDataManager(logger: getIt<Logger>(), dio: getIt<Dio>()));
+
+  // Language Service — loads language metadata from assets/configs/languages.json
+  getIt.registerLazySingleton<LanguageService>(
+      () => LanguageService(logger: getIt<Logger>()));
 
   // Remote Config Service (Assets-based configs, Remote tags download)
   getIt.registerLazySingleton<RemoteConfigService>(() => RemoteConfigService(

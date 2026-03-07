@@ -53,6 +53,10 @@ SourceConfig _$SourceConfigFromJson(Map<String, dynamic> json) => SourceConfig(
       searchConfig: json['searchConfig'] == null
           ? null
           : SearchConfig.fromJson(json['searchConfig'] as Map<String, dynamic>),
+      searchForm: json['searchForm'] == null
+          ? null
+          : SearchFormConfig.fromJson(
+              json['searchForm'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$SourceConfigToJson(SourceConfig instance) =>
@@ -72,6 +76,7 @@ Map<String, dynamic> _$SourceConfigToJson(SourceConfig instance) =>
       'auth': instance.auth?.toJson(),
       'typeMapping': instance.typeMapping,
       'searchConfig': instance.searchConfig?.toJson(),
+      'searchForm': instance.searchForm?.toJson(),
     };
 
 ApiConfig _$ApiConfigFromJson(Map<String, dynamic> json) => ApiConfig(
@@ -630,6 +635,42 @@ Map<String, dynamic> _$MaintenanceInfoToJson(MaintenanceInfo instance) =>
       'reason': instance.reason,
       'estimatedRecovery': instance.estimatedRecovery,
       'contactUrl': instance.contactUrl,
+    };
+
+SearchFormConfig _$SearchFormConfigFromJson(Map<String, dynamic> json) =>
+    SearchFormConfig(
+      urlPattern: json['urlPattern'] as String,
+      params: (json['params'] as Map<String, dynamic>).map(
+        (k, e) => MapEntry(
+            k, SearchFormFieldConfig.fromJson(e as Map<String, dynamic>)),
+      ),
+    );
+
+Map<String, dynamic> _$SearchFormConfigToJson(SearchFormConfig instance) =>
+    <String, dynamic>{
+      'urlPattern': instance.urlPattern,
+      'params': instance.params.map((k, e) => MapEntry(k, e.toJson())),
+    };
+
+SearchFormFieldConfig _$SearchFormFieldConfigFromJson(
+        Map<String, dynamic> json) =>
+    SearchFormFieldConfig(
+      type: json['type'] as String,
+      queryParam: json['queryParam'] as String?,
+      placeholder: json['placeholder'] as String?,
+      options:
+          (json['options'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      urlPattern: json['urlPattern'] as String?,
+    );
+
+Map<String, dynamic> _$SearchFormFieldConfigToJson(
+        SearchFormFieldConfig instance) =>
+    <String, dynamic>{
+      'type': instance.type,
+      'queryParam': instance.queryParam,
+      'placeholder': instance.placeholder,
+      'options': instance.options,
+      'urlPattern': instance.urlPattern,
     };
 
 _SearchConfig _$SearchConfigFromJson(Map<String, dynamic> json) =>

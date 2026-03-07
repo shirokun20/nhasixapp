@@ -11,8 +11,6 @@ import '../../services/detail_cache_service.dart';
 import '../datasources/remote/exceptions.dart';
 import '../../services/request_deduplication_service.dart';
 import 'package:kuron_core/kuron_core.dart' as core;
-import 'package:kuron_crotpedia/kuron_crotpedia.dart' as crotpedia;
-import 'package:kuron_komiktap/kuron_komiktap.dart';
 
 /// Implementation of ContentRepository with caching strategy and offline-first architecture
 class ContentRepositoryImpl implements ContentRepository {
@@ -320,12 +318,10 @@ class ContentRepositoryImpl implements ContentRepository {
         throw Exception('Source not found for ID: $sourceId');
       }
 
-      // Check if source supports getChapterImages
-      if (source is crotpedia.CrotpediaSource) {
-        return await source.getChapterImages(chapterId.value);
-      } else if (source is KomiktapSource) {
-        return await source.getChapterImages(chapterId.value);
-      }
+      // Call getChapterImages on whatever source implements it (works for
+      // GenericHttpSource, KomiktapSource, CrotpediaSource, or any future source).
+      final result = await source.getChapterImages(chapterId.value);
+      if (result != null) return result;
 
       _logger.w('Source ${source.displayName} does not support chapter images');
       return const ChapterData(images: []);
