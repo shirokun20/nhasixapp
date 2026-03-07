@@ -33,14 +33,23 @@ class SourceCubit extends BaseCubit<SourceState> {
   }
 
   void switchSource(String sourceId) {
+    // Emit loading state immediately so the UI can show a shimmer.
+    emit(state.copyWith(isSwitching: true));
     if (_registry.switchSource(sourceId)) {
       _prefs.setString(_keySelectedSource, sourceId);
       logInfo('Switched source to $sourceId');
-      emit(state.copyWith(activeSource: _registry.currentSource));
+      // Keep isSwitching: true — caller must call clearSwitching() after content loads.
+      emit(state.copyWith(
+        activeSource: _registry.currentSource,
+      ));
     } else {
       logWarning('Failed to switch to source $sourceId (not found)');
+      emit(state.copyWith(isSwitching: false));
     }
   }
+
+  /// Call after content has been fully reloaded to hide the switching shimmer.
+  void clearSwitching() => emit(state.copyWith(isSwitching: false));
 
   /// Explicitly refresh available sources
   void refreshSources() {

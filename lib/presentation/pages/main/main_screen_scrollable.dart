@@ -306,16 +306,12 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
               listenWhen: (previous, current) =>
                   previous.activeSource?.id != current.activeSource?.id,
               listener: (context, state) async {
-                // Reload content when source changes
                 if (mounted) {
-                  // Reset search state UI first
-                  setState(() {
-                    _isShowingSearchResults = false;
-                    _currentSearchFilter = null;
-                  });
-
-                  // Re-initialize content which will load saved filter for new source if exists
+                  _isShowingSearchResults = false;
+                  _currentSearchFilter = null;
                   await _initializeContent();
+                  // Clear the switching shimmer only after content has loaded.
+                  if (mounted) getIt<SourceCubit>().clearSwitching();
                 }
               },
             ),
@@ -323,8 +319,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           child: BlocBuilder<HomeBloc, HomeState>(
             buildWhen: (previous, current) => true,
             builder: (context, homeState) {
-              // Show full screen loading during home initialization
-              if (homeState is HomeLoading) {
+              // Show full screen loading during home initialization or source switching
+              final isSwitchingSource =
+                  context.watch<SourceCubit>().state.isSwitching;
+              if (homeState is HomeLoading || isSwitchingSource) {
                 return SimpleOfflineScaffold(
                   title: AppLocalizations.of(context)?.appTitle ?? 'NHentai',
                   body: const ListShimmer(itemCount: 8),
