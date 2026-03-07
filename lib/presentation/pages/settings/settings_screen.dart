@@ -28,8 +28,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     // Preload manifest so settings actions can resolve provider URLs from it.
-    _manifestLoadFuture =
-        getIt<RemoteConfigService>().ensureManifestLoaded().then((_) => null);
+    _manifestLoadFuture = getIt<RemoteConfigService>()
+        .ensureManifestLoaded()
+        .then((_) => null);
   }
 
   @override
@@ -61,11 +62,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           builder: (context, state) {
             if (state is SettingsLoaded) {
               return _buildSettingsContent(
-                  context, state.preferences, theme, l10n);
-            } else if (state is SettingsError) {
-              return Center(
-                child: Text(state.getUserFriendlyMessage(l10n)),
+                context,
+                state.preferences,
+                theme,
+                l10n,
               );
+            } else if (state is SettingsError) {
+              return Center(child: Text(state.getUserFriendlyMessage(l10n)));
             } else {
               return const Center(child: CircularProgressIndicator());
             }
@@ -97,8 +100,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: l10n.themeDescription,
               value: prefs.theme,
               items: ThemeOption.all
-                  .map((t) => DropdownMenuItem(
-                      value: t, child: Text(ThemeOption.getDisplayName(t))))
+                  .map(
+                    (t) => DropdownMenuItem(
+                      value: t,
+                      child: Text(ThemeOption.getDisplayName(t)),
+                    ),
+                  )
                   .toList(),
               onChanged: (v) => context.read<SettingsCubit>().updateTheme(v!),
               theme: theme,
@@ -112,7 +119,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               items: [
                 DropdownMenuItem(value: 'english', child: Text(l10n.english)),
                 DropdownMenuItem(
-                    value: 'indonesian', child: Text(l10n.indonesian)),
+                  value: 'indonesian',
+                  child: Text(l10n.indonesian),
+                ),
                 DropdownMenuItem(value: 'chinese', child: Text(l10n.chinese)),
               ],
               onChanged: (v) =>
@@ -126,8 +135,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: l10n.imageQualityDescription,
               value: prefs.imageQuality,
               items: ImageQuality.all
-                  .map((q) => DropdownMenuItem(
-                      value: q, child: Text(ImageQuality.getDisplayName(q))))
+                  .map(
+                    (q) => DropdownMenuItem(
+                      value: q,
+                      child: Text(ImageQuality.getDisplayName(q)),
+                    ),
+                  )
                   .toList(),
               onChanged: (v) =>
                   context.read<SettingsCubit>().updateImageQuality(v!),
@@ -192,10 +205,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   final String label = h < 24
                       ? '${h}h'
                       : h == 24
-                          ? l10n.oneDay
-                          : h == 48
-                              ? l10n.twoDays
-                              : l10n.oneWeek;
+                      ? l10n.oneDay
+                      : h == 48
+                      ? l10n.twoDays
+                      : l10n.oneWeek;
                   return DropdownMenuItem(value: h, child: Text(label));
                 }).toList(),
                 onChanged: (v) => context
@@ -210,10 +223,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 subtitle: l10n.maximumDaysToKeepHistory,
                 value: prefs.maxHistoryDays,
                 items: [0, 7, 14, 30, 60, 90]
-                    .map((d) => DropdownMenuItem(
+                    .map(
+                      (d) => DropdownMenuItem(
                         value: d,
-                        child:
-                            Text(d == 0 ? l10n.unlimited : l10n.daysValue(d))))
+                        child: Text(
+                          d == 0 ? l10n.unlimited : l10n.daysValue(d),
+                        ),
+                      ),
+                    )
                     .toList(),
                 onChanged: (v) =>
                     context.read<SettingsCubit>().updateMaxHistoryDays(v!),
@@ -236,8 +253,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   subtitle: l10n.daysOfInactivityBeforeCleanup,
                   value: prefs.inactivityCleanupDays,
                   items: [3, 5, 7, 14, 30]
-                      .map((d) => DropdownMenuItem(
-                          value: d, child: Text(l10n.daysValue(d))))
+                      .map(
+                        (d) => DropdownMenuItem(
+                          value: d,
+                          child: Text(l10n.daysValue(d)),
+                        ),
+                      )
                       .toList(),
                   onChanged: (v) => context
                       .read<SettingsCubit>()
@@ -252,7 +273,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // App Disguise Card
           _buildSectionHeader(
-              Icons.visibility_off_outlined, 'APP DISGUISE', theme),
+            Icons.visibility_off_outlined,
+            'APP DISGUISE',
+            theme,
+          ),
           const SizedBox(height: 12),
           _buildSettingsCard([
             _buildDisguiseModeTile(prefs, theme, l10n),
@@ -275,7 +299,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Developer Tools Card
           _buildSectionHeader(
-              Icons.bug_report_outlined, 'DEVELOPER TOOLS', theme),
+            Icons.bug_report_outlined,
+            'DEVELOPER TOOLS',
+            theme,
+          ),
           const SizedBox(height: 12),
           _buildSettingsCard([
             _buildActionTile(
@@ -402,8 +429,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: DropdownButton<T>(
           value: value,
           underline: const SizedBox(),
-          icon: Icon(Icons.arrow_drop_down,
-              color: theme.colorScheme.primary, size: 20),
+          icon: Icon(
+            Icons.arrow_drop_down,
+            color: theme.colorScheme.primary,
+            size: 20,
+          ),
           style: TextStyleConst.bodyMedium.copyWith(
             color: theme.colorScheme.onSurface,
             fontWeight: FontWeight.w500,
@@ -480,14 +510,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               : theme.colorScheme.onPrimary,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         ),
-        child: Text(actionLabel,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        child: Text(
+          actionLabel,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        ),
       ),
     );
   }
 
   Widget _buildGridPreview(
-      int columns, ThemeData theme, AppLocalizations l10n) {
+    int columns,
+    ThemeData theme,
+    AppLocalizations l10n,
+  ) {
     return Card(
       elevation: 0,
       color: theme.colorScheme.surfaceContainer.withValues(alpha: 0.5),
@@ -518,8 +553,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               itemBuilder: (context, index) {
                 return Container(
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer
-                        .withValues(alpha: 0.5),
+                    color: theme.colorScheme.primaryContainer.withValues(
+                      alpha: 0.5,
+                    ),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: theme.colorScheme.outline.withValues(alpha: 0.2),
@@ -569,14 +605,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildDisguiseModeTile(
-      UserPreferences prefs, ThemeData theme, AppLocalizations l10n) {
+    UserPreferences prefs,
+    ThemeData theme,
+    AppLocalizations l10n,
+  ) {
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
         final isLoading =
             state is SettingsLoaded && state.isUpdatingDisguiseMode;
         return ListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 4,
+          ),
           title: Text(
             l10n.disguiseMode,
             style: TextStyleConst.bodyLarge.copyWith(
@@ -613,8 +654,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: theme.colorScheme.primary,
                       ),
                     )
-                  : Icon(Icons.arrow_drop_down,
-                      color: theme.colorScheme.primary, size: 20),
+                  : Icon(
+                      Icons.arrow_drop_down,
+                      color: theme.colorScheme.primary,
+                      size: 20,
+                    ),
               style: TextStyleConst.bodyMedium.copyWith(
                 color: theme.colorScheme.onSurface,
                 fontWeight: FontWeight.w500,
@@ -623,13 +667,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
               borderRadius: BorderRadius.circular(12),
               items: [
                 DropdownMenuItem(
-                    value: 'default', child: Text(l10n.disguiseDefault)),
+                  value: 'default',
+                  child: Text(l10n.disguiseDefault),
+                ),
                 DropdownMenuItem(
-                    value: 'calculator', child: Text(l10n.disguiseCalculator)),
+                  value: 'calculator',
+                  child: Text(l10n.disguiseCalculator),
+                ),
                 DropdownMenuItem(
-                    value: 'notes', child: Text(l10n.disguiseNotes)),
+                  value: 'notes',
+                  child: Text(l10n.disguiseNotes),
+                ),
                 DropdownMenuItem(
-                    value: 'weather', child: Text(l10n.disguiseWeather)),
+                  value: 'weather',
+                  child: Text(l10n.disguiseWeather),
+                ),
               ],
               onChanged: isLoading
                   ? null
@@ -646,7 +698,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildResetButton(
-      BuildContext context, ThemeData theme, AppLocalizations l10n) {
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations l10n,
+  ) {
     return FilledButton.icon(
       onPressed: () async {
         final settingsCubit = context.read<SettingsCubit>();
@@ -654,11 +709,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           context: context,
           builder: (ctx) => AlertDialog(
             backgroundColor: theme.colorScheme.surface,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: Text(l10n.resetSettings, style: TextStyleConst.headingSmall),
-            content: Text(l10n.confirmResetSettings,
-                style: TextStyleConst.bodyMedium),
+            content: Text(
+              l10n.confirmResetSettings,
+              style: TextStyleConst.bodyMedium,
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
@@ -762,7 +820,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         // Header
         _buildSectionHeader(
-            Icons.download_outlined, 'AVAILABLE SOURCES', theme),
+          Icons.download_outlined,
+          'AVAILABLE SOURCES',
+          theme,
+        ),
         const SizedBox(height: 12),
 
         // List of installable sources
@@ -824,27 +885,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(width: 12),
 
-                  // Install/Installed Button
+                  // Install/Uninstall Button
                   FilledButton(
                     onPressed: isInstalled
-                        ? null
+                        ? () => _uninstallSource(context, entry.id)
                         : () => _installSource(context, entry.id),
                     style: FilledButton.styleFrom(
                       backgroundColor: isInstalled
-                          ? theme.colorScheme.surfaceContainerHighest
+                          ? theme.colorScheme.errorContainer
                           : theme.colorScheme.primary,
                       foregroundColor: isInstalled
-                          ? theme.colorScheme.onSurfaceVariant
+                          ? theme.colorScheme.onErrorContainer
                           : theme.colorScheme.onPrimary,
-                      disabledBackgroundColor:
-                          theme.colorScheme.surfaceContainerHighest,
-                      disabledForegroundColor:
-                          theme.colorScheme.onSurfaceVariant,
                       padding: const EdgeInsets.symmetric(
-                          vertical: 8, horizontal: 12),
+                        vertical: 8,
+                        horizontal: 12,
+                      ),
                     ),
                     child: Text(
-                      isInstalled ? 'Installed' : 'Install',
+                      isInstalled ? 'Uninstall' : 'Install',
                       style: const TextStyle(fontSize: 12),
                     ),
                   ),
@@ -870,7 +929,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final remoteConfig = getIt<RemoteConfigService>();
     final resolvedIconUrl = remoteConfig.resolveRemotePath(iconUrl);
     final iconUri = Uri.tryParse(resolvedIconUrl);
-    final isRemote = iconUri != null &&
+    final isRemote =
+        iconUri != null &&
         (iconUri.scheme == 'http' || iconUri.scheme == 'https');
 
     if (isRemote) {
@@ -900,6 +960,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       },
     );
+  }
+
+  /// Uninstall an installable source from local device.
+  Future<void> _uninstallSource(BuildContext context, String sourceId) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      final remoteConfig = getIt<RemoteConfigService>();
+      final registry = getIt<ContentSourceRegistry>();
+
+      await remoteConfig.uninstallSourceConfig(sourceId);
+      if (registry.hasSource(sourceId)) {
+        registry.unregister(sourceId);
+      }
+
+      if (!context.mounted) return;
+      context.read<SourceCubit>().refreshSources();
+
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('✅ $sourceId uninstalled successfully'),
+          backgroundColor: Colors.green.shade700,
+        ),
+      );
+
+      setState(() {});
+    } catch (e, stackTrace) {
+      Logger().e(
+        'Failed to uninstall source "$sourceId": $e details: $stackTrace',
+      );
+      if (!context.mounted) return;
+
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('❌ Failed to uninstall $sourceId: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   /// Install a source from the manifest
@@ -959,8 +1060,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Trigger rebuild to update button state
       setState(() {});
     } catch (e, stackTrace) {
-      Logger()
-          .e('Failed to install source "$sourceId": $e details: $stackTrace');
+      Logger().e(
+        'Failed to install source "$sourceId": $e details: $stackTrace',
+      );
       if (!context.mounted) return;
 
       messenger.hideCurrentSnackBar();

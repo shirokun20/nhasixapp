@@ -88,8 +88,8 @@ class RemoteConfigService {
   // ── Constructor ──────────────────────────────────────────────────────────────
 
   RemoteConfigService({required Dio dio, required Logger logger})
-      : _dio = dio,
-        _logger = logger;
+    : _dio = dio,
+      _logger = logger;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Public API
@@ -120,7 +120,8 @@ class RemoteConfigService {
         manifest = await _downloadManifest(configDir);
         _manifest = manifest;
         _logger.i(
-            'Manifest fetched: ${manifest.installableSources.length} installable sources');
+          'Manifest fetched: ${manifest.installableSources.length} installable sources',
+        );
       } catch (e) {
         _logger.w('Manifest download failed, using bundled configs', error: e);
       }
@@ -201,11 +202,14 @@ class RemoteConfigService {
       // Persist sync timestamp
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt(
-          _prefLastSyncMs, DateTime.now().millisecondsSinceEpoch);
+        _prefLastSyncMs,
+        DateTime.now().millisecondsSinceEpoch,
+      );
 
       onProgress?.call(1.0, 'Config ready');
       _logger.i(
-          '✅ RemoteConfigService ready — ${_sourceConfigs.length} sources loaded');
+        '✅ RemoteConfigService ready — ${_sourceConfigs.length} sources loaded',
+      );
     } catch (e) {
       _logger.e('RemoteConfigService initialisation failed', error: e);
       if (isFirstRun) rethrow;
@@ -273,8 +277,9 @@ class RemoteConfigService {
       final raw = _rawSourceConfigs[source];
       if (raw != null && raw['features'] != null) {
         try {
-          final featureConfig =
-              FeatureConfig.fromJson(raw['features'] as Map<String, dynamic>);
+          final featureConfig = FeatureConfig.fromJson(
+            raw['features'] as Map<String, dynamic>,
+          );
           return selector(featureConfig);
         } catch (_) {}
       }
@@ -356,7 +361,8 @@ class RemoteConfigService {
 
       if (remoteVersion == localVersion) {
         _logger.d(
-            '$sourceId: configUrl version $remoteVersion == local — no update');
+          '$sourceId: configUrl version $remoteVersion == local — no update',
+        );
         return false;
       }
 
@@ -375,11 +381,14 @@ class RemoteConfigService {
       _sourceConfigs[sourceId] = SourceConfig.fromJson(decoded);
 
       _logger.i(
-          '✅ $sourceId refreshed via configUrl: $localVersion → $remoteVersion');
+        '✅ $sourceId refreshed via configUrl: $localVersion → $remoteVersion',
+      );
       return true;
     } catch (e) {
-      _logger.w('$sourceId: configUrl refresh failed — keeping existing config',
-          error: e);
+      _logger.w(
+        '$sourceId: configUrl refresh failed — keeping existing config',
+        error: e,
+      );
       return false;
     }
   }
@@ -397,8 +406,9 @@ class RemoteConfigService {
     required String sourceId,
     required String url,
   }) async {
-    _logger
-        .i('Downloading source config for $sourceId from explicit URL: $url');
+    _logger.i(
+      'Downloading source config for $sourceId from explicit URL: $url',
+    );
 
     final response = await _dio.get<String>(
       url,
@@ -441,7 +451,8 @@ class RemoteConfigService {
     _sourceConfigs[sourceId] = parsed;
 
     _logger.i(
-        '✅ Applied source config from URL for $sourceId (v${version ?? 'unknown'})');
+      '✅ Applied source config from URL for $sourceId (v${version ?? 'unknown'})',
+    );
     return parsed;
   }
 
@@ -481,7 +492,8 @@ class RemoteConfigService {
     final rawJson = response.data;
     if (rawJson == null || rawJson.trim().isEmpty) {
       throw const FormatException(
-          'Downloaded config from manifest URL is empty');
+        'Downloaded config from manifest URL is empty',
+      );
     }
 
     if (targetEntry.checksum != null && targetEntry.checksum!.isNotEmpty) {
@@ -533,8 +545,8 @@ class RemoteConfigService {
     if (_bundledSourceIds.contains(sourceId)) return;
 
     final prefs = await SharedPreferences.getInstance();
-    final ids =
-        (prefs.getStringList(_prefInstalledSourceIds) ?? <String>[]).toSet();
+    final ids = (prefs.getStringList(_prefInstalledSourceIds) ?? <String>[])
+        .toSet();
     ids.add(sourceId);
     await prefs.setStringList(_prefInstalledSourceIds, ids.toList());
   }
@@ -542,11 +554,36 @@ class RemoteConfigService {
   /// Remove persisted install state for an installable source.
   Future<void> markSourceUninstalled(String sourceId) async {
     final prefs = await SharedPreferences.getInstance();
-    final ids =
-        (prefs.getStringList(_prefInstalledSourceIds) ?? <String>[]).toSet();
+    final ids = (prefs.getStringList(_prefInstalledSourceIds) ?? <String>[])
+        .toSet();
     if (ids.remove(sourceId)) {
       await prefs.setStringList(_prefInstalledSourceIds, ids.toList());
     }
+  }
+
+  /// Fully removes an installable source from local cache + in-memory maps.
+  ///
+  /// Bundled sources (e.g. nhentai) are protected and cannot be uninstalled.
+  Future<void> uninstallSourceConfig(String sourceId) async {
+    if (_bundledSourceIds.contains(sourceId)) {
+      _logger.w('Skip uninstall for bundled source: $sourceId');
+      return;
+    }
+
+    final configDir = await _getConfigDirectory();
+    final cachedFile = File(p.join(configDir.path, '$sourceId-config.json'));
+    if (cachedFile.existsSync()) {
+      await cachedFile.delete();
+    }
+
+    _rawSourceConfigs.remove(sourceId);
+    _sourceConfigs.remove(sourceId);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_prefSourceVersion(sourceId));
+    await markSourceUninstalled(sourceId);
+
+    _logger.i('✅ Source uninstalled locally: $sourceId');
   }
 
   /// Returns IDs for installable sources that user has installed.
@@ -571,8 +608,9 @@ class RemoteConfigService {
     }
 
     final url = source == 'nhentai' ? _nhentaiTagsUrl : _crotpediaTagsUrl;
-    final cacheKey =
-        source == 'nhentai' ? _nhentaiTagsCacheKey : _crotpediaTagsCacheKey;
+    final cacheKey = source == 'nhentai'
+        ? _nhentaiTagsCacheKey
+        : _crotpediaTagsCacheKey;
 
     try {
       _logger.i('Downloading tags for $source from: $url');
@@ -586,7 +624,9 @@ class RemoteConfigService {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(cacheKey, jsonString);
         await prefs.setInt(
-            '${cacheKey}_timestamp', DateTime.now().millisecondsSinceEpoch);
+          '${cacheKey}_timestamp',
+          DateTime.now().millisecondsSinceEpoch,
+        );
         _logger.i('✅ Tags downloaded and cached for $source');
       }
     } catch (e) {
@@ -596,8 +636,9 @@ class RemoteConfigService {
 
   Future<List<Map<String, dynamic>>?> getCachedTags(String source) async {
     if (source != 'nhentai' && source != 'crotpedia') return null;
-    final cacheKey =
-        source == 'nhentai' ? _nhentaiTagsCacheKey : _crotpediaTagsCacheKey;
+    final cacheKey = source == 'nhentai'
+        ? _nhentaiTagsCacheKey
+        : _crotpediaTagsCacheKey;
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(cacheKey);
@@ -613,16 +654,18 @@ class RemoteConfigService {
 
   Future<bool> hasTagsCache(String source) async {
     if (source != 'nhentai' && source != 'crotpedia') return false;
-    final cacheKey =
-        source == 'nhentai' ? _nhentaiTagsCacheKey : _crotpediaTagsCacheKey;
+    final cacheKey = source == 'nhentai'
+        ? _nhentaiTagsCacheKey
+        : _crotpediaTagsCacheKey;
     final prefs = await SharedPreferences.getInstance();
     return prefs.containsKey(cacheKey);
   }
 
   Future<int?> getTagsCacheAge(String source) async {
     if (source != 'nhentai' && source != 'crotpedia') return null;
-    final cacheKey =
-        source == 'nhentai' ? _nhentaiTagsCacheKey : _crotpediaTagsCacheKey;
+    final cacheKey = source == 'nhentai'
+        ? _nhentaiTagsCacheKey
+        : _crotpediaTagsCacheKey;
     try {
       final prefs = await SharedPreferences.getInstance();
       final ts = prefs.getInt('${cacheKey}_timestamp');
@@ -665,19 +708,24 @@ class RemoteConfigService {
     final manifestFile = File(p.join(configDir.path, 'manifest.json'));
     await manifestFile.writeAsString(rawJson);
 
-    final manifest =
-        SourceManifest.fromJson(jsonDecode(rawJson) as Map<String, dynamic>);
+    final manifest = SourceManifest.fromJson(
+      jsonDecode(rawJson) as Map<String, dynamic>,
+    );
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
-        _prefManifestVersion, manifest.schemaVersion.toString());
+      _prefManifestVersion,
+      manifest.schemaVersion.toString(),
+    );
 
     return manifest;
   }
 
   /// Sync one installable source config from CDN with cache/version fallback.
   Future<void> _syncSourceConfig(
-      SourceManifestEntry entry, Directory configDir) async {
+    SourceManifestEntry entry,
+    Directory configDir,
+  ) async {
     final sourceId = entry.id;
     final manifestVersion = entry.version;
 
@@ -720,7 +768,9 @@ class RemoteConfigService {
 
   /// Sync app-config.json from CDN.
   Future<void> _syncAppConfig(
-      SourceManifestAppEntry entry, Directory configDir) async {
+    SourceManifestAppEntry entry,
+    Directory configDir,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     final cachedVersion = prefs.getString(_prefSourceVersion('app'));
     final cachedFile = File(p.join(configDir.path, 'app-config.json'));
@@ -744,8 +794,9 @@ class RemoteConfigService {
       final rawJson = response.data!;
       await cachedFile.writeAsString(rawJson);
       await prefs.setString(_prefSourceVersion('app'), entry.version);
-      _appConfig =
-          AppConfig.fromJson(jsonDecode(rawJson) as Map<String, dynamic>);
+      _appConfig = AppConfig.fromJson(
+        jsonDecode(rawJson) as Map<String, dynamic>,
+      );
     } catch (e) {
       _logger.w('App config download failed, using bundled', error: e);
       await _loadSourceFromBundledFallback('app');
@@ -810,7 +861,8 @@ class RemoteConfigService {
     try {
       final assetString = await rootBundle.loadString(_tagsAssetPath);
       _tagsManifest = TagsManifest.fromJson(
-          jsonDecode(assetString) as Map<String, dynamic>);
+        jsonDecode(assetString) as Map<String, dynamic>,
+      );
     } catch (e) {
       _logger.w('Tags manifest load failed', error: e);
     }
@@ -827,7 +879,8 @@ class RemoteConfigService {
     final actual = 'sha256:${sha256.convert(utf8.encode(content)).toString()}';
     if (actual != expected) {
       _logger.w(
-          'Checksum mismatch for $sourceId: expected $expected, got $actual');
+        'Checksum mismatch for $sourceId: expected $expected, got $actual',
+      );
       // Non-fatal: log and continue — config may still be valid.
     }
   }
