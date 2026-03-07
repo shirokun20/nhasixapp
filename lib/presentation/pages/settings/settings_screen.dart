@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_generic/kuron_generic.dart';
+import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
@@ -944,7 +945,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       // Trigger rebuild to update button state
       setState(() {});
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Logger()
+          .e('Failed to install source "$sourceId": $e details: $stackTrace');
       if (!context.mounted) return;
 
       messenger.hideCurrentSnackBar();

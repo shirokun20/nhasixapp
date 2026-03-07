@@ -268,7 +268,7 @@ class ScraperConfig {
   final bool enabled;
   // Selectors are nested generic maps because they vary wildly by source
   final Map<String, dynamic>? selectors;
-  final Map<String, String>? urlPatterns;
+  final Map<String, dynamic>? urlPatterns;
 
   ScraperConfig({
     required this.enabled,

@@ -115,9 +115,7 @@ ScraperConfig _$ScraperConfigFromJson(Map<String, dynamic> json) =>
     ScraperConfig(
       enabled: json['enabled'] as bool,
       selectors: json['selectors'] as Map<String, dynamic>?,
-      urlPatterns: (json['urlPatterns'] as Map<String, dynamic>?)?.map(
-        (k, e) => MapEntry(k, e as String),
-      ),
+      urlPatterns: json['urlPatterns'] as Map<String, dynamic>?,
     );
 
 Map<String, dynamic> _$ScraperConfigToJson(ScraperConfig instance) =>

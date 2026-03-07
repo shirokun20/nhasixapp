@@ -427,7 +427,7 @@ class RemoteConfigService {
   ///
   /// Caller only needs to provide `sourceId`; this method resolves source URL
   /// from `manifest.json`, downloads it, caches it, and updates in-memory maps.
-  Future<SourceConfig> downloadAndApplySourceConfigFromManifest({
+  Future<SourceConfig?> downloadAndApplySourceConfigFromManifest({
     required String sourceId,
   }) async {
     final manifest = await ensureManifestLoaded();
@@ -477,7 +477,16 @@ class RemoteConfigService {
       );
     }
 
-    final parsed = SourceConfig.fromJson(decoded);
+    SourceConfig? parsed;
+    try {
+      parsed = SourceConfig.fromJson(decoded);
+    } catch (e, stackTrace) {
+      _logger.w(
+        'Typed SourceConfig parse failed for $sourceId; raw config kept for runtime adapter compatibility',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
 
     final configDir = await _getConfigDirectory();
     final cachedFile = File(p.join(configDir.path, '$sourceId-config.json'));
@@ -487,7 +496,9 @@ class RemoteConfigService {
     await prefs.setString(_prefSourceVersion(sourceId), targetEntry.version);
 
     _rawSourceConfigs[sourceId] = decoded;
-    _sourceConfigs[sourceId] = parsed;
+    if (parsed != null) {
+      _sourceConfigs[sourceId] = parsed;
+    }
 
     _logger.i(
       '✅ Applied source config from manifest for $sourceId (v${targetEntry.version})',
