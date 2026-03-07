@@ -47,7 +47,7 @@ class SourceLoader {
 
     _maintenanceSourceIds.clear();
 
-    for (final entry in manifest.sources) {
+    for (final entry in manifest.installableSources) {
       final sourceId = entry.id;
 
       if (!entry.enabled) {

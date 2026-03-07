@@ -736,15 +736,17 @@ class SourceManifest {
   /// Metadata for the global app-config.json.
   final SourceManifestAppEntry? appConfig;
 
-  /// Ordered list of source entries.
-  final List<SourceManifestEntry> sources;
+  /// List of installable (non-bundled) source entries available for download.
+  /// Bundled sources like `nhentai` are not included here.
+  @JsonKey(defaultValue: [])
+  final List<SourceManifestEntry> installableSources;
 
   SourceManifest({
     required this.schemaVersion,
     required this.lastUpdated,
     this.minimumAppVersion,
     this.appConfig,
-    required this.sources,
+    required this.installableSources,
   });
 
   factory SourceManifest.fromJson(Map<String, dynamic> json) =>

@@ -118,19 +118,21 @@ class RemoteConfigService {
       try {
         manifest = await _downloadManifest(configDir);
         _manifest = manifest;
-        _logger.i('Manifest fetched: ${manifest.sources.length} sources');
+        _logger.i(
+            'Manifest fetched: ${manifest.installableSources.length} installable sources');
       } catch (e) {
         _logger.w('Manifest download failed, using bundled configs', error: e);
       }
 
-      final double progressPerSource =
-          manifest != null ? 0.7 / (manifest.sources.length + 1) : 0.7 / 4;
+      final double progressPerSource = manifest != null
+          ? 0.7 / (manifest.installableSources.length + 1)
+          : 0.7 / 4;
 
       double progress = 0.1;
 
       if (manifest != null) {
-        // Step 2 — sync each source listed in the manifest
-        for (final entry in manifest.sources) {
+        // Step 2 — sync each installable source listed in the manifest
+        for (final entry in manifest.installableSources) {
           onProgress?.call(progress, 'Loading ${entry.id} config…');
           await _syncSourceConfig(entry, configDir);
           progress += progressPerSource;
@@ -438,7 +440,7 @@ class RemoteConfigService {
     }
 
     SourceManifestEntry? targetEntry;
-    for (final entry in manifest.sources) {
+    for (final entry in manifest.installableSources) {
       if (entry.id == sourceId) {
         targetEntry = entry;
         break;
@@ -447,9 +449,6 @@ class RemoteConfigService {
 
     if (targetEntry == null) {
       throw StateError('Source "$sourceId" not found in manifest.json');
-    }
-    if (!targetEntry.enabled) {
-      throw StateError('Source "$sourceId" is disabled in manifest.json');
     }
 
     final resolvedUrl = _resolveUrl(targetEntry.url);
@@ -813,7 +812,8 @@ class RemoteConfigService {
   /// sync is authoritative and already fetched the latest version.
   Future<void> _selfRefreshAllFromConfigUrl(SourceManifest? manifest) async {
     // Build a set of source IDs whose versions were handled by the manifest.
-    final manifestIds = manifest?.sources.map((e) => e.id).toSet() ?? {};
+    final manifestIds =
+        manifest?.installableSources.map((e) => e.id).toSet() ?? {};
 
     final futures = _rawSourceConfigs.keys
         .where((id) => !manifestIds.contains(id))
