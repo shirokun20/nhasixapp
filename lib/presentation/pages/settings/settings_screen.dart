@@ -704,6 +704,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await remoteConfig.downloadAndApplySourceConfigFromManifest(
         sourceId: 'komiktap',
       );
+      await remoteConfig.markSourceInstalled('komiktap');
 
       final registry = getIt<ContentSourceRegistry>();
       final sourceFactory = getIt<GenericSourceFactory>();
@@ -921,6 +922,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await remoteConfig.downloadAndApplySourceConfigFromManifest(
         sourceId: sourceId,
       );
+      await remoteConfig.markSourceInstalled(sourceId);
 
       final registry = getIt<ContentSourceRegistry>();
       final sourceFactory = getIt<GenericSourceFactory>();

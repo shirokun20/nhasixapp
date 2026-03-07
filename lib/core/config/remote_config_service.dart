@@ -67,6 +67,7 @@ class RemoteConfigService {
 
   static const String _prefManifestVersion = 'config_manifest_version';
   static const String _prefLastSyncMs = 'config_last_sync_timestamp';
+  static const String _prefInstalledSourceIds = 'installed_source_ids';
 
   /// Cached version for a specific source: "config_version_{sourceId}"
   static String _prefSourceVersion(String sourceId) =>
@@ -129,10 +130,26 @@ class RemoteConfigService {
       double progress = 0.1;
 
       if (manifest != null) {
-        // Step 2 — do NOT auto-sync installable sources here.
-        // Installable sources are only downloaded when user explicitly clicks
-        // "Install" in Settings. This allows the app to load faster and respects
-        // user choice about which providers to activate.
+        // Step 2 — restore only previously installed installable sources.
+        final prefs = await SharedPreferences.getInstance();
+        final installedIds =
+            (prefs.getStringList(_prefInstalledSourceIds) ?? const <String>[])
+                .toSet();
+        final installedEntries = manifest.installableSources
+            .where((entry) => installedIds.contains(entry.id))
+            .toList();
+
+        if (installedEntries.isNotEmpty) {
+          _logger.i(
+            'Restoring ${installedEntries.length} installed source(s): ${installedEntries.map((e) => e.id).join(', ')}',
+          );
+        }
+
+        for (final entry in installedEntries) {
+          onProgress?.call(progress, 'Restoring ${entry.id} config…');
+          await _syncSourceConfig(entry, configDir);
+          progress += progressPerSource;
+        }
 
         // Step 3 — sync app config
         if (manifest.appConfig != null) {
@@ -511,6 +528,34 @@ class RemoteConfigService {
     return parsed;
   }
 
+  /// Persist install state for an installable source.
+  Future<void> markSourceInstalled(String sourceId) async {
+    if (_bundledSourceIds.contains(sourceId)) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final ids =
+        (prefs.getStringList(_prefInstalledSourceIds) ?? <String>[]).toSet();
+    ids.add(sourceId);
+    await prefs.setStringList(_prefInstalledSourceIds, ids.toList());
+  }
+
+  /// Remove persisted install state for an installable source.
+  Future<void> markSourceUninstalled(String sourceId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final ids =
+        (prefs.getStringList(_prefInstalledSourceIds) ?? <String>[]).toSet();
+    if (ids.remove(sourceId)) {
+      await prefs.setStringList(_prefInstalledSourceIds, ids.toList());
+    }
+  }
+
+  /// Returns IDs for installable sources that user has installed.
+  Future<Set<String>> getInstalledSourceIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ids = prefs.getStringList(_prefInstalledSourceIds) ?? <String>[];
+    return ids.toSet();
+  }
+
   Future<DateTime?> getLastSyncTime() async {
     final prefs = await SharedPreferences.getInstance();
     final ms = prefs.getInt(_prefLastSyncMs);
@@ -630,6 +675,49 @@ class RemoteConfigService {
     return manifest;
   }
 
+  /// Sync one installable source config from CDN with cache/version fallback.
+  Future<void> _syncSourceConfig(
+      SourceManifestEntry entry, Directory configDir) async {
+    final sourceId = entry.id;
+    final manifestVersion = entry.version;
+
+    final prefs = await SharedPreferences.getInstance();
+    final cachedVersion = prefs.getString(_prefSourceVersion(sourceId));
+    final cachedFile = File(p.join(configDir.path, '$sourceId-config.json'));
+
+    // Use cached file if version matches.
+    if (cachedVersion == manifestVersion && cachedFile.existsSync()) {
+      _logger.d('Using cached config for $sourceId v$manifestVersion');
+      await _loadFromFile(sourceId, cachedFile);
+      return;
+    }
+
+    final configUrl = _resolveUrl(entry.url);
+    try {
+      _logger.i('Downloading config for $sourceId from $configUrl');
+      final response = await _dio.get<String>(
+        '$configUrl?v=$manifestVersion',
+        options: Options(
+          receiveTimeout: const Duration(seconds: 10),
+          responseType: ResponseType.plain,
+        ),
+      );
+
+      final rawJson = response.data!;
+      if (entry.checksum != null && entry.checksum!.isNotEmpty) {
+        _validateChecksum(rawJson, entry.checksum!, sourceId);
+      }
+
+      await cachedFile.writeAsString(rawJson);
+      await prefs.setString(_prefSourceVersion(sourceId), manifestVersion);
+      await _loadFromFile(sourceId, cachedFile);
+      _logger.i('✅ Config synced for $sourceId v$manifestVersion');
+    } catch (e) {
+      // Installable source restore is best-effort; keep app startup resilient.
+      _logger.w('Restore failed for installable source $sourceId', error: e);
+    }
+  }
+
   /// Sync app-config.json from CDN.
   Future<void> _syncAppConfig(
       SourceManifestAppEntry entry, Directory configDir) async {
@@ -661,6 +749,31 @@ class RemoteConfigService {
     } catch (e) {
       _logger.w('App config download failed, using bundled', error: e);
       await _loadSourceFromBundledFallback('app');
+    }
+  }
+
+  /// Load a source config JSON file from disk into memory.
+  Future<void> _loadFromFile(String sourceId, File file) async {
+    final rawString = await file.readAsString();
+    final raw = jsonDecode(rawString) as Map<String, dynamic>;
+    _rawSourceConfigs[sourceId] = raw;
+
+    if (sourceId == 'app') {
+      _appConfig = AppConfig.fromJson(raw);
+      return;
+    }
+
+    if (sourceId == 'tags') {
+      return;
+    }
+
+    try {
+      _sourceConfigs[sourceId] = SourceConfig.fromJson(raw);
+    } catch (e) {
+      _logger.w(
+        'Typed SourceConfig parse failed for cached source $sourceId; raw config kept',
+        error: e,
+      );
     }
   }
 
