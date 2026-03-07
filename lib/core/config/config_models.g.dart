@@ -537,9 +537,11 @@ SourceManifest _$SourceManifestFromJson(Map<String, dynamic> json) =>
           ? null
           : SourceManifestAppEntry.fromJson(
               json['appConfig'] as Map<String, dynamic>),
-      sources: (json['sources'] as List<dynamic>)
-          .map((e) => SourceManifestEntry.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      installableSources: (json['installableSources'] as List<dynamic>?)
+              ?.map((e) =>
+                  SourceManifestEntry.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
 
 Map<String, dynamic> _$SourceManifestToJson(SourceManifest instance) =>
@@ -548,7 +550,8 @@ Map<String, dynamic> _$SourceManifestToJson(SourceManifest instance) =>
       'lastUpdated': instance.lastUpdated,
       'minimumAppVersion': instance.minimumAppVersion,
       'appConfig': instance.appConfig?.toJson(),
-      'sources': instance.sources.map((e) => e.toJson()).toList(),
+      'installableSources':
+          instance.installableSources.map((e) => e.toJson()).toList(),
     };
 
 SourceManifestAppEntry _$SourceManifestAppEntryFromJson(
