@@ -21,11 +21,14 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  late Future<void> _manifestLoadFuture;
+
   @override
   void initState() {
     super.initState();
     // Preload manifest so settings actions can resolve provider URLs from it.
-    getIt<RemoteConfigService>().ensureManifestLoaded();
+    _manifestLoadFuture =
+        getIt<RemoteConfigService>().ensureManifestLoaded().then((_) => null);
   }
 
   @override
@@ -253,6 +256,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildSettingsCard([
             _buildDisguiseModeTile(prefs, theme, l10n),
           ], theme),
+
+          const SizedBox(height: 24),
+
+          // Available Sources Section
+          FutureBuilder<void>(
+            future: _manifestLoadFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              return _buildAvailableSourcesSection(theme, l10n);
+            },
+          ),
 
           const SizedBox(height: 24),
 
@@ -721,6 +737,220 @@ class _SettingsScreenState extends State<SettingsScreen> {
       messenger.showSnackBar(
         SnackBar(
           content: Text('Failed to sync KomikTap config: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Build the "Available Sources" section showing installable sources from manifest
+  Widget _buildAvailableSourcesSection(ThemeData theme, AppLocalizations l10n) {
+    final remoteConfig = getIt<RemoteConfigService>();
+    final manifest = remoteConfig.manifest;
+
+    // If no manifest or no installable sources, return empty
+    if (manifest == null || manifest.installableSources.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final registry = getIt<ContentSourceRegistry>();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header
+        _buildSectionHeader(
+            Icons.download_outlined, 'AVAILABLE SOURCES', theme),
+        const SizedBox(height: 12),
+
+        // List of installable sources
+        ...manifest.installableSources.map((entry) {
+          final isInstalled = registry.hasSource(entry.id);
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: theme.colorScheme.outline.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Icon
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: _buildSourceIcon(entry.meta?.iconUrl, theme),
+                  ),
+                  const SizedBox(width: 14),
+
+                  // Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          entry.meta?.displayName ?? entry.id,
+                          style: TextStyleConst.bodyMedium.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        if (entry.meta?.description != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              entry.meta!.description!,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Install/Installed Button
+                  FilledButton(
+                    onPressed: isInstalled
+                        ? null
+                        : () => _installSource(context, entry.id),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: isInstalled
+                          ? theme.colorScheme.surfaceContainerHighest
+                          : theme.colorScheme.primary,
+                      foregroundColor: isInstalled
+                          ? theme.colorScheme.onSurfaceVariant
+                          : theme.colorScheme.onPrimary,
+                      disabledBackgroundColor:
+                          theme.colorScheme.surfaceContainerHighest,
+                      disabledForegroundColor:
+                          theme.colorScheme.onSurfaceVariant,
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 12),
+                    ),
+                    child: Text(
+                      isInstalled ? 'Installed' : 'Install',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  /// Build source icon widget
+  Widget _buildSourceIcon(String? iconUrl, ThemeData theme) {
+    if (iconUrl == null || iconUrl.isEmpty) {
+      return Icon(
+        Icons.extension_outlined,
+        size: 20,
+        color: theme.colorScheme.onSurfaceVariant,
+      );
+    }
+
+    // Try to load from asset first (for bundled icons)
+    try {
+      return Image.asset(
+        iconUrl,
+        width: 20,
+        height: 20,
+        errorBuilder: (context, error, stackTrace) {
+          // Fallback to generic icon
+          return Icon(
+            Icons.extension_outlined,
+            size: 20,
+            color: theme.colorScheme.onSurfaceVariant,
+          );
+        },
+      );
+    } catch (e) {
+      return Icon(
+        Icons.extension_outlined,
+        size: 20,
+        color: theme.colorScheme.onSurfaceVariant,
+      );
+    }
+  }
+
+  /// Install a source from the manifest
+  Future<void> _installSource(BuildContext context, String sourceId) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    // Show loading
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text('Installing $sourceId...'),
+        duration: const Duration(seconds: 30),
+      ),
+    );
+
+    try {
+      final remoteConfig = getIt<RemoteConfigService>();
+
+      // Download and apply config from manifest
+      await remoteConfig.downloadAndApplySourceConfigFromManifest(
+        sourceId: sourceId,
+      );
+
+      final registry = getIt<ContentSourceRegistry>();
+      final sourceFactory = getIt<GenericSourceFactory>();
+      final raw = remoteConfig.getRawConfig(sourceId);
+
+      if (raw == null) {
+        throw StateError('$sourceId config missing after download');
+      }
+
+      // Register source
+      final wasActive = registry.currentSourceId == sourceId;
+      if (registry.hasSource(sourceId)) {
+        registry.unregister(sourceId);
+      }
+      registry.register(sourceFactory.create(raw));
+      if (wasActive) {
+        registry.switchSource(sourceId);
+      }
+
+      if (!context.mounted) return;
+
+      // Refresh UI state
+      context.read<SourceCubit>().refreshSources();
+
+      // Show success
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('✅ $sourceId installed successfully'),
+          backgroundColor: Colors.green.shade700,
+        ),
+      );
+
+      // Trigger rebuild to update button state
+      setState(() {});
+    } catch (e) {
+      if (!context.mounted) return;
+
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('❌ Failed to install $sourceId: $e'),
           backgroundColor: Colors.red,
         ),
       );

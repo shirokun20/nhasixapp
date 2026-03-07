@@ -124,19 +124,15 @@ class RemoteConfigService {
         _logger.w('Manifest download failed, using bundled configs', error: e);
       }
 
-      final double progressPerSource = manifest != null
-          ? 0.7 / (manifest.installableSources.length + 1)
-          : 0.7 / 4;
+      final double progressPerSource = manifest != null ? 0.7 / 2 : 0.7 / 2;
 
       double progress = 0.1;
 
       if (manifest != null) {
-        // Step 2 — sync each installable source listed in the manifest
-        for (final entry in manifest.installableSources) {
-          onProgress?.call(progress, 'Loading ${entry.id} config…');
-          await _syncSourceConfig(entry, configDir);
-          progress += progressPerSource;
-        }
+        // Step 2 — do NOT auto-sync installable sources here.
+        // Installable sources are only downloaded when user explicitly clicks
+        // "Install" in Settings. This allows the app to load faster and respects
+        // user choice about which providers to activate.
 
         // Step 3 — sync app config
         if (manifest.appConfig != null) {
@@ -618,62 +614,6 @@ class RemoteConfigService {
     return manifest;
   }
 
-  /// Sync a single source config based on its manifest entry.
-  ///
-  /// Priority:
-  /// 1. Cached file in AppDocDir (if version matches manifest)
-  /// 2. Download from CDN
-  /// 3. Bundled asset fallback
-  Future<void> _syncSourceConfig(
-      SourceManifestEntry entry, Directory configDir) async {
-    final sourceId = entry.id;
-    final manifestVersion = entry.version;
-
-    final prefs = await SharedPreferences.getInstance();
-    final cachedVersion = prefs.getString(_prefSourceVersion(sourceId));
-    final cachedFile = File(p.join(configDir.path, '$sourceId-config.json'));
-
-    // Use cached file if version matches
-    if (cachedVersion == manifestVersion && cachedFile.existsSync()) {
-      _logger.d('Using cached config for $sourceId v$manifestVersion');
-      await _loadFromFile(sourceId, cachedFile);
-      return;
-    }
-
-    // Download new config
-    final configUrl = _resolveUrl(entry.url);
-    try {
-      _logger.i('Downloading config for $sourceId from $configUrl');
-      final response = await _dio.get<String>(
-        '$configUrl?v=$manifestVersion',
-        options: Options(
-          receiveTimeout: const Duration(seconds: 10),
-          responseType: ResponseType.plain,
-        ),
-      );
-      final rawJson = response.data!;
-
-      // Validate checksum if provided
-      if (entry.checksum != null) {
-        _validateChecksum(rawJson, entry.checksum!, sourceId);
-      }
-
-      await cachedFile.writeAsString(rawJson);
-      await prefs.setString(_prefSourceVersion(sourceId), manifestVersion);
-      await _loadFromFile(sourceId, cachedFile);
-      _logger.i('✅ Config synced for $sourceId v$manifestVersion');
-    } catch (e) {
-      _logger.w('Download failed for $sourceId, using fallback', error: e);
-      // For bundled sources: fall back to bundled asset.
-      // For installable sources: check AppDocDir (previously cached), skip if absent.
-      if (_bundledSourceIds.contains(sourceId)) {
-        await _loadSourceFromBundledFallback(sourceId);
-      } else {
-        await _loadInstallableSourceFromDocDir(sourceId, configDir);
-      }
-    }
-  }
-
   /// Sync app-config.json from CDN.
   Future<void> _syncAppConfig(
       SourceManifestAppEntry entry, Directory configDir) async {
@@ -708,27 +648,6 @@ class RemoteConfigService {
     }
   }
 
-  /// Load a config from a [File] on disk into memory.
-  Future<void> _loadFromFile(String sourceId, File file) async {
-    try {
-      final raw = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
-      _rawSourceConfigs[sourceId] = raw;
-      try {
-        _sourceConfigs[sourceId] = SourceConfig.fromJson(raw);
-      } catch (e) {
-        // Some installable provider schemas can be richer than the typed
-        // SourceConfig model. Keep raw config so GenericHttpSource still works.
-        _logger.w(
-          'Typed SourceConfig parse failed for $sourceId; raw config kept for generic source usage',
-          error: e,
-        );
-      }
-    } catch (e) {
-      _logger.e('Failed to parse cached config for $sourceId', error: e);
-      rethrow;
-    }
-  }
-
   /// Load a config from bundled assets (last resort).
   Future<void> _loadSourceFromBundledFallback(String sourceId) async {
     final assetPath = _bundledAssetPaths[sourceId];
@@ -755,26 +674,6 @@ class RemoteConfigService {
       _logger.d('Loaded bundled config for $sourceId');
     } catch (e) {
       _logger.w('Bundled asset load failed for $sourceId', error: e);
-    }
-  }
-
-  /// For installable (non-bundled) sources: if a previously-downloaded config
-  /// exists in AppDocDir, load it. Otherwise skip silently — the source simply
-  /// won't be registered until the user installs it.
-  Future<void> _loadInstallableSourceFromDocDir(
-      String sourceId, Directory configDir) async {
-    final cachedFile = File(p.join(configDir.path, '$sourceId-config.json'));
-    if (!cachedFile.existsSync()) {
-      _logger.d(
-          'No cached config found for installable source "$sourceId" — skipping');
-      return;
-    }
-    try {
-      await _loadFromFile(sourceId, cachedFile);
-      _logger.i('Loaded cached installable config for $sourceId');
-    } catch (e) {
-      _logger.w('Failed to load cached config for installable source $sourceId',
-          error: e);
     }
   }
 
