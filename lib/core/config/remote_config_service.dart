@@ -35,7 +35,7 @@ class RemoteConfigService {
   /// CDN base URL for the config repo. All relative `url` fields in the
   /// manifest are resolved against this.
   static const String _cdnBase =
-      'https://cdn.jsdelivr.net/gh/shirokun20/nhasix-configs@main';
+      'https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app';
 
   static const String _manifestUrl = '$_cdnBase/manifest.json';
 
@@ -190,6 +190,23 @@ class RemoteConfigService {
   Map<String, dynamic>? getRawConfig(String source) =>
       _rawSourceConfigs[source];
 
+  /// Ensures `manifest.json` is available in memory.
+  ///
+  /// If the manifest has not been loaded yet, this attempts a fresh download.
+  /// Returns `null` when loading fails.
+  Future<SourceManifest?> ensureManifestLoaded() async {
+    if (_manifest != null) return _manifest;
+
+    try {
+      final configDir = await _getConfigDirectory();
+      _manifest = await _downloadManifest(configDir);
+      return _manifest;
+    } catch (e) {
+      _logger.w('Failed to ensure manifest is loaded', error: e);
+      return null;
+    }
+  }
+
   /// Manually register a source config (used for testing/generic sources)
   void registerSourceConfig(String sourceId, Map<String, dynamic> rawConfig) {
     try {
@@ -320,6 +337,142 @@ class RemoteConfigService {
           error: e);
       return false;
     }
+  }
+
+  /// Downloads a source config from an explicit URL and applies it instantly.
+  ///
+  /// This is intended for developer/admin flows (for example from Settings)
+  /// when testing a raw GitHub URL before the config is published to CDN.
+  ///
+  /// The downloaded JSON is validated and then:
+  /// - saved into `AppDocDir/configs/{sourceId}-config.json`
+  /// - loaded into in-memory maps (`_rawSourceConfigs`, `_sourceConfigs`)
+  /// - version is persisted to SharedPreferences when available
+  Future<SourceConfig> downloadAndApplySourceConfig({
+    required String sourceId,
+    required String url,
+  }) async {
+    _logger
+        .i('Downloading source config for $sourceId from explicit URL: $url');
+
+    final response = await _dio.get<String>(
+      url,
+      options: Options(
+        receiveTimeout: const Duration(seconds: 12),
+        responseType: ResponseType.plain,
+      ),
+    );
+
+    final rawJson = response.data;
+    if (rawJson == null || rawJson.trim().isEmpty) {
+      throw const FormatException('Downloaded config is empty');
+    }
+
+    final decoded = jsonDecode(rawJson) as Map<String, dynamic>;
+
+    final declaredSource = decoded['source'] as String?;
+    if (declaredSource == null || declaredSource.isEmpty) {
+      throw const FormatException('Config is missing required "source" field');
+    }
+    if (declaredSource != sourceId) {
+      throw FormatException(
+        'Source mismatch: expected "$sourceId" but got "$declaredSource"',
+      );
+    }
+
+    final parsed = SourceConfig.fromJson(decoded);
+
+    final configDir = await _getConfigDirectory();
+    final cachedFile = File(p.join(configDir.path, '$sourceId-config.json'));
+    await cachedFile.writeAsString(rawJson);
+
+    final version = decoded['version'] as String?;
+    if (version != null && version.isNotEmpty) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefSourceVersion(sourceId), version);
+    }
+
+    _rawSourceConfigs[sourceId] = decoded;
+    _sourceConfigs[sourceId] = parsed;
+
+    _logger.i(
+        '✅ Applied source config from URL for $sourceId (v${version ?? 'unknown'})');
+    return parsed;
+  }
+
+  /// Downloads and applies source config using manifest entry (URL + version).
+  ///
+  /// Caller only needs to provide `sourceId`; this method resolves source URL
+  /// from `manifest.json`, downloads it, caches it, and updates in-memory maps.
+  Future<SourceConfig> downloadAndApplySourceConfigFromManifest({
+    required String sourceId,
+  }) async {
+    final manifest = await ensureManifestLoaded();
+    if (manifest == null) {
+      throw StateError('manifest.json is not available');
+    }
+
+    SourceManifestEntry? targetEntry;
+    for (final entry in manifest.sources) {
+      if (entry.id == sourceId) {
+        targetEntry = entry;
+        break;
+      }
+    }
+
+    if (targetEntry == null) {
+      throw StateError('Source "$sourceId" not found in manifest.json');
+    }
+    if (!targetEntry.enabled) {
+      throw StateError('Source "$sourceId" is disabled in manifest.json');
+    }
+
+    final resolvedUrl = _resolveUrl(targetEntry.url);
+    final response = await _dio.get<String>(
+      '$resolvedUrl?v=${targetEntry.version}',
+      options: Options(
+        receiveTimeout: const Duration(seconds: 12),
+        responseType: ResponseType.plain,
+      ),
+    );
+
+    final rawJson = response.data;
+    if (rawJson == null || rawJson.trim().isEmpty) {
+      throw const FormatException(
+          'Downloaded config from manifest URL is empty');
+    }
+
+    if (targetEntry.checksum != null && targetEntry.checksum!.isNotEmpty) {
+      _validateChecksum(rawJson, targetEntry.checksum!, sourceId);
+    }
+
+    final decoded = jsonDecode(rawJson) as Map<String, dynamic>;
+    final declaredSource = decoded['source'] as String?;
+    if (declaredSource == null || declaredSource.isEmpty) {
+      throw const FormatException('Config is missing required "source" field');
+    }
+    if (declaredSource != sourceId) {
+      throw FormatException(
+        'Source mismatch: expected "$sourceId" but got "$declaredSource"',
+      );
+    }
+
+    final parsed = SourceConfig.fromJson(decoded);
+
+    final configDir = await _getConfigDirectory();
+    final cachedFile = File(p.join(configDir.path, '$sourceId-config.json'));
+    await cachedFile.writeAsString(rawJson);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefSourceVersion(sourceId), targetEntry.version);
+
+    _rawSourceConfigs[sourceId] = decoded;
+    _sourceConfigs[sourceId] = parsed;
+
+    _logger.i(
+      '✅ Applied source config from manifest for $sourceId (v${targetEntry.version})',
+    );
+    return parsed;
   }
 
   Future<DateTime?> getLastSyncTime() async {

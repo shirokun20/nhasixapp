@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:kuron_core/kuron_core.dart';
+import 'package:kuron_generic/kuron_generic.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
 import '../../../domain/entities/user_preferences.dart';
 
 import '../../cubits/settings/settings_cubit.dart';
+import '../../cubits/source/source_cubit.dart';
 import '../../../core/utils/app_update_test.dart';
 import '../../widgets/app_main_drawer_widget.dart';
 
@@ -16,6 +21,13 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Preload manifest so settings actions can resolve provider URLs from it.
+    getIt<RemoteConfigService>().ensureManifestLoaded();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -263,6 +275,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               actionLabel: l10n.clearCacheButton,
               onTap: () => AppUpdateTest.forceClearCache(context),
               isDestructive: true,
+              theme: theme,
+            ),
+            _buildDivider(theme),
+            _buildActionTile(
+              title: 'Sync KomikTap Config (Manifest)',
+              subtitle:
+                  'Cek manifest.json dulu, lalu download config KomikTap sesuai entry manifest',
+              actionLabel: 'Sync',
+              onTap: () => _syncKomiktapConfigFromManifest(context),
               theme: theme,
             ),
           ], theme),
@@ -650,5 +671,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
+  }
+
+  Future<void> _syncKomiktapConfigFromManifest(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('Checking manifest and syncing KomikTap config...'),
+      ),
+    );
+
+    try {
+      final remoteConfig = getIt<RemoteConfigService>();
+      await remoteConfig.downloadAndApplySourceConfigFromManifest(
+        sourceId: 'komiktap',
+      );
+
+      final registry = getIt<ContentSourceRegistry>();
+      final sourceFactory = getIt<GenericSourceFactory>();
+      final raw = remoteConfig.getRawConfig('komiktap');
+
+      if (raw == null) {
+        throw StateError('komiktap config missing after download');
+      }
+
+      final wasActive = registry.currentSourceId == 'komiktap';
+      if (registry.hasSource('komiktap')) {
+        registry.unregister('komiktap');
+      }
+      registry.register(sourceFactory.create(raw));
+      if (wasActive) {
+        registry.switchSource('komiktap');
+      }
+
+      if (!context.mounted) return;
+
+      context.read<SourceCubit>().refreshSources();
+
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('KomikTap config synced from manifest successfully.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed to sync KomikTap config: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
