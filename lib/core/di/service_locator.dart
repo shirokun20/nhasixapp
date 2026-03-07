@@ -680,8 +680,8 @@ void _setupCubits() {
         logger: getIt<Logger>(),
       ));
 
-  // SourceCubit - Content Source Management
-  getIt.registerFactory<SourceCubit>(() => SourceCubit(
+  // SourceCubit - Content Source Management (app-wide state = singleton)
+  getIt.registerLazySingleton<SourceCubit>(() => SourceCubit(
         registry: getIt<ContentSourceRegistry>(),
         prefs: getIt<SharedPreferences>(),
         logger: getIt<Logger>(),

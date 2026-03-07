@@ -136,7 +136,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   Future<void> _initializeContent() async {
     try {
       // Get current source ID
-      final sourceCubit = getIt<SourceCubit>();
+      final sourceCubit = context.read<SourceCubit>();
       final sourceId = sourceCubit.state.activeSource?.id;
 
       // Load saved sorting preference
@@ -212,7 +212,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   Future<void> _reloadSearchFilter() async {
     try {
       // Get current source ID
-      final sourceCubit = getIt<SourceCubit>();
+      final sourceCubit = context.read<SourceCubit>();
       final sourceId = sourceCubit.state.activeSource?.id;
 
       if (sourceId == null) return;
@@ -310,8 +310,18 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                   _isShowingSearchResults = false;
                   _currentSearchFilter = null;
                   await _initializeContent();
-                  // Clear the switching shimmer only after content has loaded.
-                  if (mounted) getIt<SourceCubit>().clearSwitching();
+                  // clearSwitching() is handled by the ContentBloc listener below.
+                }
+              },
+            ),
+            BlocListener<ContentBloc, ContentState>(
+              listenWhen: (previous, current) =>
+                  current is ContentLoaded ||
+                  current is ContentError ||
+                  current is ContentEmpty,
+              listener: (context, state) {
+                if (context.read<SourceCubit>().state.isSwitching) {
+                  context.read<SourceCubit>().clearSwitching();
                 }
               },
             ),
@@ -1216,7 +1226,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     // 2. Clear search filter from local storage
     // 3. Load normal content with current sort option
     // 4. Show success/error states properly
-    final sourceId = getIt<SourceCubit>().state.activeSource?.id;
+    final sourceId = context.read<SourceCubit>().state.activeSource?.id;
     if (sourceId != null) {
       _contentBloc.add(ContentClearSearchEvent(
         sourceId: sourceId,

@@ -70,7 +70,7 @@ lib/
 
 ## 📊 Current Progress Dashboard
 
-> Synced from `projects/README.md` — Last updated: 2026-03-01
+> Synced from `projects/README.md` — Last updated: 2026-03-07
 
 ### ✅ Completed (11)
 - chapter_reading_history_navigation
@@ -86,7 +86,7 @@ lib/
 - view_comments
 
 ### 🚧 In Progress (1)
-- **multi_provider_integration** — 75% — Phase 0 ✅, Phase 0B ✅, Phase 1 ✅, Phase 2 ✅, Phase 3 wired ✅ (manual testing next)
+- **multi_provider_integration** — 76% — Phase 0 ✅, Phase 0B ✅, Phase 1 ✅, Phase 2 ✅, Phase 3 ✅ stabilized (Phase 4 next)
 
 ### 📋 Analysis Phase (5)
 - app_audit_hardcode_ui_desktop
@@ -153,6 +153,9 @@ Project ini menggunakan search tools modern sebagai pengganti `grep`:
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-03-07 | Copilot | Source Switch Shimmer Bug Fix (Phase 3 Stabilization) | ✅ Done | SourceCubit registerFactory→registerLazySingleton + context.read |
+| 2026-03-07 | Copilot | multi_provider Phase 3B: Dynamic Search Form | ✅ Done | SearchFormConfig + DynamicFormSearchUI + raw param search |
+| 2026-03-04 | Copilot | multi_provider Phase 3: Unified Schema Refactor | ✅ Done | GenericContentMapper + zero-hardcode architecture |
 | 2026-03-03 | Copilot | multi_provider Phase 3: kuron_generic upgrades + KomikTap wiring | ✅ Done | — |
 | 2026-03-02 | Copilot | nhentai Tag Display Fix (`detail_screen` + `generic_rest_adapter`) | ✅ Done | — |
 | 2026-03-01 | Copilot | nhentai_test Bug Fixes: Search Filters + Comment Avatar | ✅ Done | [→](projects/sessions/2026-03-01-copilot-nhentai-bugfixes.md) |

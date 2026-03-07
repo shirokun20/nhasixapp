@@ -213,7 +213,7 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
   /// Check if sorting should be shown
   bool _shouldShowSorting(ContentState state) {
     // Check active source - only Nhentai supports sorting
-    final sourceCubit = getIt<SourceCubit>();
+    final sourceCubit = context.read<SourceCubit>();
     final activeSource = sourceCubit.state.activeSource;
 
     // Only show sorting for Nhentai
