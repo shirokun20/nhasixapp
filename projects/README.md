@@ -18,13 +18,14 @@
 | **app_audit_hardcode_ui_desktop** | `..........` | 0% | Pending |
 | **download_metadata_revamp** | `..........` | 0% | Pending |
 | **flutter-desktop-migration** | `..........` | 0% | Pending |
+| **komiktap_migration** | `..........` | 0% | Pending |
 | **komiktap_navigation_lists** | `..........` | 0% | Pending |
 | **reader-ads** | `..........` | 0% | Pending |
 
 ## 🚧 On Progress
 | Project Name | Progress | % | Status |
 |---|---|---|---|
-| **multi_provider_integration** | `██████░░░░` | 56% | 🔥 Hot |
+| **multi_provider_integration** | `████████░░` | 82% | 🔥 Hot |
 
 ## ✅ Success
 | Project Name | Progress | % | Status |
@@ -45,6 +46,8 @@
 | Issue | Date | Status |
 |---|---|---|
 | download range ignores page bounds | 2026-02-17 | 🔴 Open |
+| source-switch-shimmer-bug-analysis | Unknown | 🔴 Open |
+| fix-implementation-summary | Unknown | 🔴 Open |
 | download metadata chapter parentid | 2026-02-15 | 🔴 Open |
 
 ---
