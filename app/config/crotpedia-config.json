@@ -7,7 +7,7 @@
     "baseUrl": "https://crotpedia.net",
     "ui": {
         "displayName": "Crotpedia",
-        "iconPath": "assets/icons/crotpedia.png",
+        "iconPath": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/images/crotpedia.png",
         "brandColor": "#1E88E5",
         "cardStyle": "standard"
     },
