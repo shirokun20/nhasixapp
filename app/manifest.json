@@ -5,7 +5,7 @@
   "installableSources": [
     {
       "id": "komiktap",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "url": "config/komiktap-config.json",
       "meta": {
         "displayName": "KomikTap",

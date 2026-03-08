@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
@@ -106,12 +107,20 @@ class CrotpediaGenreListScreen extends StatelessWidget {
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final genre = state.genres[index];
+                            final rawConfig = getIt<RemoteConfigService>()
+                                .getRawConfig('crotpedia');
+                            final navigation = rawConfig?['navigation'];
+                            final genrePrefix = navigation
+                                    is Map<String, dynamic>
+                                ? (navigation['genreQueryPrefix'] as String? ??
+                                    'genre:')
+                                : 'genre:';
                             return _GenreCard(
                               name: genre.name,
                               count: genre.count,
                               icon: _getGenreIcon(genre.name),
                               onTap: () => AppRouter.goToContentByTag(
-                                  context, 'genre:${genre.slug}'),
+                                  context, '$genrePrefix${genre.slug}'),
                             );
                           },
                           childCount: state.genres.length,

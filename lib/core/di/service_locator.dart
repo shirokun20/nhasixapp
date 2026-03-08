@@ -512,6 +512,7 @@ void _setupRepositories() {
   // Content Repository with multi-layer cache integration
   getIt.registerLazySingleton<ContentRepository>(() => ContentRepositoryImpl(
         contentSourceRegistry: getIt<ContentSourceRegistry>(),
+        remoteConfigService: getIt<RemoteConfigService>(),
         remoteDataSource: getIt<RemoteDataSource>(),
         detailCacheService: getIt<DetailCacheService>(),
         requestDeduplicationService: getIt<RequestDeduplicationService>(),

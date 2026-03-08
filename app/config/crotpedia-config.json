@@ -246,6 +246,10 @@
             "icon": "assignment"
         }
     },
+    "navigation": {
+        "genreQueryPrefix": "genre:",
+        "genreTagType": "genre"
+    },
     "searchConfig": {
         "searchMode": "form-based",
         "endpoint": "/advanced-search/",

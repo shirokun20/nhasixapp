@@ -124,16 +124,21 @@ class GenericScraperAdapter implements GenericAdapter {
       );
     }
 
-    // 1) Genre/tag filter → genreSearch
-    // 2) Non-empty text   → search
-    // 3) Empty query p>1  → homePage  (if defined)
+    // 1) Genre/tag filter → genreSearch / genreSearchPage
+    // 2) Non-empty text   → search / searchPage
+    // 3) Empty query p>1  → homePage (if defined)
     // 4) Empty query p=1  → home
     final String patternKey;
     if (filter.includeTags.isNotEmpty &&
         urlPatternsCfg.containsKey('genreSearch')) {
-      patternKey = 'genreSearch';
+      patternKey =
+          filter.page > 1 && urlPatternsCfg.containsKey('genreSearchPage')
+              ? 'genreSearchPage'
+              : 'genreSearch';
     } else if (filter.query.trim().isNotEmpty) {
-      patternKey = 'search';
+      patternKey = filter.page > 1 && urlPatternsCfg.containsKey('searchPage')
+          ? 'searchPage'
+          : 'search';
     } else {
       patternKey = filter.page > 1 && urlPatternsCfg.containsKey('homePage')
           ? 'homePage'

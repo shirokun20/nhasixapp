@@ -1,6 +1,6 @@
 {
   "source": "komiktap",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "enabled": true,
   "defaultLanguage": "indonesian",
   "configUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/config/komiktap-config.json",
@@ -71,7 +71,11 @@
         }
       },
       "genreSearch": {
-        "url": "/genre/{tag}/page/{page}/",
+        "url": "/genres/{tag}/",
+        "inherits": "search"
+      },
+      "genreSearchPage": {
+        "url": "/genres/{tag}/page/{page}/",
         "inherits": "search"
       },
       "detail": "/manga/{id}/",

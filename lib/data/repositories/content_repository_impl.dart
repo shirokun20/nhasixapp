@@ -1,6 +1,7 @@
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/data/models/content_model.dart';
 
+import '../../core/config/remote_config_service.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/content_repository.dart';
 import '../../domain/value_objects/value_objects.dart';
@@ -16,6 +17,7 @@ import 'package:kuron_core/kuron_core.dart' as core;
 class ContentRepositoryImpl implements ContentRepository {
   ContentRepositoryImpl({
     required this.contentSourceRegistry,
+    required this.remoteConfigService,
     required this.remoteDataSource, // Keep for legacy tag ops for now
     required this.detailCacheService,
     required this.requestDeduplicationService,
@@ -25,6 +27,7 @@ class ContentRepositoryImpl implements ContentRepository {
   }) : _logger = logger ?? Logger();
 
   final core.ContentSourceRegistry contentSourceRegistry;
+  final RemoteConfigService remoteConfigService;
   final RemoteDataSource remoteDataSource;
   final DetailCacheService detailCacheService;
   final RequestDeduplicationService requestDeduplicationService;
@@ -413,8 +416,43 @@ class ContentRepositoryImpl implements ContentRepository {
     process(appFilter.parodies, 'parody');
     process(appFilter.groups, 'group');
 
+    // Config-driven genre-route support:
+    // Convert `<genrePrefix><slug>` query into includeTags so generic scraper
+    // can use `genreSearch` URL pattern from source config.
+    var mappedQuery = appFilter.query ?? '';
+    final activeSourceId = contentSourceRegistry.currentSource?.id;
+    final rawConfig = activeSourceId == null
+        ? null
+        : remoteConfigService.getRawConfig(activeSourceId);
+    final navigation = rawConfig?['navigation'];
+    final genrePrefix = navigation is Map<String, dynamic>
+        ? (navigation['genreQueryPrefix'] as String? ?? 'genre:')
+        : 'genre:';
+    final genreTagType = navigation is Map<String, dynamic>
+        ? (navigation['genreTagType'] as String? ?? 'genre')
+        : 'genre';
+
+    if (mappedQuery.startsWith(genrePrefix)) {
+      final rawSlug = mappedQuery.substring(genrePrefix.length).trim();
+      final normalizedSlug = rawSlug
+          .toLowerCase()
+          .replaceAll(RegExp(r'\s+'), '-')
+          .replaceAll(RegExp(r'-+'), '-')
+          .replaceAll(RegExp(r'^-|-$'), '');
+
+      if (normalizedSlug.isNotEmpty) {
+        includeTags.add(core.FilterItem(
+          id: 0,
+          name: normalizedSlug,
+          type: genreTagType,
+          isExcluded: false,
+        ));
+        mappedQuery = '';
+      }
+    }
+
     return core.SearchFilter(
-      query: appFilter.query ?? '',
+      query: mappedQuery,
       page: appFilter.page,
       sort: coreSort,
       includeTags: includeTags,

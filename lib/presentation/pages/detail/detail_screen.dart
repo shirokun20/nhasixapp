@@ -162,13 +162,7 @@ class _DetailScreenState extends State<DetailScreen> {
                   .sourceId
               : 'nhentai');
 
-      if (actualSourceId == SourceType.crotpedia.id) {
-        // SPECIAL HANDLING FOR CROTPEDIA GENRES
-        // Crotpedia supports specific genre browsing via /baca/genre/slug/
-        // We pass 'genre:slug' as query, which CrotpediaSource intercepts.
-        final slug = tagName.toLowerCase().replaceAll(' ', '-');
-        query = 'genre:$slug';
-      } else if (actualSourceId == 'nhentai') {
+      if (actualSourceId == 'nhentai') {
         // SPECIAL HANDLING FOR NHENTAI
         // User requested strict slug format: lowercase + hyphens
         // e.g. "Big Breasts" -> "big-breasts", "Lucy Heartfilia" -> "lucy-heartfilia"
@@ -187,6 +181,42 @@ class _DetailScreenState extends State<DetailScreen> {
           // General tags: just the slug (e.g. big-breasts)
           // This will map to "q=big-breasts" in search
           query = value;
+        }
+      } else {
+        // Config-driven genre route support for generic scraper sources
+        // (e.g. crotpedia, komiktap): if source defines `genreSearch` pattern,
+        // clicking a genre tag should route to that pattern via prefix query.
+        final rawConfig =
+            getIt<RemoteConfigService>().getRawConfig(actualSourceId);
+        final scraper = rawConfig?['scraper'];
+        final urlPatterns = scraper is Map<String, dynamic>
+            ? scraper['urlPatterns'] as Map<String, dynamic>?
+            : null;
+        final hasGenreSearch = urlPatterns?.containsKey('genreSearch') ?? false;
+
+        final navigation = rawConfig?['navigation'];
+        final genrePrefix = navigation is Map<String, dynamic>
+            ? (navigation['genreQueryPrefix'] as String? ?? 'genre:')
+            : 'genre:';
+        final genreTagType = navigation is Map<String, dynamic>
+            ? (navigation['genreTagType'] as String? ?? 'genre')
+            : 'genre';
+
+        final normalizedTagType = (tagType ?? '').toLowerCase().trim();
+        final isGenreLikeTag = normalizedTagType.isEmpty ||
+            normalizedTagType == 'tag' ||
+            normalizedTagType == genreTagType;
+
+        if (hasGenreSearch && isGenreLikeTag) {
+          var slug = tagName.toLowerCase().trim();
+          if (tagId != null && int.tryParse(tagId) == null) {
+            slug = tagId.toLowerCase().trim();
+          }
+          slug = slug
+              .replaceAll(RegExp(r'\s+'), '-')
+              .replaceAll(RegExp(r'-+'), '-')
+              .replaceAll(RegExp(r'^-|-$'), '');
+          query = '$genrePrefix$slug';
         }
       }
 
