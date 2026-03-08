@@ -1,6 +1,6 @@
 {
     "source": "crotpedia",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "enabled": true,
     "defaultLanguage": "indonesian",
     "configUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/config/crotpedia-config.json",
