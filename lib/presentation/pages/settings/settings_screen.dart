@@ -12,6 +12,7 @@ import '../../cubits/settings/settings_cubit.dart';
 import '../../cubits/source/source_cubit.dart';
 import '../../../core/utils/app_update_test.dart';
 import '../../widgets/app_main_drawer_widget.dart';
+import '../../../data/datasources/local/local_data_source.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -962,10 +963,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// Uninstall an installable source from local device.
   Future<void> _uninstallSource(BuildContext context, String sourceId) async {
     final messenger = ScaffoldMessenger.of(context);
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+
+    // Show Confirmation Dialog
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: theme.colorScheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Text('Uninstall $sourceId?', style: TextStyleConst.headingSmall),
+        content: Text(
+          'Warning: This will also delete all history and favorites associated with this source. This action cannot be undone.',
+          style: TextStyleConst.bodyMedium,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n?.cancel ?? 'Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: theme.colorScheme.error,
+              foregroundColor: theme.colorScheme.onError,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Uninstall'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
 
     try {
       final remoteConfig = getIt<RemoteConfigService>();
       final registry = getIt<ContentSourceRegistry>();
+      final localDb = getIt<LocalDataSource>();
+
+      // Delete user data (History & Favorites)
+      await localDb.deleteHistoryBySourceId(sourceId);
+      await localDb.deleteFavoritesBySourceId(sourceId);
 
       await remoteConfig.uninstallSourceConfig(sourceId);
       if (registry.hasSource(sourceId)) {
@@ -978,7 +1018,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
         SnackBar(
-          content: Text('✅ $sourceId uninstalled successfully'),
+          content:
+              Text('✅ $sourceId uninstalled and data cleaned successfully'),
           backgroundColor: Colors.green.shade700,
         ),
       );

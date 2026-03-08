@@ -104,6 +104,24 @@ class LocalDataSource {
     }
   }
 
+  /// Remove all favorites for a specific source
+  Future<void> deleteFavoritesBySourceId(String sourceId) async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) {
+        _logger.e('Database not available, cannot delete favorites by source');
+        return;
+      }
+
+      await db
+          .delete('favorites', where: 'source_id = ?', whereArgs: [sourceId]);
+      _logger.d('Deleted all favorites for source: $sourceId');
+    } catch (e) {
+      _logger.e('Error deleting favorites by source: $e');
+      rethrow;
+    }
+  }
+
   /// Get favorite content with title from favorites table (fallback to history/downloads)
   Future<List<Map<String, dynamic>>> getFavorites({
     int page = 1,
@@ -685,6 +703,27 @@ class LocalDataSource {
       _logger.d('Deleted history for $id');
     } catch (e) {
       _logger.e('Error deleting history: $e');
+    }
+  }
+
+  /// Delete all history entries for a specific source
+  Future<void> deleteHistoryBySourceId(String sourceId) async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) {
+        _logger.e('Database not available, cannot delete history by source');
+        return;
+      }
+
+      await db.delete(
+        'history',
+        where: 'source_id = ?',
+        whereArgs: [sourceId],
+      );
+
+      _logger.d('Deleted all history for source: $sourceId');
+    } catch (e) {
+      _logger.e('Error deleting history by source: $e');
     }
   }
 

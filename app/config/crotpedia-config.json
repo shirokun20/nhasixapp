@@ -52,7 +52,8 @@
                     "pagination": {
                         "current": ".pagination .page-numbers.current",
                         "next": ".pagination .next.page-numbers",
-                        "prev": ".pagination .prev.page-numbers"
+                        "prev": ".pagination .prev.page-numbers",
+                        "links": ".pagination a.page-numbers:not(.next):not(.prev)"
                     }
                 }
             },
@@ -81,7 +82,8 @@
                     "pagination": {
                         "current": ".pagination .page-numbers.current",
                         "next": ".pagination .next.page-numbers",
-                        "prev": ".pagination .prev.page-numbers"
+                        "prev": ".pagination .prev.page-numbers",
+                        "links": ".pagination a.page-numbers:not(.next):not(.prev)"
                     }
                 }
             },
