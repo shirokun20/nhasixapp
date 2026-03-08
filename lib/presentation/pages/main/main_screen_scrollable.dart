@@ -31,7 +31,6 @@ import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
 
 import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
 import 'package:nhasixapp/presentation/widgets/pagination_widget.dart';
-import 'package:nhasixapp/presentation/widgets/sorting_widget.dart';
 import 'package:nhasixapp/presentation/widgets/offline_indicator_widget.dart';
 import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:nhasixapp/presentation/pages/main/widgets/main_grid_card.dart';
@@ -669,15 +668,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                   final sortingConfig = searchConfig?.sortingConfig;
 
                   if (sortingConfig == null) {
-                    // Fallback to legacy widget if no config
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0, vertical: 8.0),
-                      child: SortingWidget(
-                        currentSort: _currentSortOption,
-                        onSortChanged: _onSortingChanged,
-                      ),
-                    );
+                    return const SizedBox.shrink();
                   }
 
                   return DynamicSortingWidget(
@@ -990,20 +981,31 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
   /// Check if sorting should be shown
   bool _shouldShowSorting(ContentState state) {
+    if (!mounted) return false;
+
     // Only show sorting when there's an active search/filter AND there's data
     if (!_isShowingSearchResults) {
       return false; // Hide sorting for normal content browsing
     }
 
-    // Show sorting only when there's data (loaded state with content) and search is active
-    if (state is ContentLoaded && state.contents.isNotEmpty) {
-      return true;
+    // Check if the current source config supports sorting
+    final sourceId = context.read<SourceCubit>().state.activeSource?.id;
+    final sourceConfig = sourceId != null
+        ? getIt<RemoteConfigService>().getConfig(sourceId)
+        : null;
+    final sortingConfig = sourceConfig?.searchConfig?.sortingConfig;
+
+    if (sortingConfig == null) {
+      // Hide sorting completely if there is no sortingConfig
+      return false;
     }
-    // Also show when loading more or refreshing (to maintain UI consistency) and search is active
-    if (state is ContentLoadingMore || state is ContentRefreshing) {
-      return true;
-    }
-    return false;
+
+    final hasData = (state is ContentLoaded && state.contents.isNotEmpty) ||
+        state is ContentLoadingMore ||
+        state is ContentRefreshing;
+
+    // Show sorting only when there's data
+    return hasData;
   }
 
   /// Build search results header
