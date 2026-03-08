@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
+import 'package:cookie_jar/cookie_jar.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/data/datasources/local/database_helper.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
@@ -19,6 +20,7 @@ import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_crotpedia/kuron_crotpedia.dart';
 import 'package:kuron_komiktap/kuron_komiktap.dart';
 import 'package:kuron_generic/kuron_generic.dart';
+import 'package:kuron_special/kuron_special.dart';
 
 // Core Network
 import 'package:nhasixapp/core/network/http_client_manager.dart';
@@ -442,33 +444,50 @@ void _setupDataSources() {
     },
   );
 
+  // Source Factory Resolver
+  getIt.registerLazySingleton<SourceFactoryResolver>(() {
+    return SourceFactoryResolver(
+      factories: [
+        CrotpediaSourceFactory(
+          dio: getIt<Dio>(),
+          cookieJar: PersistCookieJar(storage: getIt<CrotpediaCookieStore>()),
+          logger: getIt<Logger>(),
+        ),
+      ],
+      defaultFactory: getIt<GenericSourceFactory>(),
+    );
+  });
+
   // Content Source Registry
   // GenericHttpSource (nhentai) registered first → primary source.
-  // KomikTap registered as GenericHttpSource via inline creation (Phase 3).
   getIt.registerLazySingleton<ContentSourceRegistry>(() {
     final logger = getIt<Logger>();
     final registry = ContentSourceRegistry();
+    final remoteConfig = getIt<RemoteConfigService>();
+    final resolver = getIt<SourceFactoryResolver>();
 
     // nhentai — primary (config-driven via GenericHttpSource)
     registry.register(getIt<GenericHttpSource>());
 
-    // KomikTap — config-driven scraper source (Phase 3)
-    final komiktapRaw = getIt<RemoteConfigService>().getRawConfig('komiktap');
-    if (komiktapRaw != null && komiktapRaw.isNotEmpty) {
-      final config =
-          jsonDecode(jsonEncode(komiktapRaw)) as Map<String, dynamic>;
-      logger.d('Registering KomikTap as GenericHttpSource (scraper)');
-      registry.register(GenericHttpSource(
-        rawConfig: config,
-        dio: getIt<Dio>(),
-        logger: logger,
-      ));
-    } else {
-      logger.w('KomikTap config not loaded — source not registered. '
-          'Ensure RemoteConfigService.smartInitialize() has run.');
+    // Dynamically register other sources from manifest
+    final manifest = remoteConfig.manifest;
+    if (manifest != null) {
+      for (final source in manifest.installableSources) {
+        final rawConfig = remoteConfig.getRawConfig(source.id);
+        if (rawConfig != null && rawConfig.isNotEmpty) {
+          final config =
+              jsonDecode(jsonEncode(rawConfig)) as Map<String, dynamic>;
+          try {
+            final sourceInstance = resolver.createSource(config);
+            registry.register(sourceInstance);
+            logger.d('Dynamically registered source: ${source.id}');
+          } catch (e) {
+            logger.e('Failed to register dynamic source ${source.id}: $e');
+          }
+        }
+      }
     }
 
-    // registry.register(getIt<CrotpediaSource>());
     return registry;
   });
 

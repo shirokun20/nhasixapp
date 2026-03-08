@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kuron_core/kuron_core.dart';
-import 'package:kuron_generic/kuron_generic.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -28,9 +27,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     // Preload manifest so settings actions can resolve provider URLs from it.
-    _manifestLoadFuture = getIt<RemoteConfigService>()
-        .ensureManifestLoaded()
-        .then((_) => null);
+    _manifestLoadFuture =
+        getIt<RemoteConfigService>().ensureManifestLoaded().then((_) => null);
   }
 
   @override
@@ -205,10 +203,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   final String label = h < 24
                       ? '${h}h'
                       : h == 24
-                      ? l10n.oneDay
-                      : h == 48
-                      ? l10n.twoDays
-                      : l10n.oneWeek;
+                          ? l10n.oneDay
+                          : h == 48
+                              ? l10n.twoDays
+                              : l10n.oneWeek;
                   return DropdownMenuItem(value: h, child: Text(label));
                 }).toList(),
                 onChanged: (v) => context
@@ -765,7 +763,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await remoteConfig.markSourceInstalled('komiktap');
 
       final registry = getIt<ContentSourceRegistry>();
-      final sourceFactory = getIt<GenericSourceFactory>();
+      final resolver = getIt<SourceFactoryResolver>();
       final raw = remoteConfig.getRawConfig('komiktap');
 
       if (raw == null) {
@@ -776,7 +774,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (registry.hasSource('komiktap')) {
         registry.unregister('komiktap');
       }
-      registry.register(sourceFactory.create(raw));
+      registry.register(resolver.createSource(raw));
       if (wasActive) {
         registry.switchSource('komiktap');
       }
@@ -929,8 +927,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final remoteConfig = getIt<RemoteConfigService>();
     final resolvedIconUrl = remoteConfig.resolveRemotePath(iconUrl);
     final iconUri = Uri.tryParse(resolvedIconUrl);
-    final isRemote =
-        iconUri != null &&
+    final isRemote = iconUri != null &&
         (iconUri.scheme == 'http' || iconUri.scheme == 'https');
 
     if (isRemote) {
@@ -1026,7 +1023,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await remoteConfig.markSourceInstalled(sourceId);
 
       final registry = getIt<ContentSourceRegistry>();
-      final sourceFactory = getIt<GenericSourceFactory>();
+      final resolver = getIt<SourceFactoryResolver>();
       final raw = remoteConfig.getRawConfig(sourceId);
 
       if (raw == null) {
@@ -1038,7 +1035,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (registry.hasSource(sourceId)) {
         registry.unregister(sourceId);
       }
-      registry.register(sourceFactory.create(raw));
+      registry.register(resolver.createSource(raw));
       if (wasActive) {
         registry.switchSource(sourceId);
       }

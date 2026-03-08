@@ -1,0 +1,28 @@
+name: kuron_special
+description: A package containing special adapters for providers with complex requirements (e.g. integrated CF Bypass + Auth) that cannot be handled by JSON configs alone.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  kuron_core:
+    path: ../kuron_core
+  kuron_generic:
+    path: ../kuron_generic
+  kuron_native:
+    path: ../kuron_native
+  dio: ^5.4.0
+  cookie_jar: ^4.0.8
+  dio_cookie_manager: ^3.1.1
+  flutter_secure_storage: ^9.0.0
+  logger: ^2.0.2+1
+  native_dio_adapter: ^1.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1

@@ -17,6 +17,21 @@
         "requiresSpecialAdapter": false,
         "sizeKb": 4
       }
+    },
+    {
+      "id": "crotpedia",
+      "version": "1.0.0",
+      "url": "config/crotpedia-config.json",
+      "meta": {
+        "displayName": "Crotpedia",
+        "description": "Manga reader with specialized Cloudflare bypass",
+        "iconUrl": "images/crotpedia.png",
+        "contentType": "manga",
+        "language": "id",
+        "requiresAuth": true,
+        "requiresSpecialAdapter": true,
+        "sizeKb": 6
+      }
     }
   ]
 }

@@ -1,0 +1,180 @@
+{
+    "source": "crotpedia",
+    "version": "1.0.0",
+    "enabled": true,
+    "defaultLanguage": "indonesian",
+    "configUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/config/crotpedia-config.json",
+    "baseUrl": "https://crotpedia.net",
+    "ui": {
+        "displayName": "Crotpedia",
+        "iconPath": "assets/icons/crotpedia.png",
+        "brandColor": "#1E88E5",
+        "cardStyle": "standard"
+    },
+    "network": {
+        "requiresBypass": true,
+        "cloudflare": {
+            "bypassEnabled": true
+        },
+        "headers": {
+            "Referer": "https://crotpedia.net/"
+        }
+    },
+    "auth": {
+        "enabled": true,
+        "loginUrl": "https://crotpedia.net/login/",
+        "registerUrl": "https://crotpedia.net/register/",
+        "bookmarkUrl": "https://crotpedia.net/bookmark/",
+        "nonceRegex": "name=\"koi_login_nonce\"\\s+value=\"([^\"]+)\"",
+        "loginSuccessFilter": "/wp-admin"
+    },
+    "scraper": {
+        "enabled": true,
+        "urlPatterns": {
+            "home": {
+                "url": "/",
+                "list": {
+                    "container": ".flexbox4-item",
+                    "fields": {
+                        "id": {
+                            "selector": "a",
+                            "attribute": "href",
+                            "transform": "slug"
+                        },
+                        "title": {
+                            "selector": ".flexbox4-side .title a"
+                        },
+                        "coverUrl": {
+                            "selector": ".flexbox4-thumb img",
+                            "attribute": "src"
+                        }
+                    },
+                    "pagination": {
+                        "current": ".pagination .page-numbers.current",
+                        "next": ".pagination .next.page-numbers",
+                        "prev": ".pagination .prev.page-numbers"
+                    }
+                }
+            },
+            "homePage": {
+                "url": "/page/{page}/",
+                "inherits": "home"
+            },
+            "search": {
+                "url": "/?s={query}",
+                "list": {
+                    "container": ".flexbox2-item",
+                    "fields": {
+                        "id": {
+                            "selector": "a",
+                            "attribute": "href",
+                            "transform": "slug"
+                        },
+                        "title": {
+                            "selector": ".flexbox2-title span"
+                        },
+                        "coverUrl": {
+                            "selector": ".flexbox2-thumb img",
+                            "attribute": "src"
+                        }
+                    },
+                    "pagination": {
+                        "current": ".pagination .page-numbers.current",
+                        "next": ".pagination .next.page-numbers",
+                        "prev": ".pagination .prev.page-numbers"
+                    }
+                }
+            },
+            "searchPage": {
+                "url": "/page/{page}/?s={query}",
+                "inherits": "search"
+            },
+            "genreSearch": {
+                "url": "/baca/genre/{tag}/",
+                "inherits": "search"
+            },
+            "genreSearchPage": {
+                "url": "/baca/genre/{tag}/page/{page}/",
+                "inherits": "search"
+            },
+            "advancedSearch": {
+                "url": "/advanced-search/?title={query}&order={order}&genre[]={tag}",
+                "inherits": "search"
+            },
+            "advancedSearchPage": {
+                "url": "/advanced-search/page/{page}/?title={query}&order={order}&genre[]={tag}",
+                "inherits": "search"
+            },
+            "detail": "/baca/series/{id}/",
+            "chapter": "/baca/{id}/"
+        },
+        "selectors": {
+            "detail": {
+                "fields": {
+                    "title": {
+                        "selector": ".series-titlex h2"
+                    },
+                    "coverUrl": {
+                        "selector": ".series-thumb img",
+                        "attribute": "src"
+                    },
+                    "tags": {
+                        "selector": ".series-genres a",
+                        "multi": true
+                    }
+                },
+                "chapters": {
+                    "container": ".series-chapterlist li",
+                    "fields": {
+                        "id": {
+                            "selector": ".flexch-infoz a",
+                            "attribute": "href",
+                            "transform": "slug"
+                        },
+                        "title": {
+                            "selector": ".flexch-infoz a span"
+                        },
+                        "date": {
+                            "selector": ".flexch-infoz .date"
+                        }
+                    }
+                }
+            },
+            "reader": {
+                "container": ".reader-area",
+                "images": {
+                    "selector": "p img",
+                    "attribute": "src"
+                },
+                "nav": {
+                    "next": ".nextprev a.next, .nav-links a.next, a.next_page",
+                    "prev": ".nextprev a.prev, .nav-links a.prev, a.prev_page"
+                }
+            }
+        }
+    },
+    "searchForm": {
+        "urlPattern": "search",
+        "params": {
+            "query": {
+                "queryParam": "s",
+                "type": "text",
+                "placeholder": "Cari series..."
+            },
+            "page": {
+                "queryParam": "paged",
+                "type": "page"
+            }
+        }
+    },
+    "features": {
+        "search": true,
+        "chapters": true,
+        "download": true,
+        "favorite": false,
+        "bookmark": true,
+        "supportsAuth": true,
+        "comments": false,
+        "related": false
+    }
+}

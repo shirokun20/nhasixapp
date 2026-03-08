@@ -8,6 +8,7 @@ export 'src/sources/content_source.dart';
 export 'src/sources/search_capabilities.dart';
 export 'src/sources/content_source_registry.dart';
 export 'src/sources/source_factory.dart';
+export 'src/sources/source_factory_resolver.dart';
 
 // Entities
 export 'src/entities/content.dart';

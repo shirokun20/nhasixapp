@@ -4,9 +4,8 @@ import 'dart:async';
 ///
 /// Used by [RateLimiter] to limit the number of concurrent requests.
 class Semaphore {
-  Semaphore(this._maxCount) : _currentCount = _maxCount;
+  Semaphore(int maxCount) : _currentCount = maxCount;
 
-  final int _maxCount;
   int _currentCount;
   final _waitQueue = <Completer<void>>[];
 
