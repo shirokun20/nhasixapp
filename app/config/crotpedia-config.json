@@ -1,6 +1,6 @@
 {
     "source": "crotpedia",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "enabled": true,
     "defaultLanguage": "indonesian",
     "configUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/config/crotpedia-config.json",
@@ -8,13 +8,14 @@
     "ui": {
         "displayName": "Crotpedia",
         "iconPath": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/images/crotpedia.png",
-        "brandColor": "#1E88E5",
+        "themeColor": "#1E88E5",
         "cardStyle": "standard"
     },
     "network": {
         "requiresBypass": true,
         "cloudflare": {
-            "bypassEnabled": true
+            "bypassEnabled": true,
+            "antiDetection": false
         },
         "headers": {
             "Referer": "https://crotpedia.net/"
@@ -211,7 +212,7 @@
                     {
                         "value": "",
                         "label": "All",
-                        "default": true
+                        "isDefault": true
                     },
                     {
                         "value": "ongoing",
@@ -230,7 +231,7 @@
                     {
                         "value": "",
                         "label": "All",
-                        "default": true
+                        "isDefault": true
                     },
                     {
                         "value": "Manga",
@@ -261,7 +262,7 @@
                     {
                         "value": "update",
                         "label": "Latest Update",
-                        "default": true
+                        "isDefault": true
                     },
                     {
                         "value": "latest",
@@ -308,7 +309,7 @@
                     "label": "Latest Update",
                     "displayLabel": "Sorted by: Latest Update",
                     "icon": "update",
-                    "default": true
+                    "isDefault": true
                 },
                 {
                     "value": "latest",

@@ -185,7 +185,7 @@
                     "label": "Recent",
                     "displayLabel": "Sorted by: Recent",
                     "icon": "update",
-                    "default": true
+                    "isDefault": true
                 },
                 {
                     "value": "popular",
