@@ -562,11 +562,29 @@ class GenericScraperAdapter implements GenericAdapter {
 
       final nextSel = paginationConfig['next'] as String?;
       final altSel = paginationConfig['alt'] as String?;
+      final linksSel = paginationConfig['links'] as String?;
+
       final hasNext =
           (nextSel != null && _parser.selectAll(doc, nextSel).isNotEmpty) ||
               (altSel != null && _parser.selectAll(doc, altSel).isNotEmpty);
 
-      return AdapterSearchResult(items: items, hasNextPage: hasNext);
+      int? totalPages;
+      if (linksSel != null) {
+        final pageLinks = _parser.selectAll(doc, linksSel);
+        for (final link in pageLinks) {
+          final pageText = link.text.trim();
+          final pageNum = int.tryParse(pageText);
+          if (pageNum != null && (totalPages == null || pageNum > totalPages)) {
+            totalPages = pageNum;
+          }
+        }
+      }
+
+      return AdapterSearchResult(
+        items: items,
+        hasNextPage: hasNext,
+        totalPages: totalPages,
+      );
     } catch (e) {
       _logger.e('$_sourceId scraper list fetch failed: $url', error: e);
       return const AdapterSearchResult(items: [], hasNextPage: false);
