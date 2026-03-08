@@ -36,21 +36,14 @@ class _SearchScreenState extends State<SearchScreen> {
           final sourceId = sourceState.activeSource?.id ?? 'nhentai';
           final remoteConfig = getIt<RemoteConfigService>();
           final sourceConfig = remoteConfig.getConfig(sourceId);
-          final searchConfig = sourceConfig?.searchConfig;
-
-          // Try parsed searchForm first; fall back to parsing from raw JSON map
-          // so the screen works even after hot-reload (singleton in memory may
-          // have been created before searchForm field was added to SourceConfig).
-          SearchFormConfig? searchForm = sourceConfig?.searchForm;
-          if (searchForm == null) {
-            final rawMap = remoteConfig.getRawConfig(sourceId);
-            final rawForm = rawMap?['searchForm'] as Map<String, dynamic>?;
-            if (rawForm != null) {
-              searchForm = SearchFormConfig.fromJson(rawForm);
-            }
-          }
+          final searchConfig = remoteConfig.getSearchConfig(sourceId);
+          final searchForm = remoteConfig.getSearchFormConfig(sourceId);
+          final rawMap = remoteConfig.getRawConfig(sourceId);
 
           Logger().i('Building SearchScreen for source: $sourceId');
+          Logger().i('SourceConfig available: ${sourceConfig != null}');
+          Logger().i(
+              'Raw config available: ${rawMap != null}, version=${rawMap?['version']}');
           Logger().i(
               'SearchConfig: ${searchConfig != null ? searchConfig.toJson() : 'null'}');
           Logger().i(

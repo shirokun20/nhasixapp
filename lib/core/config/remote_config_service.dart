@@ -88,8 +88,8 @@ class RemoteConfigService {
   // ── Constructor ──────────────────────────────────────────────────────────────
 
   RemoteConfigService({required Dio dio, required Logger logger})
-    : _dio = dio,
-      _logger = logger;
+      : _dio = dio,
+        _logger = logger;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Public API
@@ -219,6 +219,50 @@ class RemoteConfigService {
   // Getters ──────────────────────────────────────────────────────────────────
 
   SourceConfig? getConfig(String source) => _sourceConfigs[source];
+
+  /// Returns search config for [source], preferring typed config and falling
+  /// back to raw JSON when typed parsing was skipped/failed.
+  SearchConfig? getSearchConfig(String source) {
+    final typed = _sourceConfigs[source]?.searchConfig;
+    if (typed != null) return typed;
+
+    final dynamic rawSearchConfig = _rawSourceConfigs[source]?['searchConfig'];
+    if (rawSearchConfig is Map<String, dynamic>) {
+      try {
+        return SearchConfig.fromJson(rawSearchConfig);
+      } catch (e, stackTrace) {
+        _logger.w(
+          'Failed to parse raw searchConfig for $source',
+          error: e,
+          stackTrace: stackTrace,
+        );
+      }
+    }
+
+    return null;
+  }
+
+  /// Returns search form config for [source], preferring typed config and
+  /// falling back to raw JSON when typed parsing was skipped/failed.
+  SearchFormConfig? getSearchFormConfig(String source) {
+    final typed = _sourceConfigs[source]?.searchForm;
+    if (typed != null) return typed;
+
+    final dynamic rawSearchForm = _rawSourceConfigs[source]?['searchForm'];
+    if (rawSearchForm is Map<String, dynamic>) {
+      try {
+        return SearchFormConfig.fromJson(rawSearchForm);
+      } catch (e, stackTrace) {
+        _logger.w(
+          'Failed to parse raw searchForm for $source',
+          error: e,
+          stackTrace: stackTrace,
+        );
+      }
+    }
+
+    return null;
+  }
 
   List<SourceConfig> getAllSourceConfigs() =>
       _sourceConfigs.values.where((c) => c.enabled).toList();
@@ -517,7 +561,9 @@ class RemoteConfigService {
     } catch (e, stackTrace) {
       _logger.w(
         'Typed SourceConfig parse failed for $sourceId; raw config kept for runtime adapter compatibility',
-        error: e,
+        error: 'version=${decoded['version']}, '
+            'hasSearchConfig=${decoded['searchConfig'] != null}, '
+            'hasSearchForm=${decoded['searchForm'] != null} | $e',
         stackTrace: stackTrace,
       );
     }
@@ -545,8 +591,8 @@ class RemoteConfigService {
     if (_bundledSourceIds.contains(sourceId)) return;
 
     final prefs = await SharedPreferences.getInstance();
-    final ids = (prefs.getStringList(_prefInstalledSourceIds) ?? <String>[])
-        .toSet();
+    final ids =
+        (prefs.getStringList(_prefInstalledSourceIds) ?? <String>[]).toSet();
     ids.add(sourceId);
     await prefs.setStringList(_prefInstalledSourceIds, ids.toList());
   }
@@ -554,8 +600,8 @@ class RemoteConfigService {
   /// Remove persisted install state for an installable source.
   Future<void> markSourceUninstalled(String sourceId) async {
     final prefs = await SharedPreferences.getInstance();
-    final ids = (prefs.getStringList(_prefInstalledSourceIds) ?? <String>[])
-        .toSet();
+    final ids =
+        (prefs.getStringList(_prefInstalledSourceIds) ?? <String>[]).toSet();
     if (ids.remove(sourceId)) {
       await prefs.setStringList(_prefInstalledSourceIds, ids.toList());
     }
@@ -608,9 +654,8 @@ class RemoteConfigService {
     }
 
     final url = source == 'nhentai' ? _nhentaiTagsUrl : _crotpediaTagsUrl;
-    final cacheKey = source == 'nhentai'
-        ? _nhentaiTagsCacheKey
-        : _crotpediaTagsCacheKey;
+    final cacheKey =
+        source == 'nhentai' ? _nhentaiTagsCacheKey : _crotpediaTagsCacheKey;
 
     try {
       _logger.i('Downloading tags for $source from: $url');
@@ -636,9 +681,8 @@ class RemoteConfigService {
 
   Future<List<Map<String, dynamic>>?> getCachedTags(String source) async {
     if (source != 'nhentai' && source != 'crotpedia') return null;
-    final cacheKey = source == 'nhentai'
-        ? _nhentaiTagsCacheKey
-        : _crotpediaTagsCacheKey;
+    final cacheKey =
+        source == 'nhentai' ? _nhentaiTagsCacheKey : _crotpediaTagsCacheKey;
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(cacheKey);
@@ -654,18 +698,16 @@ class RemoteConfigService {
 
   Future<bool> hasTagsCache(String source) async {
     if (source != 'nhentai' && source != 'crotpedia') return false;
-    final cacheKey = source == 'nhentai'
-        ? _nhentaiTagsCacheKey
-        : _crotpediaTagsCacheKey;
+    final cacheKey =
+        source == 'nhentai' ? _nhentaiTagsCacheKey : _crotpediaTagsCacheKey;
     final prefs = await SharedPreferences.getInstance();
     return prefs.containsKey(cacheKey);
   }
 
   Future<int?> getTagsCacheAge(String source) async {
     if (source != 'nhentai' && source != 'crotpedia') return null;
-    final cacheKey = source == 'nhentai'
-        ? _nhentaiTagsCacheKey
-        : _crotpediaTagsCacheKey;
+    final cacheKey =
+        source == 'nhentai' ? _nhentaiTagsCacheKey : _crotpediaTagsCacheKey;
     try {
       final prefs = await SharedPreferences.getInstance();
       final ts = prefs.getInt('${cacheKey}_timestamp');
@@ -737,6 +779,12 @@ class RemoteConfigService {
     if (cachedVersion == manifestVersion && cachedFile.existsSync()) {
       _logger.d('Using cached config for $sourceId v$manifestVersion');
       await _loadFromFile(sourceId, cachedFile);
+      final raw = _rawSourceConfigs[sourceId];
+      _logger.d(
+        'Cached $sourceId summary: version=${raw?['version']}, '
+        'hasSearchConfig=${raw?['searchConfig'] != null}, '
+        'hasSearchForm=${raw?['searchForm'] != null}',
+      );
       return;
     }
 
@@ -822,7 +870,9 @@ class RemoteConfigService {
       _sourceConfigs[sourceId] = SourceConfig.fromJson(raw);
     } catch (e) {
       _logger.w(
-        'Typed SourceConfig parse failed for cached source $sourceId; raw config kept',
+        'Typed SourceConfig parse failed for cached source $sourceId; raw config kept '
+        '(version=${raw['version']}, hasSearchConfig=${raw['searchConfig'] != null}, '
+        'hasSearchForm=${raw['searchForm'] != null})',
         error: e,
       );
     }
@@ -846,7 +896,9 @@ class RemoteConfigService {
           _sourceConfigs[sourceId] = SourceConfig.fromJson(raw);
         } catch (e) {
           _logger.w(
-            'Typed SourceConfig parse failed for bundled source $sourceId; raw config kept',
+            'Typed SourceConfig parse failed for bundled source $sourceId; raw config kept '
+            '(version=${raw['version']}, hasSearchConfig=${raw['searchConfig'] != null}, '
+            'hasSearchForm=${raw['searchForm'] != null})',
             error: e,
           );
         }
