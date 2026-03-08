@@ -21,6 +21,10 @@
     {
       "id": "crotpedia",
       "version": "1.0.3",
+      "maintenance": {
+        "active": true,
+        "reason": "Crotpedia website is currently down"
+      },
       "url": "config/crotpedia-config.json",
       "meta": {
         "displayName": "Crotpedia",
