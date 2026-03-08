@@ -369,7 +369,7 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
             group.label.toUpperCase(),
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).primaryColor,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
           ),
           const SizedBox(height: 12),
@@ -440,7 +440,7 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
                 group.label.toUpperCase(),
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
               ),
               if (availableTags.length > 12)
