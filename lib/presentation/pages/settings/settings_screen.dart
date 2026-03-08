@@ -828,6 +828,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // List of installable sources
         ...manifest.installableSources.map((entry) {
           final isInstalled = registry.hasSource(entry.id);
+          final isUnderMaintenance = entry.maintenance?.active ?? false;
 
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
@@ -866,6 +867,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             color: theme.colorScheme.onSurface,
                           ),
                         ),
+                        if (isUnderMaintenance)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.errorContainer,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'Maintenance',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: theme.colorScheme.onErrorContainer,
+                                ),
+                              ),
+                            ),
+                          ),
                         if (entry.meta?.description != null)
                           Padding(
                             padding: const EdgeInsets.only(top: 4),
@@ -877,6 +898,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        if (isUnderMaintenance &&
+                            (entry.maintenance?.reason?.isNotEmpty ?? false))
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              entry.maintenance!.reason!,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: theme.colorScheme.error,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                       ],

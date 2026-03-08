@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nhasixapp/core/config/source_loader.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_state.dart';
 
@@ -21,6 +23,11 @@ class SourceSelector extends StatelessWidget {
 
     return BlocBuilder<SourceCubit, SourceState>(
       builder: (context, state) {
+        final sourceLoader = getIt<SourceLoader>();
+        final activeId = state.activeSource?.id;
+        final isActiveUnderMaintenance =
+            activeId != null && sourceLoader.isUnderMaintenance(activeId);
+
         // Hide if only one source available (uncomment for production)
         // if (state.availableSources.length <= 1) {
         //   return const SizedBox.shrink();
@@ -60,14 +67,40 @@ class SourceSelector extends StatelessWidget {
                     const SizedBox(width: 14),
                     // Text - matches nav item
                     Expanded(
-                      child: Text(
-                        state.activeSource?.displayName ?? 'Select Source',
-                        style: TextStyleConst.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: colorScheme.onSurface.withValues(alpha: 0.85),
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            state.activeSource?.displayName ?? 'Select Source',
+                            style: TextStyleConst.bodyMedium.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color:
+                                  colorScheme.onSurface.withValues(alpha: 0.85),
+                            ),
+                          ),
+                          if (isActiveUnderMaintenance)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                'Under maintenance',
+                                style: TextStyleConst.bodySmall.copyWith(
+                                  color: colorScheme.error,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
+                    if (isActiveUnderMaintenance)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Icon(
+                          Icons.warning_amber_rounded,
+                          size: 18,
+                          color: colorScheme.error,
+                        ),
+                      ),
                     // Dropdown indicator
                     Icon(
                       Icons.unfold_more_rounded,
@@ -115,8 +148,11 @@ class SourceSelector extends StatelessWidget {
         maxWidth: button.size.width,
       ),
       items: state.availableSources.map((source) {
+        final sourceLoader = getIt<SourceLoader>();
         final isActive = source.id == state.activeSource?.id;
+        final isUnderMaintenance = sourceLoader.isUnderMaintenance(source.id);
         return PopupMenuItem<String>(
+          enabled: !isUnderMaintenance,
           value: source.id,
           height: 56,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -140,14 +176,28 @@ class SourceSelector extends StatelessWidget {
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
-                  source.displayName,
+                  isUnderMaintenance
+                      ? '${source.displayName} (Maintenance)'
+                      : source.displayName,
                   style: TextStyleConst.bodyMedium.copyWith(
                     fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                    color:
-                        isActive ? colorScheme.primary : colorScheme.onSurface,
+                    color: isUnderMaintenance
+                        ? colorScheme.error
+                        : (isActive
+                            ? colorScheme.primary
+                            : colorScheme.onSurface),
                   ),
                 ),
               ),
+              if (isUnderMaintenance)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Icon(
+                    Icons.warning_amber_rounded,
+                    size: 18,
+                    color: colorScheme.error,
+                  ),
+                ),
               if (isActive)
                 Icon(
                   Icons.check_circle_rounded,

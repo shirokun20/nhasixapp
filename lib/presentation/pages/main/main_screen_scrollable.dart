@@ -46,6 +46,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nhasixapp/core/config/config_models.dart';
 import 'package:nhasixapp/presentation/widgets/dynamic_sorting_widget.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/config/source_loader.dart';
 
 class MainScreenScrollable extends StatefulWidget {
   const MainScreenScrollable({super.key});
@@ -67,6 +68,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   SortOption _currentSortOption = SortOption.newest;
   bool _isOffline = false;
   DateTime? _lastBackPressTime;
+  bool _hasShownMaintenanceNotice = false;
 
   @override
   void initState() {
@@ -95,10 +97,52 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
     _initializeContent();
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showMaintenanceSnackbarIfNeeded();
+    });
+
     // Show welcome onboarding sheet on first launch
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndShowWelcomeSheet();
     });
+  }
+
+  void _showMaintenanceSnackbarIfNeeded() {
+    if (!mounted || _hasShownMaintenanceNotice) return;
+
+    final sourceLoader = getIt<SourceLoader>();
+    final remoteConfig = getIt<RemoteConfigService>();
+    final underMaintenance = sourceLoader.maintenanceSourceIds;
+    if (underMaintenance.isEmpty) return;
+
+    final sourceNames = <String>[];
+    String? crotpediaReason;
+    final manifest = remoteConfig.manifest;
+    for (final sourceId in underMaintenance) {
+      final source = getIt<ContentSourceRegistry>().getSource(sourceId);
+      sourceNames.add(source?.displayName ?? sourceId);
+      if (sourceId == 'crotpedia') {
+        for (final entry in manifest?.installableSources ?? const []) {
+          if (entry.id == 'crotpedia') {
+            crotpediaReason = entry.maintenance?.reason;
+            break;
+          }
+        }
+      }
+    }
+
+    final message = crotpediaReason != null && crotpediaReason.isNotEmpty
+        ? 'Crotpedia maintenance: $crotpediaReason'
+        : 'Source maintenance: ${sourceNames.join(', ')}';
+
+    _hasShownMaintenanceNotice = true;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 6),
+      ),
+    );
   }
 
   /// Check if this is first launch and show welcome sheet

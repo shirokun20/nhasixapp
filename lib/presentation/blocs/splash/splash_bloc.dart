@@ -4,6 +4,7 @@ import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/config/source_loader.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/core/utils/app_state_manager.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
@@ -11,6 +12,7 @@ import 'package:nhasixapp/core/utils/directory_utils.dart';
 import 'package:nhasixapp/core/utils/tag_data_manager.dart';
 import 'package:nhasixapp/core/constants/app_constants.dart';
 import 'package:nhasixapp/core/di/service_locator.dart' show getIt;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:kuron_core/kuron_core.dart'; // For ContentSourceRegistry
 
@@ -23,6 +25,8 @@ part 'splash_state.dart';
 // Checking SplashState file content is safer.
 
 class SplashBloc extends Bloc<SplashEvent, SplashState> {
+  static const String _selectedSourcePrefKey = 'selected_source_id';
+
   SplashBloc({
     required RemoteConfigService remoteConfigService,
     required RemoteDataSource remoteDataSource,
@@ -91,6 +95,35 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       // Initialize sources
       // CRITICAL: Access registry AFTER smartInitialize() completes to ensure config is loaded
       final contentSourceRegistry = getIt<ContentSourceRegistry>();
+      final sourceLoader = getIt<SourceLoader>();
+
+      // Apply remote manifest gates (enabled/maintenance) to registry state.
+      // Without this call, manifest maintenance flags are never reflected in UI/runtime.
+      sourceLoader.applyManifest(contentSourceRegistry);
+
+      // If current source is under maintenance, force-switch to default source.
+      // This prevents app from staying on unavailable provider after startup.
+      final currentSourceId = contentSourceRegistry.currentSourceId;
+      if (currentSourceId != null &&
+          sourceLoader.isUnderMaintenance(currentSourceId)) {
+        final fallbackSourceId = contentSourceRegistry.hasSource('nhentai')
+            ? 'nhentai'
+            : (contentSourceRegistry.sourceIds.isNotEmpty
+                ? contentSourceRegistry.sourceIds.first
+                : null);
+
+        if (fallbackSourceId != null && fallbackSourceId != currentSourceId) {
+          final switched = contentSourceRegistry.switchSource(fallbackSourceId);
+          if (switched) {
+            final prefs = getIt<SharedPreferences>();
+            await prefs.setString(_selectedSourcePrefKey, fallbackSourceId);
+            _logger.w(
+              'SplashBloc: active source "$currentSourceId" under maintenance, switched to "$fallbackSourceId"',
+            );
+          }
+        }
+      }
+
       final sources = contentSourceRegistry.sourceIds;
       final tagsManifest = _remoteConfigService.tagsManifest;
 
