@@ -170,6 +170,65 @@
             }
         }
     },
+    "featurePages": {
+        "genreList": {
+            "url": "/genre-list/",
+            "container": "ul.achlist li",
+            "fields": {
+                "name": {
+                    "selector": "a",
+                    "type": "text"
+                },
+                "url": {
+                    "selector": "a",
+                    "attribute": "href"
+                },
+                "count": {
+                    "selector": "span",
+                    "type": "text",
+                    "transform": "int"
+                }
+            }
+        },
+        "doujinList": {
+            "url": "/doujin-list/",
+            "container": ".mangalist-blc a.series",
+            "fields": {
+                "title": {
+                    "type": "text"
+                },
+                "url": {
+                    "attribute": "href"
+                },
+                "id": {
+                    "attribute": "rel"
+                }
+            }
+        },
+        "requestList": {
+            "url": "/baca/publisher/request/",
+            "pageUrl": "/baca/publisher/request/page/{page}/",
+            "container": ".flexbox2-item",
+            "fields": {
+                "title": {
+                    "selector": ".flexbox2-title span",
+                    "type": "text"
+                },
+                "coverUrl": {
+                    "selector": "img",
+                    "attribute": "src"
+                },
+                "url": {
+                    "selector": "a",
+                    "attribute": "href"
+                },
+                "status": {
+                    "selector": ".flexbox2-footer",
+                    "type": "text"
+                }
+            }
+        }
+    },
     "searchConfig": {
         "searchMode": "form-based",
         "endpoint": "/advanced-search/",

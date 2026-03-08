@@ -566,7 +566,7 @@ void _setupRepositories() {
   getIt.registerLazySingleton<CrotpediaFeatureRepository>(
       () => CrotpediaFeatureRepositoryImpl(
             crotpediaSource: getIt<CrotpediaSource>(),
-            scraper: getIt<CrotpediaScraper>(),
+            remoteConfigService: getIt<RemoteConfigService>(),
             doujinListDao: getIt<DoujinListDao>(),
             sharedPreferences: getIt<SharedPreferences>(), // INJECTED
             logger: getIt<Logger>(),
