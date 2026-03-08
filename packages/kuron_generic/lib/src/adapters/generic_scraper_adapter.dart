@@ -221,24 +221,44 @@ class GenericScraperAdapter implements GenericAdapter {
       }
     }
 
-    // Build the base URL path — strip the query-string portion of the template
-    // so we append our own params cleanly.
+    // Build the base URL path and keep template query defaults.
     final patternValue = urlPatternsCfg[patternKey];
     String basePath = '';
+    String templateQuery = '';
     if (patternValue is String) {
       basePath = patternValue;
     } else if (patternValue is Map<String, dynamic>) {
       basePath = (patternValue['url'] as String?) ?? '';
     }
-    // Remove everything from '?' onwards (we'll append our own query string).
+
+    // Extract template query (if any) so we can preserve required keys
+    // like `title=` when caller raw params omit them.
     final qIdx = basePath.indexOf('?');
-    if (qIdx >= 0) basePath = basePath.substring(0, qIdx);
+    if (qIdx >= 0) {
+      templateQuery = basePath.substring(qIdx + 1);
+      basePath = basePath.substring(0, qIdx);
+    }
     // Substitute {page} if present in path (some sources embed page in path).
     basePath = basePath.replaceAll('{page}', page.toString());
 
+    // Merge template query defaults with raw params (raw params take priority).
+    // This keeps mandatory but empty params from template, e.g. `title=`.
+    final mergedParams = <String, String>{};
+    if (templateQuery.isNotEmpty) {
+      for (final pair in templateQuery.split('&')) {
+        if (pair.isEmpty) continue;
+        final idx = pair.indexOf('=');
+        final key = idx < 0 ? pair : pair.substring(0, idx);
+        if (key.isEmpty) continue;
+        mergedParams[key] = '';
+      }
+    }
+    mergedParams.addAll(rawMap);
+
     // Assemble the final query string: raw user params + page.
     final queryParts = <String>[];
-    rawMap.forEach((k, v) => queryParts.add('$k=${Uri.encodeComponent(v)}'));
+    mergedParams
+        .forEach((k, v) => queryParts.add('$k=${Uri.encodeComponent(v)}'));
     queryParts.add('$pageParam=${Uri.encodeComponent(page.toString())}');
 
     final baseUrl = _urlBuilder.resolve(basePath, {});

@@ -35,7 +35,7 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
   final Map<String, bool> _checkboxExpanded = {};
 
   // Loaded tag data
-  final Map<String, List<String>> _loadedTags = {};
+  final Map<String, List<_TagOption>> _loadedTags = {};
   bool _isLoadingTags = true;
 
   @override
@@ -166,7 +166,15 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
 
           if (mounted) {
             setState(() {
-              _loadedTags[group.name] = tags.map((t) => t.name).toList();
+              _loadedTags[group.name] = tags
+                  .map(
+                    (t) => _TagOption(
+                      label: t.name,
+                      // Use slug as query value; fallback to name if slug missing.
+                      value: (t.slug ?? '').isNotEmpty ? t.slug! : t.name,
+                    ),
+                  )
+                  .toList();
             });
           }
         }
@@ -456,9 +464,9 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
             spacing: 8,
             runSpacing: 8,
             children: visibleTags.map((tag) {
-              final isSelected = selectedValues.contains(tag);
+              final isSelected = selectedValues.contains(tag.value);
               return FilterChip(
-                label: Text(tag),
+                label: Text(tag.label),
                 selected: isSelected,
                 showCheckmark: false,
                 selectedColor: Theme.of(context).colorScheme.primaryContainer,
@@ -471,9 +479,9 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
                 onSelected: (selected) {
                   setState(() {
                     if (selected) {
-                      _checkboxValues[group.name]!.add(tag);
+                      _checkboxValues[group.name]!.add(tag.value);
                     } else {
-                      _checkboxValues[group.name]!.remove(tag);
+                      _checkboxValues[group.name]!.remove(tag.value);
                     }
                   });
                 },
@@ -484,4 +492,11 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
       ),
     );
   }
+}
+
+class _TagOption {
+  final String label;
+  final String value;
+
+  const _TagOption({required this.label, required this.value});
 }
