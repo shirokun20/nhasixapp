@@ -201,22 +201,19 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
     // Format: "raw:key=value&key2=value"
     final params = <String>[];
 
-    // 1. Text Fields - only include non-empty values after trimming
+    // 1. Text Fields - keep keys even when empty for WordPress advanced-search
+    // compatibility (some providers expect full query shape).
     _controllers.forEach((name, controller) {
       final trimmedValue = controller.text.trim();
-      if (trimmedValue.isNotEmpty) {
-        params.add(
-            '${Uri.encodeComponent(name)}=${Uri.encodeComponent(trimmedValue)}');
-      }
+      params.add(
+          '${Uri.encodeComponent(name)}=${Uri.encodeComponent(trimmedValue)}');
     });
 
-    // 2. Radio Values - only include non-empty values
+    // 2. Radio Values - keep keys even when value is empty (e.g. status/type)
     _radioValues.forEach((name, value) {
       final trimmedValue = value.trim();
-      if (trimmedValue.isNotEmpty) {
-        params.add(
-            '${Uri.encodeComponent(name)}=${Uri.encodeComponent(trimmedValue)}');
-      }
+      params.add(
+          '${Uri.encodeComponent(name)}=${Uri.encodeComponent(trimmedValue)}');
     });
 
     // 3. Checkboxes (Tags/Genres)

@@ -55,6 +55,7 @@ class CrotpediaAuthManager {
   static const _keyPassword = 'crotpedia_password';
   static const _keyUsername = 'crotpedia_username';
   static const _keyLoginTime = 'crotpedia_login_time';
+  static const _externalPasswordSentinel = '__external_session__';
 
   CrotpediaAuthManager({
     required Dio dio,
@@ -211,7 +212,15 @@ class CrotpediaAuthManager {
       final savedEmail = await _secureStorage.read(key: _keyEmail);
       final savedPassword = await _secureStorage.read(key: _keyPassword);
 
-      if (savedEmail != null && savedPassword != null) {
+      // External WebView sessions don't carry a reusable password. Avoid
+      // retrying programmatic login with placeholder credentials.
+      if (savedPassword == null ||
+          savedPassword.isEmpty ||
+          savedPassword == _externalPasswordSentinel) {
+        return false;
+      }
+
+      if (savedEmail != null) {
         final result = await login(
           email: savedEmail,
           password: savedPassword,
@@ -251,7 +260,7 @@ class CrotpediaAuthManager {
     _email = email;
     _username = email.split('@').first;
 
-    await _saveCredentials(email, 'external'); // Password unknown or hidden
+    await _saveExternalSessionIdentity(email);
   }
 
   // ============ Bookmark Interaction ============
@@ -294,6 +303,16 @@ class CrotpediaAuthManager {
   Future<void> _saveCredentials(String email, String password) async {
     await _secureStorage.write(key: _keyEmail, value: email);
     await _secureStorage.write(key: _keyPassword, value: password);
+    await _secureStorage.write(
+        key: _keyUsername, value: email.split('@').first);
+    await _secureStorage.write(
+        key: _keyLoginTime, value: DateTime.now().toIso8601String());
+  }
+
+  Future<void> _saveExternalSessionIdentity(String email) async {
+    await _secureStorage.write(key: _keyEmail, value: email);
+    await _secureStorage.write(
+        key: _keyPassword, value: _externalPasswordSentinel);
     await _secureStorage.write(
         key: _keyUsername, value: email.split('@').first);
     await _secureStorage.write(

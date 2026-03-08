@@ -193,23 +193,25 @@ class WebViewSessionAdapter {
         return await _dio.get<T>(url, options: options);
       }
 
-      // 3. Launch UI Bypass
-      final bypassed = await _attemptNativeBypass(url);
-      if (!bypassed) {
+      // 3. Launch UI Bypass and use verified response directly.
+      final bypassResponse = await _attemptNativeBypassAndVerify<T>(
+        targetUrl: url,
+        options: options,
+      );
+      if (bypassResponse == null) {
         _logger.e('❌ Cloudflare bypass failed completely.');
         rethrow;
       }
 
-      _logger.i('✅ Cloudflare bypassed. Retrying request...');
-
-      // Update UserAgent in options to match the newly captured one from native
-      options?.headers ??= {};
-      options?.headers?['User-Agent'] = _dio.options.headers['User-Agent'];
-      return await _dio.get<T>(url, options: options);
+      _logger.i('✅ Cloudflare bypassed. Using verified response.');
+      return bypassResponse;
     }
   }
 
-  Future<bool> _attemptNativeBypass(String targetUrl) async {
+  Future<Response<T>?> _attemptNativeBypassAndVerify<T>({
+    required String targetUrl,
+    Options? options,
+  }) async {
     _isBypassing = true;
     try {
       _logger.i('🚀 Launching Native WebView for CF Bypass...');
@@ -243,36 +245,48 @@ class WebViewSessionAdapter {
           await _saveRawCookies(cookiesRaw, targetUrl);
         }
 
-        // 3. Verify
-        return await _verifyBypass(targetUrl);
+        // 3. Verify and return success response to caller.
+        return await _verifyBypass<T>(targetUrl, options: options);
       }
-      return false;
+      return null;
     } catch (e) {
       _logger.e('Native Bypass Error: $e');
-      return false;
+      return null;
     } finally {
       _isBypassing = false;
     }
   }
 
-  Future<bool> _verifyBypass(String url) async {
+  Future<Response<T>?> _verifyBypass<T>(
+    String url, {
+    Options? options,
+  }) async {
     for (int i = 0; i < 3; i++) {
       try {
-        final response = await _dio.get(url,
-            options: Options(
-              followRedirects: true,
-              validateStatus: (status) => status != null && status < 500,
-            ));
+        final response = await _dio.get<T>(
+          url,
+          options: Options(
+            followRedirects: true,
+            validateStatus: (status) => status != null && status < 500,
+          ),
+        );
+
+        if (response.statusCode != null && response.statusCode! >= 400) {
+          _logger.w(
+            'Bypass verify attempt ${i + 1} got status ${response.statusCode}',
+          );
+          continue;
+        }
 
         if (!isCloudflareChallenge(response.data.toString())) {
-          return true;
+          return response;
         }
       } catch (e) {
         _logger.w('Verify attempt ${i + 1} failed: $e');
       }
       await Future.delayed(const Duration(seconds: 1));
     }
-    return false;
+    return null;
   }
 
   Future<void> _saveRawCookies(List<String> rawCookies, String urlStr) async {

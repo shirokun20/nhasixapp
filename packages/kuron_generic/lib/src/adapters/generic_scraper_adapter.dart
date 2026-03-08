@@ -179,9 +179,16 @@ class GenericScraperAdapter implements GenericAdapter {
   }) async {
     // Determine which URL pattern to use from searchForm config.
     final searchFormCfg = rawConfig['searchForm'] as Map<String, dynamic>?;
-    final patternKey = (searchFormCfg?['urlPattern'] as String?) ?? 'search';
+    final basePatternKey =
+        (searchFormCfg?['urlPattern'] as String?) ?? 'search';
     final formParamsCfg =
         (searchFormCfg?['params'] as Map?)?.cast<String, dynamic>() ?? {};
+
+    // Prefer `{pattern}Page` variant for page > 1 when provided by config.
+    final pagedPatternKey = '${basePatternKey}Page';
+    final patternKey = page > 1 && urlPatternsCfg.containsKey(pagedPatternKey)
+        ? pagedPatternKey
+        : basePatternKey;
 
     if (!urlPatternsCfg.containsKey(patternKey)) {
       _logger.w('$_sourceId: raw search — URL pattern "$patternKey" not found');
@@ -189,13 +196,14 @@ class GenericScraperAdapter implements GenericAdapter {
     }
 
     // Parse raw params (e.g. "s=manga&status=ongoing")
-    final rawMap = <String, String>{};
+    final rawMap = <String, List<String>>{};
     for (final pair in rawParams.split('&')) {
       if (pair.isEmpty) continue;
       final idx = pair.indexOf('=');
       if (idx < 0) continue;
-      rawMap[Uri.decodeComponent(pair.substring(0, idx))] =
-          Uri.decodeComponent(pair.substring(idx + 1));
+      final key = Uri.decodeComponent(pair.substring(0, idx));
+      final value = Uri.decodeComponent(pair.substring(idx + 1));
+      rawMap.putIfAbsent(key, () => <String>[]).add(value);
     }
 
     // Resolve list config from the URL pattern (for pagination/selector info).
@@ -238,28 +246,47 @@ class GenericScraperAdapter implements GenericAdapter {
       templateQuery = basePath.substring(qIdx + 1);
       basePath = basePath.substring(0, qIdx);
     }
+    final hasPageInPathTemplate = basePath.contains('{page}');
     // Substitute {page} if present in path (some sources embed page in path).
     basePath = basePath.replaceAll('{page}', page.toString());
 
     // Merge template query defaults with raw params (raw params take priority).
     // This keeps mandatory but empty params from template, e.g. `title=`.
-    final mergedParams = <String, String>{};
+    final mergedParams = <String, List<String>>{};
     if (templateQuery.isNotEmpty) {
       for (final pair in templateQuery.split('&')) {
         if (pair.isEmpty) continue;
         final idx = pair.indexOf('=');
         final key = idx < 0 ? pair : pair.substring(0, idx);
         if (key.isEmpty) continue;
-        mergedParams[key] = '';
+        mergedParams[key] = <String>[''];
       }
     }
     mergedParams.addAll(rawMap);
 
-    // Assemble the final query string: raw user params + page.
+    // Pagination is controlled by adapter/page argument. Avoid carrying a
+    // stale `page` query from saved raw filters to prevent duplicate params.
+    mergedParams.remove(pageParam);
+
+    // Assemble final query string.
     final queryParts = <String>[];
-    mergedParams
-        .forEach((k, v) => queryParts.add('$k=${Uri.encodeComponent(v)}'));
-    queryParts.add('$pageParam=${Uri.encodeComponent(page.toString())}');
+    mergedParams.forEach((k, values) {
+      for (var i = 0; i < values.length; i++) {
+        var key = k;
+        // WordPress-style paged routes sometimes expect indexed array keys
+        // (e.g. genre[0]=anal) instead of repeated genre[]=anal pairs.
+        if (page > 1 && key.endsWith('[]')) {
+          key = '${key.substring(0, key.length - 2)}[$i]';
+        }
+        queryParts.add('$key=${Uri.encodeComponent(values[i])}');
+      }
+    });
+
+    // Only append page query param when actually paginating and path does not
+    // already encode page (many WordPress routes reject `page=1`).
+    if (page > 1 && !hasPageInPathTemplate) {
+      queryParts.add('$pageParam=${Uri.encodeComponent(page.toString())}');
+    }
 
     final baseUrl = _urlBuilder.resolve(basePath, {});
     final finalUrl =
