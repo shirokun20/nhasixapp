@@ -184,10 +184,46 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                         final configService = getIt<RemoteConfigService>();
                         final rawConfig =
                             configService.getRawConfig('crotpedia');
-                        if (rawConfig != null &&
-                            rawConfig.containsKey('menuConfig')) {
-                          final menuConfig =
-                              rawConfig['menuConfig'] as Map<String, dynamic>;
+                        if (rawConfig != null) {
+                          Map<String, dynamic>? menuConfig;
+                          if (rawConfig['menuConfig'] is Map<String, dynamic>) {
+                            menuConfig =
+                                rawConfig['menuConfig'] as Map<String, dynamic>;
+                          } else if (rawConfig['featurePages']
+                              is Map<String, dynamic>) {
+                            final featurePages = rawConfig['featurePages']
+                                as Map<String, dynamic>;
+                            // Fallback: auto-build drawer menu from featurePages
+                            // so menu still appears even without legacy menuConfig.
+                            final generatedMenu = <String, dynamic>{};
+                            if (featurePages.containsKey('genreList')) {
+                              generatedMenu['genreList'] = {
+                                'enabled': true,
+                                'label': 'Genres',
+                                'icon': 'category',
+                              };
+                            }
+                            if (featurePages.containsKey('doujinList')) {
+                              generatedMenu['doujinList'] = {
+                                'enabled': true,
+                                'label': 'Doujin List',
+                                'icon': 'library_books',
+                              };
+                            }
+                            if (featurePages.containsKey('requestList')) {
+                              generatedMenu['requestList'] = {
+                                'enabled': true,
+                                'label': 'Request List',
+                                'icon': 'assignment',
+                              };
+                            }
+                            menuConfig = generatedMenu;
+                          }
+
+                          if (menuConfig == null) {
+                            return const SizedBox.shrink();
+                          }
+
                           final List<Widget> menuItems = [];
 
                           // Helper for icon mapping

@@ -229,6 +229,23 @@
             }
         }
     },
+    "menuConfig": {
+        "genreList": {
+            "enabled": true,
+            "label": "Genres",
+            "icon": "category"
+        },
+        "doujinList": {
+            "enabled": true,
+            "label": "Doujin List",
+            "icon": "library_books"
+        },
+        "requestList": {
+            "enabled": true,
+            "label": "Request List",
+            "icon": "assignment"
+        }
+    },
     "searchConfig": {
         "searchMode": "form-based",
         "endpoint": "/advanced-search/",
