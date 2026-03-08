@@ -8,7 +8,6 @@ import '../../../core/utils/offline_content_manager.dart';
 import '../../../services/image_metadata_service.dart';
 import '../base/base_cubit.dart';
 import 'package:kuron_core/kuron_core.dart';
-import 'package:kuron_crotpedia/kuron_crotpedia.dart';
 import '../../../../core/utils/error_message_utils.dart';
 import '../../../domain/entities/history.dart';
 
@@ -475,8 +474,7 @@ class DetailCubit extends BaseCubit<DetailState> {
         bool needsLogin = false;
 
         // Crotpedia specific heuristic (Generic source might need its own heuristic later)
-        if (source is CrotpediaSource ||
-            currentState.content.sourceId == 'crotpedia') {
+        if (currentState.content.sourceId == 'crotpedia') {
           message = 'This chapter requires login or is unavailable.';
           needsLogin = true;
         }

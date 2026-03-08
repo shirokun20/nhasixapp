@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
 import 'package:cookie_jar/cookie_jar.dart';
-import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/data/datasources/local/database_helper.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass_no_webview.dart';
@@ -17,7 +16,6 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart'
     hide ImageCacheManager;
 
 import 'package:kuron_core/kuron_core.dart';
-import 'package:kuron_crotpedia/kuron_crotpedia.dart';
 import 'package:kuron_komiktap/kuron_komiktap.dart';
 import 'package:kuron_generic/kuron_generic.dart';
 import 'package:kuron_special/kuron_special.dart';
@@ -347,38 +345,26 @@ void _setupDataSources() {
         logger: getIt<Logger>(),
       ));
 
-  // Crotpedia Cookie Store
-  getIt.registerLazySingleton<CrotpediaCookieStore>(
-      () => CrotpediaCookieStore());
-
-  // Crotpedia Auth Manager
-  getIt.registerLazySingleton<CrotpediaAuthManager>(() => CrotpediaAuthManager(
-        dio: getIt<Dio>(),
-        cookieStore: getIt<CrotpediaCookieStore>(),
-      ));
-
-  // Crotpedia Scraper
-  getIt.registerLazySingleton<CrotpediaScraper>(() => CrotpediaScraper(
-        customSelectors: getIt<RemoteConfigService>()
-            .getConfig('crotpedia')
-            ?.scraper
-            ?.selectors,
-      ));
-
-  // Crotpedia Source
-  getIt.registerLazySingleton<CrotpediaSource>(() => CrotpediaSource(
-        scraper: getIt<CrotpediaScraper>(),
-        authManager: getIt<CrotpediaAuthManager>(),
-        dio: getIt<Dio>(),
-        navigatorKey: AppRouter.navigatorKey,
-        logger: getIt<Logger>(),
-        baseUrl:
-            getIt<RemoteConfigService>().getConfig('crotpedia')?.api?.baseUrl,
-        displayName: getIt<RemoteConfigService>()
-            .getConfig('crotpedia')
-            ?.ui
-            ?.displayName,
-      ));
+  // Crotpedia WebView Session Adapter
+  // Replaces legacy CrotpediaCookieStore + CrotpediaAuthManager + CrotpediaSource.
+  // Provides CF bypass + auth via WebViewSessionAdapter for multi-source arch.
+  getIt.registerLazySingleton<WebViewSessionAdapter>(() {
+    final rawConfig =
+        getIt<RemoteConfigService>().getRawConfig('crotpedia') ?? {};
+    final baseUrl =
+        (rawConfig['api'] as Map<String, dynamic>?)?['baseUrl'] as String? ??
+            (rawConfig['baseUrl'] as String?) ??
+            'https://crotpedia.net';
+    final cookieStorage = GenericCookieStorage('crotpedia');
+    final cookieJar = PersistCookieJar(storage: cookieStorage);
+    return WebViewSessionAdapter(
+      dio: getIt<Dio>(),
+      cookieJar: cookieJar,
+      config: WebViewSessionConfig.fromJson(rawConfig),
+      baseUrl: baseUrl,
+      logger: getIt<Logger>(),
+    );
+  });
 
   // KomikTap Scraper
   getIt.registerLazySingleton<KomiktapScraper>(() => KomiktapScraper(
@@ -450,7 +436,7 @@ void _setupDataSources() {
       factories: [
         CrotpediaSourceFactory(
           dio: getIt<Dio>(),
-          cookieJar: PersistCookieJar(storage: getIt<CrotpediaCookieStore>()),
+          sessionAdapter: getIt<WebViewSessionAdapter>(),
           logger: getIt<Logger>(),
         ),
       ],
@@ -566,10 +552,10 @@ void _setupRepositories() {
   // Crotpedia Feature Repository
   getIt.registerLazySingleton<CrotpediaFeatureRepository>(
       () => CrotpediaFeatureRepositoryImpl(
-            crotpediaSource: getIt<CrotpediaSource>(),
+            sessionAdapter: getIt<WebViewSessionAdapter>(),
             remoteConfigService: getIt<RemoteConfigService>(),
             doujinListDao: getIt<DoujinListDao>(),
-            sharedPreferences: getIt<SharedPreferences>(), // INJECTED
+            sharedPreferences: getIt<SharedPreferences>(),
             logger: getIt<Logger>(),
           ));
 }
@@ -684,7 +670,7 @@ void _setupBlocs() {
         remoteConfigService: getIt<RemoteConfigService>(),
         appLocalizations: null, // Initialized during main setup
         crotpediaAuthManager:
-            getIt<CrotpediaAuthManager>(), // NEW: Inject for cookie extraction
+            getIt<WebViewSessionAdapter>(), // Inject for cookie extraction
       ));
 
   // Register other BLoCs when implemented
@@ -734,7 +720,7 @@ void _setupCubits() {
 
   // CrotpediaAuthCubit - Crotpedia login management
   getIt.registerLazySingleton<CrotpediaAuthCubit>(() => CrotpediaAuthCubit(
-        source: getIt<CrotpediaSource>(),
+        adapter: getIt<WebViewSessionAdapter>(),
         logger: getIt<Logger>(),
       ));
 

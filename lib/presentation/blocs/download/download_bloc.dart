@@ -14,7 +14,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/config/remote_config_service.dart';
 
-import 'package:kuron_crotpedia/kuron_crotpedia.dart';
+import 'package:kuron_special/kuron_special.dart';
 import 'package:kuron_generic/kuron_generic.dart';
 import 'package:kuron_komiktap/kuron_komiktap.dart';
 
@@ -55,8 +55,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     required PdfConversionQueueManager pdfConversionQueueManager,
     required RemoteConfigService remoteConfigService,
     AppLocalizations? appLocalizations,
-    CrotpediaAuthManager?
-        crotpediaAuthManager, // NEW: Optional for cookie extraction
+    WebViewSessionAdapter?
+        crotpediaAuthManager, // Optional for cookie extraction
     DownloadManager? downloadManager, // NEW: Optional for testing
   })  : _downloadContentUseCase = downloadContentUseCase,
         _getContentDetailUseCase = getContentDetailUseCase,
@@ -123,7 +123,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   final PdfConversionQueueManager _pdfConversionQueueManager;
   final RemoteConfigService _remoteConfigService;
   final AppLocalizations? _appLocalizations;
-  final CrotpediaAuthManager? _crotpediaAuthManager;
+  final WebViewSessionAdapter? _crotpediaAuthManager;
   final DownloadManager
       _downloadManager; // Use instance variable instead of singleton directly
 
@@ -150,11 +150,17 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       }
       return '';
     } else if (sourceId == SourceType.crotpedia.id) {
-      // Check if it's a chapter slug
+      // Config-driven URL building for crotpedia
+      final crotpediaRaw =
+          getIt<RemoteConfigService>().getRawConfig('crotpedia');
+      final crotpediaBase = (crotpediaRaw?['api']
+              as Map<String, dynamic>?)?['baseUrl'] as String? ??
+          (crotpediaRaw?['baseUrl'] as String?) ??
+          'https://crotpedia.net';
       if (contentId.contains('chapter')) {
-        return CrotpediaUrlBuilder.chapterReader(contentId);
+        return '$crotpediaBase/baca/$contentId/';
       }
-      return CrotpediaUrlBuilder.seriesDetail(contentId);
+      return '$crotpediaBase/baca/series/$contentId/';
     } else if (sourceId == SourceType.komiktap.id) {
       // Check if it's a chapter slug
       if (contentId.contains('chapter')) {

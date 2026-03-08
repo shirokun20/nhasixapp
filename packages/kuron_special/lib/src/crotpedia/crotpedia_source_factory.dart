@@ -1,26 +1,26 @@
 import 'package:dio/dio.dart';
-import 'package:cookie_jar/cookie_jar.dart';
 import 'package:logger/logger.dart';
 import 'package:native_dio_adapter/native_dio_adapter.dart';
 import 'package:kuron_generic/kuron_generic.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../webview_session/webview_session_adapter.dart';
 
-/// Factory to construct a Crotpedia generic source with a fully wired
+/// Factory to construct a CF-protected generic source with a fully wired
 /// WebViewSessionAdapter for Cloudflare bypass and auto-login capabilities.
-/// Factory to construct a Crotpedia generic source with a fully wired
-/// WebViewSessionAdapter for Cloudflare bypass and auto-login capabilities.
+///
+/// Designed for multi-source: any Cloudflare-protected provider can use this
+/// factory by providing its own [WebViewSessionAdapter] instance.
 class CrotpediaSourceFactory implements SourceFactory {
   final Dio _dio;
-  final PersistCookieJar _cookieJar;
+  final WebViewSessionAdapter _sessionAdapter;
   final Logger _logger;
 
   CrotpediaSourceFactory({
     required Dio dio,
-    required PersistCookieJar cookieJar,
+    required WebViewSessionAdapter sessionAdapter,
     required Logger logger,
   })  : _dio = dio,
-        _cookieJar = cookieJar,
+        _sessionAdapter = sessionAdapter,
         _logger = logger;
 
   @override
@@ -38,27 +38,13 @@ class CrotpediaSourceFactory implements SourceFactory {
       _logger.w('Failed to attach NativeAdapter for Crotpedia: $e');
     }
 
-    final baseUrl = config['baseUrl'] as String? ?? 'https://crotpedia.net';
-
-    // 2. Build the WebViewSessionAdapter
-    final sessionConfig = WebViewSessionConfig.fromJson(config);
-    final sessionAdapter = WebViewSessionAdapter(
-      dio: _dio,
-      cookieJar: _cookieJar,
-      config: sessionConfig,
-      baseUrl: baseUrl,
-      logger: _logger,
-    );
-
-    /// 3. Create a custom GenericRestAdapter subclass (or just override request method)
-    /// We intercept `request` calls at the GenericAdapter level so that it
-    /// automatically uses `sessionAdapter.requestWithBypass` instead of `dio.get`.
+    // 2. Create intercepting Dio that delegates GET → requestWithBypass
     final interceptingDio = _CrotpediaDioInterceptor(
       baseDio: _dio,
-      sessionAdapter: sessionAdapter,
+      sessionAdapter: _sessionAdapter,
     );
 
-    // 4. Return the configured GenericHttpSource
+    // 3. Return the configured GenericHttpSource
     return GenericHttpSource(
       rawConfig: config,
       dio: interceptingDio,

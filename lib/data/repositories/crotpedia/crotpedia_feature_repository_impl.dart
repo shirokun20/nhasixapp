@@ -5,7 +5,7 @@ import 'package:html/parser.dart' as html_parser;
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:kuron_crotpedia/kuron_crotpedia.dart';
+import 'package:kuron_special/kuron_special.dart';
 
 import '../../../../core/config/remote_config_service.dart';
 import '../../../../domain/entities/crotpedia/crotpedia_entities.dart';
@@ -13,7 +13,7 @@ import '../../../../domain/repositories/crotpedia/crotpedia_feature_repository.d
 import '../../datasources/local/doujin_list_dao.dart';
 
 class CrotpediaFeatureRepositoryImpl implements CrotpediaFeatureRepository {
-  final CrotpediaSource crotpediaSource;
+  final WebViewSessionAdapter sessionAdapter;
   final RemoteConfigService remoteConfigService;
   final DoujinListDao doujinListDao;
   final SharedPreferences sharedPreferences;
@@ -25,7 +25,7 @@ class CrotpediaFeatureRepositoryImpl implements CrotpediaFeatureRepository {
   static const int _cacheDurationHours = 24;
 
   CrotpediaFeatureRepositoryImpl({
-    required this.crotpediaSource,
+    required this.sessionAdapter,
     required this.remoteConfigService,
     required this.doujinListDao,
     required this.sharedPreferences,
@@ -136,7 +136,9 @@ class CrotpediaFeatureRepositoryImpl implements CrotpediaFeatureRepository {
       final fields =
           (config?['fields'] as Map?)?.cast<String, dynamic>() ?? const {};
 
-      final html = await crotpediaSource.fetchHtml(_resolveUrl(path));
+      final response =
+          await sessionAdapter.requestWithBypass<String>(_resolveUrl(path));
+      final html = response.data ?? '';
       final document = _parseHtml(html);
       final items = document.querySelectorAll(container);
 
@@ -225,7 +227,9 @@ class CrotpediaFeatureRepositoryImpl implements CrotpediaFeatureRepository {
       final fields =
           (config?['fields'] as Map?)?.cast<String, dynamic>() ?? const {};
 
-      final html = await crotpediaSource.fetchHtml(_resolveUrl(path));
+      final response =
+          await sessionAdapter.requestWithBypass<String>(_resolveUrl(path));
+      final html = response.data ?? '';
       final document = _parseHtml(html);
       final items = document.querySelectorAll(container);
 
@@ -290,7 +294,9 @@ class CrotpediaFeatureRepositoryImpl implements CrotpediaFeatureRepository {
           ? firstPagePath
           : pageUrlPattern.replaceAll('{page}', page.toString());
 
-      final html = await crotpediaSource.fetchHtml(_resolveUrl(path));
+      final response =
+          await sessionAdapter.requestWithBypass<String>(_resolveUrl(path));
+      final html = response.data ?? '';
       final document = _parseHtml(html);
       final items = document.querySelectorAll(container);
 

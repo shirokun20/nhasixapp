@@ -795,13 +795,6 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
-  kuron_crotpedia:
-    dependency: "direct main"
-    description:
-      path: "packages/kuron_crotpedia"
-      relative: true
-    source: path
-    version: "0.1.0"
   kuron_generic:
     dependency: "direct main"
     description:

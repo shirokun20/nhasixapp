@@ -416,6 +416,26 @@ class WebViewSessionAdapter {
     }
   }
 
+  /// Set session from external WebView login (e.g. native browser login flow).
+  /// [username] is the detected username from cookies.
+  /// [rawCookies] is a list of "key=value" strings from the WebView.
+  Future<void> setExternalLogin({
+    required String username,
+    required List<String> rawCookies,
+  }) async {
+    if (rawCookies.isNotEmpty) {
+      await _saveRawCookies(rawCookies, _baseUrl);
+    }
+
+    _authState = WebViewAuthState.loggedIn;
+    _username = username;
+    _email = '$username@external';
+
+    // Save identity so tryAutoLogin can restore state
+    await _secureStorage.write(key: _keyEmail, value: _email!);
+    // No password for external sessions
+  }
+
   Future<void> logout() async {
     await _cookieJar.deleteAll();
     await _secureStorage.delete(key: _keyEmail);
