@@ -278,9 +278,11 @@ class WebViewSessionAdapter {
           continue;
         }
 
-        if (!isCloudflareChallenge(response.data.toString())) {
-          return response;
-        }
+        // Status < 400 means bypass worked — return immediately.
+        // Don't re-check isCloudflareChallenge here because normal pages
+        // can contain CF-related strings (Ray ID in footer, challenge-platform
+        // in Turnstile scripts) causing false positives.
+        return response;
       } catch (e) {
         _logger.w('Verify attempt ${i + 1} failed: $e');
       }
