@@ -176,7 +176,7 @@
     "ads": {
         "provider": "start.io",
         "enabled": false,
-        "androidAppId": "YOUR_ANDROID_APP_ID",
+        "androidAppId": "201356049",
         "banner": {
             "enabled": false,
             "showInDetail": false,

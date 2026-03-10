@@ -28,7 +28,7 @@ class RemoteConfigService {
   AppConfig? _appConfig;
   TagsManifest? _tagsManifest;
   final Map<String, SourceConfig> _sourceConfigs = {};
-  
+
   // Registry to track which features require premium (Parsed manually from JSON)
   // Structure: { 'sourceName': { 'featureName': requiresPremium } }
   final Map<String, Map<String, bool>> _premiumRegistry = {};
@@ -53,9 +53,9 @@ class RemoteConfigService {
     try {
       // SIMPLIFIED: Just load from assets directly, skip remote download
       // This is more stable and faster for production use
-      // onProgress?.call(0.2, 'Loading nhentai config...');
-      // await _loadFromAsset('nhentai', 'assets/configs/nhentai-config.json',
-      //     (json) => _sourceConfigs['nhentai'] = SourceConfig.fromJson(json));
+      onProgress?.call(0.2, 'Loading nhentai config...');
+      await _loadFromAsset('nhentai', 'assets/configs/nhentai-config.json',
+          (json) => _sourceConfigs['nhentai'] = SourceConfig.fromJson(json));
 
       // onProgress?.call(0.4, 'Loading crotpedia config...');
       // await _loadFromAsset('crotpedia', 'assets/configs/crotpedia-config.json',
@@ -92,24 +92,25 @@ class RemoteConfigService {
     try {
       final assetString = await rootBundle.loadString(assetPath);
       final data = jsonDecode(assetString) as Map<String, dynamic>;
-      
+
       // Manually parse premium flags if present
       if (data.containsKey('features')) {
         final features = data['features'] as Map<String, dynamic>;
         final Map<String, bool> sourceFlags = {};
-        
+
         features.forEach((key, value) {
-          if (value is Map<String, dynamic> && value.containsKey('requiresPremium')) {
+          if (value is Map<String, dynamic> &&
+              value.containsKey('requiresPremium')) {
             sourceFlags[key] = value['requiresPremium'] == true;
           } else {
-             // Default to false if not specified or simple boolean
-             sourceFlags[key] = false;
+            // Default to false if not specified or simple boolean
+            sourceFlags[key] = false;
           }
         });
-        
+
         _premiumRegistry[sourceName] = sourceFlags;
       }
-      
+
       updateConfig(data);
     } catch (e) {
       _logger.w('Asset load failed for $sourceName', error: e);
@@ -259,7 +260,7 @@ class RemoteConfigService {
     // So if config is null here, something is really wrong.
     final config = getConfig(source);
     if (config?.features == null) return false;
-    
+
     final feature = config!.features!;
     final isEnabledInConfig = selector(feature);
 
@@ -267,37 +268,36 @@ class RemoteConfigService {
 
     // Check if feature requires premium
     // We check the manual registry we populated during load
- 
-    
+
     // We need to infer the feature name from the selector/config
     // Since we can't reflect on the selector, we check the registry for ANY true flag?
     // No, we need to know specifically which feature.
     // LIMITATION: The current method signature `(f) => f.download` hides the name "download".
     // WE CANNOT know "download" was accessed.
-    
+
     // WORKAROUND: Change the method approach or assume we iterate the registry?
     // If we assume `selector` just returns the enabled state...
     // But `isFeatureEnabled` implies "Can I use it?".
-    
+
     // PROPOSAL: Since I can't reflect the name, I will just return `isEnabledInConfig`.
     // BUT I added `_premiumRegistry`. It's useless if I can't look up the key.
-    
+
     // Better: Add a new method `isPremiumFeatureEnabled(String source, String featureName)`.
     // And update callsites? Too many callsites.
-    
+
     // Hack: For now, if ANY feature in the source requires premium, and premium is invalid, disable ALL premium features?
     // No, that blocks non-premium features if logic is mixed.
-    
+
     // Let's rely on the fact that `User` requests specifically checking `komiktap-config.json` manually.
     // I will modify `isFeatureAccessible` in `LicenseService` to take the feature name?
     // Or just make `RemoteConfigService` expose `requiresPremium(source, feature)`.
-    
+
     // Let's implement `isPremiumAccessible(source, featureName)` in RemoteConfigService
     // and let the UI use THAT.
-    
+
     return isEnabledInConfig;
   }
-  
+
   /// Check if a feature requires premium (without checking license validity)
   /// This is useful for UI logic that needs to check license separately
   bool doesFeatureRequirePremium(String source, String featureName) {
@@ -311,42 +311,44 @@ class RemoteConfigService {
 
   /// Check if a specific named feature is accessible (checks enabled + premium)
   /// [isPremiumActive] - Optional override for premium status. If not provided, reads from SharedPreferences
-  bool isContentFeatureAccessible(String source, String featureName, {bool? isPremiumActive}) {
+  bool isContentFeatureAccessible(String source, String featureName,
+      {bool? isPremiumActive}) {
     if (!_sourceConfigs.containsKey(source)) return false;
-    
+
     // 1. Check if feature is enabled in basic config first (if accessible)
     // This part is tricky because we don't know the exact hierarchy path of featureName
     // So we rely on the registry for "premium requirement" AND "existence"
-    
+
     final featureMap = _premiumRegistry[source];
     // If feature is not in registry, it might still be enabled/disabled but not premium
     // But for "isContentFeatureAccessible" we primarily care about the premium gate for now
-    
+
     if (featureMap == null) return true; // No registry = assume free/enabled
-    
+
     // 2. Check Premium Requirement
     final requiresPremium = featureMap[featureName] ?? false;
-    
+
     if (requiresPremium) {
-       // Use provided premium status or fall back to SharedPreferences
-       final isLicenseValid = isPremiumActive ?? (_prefs.getBool('komiktap_license_valid') ?? false);
-       if (!isLicenseValid) {
-         return false;
-       }
+      // Use provided premium status or fall back to SharedPreferences
+      final isLicenseValid = isPremiumActive ??
+          (_prefs.getBool('komiktap_license_valid') ?? false);
+      if (!isLicenseValid) {
+        return false;
+      }
     }
-    
+
     return true;
   }
 
-
-
   /// Check if source supports tag exclusion (for search UI)
   bool supportsTagExclusion(String source) {
-    return isFeatureEnabled(source, (f) => f.supportsTagExclusion?.enabled ?? false);
+    return isFeatureEnabled(
+        source, (f) => f.supportsTagExclusion?.enabled ?? false);
   }
 
   /// Check if source supports advanced search
   bool supportsAdvancedSearch(String source) {
-    return isFeatureEnabled(source, (f) => f.supportsAdvancedSearch?.enabled ?? false);
+    return isFeatureEnabled(
+        source, (f) => f.supportsAdvancedSearch?.enabled ?? false);
   }
 }

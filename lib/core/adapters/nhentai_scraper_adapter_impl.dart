@@ -2,19 +2,35 @@ import 'package:kuron_core/kuron_core.dart' as core;
 import 'package:kuron_nhentai/kuron_nhentai.dart';
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
 import 'package:nhasixapp/domain/entities/search_filter.dart' as app_filter;
+import 'package:nhasixapp/services/license_service.dart';
+
+/// Custom exception for premium required access
+class PremiumRequiredException implements Exception {
+  final String message;
+  PremiumRequiredException([this.message = 'Premium subscription required']);
+
+  @override
+  String toString() => 'PremiumRequiredException: $message';
+}
 
 /// Implementation of NhentaiScraperAdapter that delegates to RemoteDataSource.
 ///
-/// Since ContentModel now extends core.Content, we can return it directly
-/// without manual mapping.
+/// Requires premium subscription to access Nhentai content.
 class NhentaiScraperAdapterImpl implements NhentaiScraperAdapter {
   final RemoteDataSource _remoteDataSource;
+  final LicenseService _licenseService;
 
-  NhentaiScraperAdapterImpl(this._remoteDataSource);
+  NhentaiScraperAdapterImpl(this._remoteDataSource, this._licenseService);
+
+  void _checkPremium() {
+    if (!_licenseService.isPremiumActive) {
+      throw PremiumRequiredException('Nhentai requires premium subscription');
+    }
+  }
 
   @override
   Future<core.Content> getDetail(String contentId) async {
-    // ContentModel extends core.Content, so return directly
+    _checkPremium();
     return await _remoteDataSource.getContentDetailViaApi(contentId);
   }
 
@@ -23,6 +39,7 @@ class NhentaiScraperAdapterImpl implements NhentaiScraperAdapter {
     int page = 1,
     core.SortOption sort = core.SortOption.newest,
   }) async {
+    _checkPremium();
     final appSort = _mapSortOption(sort);
     final result = await _remoteDataSource.getContentListWithPaginationViaApi(
       page: page,
@@ -36,6 +53,7 @@ class NhentaiScraperAdapterImpl implements NhentaiScraperAdapter {
     core.PopularTimeframe timeframe = core.PopularTimeframe.allTime,
     int page = 1,
   }) async {
+    _checkPremium();
     app_filter.SortOption appSort = app_filter.SortOption.popular;
     switch (timeframe) {
       case core.PopularTimeframe.today:
@@ -58,10 +76,10 @@ class NhentaiScraperAdapterImpl implements NhentaiScraperAdapter {
 
   @override
   Future<List<core.Content>> getRandom({int count = 1}) async {
+    _checkPremium();
     final List<core.Content> results = [];
     for (int i = 0; i < count; i++) {
       try {
-        // ContentModel extends core.Content
         final content = await _remoteDataSource.getRandomContent();
         results.add(content);
       } catch (e) {
@@ -73,13 +91,14 @@ class NhentaiScraperAdapterImpl implements NhentaiScraperAdapter {
 
   @override
   Future<List<core.Content>> getRelated(String contentId) async {
+    _checkPremium();
     final contents = await _remoteDataSource.getRelatedContentViaApi(contentId);
-    // ContentModel list is already List<core.Content> compatible
     return contents.cast<core.Content>();
   }
 
   @override
   Future<core.ContentListResult> search(core.SearchFilter filter) async {
+    _checkPremium();
     final appFilter = _mapSearchFilter(filter);
     final result =
         await _remoteDataSource.searchContentWithPaginationViaApi(appFilter);
@@ -105,7 +124,6 @@ class NhentaiScraperAdapterImpl implements NhentaiScraperAdapter {
 
   core.ContentListResult _mapListResult(Map<String, dynamic> result, int page) {
     final List<dynamic> rawContents = result['contents'];
-    // Contents are already ContentModel which extends core.Content
     final List<core.Content> contents = rawContents.cast<core.Content>();
 
     final pagination = result['pagination'] as Map<String, dynamic>;
@@ -122,7 +140,6 @@ class NhentaiScraperAdapterImpl implements NhentaiScraperAdapter {
   }
 
   app_filter.SearchFilter _mapSearchFilter(core.SearchFilter filter) {
-    // Map SortOption
     app_filter.SortOption appSort = app_filter.SortOption.newest;
     switch (filter.sort) {
       case core.SortOption.newest:
@@ -142,14 +159,12 @@ class NhentaiScraperAdapterImpl implements NhentaiScraperAdapter {
         break;
     }
 
-    // Convert core.FilterItem to app FilterItem
     final tags = <app_filter.FilterItem>[];
     final artists = <app_filter.FilterItem>[];
     final characters = <app_filter.FilterItem>[];
     final parodies = <app_filter.FilterItem>[];
     final groups = <app_filter.FilterItem>[];
 
-    // Helper to process items
     void processItems(List<core.FilterItem> items, bool isExcluded) {
       for (final item in items) {
         final appItem =
@@ -176,7 +191,6 @@ class NhentaiScraperAdapterImpl implements NhentaiScraperAdapter {
       }
     }
 
-    // Process both include and exclude lists
     processItems(filter.includeTags, false);
     processItems(filter.excludeTags, true);
 

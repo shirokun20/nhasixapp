@@ -3,7 +3,17 @@ import 'package:nhasixapp/core/adapters/nhentai_scraper_adapter_impl.dart';
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
 import 'package:nhasixapp/domain/entities/search_filter.dart' as app_filter;
 import 'package:kuron_core/kuron_core.dart' as core;
+import 'package:nhasixapp/services/license_service.dart';
 // Mockito not needed as we use manual mock below
+
+// Mock LicenseService
+class MockLicenseService extends Fake implements LicenseService {
+  final bool isPremium;
+  MockLicenseService({this.isPremium = true});
+
+  @override
+  bool get isPremiumActive => isPremium;
+}
 
 // Since Mockito is not in dev_dependencies, we create a manual mock
 class MockRemoteDataSource implements RemoteDataSource {
@@ -30,7 +40,9 @@ void main() {
     test('should correctly map excluded tags and filter types', () async {
       // Arrange
       final mockRemoteDataSource = MockRemoteDataSource();
-      final adapter = NhentaiScraperAdapterImpl(mockRemoteDataSource);
+      final mockLicenseService = MockLicenseService(isPremium: true);
+      final adapter =
+          NhentaiScraperAdapterImpl(mockRemoteDataSource, mockLicenseService);
 
       final coreFilter = core.SearchFilter(
         query: 'test query',

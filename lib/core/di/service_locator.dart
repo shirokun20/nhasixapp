@@ -353,7 +353,10 @@ void _setupDataSources() {
 
   // Nhentai Scraper Adapter
   getIt.registerLazySingleton<NhentaiScraperAdapter>(
-      () => NhentaiScraperAdapterImpl(getIt<RemoteDataSource>()));
+      () => NhentaiScraperAdapterImpl(
+            getIt<RemoteDataSource>(),
+            getIt<LicenseService>(),
+          ));
 
   // Nhentai Source
   getIt.registerLazySingleton<NhentaiSource>(() => NhentaiSource(
@@ -416,9 +419,9 @@ void _setupDataSources() {
   // Content Source Registry
   getIt.registerLazySingleton<ContentSourceRegistry>(() {
     final registry = ContentSourceRegistry();
-    // registry.register(getIt<NhentaiSource>());
+    registry.register(getIt<KomiktapSource>()); // Default (first = default)
+    registry.register(getIt<NhentaiSource>()); // Premium only
     // registry.register(getIt<CrotpediaSource>());
-    registry.register(getIt<KomiktapSource>()); // NEW
     return registry;
   });
 
