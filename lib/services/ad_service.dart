@@ -40,12 +40,16 @@ class AdService {
   bool _isUnityInitialized = false;
   Completer<void>? _initCompleter;
 
+  // Ad showing state for navigation blocking
+  bool _isAdShowing = false;
+  bool get isAdShowing => _isAdShowing;
+
   // Random instance untuk ad network selection
   final _random = Random();
 
-  /// Returns true ~50% of the time, hanya jika Unity sudah siap.
-  /// Digunakan untuk randomize antara Unity dan StartApp.
-  bool _useUnity() => _isUnityInitialized && _random.nextBool();
+  /// Returns true ~70% of the time, hanya jika Unity sudah siap.
+  /// 70% Unity / 30% StartApp
+  bool _useUnity() => _isUnityInitialized && _random.nextDouble() < 0.7;
   // -------------------------------
 
   AdService({
@@ -206,36 +210,42 @@ class AdService {
       return;
     }
 
-    final useUnityFirst = _useUnity();
-    _logger.d(
-        'AdService: Interstitial — picked ${useUnityFirst ? "Unity" : "StartApp"} (random)');
+    _isAdShowing = true;
 
-    if (useUnityFirst) {
-      // Unity first, fallback StartApp
-      final success = await _showUnityVideoAd(_interstitialPlacementId);
-      if (success) return;
+    try {
+      final useUnityFirst = _useUnity();
+      _logger.d(
+          'AdService: Interstitial — picked ${useUnityFirst ? "Unity" : "StartApp"} (random)');
 
-      _logger.w(
-          'AdService: Unity Interstitial failed, falling back to StartApp...');
-      final result = await KuronAds.showInterstitial();
-      if (!result) {
-        _logger.w('AdService: Both Unity and StartApp Interstitial failed.');
-      }
-    } else {
-      // StartApp first, fallback Unity
-      _logger.d('AdService: Trying StartApp Interstitial...');
-      final result = await KuronAds.showInterstitial();
-      if (result) {
-        _logger.d('AdService: StartApp Interstitial shown successfully.');
-        return;
-      }
+      if (useUnityFirst) {
+        // Unity first, fallback StartApp
+        final success = await _showUnityVideoAd(_interstitialPlacementId);
+        if (success) return;
 
-      _logger.w(
-          'AdService: StartApp Interstitial failed, falling back to Unity...');
-      final success = await _showUnityVideoAd(_interstitialPlacementId);
-      if (!success) {
-        _logger.w('AdService: Both StartApp and Unity Interstitial failed.');
+        _logger.w(
+            'AdService: Unity Interstitial failed, falling back to StartApp...');
+        final result = await KuronAds.showInterstitial();
+        if (!result) {
+          _logger.w('AdService: Both Unity and StartApp Interstitial failed.');
+        }
+      } else {
+        // StartApp first, fallback Unity
+        _logger.d('AdService: Trying StartApp Interstitial...');
+        final result = await KuronAds.showInterstitial();
+        if (result) {
+          _logger.d('AdService: StartApp Interstitial shown successfully.');
+          return;
+        }
+
+        _logger.w(
+            'AdService: StartApp Interstitial failed, falling back to Unity...');
+        final success = await _showUnityVideoAd(_interstitialPlacementId);
+        if (!success) {
+          _logger.w('AdService: Both StartApp and Unity Interstitial failed.');
+        }
       }
+    } finally {
+      _isAdShowing = false;
     }
   }
 

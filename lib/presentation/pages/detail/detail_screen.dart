@@ -45,6 +45,7 @@ class _DetailScreenState extends State<DetailScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isNavigating =
       false; // Add navigation lock to prevent multiple simultaneous navigation
+  bool _isLoadingForAd = false; // Block back button while showing ad
 
   @override
   void initState() {
@@ -188,11 +189,19 @@ class _DetailScreenState extends State<DetailScreen> {
     return BlocProvider.value(
       value: _detailCubit,
       child: PopScope(
-        canPop: true,
-        onPopInvokedWithResult: (didPop, result) {
-          if (!didPop) {
-            // Handle custom pop logic if needed
+        canPop: !_isLoadingForAd,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (!didPop && !_isLoadingForAd) {
             context.pop();
+          } else if (_isLoadingForAd) {
+            // Show snackbar when user tries to back while ad is loading
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(AppLocalizations.of(context)?.adLoading ??
+                    'Mohon tunggu, iklan sedang loading...'),
+                duration: const Duration(seconds: 2),
+              ),
+            );
           }
         },
         child: Scaffold(
@@ -1660,12 +1669,20 @@ class _DetailScreenState extends State<DetailScreen> {
       {bool forceStartFromBeginning = false,
       Chapter? chapter,
       Content? parentContent}) async {
-    // Show Interstitial Ad before reading
+    // Show Interstitial Ad before reading - block back until ad completes
+    setState(() {
+      _isLoadingForAd = true;
+    });
+
     try {
       final adService = getIt<AdService>();
       await adService.showInterstitial();
     } catch (e) {
       Logger().e('Failed to show interstitial ad: $e');
+    } finally {
+      setState(() {
+        _isLoadingForAd = false;
+      });
     }
 
     if (!mounted) return;

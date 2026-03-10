@@ -3359,4 +3359,46 @@ class AppLocalizationsId extends AppLocalizations {
   String currentSubscriptionLifetime(String planName) {
     return 'Kamu sedang menggunakan paket $planName dengan masa aktif selamanya';
   }
+
+  @override
+  String get freePlan => 'TIPE FREE';
+
+  @override
+  String get tapToUpgrade => 'Ketuk untuk Upgrade →';
+
+  @override
+  String get upgradeToVip => 'Upgrade ke VIP';
+
+  @override
+  String get vipBenefitNoAds => 'Tanpa Iklan';
+
+  @override
+  String get vipBenefitNhentaiAccess => 'Akses Sumber Nhentai';
+
+  @override
+  String get vipBenefitUnlimitedDownloads => 'Unlimited Download';
+
+  @override
+  String get vipBenefitPdfExport => 'Ekspor PDF';
+
+  @override
+  String get vipBenefitHighQuality => 'Gambar Kualitas Tinggi';
+
+  @override
+  String get vipBenefitPrioritySupport => 'Prioritas Dukungan';
+
+  @override
+  String get buyNow => 'Beli Sekarang';
+
+  @override
+  String get alreadyHaveLicense => 'Sudah Punya Lisensi';
+
+  @override
+  String get nhentaiRequiresPremium => 'Nhentai membutuhkan langganan premium';
+
+  @override
+  String get adLoading => 'Memuat iklan...';
+
+  @override
+  String get adTimeout => 'Iklan habis waktu. Silakan coba lagi.';
 }

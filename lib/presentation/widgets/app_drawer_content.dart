@@ -14,6 +14,7 @@ import '../../core/routing/app_route.dart';
 import 'common/source_selector.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/presentation/widgets/license_check_dialog.dart';
+import 'package:nhasixapp/presentation/widgets/vip_info_dialog.dart';
 import 'package:nhasixapp/services/license_service.dart';
 
 class AppDrawerContent extends StatefulWidget {
@@ -572,21 +573,61 @@ class _AppDrawerContentState extends State<AppDrawerContent>
               );
             }
 
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: theme.colorScheme.outline.withValues(alpha: 0.2),
+            return InkWell(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => const VipInfoDialog(),
+                );
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      theme.colorScheme.primary.withValues(alpha: 0.1),
+                      theme.colorScheme.secondary.withValues(alpha: 0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                  ),
                 ),
-              ),
-              child: Text(
-                l10n.appSubtitleDescription,
-                style: TextStyleConst.bodySmall.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.workspace_premium_outlined,
+                          size: 14,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          l10n.freePlan.toUpperCase(),
+                          style: TextStyleConst.bodySmall.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      l10n.tapToUpgrade,
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             );

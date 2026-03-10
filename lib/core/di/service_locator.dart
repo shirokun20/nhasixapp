@@ -619,6 +619,7 @@ void _setupCubits() {
         registry: getIt<ContentSourceRegistry>(),
         prefs: getIt<SharedPreferences>(),
         logger: getIt<Logger>(),
+        licenseService: getIt<LicenseService>(),
       ));
 
   // SettingsCubit - App-wide settings management

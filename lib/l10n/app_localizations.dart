@@ -7,7 +7,6 @@ import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
 import 'app_localizations_id.dart';
-import 'app_localizations_zh.dart';
 
 // ignore_for_file: type=lint
 
@@ -96,8 +95,7 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('id'),
-    Locale('zh')
+    Locale('id')
   ];
 
   /// No description provided for @appTitle.
@@ -5759,6 +5757,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You are currently using {planName} with lifetime validity'**
   String currentSubscriptionLifetime(String planName);
+
+  /// No description provided for @freePlan.
+  ///
+  /// In en, this message translates to:
+  /// **'FREE PLAN'**
+  String get freePlan;
+
+  /// No description provided for @tapToUpgrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to Upgrade →'**
+  String get tapToUpgrade;
+
+  /// No description provided for @upgradeToVip.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade to VIP'**
+  String get upgradeToVip;
+
+  /// No description provided for @vipBenefitNoAds.
+  ///
+  /// In en, this message translates to:
+  /// **'No Ads Blocking'**
+  String get vipBenefitNoAds;
+
+  /// No description provided for @vipBenefitNhentaiAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Nhentai Source Access'**
+  String get vipBenefitNhentaiAccess;
+
+  /// No description provided for @vipBenefitUnlimitedDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited Downloads'**
+  String get vipBenefitUnlimitedDownloads;
+
+  /// No description provided for @vipBenefitPdfExport.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF Export'**
+  String get vipBenefitPdfExport;
+
+  /// No description provided for @vipBenefitHighQuality.
+  ///
+  /// In en, this message translates to:
+  /// **'High Quality Images'**
+  String get vipBenefitHighQuality;
+
+  /// No description provided for @vipBenefitPrioritySupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority Support'**
+  String get vipBenefitPrioritySupport;
+
+  /// No description provided for @buyNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy Now'**
+  String get buyNow;
+
+  /// No description provided for @alreadyHaveLicense.
+  ///
+  /// In en, this message translates to:
+  /// **'Already Have License'**
+  String get alreadyHaveLicense;
+
+  /// No description provided for @nhentaiRequiresPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'Nhentai requires premium subscription'**
+  String get nhentaiRequiresPremium;
+
+  /// No description provided for @adLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading advertisement...'**
+  String get adLoading;
+
+  /// No description provided for @adTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Ad timed out. Please try again.'**
+  String get adTimeout;
 }
 
 class _AppLocalizationsDelegate
@@ -5772,7 +5854,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'id', 'zh'].contains(locale.languageCode);
+      <String>['en', 'id'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -5785,8 +5867,6 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
       return AppLocalizationsEn();
     case 'id':
       return AppLocalizationsId();
-    case 'zh':
-      return AppLocalizationsZh();
   }
 
   throw FlutterError(

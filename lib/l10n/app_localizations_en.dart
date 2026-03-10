@@ -3345,4 +3345,46 @@ class AppLocalizationsEn extends AppLocalizations {
   String currentSubscriptionLifetime(String planName) {
     return 'You are currently using $planName with lifetime validity';
   }
+
+  @override
+  String get freePlan => 'FREE PLAN';
+
+  @override
+  String get tapToUpgrade => 'Tap to Upgrade →';
+
+  @override
+  String get upgradeToVip => 'Upgrade to VIP';
+
+  @override
+  String get vipBenefitNoAds => 'No Ads Blocking';
+
+  @override
+  String get vipBenefitNhentaiAccess => 'Nhentai Source Access';
+
+  @override
+  String get vipBenefitUnlimitedDownloads => 'Unlimited Downloads';
+
+  @override
+  String get vipBenefitPdfExport => 'PDF Export';
+
+  @override
+  String get vipBenefitHighQuality => 'High Quality Images';
+
+  @override
+  String get vipBenefitPrioritySupport => 'Priority Support';
+
+  @override
+  String get buyNow => 'Buy Now';
+
+  @override
+  String get alreadyHaveLicense => 'Already Have License';
+
+  @override
+  String get nhentaiRequiresPremium => 'Nhentai requires premium subscription';
+
+  @override
+  String get adLoading => 'Loading advertisement...';
+
+  @override
+  String get adTimeout => 'Ad timed out. Please try again.';
 }

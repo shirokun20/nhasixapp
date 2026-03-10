@@ -2337,5 +2337,19 @@
     "placeholders": {
       "planName": {"type": "String"}
     }
-  }
+  },
+  "freePlan": "FREE PLAN",
+  "tapToUpgrade": "Tap to Upgrade →",
+  "upgradeToVip": "Upgrade to VIP",
+  "vipBenefitNoAds": "No Ads Blocking",
+  "vipBenefitNhentaiAccess": "Nhentai Source Access",
+  "vipBenefitUnlimitedDownloads": "Unlimited Downloads",
+  "vipBenefitPdfExport": "PDF Export",
+  "vipBenefitHighQuality": "High Quality Images",
+  "vipBenefitPrioritySupport": "Priority Support",
+  "buyNow": "Buy Now",
+  "alreadyHaveLicense": "Already Have License",
+  "nhentaiRequiresPremium": "Nhentai requires premium subscription",
+  "adLoading": "Loading advertisement...",
+  "adTimeout": "Ad timed out. Please try again."
 }

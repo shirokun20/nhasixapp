@@ -1983,5 +1983,19 @@
     "placeholders": {
       "planName": {"type": "String"}
     }
-  }
+  },
+  "freePlan": "TIPE FREE",
+  "tapToUpgrade": "Ketuk untuk Upgrade →",
+  "upgradeToVip": "Upgrade ke VIP",
+  "vipBenefitNoAds": "Tanpa Iklan",
+  "vipBenefitNhentaiAccess": "Akses Sumber Nhentai",
+  "vipBenefitUnlimitedDownloads": "Unlimited Download",
+  "vipBenefitPdfExport": "Ekspor PDF",
+  "vipBenefitHighQuality": "Gambar Kualitas Tinggi",
+  "vipBenefitPrioritySupport": "Prioritas Dukungan",
+  "buyNow": "Beli Sekarang",
+  "alreadyHaveLicense": "Sudah Punya Lisensi",
+  "nhentaiRequiresPremium": "Nhentai membutuhkan langganan premium",
+  "adLoading": "Memuat iklan...",
+  "adTimeout": "Iklan habis waktu. Silakan coba lagi."
 }

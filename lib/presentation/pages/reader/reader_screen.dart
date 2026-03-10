@@ -444,13 +444,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         },
         child: BlocBuilder<ReaderCubit, ReaderState>(
           builder: (context, state) {
-            return PopScope(
-              canPop: true,
-              onPopInvokedWithResult: (didPop, result) {
-                if (didPop) {
-                  getIt<AdService>().showInterstitial();
-                }
-              },
+            return _ReaderPopScope(
               child: Scaffold(
                 backgroundColor: Theme.of(context).colorScheme.surface,
                 body: LayoutBuilder(
@@ -1456,6 +1450,60 @@ class _KeepAliveImageViewerState extends State<KeepAliveImageViewer>
       readingMode: ReadingMode.continuousScroll,
       enableZoom: widget.enableZoom,
       onImageLoaded: widget.onImageLoaded,
+    );
+  }
+}
+
+class _ReaderPopScope extends StatefulWidget {
+  final Widget child;
+
+  const _ReaderPopScope({required this.child});
+
+  @override
+  State<_ReaderPopScope> createState() => _ReaderPopScopeState();
+}
+
+class _ReaderPopScopeState extends State<_ReaderPopScope> {
+  Future<void> _handlePop() async {
+    final adService = getIt<AdService>();
+
+    if (!adService.shouldShowAds) {
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context)?.loadingContent ??
+            'Loading advertisement...'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    try {
+      await adService.showInterstitial();
+    } catch (e) {
+      // Allow navigation if ad fails
+    }
+
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        await _handlePop();
+      },
+      child: widget.child,
     );
   }
 }
