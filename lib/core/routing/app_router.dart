@@ -450,6 +450,46 @@ class AppRouter {
           type: RouteTransitionType.fade,
         ),
       ),
+
+      // List Ongoing
+      GoRoute(
+        path: AppRoute.komiktapListOngoing,
+        name: AppRoute.komiktapListOngoingName,
+        pageBuilder: (context, state) {
+          final page =
+              int.tryParse(state.uri.queryParameters['page'] ?? '1') ?? 1;
+          return AppAnimations.animatedPageBuilder(
+            context,
+            state,
+            ContentListScreen(
+              listType: ContentListType.ongoing,
+              sourceId: 'komiktap',
+              initialPage: page,
+            ),
+            type: RouteTransitionType.fade,
+          );
+        },
+      ),
+
+      // List Complete (Tamat)
+      GoRoute(
+        path: AppRoute.komiktapListComplete,
+        name: AppRoute.komiktapListCompleteName,
+        pageBuilder: (context, state) {
+          final page =
+              int.tryParse(state.uri.queryParameters['page'] ?? '1') ?? 1;
+          return AppAnimations.animatedPageBuilder(
+            context,
+            state,
+            ContentListScreen(
+              listType: ContentListType.complete,
+              sourceId: 'komiktap',
+              initialPage: page,
+            ),
+            type: RouteTransitionType.fade,
+          );
+        },
+      ),
     ],
 
     // Error handling

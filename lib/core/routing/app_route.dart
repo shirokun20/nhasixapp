@@ -38,6 +38,8 @@ class AppRoute {
   static const String komiktapListGenre = '/komiktap-list-genre';
   static const String komiktapListAZ = '/komiktap-list-az';
   static const String komiktapListProject = '/komiktap-list-project';
+  static const String komiktapListOngoing = '/komiktap-list-ongoing';
+  static const String komiktapListComplete = '/komiktap-list-complete';
 
   // Route names for navigation
   static const String splashName = 'splash';
@@ -67,4 +69,6 @@ class AppRoute {
   static const String komiktapListGenreName = 'komiktap-list-genre';
   static const String komiktapListAZName = 'komiktap-list-az';
   static const String komiktapListProjectName = 'komiktap-list-project';
+  static const String komiktapListOngoingName = 'komiktap-list-ongoing';
+  static const String komiktapListCompleteName = 'komiktap-list-complete';
 }

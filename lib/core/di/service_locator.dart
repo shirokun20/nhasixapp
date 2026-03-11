@@ -448,6 +448,7 @@ void _setupRepositories() {
         contentCacheManager:
             getIt<multi_cache.CacheManager<Map<String, dynamic>>>(),
         tagCacheManager: getIt<multi_cache.CacheManager<List<Tag>>>(),
+        remoteConfigService: getIt<RemoteConfigService>(),
         // localDataSource: getIt<LocalDataSource>(),
         logger: getIt<Logger>(),
       ));

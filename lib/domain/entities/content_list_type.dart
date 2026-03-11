@@ -6,10 +6,12 @@ enum ContentListType {
   project,
   az,
   genre,
+  ongoing,
+  complete,
 }
 
 extension ContentListTypeExtension on ContentListType {
-  /// Get base URL path for this list type
+  /// Get base URL path for this list type (fallback default, prefer reading from config)
   String get basePath {
     switch (this) {
       case ContentListType.manga:
@@ -24,6 +26,10 @@ extension ContentListTypeExtension on ContentListType {
         return '/a-z-list/';
       case ContentListType.genre:
         return '/genres/';
+      case ContentListType.ongoing:
+        return '/ongoing/';
+      case ContentListType.complete:
+        return '/tamat/';
     }
   }
 
@@ -42,6 +48,10 @@ extension ContentListTypeExtension on ContentListType {
         return 'A-Z List';
       case ContentListType.genre:
         return 'Genres';
+      case ContentListType.ongoing:
+        return 'Ongoing';
+      case ContentListType.complete:
+        return 'Complete';
     }
   }
 

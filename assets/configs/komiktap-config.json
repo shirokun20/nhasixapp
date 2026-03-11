@@ -1,7 +1,7 @@
 {
   "source": "komiktap",
   "version": "1.0.1",
-  "lastUpdated": "2026-01-25T23:20:00+07:00",
+  "lastUpdated": "2026-03-11T22:26:57+07:00",
   "baseUrl": "https://komiktap.info",
   "searchConfig": {
     "searchMode": "query-string",
@@ -75,6 +75,18 @@
         "container": "#readerarea",
         "images": "img"
       },
+      "list": {
+        "container": ".listupd.cp",
+        "item": ".bs",
+        "link": ".bsx > a[href]",
+        "cover": ".limit img",
+        "title": ".bigor .tt",
+        "chapter": ".bigor .epxs",
+        "rating": ".bigor .numscore",
+        "status": ".status",
+        "type": ".type",
+        "hot": ".hotx"
+      },
       "pagination": {
         "container": ".hpage",
         "next": "a.r",
@@ -93,7 +105,22 @@
       "genre": "/genres/{slug}/",
       "genrePaginated": "/genres/{slug}/page/{num}/",
       "search": "/?s={query}",
-      "searchPaginated": "/page/{num}/?s={query}"
+      "searchPaginated": "/page/{num}/?s={query}",
+      "listManga": "/list-manga/",
+      "listMangaPaginated": "/list-manga/page/{num}/",
+      "listManhua": "/list-manhua/",
+      "listManhuaPaginated": "/list-manhua/page/{num}/",
+      "listManhwa": "/list-manhwa/",
+      "listManhwaPaginated": "/list-manhwa/page/{num}/",
+      "listProject": "/project/",
+      "listProjectPaginated": "/project/page/{num}/",
+      "listAZ": "/a-z-list/",
+      "listAZPaginated": "/a-z-list/page/{num}/",
+      "listGenre": "/genres/",
+      "ongoing": "/ongoing/",
+      "ongoingPaginated": "/ongoing/page/{num}/",
+      "complete": "/tamat/",
+      "completePaginated": "/tamat/page/{num}/"
     }
   },
   "auth": {

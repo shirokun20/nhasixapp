@@ -185,4 +185,38 @@ class KomiktapUrlBuilder {
   static String buildListGenreUrl({String baseUrl = baseUrl}) {
     return '$baseUrl/genres/';
   }
+
+  /// Build List Ongoing URL with pagination.
+  /// Path is read from config (scraper.urlPatterns.ongoing), not hardcoded.
+  /// Default fallback: /ongoing/
+  /// Page 1: https://komiktap.info/ongoing/
+  /// Page 2+: https://komiktap.info/ongoing/page/2/
+  static String buildListOngoingUrl({
+    int page = 1,
+    String baseUrl = baseUrl,
+    String path = '/ongoing/',
+  }) {
+    final cleanPath = path.endsWith('/') ? path : '$path/';
+    if (page <= 1) {
+      return '$baseUrl$cleanPath';
+    }
+    return '$baseUrl${cleanPath}page/$page/';
+  }
+
+  /// Build List Complete/Tamat URL with pagination.
+  /// Path is read from config (scraper.urlPatterns.complete), not hardcoded.
+  /// Default fallback: /tamat/
+  /// Page 1: https://komiktap.info/tamat/
+  /// Page 2+: https://komiktap.info/tamat/page/2/
+  static String buildListCompleteUrl({
+    int page = 1,
+    String baseUrl = baseUrl,
+    String path = '/tamat/',
+  }) {
+    final cleanPath = path.endsWith('/') ? path : '$path/';
+    if (page <= 1) {
+      return '$baseUrl$cleanPath';
+    }
+    return '$baseUrl${cleanPath}page/$page/';
+  }
 }

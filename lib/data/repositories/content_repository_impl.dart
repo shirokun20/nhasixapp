@@ -13,6 +13,7 @@ import '../../services/request_deduplication_service.dart';
 import 'package:kuron_core/kuron_core.dart' as core;
 import 'package:kuron_crotpedia/kuron_crotpedia.dart' as crotpedia;
 import 'package:kuron_komiktap/kuron_komiktap.dart';
+import '../../core/config/remote_config_service.dart';
 
 /// Implementation of ContentRepository with caching strategy and offline-first architecture
 class ContentRepositoryImpl implements ContentRepository {
@@ -23,6 +24,7 @@ class ContentRepositoryImpl implements ContentRepository {
     required this.requestDeduplicationService,
     required this.contentCacheManager,
     required this.tagCacheManager,
+    this.remoteConfigService,
     Logger? logger,
   }) : _logger = logger ?? Logger();
 
@@ -32,6 +34,7 @@ class ContentRepositoryImpl implements ContentRepository {
   final RequestDeduplicationService requestDeduplicationService;
   final multi_cache.CacheManager<Map<String, dynamic>> contentCacheManager;
   final multi_cache.CacheManager<List<Tag>> tagCacheManager;
+  final RemoteConfigService? remoteConfigService;
   final Logger _logger;
 
   static const Duration cacheExpiration = Duration(hours: 6);
@@ -478,6 +481,30 @@ class ContentRepositoryImpl implements ContentRepository {
           url = KomiktapUrlBuilder.buildListAZUrl(
             page: page,
             letter: filter,
+          );
+          break;
+        case ContentListType.ongoing:
+          // Read path from config (scraper.urlPatterns.ongoing), fallback to default
+          final ongoingPath = remoteConfigService
+                  ?.getConfig('komiktap')
+                  ?.scraper
+                  ?.urlPatterns?['ongoing'] ??
+              '/ongoing/';
+          url = KomiktapUrlBuilder.buildListOngoingUrl(
+            page: page,
+            path: ongoingPath,
+          );
+          break;
+        case ContentListType.complete:
+          // Read path from config (scraper.urlPatterns.complete), fallback to default
+          final completePath = remoteConfigService
+                  ?.getConfig('komiktap')
+                  ?.scraper
+                  ?.urlPatterns?['complete'] ??
+              '/tamat/';
+          url = KomiktapUrlBuilder.buildListCompleteUrl(
+            page: page,
+            path: completePath,
           );
           break;
         case ContentListType.genre:

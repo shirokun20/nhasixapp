@@ -33,6 +33,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
     with SingleTickerProviderStateMixin {
   bool _isOffline = false;
   String _appVersion = '';
+  bool _isKomiktapMenuExpanded = true;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
@@ -313,58 +314,106 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                         return const SizedBox.shrink();
                       }),
 
-                      // KomikTap Navigation Lists (NEW) - Only show for KomikTap source
+                      // KomikTap Navigation Lists - Only show for KomikTap source
                       if (_isKomiktapSource(context)) ...[
                         const SizedBox(height: 16),
-                        _buildSectionLabel('KOMIKTAP', theme),
-                        const SizedBox(height: 8),
-                        _buildNavItem(
-                          context,
-                          icon: Icons.menu_book,
-                          label: 'List Manga',
-                          route: AppRoute.komiktapListManga,
-                          isSelected: isSelected(AppRoute.komiktapListManga),
-                          theme: theme,
+                        // Collapsible section header
+                        _buildCollapsibleSectionLabel(
+                          'KOMIKTAP',
+                          theme,
+                          isExpanded: _isKomiktapMenuExpanded,
+                          onToggle: () {
+                            setState(() {
+                              _isKomiktapMenuExpanded =
+                                  !_isKomiktapMenuExpanded;
+                            });
+                          },
                         ),
-                        _buildNavItem(
-                          context,
-                          icon: Icons.auto_stories,
-                          label: 'List Manhua',
-                          route: AppRoute.komiktapListManhua,
-                          isSelected: isSelected(AppRoute.komiktapListManhua),
-                          theme: theme,
-                        ),
-                        _buildNavItem(
-                          context,
-                          icon: Icons.import_contacts,
-                          label: 'List Manhwa',
-                          route: AppRoute.komiktapListManhwa,
-                          isSelected: isSelected(AppRoute.komiktapListManhwa),
-                          theme: theme,
-                        ),
-                        _buildNavItem(
-                          context,
-                          icon: Icons.sort_by_alpha,
-                          label: 'List A-Z',
-                          route: AppRoute.komiktapListAZ,
-                          isSelected: isSelected(AppRoute.komiktapListAZ),
-                          theme: theme,
-                        ),
-                        _buildNavItem(
-                          context,
-                          icon: Icons.category,
-                          label: 'List Genre',
-                          route: AppRoute.komiktapListGenre,
-                          isSelected: isSelected(AppRoute.komiktapListGenre),
-                          theme: theme,
-                        ),
-                        _buildNavItem(
-                          context,
-                          icon: Icons.workspaces,
-                          label: 'List Project',
-                          route: AppRoute.komiktapListProject,
-                          isSelected: isSelected(AppRoute.komiktapListProject),
-                          theme: theme,
+                        // Animated collapsible content
+                        AnimatedCrossFade(
+                          duration: const Duration(milliseconds: 200),
+                          crossFadeState: _isKomiktapMenuExpanded
+                              ? CrossFadeState.showFirst
+                              : CrossFadeState.showSecond,
+                          firstChild: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(height: 8),
+                              _buildNavItem(
+                                context,
+                                icon: Icons.schedule_rounded,
+                                label: 'List Ongoing',
+                                route: AppRoute.komiktapListOngoing,
+                                isSelected:
+                                    isSelected(AppRoute.komiktapListOngoing),
+                                theme: theme,
+                              ),
+                              _buildNavItem(
+                                context,
+                                icon: Icons.check_circle_rounded,
+                                label: 'List Complete',
+                                route: AppRoute.komiktapListComplete,
+                                isSelected:
+                                    isSelected(AppRoute.komiktapListComplete),
+                                theme: theme,
+                              ),
+                              _buildNavItem(
+                                context,
+                                icon: Icons.menu_book,
+                                label: 'List Manga',
+                                route: AppRoute.komiktapListManga,
+                                isSelected:
+                                    isSelected(AppRoute.komiktapListManga),
+                                theme: theme,
+                              ),
+                              _buildNavItem(
+                                context,
+                                icon: Icons.auto_stories,
+                                label: 'List Manhua',
+                                route: AppRoute.komiktapListManhua,
+                                isSelected:
+                                    isSelected(AppRoute.komiktapListManhua),
+                                theme: theme,
+                              ),
+                              _buildNavItem(
+                                context,
+                                icon: Icons.import_contacts,
+                                label: 'List Manhwa',
+                                route: AppRoute.komiktapListManhwa,
+                                isSelected:
+                                    isSelected(AppRoute.komiktapListManhwa),
+                                theme: theme,
+                              ),
+                              _buildNavItem(
+                                context,
+                                icon: Icons.sort_by_alpha,
+                                label: 'List A-Z',
+                                route: AppRoute.komiktapListAZ,
+                                isSelected:
+                                    isSelected(AppRoute.komiktapListAZ),
+                                theme: theme,
+                              ),
+                              _buildNavItem(
+                                context,
+                                icon: Icons.category,
+                                label: 'List Genre',
+                                route: AppRoute.komiktapListGenre,
+                                isSelected:
+                                    isSelected(AppRoute.komiktapListGenre),
+                                theme: theme,
+                              ),
+                              _buildNavItem(
+                                context,
+                                icon: Icons.workspaces,
+                                label: 'List Project',
+                                route: AppRoute.komiktapListProject,
+                                isSelected:
+                                    isSelected(AppRoute.komiktapListProject),
+                                theme: theme,
+                              ),
+                            ],
+                          ),
+                          secondChild: const SizedBox.shrink(),
                         ),
                       ],
 
@@ -427,6 +476,46 @@ class _AppDrawerContentState extends State<AppDrawerContent>
           fontWeight: FontWeight.bold,
           letterSpacing: 1.2,
           color: theme.colorScheme.primary.withValues(alpha: 0.8),
+        ),
+      ),
+    );
+  }
+
+  /// Collapsible section label — tap to toggle show/hide menu items
+  Widget _buildCollapsibleSectionLabel(
+    String label,
+    ThemeData theme, {
+    required bool isExpanded,
+    required VoidCallback onToggle,
+  }) {
+    return InkWell(
+      onTap: onToggle,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                  color: theme.colorScheme.primary.withValues(alpha: 0.8),
+                ),
+              ),
+            ),
+            AnimatedRotation(
+              turns: isExpanded ? 0.0 : -0.5,
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                Icons.expand_less_rounded,
+                size: 18,
+                color: theme.colorScheme.primary.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
         ),
       ),
     );
