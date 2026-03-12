@@ -48,9 +48,8 @@ class AdService {
   final _random = Random();
 
   /// Returns true ~70% of the time, hanya jika Unity sudah siap.
-  /// Konfigurasi: 70% Unity / 30% StartApp
+  /// 70% Unity / 30% StartApp
   bool _useUnity() => _isUnityInitialized && _random.nextDouble() < 0.7;
-
   // -------------------------------
 
   AdService({

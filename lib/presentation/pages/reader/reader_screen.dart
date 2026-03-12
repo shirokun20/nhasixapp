@@ -444,7 +444,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
         },
         child: BlocBuilder<ReaderCubit, ReaderState>(
           builder: (context, state) {
-            return _ReaderPopScope(
+            return PopScope(
+              canPop: true,
+              onPopInvokedWithResult: (didPop, result) {
+                if (didPop) {
+                  getIt<AdService>().showInterstitial();
+                }
+              },
               child: Scaffold(
                 backgroundColor: Theme.of(context).colorScheme.surface,
                 body: LayoutBuilder(
@@ -1450,37 +1456,6 @@ class _KeepAliveImageViewerState extends State<KeepAliveImageViewer>
       readingMode: ReadingMode.continuousScroll,
       enableZoom: widget.enableZoom,
       onImageLoaded: widget.onImageLoaded,
-    );
-  }
-}
-
-class _ReaderPopScope extends StatefulWidget {
-  final Widget child;
-
-  const _ReaderPopScope({required this.child});
-
-  @override
-  State<_ReaderPopScope> createState() => _ReaderPopScopeState();
-}
-
-class _ReaderPopScopeState extends State<_ReaderPopScope> {
-  Future<void> _handlePop() async {
-    // Allow immediate navigation back without ads
-    // Ads are still shown on chapter navigation (next/prev chapter) via ReaderNavigationPage
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) return;
-        await _handlePop();
-      },
-      child: widget.child,
     );
   }
 }
