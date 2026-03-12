@@ -7,7 +7,7 @@ class KomiktapUrlBuilder {
   /// Page 2+: https://komiktap.info/page/2/
   static String buildHomeUrl({int page = 1, String baseUrl = baseUrl}) {
     if (page <= 1) {
-      return baseUrl;
+      return '$baseUrl/';
     }
     return '$baseUrl/page/$page/';
   }

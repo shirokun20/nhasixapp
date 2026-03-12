@@ -34,11 +34,13 @@ class KomiktapSource implements ContentSource {
     String? baseUrl,
     String? displayName,
   })  : _scraper = scraper,
-        // Create a dedicated Dio with NativeAdapter (Cronet on Android) for
-        // genuine Chrome TLS fingerprint. Sucuri performs JA3/JA4 fingerprinting
-        // at the TLS handshake — Dart's default HttpClient is flagged as
-        // non-browser. Cronet uses Chrome's actual TLS stack, bypassing this.
-        // We clone options from the shared Dio but use our own adapter.
+        // Reuse the shared Dio's adapter (DoH-aware IOHttpClientAdapter).
+        // Cronet/NativeAdapter caused ERR_ADDRESS_UNREACHABLE because Cronet's
+        // system DNS resolves komiktap.info to an IPv6 address that is not
+        // reachable on all networks. The shared DoH adapter always resolves
+        // to IPv4 (A record) via Cloudflare 1.1.1.1, which works reliably.
+        // Sucuri does NOT block Dart's TLS at the connection level — the bypass
+        // probe already proves this (it connects and gets an HTTP 400 response).
         _dio = Dio(dio.options)..httpClientAdapter = NativeAdapter(),
         _logger = logger,
         _overriddenBaseUrl = baseUrl ?? baseUrlValue,

@@ -58,12 +58,13 @@ enum DnsProvider {
   }
 
   /// IP-based DoH endpoints that actually support JSON API via numeric IP.
-  /// Quad9 excluded because it only supports RFC\u20108484 wire format at its IP.
-  /// Order: Cloudflare → Google → AdGuard (most reliable, lowest latency first).
+  /// Quad9 excluded because it only supports RFC 8484 wire format at its IP.
+  /// AdGuard excluded because 94.140.14.14/dns-query returns HTTP 400 for
+  /// JSON API (only supports wire-format RFC 8484 via IP, not DoH-JSON).
+  /// Order: Cloudflare → Google (most reliable, lowest latency first).
   static List<String> get allDohIpUrls => [
         'https://1.1.1.1/dns-query', // Cloudflare ✔️
         'https://8.8.8.8/resolve', // Google ✔️ (/resolve for JSON API)
-        'https://94.140.14.14/dns-query', // AdGuard ✔️ 🆕
       ];
 
   /// Get provider from name string (for deserialization)
