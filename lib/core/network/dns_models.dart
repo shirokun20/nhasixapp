@@ -4,41 +4,66 @@ import 'package:equatable/equatable.dart';
 enum DnsProvider {
   /// Use system default DNS resolver
   system('System Default', [], ''),
-  
+
   /// Cloudflare DNS (1.1.1.1)
   cloudflare(
     'Cloudflare (1.1.1.1)',
     ['1.1.1.1', '1.0.0.1'],
     'https://cloudflare-dns.com/dns-query',
   ),
-  
+
   /// Google Public DNS (8.8.8.8)
   google(
     'Google (8.8.8.8)',
     ['8.8.8.8', '8.8.4.4'],
     'https://dns.google/dns-query',
   ),
-  
+
   /// Quad9 DNS (9.9.9.9)
   quad9(
     'Quad9 (9.9.9.9)',
     ['9.9.9.9', '149.112.112.112'],
     'https://dns.quad9.net/dns-query',
   ),
-  
+
   /// Custom DNS server
   custom('Custom DNS', [], '');
 
   /// Human-readable display name
   final String displayName;
-  
+
   /// DNS server IP addresses (for bootstrap)
   final List<String> dnsServers;
-  
+
   /// DNS-over-HTTPS URL endpoint
   final String dohUrl;
 
   const DnsProvider(this.displayName, this.dnsServers, this.dohUrl);
+
+  /// Get IP-address-based DoH URL.
+  /// Using a numeric IP avoids needing system DNS to reach the DoH server itself,
+  /// which solves the bootstrap "chicken-and-egg" problem on blocked networks.
+  ///
+  /// Notes verified by curl:
+  ///   Cloudflare 1.1.1.1 → /dns-query   (JSON API supported) ✅
+  ///   Google    8.8.8.8  → /resolve     (NOT /dns-query via IP) ✅
+  ///   Quad9     9.9.9.9  → no JSON API via IP (RFC 8484 only) ❌
+  String get dohUrlIpBased {
+    return switch (this) {
+      DnsProvider.cloudflare => 'https://1.1.1.1/dns-query',
+      DnsProvider.google =>
+        'https://8.8.8.8/resolve', // must use /resolve, not /dns-query
+      _ => dohUrl, // quad9/system/custom: fall back to hostname-based URL
+    };
+  }
+
+  /// IP-based DoH endpoints that actually support JSON API via numeric IP.
+  /// Quad9 excluded because it only supports RFC\u20108484 wire format at its IP.
+  /// Order: Cloudflare → Google.
+  static List<String> get allDohIpUrls => [
+        'https://1.1.1.1/dns-query', // Cloudflare ✔️
+        'https://8.8.8.8/resolve', // Google ✔️ (/resolve for JSON API)
+      ];
 
   /// Get provider from name string (for deserialization)
   static DnsProvider fromName(String name) {
@@ -53,13 +78,13 @@ enum DnsProvider {
 class DnsSettings extends Equatable {
   /// Selected DNS provider
   final DnsProvider provider;
-  
+
   /// Custom DNS server address (only used when provider is custom)
   final String? customDnsServer;
-  
+
   /// Custom DoH URL (only used when provider is custom)
   final String? customDohUrl;
-  
+
   /// Whether DNS-over-HTTPS is enabled
   final bool enabled;
 
@@ -70,19 +95,29 @@ class DnsSettings extends Equatable {
     this.enabled = true,
   });
 
-  /// Default settings (system DNS)
+  /// Default settings — Cloudflare DoH enabled.
+  /// Using 1.1.1.1 (IP-based endpoint) means no system DNS is needed to
+  /// reach Cloudflare, so this works even on networks that block DNS.
   const DnsSettings.defaultSettings()
-      : provider = DnsProvider.system,
+      : provider = DnsProvider.cloudflare,
         customDnsServer = null,
         customDohUrl = null,
-        enabled = false;
+        enabled = true;
 
-  /// Get effective DoH URL based on provider
+  /// Get effective DoH URL based on provider (hostname-based)
   String get effectiveDohUrl {
     if (provider == DnsProvider.custom && customDohUrl != null) {
       return customDohUrl!;
     }
     return provider.dohUrl;
+  }
+
+  /// Get effective IP-based DoH URL (no bootstrap DNS needed)
+  String get effectiveDohUrlIpBased {
+    if (provider == DnsProvider.custom && customDohUrl != null) {
+      return customDohUrl!;
+    }
+    return provider.dohUrlIpBased;
   }
 
   /// Get effective DNS servers based on provider
@@ -130,5 +165,6 @@ class DnsSettings extends Equatable {
   List<Object?> get props => [provider, customDnsServer, customDohUrl, enabled];
 
   @override
-  String toString() => 'DnsSettings(provider: ${provider.name}, enabled: $enabled)';
+  String toString() =>
+      'DnsSettings(provider: ${provider.name}, enabled: $enabled)';
 }

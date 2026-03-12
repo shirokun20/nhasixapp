@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
+import 'package:native_dio_adapter/native_dio_adapter.dart';
 import 'komiktap_scraper.dart';
 import 'komiktap_url_builder.dart';
 import 'komiktap_search_capabilities.dart';
@@ -15,6 +16,11 @@ class KomiktapSource implements ContentSource {
   static const String displayNameValue = 'KomikTap';
   static const String baseUrlValue = 'https://komiktap.info';
 
+  // Realistic Chrome Android UA - avoids WAF blocks (Sucuri/Cloudproxy rejects bot-like UAs)
+  static const String _chromeUserAgent =
+      'Mozilla/5.0 (Linux; Android 13; Pixel 7) '
+      'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+
   final KomiktapScraper _scraper;
   final Dio _dio;
   final Logger? _logger;
@@ -28,7 +34,12 @@ class KomiktapSource implements ContentSource {
     String? baseUrl,
     String? displayName,
   })  : _scraper = scraper,
-        _dio = dio,
+        // Create a dedicated Dio with NativeAdapter (Cronet on Android) for
+        // genuine Chrome TLS fingerprint. Sucuri performs JA3/JA4 fingerprinting
+        // at the TLS handshake — Dart's default HttpClient is flagged as
+        // non-browser. Cronet uses Chrome's actual TLS stack, bypassing this.
+        // We clone options from the shared Dio but use our own adapter.
+        _dio = Dio(dio.options)..httpClientAdapter = NativeAdapter(),
         _logger = logger,
         _overriddenBaseUrl = baseUrl ?? baseUrlValue,
         _displayName = displayName ?? displayNameValue;
@@ -71,7 +82,7 @@ class KomiktapSource implements ContentSource {
       options: Options(
         headers: {
           'Referer': '$baseUrlValue/',
-          'User-Agent': 'Mozilla/5.0 (compatible; KuronApp/1.0)',
+          'User-Agent': _chromeUserAgent,
         },
       ),
     );
@@ -113,8 +124,7 @@ class KomiktapSource implements ContentSource {
   }) {
     return {
       'Referer': baseUrl,
-      'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'User-Agent': _chromeUserAgent,
     };
   }
 
@@ -145,7 +155,7 @@ class KomiktapSource implements ContentSource {
         options: Options(
           headers: {
             'Referer': '$baseUrlValue/',
-            'User-Agent': 'Mozilla/5.0 (compatible; KuronApp/1.0)',
+            'User-Agent': _chromeUserAgent,
           },
         ),
       );
@@ -229,7 +239,7 @@ class KomiktapSource implements ContentSource {
         options: Options(
           headers: {
             'Referer': '$baseUrlValue/',
-            'User-Agent': 'Mozilla/5.0 (compatible; KuronApp/1.0)',
+            'User-Agent': _chromeUserAgent,
           },
         ),
       );
@@ -277,7 +287,7 @@ class KomiktapSource implements ContentSource {
         options: Options(
           headers: {
             'Referer': '$baseUrlValue/',
-            'User-Agent': 'Mozilla/5.0 (compatible; KuronApp/1.0)',
+            'User-Agent': _chromeUserAgent,
           },
         ),
       );
@@ -324,7 +334,7 @@ class KomiktapSource implements ContentSource {
           options: Options(
             headers: {
               'Referer': '$baseUrlValue/',
-              'User-Agent': 'Mozilla/5.0 (compatible; KuronApp/1.0)',
+              'User-Agent': _chromeUserAgent,
             },
           ),
         );
@@ -395,7 +405,7 @@ class KomiktapSource implements ContentSource {
         options: Options(
           headers: {
             'Referer': '$baseUrlValue/',
-            'User-Agent': 'Mozilla/5.0 (compatible; KuronApp/1.0)',
+            'User-Agent': _chromeUserAgent,
           },
         ),
       );

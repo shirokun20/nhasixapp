@@ -1,8 +1,9 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:logger/logger.dart';
 import '../constants/app_constants.dart';
-import 'dns_resolver.dart';  // NEW
-import 'dns_interceptor.dart';  // NEW
+import 'dns_resolver.dart';
 
 /// Singleton HTTP client manager to ensure proper lifecycle management
 /// and prevent disposal issues across the application
@@ -19,9 +20,18 @@ class HttpClientManager {
     return _instance!;
   }
 
-  /// Initialize the HTTP client with proper configuration
-  /// Optional dnsResolver enables DNS-over-HTTPS for all requests via interceptor
-  static Dio initializeHttpClient({Logger? logger, DnsResolver? dnsResolver}) {
+  /// Initialize the HTTP client with proper configuration.
+  ///
+  /// When [dnsResolver] is provided, all connections bypass system DNS via
+  /// DNS-over-HTTPS. The technique used is **socket-level DNS bypass**:
+  /// the raw TCP socket connects to the resolved IP, while Dart's HttpClient
+  /// handles TLS with the original hostname as SNI — exactly like
+  /// `curl --resolve hostname:443:ip`. HTTPS certificate validation stays
+  /// fully correct with zero extra code needed.
+  static Dio initializeHttpClient({
+    Logger? logger,
+    DnsResolver? dnsResolver,
+  }) {
     _logger = logger ?? Logger();
 
     if (_httpClient != null) {
@@ -34,17 +44,66 @@ class HttpClientManager {
 
     _httpClient = Dio();
 
-    // Configure default options
+    // Socket-level DNS bypass via connectionFactory.
+    // Dart's HttpClient accepts a raw Socket from connectionFactory and then
+    // wraps it with TLS using the *original URI hostname* for SNI — so cert
+    // validation is automatic and correct, just like `curl --resolve`.
+    // No URL rewriting, no custom cert callbacks needed.
+    if (dnsResolver != null) {
+      _httpClient!.httpClientAdapter = IOHttpClientAdapter(
+        createHttpClient: () {
+          final client = HttpClient();
+          client.connectionFactory =
+              (Uri uri, String? proxyHost, int? proxyPort) async {
+            try {
+              // Skip DoH for addresses that are already IPs
+              if (_isIpAddress(uri.host)) {
+                return Socket.startConnect(uri.host, uri.port);
+              }
+              final addresses = await dnsResolver.lookup(uri.host);
+              if (addresses.isEmpty) throw Exception('No DoH addresses');
+              _logger?.d(
+                  'DoH: ${uri.host} → ${addresses.first.address} (SNI kept)');
+              // Connect socket to resolved IP; HttpClient wraps with TLS
+              // using uri.host as SNI automatically.
+              return Socket.startConnect(addresses.first, uri.port);
+            } catch (e) {
+              _logger?.w('DoH failed for ${uri.host}, using system DNS: $e');
+              return Socket.startConnect(uri.host, uri.port);
+            }
+          };
+          return client;
+        },
+      );
+    }
+
+    // Configure default options with full Chrome Android fingerprint.
+    // Sucuri/Cloudproxy (and most WAFs) cross-check UA against client-hint headers
+    // (Sec-Ch-Ua*) and fetch-metadata headers (Sec-Fetch-*). A Chrome UA without
+    // those companion headers is a strong bot signal → HTTP 400 or 403.
     _httpClient!.options.headers = {
+      // Core identity headers — must match as a group
       'User-Agent':
-          'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
+          'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+      // Chrome client hints — Chrome 89+ always sends these
+      'Sec-Ch-Ua':
+          '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+      'Sec-Ch-Ua-Mobile': '?1',
+      'Sec-Ch-Ua-Platform': '"Android"',
+      // Fetch metadata — WAFs use these to detect non-browser requests
+      // 'none' = direct navigation (typed URL / bookmark) — correct for scraper
+      'Sec-Fetch-Site': 'none',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-User': '?1',
+      // Standard browser headers
       'Accept':
-          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-      'Accept-Language': 'en-US,en;q=0.9',
-      'DNT': '1',
-      'Connection': 'keep-alive',
+          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+      'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+      'Accept-Encoding': 'gzip, deflate',
+      'Cache-Control': 'max-age=0',
       'Upgrade-Insecure-Requests': '1',
-      // 'Cookie': 'csrftoken=8FfRKO5iEnVwVfO3zzR2B7IDxHZUw674; session-affinity=1754401765.457.1635.890657|5438e073fbb56fb7666a0126dc9d5e81'
+      'Connection': 'keep-alive',
     };
 
     // Set default timeouts
@@ -55,15 +114,8 @@ class HttpClientManager {
     _httpClient!.options.maxRedirects = 5;
     _httpClient!.options.responseType = ResponseType.plain;
 
-    // Add DNS-over-HTTPS interceptor if DnsResolver provided
     if (dnsResolver != null) {
-      _logger?.i('Adding DNS-over-HTTPS interceptor');
-      _httpClient!.interceptors.add(
-        DnsInterceptor(
-          dnsResolver: dnsResolver,
-          logger: _logger!,
-        ),
-      );
+      _logger?.i('DoH enabled via socket-level connectionFactory');
     }
 
     // Add logging interceptor
@@ -190,6 +242,21 @@ class HttpClientManager {
       'base_url': _httpClient!.options.baseUrl,
       'headers_count': _httpClient!.options.headers.length,
     };
+  }
+
+  /// Check if [host] is already a numeric IP address.
+  /// Connections to IPs skip DoH lookup (no DNS needed).
+  static bool _isIpAddress(String host) {
+    try {
+      InternetAddress(host, type: InternetAddressType.IPv4);
+      return true;
+    } catch (_) {}
+    try {
+      InternetAddress(host, type: InternetAddressType.IPv6);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Reset the HTTP client (for testing purposes only)

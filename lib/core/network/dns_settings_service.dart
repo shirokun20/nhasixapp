@@ -33,26 +33,41 @@ class DnsSettingsService {
   Future<void> initialize() async {
     try {
       _currentSettings = await loadSettings();
-      _logger.i('DnsSettingsService initialized: ${_currentSettings.provider.name}');
+      _logger.i(
+          'DnsSettingsService initialized: ${_currentSettings.provider.name}');
     } catch (e) {
       _logger.e('Failed to initialize DNS settings', error: e);
       _currentSettings = const DnsSettings.defaultSettings();
     }
   }
 
-  /// Load DNS settings from SharedPreferences
+  /// Load DNS settings from SharedPreferences.
+  /// If no settings are saved, or the saved settings match the old default
+  /// (system DNS + disabled), migrates automatically to Cloudflare DoH.
   Future<DnsSettings> loadSettings() async {
     try {
       final jsonString = _prefs.getString(_settingsKey);
-      
+
       if (jsonString == null || jsonString.isEmpty) {
-        _logger.d('No saved DNS settings, using defaults');
+        _logger.d('No saved DNS settings, using Cloudflare DoH default');
         return const DnsSettings.defaultSettings();
       }
 
       final json = jsonDecode(jsonString) as Map<String, dynamic>;
       final settings = DnsSettings.fromJson(json);
-      
+
+      // Migration: old default was system+disabled → upgrade to Cloudflare DoH
+      if (settings.provider == DnsProvider.system && !settings.enabled) {
+        _logger
+            .i('DnsSettingsService: Migrating DNS settings to Cloudflare DoH '
+                'for better connectivity on restricted networks');
+        final migrated = const DnsSettings.defaultSettings();
+        // Persist migration without broadcasting (service may not be fully inited yet)
+        final jsonStr = jsonEncode(migrated.toJson());
+        await _prefs.setString(_settingsKey, jsonStr);
+        return migrated;
+      }
+
       _logger.d('Loaded DNS settings: ${settings.provider.name}');
       return settings;
     } catch (e) {
@@ -66,10 +81,10 @@ class DnsSettingsService {
     try {
       final jsonString = jsonEncode(settings.toJson());
       await _prefs.setString(_settingsKey, jsonString);
-      
+
       _currentSettings = settings;
       _settingsController.add(settings);
-      
+
       _logger.i(
         'DNS settings saved: ${settings.provider.name} (enabled: ${settings.enabled})',
       );

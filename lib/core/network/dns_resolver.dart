@@ -51,43 +51,63 @@ class DnsResolver {
     try {
       // Perform DoH lookup
       final addresses = await _performDohLookup(host, settings);
-      
+
       // Cache result
       _cache[host] = _CachedDnsResult(addresses);
       _logger.d('DNS resolved $host to ${addresses.length} addresses via DoH');
-      
+
       return addresses;
     } catch (e) {
-      _logger.w('DoH lookup failed for $host, falling back to system DNS', error: e);
-      
+      _logger.w('DoH lookup failed for $host, falling back to system DNS',
+          error: e);
+
       // Fallback to system DNS on error
       return _systemLookup(host);
     }
   }
 
-  /// Perform DNS-over-HTTPS lookup
+  /// Perform DNS-over-HTTPS lookup with multi-provider fallback.
+  /// Tries IP-based DoH endpoints first (no bootstrap DNS required),
+  /// then falls back to other providers if the primary fails.
   Future<List<InternetAddress>> _performDohLookup(
     String host,
     DnsSettings settings,
   ) async {
-    final dohUrl = settings.effectiveDohUrl;
+    // Use IP-based URL as primary — avoids needing DNS to reach the DoH server
+    final primaryUrl = settings.effectiveDohUrlIpBased;
 
-    if (dohUrl.isEmpty) {
-      throw Exception('DoH URL not configured');
+    // Build fallback chain: all providers except the one already used as primary
+    final fallbackUrls =
+        DnsProvider.allDohIpUrls.where((url) => url != primaryUrl).toList();
+
+    for (final url in [primaryUrl, ...fallbackUrls]) {
+      try {
+        final addresses = await _queryDohEndpoint(url, host);
+        if (addresses.isNotEmpty) {
+          _logger.d('DoH resolved $host → ${addresses.first.address} via $url');
+          return addresses;
+        }
+      } catch (e) {
+        _logger.w('DoH endpoint $url failed for $host: $e');
+      }
     }
 
-    // Make DoH request (DNS JSON API format)
+    throw Exception('All DoH endpoints failed for $host');
+  }
+
+  /// Query a single DoH endpoint and return A records.
+  Future<List<InternetAddress>> _queryDohEndpoint(
+    String dohUrl,
+    String host,
+  ) async {
     final response = await _dio.get(
       dohUrl,
-      queryParameters: {
-        'name': host,
-        'type': 'A', // IPv4 only for now
-      },
+      queryParameters: {'name': host, 'type': 'A'},
       options: Options(
         headers: {'Accept': 'application/dns-json'},
         responseType: ResponseType.json,
-        receiveTimeout: const Duration(seconds: 10),
-        sendTimeout: const Duration(seconds: 5),
+        receiveTimeout: const Duration(seconds: 5),
+        sendTimeout: const Duration(seconds: 3),
       ),
     );
 
@@ -100,13 +120,11 @@ class DnsResolver {
     }
 
     // Extract A records (type 1)
-    final addresses = answers
-        .where((answer) => answer['type'] == 1)
-        .map((answer) {
-          final ip = answer['data'] as String;
-          return InternetAddress(ip);
-        })
-        .toList();
+    final addresses =
+        answers.where((answer) => answer['type'] == 1).map((answer) {
+      final ip = answer['data'] as String;
+      return InternetAddress(ip);
+    }).toList();
 
     if (addresses.isEmpty) {
       throw Exception('No A records found for $host');

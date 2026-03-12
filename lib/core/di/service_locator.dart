@@ -28,7 +28,7 @@ import 'package:nhasixapp/core/utils/tag_data_manager.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/network/dns_settings_service.dart';
-import 'package:nhasixapp/core/network/dns_resolver.dart'; // NEW
+import 'package:nhasixapp/core/network/dns_resolver.dart';
 
 // Data Sources
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
@@ -145,15 +145,36 @@ void _setupCore() {
         ),
       ));
 
-  // HTTP Client (Dio) - Using singleton manager
-  // DNS-over-HTTPS is DISABLED because it's incompatible with HTTPS/SSL
-  // (SNI and certificate validation fail when using IP addresses)
-  getIt.registerLazySingleton<Dio>(() {
-    return HttpClientManager.initializeHttpClient(
-      logger: getIt<Logger>(),
-      // dnsResolver: getIt<DnsResolver>(),  // DISABLED - incompatible with HTTPS
-    );
-  });
+  // DNS Settings Service — registered early so DnsResolver (and Dio) can use it
+  getIt.registerLazySingleton<DnsSettingsService>(() => DnsSettingsService(
+        prefs: getIt<SharedPreferences>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // DNS Resolver (DoH fallback: Cloudflare 1.1.1.1 → Google 8.8.8.8 → system DNS)
+  getIt.registerLazySingleton<DnsResolver>(() => DnsResolver(
+        settingsService: getIt<DnsSettingsService>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // HTTP Client (Dio) - eager singleton (not lazy) to avoid GetIt's internal
+  // async completer being double-completed during re-entrant lazy resolution.
+  // DNS deps are registered above so they resolve correctly when Dio is built.
+  // Socket connects to DoH-resolved IP, Dart handles TLS with original hostname
+  // as SNI (identical to `curl --resolve`). Fallback: Cloudflare → Google → system.
+  // Note: Uses default timeouts (30s) during init to avoid circular dep on RemoteConfigService
+  getIt.registerSingleton<Dio>(HttpClientManager.initializeHttpClient(
+    logger: getIt<Logger>(),
+    dnsResolver: getIt<DnsResolver>(),
+  ));
+
+  // Remote Config Service (Assets-based configs, Remote tags download)
+  // Registered AFTER Dio so it can use the HTTP client
+  getIt.registerLazySingleton<RemoteConfigService>(() => RemoteConfigService(
+        dio: getIt<Dio>(),
+        logger: getIt<Logger>(),
+        prefs: getIt<SharedPreferences>(),
+      ));
 
   // Cache Manager
   getIt.registerLazySingleton<CacheManager>(() => DefaultCacheManager());
@@ -161,25 +182,6 @@ void _setupCore() {
   // Tag Data Manager
   getIt.registerLazySingleton<TagDataManager>(
       () => TagDataManager(logger: getIt<Logger>(), dio: getIt<Dio>()));
-
-  // Remote Config Service (Assets-based configs, Remote tags download)
-  getIt.registerLazySingleton<RemoteConfigService>(() => RemoteConfigService(
-        dio: getIt<Dio>(),
-        logger: getIt<Logger>(),
-        prefs: getIt<SharedPreferences>(),
-      ));
-
-  // DNS Settings Service
-  getIt.registerLazySingleton<DnsSettingsService>(() => DnsSettingsService(
-        prefs: getIt<SharedPreferences>(),
-        logger: getIt<Logger>(),
-      ));
-
-  // DNS Resolver (NEW)
-  getIt.registerLazySingleton<DnsResolver>(() => DnsResolver(
-        settingsService: getIt<DnsSettingsService>(),
-        logger: getIt<Logger>(),
-      ));
 
   // Request Rate Manager
   getIt.registerLazySingleton<RequestRateManager>(() => RequestRateManager(
