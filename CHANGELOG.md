@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.1.2+7] - 2026-03-12
+
+### 🐛 Diperbaiki (Fixed)
+- **Rollback Konfigurasi Iklan ke Versi Stabil:** Mengembalikan konfigurasi iklan ke versi 1.1.1 yang lebih stabil untuk mengatasi masalah iklan blank di Unity Ads dan bug lainnya.
+  - **Unity Ads:** Dikembalikan ke konfigurasi stabil versi 1.1.1 dengan perbaikan pada load/show sequence.
+  - **Pembagian Iklan:** 70% Unity Ads / 30% StartApp (menggunakan `Random.nextDouble() < 0.7`).
+  - **Fallback Mechanism:** Tetap mempertahankan fallback otomatis ke StartApp jika Unity Ads gagal memuat.
+- **Stabilitas Unity Ads:** Memperbaiki masalah iklan blank dengan memastikan Unity Ads hanya ditampilkan setelah benar-benar siap (`_isUnityInitialized`).
+- **Navigasi Iklan yang Lebih Baik:** Menghapus iklan interstitial yang mengganggu navigasi antara Detail Screen ↔ Reader Screen.
+  - **Detail → Reader:** Tidak ada lagi iklan interstitial saat membuka chapter dari Detail Screen.
+  - **Reader → Detail:** Navigasi back dari Reader Screen ke Detail Screen sekarang langsung, tanpa iklan.
+  - **Chapter Navigation:** Iklan rewarded video tetap ditampilkan saat navigasi chapter berikutnya/sebelumnya (via ReaderNavigationPage) untuk menjaga keseimbangan monetisasi.
+
+### 📝 Ringkas (Summary)
+- **Version:** 1.1.2+7 (patch)
+- **Perubahan Utama:** Rollback konfigurasi iklan ke versi stabil 1.1.1 dengan pembagian 70% Unity / 30% StartApp dan navigasi yang lebih smooth.
+- **Catatan:** Versi aplikasi tetap 1.1.2, hanya konfigurasi iklan yang dikembalikan ke versi 1.1.1 yang lebih stabil.
+
+---
+
 ## [1.1.1+5] - 2026-02-21
 
 ### 📝 Ringkas (Summary)

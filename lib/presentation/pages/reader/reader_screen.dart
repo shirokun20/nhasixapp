@@ -1465,31 +1465,8 @@ class _ReaderPopScope extends StatefulWidget {
 
 class _ReaderPopScopeState extends State<_ReaderPopScope> {
   Future<void> _handlePop() async {
-    final adService = getIt<AdService>();
-
-    if (!adService.shouldShowAds) {
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(AppLocalizations.of(context)?.loadingContent ??
-            'Loading advertisement...'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-
-    try {
-      await adService.showInterstitial();
-    } catch (e) {
-      // Allow navigation if ad fails
-    }
-
-    await Future.delayed(const Duration(milliseconds: 300));
-
+    // Allow immediate navigation back without ads
+    // Ads are still shown on chapter navigation (next/prev chapter) via ReaderNavigationPage
     if (mounted) {
       Navigator.of(context).pop();
     }
@@ -1498,7 +1475,7 @@ class _ReaderPopScopeState extends State<_ReaderPopScope> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: true,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
         await _handlePop();
