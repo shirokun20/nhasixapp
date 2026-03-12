@@ -77,32 +77,24 @@ class HttpClientManager {
       );
     }
 
-    // Configure default options with full Chrome Android fingerprint.
-    // Sucuri/Cloudproxy (and most WAFs) cross-check UA against client-hint headers
-    // (Sec-Ch-Ua*) and fetch-metadata headers (Sec-Fetch-*). A Chrome UA without
-    // those companion headers is a strong bot signal → HTTP 400 or 403.
+    // Configure default options with Chrome Android fingerprint.
+    // Only include headers that are correct across all request types.
+    // Navigation-specific headers (Sec-Fetch-Mode: navigate, Upgrade-Insecure-Requests,
+    // Cache-Control: max-age=0) are NOT set here — they cause Cloudflare WAF to block
+    // POST/API requests since POST + navigate is a contradictory bot signal.
+    // Those headers should be set per-request in GET-navigation-only contexts.
     _httpClient!.options.headers = {
-      // Core identity headers — must match as a group
+      // Core identity headers — valid for all request types
       'User-Agent':
           'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-      // Chrome client hints — Chrome 89+ always sends these
+      // Chrome client hints — always sent by Chrome 89+, valid for all types
       'Sec-Ch-Ua':
           '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
       'Sec-Ch-Ua-Mobile': '?1',
       'Sec-Ch-Ua-Platform': '"Android"',
-      // Fetch metadata — WAFs use these to detect non-browser requests
-      // 'none' = direct navigation (typed URL / bookmark) — correct for scraper
-      'Sec-Fetch-Site': 'none',
-      'Sec-Fetch-Mode': 'navigate',
-      'Sec-Fetch-Dest': 'document',
-      'Sec-Fetch-User': '?1',
-      // Standard browser headers
-      'Accept':
-          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+      // Accept-Language is safe to send on all requests
       'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
       'Accept-Encoding': 'gzip, deflate',
-      'Cache-Control': 'max-age=0',
-      'Upgrade-Insecure-Requests': '1',
       'Connection': 'keep-alive',
     };
 

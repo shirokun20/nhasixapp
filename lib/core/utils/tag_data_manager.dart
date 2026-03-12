@@ -16,10 +16,25 @@ import 'package:shared_preferences/shared_preferences.dart';
 class TagDataManager {
   TagDataManager({required Dio dio, required Logger logger})
       : _dio = dio,
-        _logger = logger;
+        _logger = logger {
+    // Clean Dio for GitHub/CDN tag downloads — no DoH bypass
+    _cdnDio = Dio(BaseOptions(
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 120),
+      sendTimeout: const Duration(seconds: 15),
+      responseType: ResponseType.bytes,
+      headers: {
+        'User-Agent':
+            'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36',
+        'Accept': '*/*',
+      },
+    ));
+  }
 
-  final Dio _dio;
+  // ignore: unused_field
+  final Dio _dio; // kept for DI signature compatibility
   final Logger _logger;
+  late final Dio _cdnDio;
 
   static const String _tagsVersionKey = 'tags_version';
 
@@ -98,7 +113,14 @@ class TagDataManager {
         _logger.i(
           'TagDataManager: Tag update required for $source (v$remoteVersion != v$localVersion, hasData: $hasData). Downloading...',
         );
-        await downloadTags(migration.remoteUrl!, remoteVersion, source);
+        // Build ordered fallback list: primary → fallback → raw.githubusercontent.com
+        final urls = [
+          migration.remoteUrl!,
+          if (migration.fallbackUrl != null) migration.fallbackUrl!,
+          // Last-resort: raw GitHub (different CDN path from jsDelivr)
+          'https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/configs/configs/tags/tags_$source.json',
+        ];
+        await downloadTagsWithFallback(urls, remoteVersion, source);
       } else {
         _logger.d(
             'TagDataManager: Tags for $source are up to date (v$localVersion)');
@@ -109,20 +131,42 @@ class TagDataManager {
     }
   }
 
-  /// Download and cache tags
+  /// Download and cache tags, trying each URL in [urls] until one succeeds.
+  Future<bool> downloadTagsWithFallback(
+    List<String> urls,
+    String version,
+    String source,
+  ) async {
+    for (int i = 0; i < urls.length; i++) {
+      final url = urls[i];
+      final success = await downloadTags(url, version, source);
+      if (success) return true;
+      if (i < urls.length - 1) {
+        _logger.w(
+          'TagDataManager: Trying fallback URL ${i + 2}/${urls.length} for $source...',
+        );
+      }
+    }
+    _logger.e(
+      'TagDataManager: All ${urls.length} URLs failed for $source. Tags unavailable.',
+    );
+    return false;
+  }
+
+  /// Download and cache tags from a single URL.
   Future<bool> downloadTags(String url, String version, String source) async {
+    final docDir = await getApplicationDocumentsDirectory();
+    final filePath = '${docDir.path}/tags_$source.json';
+    final tempPath = '$filePath.tmp';
+
     try {
-      final docDir = await getApplicationDocumentsDirectory();
-      final filePath = '${docDir.path}/tags_$source.json';
+      _logger.i('TagDataManager: Downloading tags from $url ...');
+      await _cdnDio.download(url, tempPath);
 
-      _logger.i('TagDataManager: Downloading tags from $url for $source...');
-      await _dio.download(url, filePath);
+      // Verify the downloaded file is valid JSON before committing
+      final tempFile = File(tempPath);
+      final jsonString = await tempFile.readAsString();
 
-      // Verify the downloaded file is valid JSON before updating prefs
-      final file = File(filePath);
-      final jsonString = await file.readAsString();
-
-      // Try parsing to verify integrity
       final isValid = await _parseAndCacheTags(
         jsonString,
         source: 'downloaded file',
@@ -130,26 +174,23 @@ class TagDataManager {
       );
 
       if (isValid) {
+        // Commit: rename temp → final
+        await tempFile.rename(filePath);
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('${_tagsVersionKey}_$source', version);
         _logger.i(
-          'TagDataManager: Successfully updated tags to version $version for $source',
+          'TagDataManager: Successfully downloaded tags v$version for $source',
         );
         return true;
       } else {
-        _logger.w(
-          'TagDataManager: Downloaded tags file is invalid. Reverting...',
-        );
-        if (file.existsSync()) await file.delete();
-        // Try invalidating cache or reloading assets?
-        // _loadFromAssets(source);
+        _logger.w('TagDataManager: Downloaded tags invalid from $url');
+        if (tempFile.existsSync()) await tempFile.delete();
         return false;
       }
     } catch (e) {
-      _logger.e(
-        'TagDataManager: Failed to download tags for $source',
-        error: e,
-      );
+      _logger.w('TagDataManager: Download failed from $url', error: e);
+      final tempFile = File(tempPath);
+      if (tempFile.existsSync()) await tempFile.delete();
       return false;
     }
   }

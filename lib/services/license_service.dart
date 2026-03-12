@@ -7,11 +7,17 @@ import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LicenseService {
-  final Dio _dio;
+  // ignore: unused_field
+  final Dio _dio; // kept for DI signature compatibility
   final Logger _logger;
   final RemoteConfigService _remoteConfigService;
   final SharedPreferences _prefs;
   final FlutterSecureStorage _secureStorage;
+
+  /// Dedicated Dio for license API — uses standard DNS (no DoH bypass).
+  /// The shared [_dio] routes through DoH → direct-IP to Cloudflare, which
+  /// causes `cf-ray: -` 400 rejections at Cloudflare's TLS/proxy layer.
+  late final Dio _licenseDio;
 
   // Stream for premium status changes
   final _premiumStatusController = StreamController<bool>.broadcast();
@@ -46,6 +52,19 @@ class LicenseService {
         _remoteConfigService = remoteConfigService,
         _prefs = prefs,
         _secureStorage = secureStorage {
+    // Clean Dio for license API — no DoH, no scraping interceptors
+    _licenseDio = Dio(BaseOptions(
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
+      sendTimeout: const Duration(seconds: 15),
+      responseType: ResponseType.plain,
+      headers: {
+        'User-Agent':
+            'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36',
+        'Accept': 'application/json',
+      },
+    ));
+
     // Optimistic Load from Prefs (Sync) to avoid flicker/race on Hot Restart
     _isPremiumActive = _prefs.getBool(_prefKeyLicenseValid) ?? false;
     _planName = _prefs.getString('komiktap_plan_name_cache');
@@ -177,7 +196,7 @@ class LicenseService {
         _logger.d('Checking license: $licenseKey at $endpoint');
       }
 
-      final response = await _dio.post(
+      final response = await _licenseDio.post(
         endpoint,
         data: {
           'license_key': licenseKey,
@@ -186,8 +205,24 @@ class LicenseService {
         },
         options: Options(
           validateStatus: (status) => status! < 500,
+          contentType: 'application/json',
+          headers: {
+            'Accept': 'application/json',
+          },
         ),
       );
+
+      // Server returned non-JSON (e.g. WAF/CDN error page)
+      if (response.data is String &&
+          (response.data as String).trimLeft().startsWith('<')) {
+        _logger.w(
+            'License API returned HTML (WAF block?) — status ${response.statusCode}');
+        return {
+          'valid': false,
+          'message': 'Server error (${response.statusCode})',
+          'server_responded': false,
+        };
+      }
 
       final dynamic responseData = response.data is String
           ? jsonDecode(response.data as String)

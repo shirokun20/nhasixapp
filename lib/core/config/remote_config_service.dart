@@ -7,9 +7,13 @@ import 'package:nhasixapp/core/config/config_models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class RemoteConfigService {
-  final Dio _dio;
+  // ignore: unused_field
+  final Dio _dio; // kept for DI signature compatibility
   final Logger _logger;
   final SharedPreferences _prefs; // NEW: For reading license status
+
+  /// Clean Dio for GitHub/CDN downloads — no DoH bypass so CDN routing works.
+  late final Dio _cdnDio;
 
   // GitHub Raw URLs for tags (large files, downloaded on demand)
   static const String _tagsBaseUrl =
@@ -39,7 +43,19 @@ class RemoteConfigService {
     required SharedPreferences prefs, // NEW
   })  : _dio = dio,
         _logger = logger,
-        _prefs = prefs;
+        _prefs = prefs {
+    _cdnDio = Dio(BaseOptions(
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 60),
+      sendTimeout: const Duration(seconds: 15),
+      responseType: ResponseType.plain,
+      headers: {
+        'User-Agent':
+            'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36',
+        'Accept': '*/*',
+      },
+    ));
+  }
 
   /// Initialize with Smart Sync logic (Master Manifest Pattern)
   /// [isFirstRun] - If true, throws exception on critical failure
@@ -133,7 +149,7 @@ class RemoteConfigService {
     try {
       _logger.i('Downloading tags for $source from: $url');
 
-      final response = await _dio.get(url);
+      final response = await _cdnDio.get(url);
 
       if (response.statusCode == 200 && response.data != null) {
         final String jsonString;

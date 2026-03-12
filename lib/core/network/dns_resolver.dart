@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
@@ -111,8 +112,18 @@ class DnsResolver {
       ),
     );
 
-    // Parse response
-    final data = response.data as Map<String, dynamic>;
+    // Parse response — Dio may return String or Map depending on endpoint
+    final dynamic raw = response.data;
+    final Map<String, dynamic> data;
+    if (raw is Map<String, dynamic>) {
+      data = raw;
+    } else if (raw is String) {
+      data = Map<String, dynamic>.from(
+        json.decode(raw) as Map,
+      );
+    } else {
+      throw Exception('Unexpected DoH response type: ${raw.runtimeType}');
+    }
     final answers = data['Answer'] as List?;
 
     if (answers == null || answers.isEmpty) {
