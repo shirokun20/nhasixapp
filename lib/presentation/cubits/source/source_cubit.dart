@@ -1,6 +1,7 @@
 import 'package:kuron_core/kuron_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nhasixapp/services/license_service.dart';
+import 'dart:async';
 import '../base/base_cubit.dart';
 import 'source_state.dart';
 
@@ -20,12 +21,19 @@ class SourceCubit extends BaseCubit<SourceState> {
             activeSource: _getDefaultSource(registry, licenseService),
           ),
         ) {
+    _premiumSubscription = licenseService.premiumStatusStream.listen(
+      (isPremium) {
+        logger.d('Premium status changed: $isPremium, refreshing sources');
+        refreshSources();
+      },
+    );
     _loadSavedSource();
   }
 
   final ContentSourceRegistry _registry;
   final SharedPreferences _prefs;
   final LicenseService _licenseService;
+  late final StreamSubscription<bool> _premiumSubscription;
   static const String _keySelectedSource = 'selected_source_id';
 
   static List<ContentSource> _filterSources(
@@ -112,5 +120,11 @@ class SourceCubit extends BaseCubit<SourceState> {
       availableSources: _filterSources(_registry.allSources, _licenseService),
       activeSource: _getDefaultSource(_registry, _licenseService),
     ));
+  }
+
+  @override
+  Future<void> close() async {
+    await _premiumSubscription.cancel();
+    return super.close();
   }
 }

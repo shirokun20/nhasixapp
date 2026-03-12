@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -11,6 +12,10 @@ class LicenseService {
   final RemoteConfigService _remoteConfigService;
   final SharedPreferences _prefs;
   final FlutterSecureStorage _secureStorage;
+
+  // Stream for premium status changes
+  final _premiumStatusController = StreamController<bool>.broadcast();
+  Stream<bool> get premiumStatusStream => _premiumStatusController.stream;
 
   // Prefs keys (Sync Cache)
   static const String _prefKeyLicenseValid = 'komiktap_license_valid';
@@ -54,13 +59,13 @@ class LicenseService {
   Future<void> initialize() async {
     try {
       _logger.d('Initializing LicenseService...');
-      
+
       // 1. Load from Secure Storage
       final isValidStr = await _secureStorage.read(key: _secureKeyIsValid);
       final expiresAtStr = await _secureStorage.read(key: _secureKeyExpiresAt);
       final key = await _secureStorage.read(key: _secureKeyLicenseKey);
       _planName = await _secureStorage.read(key: _secureKeyPlanName);
-      
+
       // 2. Parse Expiry
       if (expiresAtStr != null) {
         _expiresAt = DateTime.tryParse(expiresAtStr);
@@ -68,14 +73,17 @@ class LicenseService {
 
       // 3. Local Validation (Expiry Check)
       bool isValid = isValidStr == 'true';
-      if (isValid && _expiresAt != null && DateTime.now().isAfter(_expiresAt!)) {
+      if (isValid &&
+          _expiresAt != null &&
+          DateTime.now().isAfter(_expiresAt!)) {
         _logger.w('License expired locally. Revoking.');
         isValid = false;
         await _revokeLicenseLocally();
       } else {
         _isPremiumActive = isValid;
+        _emitPremiumStatusChange();
       }
-      
+
       // 4. Sync cache to prefs (Anti-bypass sync)
       await _syncToPrefs();
 
@@ -95,18 +103,28 @@ class LicenseService {
     } else {
       await _prefs.remove('komiktap_plan_name_cache');
     }
-    
+
     if (_expiresAt != null) {
-      await _prefs.setString('komiktap_expires_at_cache', _expiresAt!.toIso8601String());
+      await _prefs.setString(
+          'komiktap_expires_at_cache', _expiresAt!.toIso8601String());
     } else {
       await _prefs.remove('komiktap_expires_at_cache');
     }
   }
 
+  void _emitPremiumStatusChange() {
+    _premiumStatusController.add(_isPremiumActive);
+    _logger.d('Premium status changed: $_isPremiumActive');
+  }
+
   Future<void> _revokeLicenseLocally() async {
+    final wasPremium = _isPremiumActive;
     _isPremiumActive = false;
     await _secureStorage.write(key: _secureKeyIsValid, value: 'false');
     await _syncToPrefs();
+    if (wasPremium) {
+      _emitPremiumStatusChange();
+    }
   }
 
   Future<void> removeLicense() async {
@@ -116,38 +134,49 @@ class LicenseService {
     _logger.i('License removed by user.');
   }
 
+  void _activatePremium() {
+    _isPremiumActive = true;
+    _emitPremiumStatusChange();
+  }
+
   Future<void> _revalidateInBackground(String key) async {
     try {
-      final deviceId = await _secureStorage.read(key: _secureKeyDeviceId) ?? 'unknown';
-      final deviceName = await _secureStorage.read(key: _secureKeyDeviceName) ?? 'unknown'; // fallback
+      final deviceId =
+          await _secureStorage.read(key: _secureKeyDeviceId) ?? 'unknown';
+      final deviceName = await _secureStorage.read(key: _secureKeyDeviceName) ??
+          'unknown'; // fallback
 
       _logger.d('Revalidating license in background...');
-      final result = await checkLicense(key, deviceId, deviceName, isBackground: true);
-      
+      final result =
+          await checkLicense(key, deviceId, deviceName, isBackground: true);
+
       if (result['valid'] == false) {
         _logger.w('License revalidation failed: ${result['message']}');
         // Revoke if server explicitly says invalid (403/200 success=false)
         // If connection error, we KEEP the local valid state (grace period)
         if (result['server_responded'] == true) {
-             await _revokeLicenseLocally();
+          await _revokeLicenseLocally();
         }
       } else {
         _logger.d('License revalidated successfully.');
       }
     } catch (e) {
-       _logger.e('Revalidation error', error: e);
+      _logger.e('Revalidation error', error: e);
     }
   }
 
   Future<Map<String, dynamic>> checkLicense(
-      String licenseKey, String deviceId, String deviceName, {bool isBackground = false}) async {
+      String licenseKey, String deviceId, String deviceName,
+      {bool isBackground = false}) async {
     final endpoint = _remoteConfigService.appConfig?.featureFlags?['premium']
             ?['activation']?['validateEndpoint'] ??
         'http://192.168.0.7:8000/api/check-license';
 
     try {
-      if (!isBackground) _logger.d('Checking license: $licenseKey at $endpoint');
-      
+      if (!isBackground) {
+        _logger.d('Checking license: $licenseKey at $endpoint');
+      }
+
       final response = await _dio.post(
         endpoint,
         data: {
@@ -160,18 +189,20 @@ class LicenseService {
         ),
       );
 
-      final dynamic responseData = response.data is String 
-          ? jsonDecode(response.data as String) 
+      final dynamic responseData = response.data is String
+          ? jsonDecode(response.data as String)
           : response.data;
-      
-      if (response.statusCode == 200 && responseData is Map && responseData['status'] == 'success') {
+
+      if (response.statusCode == 200 &&
+          responseData is Map &&
+          responseData['status'] == 'success') {
         final data = responseData['data'];
         final maxDevices = data['max_devices'] as int?;
         final expiresAt = data['expires_at'] as String?;
         final planName = data['plan_name'] as String?;
 
         // Update State
-        _isPremiumActive = true;
+        _planName = planName;
         if (maxDevices != null) {
           _maxDevices = maxDevices;
           await _prefs.setInt(_prefKeyMaxDevices, maxDevices);
@@ -179,7 +210,6 @@ class LicenseService {
         if (expiresAt != null) {
           _expiresAt = DateTime.tryParse(expiresAt);
         }
-        _planName = planName;
 
         // Secure Persist
         await Future.wait([
@@ -187,25 +217,31 @@ class LicenseService {
           _secureStorage.write(key: _secureKeyDeviceId, value: deviceId),
           _secureStorage.write(key: _secureKeyDeviceName, value: deviceName),
           _secureStorage.write(key: _secureKeyIsValid, value: 'true'),
-          if (expiresAt != null) _secureStorage.write(key: _secureKeyExpiresAt, value: expiresAt),
-          if (planName != null) _secureStorage.write(key: _secureKeyPlanName, value: planName),
+          if (expiresAt != null)
+            _secureStorage.write(key: _secureKeyExpiresAt, value: expiresAt),
+          if (planName != null)
+            _secureStorage.write(key: _secureKeyPlanName, value: planName),
         ]);
-        
+
         await _syncToPrefs();
-        
+
+        // Activate premium and notify listeners
+        _activatePremium();
+
         return {
           'valid': true,
           'message': data['message'] ?? 'License active',
-          'max_devices': maxDevices, 
+          'max_devices': maxDevices,
           'data': data,
           'server_responded': true,
         };
       } else {
         // Explicit failure
         if (!isBackground) await _revokeLicenseLocally();
-        
-        final msg = (responseData is Map) ? responseData['message'] : 'Invalid license';
-        
+
+        final msg =
+            (responseData is Map) ? responseData['message'] : 'Invalid license';
+
         return {
           'valid': false,
           'message': msg ?? 'Invalid license',
@@ -227,17 +263,23 @@ class LicenseService {
     if (!requiresPremium) return true;
     // Check purely in-memory (synced from SecureStorage on init)
     // Double check expiry just in case app has been running for days
-    if (_isPremiumActive && _expiresAt != null && DateTime.now().isAfter(_expiresAt!)) {
-        // Lazy revocation
-        _revokeLicenseLocally(); 
-        return false;
+    if (_isPremiumActive &&
+        _expiresAt != null &&
+        DateTime.now().isAfter(_expiresAt!)) {
+      // Lazy revocation
+      _revokeLicenseLocally();
+      return false;
     }
     return _isPremiumActive;
   }
-  
+
   bool get isPremiumActive => isFeatureAccessible(true);
-  
+
   int get maxDevices => _maxDevices;
   DateTime? get expiresAt => _expiresAt;
   String? get planName => _planName;
+
+  void dispose() {
+    _premiumStatusController.close();
+  }
 }
