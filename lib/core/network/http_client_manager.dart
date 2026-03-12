@@ -68,8 +68,10 @@ class HttpClientManager {
               // using uri.host as SNI automatically.
               return Socket.startConnect(addresses.first, uri.port);
             } catch (e) {
-              _logger?.w('DoH failed for ${uri.host}, using system DNS: $e');
-              return Socket.startConnect(uri.host, uri.port);
+              _logger?.e('DoH failed for ${uri.host}: $e');
+              // No system DNS fallback — propagate so the caller sees the real
+              // failure instead of silently connecting via censored system DNS.
+              rethrow;
             }
           };
           return client;

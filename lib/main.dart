@@ -19,6 +19,7 @@ import 'package:nhasixapp/services/app_update_service.dart';
 import 'package:nhasixapp/services/workers/download_worker.dart';
 import 'package:nhasixapp/services/license_service.dart';
 import 'package:nhasixapp/services/ad_service.dart';
+import 'package:nhasixapp/core/network/dns_settings_service.dart';
 import 'package:nhasixapp/core/utils/performance_monitor.dart';
 import 'dart:io';
 
@@ -43,6 +44,15 @@ void main() async {
     };
 
     await setupLocator();
+
+    // Initialize DNS Settings early — MUST happen before any HTTP request
+    // (LicenseService, RemoteConfigService, etc.) so the correct DoH provider
+    // is active from the very first connection, not just after the settings
+    // screen is opened for the first time.
+    await getIt<DnsSettingsService>().initialize().catchError((e) {
+      debugPrint('⚠️ DnsSettingsService init failed: $e');
+      return;
+    });
 
     // Initialize Performance Monitoring
     await PerformanceMonitor.initialize().timeout(

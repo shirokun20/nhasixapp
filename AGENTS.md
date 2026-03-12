@@ -1,20 +1,46 @@
 # NhasixApp Agent Rules
 
-## 🤖 Custom Agents & Skills
+## 🤖 AI Assistant Guide
 
-This project includes custom OpenCode agents and skills in `.opencode/`:
+This project is designed to work with **any AI assistant** (Claude, Cursor, GitHub Copilot, Qwen Code, etc.).
 
-### Agents (invoke with @)
-- `@flutter-architect` - Clean Architecture guidance and reviews
+### Using with Any AI
+
+**Context Files:**
+- `AGENTS.md` - Project rules and conventions (this file)
+- `.qwen/skills/*.md` - Architecture & pattern documentation
+- `projects/analysis-plan/` - Feature analysis documents
+- `projects/future-plan/` - Implementation plans
+
+**Workflow (AI-agnostic):**
+1. **Analysis**: Read `projects/analysis-plan/[feature]/analysis.md`
+2. **Planning**: Read `projects/future-plan/[feature]/implementation-plan.md`
+3. **Execution**: Code with guidance from skills documentation
+4. **Completion**: Move to `projects/success-plan/`
+
+---
+
+## 🔧 Optional: Qwen Code Integration
+
+If using **Qwen Code**, custom agents and skills are available:
+
+### Agents (Invoke with @)
+
+Located in `.qwen/agents/`:
+- `@flutter-architect` - Clean Architecture guidance
 - `@feature-dev` - Development workflow coordinator
-- `@code-reviewer` - Flutter code quality reviews
-- `@ui-designer` - UI/UX and responsive design guidance
+- `@code-reviewer` - Code quality reviews
+- `@ui-designer` - UI/UX and responsive design
 
-### Skills (loaded via skill tool)
-- `clean-arch` - Clean Architecture implementation patterns
-- `bloc-pattern` - BLoC/Cubit state management patterns
-- `project-workflow` - Development workflow phases and processes
-- `di-setup` - Dependency Injection with GetIt setup
+### Skills (Load via skill tool)
+
+Located in `.qwen/skills/`:
+- `clean-arch` - Clean Architecture patterns
+- `bloc-pattern` - BLoC/Cubit state management
+- `di-setup` - Dependency Injection with GetIt
+- `project-workflow` - Development workflow phases
+
+**Note:** These are optional enhancements for Qwen Code users. All project conventions work with any AI assistant.
 
 ---
 

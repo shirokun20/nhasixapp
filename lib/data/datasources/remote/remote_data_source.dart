@@ -15,8 +15,7 @@ import 'request_rate_manager.dart';
 import 'exceptions.dart';
 import '../../../../core/config/remote_config_service.dart';
 
-/// Remote data source for komiktap.info
-/// Supports both API and HTML scraping with automatic fallback
+/// Remote data source for nhentai (API + HTML scraping with automatic fallback)
 class RemoteDataSource {
   RemoteDataSource({
     required this.httpClient,
@@ -44,8 +43,8 @@ class RemoteDataSource {
   bool _useApi = true;
 
   String get baseUrl =>
-      _remoteConfigService.getConfig('komiktap')?.baseUrl ??
-      'https://komiktap.info';
+      _remoteConfigService.getConfig('nhentai')?.baseUrl ??
+      'https://nhentai.net';
 
   static const Duration requestTimeout = Duration(seconds: 30);
   static const int maxRetries = 3;
@@ -348,9 +347,9 @@ class RemoteDataSource {
       _logger.i(
           'Fetching popular content with pagination for period: $period, page: $page');
 
-      // nhentai doesn't support empty query search, use homepage for browsing
-      // Homepage shows latest content - for actual popularity sorting, we'd need different logic
-      final url = '$baseUrl/?page=$page';
+      // nhentai /popular endpoint supports ?page= and /popular-{period}
+      final timeframePath = period == 'all' ? '' : '-$period';
+      final url = '$baseUrl/popular$timeframePath?page=$page';
       final html = await _getPageHtml(url);
 
       // Parse content list
@@ -383,9 +382,8 @@ class RemoteDataSource {
       _logger.i(
           'Fetching popular content (sync) for period: $period, page: $page');
 
-      // nhentai doesn't support empty query search, use homepage for browsing
-      // Homepage shows latest content - for actual popularity sorting, we'd need different logic
-      final url = '$baseUrl/?page=$page';
+      final timeframePath = period == 'all' ? '' : '-$period';
+      final url = '$baseUrl/popular$timeframePath?page=$page';
       final html = await _getPageHtml(url);
 
       final contents = scraper.parseContentListSync(html);

@@ -59,11 +59,11 @@ class DnsResolver {
 
       return addresses;
     } catch (e) {
-      _logger.w('DoH lookup failed for $host, falling back to system DNS',
+      _logger.e('DoH lookup failed for $host — all endpoints exhausted',
           error: e);
-
-      // Fallback to system DNS on error
-      return _systemLookup(host);
+      // No system DNS fallback: rethrow so callers see the real failure.
+      // System DNS may be censored; silent fallback defeats the purpose of DoH.
+      rethrow;
     }
   }
 
