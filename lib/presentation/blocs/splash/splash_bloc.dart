@@ -99,7 +99,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
         );
       } else {
         // Condition 2: Has Cache (Normal Run) -> SMART UPDATE
-        emit(SplashInitializing(message: 'Checking for updates...', progress: 0.1));
+        emit(SplashInitializing(
+            message: 'Checking for updates...', progress: 0.1));
 
         // This won't throw on error, keeps old config
         await _remoteConfigService.smartInitialize(
@@ -116,7 +117,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
           'SplashBloc: Config synced (Last: ${lastSync?.toIso8601String()})');
 
       // 4. Initialize Tag Data for all sources
-      emit(SplashInitializing(message: 'Initializing tags database...', progress: 1.0));
+      emit(SplashInitializing(
+          message: 'Initializing tags database...', progress: 1.0));
 
       // Initialize sources
       final sources = _contentSourceRegistry.sourceIds;
@@ -133,7 +135,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
 
         // Check for updates (Blocking if no tags, Background if has tags)
         if (!_tagDataManager.hasTags(source)) {
-          emit(SplashInitializing(message: 'Downloading tags for $source...', progress: 1.0));
+          emit(SplashInitializing(
+              message: 'Downloading tags for $source...', progress: 1.0));
           await _tagDataManager.checkForUpdates(source: source);
         } else {
           _tagDataManager.checkForUpdates(source: source).ignore();
@@ -156,7 +159,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       // Check if bypass is already working
       final isAlreadyBypassed = await _remoteDataSource.checkCloudflareStatus();
       if (isAlreadyBypassed) {
-        _logger.i('SplashBloc: Cloudflare already bypassed');
+        _logger.i('SplashBloc: komiktap.info already accessible');
         emit(SplashSuccess(
             message:
                 'Ready (Last Sync: ${lastSync != null ? "${lastSync.hour}:${lastSync.minute}" : "Unknown"})'));
@@ -185,14 +188,14 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
 
       // Initialize the remote data source (includes anti-detection)
       // await Future.delayed(Duration(seconds: 1)); // Removed for optimization
-      emit(SplashBypassInProgress(message: 'Connecting to nhentai.net...'));
+      emit(SplashBypassInProgress(message: 'Connecting to komiktap.info...'));
       final success = await _remoteDataSource.initialize();
 
       if (success) {
-        emit(SplashSuccess(message: 'Successfully connected to nhentai.net'));
+        emit(SplashSuccess(message: 'Successfully connected to komiktap.info'));
       } else {
         emit(SplashError(
-          message: 'Failed to connect to nhentai.net. Please try again.',
+          message: 'Failed to connect to komiktap.info. Please try again.',
           canRetry: true,
         ));
       }
@@ -222,7 +225,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
 
         if (isVerified) {
           _logger.i('SplashBloc: Cloudflare bypass successful and verified');
-          emit(SplashSuccess(message: 'Successfully connected to nhentai.net'));
+          emit(SplashSuccess(
+              message: 'Successfully connected to komiktap.info'));
         } else {
           _logger
               .w('SplashBloc: Bypass reported success but verification failed');
@@ -269,7 +273,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
 
         // Check if there are downloaded contents for offline use
         final downloadedContents = await _userDataRepository.getAllDownloads(
-            limit: _remoteConfigService.appConfig?.limits?.maxBatchSize ?? 1000);
+            limit:
+                _remoteConfigService.appConfig?.limits?.maxBatchSize ?? 1000);
         final completedDownloads =
             downloadedContents.where((d) => d.isCompleted).toList();
 
@@ -296,7 +301,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       final result = await _remoteDataSource.bypassCloudflare();
 
       if (result) {
-        emit(SplashSuccess(message: 'Successfully connected to nhentai.net'));
+        emit(SplashSuccess(message: 'Successfully connected to komiktap.info'));
       } else {
         _logger.w('SplashBloc: Retry failed, forcing offline mode');
         AppStateManager().enableOfflineMode();

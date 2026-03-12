@@ -15,7 +15,7 @@ import 'request_rate_manager.dart';
 import 'exceptions.dart';
 import '../../../../core/config/remote_config_service.dart';
 
-/// Remote data source for nhentai.net
+/// Remote data source for komiktap.info
 /// Supports both API and HTML scraping with automatic fallback
 class RemoteDataSource {
   RemoteDataSource({
@@ -44,8 +44,8 @@ class RemoteDataSource {
   bool _useApi = true;
 
   String get baseUrl =>
-      _remoteConfigService.getConfig('nhentai')?.baseUrl ??
-      'https://nhentai.net';
+      _remoteConfigService.getConfig('komiktap')?.baseUrl ??
+      'https://komiktap.info';
 
   static const Duration requestTimeout = Duration(seconds: 30);
   static const int maxRetries = 3;
@@ -305,7 +305,7 @@ class RemoteDataSource {
 
       _logger.i(
           'Successfully extracted content ID: $contentId from random page. Fetching details via API...');
-      
+
       // Use API-enabled method to get details
       return await getContentDetailViaApi(contentId);
     } catch (e, stackTrace) {
