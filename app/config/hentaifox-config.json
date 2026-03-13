@@ -19,34 +19,43 @@
     "enabled": true,
     "urlPatterns": {
       "base": "https://hentaifox.com/",
-      "home": "/pag/{page}/",
-      "search": "/search/?q={q}&page={page}",
+      "home": {
+        "url": "/pag/{page}/",
+        "list": {
+          "container": ".thumb",
+          "fields": {
+            "id": {"selector": "a", "attribute": "href", "transform": "slug"},
+            "title": {"selector": ".caption a"},
+            "thumbnail": {"selector": "img", "attribute": "data-src"}
+          },
+          "pagination": {
+            "next": ".pagination .page-item:last-child a",
+            "links": ".pagination .page-link"
+          }
+        }
+      },
+      "search": {
+        "url": "/search/?q={q}&page={page}",
+        "inherits": "home"
+      },
       "detail": "/gallery/{id}/",
       "chapter": "/gallery/{id}/"
     },
     "selectors": {
-      "list": {
-        "items": ".thumb",
-        "fields": {
-          "id": {"selector": "a", "attribute": "href"},
-          "title": {"selector": ".caption a"},
-          "thumbnail": {"selector": "img", "attribute": "src"}
-        }
-      },
       "detail": {
         "fields": {
-          "title": {"selector": "h1"},
+          "title": {"selector": ".info h1"},
           "thumbnail": {"selector": ".cover img", "attribute": "src"},
           "tags": {"selector": ".tag_btn", "multi": true},
-          "pageCount": {"selector": ".pages span"}
+          "pageCount": {"selector": ".i_text.pages"}
         }
       },
       "reader": {
         "mode": "hentaifoxCdn",
-        "thumbSelector": "#thumbs img",
+        "thumbSelector": ".gallery_thumb img",
         "thumbSrcAttr": "data-src",
-        "cdnPathRegex": "//([^/]+\\.hentaifox\\.com)/([^/]+/[^/]+)/\\d+t\\.jpg",
-        "pageCountSelector": ".pages span"
+        "cdnPathRegex": "//([^/]+)/(.+)/\\d+t\\.(?:jpg|webp)",
+        "pageCountSelector": ".i_text.pages"
       }
     }
   },
