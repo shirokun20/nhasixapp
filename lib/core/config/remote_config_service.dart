@@ -164,12 +164,9 @@ class RemoteConfigService {
         // Safety net: bundled sources must always be available even when
         // manifest intentionally lists only installable providers.
         for (final bundledId in _bundledSourceIds) {
-          if (!_rawSourceConfigs.containsKey(bundledId)) {
-            _logger.w(
-              'Bundled source "$bundledId" not present after manifest sync; loading asset fallback',
-            );
-            await _loadSourceFromBundledFallback(bundledId);
-          }
+          // FOR DEVELOPMENT: Force load from asset fallback to overwrite any cached GitHub config!
+          _logger.w('DEV OVERRIDE: Forcing bundled source "$bundledId" to load from asset fallback!');
+          await _loadSourceFromBundledFallback(bundledId);
         }
 
         // Ensure app config exists as fallback if manifest omits appConfig.

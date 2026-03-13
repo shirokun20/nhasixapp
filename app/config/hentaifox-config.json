@@ -19,7 +19,7 @@
     "enabled": true,
     "urlPatterns": {
       "base": "https://hentaifox.com/",
-      "allGalleries": "/pag/{page}/",
+      "home": "/pag/{page}/",
       "search": "/search/?q={q}&page={page}",
       "detail": "/gallery/{id}/",
       "chapter": "/gallery/{id}/"
