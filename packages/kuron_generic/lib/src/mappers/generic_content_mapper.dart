@@ -38,7 +38,7 @@ class GenericContentMapper {
     return Content(
       id: _str(fields, 'id'),
       sourceId: sourceId,
-      title: _str(fields, 'title', fallback: 'Unknown'),
+      title: _extractTitle(fields),
       coverUrl: _str(fields, 'coverUrl'),
       tags: tagsResolved.tags,
       artists: tagsResolved.artists.isNotEmpty
@@ -87,7 +87,7 @@ class GenericContentMapper {
     return Content(
       id: id,
       sourceId: sourceId,
-      title: _str(fields, 'title', fallback: 'Unknown'),
+      title: _extractTitle(fields),
       coverUrl: coverUrl,
       tags: tagsResolved.tags,
       artists: tagsResolved.artists.isNotEmpty
@@ -225,6 +225,14 @@ class GenericContentMapper {
   }) {
     final v = f[key];
     if (v is String) return v.isEmpty ? fallback : v;
+    if (v is Map && v.isNotEmpty) {
+      final firstVal = v.values.first;
+      if (firstVal is String && firstVal.isNotEmpty) return firstVal;
+    }
+    if (v is List && v.isNotEmpty) {
+      final firstVal = v.first;
+      if (firstVal is String && firstVal.isNotEmpty) return firstVal;
+    }
     return fallback;
   }
 
@@ -236,6 +244,27 @@ class GenericContentMapper {
     }
     if (v is String && v.isNotEmpty) return [v];
     return const [];
+  }
+
+  static String _extractTitle(Map<String, dynamic> fields) {
+    // 1. Try to find an English title in altTitles first
+    final altTitles = fields['altTitles'];
+    if (altTitles is List) {
+      for (final alt in altTitles) {
+        if (alt is Map && alt['en'] != null && alt['en'].toString().isNotEmpty) {
+          return alt['en'].toString();
+        }
+      }
+    }
+
+    // 2. Try the main title object, prioritize english if available
+    final t = fields['title'];
+    if (t is Map && t['en'] != null && t['en'].toString().isNotEmpty) {
+      return t['en'].toString();
+    }
+
+    // 3. Fallback to _str generic stringifier
+    return _str(fields, 'title', fallback: 'Unknown');
   }
 
   static int _int(Map<String, dynamic> f, String key) {

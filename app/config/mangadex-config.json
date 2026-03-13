@@ -41,7 +41,10 @@
           "selector": "$.id"
         },
         "title": {
-          "selector": "$.attributes.title.en"
+          "selector": "$.attributes.title"
+        },
+        "altTitles": {
+          "selector": "$.attributes.altTitles"
         },
         "coverUrl": {
           "type": "coverBuilder",
@@ -83,7 +86,10 @@
           "selector": "$.data.id"
         },
         "title": {
-          "selector": "$.data.attributes.title.en"
+          "selector": "$.data.attributes.title"
+        },
+        "altTitles": {
+          "selector": "$.data.attributes.altTitles"
         },
         "coverUrl": {
           "type": "coverBuilder",
