@@ -57,13 +57,11 @@ class RemoteConfigService {
   static const Map<String, String> _bundledAssetPaths = {
     'nhentai': '$_assetConfigBase/nhentai-config.json',
     'app': '$_assetConfigBase/app-config.json',
-    'tags': _tagsAssetPath,
-    'mangadex': '$_assetConfigBase/mangadex-config.json',
-    'hentaifox': '$_assetConfigBase/hentaifox-config.json',
+    'tags': _tagsAssetPath
   };
 
   /// Source IDs that are bundled into the APK and always available.
-  static const Set<String> _bundledSourceIds = {'nhentai', 'mangadex', 'hentaifox'};
+  static const Set<String> _bundledSourceIds = {'nhentai'};
 
   // ── SharedPreferences keys ───────────────────────────────────────────────────
 
@@ -165,7 +163,8 @@ class RemoteConfigService {
         // manifest intentionally lists only installable providers.
         for (final bundledId in _bundledSourceIds) {
           // FOR DEVELOPMENT: Force load from asset fallback to overwrite any cached GitHub config!
-          _logger.w('DEV OVERRIDE: Forcing bundled source "$bundledId" to load from asset fallback!');
+          _logger.w(
+              'DEV OVERRIDE: Forcing bundled source "$bundledId" to load from asset fallback!');
           await _loadSourceFromBundledFallback(bundledId);
         }
 

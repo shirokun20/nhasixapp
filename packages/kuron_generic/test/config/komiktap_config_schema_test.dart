@@ -19,20 +19,30 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
-/// Candidate paths (tried in order). Prefer `app/config/` (new standard)
-/// with `assets/configs/` fallback for configs not migrated yet.
+/// Resolve config path with explicit source policy:
+/// - installable sources -> app/config/
+/// - bundled defaults (nhentai) -> assets/configs/
 String _resolveConfigPath(String filename) {
-  final candidates = [
-    '../../app/config/$filename', // running inside packages/kuron_generic/
-    'app/config/$filename', // running from project root
-    '../../assets/configs/$filename',
-    'assets/configs/$filename',
-  ];
+  final bool isBundledNhentai = filename == 'nhentai-config.json';
+  final candidates = isBundledNhentai
+      ? [
+          '../../assets/configs/$filename',
+          'assets/configs/$filename',
+        ]
+      : [
+          '../../app/config/$filename', // running inside packages/kuron_generic/
+          'app/config/$filename', // running from project root
+        ];
   for (final p in candidates) {
     if (File(p).existsSync()) return p;
   }
+  if (isBundledNhentai) {
+    throw StateError(
+        'Cannot locate $filename under assets/config/. Run tests from project root or packages/kuron_generic/.');
+  }
+
   throw StateError(
-      'Cannot locate $filename under app/config/ or assets/configs/. Run tests from project root or packages/kuron_generic/.');
+      'Cannot locate $filename under app/config/. Run tests from project root or packages/kuron_generic/.');
 }
 
 Map<String, dynamic> _loadJson(String filename) {
