@@ -65,6 +65,7 @@
         "fields": {
           "title": {"selector": ".info h1"},
           "coverUrl": {"selector": ".cover img", "attribute": "src"},
+          "uploadDate": {"selector": ".info .i_text.pages", "regex": "Posted:\\s*(.+)$"},
           "tags": {
             "selector": ".tags .tag_btn",
             "attribute": "href",
