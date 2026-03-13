@@ -464,12 +464,88 @@ class GenericScraperAdapter implements GenericAdapter {
 
       // 2. DOM fallback for images.
       if (imageUrls.isEmpty && readerConfig['mode'] == 'hentaifoxCdn') {
+        // Prefer true full-res URL from /g/{id}/1/ page so extension follows
+        // the actual gallery format (webp/jpg/jpeg/png).
+        final readerPagePattern =
+            (readerConfig['readerPageUrlPattern'] as String?) ?? '/g/{id}/1/';
+        String? readerSampleUrl;
+        var readerPageCount = 0;
+        Map<int, String> readerExtByPage = const {};
+        try {
+          final readerPageUrl = _urlBuilder.resolve(
+            readerPagePattern.replaceAll('{id}', chapterId),
+            const {},
+          );
+          final readerResp = await _dio.get<String>(
+            readerPageUrl,
+            options: Options(responseType: ResponseType.plain),
+          );
+          final readerHtml = readerResp.data ?? '';
+          final readerDoc = _parser.parse(readerHtml);
+          readerExtByPage = _extractHentaiFoxExtensionsByPage(readerHtml);
+
+          final readerImageSelector =
+              (readerConfig['readerImageSelector'] as String?) ?? '#gimg';
+          final readerImageAttr =
+              (readerConfig['readerImageAttr'] as String?) ?? 'data-src';
+          readerSampleUrl = _parser.extractString(
+            readerDoc,
+            FieldSelector(
+              selector: readerImageSelector,
+              attribute: readerImageAttr,
+            ),
+          );
+          if (readerSampleUrl == null || readerSampleUrl.isEmpty) {
+            readerSampleUrl = _parser.extractString(
+              readerDoc,
+              FieldSelector(selector: readerImageSelector, attribute: 'src'),
+            );
+          }
+
+          final readerPageCountSelector =
+              (readerConfig['readerPageCountSelector'] as String?) ?? '#pages';
+          final readerPageCountAttr =
+              (readerConfig['readerPageCountAttr'] as String?) ?? 'value';
+          final readerPageCountStr = _parser.extractString(
+                readerDoc,
+                FieldSelector(
+                  selector: readerPageCountSelector,
+                  attribute: readerPageCountAttr,
+                ),
+              ) ??
+              _parser.extractString(
+                readerDoc,
+                const FieldSelector(selector: '.total_pages'),
+              );
+
+          final readerPagesMatch =
+              RegExp(r'(\d+)').firstMatch(readerPageCountStr ?? '');
+          readerPageCount =
+              int.tryParse(readerPagesMatch?.group(1) ?? '0') ?? 0;
+
+          if ((readerSampleUrl?.isNotEmpty ?? false) && readerPageCount > 0) {
+            imageUrls = _buildHentaiFoxImageUrlsFromSample(
+              readerSampleUrl!,
+              readerPageCount,
+              readerExtByPage,
+            );
+          }
+        } catch (e) {
+          _logger.w(
+            '$_sourceId: failed to extract HentaiFox reader-page sample URL',
+            error: e,
+          );
+        }
+
         final thumbSel = readerConfig['thumbSelector'] as String?;
         final thumbAttr = readerConfig['thumbSrcAttr'] as String? ?? 'src';
         final regexStr = readerConfig['cdnPathRegex'] as String?;
         final pageSelStr = readerConfig['pageCountSelector'] as String?;
 
-        if (thumbSel != null && regexStr != null && pageSelStr != null) {
+        if (imageUrls.isEmpty &&
+            thumbSel != null &&
+            regexStr != null &&
+            pageSelStr != null) {
           // Collect explicit thumb URLs as final fallback only.
           final thumbElements = _parser.selectAll(doc, thumbSel);
           final explicitThumbs = <String>[];
@@ -497,31 +573,44 @@ class GenericScraperAdapter implements GenericAdapter {
               final cdnHost = match.group(1);
               final internalPath = match.group(2);
 
-              // Prefer high-quality URLs based on detail metadata if available.
+              final preferredExt = _inferImageExtension(
+                readerSampleUrl?.isNotEmpty == true
+                    ? readerSampleUrl
+                    : thumbSrc,
+              );
+
+              // Prefer metadata-based URL building when hidden fields exist.
               final loadDir = _parser.extractString(
-                doc,
-                const FieldSelector(selector: '#load_dir', attribute: 'value'),
-              );
+                    doc,
+                    const FieldSelector(
+                        selector: '#load_dir', attribute: 'value'),
+                  ) ??
+                  _parser.extractString(
+                    doc,
+                    const FieldSelector(
+                        selector: '#image_dir', attribute: 'value'),
+                  );
               final loadId = _parser.extractString(
-                doc,
-                const FieldSelector(selector: '#load_id', attribute: 'value'),
-              );
+                    doc,
+                    const FieldSelector(
+                        selector: '#load_id', attribute: 'value'),
+                  ) ??
+                  _parser.extractString(
+                    doc,
+                    const FieldSelector(
+                        selector: '#gallery_id', attribute: 'value'),
+                  );
 
               if ((loadDir?.isNotEmpty ?? false) &&
                   (loadId?.isNotEmpty ?? false)) {
                 for (int i = 1; i <= pageCount; i++) {
-                  imageUrls.add('https://$cdnHost/$loadDir/$loadId/$i.webp');
+                  imageUrls.add(
+                      'https://$cdnHost/$loadDir/$loadId/$i.$preferredExt');
                 }
               } else {
-                // Keep extension consistent with thumb URL (e.g. 1t.jpg -> 1.jpg)
-                // when metadata is unavailable.
-                final extMatch = RegExp(r'\d+t\.(jpg|jpeg|webp|png)(?:\?.*)?$',
-                        caseSensitive: false)
-                    .firstMatch(thumbSrc);
-                final imageExt = (extMatch?.group(1) ?? 'jpg').toLowerCase();
-
                 for (int i = 1; i <= pageCount; i++) {
-                  imageUrls.add('https://$cdnHost/$internalPath/$i.$imageExt');
+                  imageUrls
+                      .add('https://$cdnHost/$internalPath/$i.$preferredExt');
                 }
               }
             }
@@ -886,5 +975,107 @@ class GenericScraperAdapter implements GenericAdapter {
     if (parentClass.contains('disabled')) return false;
 
     return true;
+  }
+
+  String _inferImageExtension(String? imageUrl) {
+    if (imageUrl == null || imageUrl.isEmpty) return 'jpg';
+
+    final clean = imageUrl.split('?').first;
+    final extMatch = RegExp(
+            r'\.(jpg|jpeg|webp|png|gif)$|\d+t\.(jpg|jpeg|webp|png|gif)$',
+            caseSensitive: false)
+        .firstMatch(clean);
+    return (extMatch?.group(1) ?? extMatch?.group(2) ?? 'jpg').toLowerCase();
+  }
+
+  /// Build HentaiFox image URLs using per-page extension mapping from `g_th`.
+  List<String> _buildHentaiFoxImageUrlsFromSample(
+    String sampleUrl,
+    int pageCount,
+    Map<int, String> extByPage,
+  ) {
+    if (sampleUrl.isEmpty || pageCount <= 0) return const [];
+
+    final normalized =
+        sampleUrl.startsWith('//') ? 'https:$sampleUrl' : sampleUrl;
+    final uri = Uri.tryParse(normalized);
+    if (uri == null || uri.host.isEmpty || uri.pathSegments.isEmpty) {
+      return const [];
+    }
+
+    final segments = List<String>.from(uri.pathSegments);
+    final fileName = segments.removeLast();
+    final defaultExtMatch =
+        RegExp(r'^\d+\.(jpg|jpeg|webp|png|gif)$', caseSensitive: false)
+            .firstMatch(fileName);
+    final defaultExt = (defaultExtMatch?.group(1) ?? 'jpg').toLowerCase();
+
+    final scheme = uri.scheme.isEmpty ? 'https' : uri.scheme;
+    final origin = uri.hasPort
+        ? '$scheme://${uri.host}:${uri.port}'
+        : '$scheme://${uri.host}';
+    final pathPrefix = '/${segments.join('/')}';
+
+    return List<String>.generate(
+      pageCount,
+      (index) {
+        final page = index + 1;
+        final ext = (extByPage[page] ?? defaultExt).toLowerCase();
+        return '$origin$pathPrefix/$page.$ext';
+      },
+      growable: false,
+    );
+  }
+
+  /// Parse HentaiFox `g_th` map and return image extension by page number.
+  Map<int, String> _extractHentaiFoxExtensionsByPage(String html) {
+    if (html.isEmpty) return const {};
+
+    String? rawJson;
+    final parseJsonMatch = RegExp(
+      r"var\s+g_th\s*=\s*\$\.parseJSON\(\s*'(.+?)'\s*\)\s*;",
+      dotAll: true,
+    ).firstMatch(html);
+    if (parseJsonMatch != null) {
+      rawJson = parseJsonMatch.group(1);
+    }
+
+    rawJson ??= RegExp(
+      r'var\s+g_th\s*=\s*(\{.+?\})\s*;',
+      dotAll: true,
+    ).firstMatch(html)?.group(1);
+
+    if (rawJson == null || rawJson.isEmpty) {
+      return const {};
+    }
+
+    try {
+      final parsed = json.decode(rawJson) as Map<String, dynamic>;
+      const extMap = {
+        'j': 'jpg',
+        'w': 'webp',
+        'p': 'png',
+        'g': 'gif',
+        'b': 'bmp',
+      };
+
+      final result = <int, String>{};
+      parsed.forEach((key, value) {
+        final page = int.tryParse(key);
+        if (page == null) return;
+
+        final parts = value.toString().split(',');
+        if (parts.isEmpty || parts.first.isEmpty) return;
+
+        final extCode = parts.first.trim().toLowerCase();
+        final ext = extMap[extCode];
+        if (ext != null && ext.isNotEmpty) {
+          result[page] = ext;
+        }
+      });
+      return result;
+    } catch (_) {
+      return const {};
+    }
   }
 }

@@ -114,6 +114,33 @@ const _config = {
   },
 };
 
+const _hfBaseUrl = 'https://hentaifox.com';
+
+const _hentaiFoxConfig = {
+  'source': 'hentaifox',
+  'baseUrl': _hfBaseUrl,
+  'scraper': {
+    'urlPatterns': {
+      'chapter': '/gallery/{id}/',
+    },
+    'selectors': {
+      'reader': {
+        'mode': 'hentaifoxCdn',
+        'thumbSelector': '.gallery_thumb img',
+        'thumbSrcAttr': 'data-src',
+        'cdnPathRegex':
+            '(?:https?:)?//([^/]+)/(.+?)/\\d+t\\.(?:jpg|webp|jpeg|png)',
+        'pageCountSelector': '.i_text.pages',
+        'readerPageUrlPattern': '/g/{id}/1/',
+        'readerImageSelector': '#gimg',
+        'readerImageAttr': 'data-src',
+        'readerPageCountSelector': '#pages',
+        'readerPageCountAttr': 'value',
+      },
+    },
+  },
+};
+
 // ── Fake HTML pages ───────────────────────────────────────────────────────────
 
 /// Home page with 2 content items + a next-page link.
@@ -222,6 +249,30 @@ const _chapterHtmlNoTsReader = '''
 </body></html>
 ''';
 
+const _hfDetailHtml = '''
+<html><body>
+<div class="gallery_thumb"><img data-src="https://i3.hentaifox.com/004/3837511/1t.jpg"></div>
+<div class="i_text pages">Pages: 3</div>
+</body></html>
+''';
+
+const _hfReaderHtmlJpg = '''
+<html><body>
+<input type="hidden" id="pages" value="3" />
+<a class="next_img"><img id="gimg" data-src="https://i3.hentaifox.com/004/3837511/2.jpg" /></a>
+</body></html>
+''';
+
+const _hfReaderHtmlMixedExt = """
+<html><body>
+<input type="hidden" id="pages" value="3" />
+<a class="next_img"><img id="gimg" data-src="https://i3.hentaifox.com/004/3834485/1.webp" /></a>
+<script type="text/javascript">
+var g_th = \$.parseJSON('{"1":"w,1280,1810","2":"j,1280,1810","3":"w,1280,1810"}');
+</script>
+</body></html>
+""";
+
 // ── Test setup helpers ────────────────────────────────────────────────────────
 
 GenericScraperAdapter _buildAdapter(Dio dio) {
@@ -235,6 +286,18 @@ GenericScraperAdapter _buildAdapter(Dio dio) {
 }
 
 Dio _buildDio() => Dio(BaseOptions(baseUrl: _baseUrl));
+
+GenericScraperAdapter _buildHentaiFoxAdapter(Dio dio) {
+  return GenericScraperAdapter(
+    dio: dio,
+    urlBuilder: const GenericUrlBuilder(baseUrl: _hfBaseUrl),
+    parser: GenericHtmlParser(logger: Logger(printer: PrettyPrinter())),
+    logger: Logger(printer: PrettyPrinter()),
+    sourceId: 'hentaifox',
+  );
+}
+
+Dio _buildHentaiFoxDio() => Dio(BaseOptions(baseUrl: _hfBaseUrl));
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Tests
@@ -835,6 +898,66 @@ void main() {
         },
       );
       expect(result, isNull);
+    });
+  });
+
+  group('GenericScraperAdapter.fetchChapterImages() — HentaiFox CDN', () {
+    late Dio dio;
+    late DioAdapter dioAdapter;
+    late GenericScraperAdapter adapter;
+
+    setUp(() {
+      dio = _buildHentaiFoxDio();
+      dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
+      adapter = _buildHentaiFoxAdapter(dio);
+    });
+
+    test('uses full-res extension from reader page (non-webp)', () async {
+      dioAdapter.onGet(
+        '$_hfBaseUrl/gallery/159323/',
+        (s) => s.reply(200, _hfDetailHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+      dioAdapter.onGet(
+        '$_hfBaseUrl/g/159323/1/',
+        (s) => s.reply(200, _hfReaderHtmlJpg, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result =
+          await adapter.fetchChapterImages('159323', _hentaiFoxConfig);
+      expect(result, isNotNull);
+      expect(result!.images, [
+        'https://i3.hentaifox.com/004/3837511/1.jpg',
+        'https://i3.hentaifox.com/004/3837511/2.jpg',
+        'https://i3.hentaifox.com/004/3837511/3.jpg',
+      ]);
+    });
+
+    test('supports mixed per-page extensions from g_th map', () async {
+      dioAdapter.onGet(
+        '$_hfBaseUrl/gallery/159186/',
+        (s) => s.reply(200, _hfDetailHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+      dioAdapter.onGet(
+        '$_hfBaseUrl/g/159186/1/',
+        (s) => s.reply(200, _hfReaderHtmlMixedExt, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result =
+          await adapter.fetchChapterImages('159186', _hentaiFoxConfig);
+      expect(result, isNotNull);
+      expect(result!.images, [
+        'https://i3.hentaifox.com/004/3834485/1.webp',
+        'https://i3.hentaifox.com/004/3834485/2.jpg',
+        'https://i3.hentaifox.com/004/3834485/3.webp',
+      ]);
     });
   });
 }

@@ -294,6 +294,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     // Responsive sizing based on reading mode
     final bool isContinuousScroll =
         widget.readingMode == ReadingMode.continuousScroll;
+
     final double cardSize = isContinuousScroll ? 250 : 200;
     final double logoSize = isContinuousScroll ? 100 : 100;
     final double progressSize = isContinuousScroll ? 120 : 160;

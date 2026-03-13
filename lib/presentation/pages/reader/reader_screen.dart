@@ -60,7 +60,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   // Prefetch control
   final Set<int> _prefetchedPages = <int>{};
-  static const int _prefetchCount = 5;
+  static const int _prefetchCount = 3;
+
+  // Throttle expensive continuous-scroll computations.
+  static const Duration _scrollProcessInterval = Duration(milliseconds: 90);
+  DateTime _lastScrollProcessAt = DateTime.fromMillisecondsSinceEpoch(0);
 
   // Debounce mechanism to prevent onPageChanged loops
   bool _isProgrammaticAnimation = false;
@@ -303,6 +307,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
       return;
     }
 
+    // Continuous scroll fires per-pixel updates. Throttle heavy page
+    // estimation/prefetch logic to reduce main-thread pressure.
+    final now = DateTime.now();
+    if (now.difference(_lastScrollProcessAt) < _scrollProcessInterval) {
+      return;
+    }
+    _lastScrollProcessAt = now;
+
     final metrics = notification.metrics;
     final totalPages = state.content!.pageCount;
     final screenHeight = MediaQuery.of(context).size.height;
@@ -382,7 +394,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _saveDebounceTimer?.cancel();
     _saveDebounceTimer = Timer(const Duration(milliseconds: 500), () {
       // Only save if still at bottom after 500ms
-      _readerCubit.updateCurrentPageFromSwipe(page);
+      if (state.readingMode == ReadingMode.continuousScroll) {
+        _readerCubit.updateCurrentPageSilent(page);
+      } else {
+        _readerCubit.updateCurrentPageFromSwipe(page);
+      }
     });
   }
 
@@ -399,7 +415,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
       // Save page progress after user stops scrolling for 800ms
       // This prevents DB spam when user scrolls up/down repeatedly
       _lastSavedPage = page; // Update last saved page
-      _readerCubit.updateCurrentPageFromSwipe(page);
+      if (state.readingMode == ReadingMode.continuousScroll) {
+        _readerCubit.updateCurrentPageSilent(page);
+      } else {
+        _readerCubit.updateCurrentPageFromSwipe(page);
+      }
     });
   }
 
@@ -654,10 +674,22 @@ class _ReaderScreenState extends State<ReaderScreen> {
           );
       },
       child: BlocListener<ReaderCubit, ReaderState>(
+        listenWhen: (previous, current) {
+          final prevContentId = previous.content?.id;
+          final currContentId = current.content?.id;
+          final prevImageCount = previous.content?.imageUrls.length ?? 0;
+          final currImageCount = current.content?.imageUrls.length ?? 0;
+
+          // Ignore timer-only or unrelated state updates.
+          return previous.currentPage != current.currentPage ||
+              previous.readingMode != current.readingMode ||
+              prevContentId != currContentId ||
+              prevImageCount != currImageCount;
+        },
         listener: (context, state) {
           _syncControllersWithState(state);
 
-          // Trigger initial prefetching when content is loaded
+          // Prefetch only when listener-relevant states change.
           if (state.content != null && state.content!.imageUrls.isNotEmpty) {
             final currentPage = state.currentPage ?? widget.initialPage;
             _prefetchImages(
@@ -665,6 +697,23 @@ class _ReaderScreenState extends State<ReaderScreen> {
           }
         },
         child: BlocBuilder<ReaderCubit, ReaderState>(
+          buildWhen: (previous, current) {
+            final prevContentId = previous.content?.id;
+            final currContentId = current.content?.id;
+            final prevImageCount = previous.content?.imageUrls.length ?? 0;
+            final currImageCount = current.content?.imageUrls.length ?? 0;
+
+            // Prevent full-screen rebuild every second from readingTimer.
+            return previous.runtimeType != current.runtimeType ||
+                prevContentId != currContentId ||
+                prevImageCount != currImageCount ||
+                previous.currentPage != current.currentPage ||
+                previous.showUI != current.showUI ||
+                previous.readingMode != current.readingMode ||
+                previous.enableZoom != current.enableZoom ||
+                previous.keepScreenOn != current.keepScreenOn ||
+                previous.isOfflineMode != current.isOfflineMode;
+          },
           builder: (context, state) {
             return Scaffold(
               backgroundColor: Theme.of(context).colorScheme.surface,
@@ -917,7 +966,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         controller: _scrollController,
         physics: const BouncingScrollPhysics(), // Smoother scroll
         cacheExtent:
-            10000.0, // 🚀 OPTIMIZATION: Increased from 1000px to 10000px to keep more images in memory
+            2500.0, // Keep nearby pages warm without overbuilding too many widgets
         addAutomaticKeepAlives:
             true, // Keep widgets alive when scrolled out of view
         itemCount: totalItems,
