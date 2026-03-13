@@ -66,6 +66,7 @@
           "title": {"selector": ".info h1"},
           "coverUrl": {"selector": ".cover img", "attribute": "src"},
           "uploadDate": {"selector": ".info .i_text.pages", "regex": "Posted:\\s*(.+)$"},
+          "favorites": {"selector": "#thumbs_up", "regex": "(\\d+)"},
           "tags": {
             "selector": ".tags .tag_btn",
             "attribute": "href",
@@ -73,6 +74,24 @@
             "multi": true
           },
           "pageCount": {"selector": ".i_text.pages", "regex": "(\\d+)"}
+        }
+      },
+      "related": {
+        "container": ".related_galleries .thumb",
+        "fields": {
+          "id": {"selector": ".inner_thumb a", "attribute": "href", "transform": "slug"},
+          "title": {"selector": ".g_title a"},
+          "coverUrl": {"selector": ".inner_thumb img", "attribute": "data-src"}
+        }
+      },
+      "comments": {
+        "container": "#comments_list .comment",
+        "fields": {
+          "id": {"selector": ".like_comment", "attribute": "comment_id"},
+          "username": {"selector": ".head span[id^='user_text_'] a"},
+          "body": {"selector": ".comment_body .text"},
+          "avatarUrl": {"selector": ".avatar img", "attribute": "src"},
+          "postDate": {"selector": ".comment_body .head .posted"}
         }
       },
       "reader": {
@@ -85,8 +104,8 @@
     }
   },
   "features": {
-    "comments": false,
-    "related": false,
+    "comments": true,
+    "related": true,
     "download": false,
     "favorite": true,
     "chapters": false

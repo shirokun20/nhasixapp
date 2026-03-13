@@ -121,9 +121,35 @@ const _hentaiFoxConfig = {
   'baseUrl': _hfBaseUrl,
   'scraper': {
     'urlPatterns': {
+      'detail': '/gallery/{id}/',
       'chapter': '/gallery/{id}/',
     },
     'selectors': {
+      'comments': {
+        'container': '#comments_list .comment',
+        'fields': {
+          'id': {
+            'selector': '.like_comment',
+            'attribute': 'comment_id',
+          },
+          'username': {'selector': '.head span[id^="user_text_"] a'},
+          'body': {'selector': '.comment_body .text'},
+          'avatarUrl': {'selector': '.avatar img', 'attribute': 'src'},
+          'postDate': {'selector': '.comment_body .head .posted'},
+        },
+      },
+      'related': {
+        'container': '.related_galleries .thumb',
+        'fields': {
+          'id': {
+            'selector': '.inner_thumb a',
+            'attribute': 'href',
+            'transform': 'slug'
+          },
+          'title': {'selector': '.g_title a'},
+          'coverUrl': {'selector': '.inner_thumb img', 'attribute': 'data-src'},
+        },
+      },
       'reader': {
         'mode': 'hentaifoxCdn',
         'thumbSelector': '.gallery_thumb img',
@@ -272,6 +298,51 @@ var g_th = \$.parseJSON('{"1":"w,1280,1810","2":"j,1280,1810","3":"w,1280,1810"}
 </script>
 </body></html>
 """;
+
+const _hfDetailHtmlWithRelated = '''
+<html><body>
+<div class="related_galleries">
+  <div class="thumb">
+    <div class="inner_thumb">
+      <a href="/gallery/151266/"><img data-src="https://i3.hentaifox.com/004/3598674/thumb.jpg" /></a>
+    </div>
+    <h2 class="g_title"><a href="/gallery/151266/">OS Asuna-san Book</a></h2>
+  </div>
+  <div class="thumb">
+    <div class="inner_thumb">
+      <a href="/gallery/150653/"><img data-src="https://i3.hentaifox.com/004/3577428/thumb.jpg" /></a>
+    </div>
+    <h2 class="g_title"><a href="/gallery/150653/">Home Sweet Home 2</a></h2>
+  </div>
+</div>
+</body></html>
+''';
+
+const _hfDetailHtmlWithComments = '''
+<html><body>
+<div id="comments_list">
+  <ul>
+    <li class="p_comm">
+      <div class="comment">
+        <div class="avatar">
+          <img src="/uploads/avatar_1.jpg">
+        </div>
+        <div class="comment_body">
+          <div class="head">
+            <span id="user_text_1164113"><a href="/user/217547/">Eichi</a></span>
+            <span class="posted">2 months ago </span>
+          </div>
+          <div class="text">NIICEEE</div>
+          <div class="opt">
+            <i comment_id="1164113" class="fa fa-thumbs-up like_comment"></i>
+          </div>
+        </div>
+      </div>
+    </li>
+  </ul>
+</div>
+</body></html>
+''';
 
 // ── Test setup helpers ────────────────────────────────────────────────────────
 
@@ -958,6 +1029,71 @@ void main() {
         'https://i3.hentaifox.com/004/3834485/2.jpg',
         'https://i3.hentaifox.com/004/3834485/3.webp',
       ]);
+    });
+  });
+
+  group('GenericScraperAdapter.fetchRelated() — HentaiFox', () {
+    late Dio dio;
+    late DioAdapter dioAdapter;
+    late GenericScraperAdapter adapter;
+
+    setUp(() {
+      dio = _buildHentaiFoxDio();
+      dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
+      adapter = _buildHentaiFoxAdapter(dio);
+    });
+
+    test('extracts related galleries from detail page', () async {
+      dioAdapter.onGet(
+        '$_hfBaseUrl/gallery/154991/',
+        (s) => s.reply(200, _hfDetailHtmlWithRelated, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.fetchRelated('154991', _hentaiFoxConfig);
+      expect(result, hasLength(2));
+
+      expect(result[0].id, '151266');
+      expect(result[0].title, 'OS Asuna-san Book');
+      expect(
+          result[0].coverUrl, 'https://i3.hentaifox.com/004/3598674/thumb.jpg');
+
+      expect(result[1].id, '150653');
+      expect(result[1].title, 'Home Sweet Home 2');
+      expect(
+          result[1].coverUrl, 'https://i3.hentaifox.com/004/3577428/thumb.jpg');
+    });
+  });
+
+  group('GenericScraperAdapter.fetchComments() — HentaiFox', () {
+    late Dio dio;
+    late DioAdapter dioAdapter;
+    late GenericScraperAdapter adapter;
+
+    setUp(() {
+      dio = _buildHentaiFoxDio();
+      dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
+      adapter = _buildHentaiFoxAdapter(dio);
+    });
+
+    test('extracts comments from detail page', () async {
+      dioAdapter.onGet(
+        '$_hfBaseUrl/gallery/154991/',
+        (s) => s.reply(200, _hfDetailHtmlWithComments, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.fetchComments('154991', _hentaiFoxConfig);
+      expect(result, hasLength(1));
+
+      expect(result.first.id, '1164113');
+      expect(result.first.username, 'Eichi');
+      expect(result.first.body, 'NIICEEE');
+      expect(
+          result.first.avatarUrl, 'https://hentaifox.com/uploads/avatar_1.jpg');
+      expect(result.first.postDate, isNotNull);
     });
   });
 }

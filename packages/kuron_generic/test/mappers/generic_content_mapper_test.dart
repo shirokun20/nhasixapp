@@ -68,6 +68,14 @@ void main() {
       expect(result.pageCount, 24);
     });
 
+    test('maps favorites from int', () {
+      final result = GenericContentMapper.toListItem(
+        {'id': 'x', 'favorites': 123},
+        sourceId: sourceId,
+      );
+      expect(result.favorites, 123);
+    });
+
     test('maps pageCount from numeric string', () {
       final result = GenericContentMapper.toListItem(
         {'id': 'x', 'pageCount': '48'},
@@ -360,6 +368,15 @@ void main() {
         sourceId: sourceId,
       );
       expect(result.mediaId, '3456789');
+    });
+
+    test('maps favorites on detail', () {
+      final result = GenericContentMapper.toDetail(
+        'x',
+        {'favorites': '77'},
+        sourceId: sourceId,
+      );
+      expect(result.favorites, 77);
     });
   });
 

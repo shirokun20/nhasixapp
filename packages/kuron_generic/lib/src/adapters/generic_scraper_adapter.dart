@@ -380,15 +380,135 @@ class GenericScraperAdapter implements GenericAdapter {
   Future<List<Content>> fetchRelated(
     String contentId,
     Map<String, dynamic> rawConfig,
-  ) async =>
-      const [];
+  ) async {
+    final scraper = rawConfig['scraper'] as Map<String, dynamic>?;
+    final urlPatternsCfg =
+        (scraper?['urlPatterns'] as Map<String, dynamic>?) ?? {};
+    final detailTemplate = _patternUrl(urlPatternsCfg, 'detail');
+    if (detailTemplate.isEmpty) return const [];
+
+    final selectors = (scraper?['selectors'] as Map<String, dynamic>?) ?? {};
+    final relatedCfg = selectors['related'] as Map<String, dynamic>?;
+    if (relatedCfg == null) return const [];
+
+    final containerSel = relatedCfg['container'] as String?;
+    final fieldsConfig =
+        (relatedCfg['fields'] as Map<String, dynamic>?) ?? const {};
+    if (containerSel == null || containerSel.isEmpty || fieldsConfig.isEmpty) {
+      return const [];
+    }
+
+    final url = _urlBuilder.buildDetailUrl(detailTemplate, contentId);
+
+    try {
+      final response = await _dio.get<String>(
+        url,
+        options: Options(responseType: ResponseType.plain),
+      );
+      final doc = _parser.parse(response.data ?? '');
+      final relatedEls = _parser.selectAll(doc, containerSel);
+      if (relatedEls.isEmpty) return const [];
+
+      final defaultLang = rawConfig['defaultLanguage'] as String?;
+      final seenIds = <String>{};
+      final related = <Content>[];
+
+      for (final el in relatedEls) {
+        final fields = _extractElementFields(el, fieldsConfig);
+        var item = GenericContentMapper.toListItem(fields, sourceId: _sourceId);
+
+        if (defaultLang != null &&
+            (item.language.isEmpty || item.language == 'unknown')) {
+          item = item.copyWith(language: defaultLang);
+        }
+
+        if (item.id.isEmpty ||
+            item.id == contentId ||
+            seenIds.contains(item.id)) {
+          continue;
+        }
+
+        seenIds.add(item.id);
+        related.add(item);
+      }
+
+      return related;
+    } catch (e) {
+      _logger.e('$_sourceId scraper related fetch failed for $contentId',
+          error: e);
+      return const [];
+    }
+  }
 
   @override
   Future<List<Comment>> fetchComments(
     String contentId,
     Map<String, dynamic> rawConfig,
-  ) async =>
-      const [];
+  ) async {
+    final scraper = rawConfig['scraper'] as Map<String, dynamic>?;
+    final urlPatternsCfg =
+        (scraper?['urlPatterns'] as Map<String, dynamic>?) ?? {};
+    final detailTemplate = _patternUrl(urlPatternsCfg, 'detail');
+    if (detailTemplate.isEmpty) return const [];
+
+    final selectors = (scraper?['selectors'] as Map<String, dynamic>?) ?? {};
+    final commentsCfg = selectors['comments'] as Map<String, dynamic>?;
+    if (commentsCfg == null) return const [];
+
+    final containerSel = commentsCfg['container'] as String?;
+    final fieldsConfig =
+        (commentsCfg['fields'] as Map<String, dynamic>?) ?? const {};
+    if (containerSel == null || containerSel.isEmpty || fieldsConfig.isEmpty) {
+      return const [];
+    }
+
+    final url = _urlBuilder.buildDetailUrl(detailTemplate, contentId);
+
+    try {
+      final response = await _dio.get<String>(
+        url,
+        options: Options(responseType: ResponseType.plain),
+      );
+      final doc = _parser.parse(response.data ?? '');
+      final commentEls = _parser.selectAll(doc, containerSel);
+      if (commentEls.isEmpty) return const [];
+
+      final seenIds = <String>{};
+      final comments = <Comment>[];
+
+      for (final el in commentEls) {
+        final fields = _extractElementFields(el, fieldsConfig);
+
+        final id = (fields['id']?.toString() ?? '').trim();
+        final username = (fields['username']?.toString() ?? '').trim();
+        final body = (fields['body']?.toString() ?? '').trim();
+        if (id.isEmpty || username.isEmpty || body.isEmpty) continue;
+        if (seenIds.contains(id)) continue;
+
+        final avatarRaw = (fields['avatarUrl']?.toString() ?? '').trim();
+        final avatar =
+            avatarRaw.isEmpty ? null : _urlBuilder.resolve(avatarRaw, const {});
+        final postDateRaw = (fields['postDate']?.toString() ?? '').trim();
+
+        comments.add(
+          Comment(
+            id: id,
+            username: username,
+            body: body,
+            avatarUrl: avatar,
+            postDate: _parseRelativeOrAbsoluteDate(postDateRaw),
+          ),
+        );
+        seenIds.add(id);
+      }
+
+      return comments;
+    } catch (e) {
+      _logger.e('$_sourceId scraper comments fetch failed for $contentId',
+          error: e);
+      return const [];
+    }
+  }
 
   // ── fetchChapterImages ─────────────────────────────────────────────────────
 
@@ -1076,6 +1196,55 @@ class GenericScraperAdapter implements GenericAdapter {
       return result;
     } catch (_) {
       return const {};
+    }
+  }
+
+  DateTime? _parseRelativeOrAbsoluteDate(String raw) {
+    if (raw.isEmpty) return null;
+
+    final absolute = DateTime.tryParse(raw);
+    if (absolute != null) return absolute;
+
+    final now = DateTime.now();
+    final normalized = raw
+        .toLowerCase()
+        .replaceFirst(RegExp(r'^(posted|date)\s*:\s*'), '')
+        .trim();
+
+    if (normalized == 'just now' || normalized == 'today') return now;
+    if (normalized == 'yesterday') {
+      return now.subtract(const Duration(days: 1));
+    }
+
+    final match = RegExp(
+      r'^(\d+|a|an)\s+(second|minute|hour|day|week|month|year)s?\s+ago$',
+    ).firstMatch(normalized);
+    if (match == null) return null;
+
+    final quantityRaw = match.group(1) ?? '0';
+    final unit = match.group(2) ?? '';
+    final quantity = (quantityRaw == 'a' || quantityRaw == 'an')
+        ? 1
+        : (int.tryParse(quantityRaw) ?? 0);
+    if (quantity <= 0) return null;
+
+    switch (unit) {
+      case 'second':
+        return now.subtract(Duration(seconds: quantity));
+      case 'minute':
+        return now.subtract(Duration(minutes: quantity));
+      case 'hour':
+        return now.subtract(Duration(hours: quantity));
+      case 'day':
+        return now.subtract(Duration(days: quantity));
+      case 'week':
+        return now.subtract(Duration(days: quantity * 7));
+      case 'month':
+        return now.subtract(Duration(days: quantity * 30));
+      case 'year':
+        return now.subtract(Duration(days: quantity * 365));
+      default:
+        return null;
     }
   }
 }

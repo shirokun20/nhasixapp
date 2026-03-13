@@ -8,7 +8,7 @@
 ///
 /// ### Supported field names (keys in the extracted map)
 /// Scalar strings: `id`, `title`, `coverUrl`, `language`, `pageCount`,
-/// `uploadDate`, `mediaId`, `englishTitle`, `japaneseTitle`.
+/// `uploadDate`, `mediaId`, `englishTitle`, `japaneseTitle`, `favorites`.
 ///
 /// String lists: `artists`, `characters`, `parodies`, `groups`.
 ///
@@ -59,6 +59,7 @@ class GenericContentMapper {
       pageCount: _int(fields, 'pageCount'),
       imageUrls: const [],
       uploadDate: _date(fields, 'uploadDate'),
+      favorites: _int(fields, 'favorites'),
       mediaId: fields['mediaId'] as String?,
     );
   }
@@ -109,6 +110,7 @@ class GenericContentMapper {
       imageUrls: imageUrls,
       chapters: chapters,
       uploadDate: _date(fields, 'uploadDate'),
+      favorites: _int(fields, 'favorites'),
       mediaId: fields['mediaId'] as String?,
       englishTitle: fields['englishTitle'] as String?,
       japaneseTitle: fields['japaneseTitle'] as String?,
