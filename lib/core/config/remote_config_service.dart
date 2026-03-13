@@ -58,10 +58,12 @@ class RemoteConfigService {
     'nhentai': '$_assetConfigBase/nhentai-config.json',
     'app': '$_assetConfigBase/app-config.json',
     'tags': _tagsAssetPath,
+    'mangadex': '$_assetConfigBase/mangadex-config.json',
+    'hentaifox': '$_assetConfigBase/hentaifox-config.json',
   };
 
   /// Source IDs that are bundled into the APK and always available.
-  static const Set<String> _bundledSourceIds = {'nhentai'};
+  static const Set<String> _bundledSourceIds = {'nhentai', 'mangadex', 'hentaifox'};
 
   // ── SharedPreferences keys ───────────────────────────────────────────────────
 

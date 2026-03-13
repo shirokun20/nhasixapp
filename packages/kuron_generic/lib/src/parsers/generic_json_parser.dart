@@ -32,6 +32,17 @@ class GenericJsonParser {
     }
   }
 
+  /// Extract a raw dynamic value from [data] using [selector].
+  dynamic extractRaw(dynamic data, FieldSelector selector) {
+    try {
+      return _evaluate(data, selector);
+    } catch (e) {
+      _logger.w('GenericJsonParser: failed to extract raw "${selector.selector}"',
+          error: e);
+      return null;
+    }
+  }
+
   /// Extract a list of values from [data] using [selector].
   List<String> extractList(dynamic data, FieldSelector selector) {
     try {

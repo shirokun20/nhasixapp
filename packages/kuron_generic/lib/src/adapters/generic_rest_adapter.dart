@@ -587,7 +587,7 @@ class GenericRestAdapter implements GenericAdapter {
           if (multi) {
             result[fieldName] = _parser.extractList(data, sel);
           } else {
-            result[fieldName] = _parser.extractString(data, sel) ?? '';
+            result[fieldName] = _parser.extractRaw(data, sel);
           }
       }
     }
