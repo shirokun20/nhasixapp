@@ -239,9 +239,43 @@ class ReaderCubit extends Cubit<ReaderState> {
         }
       }
 
+      // 3.6. Fallback for single-content readers (no chapter list):
+      // If detail payload has no image URLs, fetch them from chapter endpoint
+      // using the same contentId (e.g. HentaiFox /gallery/{id}/).
+      if (content.imageUrls.isEmpty && isConnected) {
+        try {
+          _logger.i(
+              '🖼️ Content has no imageUrls, fetching chapter images fallback: $contentId');
+          final fallbackChapterData =
+              await getChapterImagesUseCase(GetChapterImagesParams.fromString(
+            contentId,
+            sourceId: content.sourceId,
+          ));
+
+          if (fallbackChapterData.images.isNotEmpty) {
+            content = content.copyWith(
+              imageUrls: fallbackChapterData.images,
+              pageCount: fallbackChapterData.images.length,
+            );
+
+            // Preserve any previously fetched chapterData, but if absent,
+            // keep fallback navigation so next/prev can still work.
+            chapterData ??= fallbackChapterData;
+
+            _logger.i(
+                '✅ Fallback loaded ${fallbackChapterData.images.length} images for: $contentId');
+          } else {
+            _logger.w(
+                '⚠️ Fallback chapter image fetch returned empty for: $contentId');
+          }
+        } catch (e) {
+          _logger.w('Fallback chapter image fetch failed for $contentId: $e');
+        }
+      }
+
       // 4. Emit Loaded State Immediately
       emit(state.copyWith(
-        content: content,
+        content: content!,
         currentPage: startPage,
         readingMode: savedSettings.readingMode,
         showUI: savedSettings.showUI,

@@ -470,6 +470,18 @@ class GenericScraperAdapter implements GenericAdapter {
         final pageSelStr = readerConfig['pageCountSelector'] as String?;
 
         if (thumbSel != null && regexStr != null && pageSelStr != null) {
+          // Collect explicit thumb URLs as final fallback only.
+          final thumbElements = _parser.selectAll(doc, thumbSel);
+          final explicitThumbs = <String>[];
+          for (final el in thumbElements) {
+            final raw =
+                (el.attributes[thumbAttr] ?? el.attributes['src'] ?? '').trim();
+            if (raw.isEmpty || raw.startsWith('data:image/')) continue;
+            if (raw.startsWith('http://') || raw.startsWith('https://')) {
+              explicitThumbs.add(raw);
+            }
+          }
+
           final countStr =
               _parser.extractString(doc, FieldSelector(selector: pageSelStr));
           final pagesMatch = RegExp(r'(\d+)').firstMatch(countStr ?? '');
@@ -485,10 +497,39 @@ class GenericScraperAdapter implements GenericAdapter {
               final cdnHost = match.group(1);
               final internalPath = match.group(2);
 
-              for (int i = 1; i <= pageCount; i++) {
-                imageUrls.add('https://$cdnHost/$internalPath/$i.webp');
+              // Prefer high-quality URLs based on detail metadata if available.
+              final loadDir = _parser.extractString(
+                doc,
+                const FieldSelector(selector: '#load_dir', attribute: 'value'),
+              );
+              final loadId = _parser.extractString(
+                doc,
+                const FieldSelector(selector: '#load_id', attribute: 'value'),
+              );
+
+              if ((loadDir?.isNotEmpty ?? false) &&
+                  (loadId?.isNotEmpty ?? false)) {
+                for (int i = 1; i <= pageCount; i++) {
+                  imageUrls.add('https://$cdnHost/$loadDir/$loadId/$i.webp');
+                }
+              } else {
+                // Keep extension consistent with thumb URL (e.g. 1t.jpg -> 1.jpg)
+                // when metadata is unavailable.
+                final extMatch = RegExp(r'\d+t\.(jpg|jpeg|webp|png)(?:\?.*)?$',
+                        caseSensitive: false)
+                    .firstMatch(thumbSrc);
+                final imageExt = (extMatch?.group(1) ?? 'jpg').toLowerCase();
+
+                for (int i = 1; i <= pageCount; i++) {
+                  imageUrls.add('https://$cdnHost/$internalPath/$i.$imageExt');
+                }
               }
             }
+          }
+
+          // Absolute last fallback: keep using explicit thumb URLs.
+          if (imageUrls.isEmpty && explicitThumbs.isNotEmpty) {
+            imageUrls = explicitThumbs;
           }
         }
       }
