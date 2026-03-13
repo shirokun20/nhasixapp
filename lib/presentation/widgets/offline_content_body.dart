@@ -246,7 +246,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
               ...sourceConfigs.map((config) {
                 final sourceId = config.source;
                 final displayName = config.ui?.displayName ?? sourceId;
-                final themeColor = config.ui?.themeColor;
+                final themeColor = config.ui?.activeColor;
 
                 Color? chipColor;
                 if (themeColor != null) {

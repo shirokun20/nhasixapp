@@ -394,15 +394,19 @@ class FeatureConfig {
 class UiConfig {
   final String displayName;
   final String iconPath;
-  final String themeColor;
-  final String cardStyle;
+  final String? themeColor;
+  final String? brandColor;
+  final String? cardStyle;
 
   UiConfig({
     required this.displayName,
     required this.iconPath,
-    required this.themeColor,
-    required this.cardStyle,
+    this.themeColor,
+    this.brandColor,
+    this.cardStyle,
   });
+
+  String get activeColor => themeColor ?? brandColor ?? '#000000';
 
   factory UiConfig.fromJson(Map<String, dynamic> json) =>
       _$UiConfigFromJson(json);

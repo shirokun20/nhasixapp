@@ -229,14 +229,16 @@ Map<String, dynamic> _$FeatureConfigToJson(FeatureConfig instance) =>
 UiConfig _$UiConfigFromJson(Map<String, dynamic> json) => UiConfig(
       displayName: json['displayName'] as String,
       iconPath: json['iconPath'] as String,
-      themeColor: json['themeColor'] as String,
-      cardStyle: json['cardStyle'] as String,
+      themeColor: json['themeColor'] as String?,
+      brandColor: json['brandColor'] as String?,
+      cardStyle: json['cardStyle'] as String?,
     );
 
 Map<String, dynamic> _$UiConfigToJson(UiConfig instance) => <String, dynamic>{
       'displayName': instance.displayName,
       'iconPath': instance.iconPath,
       'themeColor': instance.themeColor,
+      'brandColor': instance.brandColor,
       'cardStyle': instance.cardStyle,
     };
 

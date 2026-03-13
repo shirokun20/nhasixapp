@@ -541,8 +541,8 @@ class DownloadItemWidget extends StatelessWidget {
       final remoteConfig = GetIt.I<RemoteConfigService>();
       final config = remoteConfig.getConfig(sourceId.toLowerCase());
 
-      if (config?.ui?.themeColor != null) {
-        final hexColor = config!.ui!.themeColor.replaceFirst('#', '0xFF');
+      if (config?.ui != null) {
+        final hexColor = config!.ui!.activeColor.replaceFirst('#', '0xFF');
         return Color(int.parse(hexColor));
       }
     } catch (e) {

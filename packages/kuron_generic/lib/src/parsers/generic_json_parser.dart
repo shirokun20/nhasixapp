@@ -20,7 +20,24 @@ class GenericJsonParser {
     try {
       final value = _evaluate(data, selector);
       if (value == null) return selector.fallback;
-      final str = value.toString();
+      
+      String? str;
+      if (value is Map) {
+        if (value.containsKey('en')) {
+          str = value['en']?.toString();
+        } else if (value.isNotEmpty) {
+          str = value.values.first?.toString();
+        }
+      } else if (value is List) {
+        if (value.isNotEmpty) {
+          str = value.first?.toString();
+        }
+      } else {
+        str = value.toString();
+      }
+
+      if (str == null || str.isEmpty) return selector.fallback;
+
       if (selector.regex != null) {
         return _applyRegex(str, selector.regex!);
       }

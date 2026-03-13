@@ -1,18 +1,23 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/widgets.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // 1. Clear SharedPreferences
   final prefs = await SharedPreferences.getInstance();
   final keys = prefs.getKeys();
   for (final key in keys) {
-    if (key.startsWith('config_version_') || key == 'config_manifest_version' || key == 'installed_source_ids') {
+    if (key.startsWith('config_version_') ||
+        key == 'config_manifest_version' ||
+        key == 'installed_source_ids') {
       await prefs.remove(key);
-      print('Removed SharedPreferences key: $key');
+      if (kDebugMode) {
+        print('Removed SharedPreferences key: $key');
+      }
     }
   }
 
@@ -21,10 +26,16 @@ void main() async {
   final configsDir = Directory('${dir.path}/configs');
   if (await configsDir.exists()) {
     await configsDir.delete(recursive: true);
-    print('Deleted configs directory at: ${configsDir.path}');
+    if (kDebugMode) {
+      print('Deleted configs directory at: ${configsDir.path}');
+    }
   } else {
-    print('No configs directory found at: ${configsDir.path}');
+    if (kDebugMode) {
+      print('No configs directory found at: ${configsDir.path}');
+    }
   }
-  
-  print('Config cache cleared successfully.');
+
+  if (kDebugMode) {
+    print('Config cache cleared successfully.');
+  }
 }
