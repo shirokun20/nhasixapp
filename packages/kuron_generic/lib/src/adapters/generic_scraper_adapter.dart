@@ -470,11 +470,13 @@ class GenericScraperAdapter implements GenericAdapter {
         final pageSelStr = readerConfig['pageCountSelector'] as String?;
 
         if (thumbSel != null && regexStr != null && pageSelStr != null) {
-          final countStr = _parser.extractString(doc, FieldSelector(selector: pageSelStr));
+          final countStr =
+              _parser.extractString(doc, FieldSelector(selector: pageSelStr));
           final pagesMatch = RegExp(r'(\d+)').firstMatch(countStr ?? '');
           final pageCount = int.tryParse(pagesMatch?.group(1) ?? '0') ?? 0;
 
-          final thumbSrc = _parser.extractString(doc, FieldSelector(selector: thumbSel, attribute: thumbAttr));
+          final thumbSrc = _parser.extractString(
+              doc, FieldSelector(selector: thumbSel, attribute: thumbAttr));
 
           if (thumbSrc != null && pageCount > 0) {
             final regex = RegExp(regexStr);
@@ -559,10 +561,13 @@ class GenericScraperAdapter implements GenericAdapter {
     String urlTemplate;
     Map<String, dynamic>? listConfig;
 
+    Map<String, dynamic>? patternMap;
+
     if (patternValue is String) {
       urlTemplate = patternValue;
       listConfig = null;
     } else if (patternValue is Map<String, dynamic>) {
+      patternMap = patternValue;
       urlTemplate = patternValue['url'] as String? ?? '';
 
       Map<String, dynamic>? parentList;
@@ -603,6 +608,18 @@ class GenericScraperAdapter implements GenericAdapter {
           ? filter.includeTags.first.name.toLowerCase().replaceAll(' ', '-')
           : '',
     };
+
+    // Some sources use non-uniform URL path for specific pages, e.g. page 2.
+    if (patternMap != null) {
+      final pageOverrides =
+          (patternMap['pageOverrides'] as Map?)?.cast<String, dynamic>();
+      final overrideTemplate =
+          pageOverrides?[filter.page.toString()] as String?;
+      if (overrideTemplate != null && overrideTemplate.isNotEmpty) {
+        urlTemplate = overrideTemplate;
+      }
+    }
+
     return (_urlBuilder.resolve(urlTemplate, params), listConfig);
   }
 
@@ -644,9 +661,8 @@ class GenericScraperAdapter implements GenericAdapter {
       final altSel = paginationConfig['alt'] as String?;
       final linksSel = paginationConfig['links'] as String?;
 
-      final hasNext =
-          (nextSel != null && _parser.selectAll(doc, nextSel).isNotEmpty) ||
-              (altSel != null && _parser.selectAll(doc, altSel).isNotEmpty);
+      final hasNext = (nextSel != null && _hasEnabledLink(doc, nextSel)) ||
+          (altSel != null && _hasEnabledLink(doc, altSel));
 
       int? totalPages;
       if (linksSel != null) {
@@ -689,7 +705,14 @@ class GenericScraperAdapter implements GenericAdapter {
       if (sel == null) continue;
 
       if (multi) {
-        result[entry.key] = _parser.extractList(doc, sel);
+        var values = _parser.extractList(doc, sel);
+        if (transform == 'slug') {
+          values = values
+              .map(_extractSlugFromUrl)
+              .where((v) => v.isNotEmpty)
+              .toList();
+        }
+        result[entry.key] = values;
       } else {
         var value = _parser.extractString(doc, sel) ?? '';
         if (transform == 'slug' && value.isNotEmpty) {
@@ -717,13 +740,20 @@ class GenericScraperAdapter implements GenericAdapter {
       if (sel == null) continue;
 
       if (multi) {
-        result[entry.key] = el
+        var values = el
             .querySelectorAll(sel.selector)
             .map((c) => sel.attribute != null
                 ? (c.attributes[sel.attribute] ?? '')
                 : c.text.trim())
             .where((s) => s.isNotEmpty)
             .toList();
+        if (transform == 'slug') {
+          values = values
+              .map(_extractSlugFromUrl)
+              .where((v) => v.isNotEmpty)
+              .toList();
+        }
+        result[entry.key] = values;
       } else {
         var value = _parser.extractFromElement(el, sel) ?? '';
         if (transform == 'slug' && value.isNotEmpty) {
@@ -802,5 +832,18 @@ class GenericScraperAdapter implements GenericAdapter {
     match = chapterRegex.firstMatch(url);
     if (match != null) return match.group(1) ?? '';
     return '';
+  }
+
+  bool _hasEnabledLink(dom.Document doc, String selector) {
+    final link = doc.querySelector(selector);
+    if (link == null) return false;
+
+    final href = (link.attributes['href'] ?? '').trim();
+    if (href.isEmpty || href == '#') return false;
+
+    final parentClass = link.parent?.attributes['class'] ?? '';
+    if (parentClass.contains('disabled')) return false;
+
+    return true;
   }
 }

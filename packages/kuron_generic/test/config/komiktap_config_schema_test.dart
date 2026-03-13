@@ -19,18 +19,20 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
-/// Candidate paths (tried in order).  Tests can be run from the project root
-/// OR from the package root — we handle both.
+/// Candidate paths (tried in order). Prefer `app/config/` (new standard)
+/// with `assets/configs/` fallback for configs not migrated yet.
 String _resolveConfigPath(String filename) {
   final candidates = [
-    '../../assets/configs/$filename', // running inside packages/kuron_generic/
-    'assets/configs/$filename', // running from project root
+    '../../app/config/$filename', // running inside packages/kuron_generic/
+    'app/config/$filename', // running from project root
+    '../../assets/configs/$filename',
+    'assets/configs/$filename',
   ];
   for (final p in candidates) {
     if (File(p).existsSync()) return p;
   }
   throw StateError(
-      'Cannot locate $filename. Run tests from project root or packages/kuron_generic/.');
+      'Cannot locate $filename under app/config/ or assets/configs/. Run tests from project root or packages/kuron_generic/.');
 }
 
 Map<String, dynamic> _loadJson(String filename) {

@@ -20,13 +20,13 @@
     "urlPatterns": {
       "base": "https://hentaifox.com/",
       "home": {
-        "url": "/pag/{page}/",
+        "url": "/",
         "list": {
           "container": ".thumb",
           "fields": {
-            "id": {"selector": "a", "attribute": "href", "transform": "slug"},
+            "id": {"selector": ".inner_thumb a", "attribute": "href", "transform": "slug"},
             "title": {"selector": ".caption a"},
-            "thumbnail": {"selector": "img", "attribute": "data-src"}
+            "coverUrl": {"selector": "img", "attribute": "data-src"}
           },
           "pagination": {
             "next": ".pagination .page-item:last-child a",
@@ -34,8 +34,27 @@
           }
         }
       },
+      "homePage": {
+        "url": "/pag/{page}/",
+        "pageOverrides": {
+          "2": "/page/2/"
+        },
+        "inherits": "home"
+      },
       "search": {
-        "url": "/search/?q={q}&page={page}",
+        "url": "/search/?q={query}",
+        "inherits": "home"
+      },
+      "searchPage": {
+        "url": "/search/?q={query}&page={page}",
+        "inherits": "home"
+      },
+      "genreSearch": {
+        "url": "/tag/{tag}/",
+        "inherits": "home"
+      },
+      "genreSearchPage": {
+        "url": "/tag/{tag}/pag/{page}/",
         "inherits": "home"
       },
       "detail": "/gallery/{id}/",
@@ -45,16 +64,21 @@
       "detail": {
         "fields": {
           "title": {"selector": ".info h1"},
-          "thumbnail": {"selector": ".cover img", "attribute": "src"},
-          "tags": {"selector": ".tag_btn", "multi": true},
-          "pageCount": {"selector": ".i_text.pages"}
+          "coverUrl": {"selector": ".cover img", "attribute": "src"},
+          "tags": {
+            "selector": ".tags .tag_btn",
+            "attribute": "href",
+            "transform": "slug",
+            "multi": true
+          },
+          "pageCount": {"selector": ".i_text.pages", "regex": "(\\d+)"}
         }
       },
       "reader": {
         "mode": "hentaifoxCdn",
         "thumbSelector": ".gallery_thumb img",
         "thumbSrcAttr": "data-src",
-        "cdnPathRegex": "//([^/]+)/(.+)/\\d+t\\.(?:jpg|webp)",
+        "cdnPathRegex": "(?:https?:)?//([^/]+)/(.+?)/\\d+t\\.(?:jpg|webp)",
         "pageCountSelector": ".i_text.pages"
       }
     }
