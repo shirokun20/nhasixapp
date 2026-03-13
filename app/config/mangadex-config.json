@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "MangaDex provider using generic REST adapter. Supports full chapter reading via at-home server.",
   "type": "api",
-  "source": "api.mangadex.org",
+  "source": "mangadex",
   "baseUrl": "https://api.mangadex.org",
   "supportsSearch": true,
   "supportsLatest": true,

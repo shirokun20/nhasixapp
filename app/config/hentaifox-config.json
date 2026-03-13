@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "HentaiFox provider using generic scraper adapter.",
   "type": "html",
-  "source": "hentaifox.com",
+  "source": "hentaifox",
   "baseUrl": "https://hentaifox.com",
   "supportsSearch": true,
   "supportsLatest": true,
