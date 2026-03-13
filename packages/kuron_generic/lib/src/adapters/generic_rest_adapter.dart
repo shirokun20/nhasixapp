@@ -308,9 +308,46 @@ class GenericRestAdapter implements GenericAdapter {
     String chapterId,
     Map<String, dynamic> rawConfig,
   ) async {
-    // REST APIs usually serve image URLs within the detail endpoint (like nhentai).
-    // If a source explicitly has a chapters/pages endpoint, it requires custom config.
-    // For now, return null as it is primarily used by manga scrapers.
+    final imagesCfg = rawConfig['api']?['images'] as Map<String, dynamic>?;
+    if (imagesCfg == null) return null;
+
+    final mode = imagesCfg['mode'] as String?;
+    if (mode == 'atHome') {
+      final endpoint = imagesCfg['atHomeEndpoint'] as String?;
+      if (endpoint == null) return null;
+
+      final baseApiUrl = _getBaseUrl(rawConfig);
+      final fullPath = endpoint.startsWith('/') ? endpoint : '/$endpoint';
+      final url = '$baseApiUrl${fullPath.replaceAll('{chapterId}', chapterId)}';
+      _logger.d('$_sourceId REST at-home request: $url');
+
+      try {
+        await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
+        final response = await _dio.get<dynamic>(url);
+        final data = response.data is String
+            ? jsonDecode(response.data as String)
+            : response.data;
+
+        final baseUrl = data['baseUrl'] as String?;
+        final chapterNode = data['chapter'] as Map<String, dynamic>?;
+        if (baseUrl != null && chapterNode != null) {
+          final hash = chapterNode['hash'] as String?;
+          final fileNames = (chapterNode['data'] as List<dynamic>?)?.cast<String>();
+          
+          if (hash != null && fileNames != null) {
+            final images =
+                fileNames.map((fn) => '$baseUrl/data/$hash/$fn').toList();
+            return ChapterData(
+              images: images,
+            );
+          }
+        }
+      } catch (e, st) {
+        _logger.e('$_sourceId fetchChapterImages (atHome) failed',
+            error: e, stackTrace: st);
+      }
+    }
+    
     return null;
   }
 
@@ -351,7 +388,13 @@ class GenericRestAdapter implements GenericAdapter {
       return const AdapterSearchResult(items: [], hasNextPage: false);
     }
 
-    final url = _urlBuilder.buildSearchUrl(template, filter);
+    String url = _urlBuilder.buildSearchUrl(template, filter);
+    final paginationCfg = (apiList['pagination'] as Map<String, dynamic>?) ?? {};
+    if (paginationCfg['offsetMode'] == true) {
+      final pageSize = paginationCfg['pageSize'] as int? ?? 20;
+      final offset = ((filter.page > 0 ? filter.page : 1) - 1) * pageSize;
+      url = url.replaceAll('{offset}', offset.toString());
+    }
     _logger.d('$_sourceId REST [new schema] search: $url');
 
     try {
@@ -380,17 +423,34 @@ class GenericRestAdapter implements GenericAdapter {
       // Pagination
       final paginationCfg =
           (apiList['pagination'] as Map<String, dynamic>?) ?? {};
-      final totalPagesStr =
-          _extractRestScalar(data, paginationCfg['totalPages']);
-      final currentPageStr =
-          _extractRestScalar(data, paginationCfg['currentPage']);
       bool hasNext = true;
       int? totalPages;
-      if (totalPagesStr != null && currentPageStr != null) {
-        totalPages = int.tryParse(totalPagesStr);
-        final current = int.tryParse(currentPageStr);
-        if (totalPages != null && current != null) {
-          hasNext = current < totalPages;
+
+      if (paginationCfg['offsetMode'] == true) {
+        final totalStr = _extractRestScalar(data, paginationCfg['total']);
+        final limitStr = _extractRestScalar(data, paginationCfg['limit']);
+        final offsetStr = _extractRestScalar(data, paginationCfg['offset']);
+
+        final total = int.tryParse(totalStr ?? '');
+        final limit = int.tryParse(limitStr ?? '');
+        final offset = int.tryParse(offsetStr ?? '');
+
+        if (total != null && limit != null && offset != null) {
+          hasNext = (offset + limit) < total;
+          totalPages = (total / limit).ceil();
+        }
+      } else {
+        final totalPagesStr =
+            _extractRestScalar(data, paginationCfg['totalPages']);
+        final currentPageStr =
+            _extractRestScalar(data, paginationCfg['currentPage']);
+
+        if (totalPagesStr != null && currentPageStr != null) {
+          totalPages = int.tryParse(totalPagesStr);
+          final current = int.tryParse(currentPageStr);
+          if (totalPages != null && current != null) {
+            hasNext = current < totalPages;
+          }
         }
       }
 
@@ -442,11 +502,43 @@ class GenericRestAdapter implements GenericAdapter {
         imageUrls = _buildImageUrlsFromTemplate(data, imagesCfg);
       }
 
+      // Chapters
+      List<Chapter>? chapters;
+      final chaptersCfg = apiDetail['chapters'] as Map<String, dynamic>?;
+      if (chaptersCfg != null) {
+        final chapterEndpoint = chaptersCfg['endpoint'] as String?;
+        if (chapterEndpoint != null) {
+          final baseApiUrl = _getBaseUrl(rawConfig);
+          final fullPath = chapterEndpoint.startsWith('/') ? chapterEndpoint : '/$chapterEndpoint';
+          final chapterUrl = '$baseApiUrl${fullPath.replaceAll('{id}', contentId)}';
+          
+          try {
+            final chapterRes = await _dio.get<dynamic>(chapterUrl);
+            final cData = chapterRes.data is String
+                ? jsonDecode(chapterRes.data as String)
+                : chapterRes.data;
+            
+            final itemsSelector = chaptersCfg['items'] as String?;
+            if (itemsSelector != null) {
+              final rawChapters = _parser.extractItems(cData, FieldSelector(selector: itemsSelector));
+              final cFields = (chaptersCfg['fields'] as Map<String, dynamic>?) ?? {};
+              chapters = rawChapters.map((c) {
+                final cFieldsExtracted = _extractRestFields(c, cFields);
+                return GenericContentMapper.toChapter(cFieldsExtracted);
+              }).toList();
+            }
+          } catch (e) {
+            _logger.w('$_sourceId detail chapters fetch failed: $e');
+          }
+        }
+      }
+
       final content = GenericContentMapper.toDetail(
         contentId,
         fields,
         sourceId: _sourceId,
         imageUrls: imageUrls,
+        chapters: chapters,
       );
       return AdapterDetailResult(content: content, imageUrls: imageUrls);
     } catch (e) {
@@ -1016,6 +1108,26 @@ class GenericRestAdapter implements GenericAdapter {
 
     final template = builder['template'] as String?;
     if (template == null) return null;
+
+    final builderType = builder['type'] as String?;
+    if (builderType == 'mangadexCover') {
+      final mangaIdSel = builder['mangaIdPath'] as String?;
+      final filenameSel = builder['filenamePath'] as String?;
+      
+      final mangaId = mangaIdSel != null 
+          ? _parser.extractString(data, FieldSelector(selector: mangaIdSel))
+          : alreadyExtractedMediaId;
+      final filename = filenameSel != null 
+          ? _parser.extractString(data, FieldSelector(selector: filenameSel))
+          : null;
+          
+      if (mangaId != null && filename != null) {
+        return template
+            .replaceAll('{mangaId}', mangaId)
+            .replaceAll('{fileName}', filename);
+      }
+      return null;
+    }
 
     // Resolve media_id
     final mediaIdSel = builder['mediaIdSelector'] as String?;

@@ -10,22 +10,26 @@
 ## 🔮 Future Plans
 | Project Name | Progress | % | Status |
 |---|---|---|---|
+| **builtin-dns-resolver** | `..........` | 0% | 🧊 Backlog |
 | **nhentai_search_revamp** | `..........` | 0% | 🧊 Backlog |
 
 ## 📋 Analysis Phase
 | Project Name | Progress | % | Status |
 |---|---|---|---|
 | **app_audit_hardcode_ui_desktop** | `..........` | 0% | Pending |
+| **builtin-dns-resolver** | `..........` | 0% | Pending |
 | **download_metadata_revamp** | `..........` | 0% | Pending |
 | **flutter-desktop-migration** | `..........` | 0% | Pending |
 | **komiktap_migration** | `..........` | 0% | Pending |
 | **komiktap_navigation_lists** | `..........` | 0% | Pending |
+| **premium_enhancements** | `..........` | 0% | Pending |
 | **reader-ads** | `..........` | 0% | Pending |
 
 ## 🚧 On Progress
 | Project Name | Progress | % | Status |
 |---|---|---|---|
-| **multi_provider_integration** | `█████████░` | 91% | 🔥 Hot |
+| **multi_provider_integration** | `█████████░` | 93% | 🔥 Hot |
+| **premium_enhancements** | `..........` | 0% | Pending |
 
 ## ✅ Success
 | Project Name | Progress | % | Status |

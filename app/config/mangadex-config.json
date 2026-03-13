@@ -1,0 +1,112 @@
+{
+  "id": "mangadex",
+  "name": "MangaDex",
+  "version": "1.0.0",
+  "description": "MangaDex provider using generic REST adapter. Supports full chapter reading via at-home server.",
+  "type": "api",
+  "source": "api.mangadex.org",
+  "baseUrl": "https://api.mangadex.org",
+  "supportsSearch": true,
+  "supportsLatest": true,
+  "supportsDetail": true,
+  "network": {
+    "rateLimitMs": 500,
+    "maxRetries": 3,
+    "timeoutMs": 15000,
+    "userAgent": "Kuron/2.0 (Mobile, Dart)"
+  },
+  "api": {
+    "endpoints": {
+      "allGalleries": "/manga?limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&order[createdAt]=desc",
+      "search": "/manga?title={q}&limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe",
+      "detail": "/manga/{id}?includes[]=cover_art&includes[]=author&includes[]=artist"
+    },
+    "list": {
+      "items": "$.data[*]",
+      "pagination": {
+        "offsetMode": true,
+        "total": {
+          "path": "$.total"
+        },
+        "limit": {
+          "path": "$.limit"
+        },
+        "offset": {
+          "path": "$.offset"
+        },
+        "pageSize": 30
+      },
+      "fields": {
+        "id": {
+          "selector": "$.id"
+        },
+        "title": {
+          "selector": "$.attributes.title.en"
+        },
+        "coverUrl": {
+          "type": "coverBuilder",
+          "template": "https://uploads.mangadex.org/covers/{mangaId}/{fileName}.256.jpg",
+          "mangaIdPath": "$.id",
+          "filenamePath": "$.relationships[?(@.type=='cover_art')].attributes.fileName"
+        },
+        "tags": {
+          "selector": "$.attributes.tags[*].attributes.name.en",
+          "multi": true
+        },
+        "artists": {
+          "selector": "$.relationships[?(@.type=='artist')].attributes.name",
+          "multi": true
+        }
+      }
+    },
+    "detail": {
+      "chapters": {
+        "endpoint": "/chapter?manga={id}&translatedLanguage[]=en&limit=500&order[chapter]=desc",
+        "items": "$.data[*]",
+        "fields": {
+          "id": {
+            "selector": "$.id"
+          },
+          "title": {
+            "selector": "$.attributes.chapter"
+          },
+          "url": {
+            "selector": "$.id"
+          },
+          "date": {
+            "selector": "$.attributes.readableAt"
+          }
+        }
+      },
+      "fields": {
+        "id": {
+          "selector": "$.data.id"
+        },
+        "title": {
+          "selector": "$.data.attributes.title.en"
+        },
+        "coverUrl": {
+          "type": "coverBuilder",
+          "template": "https://uploads.mangadex.org/covers/{mangaId}/{fileName}.256.jpg",
+          "mangaIdPath": "$.data.id",
+          "filenamePath": "$.data.relationships[?(@.type=='cover_art')].attributes.fileName"
+        },
+        "tags": {
+          "selector": "$.data.attributes.tags[*].attributes.name.en",
+          "multi": true
+        },
+        "artists": {
+          "selector": "$.data.relationships[?(@.type=='artist')].attributes.name",
+          "multi": true
+        },
+        "uploadDate": {
+          "selector": "$.data.attributes.createdAt"
+        }
+      }
+    },
+    "images": {
+      "mode": "atHome",
+      "atHomeEndpoint": "/at-home/server/{chapterId}"
+    }
+  }
+}

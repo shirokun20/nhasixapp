@@ -32,6 +32,36 @@
         "requiresSpecialAdapter": true,
         "sizeKb": 6
       }
+    },
+    {
+      "id": "mangadex",
+      "version": "1.0.0",
+      "url": "config/mangadex-config.json",
+      "meta": {
+        "displayName": "MangaDex",
+        "description": "Manga reader featuring a large community and frequent updates",
+        "iconUrl": "images/mangadex.png",
+        "contentType": "manga",
+        "language": "en",
+        "requiresAuth": false,
+        "requiresSpecialAdapter": false,
+        "sizeKb": 5
+      }
+    },
+    {
+      "id": "hentaifox",
+      "version": "1.0.0",
+      "url": "config/hentaifox-config.json",
+      "meta": {
+        "displayName": "HentaiFox",
+        "description": "High quality Hentai reader",
+        "iconUrl": "images/hentaifox.png",
+        "contentType": "doujinshi",
+        "language": "en",
+        "requiresAuth": false,
+        "requiresSpecialAdapter": false,
+        "sizeKb": 5
+      }
     }
   ]
 }

@@ -463,6 +463,34 @@ class GenericScraperAdapter implements GenericAdapter {
       final doc = _parser.parse(htmlContent);
 
       // 2. DOM fallback for images.
+      if (imageUrls.isEmpty && readerConfig['mode'] == 'hentaifoxCdn') {
+        final thumbSel = readerConfig['thumbSelector'] as String?;
+        final thumbAttr = readerConfig['thumbSrcAttr'] as String? ?? 'src';
+        final regexStr = readerConfig['cdnPathRegex'] as String?;
+        final pageSelStr = readerConfig['pageCountSelector'] as String?;
+
+        if (thumbSel != null && regexStr != null && pageSelStr != null) {
+          final countStr = _parser.extractString(doc, FieldSelector(selector: pageSelStr));
+          final pagesMatch = RegExp(r'(\d+)').firstMatch(countStr ?? '');
+          final pageCount = int.tryParse(pagesMatch?.group(1) ?? '0') ?? 0;
+
+          final thumbSrc = _parser.extractString(doc, FieldSelector(selector: thumbSel, attribute: thumbAttr));
+
+          if (thumbSrc != null && pageCount > 0) {
+            final regex = RegExp(regexStr);
+            final match = regex.firstMatch(thumbSrc);
+            if (match != null && match.groupCount >= 2) {
+              final cdnHost = match.group(1);
+              final internalPath = match.group(2);
+
+              for (int i = 1; i <= pageCount; i++) {
+                imageUrls.add('https://$cdnHost/$internalPath/$i.webp');
+              }
+            }
+          }
+        }
+      }
+
       if (imageUrls.isEmpty) {
         final containerSel = readerConfig['container'] as String?;
         if (containerSel != null) {

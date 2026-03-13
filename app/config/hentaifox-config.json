@@ -1,0 +1,52 @@
+{
+  "id": "hentaifox",
+  "name": "HentaiFox",
+  "version": "1.0.0",
+  "description": "HentaiFox provider using generic scraper adapter.",
+  "type": "html",
+  "source": "hentaifox.com",
+  "baseUrl": "https://hentaifox.com",
+  "supportsSearch": true,
+  "supportsLatest": true,
+  "supportsDetail": true,
+  "network": {
+    "rateLimitMs": 1000,
+    "maxRetries": 3,
+    "timeoutMs": 15000,
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+  },
+  "scraper": {
+    "urlPatterns": {
+      "base": "https://hentaifox.com/",
+      "allGalleries": "/pag/{page}/",
+      "search": "/search/?q={q}&page={page}",
+      "detail": "/gallery/{id}/",
+      "chapter": "/gallery/{id}/"
+    },
+    "selectors": {
+      "list": {
+        "items": ".thumb",
+        "fields": {
+          "id": {"selector": "a", "attribute": "href"},
+          "title": {"selector": ".caption a"},
+          "thumbnail": {"selector": "img", "attribute": "src"}
+        }
+      },
+      "detail": {
+        "fields": {
+          "title": {"selector": "h1"},
+          "thumbnail": {"selector": ".cover img", "attribute": "src"},
+          "tags": {"selector": ".tag_btn", "multi": true},
+          "pageCount": {"selector": ".pages span"}
+        }
+      },
+      "reader": {
+        "mode": "hentaifoxCdn",
+        "thumbSelector": "#thumbs img",
+        "thumbSrcAttr": "data-src",
+        "cdnPathRegex": "//([^/]+\\.hentaifox\\.com)/([^/]+/[^/]+)/\\d+t\\.jpg",
+        "pageCountSelector": ".pages span"
+      }
+    }
+  }
+}
