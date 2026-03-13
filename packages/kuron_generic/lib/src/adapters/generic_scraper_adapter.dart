@@ -455,6 +455,9 @@ class GenericScraperAdapter implements GenericAdapter {
     final commentsCfg = selectors['comments'] as Map<String, dynamic>?;
     if (commentsCfg == null) return const [];
 
+    final url = _urlBuilder.buildDetailUrl(detailTemplate, contentId);
+    String? cachedDetailHtml;
+
     // 1) API-first comments path (e.g. HentaiFox includes/comments.php)
     final commentsEndpoint = commentsCfg['endpoint'] as String?;
     if (commentsEndpoint != null && commentsEndpoint.isNotEmpty) {
@@ -463,10 +466,40 @@ class GenericScraperAdapter implements GenericAdapter {
             (commentsCfg['galleryIdParam'] as String?) ?? 'gallery_id';
         final commentsUrl = _urlBuilder.resolve(commentsEndpoint, const {});
 
+        // comments.php is protected by CSRF/session checks.
+        final detailResponse = await _dio.get<String>(
+          url,
+          options: Options(responseType: ResponseType.plain),
+        );
+        cachedDetailHtml = detailResponse.data;
+
+        final csrfToken = _extractCsrfToken(cachedDetailHtml ?? '');
+        final cookieHeader = _buildCookieHeader(detailResponse.headers);
+        final requestHeaders = <String, dynamic>{
+          'Referer': url,
+          'Origin': Uri.parse(url).origin,
+          'X-Requested-With': 'XMLHttpRequest',
+          if (csrfToken != null && csrfToken.isNotEmpty)
+            'X-CSRF-TOKEN': csrfToken,
+          if (cookieHeader.isNotEmpty) 'Cookie': cookieHeader,
+        };
+
         final response = await _dio.post<dynamic>(
           commentsUrl,
-          data: FormData.fromMap({galleryIdParam: contentId}),
+          data: {galleryIdParam: contentId},
+          options: Options(
+            contentType: Headers.formUrlEncodedContentType,
+            responseType: ResponseType.plain,
+            headers: requestHeaders,
+            validateStatus: (status) => status != null && status < 500,
+          ),
         );
+
+        if (response.statusCode != 200) {
+          _logger.w(
+            '$_sourceId comments API returned ${response.statusCode} for $contentId',
+          );
+        }
 
         final apiComments = _parseApiComments(response.data);
         if (apiComments.isNotEmpty) {
@@ -486,14 +519,15 @@ class GenericScraperAdapter implements GenericAdapter {
       return const [];
     }
 
-    final url = _urlBuilder.buildDetailUrl(detailTemplate, contentId);
-
     try {
-      final response = await _dio.get<String>(
-        url,
-        options: Options(responseType: ResponseType.plain),
-      );
-      final doc = _parser.parse(response.data ?? '');
+      final html = cachedDetailHtml ??
+          (await _dio.get<String>(
+            url,
+            options: Options(responseType: ResponseType.plain),
+          ))
+              .data ??
+          '';
+      final doc = _parser.parse(html);
       final commentEls = _parser.selectAll(doc, containerSel);
       if (commentEls.isEmpty) return const [];
 
@@ -532,6 +566,35 @@ class GenericScraperAdapter implements GenericAdapter {
           error: e);
       return const [];
     }
+  }
+
+  String? _extractCsrfToken(String html) {
+    if (html.isEmpty) return null;
+
+    final doc = _parser.parse(html);
+    final metaEls = _parser.selectAll(doc, 'meta[name="csrf-token"]');
+    final token =
+        metaEls.isNotEmpty ? metaEls.first.attributes['content']?.trim() : null;
+    if (token != null && token.isNotEmpty) {
+      return token;
+    }
+
+    return RegExp(
+      '<meta\\s+name=["\\\']csrf-token["\\\']\\s+content=["\\\']([^"\\\']+)["\\\']',
+      caseSensitive: false,
+    ).firstMatch(html)?.group(1);
+  }
+
+  String _buildCookieHeader(Headers headers) {
+    final setCookies = headers.map['set-cookie'];
+    if (setCookies == null || setCookies.isEmpty) return '';
+
+    final cookiePairs = setCookies
+        .map((raw) => raw.split(';').first.trim())
+        .where((pair) => pair.isNotEmpty)
+        .toSet();
+
+    return cookiePairs.join('; ');
   }
 
   // ── fetchChapterImages ─────────────────────────────────────────────────────

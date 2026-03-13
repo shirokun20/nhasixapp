@@ -322,6 +322,7 @@ const _hfDetailHtmlWithRelated = '''
 
 const _hfDetailHtmlWithComments = '''
 <html><body>
+<meta name="csrf-token" content="test-csrf-token" />
 <div id="comments_list">
   <ul>
     <li class="p_comm">
@@ -1097,9 +1098,29 @@ void main() {
     });
 
     test('extracts comments from comments.php API', () async {
+      dioAdapter.onGet(
+        '$_hfBaseUrl/gallery/158214/',
+        (s) => s.reply(200, _hfDetailHtmlWithComments, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8'],
+          'set-cookie': ['PHPSESSID=test-session; path=/; HttpOnly']
+        }),
+      );
       dioAdapter.onPost(
         '$_hfBaseUrl/includes/comments.php',
-        (s) => s.reply(200, _hfCommentsApiResponse, headers: {
+        (s) => s.reply(200, [
+          {
+            'comment_id': 1169016,
+            'user_id': 425882,
+            'user_name': 'Yunex13',
+            'is_retired': 0,
+            'user_avatar': 'f7c22f028e78ffeb7223fe9a423db3c5.jpg',
+            'parent': 0,
+            'likes': 2,
+            'dislikes': 0,
+            'comment': ':e_heart_eyes::e_heart_eyes:',
+            'posted': '19 days ago',
+          }
+        ], headers: {
           Headers.contentTypeHeader: ['application/json']
         }),
       );
@@ -1116,16 +1137,17 @@ void main() {
     });
 
     test('falls back to detail HTML parsing when API fails', () async {
+      dioAdapter.onGet(
+        '$_hfBaseUrl/gallery/154991/',
+        (s) => s.reply(200, _hfDetailHtmlWithComments, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8'],
+          'set-cookie': ['PHPSESSID=test-session; path=/; HttpOnly']
+        }),
+      );
       dioAdapter.onPost(
         '$_hfBaseUrl/includes/comments.php',
         (s) => s.reply(500, 'error', headers: {
           Headers.contentTypeHeader: ['text/plain']
-        }),
-      );
-      dioAdapter.onGet(
-        '$_hfBaseUrl/gallery/154991/',
-        (s) => s.reply(200, _hfDetailHtmlWithComments, headers: {
-          Headers.contentTypeHeader: ['text/html; charset=utf-8']
         }),
       );
 
