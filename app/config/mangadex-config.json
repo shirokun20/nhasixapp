@@ -1,19 +1,19 @@
 {
-  "id": "mangadex",
-  "name": "MangaDex",
-  "version": "1.0.0",
-  "description": "MangaDex provider using generic REST adapter. Supports full chapter reading via at-home server.",
-  "type": "api",
   "source": "mangadex",
+  "version": "1.0.0",
+  "enabled": true,
+  "defaultLanguage": "english",
   "baseUrl": "https://api.mangadex.org",
-  "supportsSearch": true,
-  "supportsLatest": true,
-  "supportsDetail": true,
+  "ui": {
+    "displayName": "MangaDex",
+    "iconPath": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/images/mangadex.png",
+    "brandColor": "#FF6740"
+  },
   "network": {
-    "rateLimitMs": 500,
-    "maxRetries": 3,
-    "timeoutMs": 15000,
-    "userAgent": "Kuron/2.0 (Mobile, Dart)"
+    "requiresBypass": false,
+    "headers": {
+      "User-Agent": "Kuron/2.0 (Mobile, Dart)"
+    }
   },
   "api": {
     "endpoints": {
@@ -108,5 +108,12 @@
       "mode": "atHome",
       "atHomeEndpoint": "/at-home/server/{chapterId}"
     }
+  },
+  "features": {
+    "comments": false,
+    "related": false,
+    "download": false,
+    "favorite": true,
+    "chapters": true
   }
 }

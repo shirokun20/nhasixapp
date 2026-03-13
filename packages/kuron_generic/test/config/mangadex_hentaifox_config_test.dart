@@ -24,8 +24,7 @@ void main() {
     });
 
     test('has required top-level keys', () {
-      expect(config['id'], 'mangadex');
-      expect(config['type'], 'api');
+      expect(config['source'], 'mangadex');
       expect(config['api'], isA<Map>());
     });
 
@@ -67,8 +66,7 @@ void main() {
     });
 
     test('has required top-level keys', () {
-      expect(config['id'], 'hentaifox');
-      expect(config['type'], 'html');
+      expect(config['source'], 'hentaifox');
       expect(config['scraper'], isA<Map>());
     });
 

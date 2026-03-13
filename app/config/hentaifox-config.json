@@ -1,21 +1,22 @@
 {
-  "id": "hentaifox",
-  "name": "HentaiFox",
-  "version": "1.0.0",
-  "description": "HentaiFox provider using generic scraper adapter.",
-  "type": "html",
   "source": "hentaifox",
+  "version": "1.0.0",
+  "enabled": true,
+  "defaultLanguage": "english",
   "baseUrl": "https://hentaifox.com",
-  "supportsSearch": true,
-  "supportsLatest": true,
-  "supportsDetail": true,
+  "ui": {
+    "displayName": "HentaiFox",
+    "iconPath": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/images/hentaifox.png",
+    "brandColor": "#E3456F"
+  },
   "network": {
-    "rateLimitMs": 1000,
-    "maxRetries": 3,
-    "timeoutMs": 15000,
-    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+    "requiresBypass": false,
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+    }
   },
   "scraper": {
+    "enabled": true,
     "urlPatterns": {
       "base": "https://hentaifox.com/",
       "allGalleries": "/pag/{page}/",
@@ -48,5 +49,12 @@
         "pageCountSelector": ".pages span"
       }
     }
+  },
+  "features": {
+    "comments": false,
+    "related": false,
+    "download": false,
+    "favorite": true,
+    "chapters": false
   }
 }
