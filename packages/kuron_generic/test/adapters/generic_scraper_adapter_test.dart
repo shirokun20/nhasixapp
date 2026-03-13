@@ -347,23 +347,6 @@ const _hfDetailHtmlWithComments = '''
 </body></html>
 ''';
 
-const _hfCommentsApiResponse = '''
-[
-  {
-    "comment_id":1169016,
-    "user_id":425882,
-    "user_name":"Yunex13",
-    "is_retired":0,
-    "user_avatar":"f7c22f028e78ffeb7223fe9a423db3c5.jpg",
-    "parent":0,
-    "likes":2,
-    "dislikes":0,
-    "comment":":e_heart_eyes::e_heart_eyes:",
-    "posted":"19 days ago"
-  }
-]
-''';
-
 // ── Test setup helpers ────────────────────────────────────────────────────────
 
 GenericScraperAdapter _buildAdapter(Dio dio) {
