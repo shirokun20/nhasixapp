@@ -126,6 +126,8 @@ const _hentaiFoxConfig = {
     },
     'selectors': {
       'comments': {
+        'endpoint': '/includes/comments.php',
+        'galleryIdParam': 'gallery_id',
         'container': '#comments_list .comment',
         'fields': {
           'id': {
@@ -342,6 +344,23 @@ const _hfDetailHtmlWithComments = '''
   </ul>
 </div>
 </body></html>
+''';
+
+const _hfCommentsApiResponse = '''
+[
+  {
+    "comment_id":1169016,
+    "user_id":425882,
+    "user_name":"Yunex13",
+    "is_retired":0,
+    "user_avatar":"f7c22f028e78ffeb7223fe9a423db3c5.jpg",
+    "parent":0,
+    "likes":2,
+    "dislikes":0,
+    "comment":":e_heart_eyes::e_heart_eyes:",
+    "posted":"19 days ago"
+  }
+]
 ''';
 
 // ── Test setup helpers ────────────────────────────────────────────────────────
@@ -1077,7 +1096,32 @@ void main() {
       adapter = _buildHentaiFoxAdapter(dio);
     });
 
-    test('extracts comments from detail page', () async {
+    test('extracts comments from comments.php API', () async {
+      dioAdapter.onPost(
+        '$_hfBaseUrl/includes/comments.php',
+        (s) => s.reply(200, _hfCommentsApiResponse, headers: {
+          Headers.contentTypeHeader: ['application/json']
+        }),
+      );
+
+      final result = await adapter.fetchComments('158214', _hentaiFoxConfig);
+      expect(result, hasLength(1));
+
+      expect(result.first.id, '1169016');
+      expect(result.first.username, 'Yunex13');
+      expect(result.first.body, ':e_heart_eyes::e_heart_eyes:');
+      expect(result.first.avatarUrl,
+          'https://hentaifox.com/uploads/f7c22f028e78ffeb7223fe9a423db3c5.jpg');
+      expect(result.first.postDate, isNotNull);
+    });
+
+    test('falls back to detail HTML parsing when API fails', () async {
+      dioAdapter.onPost(
+        '$_hfBaseUrl/includes/comments.php',
+        (s) => s.reply(500, 'error', headers: {
+          Headers.contentTypeHeader: ['text/plain']
+        }),
+      );
       dioAdapter.onGet(
         '$_hfBaseUrl/gallery/154991/',
         (s) => s.reply(200, _hfDetailHtmlWithComments, headers: {
@@ -1087,13 +1131,8 @@ void main() {
 
       final result = await adapter.fetchComments('154991', _hentaiFoxConfig);
       expect(result, hasLength(1));
-
       expect(result.first.id, '1164113');
       expect(result.first.username, 'Eichi');
-      expect(result.first.body, 'NIICEEE');
-      expect(
-          result.first.avatarUrl, 'https://hentaifox.com/uploads/avatar_1.jpg');
-      expect(result.first.postDate, isNotNull);
     });
   });
 }

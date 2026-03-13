@@ -85,6 +85,8 @@
         }
       },
       "comments": {
+        "endpoint": "/includes/comments.php",
+        "galleryIdParam": "gallery_id",
         "container": "#comments_list .comment",
         "fields": {
           "id": {"selector": ".like_comment", "attribute": "comment_id"},

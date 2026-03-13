@@ -455,6 +455,30 @@ class GenericScraperAdapter implements GenericAdapter {
     final commentsCfg = selectors['comments'] as Map<String, dynamic>?;
     if (commentsCfg == null) return const [];
 
+    // 1) API-first comments path (e.g. HentaiFox includes/comments.php)
+    final commentsEndpoint = commentsCfg['endpoint'] as String?;
+    if (commentsEndpoint != null && commentsEndpoint.isNotEmpty) {
+      try {
+        final galleryIdParam =
+            (commentsCfg['galleryIdParam'] as String?) ?? 'gallery_id';
+        final commentsUrl = _urlBuilder.resolve(commentsEndpoint, const {});
+
+        final response = await _dio.post<dynamic>(
+          commentsUrl,
+          data: FormData.fromMap({galleryIdParam: contentId}),
+        );
+
+        final apiComments = _parseApiComments(response.data);
+        if (apiComments.isNotEmpty) {
+          return apiComments;
+        }
+      } catch (e) {
+        _logger.w('$_sourceId comments API failed for $contentId', error: e);
+      }
+    }
+
+    // 2) HTML fallback comments path
+
     final containerSel = commentsCfg['container'] as String?;
     final fieldsConfig =
         (commentsCfg['fields'] as Map<String, dynamic>?) ?? const {};
@@ -1246,5 +1270,63 @@ class GenericScraperAdapter implements GenericAdapter {
       default:
         return null;
     }
+  }
+
+  List<Comment> _parseApiComments(dynamic data) {
+    List<dynamic> rows;
+
+    if (data is List) {
+      rows = data;
+    } else if (data is String) {
+      final decoded = json.decode(data);
+      if (decoded is List) {
+        rows = decoded;
+      } else {
+        return const [];
+      }
+    } else {
+      return const [];
+    }
+
+    final comments = <Comment>[];
+    final seenIds = <String>{};
+
+    for (final row in rows) {
+      if (row is! Map) continue;
+
+      final id = (row['comment_id'] ?? '').toString().trim();
+      final username = (row['user_name'] ?? '').toString().trim();
+      final body = (row['comment'] ?? '').toString().trim();
+      if (id.isEmpty || username.isEmpty || body.isEmpty) continue;
+      if (seenIds.contains(id)) continue;
+
+      final avatarRaw = (row['user_avatar'] ?? '').toString().trim();
+      String? avatarUrl;
+      if (avatarRaw.isNotEmpty) {
+        if (avatarRaw.startsWith('http://') ||
+            avatarRaw.startsWith('https://')) {
+          avatarUrl = avatarRaw;
+        } else if (avatarRaw.startsWith('/')) {
+          avatarUrl = _urlBuilder.resolve(avatarRaw, const {});
+        } else {
+          avatarUrl = _urlBuilder.resolve('/uploads/$avatarRaw', const {});
+        }
+      }
+
+      final postedRaw = (row['posted'] ?? '').toString().trim();
+
+      comments.add(
+        Comment(
+          id: id,
+          username: username,
+          body: body,
+          avatarUrl: avatarUrl,
+          postDate: _parseRelativeOrAbsoluteDate(postedRaw),
+        ),
+      );
+      seenIds.add(id);
+    }
+
+    return comments;
   }
 }
