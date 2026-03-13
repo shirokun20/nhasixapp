@@ -21,13 +21,31 @@ class GenericHtmlParser {
   /// Extract a single string value from [document] using [selector].
   String? extractString(dom.Document document, FieldSelector selector) {
     try {
+      if (selector.regex != null) {
+        // For regex extraction, scan all matching elements and return the first
+        // value that matches the regex. This is useful for repeated selectors
+        // where only one node contains the desired token.
+        final elements = document.querySelectorAll(selector.selector);
+        for (final element in elements) {
+          final value = selector.attribute != null
+              ? element.attributes[selector.attribute]
+              : element.text.trim();
+          if (value == null || value.isEmpty) continue;
+
+          final matched = _applyRegex(value, selector.regex!);
+          if (matched != null && matched.isNotEmpty) {
+            return matched;
+          }
+        }
+        return selector.fallback;
+      }
+
       final element = document.querySelector(selector.selector);
       if (element == null) return selector.fallback;
       final value = selector.attribute != null
           ? element.attributes[selector.attribute]
           : element.text.trim();
       if (value == null || value.isEmpty) return selector.fallback;
-      if (selector.regex != null) return _applyRegex(value, selector.regex!);
       return value;
     } catch (e) {
       _logger.w('GenericHtmlParser: failed to extract "${selector.selector}"',

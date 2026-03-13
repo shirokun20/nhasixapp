@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/config/config_models.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
@@ -27,6 +26,29 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
+  SearchConfig? _buildScraperQueryFallback(Map<String, dynamic>? rawMap) {
+    final scraper = rawMap?['scraper'] as Map<String, dynamic>?;
+    final urlPatterns = scraper?['urlPatterns'] as Map<String, dynamic>?;
+    final searchPattern = urlPatterns?['search'];
+
+    String? endpoint;
+    if (searchPattern is String) {
+      endpoint = searchPattern;
+    } else if (searchPattern is Map<String, dynamic>) {
+      endpoint = searchPattern['url'] as String?;
+    }
+
+    if (endpoint == null || endpoint.isEmpty) {
+      return null;
+    }
+
+    return SearchConfig(
+      searchMode: SearchMode.queryString,
+      endpoint: endpoint,
+      queryParam: 'q',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppScaffoldWithOffline(
@@ -35,19 +57,10 @@ class _SearchScreenState extends State<SearchScreen> {
         builder: (context, sourceState) {
           final sourceId = sourceState.activeSource?.id ?? 'nhentai';
           final remoteConfig = getIt<RemoteConfigService>();
-          final sourceConfig = remoteConfig.getConfig(sourceId);
-          final searchConfig = remoteConfig.getSearchConfig(sourceId);
-          final searchForm = remoteConfig.getSearchFormConfig(sourceId);
           final rawMap = remoteConfig.getRawConfig(sourceId);
-
-          Logger().i('Building SearchScreen for source: $sourceId');
-          Logger().i('SourceConfig available: ${sourceConfig != null}');
-          Logger().i(
-              'Raw config available: ${rawMap != null}, version=${rawMap?['version']}');
-          Logger().i(
-              'SearchConfig: ${searchConfig != null ? searchConfig.toJson() : 'null'}');
-          Logger().i(
-              'SearchForm: ${searchForm != null ? searchForm.toJson() : 'null'}');
+          final searchConfig = remoteConfig.getSearchConfig(sourceId) ??
+              _buildScraperQueryFallback(rawMap);
+          final searchForm = remoteConfig.getSearchFormConfig(sourceId);
 
           // Priority: searchConfig (nhentai-style) → searchForm (komiktap-style)
           // → fallback UI

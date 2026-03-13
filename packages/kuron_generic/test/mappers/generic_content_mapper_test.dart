@@ -107,6 +107,36 @@ void main() {
       expect(result.uploadDate.day, 15);
     });
 
+    test('maps uploadDate from relative string', () {
+      final before = DateTime.now();
+      final result = GenericContentMapper.toListItem(
+        {'id': 'x', 'uploadDate': '19 days ago'},
+        sourceId: sourceId,
+      );
+      final after = DateTime.now();
+
+      final minExpected = before.subtract(const Duration(days: 19, minutes: 1));
+      final maxExpected = after.subtract(const Duration(days: 18, hours: 23));
+
+      expect(result.uploadDate.isAfter(minExpected), isTrue);
+      expect(result.uploadDate.isBefore(maxExpected), isTrue);
+    });
+
+    test('maps uploadDate from posted relative label', () {
+      final before = DateTime.now();
+      final result = GenericContentMapper.toListItem(
+        {'id': 'x', 'uploadDate': 'Posted: 2 months ago'},
+        sourceId: sourceId,
+      );
+      final after = DateTime.now();
+
+      final minExpected = before.subtract(const Duration(days: 61));
+      final maxExpected = after.subtract(const Duration(days: 59));
+
+      expect(result.uploadDate.isAfter(minExpected), isTrue);
+      expect(result.uploadDate.isBefore(maxExpected), isTrue);
+    });
+
     test('maps tags as List<String> to List<Tag> with type "tag"', () {
       final result = GenericContentMapper.toListItem(
         {

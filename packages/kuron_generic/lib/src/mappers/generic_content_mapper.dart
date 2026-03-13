@@ -251,7 +251,9 @@ class GenericContentMapper {
     final altTitles = fields['altTitles'];
     if (altTitles is List) {
       for (final alt in altTitles) {
-        if (alt is Map && alt['en'] != null && alt['en'].toString().isNotEmpty) {
+        if (alt is Map &&
+            alt['en'] != null &&
+            alt['en'].toString().isNotEmpty) {
           return alt['en'].toString();
         }
       }
@@ -282,13 +284,68 @@ class GenericContentMapper {
     final v = f[key];
     if (v is DateTime) return v;
     if (v is String && v.isNotEmpty) {
+      final cleaned = v.trim();
+
       final seconds = int.tryParse(v);
       if (seconds != null) {
         return DateTime.fromMillisecondsSinceEpoch(seconds * 1000);
       }
-      return DateTime.tryParse(v);
+
+      final absolute = DateTime.tryParse(cleaned);
+      if (absolute != null) return absolute;
+
+      final relative = _parseRelativeDate(cleaned);
+      if (relative != null) return relative;
     }
     return null;
+  }
+
+  static DateTime? _parseRelativeDate(String raw) {
+    if (raw.isEmpty) return null;
+
+    final now = DateTime.now();
+    final normalized = raw
+        .toLowerCase()
+        .replaceFirst(RegExp(r'^(posted|uploaded|upload date|date)\s*:\s*'), '')
+        .trim();
+
+    if (normalized == 'just now' || normalized == 'today') {
+      return now;
+    }
+    if (normalized == 'yesterday') {
+      return now.subtract(const Duration(days: 1));
+    }
+
+    final match = RegExp(
+      r'^(\d+|a|an)\s+(second|minute|hour|day|week|month|year)s?\s+ago$',
+    ).firstMatch(normalized);
+    if (match == null) return null;
+
+    final quantityRaw = match.group(1) ?? '0';
+    final unit = match.group(2) ?? '';
+    final quantity = (quantityRaw == 'a' || quantityRaw == 'an')
+        ? 1
+        : (int.tryParse(quantityRaw) ?? 0);
+    if (quantity <= 0) return null;
+
+    switch (unit) {
+      case 'second':
+        return now.subtract(Duration(seconds: quantity));
+      case 'minute':
+        return now.subtract(Duration(minutes: quantity));
+      case 'hour':
+        return now.subtract(Duration(hours: quantity));
+      case 'day':
+        return now.subtract(Duration(days: quantity));
+      case 'week':
+        return now.subtract(Duration(days: quantity * 7));
+      case 'month':
+        return now.subtract(Duration(days: quantity * 30));
+      case 'year':
+        return now.subtract(Duration(days: quantity * 365));
+      default:
+        return null;
+    }
   }
 }
 
