@@ -215,6 +215,37 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     _logger.i('DownloadBloc: Progress stream subscription initialized');
   }
 
+  /// Load all download rows from DB in batches to avoid hard caps.
+  Future<List<DownloadStatus>> _loadAllDownloadsFromDb({
+    DownloadState? state,
+    String? sourceId,
+  }) async {
+    const batchSize = 500;
+    var offset = 0;
+    final allDownloads = <DownloadStatus>[];
+
+    while (true) {
+      final page = await _userDataRepository.getAllDownloads(
+        state: state,
+        sourceId: sourceId,
+        limit: batchSize,
+        offset: offset,
+      );
+
+      if (page.isEmpty) {
+        break;
+      }
+
+      allDownloads.addAll(page);
+      if (page.length < batchSize) {
+        break;
+      }
+      offset += batchSize;
+    }
+
+    return allDownloads;
+  }
+
   /// Setup notification action callbacks to handle user interactions from notifications
   void _setupNotificationCallbacks() {
     _notificationService.setCallbacks(
@@ -265,8 +296,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       emit(const DownloadInitializing());
 
       // Load existing downloads
-      final downloads = await _userDataRepository.getAllDownloads(
-          limit: AppLimits.maxBatchSize);
+      final downloads = await _loadAllDownloadsFromDb();
 
       // Load settings (use existing settings)
       final userPrefs = await _userDataRepository.getUserPreferences();
@@ -1482,8 +1512,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           '📁 DOWNLOAD_BLOC: Updated _settings.customStorageRoot: ${_settings.customStorageRoot}');
 
       // Reload downloads from database
-      final downloads = await _userDataRepository.getAllDownloads(
-          limit: AppLimits.maxBatchSize);
+      final downloads = await _loadAllDownloadsFromDb();
 
       if (currentState is DownloadLoaded) {
         // Update existing state with new downloads
@@ -2599,8 +2628,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   /// Helper method untuk retry PDF conversion dari notification action
   Future<void> _retryPdfConversion(String contentId) async {
     try {
-      final downloads = await _userDataRepository.getAllDownloads(
-          limit: AppLimits.maxBatchSize);
+      final downloads = await _loadAllDownloadsFromDb();
       final download = downloads.firstWhere(
         (d) => d.contentId == contentId,
         orElse: () =>
@@ -2623,8 +2651,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   /// Helper method untuk open downloaded content dari notification action
   Future<void> _openDownloadedContent(String contentId) async {
     try {
-      final downloads = await _userDataRepository.getAllDownloads(
-          limit: AppLimits.maxBatchSize);
+      final downloads = await _loadAllDownloadsFromDb();
 
       final download =
           downloads.where((d) => d.contentId == contentId).firstOrNull;

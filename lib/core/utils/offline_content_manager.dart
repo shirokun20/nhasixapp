@@ -472,10 +472,7 @@ class OfflineContentManager {
         return _cachedOfflineIds!;
       }
 
-      final downloads = await _userDataRepository.getAllDownloads(
-        state: DownloadState.completed,
-        limit: AppLimits.maxBatchSize, // Get all completed downloads
-      );
+      final downloads = await _getAllCompletedDownloadsFromDb();
 
       final offlineIds = <String>[];
 
@@ -495,6 +492,33 @@ class OfflineContentManager {
           error: e, stackTrace: stackTrace);
       return [];
     }
+  }
+
+  /// Load all completed downloads in paginated batches to avoid fixed caps.
+  Future<List<DownloadStatus>> _getAllCompletedDownloadsFromDb() async {
+    const batchSize = 500;
+    var offset = 0;
+    final allDownloads = <DownloadStatus>[];
+
+    while (true) {
+      final page = await _userDataRepository.getAllDownloads(
+        state: DownloadState.completed,
+        limit: batchSize,
+        offset: offset,
+      );
+
+      if (page.isEmpty) {
+        break;
+      }
+
+      allDownloads.addAll(page);
+      if (page.length < batchSize) {
+        break;
+      }
+      offset += batchSize;
+    }
+
+    return allDownloads;
   }
 
   /// Extract sourceId from folder path.
@@ -745,10 +769,7 @@ class OfflineContentManager {
 
       if (!await downloadsDir.exists()) return;
 
-      final validDownloads = await _userDataRepository.getAllDownloads(
-        state: DownloadState.completed,
-        limit: AppLimits.maxBatchSize,
-      );
+      final validDownloads = await _getAllCompletedDownloadsFromDb();
 
       final validPaths = validDownloads
           .map((d) => d.downloadPath)

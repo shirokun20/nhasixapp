@@ -699,8 +699,9 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       // If not a search result (or empty query), get total library stats
       if (!isSearchResult) {
         storageUsage = await _offlineContentManager.getOfflineStorageUsage();
-        final offlineIds = await _offlineContentManager.getOfflineContentIds();
-        totalCount = offlineIds.length;
+        totalCount = await _userDataRepository.getDownloadsCount(
+          state: DownloadState.completed,
+        );
       }
 
       return {
