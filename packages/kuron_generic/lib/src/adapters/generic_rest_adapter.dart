@@ -580,7 +580,7 @@ class GenericRestAdapter implements GenericAdapter {
 
               // Fallback: if language-filtered query returns no chapter,
               // retry once without translatedLanguage filter.
-              if ((chapters == null || chapters.isEmpty) &&
+              if (chapters.isEmpty &&
                   chapterUrl.contains('translatedLanguage[]=')) {
                 final fallbackUrl =
                     _removeQueryParam(chapterUrl, 'translatedLanguage[]');
