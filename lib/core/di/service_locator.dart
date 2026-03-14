@@ -16,7 +16,6 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart'
     hide ImageCacheManager;
 
 import 'package:kuron_core/kuron_core.dart';
-import 'package:kuron_komiktap/kuron_komiktap.dart';
 import 'package:kuron_generic/kuron_generic.dart';
 import 'package:kuron_special/kuron_special.dart';
 
@@ -365,24 +364,6 @@ void _setupDataSources() {
       logger: getIt<Logger>(),
     );
   });
-
-  // KomikTap Scraper
-  getIt.registerLazySingleton<KomiktapScraper>(() => KomiktapScraper(
-        customSelectors: getIt<RemoteConfigService>()
-            .getConfig('komiktap')
-            ?.scraper
-            ?.selectors,
-      ));
-
-  // KomikTap Source
-  getIt.registerLazySingleton<KomiktapSource>(() => KomiktapSource(
-        scraper: getIt<KomiktapScraper>(),
-        dio: getIt<Dio>(),
-        logger: getIt<Logger>(),
-        baseUrl: getIt<RemoteConfigService>().getConfig('komiktap')?.baseUrl,
-        displayName:
-            getIt<RemoteConfigService>().getConfig('komiktap')?.ui?.displayName,
-      ));
 
   // Generic Source Factory — catch-all factory for config-driven providers
   getIt.registerLazySingleton<GenericSourceFactory>(() => GenericSourceFactory(

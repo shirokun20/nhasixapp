@@ -13,10 +13,10 @@ import 'package:flutter/foundation.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/config/remote_config_service.dart';
+import '../../../core/utils/source_url_resolver.dart';
 
 import 'package:kuron_special/kuron_special.dart';
 import 'package:kuron_generic/kuron_generic.dart';
-import 'package:kuron_komiktap/kuron_komiktap.dart';
 
 import '../../../domain/entities/entities.dart';
 import '../../../domain/entities/download_task.dart';
@@ -129,6 +129,19 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
   /// Helper to generate fallback URL based on source
   String _generateFallbackUrl(String? sourceId, String contentId) {
+    if (sourceId != null && sourceId.isNotEmpty) {
+      final preferChapterPattern = contentId.contains('chapter');
+      final configDrivenUrl = SourceUrlResolver.buildContentUrl(
+        remoteConfigService: _remoteConfigService,
+        sourceId: sourceId,
+        contentId: contentId,
+        preferChapterPattern: preferChapterPattern,
+      );
+      if (configDrivenUrl.isNotEmpty) {
+        return configDrivenUrl;
+      }
+    }
+
     if (sourceId == SourceType.nhentai.id ||
         (sourceId == null && contentId.length <= 6)) {
       // Config-driven URL via GenericHttpSource (nhentai primary source)
@@ -149,24 +162,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         return '$base${template.replaceAll('{id}', contentId)}';
       }
       return '';
-    } else if (sourceId == SourceType.crotpedia.id) {
-      // Config-driven URL building for crotpedia
-      final crotpediaRaw =
-          getIt<RemoteConfigService>().getRawConfig('crotpedia');
-      final crotpediaBase = (crotpediaRaw?['api']
-              as Map<String, dynamic>?)?['baseUrl'] as String? ??
-          (crotpediaRaw?['baseUrl'] as String?) ??
-          'https://crotpedia.net';
-      if (contentId.contains('chapter')) {
-        return '$crotpediaBase/baca/$contentId/';
-      }
-      return '$crotpediaBase/baca/series/$contentId/';
-    } else if (sourceId == SourceType.komiktap.id) {
-      // Check if it's a chapter slug
-      if (contentId.contains('chapter')) {
-        return KomiktapUrlBuilder.buildChapterUrlFromSlug(contentId);
-      }
-      return KomiktapUrlBuilder.buildSeriesDetailUrl(contentId);
     }
     return ''; // Unknown source
   }
@@ -783,7 +778,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           url: fallbackUrl, // Populate URL
           uploadDate: DateTime.now(),
           favorites: 0,
-          sourceId: updatedDownload.sourceId ?? SourceType.crotpedia.id,
+          sourceId: updatedDownload.sourceId ?? '',
         );
       }
 
@@ -810,7 +805,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             // Update total pages
             updatedDownload = updatedDownload.copyWith(
               totalPages: chapterData.images.length,
-              sourceId: updatedDownload.sourceId ?? SourceType.crotpedia.id,
+              sourceId: updatedDownload.sourceId,
             );
             await _userDataRepository.saveDownloadStatus(updatedDownload);
 
@@ -946,8 +941,14 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           _crotpediaAuthManager != null) {
         _logger.i('✅ Entering cookie extraction block');
         try {
+          final crotpediaBaseUrl = SourceUrlResolver.resolveBaseUrl(
+            remoteConfigService: _remoteConfigService,
+            sourceId: SourceType.crotpedia.id,
+          );
           cookies = await _crotpediaAuthManager.getCookiesForDomain(
-              'https://crotpedia.net'); // Match actual baseUrl (.net not .com)
+              crotpediaBaseUrl.isNotEmpty
+                  ? crotpediaBaseUrl
+                  : 'https://crotpedia.net');
 
           _logger.i('🍪 Cookie Count: ${cookies.length}');
           _logger.i('🍪 Cookie Keys: ${cookies.keys.join(", ")}');
@@ -2667,7 +2668,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         // Try to reconstruct path
         if (_settings.customStorageRoot != null &&
             _settings.customStorageRoot!.isNotEmpty) {
-          final sourceId = download.sourceId ?? SourceType.crotpedia.id;
+          final sourceId =
+              (download.sourceId != null && download.sourceId!.isNotEmpty)
+                  ? download.sourceId!
+                  : 'unknown';
           downloadPath = path.join(
               _settings.customStorageRoot!, 'nhasix', sourceId, contentId);
           _logger.d('DownloadBloc: Reconstructed path for open: $downloadPath');

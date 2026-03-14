@@ -12,6 +12,7 @@ import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/core/utils/app_state_manager.dart';
+import 'package:nhasixapp/core/utils/source_url_resolver.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
@@ -2264,13 +2265,19 @@ class _DetailScreenState extends State<DetailScreen> {
       return content.url!;
     }
 
+    final configDrivenUrl = SourceUrlResolver.buildContentUrl(
+      remoteConfigService: getIt<RemoteConfigService>(),
+      sourceId: content.sourceId,
+      contentId: content.id,
+    );
+    if (configDrivenUrl.isNotEmpty) {
+      return configDrivenUrl;
+    }
+
     // Helper to get base URL for a specific source
     final baseUrl = _getSourceBaseUrl();
 
-    if (content.sourceId == SourceType.komiktap.id) {
-      // KomikTap uses /manga/{slug}/
-      return '$baseUrl/manga/${content.id}/';
-    } else if (content.sourceId == SourceType.crotpedia.id) {
+    if (content.sourceId == SourceType.crotpedia.id) {
       // Crotpedia uses /baca/series/{slug}/
       return '$baseUrl/baca/series/${content.id}/';
     } else if (content.sourceId == 'mangadex') {
