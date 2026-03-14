@@ -83,7 +83,7 @@
     },
     "detail": {
       "chapters": {
-        "endpoint": "/chapter?manga={id}&translatedLanguage[]={language}&limit=100&order[chapter]=desc",
+        "endpoint": "/chapter?manga={id}&limit=100&order[chapter]=desc",
         "items": "$.data[*]",
         "fields": {
           "id": {
@@ -104,6 +104,9 @@
           },
           "date": {
             "selector": "$.attributes.readableAt"
+          },
+          "language": {
+            "selector": "$.attributes.translatedLanguage"
           }
         }
       },
