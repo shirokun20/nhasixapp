@@ -1435,21 +1435,65 @@ class GenericRestAdapter implements GenericAdapter {
     required Map<String, dynamic> rawConfig,
     Map<String, dynamic>? fallbackFields,
   }) async {
-    await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
-    final chapterRes = await _dio.get<dynamic>(url);
-    final cData = chapterRes.data is String
-        ? jsonDecode(chapterRes.data as String)
-        : chapterRes.data;
+    final chapters = <Chapter>[];
+    var pageUrl = url;
+    var guard = 0;
 
-    final rawChapters =
-        _parser.extractItems(cData, FieldSelector(selector: itemsSelector));
-    return rawChapters.map((c) {
-      final cFieldsExtracted = _extractRestFields(c, cFields);
+    while (true) {
+      await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
+      final chapterRes = await _dio.get<dynamic>(pageUrl);
+      final cData = chapterRes.data is String
+          ? jsonDecode(chapterRes.data as String)
+          : chapterRes.data;
 
-      _applyFallbackFields(cFieldsExtracted, c, fallbackFields);
+      final rawChapters =
+          _parser.extractItems(cData, FieldSelector(selector: itemsSelector));
+      for (final c in rawChapters) {
+        final cFieldsExtracted = _extractRestFields(c, cFields);
+        _applyFallbackFields(cFieldsExtracted, c, fallbackFields);
+        chapters.add(GenericContentMapper.toChapter(cFieldsExtracted));
+      }
 
-      return GenericContentMapper.toChapter(cFieldsExtracted);
-    }).toList();
+      final nextUrl = _nextOffsetPageUrl(pageUrl, cData);
+      if (nextUrl == null) {
+        break;
+      }
+
+      pageUrl = nextUrl;
+      guard += 1;
+      if (guard > 200) {
+        _logger.w(
+          '$_sourceId chapter pagination guard reached, stopping at ${chapters.length} items',
+        );
+        break;
+      }
+    }
+
+    return chapters;
+  }
+
+  String? _nextOffsetPageUrl(String currentUrl, dynamic data) {
+    if (data is! Map<String, dynamic>) return null;
+
+    final total = (data['total'] as num?)?.toInt();
+    final limit = (data['limit'] as num?)?.toInt();
+    final offset = (data['offset'] as num?)?.toInt();
+
+    if (total == null || limit == null || offset == null || limit <= 0) {
+      return null;
+    }
+
+    final nextOffset = offset + limit;
+    if (nextOffset >= total) return null;
+
+    return _upsertQueryParam(currentUrl, 'offset', nextOffset.toString());
+  }
+
+  String _upsertQueryParam(String url, String key, String value) {
+    final stripped = _removeQueryParam(url, key);
+    final separator = stripped.contains('?') ? '&' : '?';
+    return '$stripped$separator'
+        '${Uri.encodeQueryComponent(key)}=${Uri.encodeQueryComponent(value)}';
   }
 
   String _removeLanguagePlaceholderParam(String url) {

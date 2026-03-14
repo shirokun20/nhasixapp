@@ -2256,6 +2256,14 @@ class _DetailScreenState extends State<DetailScreen> {
 
   /// Build source-aware content URL
   String _buildContentUrl(Content content) {
+    if (content.sourceUrl != null && content.sourceUrl!.isNotEmpty) {
+      return content.sourceUrl!;
+    }
+
+    if (content.url != null && content.url!.isNotEmpty) {
+      return content.url!;
+    }
+
     // Helper to get base URL for a specific source
     final baseUrl = _getSourceBaseUrl();
 
@@ -2265,6 +2273,16 @@ class _DetailScreenState extends State<DetailScreen> {
     } else if (content.sourceId == SourceType.crotpedia.id) {
       // Crotpedia uses /baca/series/{slug}/
       return '$baseUrl/baca/series/${content.id}/';
+    } else if (content.sourceId == 'mangadex') {
+      final slug = content.title
+          .toLowerCase()
+          .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+          .replaceAll(RegExp(r'-+'), '-')
+          .replaceAll(RegExp(r'^-|-$'), '');
+      if (slug.isNotEmpty) {
+        return 'https://mangadex.org/title/${content.id}/$slug';
+      }
+      return 'https://mangadex.org/title/${content.id}';
     } else {
       // nhentai uses numeric IDs: /g/{id}/
       return '$baseUrl/g/${content.id}/';

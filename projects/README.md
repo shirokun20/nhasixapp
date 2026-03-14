@@ -50,6 +50,7 @@
 | Issue | Date | Status |
 |---|---|---|
 | download range ignores page bounds | 2026-02-17 | 🔴 Open |
+| mangadex personal feed | 2026-03-14 | 🔴 Open |
 | source-switch-shimmer-bug-analysis | Unknown | 🔴 Open |
 | fix-implementation-summary | Unknown | 🔴 Open |
 | download metadata chapter parentid | 2026-02-15 | 🔴 Open |

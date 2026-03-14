@@ -207,6 +207,42 @@ const _chaptersResponse = {
   ],
 };
 
+const _chaptersPage1Response = {
+  'result': 'ok',
+  'total': 150,
+  'limit': 100,
+  'offset': 0,
+  'data': [
+    {
+      'id': 'page-1-chapter-id',
+      'attributes': {
+        'chapter': '120',
+        'volume': '7',
+        'translatedLanguage': 'en',
+        'readableAt': '2025-01-01T00:00:00Z',
+      },
+    },
+  ],
+};
+
+const _chaptersPage2Response = {
+  'result': 'ok',
+  'total': 150,
+  'limit': 100,
+  'offset': 100,
+  'data': [
+    {
+      'id': 'page-2-chapter-id',
+      'attributes': {
+        'chapter': '20',
+        'volume': '2',
+        'translatedLanguage': 'id',
+        'readableAt': '2024-06-01T00:00:00Z',
+      },
+    },
+  ],
+};
+
 const _statsResponse = {
   'result': 'ok',
   'statistics': {
@@ -660,6 +696,34 @@ void main() {
 
       expect(result.content.id, _mangaId);
       expect(result.content.chapters, hasLength(1));
+    });
+
+    test('detail chapters paginate with offset when total exceeds limit',
+        () async {
+      dioAdapter.onGet(
+        '$_baseUrl/manga/$_mangaId?includes[]=cover_art&includes[]=author&includes[]=artist',
+        (server) => server.reply(200, _detailResponse),
+      );
+      dioAdapter.onGet(
+        '$_baseUrl/statistics/manga/$_mangaId',
+        (server) => server.reply(200, _statsResponse),
+      );
+      dioAdapter.onGet(
+        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic&translatedLanguage[]=id&translatedLanguage[]=en&translatedLanguage[]=ja&translatedLanguage[]=zh',
+        (server) => server.reply(200, _chaptersPage1Response),
+      );
+      dioAdapter.onGet(
+        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic&translatedLanguage[]=id&translatedLanguage[]=en&translatedLanguage[]=ja&translatedLanguage[]=zh&offset=100',
+        (server) => server.reply(200, _chaptersPage2Response),
+      );
+
+      final result = await adapter.fetchDetail(_mangaId, _config);
+
+      expect(result.content.chapters, hasLength(2));
+      expect(result.content.chapters![0].id, 'page-1-chapter-id');
+      expect(result.content.chapters![1].id, 'page-2-chapter-id');
+      expect(result.content.chapters![1].title, 'Vol.2 Ch.20');
+      expect(result.content.chapters![1].language, 'id');
     });
 
     test('detail returns empty chapter list when API has no chapters',
