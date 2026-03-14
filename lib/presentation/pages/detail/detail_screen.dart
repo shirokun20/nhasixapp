@@ -1339,7 +1339,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                               ],
                                             )
                                           : Text(
-                                              '${entry.languageLabel}',
+                                              '$displayIndex',
                                               style: TextStyleConst.headingSmall
                                                   .copyWith(
                                                 color: Theme.of(context)
