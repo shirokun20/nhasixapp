@@ -436,7 +436,7 @@ void main() {
     test('empty fields produce safe defaults', () {
       final result = GenericContentMapper.toChapter({});
       expect(result.id, ''); // both id and url are empty
-      expect(result.title, '');
+      expect(result.title, 'Oneshot');
       expect(result.uploadDate, isNull);
     });
   });

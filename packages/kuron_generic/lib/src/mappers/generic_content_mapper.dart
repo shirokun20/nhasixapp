@@ -325,7 +325,11 @@ class GenericContentMapper {
     if (volume.isNotEmpty) {
       return 'Vol.$volume';
     }
-    return title;
+    if (title.isNotEmpty) {
+      return title;
+    }
+    // Some one-shot sources provide no chapter/volume/title metadata.
+    return 'Oneshot';
   }
 
   static ContentStatus _status(Map<String, dynamic> fields) {
