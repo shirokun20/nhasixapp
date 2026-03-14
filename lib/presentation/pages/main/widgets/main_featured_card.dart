@@ -7,6 +7,7 @@ import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:kuron_core/kuron_core.dart';
 
 /// Horizontal featured card widget: Image left (40%), Content info right (60%)
@@ -251,55 +252,108 @@ class MainFeaturedCard extends StatelessWidget {
                             Row(
                               children: [
                                 if (content.language.isNotEmpty)
-                                  Container(
-                                    width: 28,
-                                    height: 18,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(3),
-                                      border: Border.all(
-                                        color: theme.colorScheme.outline
-                                            .withValues(alpha: 0.5),
-                                        width: 0.5,
+                                  Builder(builder: (context) {
+                                    final languageService =
+                                        getIt<LanguageService>();
+                                    final normalizedLanguage =
+                                        content.language.toLowerCase().trim();
+                                    final hasLanguage =
+                                        normalizedLanguage.isNotEmpty &&
+                                            normalizedLanguage != 'unknown';
+                                    final flagAssetPath = hasLanguage
+                                        ? languageService
+                                            .flagAssetPath(normalizedLanguage)
+                                        : null;
+                                    final languageBadge = hasLanguage
+                                        ? (normalizedLanguage.length >= 2
+                                            ? normalizedLanguage
+                                                .substring(0, 2)
+                                                .toUpperCase()
+                                            : normalizedLanguage.toUpperCase())
+                                        : '--';
+
+                                    return Container(
+                                      width: 28,
+                                      height: 18,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(3),
+                                        border: Border.all(
+                                          color: theme.colorScheme.outline
+                                              .withValues(alpha: 0.5),
+                                          width: 0.5,
+                                        ),
                                       ),
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(3),
-                                      child: SvgPicture.asset(
-                                        'assets/images/flags/${content.language.toLowerCase()}.svg',
-                                        width: 28,
-                                        height: 18,
-                                        fit: BoxFit.cover,
-                                        placeholderBuilder: (context) {
-                                          return Container(
-                                            color: theme.colorScheme
-                                                .surfaceContainerHighest,
-                                            child: Center(
-                                              child: Text(
-                                                content.language
-                                                    .substring(0, 2)
-                                                    .toUpperCase(),
-                                                style: TextStyleConst.labelSmall
-                                                    .copyWith(
-                                                  fontSize: 8,
-                                                  color: theme.colorScheme
-                                                      .onSurfaceVariant,
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(3),
+                                        child: flagAssetPath != null
+                                            ? SvgPicture.asset(
+                                                flagAssetPath,
+                                                width: 28,
+                                                height: 18,
+                                                fit: BoxFit.cover,
+                                                placeholderBuilder: (context) {
+                                                  return Container(
+                                                    color: theme.colorScheme
+                                                        .surfaceContainerHighest,
+                                                    child: Center(
+                                                      child: Text(
+                                                        languageBadge,
+                                                        style: TextStyleConst
+                                                            .labelSmall
+                                                            .copyWith(
+                                                          fontSize: 8,
+                                                          color: theme
+                                                              .colorScheme
+                                                              .onSurfaceVariant,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              )
+                                            : Container(
+                                                color: theme.colorScheme
+                                                    .surfaceContainerHighest,
+                                                child: Center(
+                                                  child: Text(
+                                                    languageBadge,
+                                                    style: TextStyleConst
+                                                        .labelSmall
+                                                        .copyWith(
+                                                      fontSize: 8,
+                                                      color: theme.colorScheme
+                                                          .onSurfaceVariant,
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                          );
-                                        },
                                       ),
-                                    ),
-                                  ),
+                                    );
+                                  }),
                                 const SizedBox(width: 8),
                                 if (content.language.isNotEmpty)
-                                  Text(
-                                    content.language.toUpperCase(),
-                                    style: TextStyleConst.labelSmall.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
+                                  Builder(builder: (context) {
+                                    final languageService =
+                                        getIt<LanguageService>();
+                                    final normalizedLanguage =
+                                        content.language.toLowerCase().trim();
+                                    final hasLanguage =
+                                        normalizedLanguage.isNotEmpty &&
+                                            normalizedLanguage != 'unknown';
+                                    final languageLabel = hasLanguage
+                                        ? languageService
+                                            .displayName(normalizedLanguage)
+                                        : content.language;
+
+                                    return Text(
+                                      languageLabel,
+                                      style: TextStyleConst.labelSmall.copyWith(
+                                        color:
+                                            theme.colorScheme.onSurfaceVariant,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    );
+                                  }),
                               ],
                             ),
                           ],

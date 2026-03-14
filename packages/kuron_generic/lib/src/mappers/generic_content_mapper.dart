@@ -55,11 +55,13 @@ class GenericContentMapper {
           : _strList(fields, 'groups'),
       language: tagsResolved.language.isNotEmpty
           ? tagsResolved.language
-          : _str(fields, 'language', fallback: 'unknown'),
+          : _resolveLanguage(fields),
       pageCount: _int(fields, 'pageCount'),
       imageUrls: const [],
       uploadDate: _date(fields, 'uploadDate'),
       favorites: _int(fields, 'favorites'),
+      status: _status(fields),
+      totalChapters: _intOrNull(fields, 'pageCount'),
       mediaId: fields['mediaId'] as String?,
     );
   }
@@ -105,7 +107,7 @@ class GenericContentMapper {
           : _strList(fields, 'groups'),
       language: tagsResolved.language.isNotEmpty
           ? tagsResolved.language
-          : _str(fields, 'language', fallback: 'unknown'),
+          : _resolveLanguage(fields),
       pageCount: pageCount,
       imageUrls: imageUrls,
       chapters: chapters,
@@ -114,6 +116,9 @@ class GenericContentMapper {
       mediaId: fields['mediaId'] as String?,
       englishTitle: fields['englishTitle'] as String?,
       japaneseTitle: fields['japaneseTitle'] as String?,
+      subTitle: _extractDescription(fields),
+      status: _status(fields),
+      totalChapters: rawPageCount > 0 ? rawPageCount : null,
     );
   }
 
@@ -125,7 +130,7 @@ class GenericContentMapper {
     final url = _str(fields, 'url');
     return Chapter(
       id: id.isNotEmpty ? id : url,
-      title: _str(fields, 'title'),
+      title: _buildChapterTitle(fields),
       url: url,
       uploadDate: _dateNullable(fields, 'date'),
     );
@@ -249,7 +254,13 @@ class GenericContentMapper {
   }
 
   static String _extractTitle(Map<String, dynamic> fields) {
-    // 1. Try to find an English title in altTitles first
+    // 1. Try the main title object, prioritize english if available.
+    final t = fields['title'];
+    if (t is Map && t['en'] != null && t['en'].toString().isNotEmpty) {
+      return t['en'].toString();
+    }
+
+    // 2. Try to find an English title in altTitles.
     final altTitles = fields['altTitles'];
     if (altTitles is List) {
       for (final alt in altTitles) {
@@ -261,21 +272,96 @@ class GenericContentMapper {
       }
     }
 
-    // 2. Try the main title object, prioritize english if available
-    final t = fields['title'];
-    if (t is Map && t['en'] != null && t['en'].toString().isNotEmpty) {
-      return t['en'].toString();
-    }
-
-    // 3. Fallback to _str generic stringifier
+    // 3. Fallback to generic map/list-aware string extraction.
     return _str(fields, 'title', fallback: 'Unknown');
+  }
+
+  static String _extractDescription(Map<String, dynamic> fields) {
+    final subtitle = _str(fields, 'subTitle');
+    if (subtitle.isNotEmpty) return subtitle;
+
+    final raw = fields['description'];
+    if (raw is String) return raw;
+    if (raw is Map) {
+      final en = raw['en'];
+      if (en != null && en.toString().isNotEmpty) {
+        return en.toString();
+      }
+      for (final value in raw.values) {
+        if (value != null && value.toString().isNotEmpty) {
+          return value.toString();
+        }
+      }
+    }
+    return '';
+  }
+
+  static String _resolveLanguage(Map<String, dynamic> fields) {
+    final language = _str(fields, 'language');
+    if (language.isNotEmpty) return language;
+
+    final originalLanguage = _str(fields, 'originalLanguage');
+    if (originalLanguage.isNotEmpty) return originalLanguage;
+
+    final available = _strList(fields, 'availableTranslatedLanguages');
+    if (available.isNotEmpty) return available.first;
+
+    return 'unknown';
+  }
+
+  static String _buildChapterTitle(Map<String, dynamic> fields) {
+    final chapterNum = _str(fields, 'chapterNum').trim();
+    final volume = _str(fields, 'volume').trim();
+    final title = _str(fields, 'title').trim();
+
+    if (volume.isNotEmpty && chapterNum.isNotEmpty) {
+      return 'Vol.$volume Ch.$chapterNum';
+    }
+    if (chapterNum.isNotEmpty) {
+      return 'Ch.$chapterNum';
+    }
+    if (volume.isNotEmpty) {
+      return 'Vol.$volume';
+    }
+    return title;
+  }
+
+  static ContentStatus _status(Map<String, dynamic> fields) {
+    final raw = _str(fields, 'status').toLowerCase().trim();
+    switch (raw) {
+      case 'ongoing':
+        return ContentStatus.ongoing;
+      case 'completed':
+        return ContentStatus.completed;
+      case 'licensed':
+        return ContentStatus.licensed;
+      case 'publishing_finished':
+      case 'publishingfinished':
+      case 'publishing-finished':
+        return ContentStatus.publishingFinished;
+      case 'cancelled':
+      case 'canceled':
+        return ContentStatus.cancelled;
+      case 'hiatus':
+      case 'on_hiatus':
+      case 'on-hiatus':
+        return ContentStatus.onHiatus;
+      default:
+        return ContentStatus.unknown;
+    }
   }
 
   static int _int(Map<String, dynamic> f, String key) {
     final v = f[key];
     if (v is int) return v;
+    if (v is num) return v.toInt();
     if (v is String) return int.tryParse(v) ?? 0;
     return 0;
+  }
+
+  static int? _intOrNull(Map<String, dynamic> f, String key) {
+    final value = _int(f, key);
+    return value > 0 ? value : null;
   }
 
   static DateTime _date(Map<String, dynamic> f, String key) {

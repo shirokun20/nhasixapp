@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../core/constants/text_style_const.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/services/language_service.dart';
 import '../../l10n/app_localizations.dart';
 import 'progressive_image_widget.dart';
 
@@ -301,6 +302,21 @@ class FeaturedContentCard extends StatelessWidget {
   }
 
   Widget _buildLanguageFlag(BuildContext context) {
+    final languageService = getIt<LanguageService>();
+    final normalizedLanguage = content.language.toLowerCase().trim();
+    final hasLanguage =
+        normalizedLanguage.isNotEmpty && normalizedLanguage != 'unknown';
+    final flagAssetPath =
+        hasLanguage ? languageService.flagAssetPath(normalizedLanguage) : null;
+    final languageBadge = hasLanguage
+        ? (normalizedLanguage.length >= 2
+            ? normalizedLanguage.substring(0, 2).toUpperCase()
+            : normalizedLanguage.toUpperCase())
+        : '--';
+    final languageLabel = hasLanguage
+        ? languageService.displayName(normalizedLanguage)
+        : content.language;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -317,33 +333,49 @@ class FeaturedContentCard extends StatelessWidget {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(3),
-            child: SvgPicture.asset(
-              'assets/images/flags/${content.language.toLowerCase()}.svg',
-              width: 28,
-              height: 18,
-              fit: BoxFit.cover,
-              placeholderBuilder: (context) {
-                return Container(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: Center(
-                    child: Text(
-                      content.language.substring(0, 2).toUpperCase(),
-                      style: TextStyleConst.labelSmall.copyWith(
-                        fontSize: 8,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+            child: flagAssetPath != null
+                ? SvgPicture.asset(
+                    flagAssetPath,
+                    width: 28,
+                    height: 18,
+                    fit: BoxFit.cover,
+                    placeholderBuilder: (context) {
+                      return Container(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
+                        child: Center(
+                          child: Text(
+                            languageBadge,
+                            style: TextStyleConst.labelSmall.copyWith(
+                              fontSize: 8,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  )
+                : Container(
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    child: Center(
+                      child: Text(
+                        languageBadge,
+                        style: TextStyleConst.labelSmall.copyWith(
+                          fontSize: 8,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
                   ),
-                );
-              },
-            ),
           ),
         ),
         const SizedBox(width: 6),
         Text(
-          content.language.length > 1
-              ? '${content.language[0].toUpperCase()}${content.language.substring(1)}'
-              : content.language.toUpperCase(),
+          languageLabel,
           style: TextStyleConst.labelSmall.copyWith(
             color:
                 Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),

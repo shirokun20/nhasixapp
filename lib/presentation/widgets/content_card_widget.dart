@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -691,63 +692,99 @@ class ContentCard extends StatelessWidget {
 
   Widget _buildLanguageFlag() {
     return Builder(
-      builder: (context) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 20,
-            height: 14,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(2),
-              border: Border.all(
-                color: Theme.of(context)
-                    .colorScheme
-                    .outline
-                    .withValues(alpha: 0.5),
-                width: 0.5,
+      builder: (context) {
+        final languageService = getIt<LanguageService>();
+        final normalizedLanguage = content.language.toLowerCase().trim();
+        final hasLanguage =
+            normalizedLanguage.isNotEmpty && normalizedLanguage != 'unknown';
+        final flagAssetPath = hasLanguage
+            ? languageService.flagAssetPath(normalizedLanguage)
+            : null;
+        final languageBadge = hasLanguage
+            ? (normalizedLanguage.length >= 2
+                ? normalizedLanguage.substring(0, 2).toUpperCase()
+                : normalizedLanguage.toUpperCase())
+            : '--';
+        final languageLabel = hasLanguage
+            ? languageService.displayName(normalizedLanguage)
+            : content.language;
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 20,
+              height: 14,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(2),
+                border: Border.all(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .outline
+                      .withValues(alpha: 0.5),
+                  width: 0.5,
+                ),
               ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(2),
-              child: SvgPicture.asset(
-                'assets/images/flags/${content.language.toLowerCase()}.svg',
-                width: 20,
-                height: 14,
-                fit: BoxFit.cover,
-                placeholderBuilder: (context) {
-                  return Container(
-                    color:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: Center(
-                      child: Text(
-                        content.language.substring(0, 2).toUpperCase(),
-                        style: TextStyleConst.labelSmall.copyWith(
-                          fontSize: 8,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: flagAssetPath != null
+                    ? SvgPicture.asset(
+                        flagAssetPath,
+                        width: 20,
+                        height: 14,
+                        fit: BoxFit.cover,
+                        placeholderBuilder: (context) {
+                          return Container(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
+                            child: Center(
+                              child: Text(
+                                languageBadge,
+                                style: TextStyleConst.labelSmall.copyWith(
+                                  fontSize: 8,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
+                        child: Center(
+                          child: Text(
+                            languageBadge,
+                            style: TextStyleConst.labelSmall.copyWith(
+                              fontSize: 8,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
               ),
             ),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            content.language.length > 1
-                ? '${content.language[0].toUpperCase()}${content.language.substring(1)}'
-                : content.language.toUpperCase(),
-            style: TextStyleConst.caption.copyWith(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.8),
+            const SizedBox(width: 4),
+            Text(
+              languageLabel,
+              style: TextStyleConst.caption.copyWith(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.8),
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      },
     );
   }
 

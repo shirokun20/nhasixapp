@@ -332,9 +332,19 @@ class GenericRestAdapter implements GenericAdapter {
         final chapterNode = data['chapter'] as Map<String, dynamic>?;
         if (baseUrl != null && chapterNode != null) {
           final hash = chapterNode['hash'] as String?;
-          final fileNames = (chapterNode['data'] as List<dynamic>?)?.cast<String>();
-          
-          if (hash != null && fileNames != null) {
+          final dataFiles = (chapterNode['data'] as List<dynamic>?)
+                  ?.map((e) => e.toString())
+                  .where((e) => e.isNotEmpty)
+                  .toList() ??
+              const <String>[];
+          final dataSaverFiles = (chapterNode['dataSaver'] as List<dynamic>?)
+                  ?.map((e) => e.toString())
+                  .where((e) => e.isNotEmpty)
+                  .toList() ??
+              const <String>[];
+          final fileNames = dataFiles.isNotEmpty ? dataFiles : dataSaverFiles;
+
+          if (hash != null && fileNames.isNotEmpty) {
             final images =
                 fileNames.map((fn) => '$baseUrl/data/$hash/$fn').toList();
             return ChapterData(
@@ -347,7 +357,7 @@ class GenericRestAdapter implements GenericAdapter {
             error: e, stackTrace: st);
       }
     }
-    
+
     return null;
   }
 
@@ -389,12 +399,18 @@ class GenericRestAdapter implements GenericAdapter {
     }
 
     String url = _urlBuilder.buildSearchUrl(template, filter);
-    final paginationCfg = (apiList['pagination'] as Map<String, dynamic>?) ?? {};
+    final paginationCfg =
+        (apiList['pagination'] as Map<String, dynamic>?) ?? {};
     if (paginationCfg['offsetMode'] == true) {
       final pageSize = paginationCfg['pageSize'] as int? ?? 20;
       final offset = ((filter.page > 0 ? filter.page : 1) - 1) * pageSize;
       url = url.replaceAll('{offset}', offset.toString());
     }
+    url = _applyLanguagePlaceholder(
+      url,
+      rawConfig,
+      requestedLanguage: filter.language,
+    );
     _logger.d('$_sourceId REST [new schema] search: $url');
 
     try {
@@ -483,17 +499,51 @@ class GenericRestAdapter implements GenericAdapter {
     }
 
     final url = _urlBuilder.buildDetailUrl(template, contentId);
-    _logger.d('$_sourceId REST [new schema] detail: $url');
+    final detailUrl = _applyLanguagePlaceholder(url, rawConfig);
+    _logger.d('$_sourceId REST [new schema] detail: $detailUrl');
 
     try {
       await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
-      final response = await _dio.get<dynamic>(url);
+      final response = await _dio.get<dynamic>(detailUrl);
       final data = response.data is String
           ? jsonDecode(response.data as String)
           : response.data;
 
       final fieldsConfig = (apiDetail['fields'] as Map<String, dynamic>?) ?? {};
       final fields = _extractRestFields(data, fieldsConfig);
+
+      // Optional statistics enrichment (e.g., MangaDex follows count).
+      final statsCfg = api['statistics'] as Map<String, dynamic>?;
+      if (statsCfg != null) {
+        final followsEndpoint = statsCfg['followsEndpoint'] as String?;
+        if (followsEndpoint != null && followsEndpoint.isNotEmpty) {
+          final baseApiUrl = _getBaseUrl(rawConfig);
+          final fullPath = followsEndpoint.startsWith('/')
+              ? followsEndpoint
+              : '/$followsEndpoint';
+          final statsUrl =
+              '$baseApiUrl${fullPath.replaceAll('{id}', contentId)}';
+
+          try {
+            final statsRes = await _dio.get<dynamic>(statsUrl);
+            final statsData = statsRes.data is String
+                ? jsonDecode(statsRes.data as String)
+                : statsRes.data;
+
+            final followsPath = statsCfg['followsPath'] as String?;
+            final follows = _extractIntByPath(
+              statsData,
+              followsPath,
+              dynamicId: contentId,
+            );
+            if (follows != null) {
+              fields['favorites'] = follows;
+            }
+          } catch (e) {
+            _logger.w('$_sourceId detail statistics fetch failed: $e');
+          }
+        }
+      }
 
       // Image URLs
       List<String> imageUrls = const [];
@@ -509,23 +559,42 @@ class GenericRestAdapter implements GenericAdapter {
         final chapterEndpoint = chaptersCfg['endpoint'] as String?;
         if (chapterEndpoint != null) {
           final baseApiUrl = _getBaseUrl(rawConfig);
-          final fullPath = chapterEndpoint.startsWith('/') ? chapterEndpoint : '/$chapterEndpoint';
-          final chapterUrl = '$baseApiUrl${fullPath.replaceAll('{id}', contentId)}';
-          
+          final fullPath = chapterEndpoint.startsWith('/')
+              ? chapterEndpoint
+              : '/$chapterEndpoint';
+          var chapterUrl =
+              '$baseApiUrl${fullPath.replaceAll('{id}', contentId)}';
+          chapterUrl = _applyLanguagePlaceholder(chapterUrl, rawConfig);
+
           try {
-            final chapterRes = await _dio.get<dynamic>(chapterUrl);
-            final cData = chapterRes.data is String
-                ? jsonDecode(chapterRes.data as String)
-                : chapterRes.data;
-            
             final itemsSelector = chaptersCfg['items'] as String?;
             if (itemsSelector != null) {
-              final rawChapters = _parser.extractItems(cData, FieldSelector(selector: itemsSelector));
-              final cFields = (chaptersCfg['fields'] as Map<String, dynamic>?) ?? {};
-              chapters = rawChapters.map((c) {
-                final cFieldsExtracted = _extractRestFields(c, cFields);
-                return GenericContentMapper.toChapter(cFieldsExtracted);
-              }).toList();
+              final cFields =
+                  (chaptersCfg['fields'] as Map<String, dynamic>?) ?? {};
+              chapters = await _fetchChapters(
+                chapterUrl,
+                itemsSelector: itemsSelector,
+                cFields: cFields,
+                rawConfig: rawConfig,
+              );
+
+              // Fallback: if language-filtered query returns no chapter,
+              // retry once without translatedLanguage filter.
+              if ((chapters == null || chapters.isEmpty) &&
+                  chapterUrl.contains('translatedLanguage[]=')) {
+                final fallbackUrl =
+                    _removeQueryParam(chapterUrl, 'translatedLanguage[]');
+                if (fallbackUrl != chapterUrl) {
+                  _logger.d(
+                      '$_sourceId chapters fallback (no language filter): $fallbackUrl');
+                  chapters = await _fetchChapters(
+                    fallbackUrl,
+                    itemsSelector: itemsSelector,
+                    cFields: cFields,
+                    rawConfig: rawConfig,
+                  );
+                }
+              }
             }
           } catch (e) {
             _logger.w('$_sourceId detail chapters fetch failed: $e');
@@ -1103,24 +1172,25 @@ class GenericRestAdapter implements GenericAdapter {
     Map<String, dynamic> selectors,
     String? alreadyExtractedMediaId,
   ) {
-    final builder = selectors['coverUrlBuilder'] as Map<String, dynamic>?;
+    final builder = selectors.containsKey('mangaIdPath')
+        ? selectors
+        : selectors['coverUrlBuilder'] as Map<String, dynamic>?;
     if (builder == null) return null;
 
     final template = builder['template'] as String?;
     if (template == null) return null;
 
-    final builderType = builder['type'] as String?;
-    if (builderType == 'mangadexCover') {
+    if (builder.containsKey('mangaIdPath')) {
       final mangaIdSel = builder['mangaIdPath'] as String?;
       final filenameSel = builder['filenamePath'] as String?;
-      
-      final mangaId = mangaIdSel != null 
+
+      final mangaId = mangaIdSel != null
           ? _parser.extractString(data, FieldSelector(selector: mangaIdSel))
           : alreadyExtractedMediaId;
-      final filename = filenameSel != null 
+      final filename = filenameSel != null
           ? _parser.extractString(data, FieldSelector(selector: filenameSel))
           : null;
-          
+
       if (mangaId != null && filename != null) {
         return template
             .replaceAll('{mangaId}', mangaId)
@@ -1162,6 +1232,147 @@ class GenericRestAdapter implements GenericAdapter {
     }
 
     return finalUrl;
+  }
+
+  int? _extractIntByPath(
+    dynamic data,
+    String? path, {
+    String? dynamicId,
+  }) {
+    final value = _extractDynamicPathValue(data, path, dynamicId: dynamicId);
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
+  dynamic _extractDynamicPathValue(
+    dynamic data,
+    String? path, {
+    String? dynamicId,
+  }) {
+    if (path == null || path.isEmpty) return null;
+
+    if (path.contains('{id}') && dynamicId != null) {
+      final normalized = path.replaceAll('{id}', dynamicId);
+      return _extractSimplePathValue(data, normalized);
+    }
+
+    return _parser.extractRaw(data, FieldSelector(selector: path));
+  }
+
+  dynamic _extractSimplePathValue(dynamic data, String path) {
+    var current = data;
+    final normalized = path.trim().replaceFirst(r'$.', '');
+    if (normalized.isEmpty) return null;
+
+    final keys = normalized
+        .split('.')
+        .map((k) => k.replaceAll("'", '').replaceAll('"', '').trim())
+        .where((k) => k.isNotEmpty)
+        .toList();
+
+    for (final key in keys) {
+      if (current is Map<String, dynamic>) {
+        current = current[key];
+      } else if (current is Map) {
+        current = current[key];
+      } else {
+        return null;
+      }
+    }
+
+    return current;
+  }
+
+  String _applyLanguagePlaceholder(
+    String url,
+    Map<String, dynamic> rawConfig, {
+    String? requestedLanguage,
+  }) {
+    if (!url.contains('{language}')) return url;
+    final language = _resolveLanguageCode(
+      requestedLanguage: requestedLanguage,
+      defaultLanguage: rawConfig['defaultLanguage'] as String?,
+    );
+    if (language == 'all') {
+      return _removeLanguagePlaceholderParam(url);
+    }
+    return url.replaceAll('{language}', language);
+  }
+
+  String _resolveLanguageCode({
+    String? requestedLanguage,
+    String? defaultLanguage,
+  }) {
+    final raw = (requestedLanguage ?? defaultLanguage ?? 'en').trim();
+    if (raw.isEmpty) return 'en';
+
+    final normalized = raw.toLowerCase().replaceAll('_', '-');
+    if (RegExp(r'^[a-z]{2}(-[a-z0-9]+)?$').hasMatch(normalized)) {
+      return normalized;
+    }
+
+    const mapping = <String, String>{
+      'all': 'all',
+      'all languages': 'all',
+      'english': 'en',
+      'indonesian': 'id',
+      'indonesia': 'id',
+      'japanese': 'ja',
+      'korean': 'ko',
+      'chinese': 'zh',
+      'simplified chinese': 'zh-hans',
+      'traditional chinese': 'zh-hant',
+      'vietnamese': 'vi',
+      'thai': 'th',
+      'spanish': 'es',
+      'portuguese': 'pt',
+      'french': 'fr',
+      'german': 'de',
+      'italian': 'it',
+      'russian': 'ru',
+      'turkish': 'tr',
+      'arabic': 'ar',
+      'polish': 'pl',
+    };
+
+    return mapping[normalized] ?? 'en';
+  }
+
+  Future<List<Chapter>> _fetchChapters(
+    String url, {
+    required String itemsSelector,
+    required Map<String, dynamic> cFields,
+    required Map<String, dynamic> rawConfig,
+  }) async {
+    await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
+    final chapterRes = await _dio.get<dynamic>(url);
+    final cData = chapterRes.data is String
+        ? jsonDecode(chapterRes.data as String)
+        : chapterRes.data;
+
+    final rawChapters =
+        _parser.extractItems(cData, FieldSelector(selector: itemsSelector));
+    return rawChapters.map((c) {
+      final cFieldsExtracted = _extractRestFields(c, cFields);
+      return GenericContentMapper.toChapter(cFieldsExtracted);
+    }).toList();
+  }
+
+  String _removeLanguagePlaceholderParam(String url) {
+    return url
+        .replaceAll(RegExp(r'([?&])[^=&]*=\{language\}(?=&|$)'), '')
+        .replaceAll('?&', '?')
+        .replaceAll(RegExp(r'[?&]$'), '');
+  }
+
+  String _removeQueryParam(String url, String paramName) {
+    final escaped = RegExp.escape(paramName);
+    return url
+        .replaceAll(RegExp('([?&])$escaped=[^&]*(?=&|\$)'), '')
+        .replaceAll('?&', '?')
+        .replaceAll(RegExp(r'[?&]$'), '');
   }
 
   /// Build the full list of image URLs for a detail response using the
