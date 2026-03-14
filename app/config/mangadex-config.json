@@ -168,6 +168,112 @@
       "atHomeEndpoint": "/at-home/server/{chapterId}"
     }
   },
+  "searchForm": {
+    "urlPattern": "search",
+    "params": {
+      "title": {
+        "queryParam": "title",
+        "type": "text",
+        "placeholder": "Search manga title..."
+      },
+      "includedTag": {
+        "queryParam": "includedTags[]",
+        "type": "tag",
+        "placeholder": "Include tag UUID"
+      },
+      "excludedTag": {
+        "queryParam": "excludedTags[]",
+        "type": "tag",
+        "placeholder": "Exclude tag UUID"
+      },
+      "includedTagsMode": {
+        "queryParam": "includedTagsMode",
+        "type": "select",
+        "options": [
+          "AND",
+          "OR"
+        ]
+      },
+      "excludedTagsMode": {
+        "queryParam": "excludedTagsMode",
+        "type": "select",
+        "options": [
+          "AND",
+          "OR"
+        ]
+      },
+      "status": {
+        "queryParam": "status[]",
+        "type": "select",
+        "options": [
+          "ongoing",
+          "completed",
+          "hiatus",
+          "cancelled"
+        ]
+      },
+      "publicationDemographic": {
+        "queryParam": "publicationDemographic[]",
+        "type": "select",
+        "options": [
+          "shounen",
+          "shoujo",
+          "josei",
+          "seinen",
+          "none"
+        ]
+      },
+      "contentRating": {
+        "queryParam": "contentRating[]",
+        "type": "select",
+        "options": [
+          "safe",
+          "suggestive",
+          "erotica",
+          "pornographic"
+        ]
+      },
+      "year": {
+        "queryParam": "year",
+        "type": "text",
+        "placeholder": "Release year (YYYY)"
+      },
+      "createdAtSince": {
+        "queryParam": "createdAtSince",
+        "type": "text",
+        "placeholder": "2025-01-01T00:00:00"
+      },
+      "updatedAtSince": {
+        "queryParam": "updatedAtSince",
+        "type": "text",
+        "placeholder": "2025-01-01T00:00:00"
+      },
+      "orderFollowed": {
+        "queryParam": "order[followedCount]",
+        "type": "select",
+        "options": [
+          "desc",
+          "asc"
+        ]
+      },
+      "orderLatestChapter": {
+        "queryParam": "order[latestUploadedChapter]",
+        "type": "select",
+        "options": [
+          "desc",
+          "asc"
+        ]
+      },
+      "hasAvailableChapters": {
+        "queryParam": "hasAvailableChapters",
+        "type": "select",
+        "options": [
+          "true",
+          "false"
+        ]
+      }
+    }
+  },
   "features": {
     "comments": false,
     "related": false,

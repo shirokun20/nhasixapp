@@ -492,7 +492,10 @@ class GenericRestAdapter implements GenericAdapter {
       return const AdapterSearchResult(items: [], hasNextPage: false);
     }
 
-    String url = _urlBuilder.buildSearchUrl(template, filter);
+    final rawParams = _extractRawSearchParams(filter.query);
+    String url = rawParams != null
+        ? _buildRawSearchUrl(template, rawParams, filter)
+        : _urlBuilder.buildSearchUrl(template, filter);
     final paginationCfg =
         (apiList['pagination'] as Map<String, dynamic>?) ?? {};
     if (paginationCfg['offsetMode'] == true) {
@@ -1482,6 +1485,82 @@ class GenericRestAdapter implements GenericAdapter {
         .replaceAll(RegExp('([?&])$escaped=[^&]*(?=&|\$)'), '')
         .replaceAll('?&', '?')
         .replaceAll(RegExp(r'[?&]$'), '');
+  }
+
+  String? _extractRawSearchParams(String query) {
+    if (!query.startsWith('raw:')) return null;
+    return query.substring(4);
+  }
+
+  String _buildRawSearchUrl(
+    String template,
+    String rawParams,
+    SearchFilter filter,
+  ) {
+    final page = filter.page > 0 ? filter.page : 1;
+    final baseUrl = _urlBuilder.resolve(template, {
+      'query': '',
+      'page': page.toString(),
+      'sort': '',
+    });
+
+    if (rawParams.trim().isEmpty) {
+      return baseUrl;
+    }
+
+    final templateParams = _parseUrlQueryParams(baseUrl);
+    final rawMap = _parseRawQueryParams(rawParams);
+
+    final merged = <String, List<String>>{...templateParams};
+    for (final entry in rawMap.entries) {
+      merged[entry.key] = entry.value;
+    }
+
+    return _rebuildUrlWithQueryParams(baseUrl, merged);
+  }
+
+  Map<String, List<String>> _parseUrlQueryParams(String url) {
+    final qIdx = url.indexOf('?');
+    if (qIdx < 0 || qIdx + 1 >= url.length) {
+      return {};
+    }
+    return _parseRawQueryParams(url.substring(qIdx + 1));
+  }
+
+  Map<String, List<String>> _parseRawQueryParams(String raw) {
+    final result = <String, List<String>>{};
+    for (final pair in raw.split('&')) {
+      if (pair.isEmpty) continue;
+      final idx = pair.indexOf('=');
+      if (idx < 0) continue;
+      final key = Uri.decodeQueryComponent(pair.substring(0, idx));
+      final value = Uri.decodeQueryComponent(pair.substring(idx + 1));
+      result.putIfAbsent(key, () => <String>[]).add(value);
+    }
+    return result;
+  }
+
+  String _rebuildUrlWithQueryParams(
+      String baseUrl, Map<String, List<String>> p) {
+    final qIdx = baseUrl.indexOf('?');
+    final path = qIdx >= 0 ? baseUrl.substring(0, qIdx) : baseUrl;
+    if (p.isEmpty) return path;
+
+    final pairs = <String>[];
+    for (final entry in p.entries) {
+      if (entry.value.isEmpty) {
+        pairs.add('${entry.key}=');
+        continue;
+      }
+      for (final value in entry.value) {
+        final encodedValue = (value.startsWith('{') && value.endsWith('}'))
+            ? value
+            : Uri.encodeQueryComponent(value);
+        pairs.add('${entry.key}=$encodedValue');
+      }
+    }
+
+    return '$path?${pairs.join('&')}';
   }
 
   String _ensureMangaDexChapterContentRatings(String url) {
