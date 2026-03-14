@@ -17,8 +17,8 @@
   },
   "api": {
     "endpoints": {
-      "allGalleries": "/manga?limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&order[followedCount]=desc",
-      "search": "/manga?title={query}&limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe",
+      "allGalleries": "/manga?limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]={language}&order[followedCount]=desc",
+      "search": "/manga?title={query}&limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]={language}",
       "detail": "/manga/{id}?includes[]=cover_art&includes[]=author&includes[]=artist"
     },
     "list": {
@@ -76,7 +76,7 @@
     },
     "detail": {
       "chapters": {
-        "endpoint": "/chapter?manga={id}&translatedLanguage[]=en&limit=100&order[chapter]=desc",
+        "endpoint": "/chapter?manga={id}&translatedLanguage[]={language}&limit=100&order[chapter]=desc",
         "items": "$.data[*]",
         "fields": {
           "id": {
