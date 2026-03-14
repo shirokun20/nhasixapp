@@ -506,6 +506,10 @@ class GenericRestAdapter implements GenericAdapter {
       requestedLanguage: filter.language,
     );
     if (_sourceId == 'mangadex') {
+      url = _ensureMangaDexSupportedLanguages(
+        url,
+        paramName: 'availableTranslatedLanguage[]',
+      );
       url = _ensureMangaDexHasAvailableChapters(url);
     }
     _logger.d('$_sourceId REST [new schema] search: $url');
@@ -662,11 +666,11 @@ class GenericRestAdapter implements GenericAdapter {
           var chapterUrl =
               '$baseApiUrl${fullPath.replaceAll('{id}', contentId)}';
           chapterUrl = _applyLanguagePlaceholder(chapterUrl, rawConfig);
-          if (_sourceId == 'mangadex' &&
-              chapterUrl.contains('translatedLanguage[]=')) {
-            chapterUrl = _removeQueryParam(chapterUrl, 'translatedLanguage[]');
-          }
           if (_sourceId == 'mangadex') {
+            chapterUrl = _ensureMangaDexSupportedLanguages(
+              chapterUrl,
+              paramName: 'translatedLanguage[]',
+            );
             chapterUrl = _ensureMangaDexChapterContentRatings(chapterUrl);
           }
 
@@ -1492,6 +1496,20 @@ class GenericRestAdapter implements GenericAdapter {
     return url.contains('?')
         ? '$url&hasAvailableChapters=true'
         : '$url?hasAvailableChapters=true';
+  }
+
+  String _ensureMangaDexSupportedLanguages(
+    String url, {
+    required String paramName,
+  }) {
+    var normalized = _removeQueryParam(url, paramName);
+    const allowed = ['id', 'en', 'ja', 'zh'];
+    for (final lang in allowed) {
+      normalized = normalized.contains('?')
+          ? '$normalized&$paramName=$lang'
+          : '$normalized?$paramName=$lang';
+    }
+    return normalized;
   }
 
   /// Build the full list of image URLs for a detail response using the

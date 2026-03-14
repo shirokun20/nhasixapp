@@ -22,9 +22,9 @@ const _config = {
   'api': {
     'endpoints': {
       'allGalleries':
-          '/manga?limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]={language}&order[followedCount]=desc&hasAvailableChapters=true',
+          '/manga?limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh&order[followedCount]=desc&hasAvailableChapters=true',
       'search':
-          '/manga?title={query}&limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]={language}&hasAvailableChapters=true',
+          '/manga?title={query}&limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh&hasAvailableChapters=true',
       'detail':
           '/manga/{id}?includes[]=cover_art&includes[]=author&includes[]=artist',
     },
@@ -71,7 +71,7 @@ const _config = {
     'detail': {
       'chapters': {
         'endpoint':
-            '/chapter?manga={id}&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic',
+            '/chapter?manga={id}&limit=100&order[chapter]=desc&translatedLanguage[]=id&translatedLanguage[]=en&translatedLanguage[]=ja&translatedLanguage[]=zh&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic',
         'items': r'$.data[*]',
         'fields': {
           'id': {'selector': r'$.id'},
@@ -381,7 +381,7 @@ void main() {
     test('search maps altTitles.en title and cover URL from relationships',
         () async {
       dioAdapter.onGet(
-        '$_baseUrl/manga?limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=en&order[followedCount]=desc&hasAvailableChapters=true',
+        '$_baseUrl/manga?limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&order[followedCount]=desc&hasAvailableChapters=true&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh',
         (server) => server.reply(200, _listResponse),
       );
 
@@ -402,7 +402,7 @@ void main() {
     test('search with query uses search endpoint and offset pagination',
         () async {
       dioAdapter.onGet(
-        '$_baseUrl/manga?title=solo+leveling&limit=30&offset=30&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=en&hasAvailableChapters=true',
+        '$_baseUrl/manga?title=solo+leveling&limit=30&offset=30&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&hasAvailableChapters=true&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh',
         (server) => server.reply(200, _searchPage2Response),
       );
 
@@ -423,7 +423,7 @@ void main() {
     test('search handles missing cover relationship without crashing',
         () async {
       dioAdapter.onGet(
-        '$_baseUrl/manga?limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=en&order[followedCount]=desc&hasAvailableChapters=true',
+        '$_baseUrl/manga?limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&order[followedCount]=desc&hasAvailableChapters=true&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh',
         (server) => server.reply(200, _listNoCoverResponse),
       );
 
@@ -442,7 +442,7 @@ void main() {
       api.remove('language');
 
       dioAdapter.onGet(
-        '$_baseUrl/manga?limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=en&order[followedCount]=desc&hasAvailableChapters=true',
+        '$_baseUrl/manga?limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&order[followedCount]=desc&hasAvailableChapters=true&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh',
         (server) => server.reply(200, _listOriginalLanguageJaResponse),
       );
 
@@ -465,7 +465,7 @@ void main() {
         (server) => server.reply(200, _statsResponse),
       );
       dioAdapter.onGet(
-        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic',
+        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic&translatedLanguage[]=id&translatedLanguage[]=en&translatedLanguage[]=ja&translatedLanguage[]=zh',
         (server) => server.reply(200, _chaptersResponse),
       );
 
@@ -497,7 +497,7 @@ void main() {
         (server) => server.reply(500, {'result': 'error'}),
       );
       dioAdapter.onGet(
-        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic',
+        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic&translatedLanguage[]=id&translatedLanguage[]=en&translatedLanguage[]=ja&translatedLanguage[]=zh',
         (server) => server.reply(200, _chaptersResponse),
       );
 
@@ -520,7 +520,7 @@ void main() {
         (server) => server.reply(200, _statsResponse),
       );
       dioAdapter.onGet(
-        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic',
+        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic&translatedLanguage[]=id&translatedLanguage[]=en&translatedLanguage[]=ja&translatedLanguage[]=zh',
         (server) => server.reply(200, _chaptersResponse),
       );
 
@@ -540,7 +540,7 @@ void main() {
         (server) => server.reply(200, _statsResponse),
       );
       dioAdapter.onGet(
-        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic',
+        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic&translatedLanguage[]=id&translatedLanguage[]=en&translatedLanguage[]=ja&translatedLanguage[]=zh',
         (server) => server.reply(200, _chaptersNoVolumeResponse),
       );
 
@@ -605,7 +605,7 @@ void main() {
 
     test('language from SearchFilter is used for search endpoint', () async {
       dioAdapter.onGet(
-        '$_baseUrl/manga?title=solo&limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=id&hasAvailableChapters=true',
+        '$_baseUrl/manga?title=solo&limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&hasAvailableChapters=true&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh',
         (server) => server.reply(200, _listResponse),
       );
 
@@ -631,7 +631,7 @@ void main() {
         (server) => server.reply(200, _statsResponse),
       );
       dioAdapter.onGet(
-        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic',
+        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic&translatedLanguage[]=id&translatedLanguage[]=en&translatedLanguage[]=ja&translatedLanguage[]=zh',
         (server) => server.reply(200, _chaptersResponse),
       );
 
@@ -652,7 +652,7 @@ void main() {
         (server) => server.reply(200, _statsResponse),
       );
       dioAdapter.onGet(
-        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic',
+        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic&translatedLanguage[]=id&translatedLanguage[]=en&translatedLanguage[]=ja&translatedLanguage[]=zh',
         (server) => server.reply(200, _emptyChaptersResponse),
       );
 
@@ -680,7 +680,7 @@ void main() {
         (server) => server.reply(200, _statsResponse),
       );
       dioAdapter.onGet(
-        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic',
+        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&translatedLanguage[]=id&translatedLanguage[]=en&translatedLanguage[]=ja&translatedLanguage[]=zh&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic',
         (server) => server.reply(200, _chaptersResponse),
       );
 
