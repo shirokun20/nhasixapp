@@ -5,6 +5,7 @@
 library;
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:kuron_core/kuron_core.dart';
@@ -322,11 +323,11 @@ class GenericRestAdapter implements GenericAdapter {
       _logger.d('$_sourceId REST at-home request: $url');
 
       try {
-        await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
-        final response = await _dio.get<dynamic>(url);
-        final data = response.data is String
-            ? jsonDecode(response.data as String)
-            : response.data;
+        final data = await _getAtHomePayloadWithRetry(
+          url,
+          rawConfig,
+          maxAttempts: 3,
+        );
 
         final baseUrl = data['baseUrl'] as String?;
         final chapterNode = data['chapter'] as Map<String, dynamic>?;
@@ -342,11 +343,14 @@ class GenericRestAdapter implements GenericAdapter {
                   .where((e) => e.isNotEmpty)
                   .toList() ??
               const <String>[];
-          final fileNames = dataFiles.isNotEmpty ? dataFiles : dataSaverFiles;
+          final useDataSaver = dataFiles.isEmpty && dataSaverFiles.isNotEmpty;
+          final fileNames = useDataSaver ? dataSaverFiles : dataFiles;
 
           if (hash != null && fileNames.isNotEmpty) {
-            final images =
-                fileNames.map((fn) => '$baseUrl/data/$hash/$fn').toList();
+            final imagePathSegment = useDataSaver ? 'data-saver' : 'data';
+            final images = fileNames
+                .map((fn) => '$baseUrl/$imagePathSegment/$hash/$fn')
+                .toList();
             return ChapterData(
               images: images,
             );
@@ -359,6 +363,96 @@ class GenericRestAdapter implements GenericAdapter {
     }
 
     return null;
+  }
+
+  Future<dynamic> _getAtHomePayloadWithRetry(
+    String url,
+    Map<String, dynamic> rawConfig, {
+    int maxAttempts = 3,
+  }) async {
+    Object? lastError;
+    StackTrace? lastStackTrace;
+
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
+        final response = await _dio.get<dynamic>(
+          url,
+          options: Options(
+            responseType: ResponseType.json,
+            headers: const {
+              'Accept': 'application/json',
+              // For unstable mobile networks this can reduce half-closed
+              // keep-alive socket issues on subsequent retries.
+              'Connection': 'close',
+            },
+          ),
+        );
+        return response.data is String
+            ? jsonDecode(response.data as String)
+            : response.data;
+      } on DioException catch (e, st) {
+        lastError = e;
+        lastStackTrace = st;
+
+        if (attempt >= maxAttempts || !_shouldRetryAtHomeDioError(e)) {
+          rethrow;
+        }
+
+        _logger.w(
+          '$_sourceId at-home transient error, retrying '
+          '($attempt/$maxAttempts): ${e.message}',
+        );
+        await Future<void>.delayed(Duration(milliseconds: attempt * 250));
+      } catch (e, st) {
+        lastError = e;
+        lastStackTrace = st;
+        if (attempt >= maxAttempts) {
+          rethrow;
+        }
+        _logger.w(
+          '$_sourceId at-home unknown transient error, retrying '
+          '($attempt/$maxAttempts): $e',
+        );
+        await Future<void>.delayed(Duration(milliseconds: attempt * 250));
+      }
+    }
+
+    if (lastError != null) {
+      Error.throwWithStackTrace(
+        lastError,
+        lastStackTrace ?? StackTrace.current,
+      );
+    }
+    throw StateError('Unexpected at-home retry flow termination');
+  }
+
+  bool _shouldRetryAtHomeDioError(DioException e) {
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.sendTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.connectionError) {
+      return true;
+    }
+
+    final message = (e.message ?? '').toLowerCase();
+    if (message.contains('connection closed before full header') ||
+        message.contains('connection reset by peer') ||
+        message.contains('socket') ||
+        message.contains('stream was terminated')) {
+      return true;
+    }
+
+    final error = e.error;
+    if (error is SocketException) return true;
+    if (error is HttpException &&
+        error.message.toLowerCase().contains(
+              'connection closed before full header',
+            )) {
+      return true;
+    }
+
+    return false;
   }
 
   // ── New schema: api.list / api.detail ─────────────────────────────────────
@@ -411,6 +505,9 @@ class GenericRestAdapter implements GenericAdapter {
       rawConfig,
       requestedLanguage: filter.language,
     );
+    if (_sourceId == 'mangadex') {
+      url = _ensureMangaDexHasAvailableChapters(url);
+    }
     _logger.d('$_sourceId REST [new schema] search: $url');
 
     try {
@@ -565,6 +662,13 @@ class GenericRestAdapter implements GenericAdapter {
           var chapterUrl =
               '$baseApiUrl${fullPath.replaceAll('{id}', contentId)}';
           chapterUrl = _applyLanguagePlaceholder(chapterUrl, rawConfig);
+          if (_sourceId == 'mangadex' &&
+              chapterUrl.contains('translatedLanguage[]=')) {
+            chapterUrl = _removeQueryParam(chapterUrl, 'translatedLanguage[]');
+          }
+          if (_sourceId == 'mangadex') {
+            chapterUrl = _ensureMangaDexChapterContentRatings(chapterUrl);
+          }
 
           try {
             final itemsSelector = chaptersCfg['items'] as String?;
@@ -577,24 +681,6 @@ class GenericRestAdapter implements GenericAdapter {
                 cFields: cFields,
                 rawConfig: rawConfig,
               );
-
-              // Fallback: if language-filtered query returns no chapter,
-              // retry once without translatedLanguage filter.
-              if (chapters.isEmpty &&
-                  chapterUrl.contains('translatedLanguage[]=')) {
-                final fallbackUrl =
-                    _removeQueryParam(chapterUrl, 'translatedLanguage[]');
-                if (fallbackUrl != chapterUrl) {
-                  _logger.d(
-                      '$_sourceId chapters fallback (no language filter): $fallbackUrl');
-                  chapters = await _fetchChapters(
-                    fallbackUrl,
-                    itemsSelector: itemsSelector,
-                    cFields: cFields,
-                    rawConfig: rawConfig,
-                  );
-                }
-              }
             }
           } catch (e) {
             _logger.w('$_sourceId detail chapters fetch failed: $e');
@@ -1356,6 +1442,25 @@ class GenericRestAdapter implements GenericAdapter {
         _parser.extractItems(cData, FieldSelector(selector: itemsSelector));
     return rawChapters.map((c) {
       final cFieldsExtracted = _extractRestFields(c, cFields);
+
+      // Backward compatibility for older remote configs that don't map
+      // chapter language field yet.
+      if (_sourceId == 'mangadex') {
+        final hasLanguage =
+            (cFieldsExtracted['language']?.toString().trim().isNotEmpty ??
+                false);
+        if (!hasLanguage) {
+          final attrs = c['attributes'];
+          if (attrs is Map<String, dynamic>) {
+            final translatedLanguage = attrs['translatedLanguage'];
+            if (translatedLanguage != null &&
+                translatedLanguage.toString().trim().isNotEmpty) {
+              cFieldsExtracted['language'] = translatedLanguage.toString();
+            }
+          }
+        }
+      }
+
       return GenericContentMapper.toChapter(cFieldsExtracted);
     }).toList();
   }
@@ -1373,6 +1478,20 @@ class GenericRestAdapter implements GenericAdapter {
         .replaceAll(RegExp('([?&])$escaped=[^&]*(?=&|\$)'), '')
         .replaceAll('?&', '?')
         .replaceAll(RegExp(r'[?&]$'), '');
+  }
+
+  String _ensureMangaDexChapterContentRatings(String url) {
+    if (url.contains('contentRating[]=')) return url;
+    const suffix =
+        'contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic';
+    return url.contains('?') ? '$url&$suffix' : '$url?$suffix';
+  }
+
+  String _ensureMangaDexHasAvailableChapters(String url) {
+    if (url.contains('hasAvailableChapters=')) return url;
+    return url.contains('?')
+        ? '$url&hasAvailableChapters=true'
+        : '$url?hasAvailableChapters=true';
   }
 
   /// Build the full list of image URLs for a detail response using the

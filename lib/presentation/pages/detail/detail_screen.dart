@@ -882,17 +882,20 @@ class _DetailScreenState extends State<DetailScreen> {
     final remoteConfig = getIt<RemoteConfigService>();
     final hasChaptersFeature =
         remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.chapters);
+    final hasChapters = content.chapters?.isNotEmpty == true;
 
     Logger().i('content.sourceId: ${content.sourceId}');
     Logger().i('hasChaptersFeature: $hasChaptersFeature');
     Logger().i('content.chapters: ${content.chapters}');
     Logger().i('content.chapters.isNotEmpty: ${content.chapters?.isNotEmpty}');
 
-    // If content has chapters AND feature is enabled, show chapter list
-    if (hasChaptersFeature &&
-        content.chapters != null &&
-        content.chapters?.isNotEmpty == true) {
-      return _buildChapterList(content);
+    // Chapter-based sources should either show chapter list or an explicit
+    // no-chapters message (without Read Now button).
+    if (hasChaptersFeature) {
+      if (hasChapters) {
+        return _buildChapterList(content);
+      }
+      return _buildNoChaptersNotice();
     }
 
     return Container(
@@ -958,9 +961,41 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
+  Widget _buildNoChaptersNotice() {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              l10n.noChaptersFound,
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildChapterList(Content content) {
     final chapters = content.chapters!;
     final l10n = AppLocalizations.of(context)!;
+    final groupedChapters = _groupChaptersByLanguage(chapters);
+    final previewEntries = _buildChapterPreviewEntries(groupedChapters);
     // Get chapter history from current state
     final currentState = _detailCubit.state;
     final chapterHistory = currentState is DetailLoaded
@@ -1072,10 +1107,56 @@ class _DetailScreenState extends State<DetailScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.all(12),
-            // Show max 5 chapters initially
-            itemCount: chapters.length > 5 ? 5 : chapters.length,
+            // Show max 5 chapter rows initially (+ language headers)
+            itemCount: previewEntries.length,
             itemBuilder: (context, index) {
-              final chapter = chapters[index];
+              final entry = previewEntries[index];
+              if (entry.isHeader) {
+                return Container(
+                  margin: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .secondaryContainer
+                        .withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .secondary
+                          .withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.translate,
+                        size: 14,
+                        color:
+                            Theme.of(context).colorScheme.onSecondaryContainer,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        entry.languageLabel ??
+                            AppLocalizations.of(context)!.languageLabel,
+                        style: TextStyleConst.labelMedium.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSecondaryContainer,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              final chapter = entry.chapter!;
+              final displayIndex = entry.chapterIndex ?? (index + 1);
 
               // Create Content object for download widget
               final chapterContent = Content(
@@ -1225,7 +1306,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                               alignment: Alignment.center,
                                               children: [
                                                 Text(
-                                                  '${index + 1}',
+                                                  '$displayIndex',
                                                   style: TextStyleConst
                                                       .headingSmall
                                                       .copyWith(
@@ -1258,7 +1339,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                               ],
                                             )
                                           : Text(
-                                              '${index + 1}',
+                                              '${entry.languageLabel}',
                                               style: TextStyleConst.headingSmall
                                                   .copyWith(
                                                 color: Theme.of(context)
@@ -1603,6 +1684,60 @@ class _DetailScreenState extends State<DetailScreen> {
         ],
       ),
     );
+  }
+
+  Map<String, List<Chapter>> _groupChaptersByLanguage(List<Chapter> chapters) {
+    final grouped = <String, List<Chapter>>{};
+    for (final chapter in chapters) {
+      final key = (chapter.language ?? '').trim().toLowerCase();
+      final normalized = key.isEmpty ? 'unknown' : key;
+      grouped.putIfAbsent(normalized, () => <Chapter>[]).add(chapter);
+    }
+
+    final sortedKeys = grouped.keys.toList()
+      ..sort((a, b) {
+        if (a == 'unknown') return 1;
+        if (b == 'unknown') return -1;
+        return a.compareTo(b);
+      });
+
+    return {for (final key in sortedKeys) key: grouped[key]!};
+  }
+
+  List<_ChapterListEntry> _buildChapterPreviewEntries(
+    Map<String, List<Chapter>> grouped,
+  ) {
+    final entries = <_ChapterListEntry>[];
+    var displayIndex = 1;
+    var chapterCount = 0;
+
+    for (final language in grouped.keys) {
+      final chapters = grouped[language]!;
+      final label = _formatChapterLanguageLabel(language);
+      entries.add(_ChapterListEntry.header(label));
+
+      for (final chapter in chapters) {
+        if (chapterCount >= 5) {
+          return entries;
+        }
+        entries.add(_ChapterListEntry.chapter(chapter, displayIndex));
+        displayIndex += 1;
+        chapterCount += 1;
+      }
+    }
+
+    return entries;
+  }
+
+  String _formatChapterLanguageLabel(String languageCode) {
+    final normalized = languageCode.trim().toLowerCase();
+    if (normalized.isEmpty || normalized == 'unknown') {
+      return AppLocalizations.of(context)!.languageLabel;
+    }
+    final langService = getIt<LanguageService>();
+    final name = langService.displayName(normalized);
+    final upper = normalized.toUpperCase();
+    return '$name ($upper)';
   }
 
   Widget _buildRelatedContentSection(DetailLoaded state) {
@@ -2590,4 +2725,28 @@ class _DetailScreenState extends State<DetailScreen> {
       ),
     );
   }
+}
+
+class _ChapterListEntry {
+  const _ChapterListEntry._({
+    required this.isHeader,
+    this.languageLabel,
+    this.chapter,
+    this.chapterIndex,
+  });
+
+  factory _ChapterListEntry.header(String label) =>
+      _ChapterListEntry._(isHeader: true, languageLabel: label);
+
+  factory _ChapterListEntry.chapter(Chapter chapter, int chapterIndex) =>
+      _ChapterListEntry._(
+        isHeader: false,
+        chapter: chapter,
+        chapterIndex: chapterIndex,
+      );
+
+  final bool isHeader;
+  final String? languageLabel;
+  final Chapter? chapter;
+  final int? chapterIndex;
 }

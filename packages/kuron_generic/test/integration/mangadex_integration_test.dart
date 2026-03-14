@@ -22,9 +22,9 @@ const _config = {
   'api': {
     'endpoints': {
       'allGalleries':
-          '/manga?limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]={language}&order[followedCount]=desc',
+          '/manga?limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]={language}&order[followedCount]=desc&hasAvailableChapters=true',
       'search':
-          '/manga?title={query}&limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]={language}',
+          '/manga?title={query}&limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]={language}&hasAvailableChapters=true',
       'detail':
           '/manga/{id}?includes[]=cover_art&includes[]=author&includes[]=artist',
     },
@@ -71,12 +71,13 @@ const _config = {
     'detail': {
       'chapters': {
         'endpoint':
-            '/chapter?manga={id}&translatedLanguage[]={language}&limit=100&order[chapter]=desc',
+            '/chapter?manga={id}&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic',
         'items': r'$.data[*]',
         'fields': {
           'id': {'selector': r'$.id'},
           'chapterNum': {'selector': r'$.attributes.chapter'},
           'volume': {'selector': r'$.attributes.volume'},
+          'language': {'selector': r'$.attributes.translatedLanguage'},
           'url': {'selector': r'$.id'},
           'date': {'selector': r'$.attributes.readableAt'},
         },
@@ -178,6 +179,7 @@ const _chaptersResponse = {
       'attributes': {
         'chapter': '200',
         'volume': '10',
+        'translatedLanguage': 'en',
         'readableAt': '2025-01-01T00:00:00Z',
       },
     },
@@ -316,6 +318,7 @@ const _chaptersNoVolumeResponse = {
       'attributes': {
         'chapter': '15',
         'volume': '',
+        'translatedLanguage': 'id',
         'readableAt': '2025-01-01T00:00:00Z',
       },
     },
@@ -378,7 +381,7 @@ void main() {
     test('search maps altTitles.en title and cover URL from relationships',
         () async {
       dioAdapter.onGet(
-        '$_baseUrl/manga?limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=en&order[followedCount]=desc',
+        '$_baseUrl/manga?limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=en&order[followedCount]=desc&hasAvailableChapters=true',
         (server) => server.reply(200, _listResponse),
       );
 
@@ -399,7 +402,7 @@ void main() {
     test('search with query uses search endpoint and offset pagination',
         () async {
       dioAdapter.onGet(
-        '$_baseUrl/manga?title=solo+leveling&limit=30&offset=30&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=en',
+        '$_baseUrl/manga?title=solo+leveling&limit=30&offset=30&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=en&hasAvailableChapters=true',
         (server) => server.reply(200, _searchPage2Response),
       );
 
@@ -420,7 +423,7 @@ void main() {
     test('search handles missing cover relationship without crashing',
         () async {
       dioAdapter.onGet(
-        '$_baseUrl/manga?limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=en&order[followedCount]=desc',
+        '$_baseUrl/manga?limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=en&order[followedCount]=desc&hasAvailableChapters=true',
         (server) => server.reply(200, _listNoCoverResponse),
       );
 
@@ -439,7 +442,7 @@ void main() {
       api.remove('language');
 
       dioAdapter.onGet(
-        '$_baseUrl/manga?limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=en&order[followedCount]=desc',
+        '$_baseUrl/manga?limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=en&order[followedCount]=desc&hasAvailableChapters=true',
         (server) => server.reply(200, _listOriginalLanguageJaResponse),
       );
 
@@ -462,7 +465,7 @@ void main() {
         (server) => server.reply(200, _statsResponse),
       );
       dioAdapter.onGet(
-        '$_baseUrl/chapter?manga=$_mangaId&translatedLanguage[]=en&limit=100&order[chapter]=desc',
+        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic',
         (server) => server.reply(200, _chaptersResponse),
       );
 
@@ -476,6 +479,7 @@ void main() {
       expect(result.content.chapters, hasLength(1));
       expect(result.content.chapters!.first.url, _chapterId);
       expect(result.content.chapters!.first.title, 'Vol.10 Ch.200');
+      expect(result.content.chapters!.first.language, 'en');
       expect(result.content.subTitle, '10 years ago...');
       expect(
         result.content.coverUrl,
@@ -493,7 +497,7 @@ void main() {
         (server) => server.reply(500, {'result': 'error'}),
       );
       dioAdapter.onGet(
-        '$_baseUrl/chapter?manga=$_mangaId&translatedLanguage[]=en&limit=100&order[chapter]=desc',
+        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic',
         (server) => server.reply(200, _chaptersResponse),
       );
 
@@ -516,7 +520,7 @@ void main() {
         (server) => server.reply(200, _statsResponse),
       );
       dioAdapter.onGet(
-        '$_baseUrl/chapter?manga=$_mangaId&translatedLanguage[]=en&limit=100&order[chapter]=desc',
+        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic',
         (server) => server.reply(200, _chaptersResponse),
       );
 
@@ -536,7 +540,7 @@ void main() {
         (server) => server.reply(200, _statsResponse),
       );
       dioAdapter.onGet(
-        '$_baseUrl/chapter?manga=$_mangaId&translatedLanguage[]=en&limit=100&order[chapter]=desc',
+        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic',
         (server) => server.reply(200, _chaptersNoVolumeResponse),
       );
 
@@ -583,8 +587,8 @@ void main() {
 
       expect(chapterData, isNotNull);
       expect(chapterData!.images, [
-        'https://uploads.mangadex.org/data/abc123hash/1.webp',
-        'https://uploads.mangadex.org/data/abc123hash/2.webp',
+        'https://uploads.mangadex.org/data-saver/abc123hash/1.webp',
+        'https://uploads.mangadex.org/data-saver/abc123hash/2.webp',
       ]);
     });
 
@@ -601,7 +605,7 @@ void main() {
 
     test('language from SearchFilter is used for search endpoint', () async {
       dioAdapter.onGet(
-        '$_baseUrl/manga?title=solo&limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=id',
+        '$_baseUrl/manga?title=solo&limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=id&hasAvailableChapters=true',
         (server) => server.reply(200, _listResponse),
       );
 
@@ -614,8 +618,7 @@ void main() {
       expect(result.items.first.id, _mangaId);
     });
 
-    test('language from defaultLanguage is used for chapter endpoint',
-        () async {
+    test('chapter endpoint is language-agnostic for grouped display', () async {
       final idConfig = _cloneConfig();
       idConfig['defaultLanguage'] = 'indonesian';
 
@@ -628,7 +631,7 @@ void main() {
         (server) => server.reply(200, _statsResponse),
       );
       dioAdapter.onGet(
-        '$_baseUrl/chapter?manga=$_mangaId&translatedLanguage[]=id&limit=100&order[chapter]=desc',
+        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic',
         (server) => server.reply(200, _chaptersResponse),
       );
 
@@ -638,7 +641,7 @@ void main() {
       expect(result.content.chapters, hasLength(1));
     });
 
-    test('detail retries chapter endpoint without language when empty',
+    test('detail returns empty chapter list when API has no chapters',
         () async {
       dioAdapter.onGet(
         '$_baseUrl/manga/$_mangaId?includes[]=cover_art&includes[]=author&includes[]=artist',
@@ -649,18 +652,42 @@ void main() {
         (server) => server.reply(200, _statsResponse),
       );
       dioAdapter.onGet(
-        '$_baseUrl/chapter?manga=$_mangaId&translatedLanguage[]=en&limit=100&order[chapter]=desc',
+        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic',
         (server) => server.reply(200, _emptyChaptersResponse),
-      );
-      dioAdapter.onGet(
-        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc',
-        (server) => server.reply(200, _chaptersResponse),
       );
 
       final result = await adapter.fetchDetail(_mangaId, _config);
 
+      expect(result.content.chapters, isEmpty);
+    });
+
+    test('legacy translatedLanguage endpoint is normalized for grouping',
+        () async {
+      final legacyConfig = _cloneConfig();
+      final detail = ((legacyConfig['api'] as Map)['detail'] as Map);
+      final chapters = (detail['chapters'] as Map);
+      chapters['endpoint'] =
+          '/chapter?manga={id}&translatedLanguage[]={language}&limit=100&order[chapter]=desc';
+      final chapterFields = (chapters['fields'] as Map);
+      chapterFields.remove('language');
+
+      dioAdapter.onGet(
+        '$_baseUrl/manga/$_mangaId?includes[]=cover_art&includes[]=author&includes[]=artist',
+        (server) => server.reply(200, _detailResponse),
+      );
+      dioAdapter.onGet(
+        '$_baseUrl/statistics/manga/$_mangaId',
+        (server) => server.reply(200, _statsResponse),
+      );
+      dioAdapter.onGet(
+        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic',
+        (server) => server.reply(200, _chaptersResponse),
+      );
+
+      final result = await adapter.fetchDetail(_mangaId, legacyConfig);
+
       expect(result.content.chapters, hasLength(1));
-      expect(result.content.chapters!.first.id, _chapterId);
+      expect(result.content.chapters!.first.language, 'en');
     });
   });
 }

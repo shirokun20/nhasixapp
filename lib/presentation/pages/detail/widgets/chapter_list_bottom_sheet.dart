@@ -5,6 +5,7 @@ import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:nhasixapp/presentation/widgets/download_button_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -33,6 +34,8 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final chapters = widget.content.chapters ?? [];
+    final groupedChapters = _groupChaptersByLanguage(chapters);
+    final entries = _buildGroupedEntries(groupedChapters);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
@@ -117,11 +120,54 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                     child: ListView.builder(
                       controller: scrollController,
                       padding: const EdgeInsets.all(16),
-                      itemCount: chapters.length,
+                      itemCount: entries.length,
                       itemBuilder: (context, index) {
-                        final chapter = chapters[index];
-                        // Find original index for display number
-                        final originalIndex = index;
+                        final entry = entries[index];
+                        if (entry.isHeader) {
+                          return Container(
+                            margin: const EdgeInsets.fromLTRB(0, 4, 0, 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .secondaryContainer
+                                  .withValues(alpha: 0.55),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .secondary
+                                    .withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.translate,
+                                  size: 14,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSecondaryContainer,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  entry.languageLabel!,
+                                  style: TextStyleConst.labelMedium.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSecondaryContainer,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        final chapter = entry.chapter!;
 
                         // Check history and calculate progress
                         bool isRead = false;
@@ -222,7 +268,7 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                                             Alignment.center,
                                                         children: [
                                                           Text(
-                                                            '${originalIndex + 1}',
+                                                            '${entry.chapterIndex ?? (index + 1)}',
                                                             style:
                                                                 TextStyleConst
                                                                     .titleMedium
@@ -268,7 +314,7 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                                         ],
                                                       )
                                                     : Text(
-                                                        '${originalIndex + 1}',
+                                                        '${entry.chapterIndex ?? (index + 1)}',
                                                         style: TextStyleConst
                                                             .titleMedium
                                                             .copyWith(
@@ -396,4 +442,72 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
       },
     );
   }
+
+  Map<String, List<Chapter>> _groupChaptersByLanguage(List<Chapter> chapters) {
+    final grouped = <String, List<Chapter>>{};
+    for (final chapter in chapters) {
+      final key = (chapter.language ?? '').trim().toLowerCase();
+      final normalized = key.isEmpty ? 'unknown' : key;
+      grouped.putIfAbsent(normalized, () => <Chapter>[]).add(chapter);
+    }
+
+    final sortedKeys = grouped.keys.toList()
+      ..sort((a, b) {
+        if (a == 'unknown') return 1;
+        if (b == 'unknown') return -1;
+        return a.compareTo(b);
+      });
+
+    return {for (final key in sortedKeys) key: grouped[key]!};
+  }
+
+  List<_GroupedChapterEntry> _buildGroupedEntries(
+    Map<String, List<Chapter>> grouped,
+  ) {
+    final entries = <_GroupedChapterEntry>[];
+    var index = 1;
+    for (final language in grouped.keys) {
+      entries.add(_GroupedChapterEntry.header(_languageLabel(language)));
+      final chapters = grouped[language]!;
+      for (final chapter in chapters) {
+        entries.add(_GroupedChapterEntry.chapter(chapter, index));
+        index += 1;
+      }
+    }
+    return entries;
+  }
+
+  String _languageLabel(String code) {
+    final normalized = code.trim().toLowerCase();
+    if (normalized.isEmpty || normalized == 'unknown') {
+      return AppLocalizations.of(context)!.languageLabel;
+    }
+    final languageService = getIt<LanguageService>();
+    final displayName = languageService.displayName(normalized);
+    return '$displayName (${normalized.toUpperCase()})';
+  }
+}
+
+class _GroupedChapterEntry {
+  const _GroupedChapterEntry._({
+    required this.isHeader,
+    this.languageLabel,
+    this.chapter,
+    this.chapterIndex,
+  });
+
+  factory _GroupedChapterEntry.header(String label) =>
+      _GroupedChapterEntry._(isHeader: true, languageLabel: label);
+
+  factory _GroupedChapterEntry.chapter(Chapter chapter, int index) =>
+      _GroupedChapterEntry._(
+        isHeader: false,
+        chapter: chapter,
+        chapterIndex: index,
+      );
+
+  final bool isHeader;
+  final String? languageLabel;
+  final Chapter? chapter;
+  final int? chapterIndex;
 }

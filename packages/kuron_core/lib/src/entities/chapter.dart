@@ -8,6 +8,7 @@ class Chapter extends Equatable {
     required this.url,
     this.uploadDate,
     this.scanGroup,
+    this.language,
   });
 
   /// Unique identifier (usually slug or ID)
@@ -25,8 +26,11 @@ class Chapter extends Equatable {
   /// Scanlation group (optional)
   final String? scanGroup;
 
+  /// Chapter translation language code (optional, e.g. "en", "id", "ja")
+  final String? language;
+
   @override
-  List<Object?> get props => [id, title, url, uploadDate, scanGroup];
+  List<Object?> get props => [id, title, url, uploadDate, scanGroup, language];
 
   Chapter copyWith({
     String? id,
@@ -34,6 +38,7 @@ class Chapter extends Equatable {
     String? url,
     DateTime? uploadDate,
     String? scanGroup,
+    String? language,
   }) {
     return Chapter(
       id: id ?? this.id,
@@ -41,6 +46,7 @@ class Chapter extends Equatable {
       url: url ?? this.url,
       uploadDate: uploadDate ?? this.uploadDate,
       scanGroup: scanGroup ?? this.scanGroup,
+      language: language ?? this.language,
     );
   }
 }

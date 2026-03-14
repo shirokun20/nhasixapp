@@ -128,11 +128,13 @@ class GenericContentMapper {
   static Chapter toChapter(Map<String, dynamic> fields) {
     final id = _str(fields, 'id');
     final url = _str(fields, 'url');
+    final language = _str(fields, 'language').trim();
     return Chapter(
       id: id.isNotEmpty ? id : url,
       title: _buildChapterTitle(fields),
       url: url,
       uploadDate: _dateNullable(fields, 'date'),
+      language: language.isNotEmpty ? language : null,
     );
   }
 

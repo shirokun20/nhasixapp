@@ -391,12 +391,14 @@ void main() {
         'title': 'Chapter 1',
         'url': '/manga-slug-chapter-1/',
         'date': '2024-03-01T00:00:00Z',
+        'language': 'en',
       });
 
       expect(result.id, 'manga-slug-chapter-1');
       expect(result.title, 'Chapter 1');
       expect(result.url, '/manga-slug-chapter-1/');
       expect(result.uploadDate?.year, 2024);
+      expect(result.language, 'en');
     });
 
     test('falls back id to url when id is empty', () {
