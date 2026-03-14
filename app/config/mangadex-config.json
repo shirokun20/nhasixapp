@@ -69,6 +69,13 @@
         "language": {
           "selector": "$.attributes.originalLanguage"
         },
+        "originalLanguage": {
+          "selector": "$.attributes.originalLanguage"
+        },
+        "availableTranslatedLanguages": {
+          "selector": "$.attributes.availableTranslatedLanguages[*]",
+          "multi": true
+        },
         "pageCount": {
           "selector": "$.attributes.lastChapter"
         }
@@ -132,6 +139,13 @@
         },
         "language": {
           "selector": "$.data.attributes.originalLanguage"
+        },
+        "originalLanguage": {
+          "selector": "$.data.attributes.originalLanguage"
+        },
+        "availableTranslatedLanguages": {
+          "selector": "$.data.attributes.availableTranslatedLanguages[*]",
+          "multi": true
         },
         "pageCount": {
           "selector": "$.data.attributes.lastChapter"
