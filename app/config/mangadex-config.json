@@ -1,6 +1,6 @@
 {
   "source": "mangadex",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "enabled": true,
   "defaultLanguage": "english",
   "baseUrl": "https://api.mangadex.org",
@@ -17,8 +17,8 @@
   },
   "api": {
     "endpoints": {
-      "allGalleries": "/manga?limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&order[createdAt]=desc",
-      "search": "/manga?title={q}&limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe",
+      "allGalleries": "/manga?limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&order[followedCount]=desc",
+      "search": "/manga?title={query}&limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe",
       "detail": "/manga/{id}?includes[]=cover_art&includes[]=author&includes[]=artist"
     },
     "list": {
@@ -46,6 +46,9 @@
         "altTitles": {
           "selector": "$.attributes.altTitles"
         },
+        "description": {
+          "selector": "$.attributes.description"
+        },
         "coverUrl": {
           "type": "coverBuilder",
           "template": "https://uploads.mangadex.org/covers/{mangaId}/{fileName}.256.jpg",
@@ -59,6 +62,15 @@
         "artists": {
           "selector": "$.relationships[?(@.type=='artist')].attributes.name",
           "multi": true
+        },
+        "status": {
+          "selector": "$.attributes.status"
+        },
+        "language": {
+          "selector": "$.attributes.originalLanguage"
+        },
+        "pageCount": {
+          "selector": "$.attributes.lastChapter"
         }
       }
     },
@@ -70,8 +82,15 @@
           "id": {
             "selector": "$.id"
           },
-          "title": {
+          "chapterNum": {
             "selector": "$.attributes.chapter"
+          },
+          "volume": {
+            "selector": "$.attributes.volume"
+          },
+          "scanlator": {
+            "selector": "$.relationships[?(@.type=='scanlation_group')].attributes.name",
+            "multi": true
           },
           "url": {
             "selector": "$.id"
@@ -91,6 +110,9 @@
         "altTitles": {
           "selector": "$.data.attributes.altTitles"
         },
+        "description": {
+          "selector": "$.data.attributes.description"
+        },
         "coverUrl": {
           "type": "coverBuilder",
           "template": "https://uploads.mangadex.org/covers/{mangaId}/{fileName}.256.jpg",
@@ -105,10 +127,24 @@
           "selector": "$.data.relationships[?(@.type=='artist')].attributes.name",
           "multi": true
         },
+        "status": {
+          "selector": "$.data.attributes.status"
+        },
+        "language": {
+          "selector": "$.data.attributes.originalLanguage"
+        },
+        "pageCount": {
+          "selector": "$.data.attributes.lastChapter"
+        },
         "uploadDate": {
           "selector": "$.data.attributes.createdAt"
         }
       }
+    },
+    "statistics": {
+      "followsEndpoint": "/statistics/manga/{id}",
+      "followsPath": "$.statistics.{id}.follows",
+      "ratingPath": "$.statistics.{id}.rating.average"
     },
     "images": {
       "mode": "atHome",
