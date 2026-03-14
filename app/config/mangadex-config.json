@@ -83,7 +83,7 @@
     },
     "detail": {
       "chapters": {
-        "endpoint": "/chapter?manga={id}&limit=100&order[chapter]=desc",
+        "endpoint": "/chapter?manga={id}&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic",
         "items": "$.data[*]",
         "fields": {
           "id": {
