@@ -388,14 +388,114 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   /// Load next chapter
   Future<void> loadNextChapter() async {
-    if (state.chapterData?.nextChapterId == null) return;
-    await loadChapter(state.chapterData!.nextChapterId!);
+    final nextChapterId = _resolveNextChapterId();
+    if (nextChapterId == null) {
+      _logger.d('No next chapter available');
+      return;
+    }
+    await loadChapter(nextChapterId);
   }
 
   /// Load previous chapter
   Future<void> loadPreviousChapter() async {
-    if (state.chapterData?.prevChapterId == null) return;
-    await loadChapter(state.chapterData!.prevChapterId!);
+    final previousChapterId = _resolvePreviousChapterId();
+    if (previousChapterId == null) {
+      _logger.d('No previous chapter available');
+      return;
+    }
+    await loadChapter(previousChapterId);
+  }
+
+  bool get hasNextChapter => _resolveNextChapterId() != null;
+
+  bool get hasPreviousChapter => _resolvePreviousChapterId() != null;
+
+  String? _resolveNextChapterId() {
+    final preferredLanguage = _currentChapterLanguageKey();
+    if (preferredLanguage != null) {
+      return _resolveAdjacentChapterId(
+        step: 1,
+        preferredLanguage: preferredLanguage,
+      );
+    }
+
+    final directNextId = state.chapterData?.nextChapterId;
+    if (directNextId != null && directNextId.isNotEmpty) {
+      return directNextId;
+    }
+
+    return _resolveAdjacentChapterId(step: 1);
+  }
+
+  String? _resolvePreviousChapterId() {
+    final preferredLanguage = _currentChapterLanguageKey();
+    if (preferredLanguage != null) {
+      return _resolveAdjacentChapterId(
+        step: -1,
+        preferredLanguage: preferredLanguage,
+      );
+    }
+
+    final directPrevId = state.chapterData?.prevChapterId;
+    if (directPrevId != null && directPrevId.isNotEmpty) {
+      return directPrevId;
+    }
+
+    return _resolveAdjacentChapterId(step: -1);
+  }
+
+  String? _resolveAdjacentChapterId({
+    required int step,
+    String? preferredLanguage,
+  }) {
+    if (_allChapters == null || _allChapters!.isEmpty) {
+      return null;
+    }
+
+    final chapterPool = preferredLanguage == null
+        ? _allChapters!
+        : _allChapters!.where((chapter) {
+            return _normalizeLanguageKey(chapter.language) == preferredLanguage;
+          }).toList();
+
+    if (chapterPool.isEmpty) {
+      return null;
+    }
+
+    final currentChapterId = state.currentChapter?.id ?? state.content?.id;
+    if (currentChapterId == null || currentChapterId.isEmpty) {
+      return null;
+    }
+
+    final currentIndex =
+        chapterPool.indexWhere((chapter) => chapter.id == currentChapterId);
+    if (currentIndex == -1) {
+      return null;
+    }
+
+    final targetIndex = currentIndex + step;
+    if (targetIndex < 0 || targetIndex >= chapterPool.length) {
+      return null;
+    }
+
+    final targetChapterId = chapterPool[targetIndex].id;
+    if (targetChapterId.isEmpty || targetChapterId == currentChapterId) {
+      return null;
+    }
+
+    return targetChapterId;
+  }
+
+  String? _currentChapterLanguageKey() {
+    return _normalizeLanguageKey(state.currentChapter?.language);
+  }
+
+  String? _normalizeLanguageKey(String? value) {
+    final raw = value?.trim().toLowerCase();
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
+    return raw.split('-').first;
   }
 
   Future<void> loadChapter(String chapterId) async {

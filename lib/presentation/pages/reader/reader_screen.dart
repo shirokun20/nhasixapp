@@ -800,10 +800,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   Widget _buildChapterNavigationPage(ReaderState state) {
-    final bool isChapterMode =
-        state.chapterData != null || state.currentChapter != null;
-    final bool hasPrevChapter = state.chapterData?.prevChapterId != null;
-    final bool hasNextChapter = state.chapterData?.nextChapterId != null;
+    final bool hasPrevChapter = _readerCubit.hasPreviousChapter;
+    final bool hasNextChapter = _readerCubit.hasNextChapter;
+    final bool isChapterMode = state.chapterData != null ||
+        state.currentChapter != null ||
+        hasPrevChapter ||
+        hasNextChapter;
 
     return EndOfChapterOverlay(
       state: state,
@@ -1647,12 +1649,26 @@ class _ReaderScreenState extends State<ReaderScreen> {
       return;
     }
 
-    final chapters = _readerCubit.allChapters!;
+    final allChapters = _readerCubit.allChapters!;
+    final activeLanguage = _normalizeLanguageForFilter(
+      state.currentChapter?.language,
+    );
+
+    final chapters = activeLanguage == null
+        ? allChapters
+        : allChapters.where((chapter) {
+            final chapterLanguage =
+                _normalizeLanguageForFilter(chapter.language);
+            return chapterLanguage == activeLanguage;
+          }).toList();
+
+    final effectiveChapters = chapters.isNotEmpty ? chapters : allChapters;
+
     int currentIndex = -1;
-    for (int i = 0; i < chapters.length; i++) {
+    for (int i = 0; i < effectiveChapters.length; i++) {
       final isMatch = state.currentChapter != null
-          ? chapters[i].id == state.currentChapter!.id
-          : chapters[i].id == state.content?.id;
+          ? effectiveChapters[i].id == state.currentChapter!.id
+          : effectiveChapters[i].id == state.content?.id;
       if (isMatch) {
         currentIndex = i;
         break;
@@ -1747,7 +1763,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                     ),
                                   ),
                                   Text(
-                                    '${chapters.length} chapters',
+                                    activeLanguage != null &&
+                                            effectiveChapters.isNotEmpty
+                                        ? '${effectiveChapters.length} chapters • ${activeLanguage.toUpperCase()}'
+                                        : '${effectiveChapters.length} chapters',
                                     style: TextStyleConst.bodySmall.copyWith(
                                       color: Theme.of(context)
                                           .colorScheme
@@ -1788,9 +1807,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       controller: scrollController,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 8),
-                      itemCount: chapters.length,
+                      itemCount: effectiveChapters.length,
                       itemBuilder: (_, index) {
-                        final chapter = chapters[index];
+                        final chapter = effectiveChapters[index];
                         final isCurrent = index == currentIndex;
 
                         return Padding(
@@ -1942,6 +1961,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
         );
       },
     );
+  }
+
+  String? _normalizeLanguageForFilter(String? value) {
+    final raw = value?.trim().toLowerCase();
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
+    return raw.split('-').first;
   }
 
   String _formatChapterDate(DateTime date) {
