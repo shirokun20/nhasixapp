@@ -86,7 +86,7 @@ lib/
 - view_comments
 
 ### 🚧 In Progress (1)
-- **multi_provider_integration** — 76% — Phase 0 ✅, Phase 0B ✅, Phase 1 ✅, Phase 2 ✅, Phase 3 ✅ stabilized (Phase 4 next)
+- **multi_provider_integration** — 88% — Phase 0 ✅, Phase 0B ✅, Phase 1 ✅, Phase 2 ✅, Phase 3 ✅, Phase 4 ✅, Phase 5 ✅ (Phase 6 next)
 
 ### 📋 Analysis Phase (5)
 - app_audit_hardcode_ui_desktop
@@ -153,6 +153,7 @@ Project ini menggunakan search tools modern sebagai pengganti `grep`:
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-03-14 | Copilot | MangaDex Phase 5 closure: runtime blockers + search form | ✅ Done | Added MangaDex `searchForm` (Swagger-aligned), enabled `raw:` dynamic-form support in GenericRestAdapter, enforced app language whitelist (`id/en/ja/zh`), fixed oneshot blank chapter label, and verified tests (integration + mapper + config). |
 | 2026-03-13 | Antigravity | multi_provider Phase 5: MangaDex & HentaiFox | ✅ Done | Added full reader support, offset pagination, and custom thumbnail extraction to generic adapters |
 | 2026-03-14 | Copilot | MangaDex Phase 5 core fix: cover/title/stats/reader | ✅ Done | Fixed `coverBuilder` key handling, added MangaDex statistics follows→favorites enrichment, updated config to v1.1.0, improved chapter/status mapping, and added integration tests (3 passed). |
 | 2026-03-14 | Copilot | HentaiFox reader fix: prefer full-res webp & fallback images | ✅ Done | Reader now falls back to chapter-images when detail lacks image URLs; adapter prefers metadata-driven full-res webp (using `#load_dir`/`#load_id`) and keeps conservative fallbacks. Unit tests updated/ran — 13 passed. |

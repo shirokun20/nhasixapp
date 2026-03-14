@@ -1,326 +1,784 @@
+
+<!DOCTYPE html>
+<html xmlns="https://www.w3.org/1999/xhtml" lang="en" class="hide-age-modal">
+<head>
+	<title>HentaiFox - Free Hentai Manga, Doujinshi and Anime Porn</title>
+	<!-- Meta Tags -->
+	<meta name="csrf-token" content="14c7139aced2a4e64db662269bae0d0b2725faa90b7e76325e58a21c9a634648">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
+	<link href="https://hentaifox.com/images/favicon.ico" rel="icon" type="image/x-icon">
+	<link rel="apple-touch-icon" href="/images/custom.png"/>
+	<meta name="description" content="HentaiFox is the ultimate source for all your hentai needs. Enjoy free hentai manga, adult doujinshi, xxx comics and anime porn. Our database grows daily." />
+		
+	<!-- CSS Styles -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css" />
+	<link rel="stylesheet" href="https://hentaifox.com/css/main.min.css?v=20205" />
+	<link rel="stylesheet" href="https://hentaifox.com/css/shop.min.css?v=82230" type="text/css" />
+	<link rel="stylesheet" href="https://hentaifox.com/css/responsive.min.css?v=95197" />
+	<link rel="stylesheet" href="https://hentaifox.com/css/rta.min.css?v=80475" type="text/css" />
+	<link rel="stylesheet" href="https://hentaifox.com/css/fastselect.min.css?v=42981" />
+	<link rel="stylesheet" href="https://hentaifox.com/css/colorpicker.min.css?v=54528" type="text/css" />
+	<link rel="stylesheet" href="https://hentaifox.com/css/snackbar.min.css?v=44305" type="text/css" />
+	<link rel="stylesheet" href="https://hentaifox.com/css/slider.min.css?v=93577" type="text/css" />
+	
+	<!-- Javascripts -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/mobile-detect/1.3.2/mobile-detect.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+	<script src="https://hentaifox.com/js/main.min.js?v=56051"></script>
+	<script src="https://hentaifox.com/js/touchswipe.min.js?v=36378"></script>
+	<script src="https://hentaifox.com/js/filesaver.min.js?v=86467"></script>
+	<script src="https://hentaifox.com/js/jszip.min.js?v=35142"></script>
+	<script src='https://hentaifox.com/js/fastselect.min.js?v=52793'></script>
+	<script src="https://hentaifox.com/js/emojiarea.min.js?v=40171"></script>
+	<script src="https://hentaifox.com/js/colorpicker.min.js?v=84428"></script>
+	<script src="https://hentaifox.com/js/cookie.min.js?v=37838"></script>
+	<script src="https://hentaifox.com/js/iconify.min.js?v=40569"></script>
+	<script src="https://hentaifox.com/js/report.min.js?v=10001"></script>
+	<script src="https://hentaifox.com/js/slider.min.js?v=17731"></script>
+
+    <!-- Google Fonts -->
+    <link type='text/css' href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400italic,600' rel='stylesheet'>
+	<link href='https://fonts.googleapis.com/css?family=Open+Sans:400,600,700' rel='stylesheet' type='text/css'>
+
+	<script>
+		document.addEventListener("touchstart", function(){}, true);
+	</script>
+	<style>
+		.bgc .exo-native-widget { width:auto!important; } .bix .exo-native-widget { width:auto!important; }
+	</style>
+
+</head>
+
+<body>
+
+<script>
+(function () {
+	const now = Date.now();
+	const oneWeek = 7 * 24 * 60 * 60 * 1000;
+	const fiveMinutes = 5 * 60 * 1000;
+	const last = parseInt(localStorage.getItem('adult_modal_shown'), 10);
+	const temp = parseInt(localStorage.getItem('adult_modal_temp'), 10);
+
+	window.__GEO__ = "ID";
+	const allowedGeos = ['US', 'FR', 'IT', 'GB'];
+
+	const shouldShow = (!last || now - last > oneWeek) &&
+					 (!temp || now - temp > fiveMinutes) &&
+					 allowedGeos.includes(window.__GEO__);
+
+	if (shouldShow) {
+		window.__SHOW_AGE_MODAL__ = true;
+		document.documentElement.classList.remove('hide-age-modal');
+	}
+})();
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+	
+  const modalKey = 'adult_modal_shown';
+  const tempKey = 'adult_modal_temp';
+  const modal = document.getElementById("age-limit-modal");
+
+  if (!modal) return;
+
+  if (window.__SHOW_AGE_MODAL__) {
+    modal.classList.add("is-open");
+    document.body.classList.add("modal-open");
+  }
+  
+  window.closeModal = function () {
+    localStorage.setItem(modalKey, Date.now());
+    modal.classList.remove("is-open");
+    document.body.classList.remove("modal-open");
+  };
+  
+  const rtaLink = document.getElementById("rtaLink");
+  if (rtaLink) {
+    rtaLink.addEventListener("click", function () {
+      localStorage.setItem(tempKey, Date.now());
+      modal.classList.remove("is-open");
+      document.body.classList.remove("modal-open");
+    });
+  }
+});
+</script>
+
+<div class="user_notify">
+	<div class="notify_header">
+		<div class="notify_text">Notifications <span style="display:none;" class="allntf">0</span></div>
+		<span class="separator"></span>
+	</div>
+	<div class="notify_body">
+		<div class="notify_loading"><span class="text"><i class="fa fa-fw fa-spin fa-spinner"></i>Loading...</span></div>
+		<div class="notify_nonew"><span class="text"><i class="fa fa-info-circle"></i> No new notifications</span></div>
+		<ul id="get-list-view"></ul>
+	</div>
+	<div class="notify_footer">
+		<span class="separator"></span>
+		<button id="ra_ntf">Mark all as read</button>
+	</div>
+</div>
+
+
+<div class="navbar">
+  
+  <div class="navbar_left">
+
+    <a href="/"><div class="navbar_logo"></div></a>
+
+    <button type="button" class="drop_btn" id="drop_btn"><i class="fa fa-arrow-down"></i></button>
+
+    <div id="dropdown_menu">
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/random/">Random</a></li>
+          <li><a href="/parodies/">Parodies</a></li>
+          <li><a href="/tags/">Tags</a></li>
+          <li><a href="/characters/">Characters</a></li>
+          <li><a href="/artists/">Artists</a></li>
+          <li><a href="/groups/">Groups</a></li>
+          <li><a href="/faq/">FAQ</a></li>
+        </ul>
+     </div>
+
+    <button type="button" class="navbar-toggle collapsed" id="nav_btn">
+      <span class="sr-only">Toggle navigation</span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </button>
+
+    <div class="navbar_links">
+
+      <ul>
+        <li><a href="/random/">Random</a></li>
+        <li><a class="" href="/parodies/">Parodies</a></li>
+        <li><a class="" href="/tags/">Tags</a></li>
+        <li><a class="" href="/characters/">Characters</a></li>
+        <li><a class="" href="/artists/">Artists</a></li>
+        <li><a class="" href="/groups/">Groups</a></li>
+        <li><a class="" href="/faq/">FAQ</a></li>
+        <li class="mob_li"><a class="" href="/login/"><i class="fa fa-sign-in"></i> Login</a></li>
+              <li class="mob_li"><a class="" href="/register/"><i class="fa fa-user"></i> Register</a></li>      </ul>
+
+    </div>
+
+    <div class="navbar_search">
+        
+        <form method="GET" class="navbar-form navbar-left sdesktop" action="/search/?q=">
+          <div class="input-group">
+            <input type="text" name="q" id="q" class="form-control" placeholder="Search here..." value="">
+          <div class="input-group-btn">
+            <button class="btn btn-default" type="submit">
+              <i class="glyphicon glyphicon-search"></i>
+            </button>
+          </div>
+          </div>
+        </form>
+
+    </div>
+
+    <div class="clear"></div>
+
+  </div>
+
+  <div class="navbar_right">
+    
+    <ul>
+      <li><a class="" href="/login/"><i class="fa fa-sign-in"></i> Login</a></li>
+              <li><a class="" href="/register/"><i class="fa fa-user"></i> Register</a></li>    </ul>
+
+  </div>
+
+  <div class="clear"></div>
+
+</div>
+<div class="overlay">
+
+<div class="wrap">	
+	
+
+	<div class="ablocktop">
+		<script type='text/javascript'>
+		<!--//<![CDATA[
+			document.write ("<scr"+"ipt type='text/javascript' src='https://go.hentaigold.net/id/8/'><\/scr"+"ipt>");
+		//]]>-->
+		</script>
+	</div>
+
+	
+
+<div class="big_res">
+
+
 <div class="galleries_overview">
-    <div class="lc_galleries">
-        <div class="thumb" data-tags="2 29 39 61 97 99 137" data-artists="2890" data-categories="2"
-            data-languages="1 2">
-            <div class="g_type">
-                <h3 class="g_cat"><a class="t_cat" href="/category/manga/">Manga</a></h3>
-            </div>
-            <div class="inner_thumb">
-                <div class="ribbon ribbon-left ribbon-orange">NEW</div>
-                <a href="/gallery/159321/"><img class="lazy entered loaded"
-                        src="https://i3.hentaifox.com/004/3837474/thumb.jpg"
-                        data-src="https://i3.hentaifox.com/004/3837474/thumb.jpg" alt="" data-ll-status="loaded"></a>
-            </div>
-            <div class="caption">
-                <h2 class="g_title"><a href="/gallery/159321/">Taishou Yotogi Roman - Kinyoubi no Hanayome CHAPTER 5</a>
-                </h2>
-            </div>
-        </div>
-        <div class="thumb" data-tags="24 28 481" data-parodies="1223" data-artists="17181" data-characters="5241"
-            data-categories="1" data-languages="1 2">
-            <div class="g_type">
-                <h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
-            </div>
-            <div class="inner_thumb">
-                <div class="ribbon ribbon-left ribbon-orange">NEW</div>
-                <a href="/gallery/159320/"><img class="lazy entered loaded"
-                        src="https://i3.hentaifox.com/004/3837468/thumb.jpg"
-                        data-src="https://i3.hentaifox.com/004/3837468/thumb.jpg" alt="" data-ll-status="loaded"></a>
-            </div>
-            <div class="caption">
-                <h2 class="g_title"><a href="/gallery/159320/">Skadi Love - Full Size</a></h2>
-            </div>
-        </div>
-        <div class="thumb" data-tags="24 481 2891" data-artists="17181" data-categories="1" data-languages="1 2">
-            <div class="g_type">
-                <h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
-            </div>
-            <div class="inner_thumb">
-                <div class="ribbon ribbon-left ribbon-orange">NEW</div>
-                <a href="/gallery/159319/"><img class="lazy entered loaded"
-                        src="https://i3.hentaifox.com/004/3837440/thumb.jpg"
-                        data-src="https://i3.hentaifox.com/004/3837440/thumb.jpg" alt="" data-ll-status="loaded"></a>
-            </div>
-            <div class="caption">
-                <h2 class="g_title"><a href="/gallery/159319/">Zenobia Love - Full Size</a></h2>
-            </div>
-        </div>
-        <div class="thumb" data-tags="12 30 50 51 60 123 238 291" data-groups="2362" data-categories="1"
-            data-languages="1 2">
-            <div class="g_type">
-                <h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
-            </div>
-            <div class="inner_thumb">
-                <div class="ribbon ribbon-left ribbon-orange">NEW</div>
-                <a href="/gallery/159318/"><img class="lazy entered loaded"
-                        src="https://i3.hentaifox.com/004/3837421/thumb.jpg"
-                        data-src="https://i3.hentaifox.com/004/3837421/thumb.jpg" alt="" data-ll-status="loaded"></a>
-            </div>
-            <div class="caption">
-                <h2 class="g_title"><a href="/gallery/159318/">Heroine Harassment Chikyuu Bouei Shoujo Haruka VS Sennou
-                        Kaijin Kuruu Seijin | Heroine Harassment Earth Defender Girl Haruka vs Brainwashing Monster
-                        Kuruu Aliens</a></h2>
-            </div>
-        </div>
-        <div class="thumb" data-tags="24 134 141 171 481 2891" data-parodies="1223" data-artists="17181"
-            data-characters="9224" data-categories="1" data-languages="1 2">
-            <div class="g_type">
-                <h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
-            </div>
-            <div class="inner_thumb">
-                <div class="ribbon ribbon-left ribbon-orange">NEW</div>
-                <a href="/gallery/159317/"><img class="lazy entered loaded"
-                        src="https://i3.hentaifox.com/004/3837410/thumb.jpg"
-                        data-src="https://i3.hentaifox.com/004/3837410/thumb.jpg" alt="" data-ll-status="loaded"></a>
-            </div>
-            <div class="caption">
-                <h2 class="g_title"><a href="/gallery/159317/">Barghest Love Short</a></h2>
-            </div>
-        </div>
-        <div class="thumb" data-tags="12 13 24 28 163 171" data-parodies="1223" data-artists="17181"
-            data-characters="5241 6028" data-categories="1" data-languages="1 2">
-            <div class="g_type">
-                <h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
-            </div>
-            <div class="inner_thumb">
-                <div class="ribbon ribbon-left ribbon-orange">NEW</div>
-                <a href="/gallery/159316/"><img class="lazy entered loaded"
-                        src="https://i3.hentaifox.com/004/3837403/thumb.jpg"
-                        data-src="https://i3.hentaifox.com/004/3837403/thumb.jpg" alt="" data-ll-status="loaded"></a>
-            </div>
-            <div class="caption">
-                <h2 class="g_title"><a href="/gallery/159316/">Lancer Artoria Alter Love Short</a></h2>
-            </div>
-        </div>
-        <div class="thumb" data-tags="12 13" data-artists="17181" data-categories="1" data-languages="1 2">
-            <div class="g_type">
-                <h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
-            </div>
-            <div class="inner_thumb">
-                <div class="ribbon ribbon-left ribbon-orange">NEW</div>
-                <a href="/gallery/159315/"><img class="lazy entered loaded"
-                        src="https://i3.hentaifox.com/004/3837389/thumb.jpg"
-                        data-src="https://i3.hentaifox.com/004/3837389/thumb.jpg" alt="" data-ll-status="loaded"></a>
-            </div>
-            <div class="caption">
-                <h2 class="g_title"><a href="/gallery/159315/">Raikou Love Short</a></h2>
-            </div>
-        </div>
-        <div class="thumb" data-tags="24 80" data-parodies="1223" data-artists="17181" data-characters="6075"
-            data-categories="1" data-languages="1 2">
-            <div class="g_type">
-                <h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
-            </div>
-            <div class="inner_thumb">
-                <div class="ribbon ribbon-left ribbon-orange">NEW</div>
-                <a href="/gallery/159314/"><img class="lazy entered loaded"
-                        src="https://i3.hentaifox.com/004/3837371/thumb.jpg"
-                        data-src="https://i3.hentaifox.com/004/3837371/thumb.jpg" alt="" data-ll-status="loaded"></a>
-            </div>
-            <div class="caption">
-                <h2 class="g_title"><a href="/gallery/159314/">Scheherazade Love Short</a></h2>
-            </div>
-        </div>
-        <div class="thumb" data-tags="12 13 18 24 67 80 2891 2973 3262" data-parodies="1223" data-artists="17181"
-            data-characters="9394" data-categories="1" data-languages="1 2">
-            <div class="g_type">
-                <h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
-            </div>
-            <div class="inner_thumb">
-                <div class="ribbon ribbon-left ribbon-orange">NEW</div>
-                <a href="/gallery/159313/"><img class="lazy entered loaded"
-                        src="https://i3.hentaifox.com/004/3837370/thumb.jpg"
-                        data-src="https://i3.hentaifox.com/004/3837370/thumb.jpg" alt="" data-ll-status="loaded"></a>
-            </div>
-            <div class="caption">
-                <h2 class="g_title"><a href="/gallery/159313/">Zenobia Love Short</a></h2>
-            </div>
-        </div>
-        <div class="thumb" data-tags="30 50 61" data-groups="2362" data-categories="1" data-languages="1 2">
-            <div class="g_type">
-                <h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
-            </div>
-            <div class="inner_thumb">
-                <div class="ribbon ribbon-left ribbon-orange">NEW</div>
-                <a href="/gallery/159312/"><img class="lazy entered loaded"
-                        src="https://i3.hentaifox.com/004/3837367/thumb.jpg"
-                        data-src="https://i3.hentaifox.com/004/3837367/thumb.jpg" alt="" data-ll-status="loaded"></a>
-            </div>
-            <div class="caption">
-                <h2 class="g_title"><a href="/gallery/159312/">Heroine Harassment Injuu Hunter Little Blossom 1 |
-                        Heroine Harassment Incubus Hunter Little Blossom 1</a></h2>
-            </div>
-        </div>
-        <div class="thumb" data-categories="1" data-languages="1 2">
-            <div class="g_type">
-                <h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
-            </div>
-            <div class="inner_thumb">
-                <div class="ribbon ribbon-left ribbon-orange">NEW</div>
-                <a href="/gallery/159311/"><img class="lazy entered loaded"
-                        src="https://i3.hentaifox.com/004/3837344/thumb.jpg"
-                        data-src="https://i3.hentaifox.com/004/3837344/thumb.jpg" alt="" data-ll-status="loaded"></a>
-            </div>
-            <div class="caption">
-                <h2 class="g_title"><a href="/gallery/159311/">Skadi Love Short</a></h2>
-            </div>
-        </div>
-        <div class="thumb" data-tags="12 13 24 25 26 28 34 35 67 78 136 213 253 277 311 634" data-artists="17021"
-            data-categories="1" data-languages="1 2 9">
-            <div class="g_type">
-                <h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
-            </div>
-            <div class="inner_thumb">
-                <div class="ribbon ribbon-left ribbon-orange">NEW</div>
-                <a href="/gallery/159310/"><img class="lazy entered loaded"
-                        src="https://i3.hentaifox.com/004/3837341/thumb.jpg"
-                        data-src="https://i3.hentaifox.com/004/3837341/thumb.jpg" alt="" data-ll-status="loaded"></a>
-            </div>
-            <div class="caption">
-                <h2 class="g_title"><a href="/gallery/159310/">Jakusha Dansei kara Kane o Makiageteiru Mojo Eigyou
-                        Haishinsha, Christmas wa Haishin o Suppokashite Kyousha no Osu no Sefri-kun to Nettori Dosukebe
-                        Ecchi | Single woman streamer that scams people off their money having hot steamy sex with her
-                        strong-male sex friend after breaking her promise of streaming through Christmas Eve</a></h2>
-            </div>
-        </div>
-        <div class="thumb" data-tags="2 4 6 8 29 91 176 218" data-parodies="327" data-characters="2455 5346"
-            data-categories="1" data-languages="1 2">
-            <div class="g_type">
-                <h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
-            </div>
-            <div class="inner_thumb">
-                <div class="ribbon ribbon-left ribbon-orange">NEW</div>
-                <a href="/gallery/159309/"><img class="lazy entered loaded"
-                        src="https://i3.hentaifox.com/004/3837291/thumb.jpg"
-                        data-src="https://i3.hentaifox.com/004/3837291/thumb.jpg" alt="" data-ll-status="loaded"></a>
-            </div>
-            <div class="caption">
-                <h2 class="g_title"><a href="/gallery/159309/">Twin Princess☆The Messy Diaper</a></h2>
-            </div>
-        </div>
-        <div class="thumb" data-tags="158 414" data-artists="11632" data-categories="1" data-languages="1">
-            <div class="g_type">
-                <h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
-            </div>
-            <div class="inner_thumb">
-                <div class="ribbon ribbon-left ribbon-orange">NEW</div>
-                <a href="/gallery/159308/"><img class="lazy entered loaded"
-                        src="https://i3.hentaifox.com/004/3837022/thumb.jpg"
-                        data-src="https://i3.hentaifox.com/004/3837022/thumb.jpg" alt="" data-ll-status="loaded"></a>
-            </div>
-            <div class="caption">
-                <h2 class="g_title"><a href="/gallery/159308/">【wasp】君のメンゼンを崩したい</a></h2>
-            </div>
-        </div>
-        <div class="thumb" data-tags="294" data-parodies="851" data-characters="5157" data-categories="1"
-            data-languages="1 2">
-            <div class="g_type">
-                <h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
-            </div>
-            <div class="inner_thumb">
-                <div class="ribbon ribbon-left ribbon-orange">NEW</div>
-                <a href="/gallery/159307/"><img class="lazy entered loaded"
-                        src="https://i3.hentaifox.com/004/3837013/thumb.jpg"
-                        data-src="https://i3.hentaifox.com/004/3837013/thumb.jpg" alt="" data-ll-status="loaded"></a>
-            </div>
-            <div class="caption">
-                <h2 class="g_title"><a href="/gallery/159307/">Jitsuzaisei Granblue Fantasy | The Real-Life Granblue
-                        Fantasy</a></h2>
-            </div>
-        </div>
-        <div class="thumb" data-tags="1 12 24 26 31 34 39 53 54 67 87 186 324 400 3131" data-groups="12450"
-            data-categories="1" data-languages="1 2">
-            <div class="g_type">
-                <h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
-            </div>
-            <div class="inner_thumb">
-                <div class="ribbon ribbon-left ribbon-orange">NEW</div>
-                <a href="/gallery/159306/"><img class="lazy entered loaded"
-                        src="https://i3.hentaifox.com/004/3836999/thumb.jpg"
-                        data-src="https://i3.hentaifox.com/004/3836999/thumb.jpg" alt="" data-ll-status="loaded"></a>
-            </div>
-            <div class="caption">
-                <h2 class="g_title"><a href="/gallery/159306/">Inmon o Fuyo Sareta kara Goblin o Tsukatta Hanashi | The
-                        tale of how I got a lewd crest and used a coblin because of it!</a></h2>
-            </div>
-        </div>
-        <div class="thumb" data-tags="10 57 491 3247" data-artists="13642" data-groups="10528" data-categories="1"
-            data-languages="1 2">
-            <div class="g_type">
-                <h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
-            </div>
-            <div class="inner_thumb">
-                <div class="ribbon ribbon-left ribbon-orange">NEW</div>
-                <a href="/gallery/159305/"><img class="lazy entered loaded"
-                        src="https://i3.hentaifox.com/004/3836986/thumb.jpg"
-                        data-src="https://i3.hentaifox.com/004/3836986/thumb.jpg" alt="" data-ll-status="loaded"></a>
-            </div>
-            <div class="caption">
-                <h2 class="g_title"><a href="/gallery/159305/">Sales JK Doutei ga Geneki Joshikousei o Katte Asa made
-                        Nama Pakohame Houdai</a></h2>
-            </div>
-        </div>
-        <div class="thumb" data-tags="1 11 40 50 68 70 71 97 218 3247" data-artists="3988" data-groups="1829"
-            data-categories="1" data-languages="1 2">
-            <div class="g_type">
-                <h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
-            </div>
-            <div class="inner_thumb">
-                <div class="ribbon ribbon-left ribbon-orange">NEW</div>
-                <a href="/gallery/159304/"><img class="lazy entered loaded"
-                        src="https://i3.hentaifox.com/004/3836985/thumb.jpg"
-                        data-src="https://i3.hentaifox.com/004/3836985/thumb.jpg" alt="" data-ll-status="loaded"></a>
-            </div>
-            <div class="caption">
-                <h2 class="g_title"><a href="/gallery/159304/">Joji Fuku Model Harumu-kun | Cross-dressing model
-                        Harumu-kun</a></h2>
-            </div>
-        </div>
-        <div class="thumb" data-tags="1 10 11 40 50 51 68 70 71 97 196 218 3247" data-artists="3988" data-groups="1829"
-            data-categories="1" data-languages="1 2">
-            <div class="g_type">
-                <h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
-            </div>
-            <div class="inner_thumb">
-                <div class="ribbon ribbon-left ribbon-orange">NEW</div>
-                <a href="/gallery/159303/"><img class="lazy entered loaded"
-                        src="https://i3.hentaifox.com/004/3836961/thumb.jpg"
-                        data-src="https://i3.hentaifox.com/004/3836961/thumb.jpg" alt="" data-ll-status="loaded"></a>
-            </div>
-            <div class="caption">
-                <h2 class="g_title"><a href="/gallery/159303/">Joji Fuku Model Harumu-kun | Cross-dressing model
-                        Harumu-kun</a></h2>
-            </div>
-        </div>
-        <div class="thumb" data-tags="3298" data-categories="1" data-languages="1">
-            <div class="g_type">
-                <h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
-            </div>
-            <div class="inner_thumb">
-                <div class="ribbon ribbon-left ribbon-orange">NEW</div>
-                <a href="/gallery/159302/"><img class="lazy entered loaded"
-                        src="https://i3.hentaifox.com/004/3836959/thumb.jpg"
-                        data-src="https://i3.hentaifox.com/004/3836959/thumb.jpg" alt="" data-ll-status="loaded"></a>
-            </div>
-            <div class="caption">
-                <h2 class="g_title"><a href="/gallery/159302/">Fallen Hero Bonus Chapter</a></h2>
-            </div>
+
+	<div class="lc_galleries"><div class="thumb" data-tags="24 43 51 61 80 88 123 129 141 222 227 256 281 324 420 1461 1525 3237"data-artists="14989"data-categories="2"data-languages="1 2">
+						<div class="g_type">
+							<h3 class="g_cat"><a class="t_cat" href="/category/manga/">Manga</a></h3>
+						</div>
+						<div class="inner_thumb">
+							<div class="ribbon ribbon-left ribbon-orange">NEW</div>
+							<a href="/gallery/159354/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3838637/thumb.jpg" alt="" /></a>
+						</div>
+						<div class="caption">
+							<h2 class="g_title"><a href="/gallery/159354/">Inma Shouki Lana Ch  2 | Succubus Princess Lana Ch 2</a></h2>
+						</div>
+					  </div><div class="thumb" data-tags="24 28 40 51 67 80 222 227 256 268 281 324"data-artists="14989"data-categories="2"data-languages="1 2">
+						<div class="g_type">
+							<h3 class="g_cat"><a class="t_cat" href="/category/manga/">Manga</a></h3>
+						</div>
+						<div class="inner_thumb">
+							<div class="ribbon ribbon-left ribbon-orange">NEW</div>
+							<a href="/gallery/159353/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3838628/thumb.jpg" alt="" /></a>
+						</div>
+						<div class="caption">
+							<h2 class="g_title"><a href="/gallery/159353/">Inma Shouki Lana Ch  1 | Succubus Princess Lana Ch  1</a></h2>
+						</div>
+					  </div><div class="thumb" data-tags="1 12 13 17 26 28 34 39 44 281 2881 3131"data-parodies="1634"data-artists="17188"data-characters="7987 9252"data-categories="1"data-languages="1 2">
+						<div class="g_type">
+							<h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
+						</div>
+						<div class="inner_thumb">
+							<div class="ribbon ribbon-left ribbon-orange">NEW</div>
+							<a href="/gallery/159352/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3838591/thumb.jpg" alt="" /></a>
+						</div>
+						<div class="caption">
+							<h2 class="g_title"><a href="/gallery/159352/">The Strongest Person in the World! - Interlude Blaze</a></h2>
+						</div>
+					  </div><div class="thumb" data-tags="4 8 12 13 15 40 61 106 302 362 571 2890"data-artists="10297"data-groups="8217"data-categories="1"data-languages="1 2">
+						<div class="g_type">
+							<h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
+						</div>
+						<div class="inner_thumb">
+							<div class="ribbon ribbon-left ribbon-orange">NEW</div>
+							<a href="/gallery/159351/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3838536/thumb.jpg" alt="" /></a>
+						</div>
+						<div class="caption">
+							<h2 class="g_title"><a href="/gallery/159351/">Mata, Natsu ga Kuru  –– Boku ga Shojo o Ubatta Boyish na Juumai wa Mesugaki ni Natta | Once Again, Summer Has Arrived ~my slutty tomboy cousin~</a></h2>
+						</div>
+					  </div><div class="thumb" data-tags="12 77 3247"data-parodies="2045"data-artists="2663"data-characters="12094"data-groups="1097"data-categories="1"data-languages="1 2">
+						<div class="g_type">
+							<h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
+						</div>
+						<div class="inner_thumb">
+							<div class="ribbon ribbon-left ribbon-orange">NEW</div>
+							<a href="/gallery/159350/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3838529/thumb.jpg" alt="" /></a>
+						</div>
+						<div class="caption">
+							<h2 class="g_title"><a href="/gallery/159350/">Kendochourai</a></h2>
+						</div>
+					  </div><div class="thumb" data-tags="1 25 40 59 61 68 132 142 196 224 690 3131 3260"data-artists="12854"data-groups="1829"data-categories="1"data-languages="1 2">
+						<div class="g_type">
+							<h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
+						</div>
+						<div class="inner_thumb">
+							<div class="ribbon ribbon-left ribbon-orange">NEW</div>
+							<a href="/gallery/159349/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3838464/thumb.jpg" alt="" /></a>
+						</div>
+						<div class="caption">
+							<h2 class="g_title"><a href="/gallery/159349/">Shin Kazokuhou de Musume ni Sareta Dokushin Otoko no Ohanashi 2</a></h2>
+						</div>
+					  </div><div class="thumb" data-tags="12 13 24 25 27 28 37 46 50 80 87 119 126 140 172 272 3247"data-artists="15585"data-categories="1"data-languages="1 2">
+						<div class="g_type">
+							<h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
+						</div>
+						<div class="inner_thumb">
+							<div class="ribbon ribbon-left ribbon-orange">NEW</div>
+							<a href="/gallery/159348/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3838421/thumb.jpg" alt="" /></a>
+						</div>
+						<div class="caption">
+							<h2 class="g_title"><a href="/gallery/159348/">My wife is trying to get in shape   ♥</a></h2>
+						</div>
+					  </div><div class="thumb" data-tags="12 13 40 50 401"data-artists="15889"data-categories="1"data-languages="1 2">
+						<div class="g_type">
+							<h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
+						</div>
+						<div class="inner_thumb">
+							<div class="ribbon ribbon-left ribbon-orange">NEW</div>
+							<a href="/gallery/159347/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3838373/thumb.jpg" alt="" /></a>
+						</div>
+						<div class="caption">
+							<h2 class="g_title"><a href="/gallery/159347/">The Story of a Masochist Punished for Secretly Sniffing His Female Classmate&#039;s Feet | Kurasu no Joshi no Ashi wo Katteni Kaida Mazo ni Batsu ga Kudaru Hanashi</a></h2>
+						</div>
+					  </div><div class="thumb" data-tags="2 10 21 30 50 60 190 296 3325"data-artists="7809"data-categories="1"data-languages="1 2">
+						<div class="g_type">
+							<h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
+						</div>
+						<div class="inner_thumb">
+							<div class="ribbon ribbon-left ribbon-orange">NEW</div>
+							<a href="/gallery/159346/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3838335/thumb.jpg" alt="" /></a>
+						</div>
+						<div class="caption">
+							<h2 class="g_title"><a href="/gallery/159346/">Mujikakuna Sekusaroido Robot e no Henshin | Oblivious Transformation into Sexaroid Robots</a></h2>
+						</div>
+					  </div><div class="thumb" data-tags="13 26 28 31 36 58 75 78 82 106 211 213"data-artists="14028"data-categories="1"data-languages="1 2">
+						<div class="g_type">
+							<h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
+						</div>
+						<div class="inner_thumb">
+							<div class="ribbon ribbon-left ribbon-orange">NEW</div>
+							<a href="/gallery/159345/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3838292/thumb.jpg" alt="" /></a>
+						</div>
+						<div class="caption">
+							<h2 class="g_title"><a href="/gallery/159345/">Rezuse Ga Man&#039;neri Kimi Nanode Kus Sai Yui No Nioi De Mesu No Etchi Na Karada nō Yobisamashi Te Mo Chitte Ii Desu Ka?</a></h2>
+						</div>
+					  </div><div class="thumb" data-tags="24"data-parodies="1223"data-categories="1"data-languages="1">
+						<div class="g_type">
+							<h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
+						</div>
+						<div class="inner_thumb">
+							<div class="ribbon ribbon-left ribbon-orange">NEW</div>
+							<a href="/gallery/159344/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3838250/thumb.jpg" alt="" /></a>
+						</div>
+						<div class="caption">
+							<h2 class="g_title"><a href="/gallery/159344/">Nightingale NTS</a></h2>
+						</div>
+					  </div><div class="thumb" data-tags="13 14 24 25 28 34 37 46 50 83 151 171 272"data-parodies="12"data-artists="299"data-characters="79 80 93"data-groups="145"data-categories="1"data-languages="1">
+						<div class="g_type">
+							<h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
+						</div>
+						<div class="inner_thumb">
+							<div class="ribbon ribbon-left ribbon-orange">NEW</div>
+							<a href="/gallery/159343/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3838185/thumb.jpg" alt="" /></a>
+						</div>
+						<div class="caption">
+							<h2 class="g_title"><a href="/gallery/159343/">G2 5</a></h2>
+						</div>
+					  </div><div class="thumb" data-tags="20 24 60"data-groups="11709"data-categories="1"data-languages="1 2">
+						<div class="g_type">
+							<h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
+						</div>
+						<div class="inner_thumb">
+							<div class="ribbon ribbon-left ribbon-orange">NEW</div>
+							<a href="/gallery/159342/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3838153/thumb.jpg" alt="" /></a>
+						</div>
+						<div class="caption">
+							<h2 class="g_title"><a href="/gallery/159342/">Guardian of Faith III</a></h2>
+						</div>
+					  </div><div class="thumb" data-tags="24 27 28 37 39 94"data-artists="1550"data-categories="1"data-languages="1 2">
+						<div class="g_type">
+							<h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
+						</div>
+						<div class="inner_thumb">
+							<div class="ribbon ribbon-left ribbon-orange">NEW</div>
+							<a href="/gallery/159341/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3838150/thumb.jpg" alt="" /></a>
+						</div>
+						<div class="caption">
+							<h2 class="g_title"><a href="/gallery/159341/">My Fair Milf : My Childhood Friend&#039;s Mom Is My Sex Friend Ch 1</a></h2>
+						</div>
+					  </div><div class="thumb" data-tags="12 13 24 28 33 34 39 44 77 124 281 439 671"data-parodies="1490"data-artists="12571"data-characters="11952 12093"data-categories="1"data-languages="1 2">
+						<div class="g_type">
+							<h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
+						</div>
+						<div class="inner_thumb">
+							<div class="ribbon ribbon-left ribbon-orange">NEW</div>
+							<a href="/gallery/159340/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3838100/thumb.jpg" alt="" /></a>
+						</div>
+						<div class="caption">
+							<h2 class="g_title"><a href="/gallery/159340/">Transcend</a></h2>
+						</div>
+					  </div><div class="thumb" data-tags="12 13 24 26 28 46 50 69 83 160 414 536"data-artists="12304"data-groups="9706"data-categories="1"data-languages="1 2">
+						<div class="g_type">
+							<h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
+						</div>
+						<div class="inner_thumb">
+							<div class="ribbon ribbon-left ribbon-orange">NEW</div>
+							<a href="/gallery/159339/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3838037/thumb.jpg" alt="" /></a>
+						</div>
+						<div class="caption">
+							<h2 class="g_title"><a href="/gallery/159339/">Taion | Body Heat</a></h2>
+						</div>
+					  </div><div class="thumb" data-tags="51 264"data-parodies="13"data-artists="75"data-characters="39"data-groups="43"data-categories="1"data-languages="1 2">
+						<div class="g_type">
+							<h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
+						</div>
+						<div class="inner_thumb">
+							<div class="ribbon ribbon-left ribbon-orange">NEW</div>
+							<a href="/gallery/159338/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3838025/thumb.jpg" alt="" /></a>
+						</div>
+						<div class="caption">
+							<h2 class="g_title"><a href="/gallery/159338/">Tifa Soushuuhen AI Translated</a></h2>
+						</div>
+					  </div><div class="thumb" data-tags="25 28 124 172"data-categories="1"data-languages="1">
+						<div class="g_type">
+							<h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
+						</div>
+						<div class="inner_thumb">
+							<div class="ribbon ribbon-left ribbon-orange">NEW</div>
+							<a href="/gallery/159337/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3838022/thumb.jpg" alt="" /></a>
+						</div>
+						<div class="caption">
+							<h2 class="g_title"><a href="/gallery/159337/">THE DILIGENT CLASS GIRL</a></h2>
+						</div>
+					  </div><div class="thumb" data-tags="4 9 11 12 22 24 25 26 28 34 37 38 39 54 61 63 67 78 87 127 171 213 239 272 387 406 439 3133 3247 3256"data-artists="7697"data-groups="5999"data-categories="1"data-languages="1 2">
+						<div class="g_type">
+							<h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
+						</div>
+						<div class="inner_thumb">
+							<div class="ribbon ribbon-left ribbon-orange">NEW</div>
+							<a href="/gallery/159336/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3837979/thumb.jpg" alt="" /></a>
+						</div>
+						<div class="caption">
+							<h2 class="g_title"><a href="/gallery/159336/">Katsute Eiyu datta, Onna Tachihe - To The Women Who Were Once Heroes</a></h2>
+						</div>
+					  </div><div class="thumb" data-tags="1 6 10 28 31 48 51 53 62 164 183 208 216 243 372 442 3247 3260"data-artists="601 975 8719 10636 12050"data-categories="1"data-languages="1 2">
+						<div class="g_type">
+							<h3 class="g_cat"><a class="t_cat" href="/category/doujinshi/">Doujinshi</a></h3>
+						</div>
+						<div class="inner_thumb">
+							<div class="ribbon ribbon-left ribbon-orange">NEW</div>
+							<a href="/gallery/159335/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3837929/thumb.jpg" alt="" /></a>
+						</div>
+						<div class="caption">
+							<h2 class="g_title"><a href="/gallery/159335/">Fetishism Vol  28 ~Shokushu Hen~</a></h2>
+						</div>
+					  </div></div><ul class='pagination'><li class='page-item disabled'><a class='page-link' href='#' tabindex='-1'>Previous</a></li><li class='page-item active'><a class='page-link' href='#'>1</a></li><li class='page-item'><a class='page-link' href='//hentaifox.com/page/2/'>2</a></li><li class='page-item'><a class='page-link' href='//hentaifox.com/pag/3/'>3</a></li><li class='page-item'><a class='page-link' href='//hentaifox.com/pag/4/'>4</a></li><li class='page-item'><a class='page-link' href='//hentaifox.com/pag/5/'>5</a></li><li class='page-item'><a class='page-link' href='//hentaifox.com/pag/6/'>6</a></li><li class='page-item'><a class='page-link' href='//hentaifox.com/pag/7/'>7</a></li><li class='page-item'><a class='page-link' href='//hentaifox.com/pag/8/'>8</a></li><li class='page-item'><a class='page-link' href='//hentaifox.com/pag/9/'>9</a></li><li class='page-item disabled'><a class='page-link' href='#' tabindex='-1'>...</a></li><li class='page-item'><a class='page-link' href='//hentaifox.com/pag/7322/'>7322</a></li><li class='page-item'><a class='page-link' href='//hentaifox.com/pag/7323/'>7323</a></li><li class='page-item'><a class='page-link' href='//hentaifox.com/page/2/'>Next</a></li></ul>	
+			
+		<div class="bix">
+			<script type='text/javascript'>
+			<!--//<![CDATA[
+			document.write ("<scr"+"ipt type='text/javascript' src='https://go.hentaigold.net/id/55/'><\/scr"+"ipt>");
+			//]]>-->
+			</script>
+		</div>
+		
+		
+	<div class="divider"></div>
+
+			<p class="popular_text">Popular Parodies</p>
+			<div class="popular_galleries_overview"><div class="thumb">
+			<div class="g_type g_type_pop">
+				<a class="g_latest" href="/parody/pokemon/">Latest</a>
+				<a class="g_popular" href="/parody/pokemon/popular/">Popular</a>
+			</div>
+			<div class="inner_thumb">
+				<a href="/parody/pokemon/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3837801/thumb.jpg" alt="" /></a>
+			</div>
+			<div class="caption">
+				<h2 class="g_title_popular"><a title="Pokemon" href="/parody/pokemon/">Pokemon</a></h2>
+			</div>
+		  </div><div class="thumb">
+			<div class="g_type g_type_pop">
+				<a class="g_latest" href="/parody/naruto-hentai/">Latest</a>
+				<a class="g_popular" href="/parody/naruto/popular/">Popular</a>
+			</div>
+			<div class="inner_thumb">
+				<a href="/parody/naruto-hentai/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3838185/thumb.jpg" alt="" /></a>
+			</div>
+			<div class="caption">
+				<h2 class="g_title_popular"><a title="Naruto" href="/parody/naruto-hentai/">Naruto</a></h2>
+			</div>
+		  </div><div class="thumb">
+			<div class="g_type g_type_pop">
+				<a class="g_latest" href="/parody/my-hero-academia-hentai/">Latest</a>
+				<a class="g_popular" href="/parody/my-hero-academia/popular/">Popular</a>
+			</div>
+			<div class="inner_thumb">
+				<a href="/parody/my-hero-academia-hentai/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3837511/thumb.jpg" alt="" /></a>
+			</div>
+			<div class="caption">
+				<h2 class="g_title_popular"><a title="My Hero Academia" href="/parody/my-hero-academia-hentai/">My Hero Academia</a></h2>
+			</div>
+		  </div><div class="thumb">
+			<div class="g_type g_type_pop">
+				<a class="g_latest" href="/parody/dragon-ball-z-hentai/">Latest</a>
+				<a class="g_popular" href="/parody/dragon-ball-z/popular/">Popular</a>
+			</div>
+			<div class="inner_thumb">
+				<a href="/parody/dragon-ball-z-hentai/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3832312/thumb.jpg" alt="" /></a>
+			</div>
+			<div class="caption">
+				<h2 class="g_title_popular"><a title="Dragon Ball Z" href="/parody/dragon-ball-z-hentai/">Dragon Ball Z</a></h2>
+			</div>
+		  </div><div class="thumb">
+			<div class="g_type g_type_pop">
+				<a class="g_latest" href="/parody/one-piece-hentai/">Latest</a>
+				<a class="g_popular" href="/parody/one-piece/popular/">Popular</a>
+			</div>
+			<div class="inner_thumb">
+				<a href="/parody/one-piece-hentai/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3833114/thumb.jpg" alt="" /></a>
+			</div>
+			<div class="caption">
+				<h2 class="g_title_popular"><a title="One Piece" href="/parody/one-piece-hentai/">One Piece</a></h2>
+			</div>
+		  </div><div class="thumb">
+			<div class="g_type g_type_pop">
+				<a class="g_latest" href="/parody/final-fantasy-vii/">Latest</a>
+				<a class="g_popular" href="/parody/final-fantasy-vii/popular/">Popular</a>
+			</div>
+			<div class="inner_thumb">
+				<a href="/parody/final-fantasy-vii/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3838025/thumb.jpg" alt="" /></a>
+			</div>
+			<div class="caption">
+				<h2 class="g_title_popular"><a title="Final Fantasy" href="/parody/final-fantasy-vii/">Final Fantasy</a></h2>
+			</div>
+		  </div><div class="thumb">
+			<div class="g_type g_type_pop">
+				<a class="g_latest" href="/parody/sailor-moon/">Latest</a>
+				<a class="g_popular" href="/parody/sailor-moon/popular/">Popular</a>
+			</div>
+			<div class="inner_thumb">
+				<a href="/parody/sailor-moon/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3820853/thumb.jpg" alt="" /></a>
+			</div>
+			<div class="caption">
+				<h2 class="g_title_popular"><a title="Sailor Moon" href="/parody/sailor-moon/">Sailor Moon</a></h2>
+			</div>
+		  </div><div class="thumb">
+			<div class="g_type g_type_pop">
+				<a class="g_latest" href="/parody/kimetsu-no-yaiba-hentai/">Latest</a>
+				<a class="g_popular" href="/parody/kimetsu-no-yaiba/popular/">Popular</a>
+			</div>
+			<div class="inner_thumb">
+				<a href="/parody/kimetsu-no-yaiba-hentai/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3820845/thumb.jpg" alt="" /></a>
+			</div>
+			<div class="caption">
+				<h2 class="g_title_popular"><a title="Demon Slayer" href="/parody/kimetsu-no-yaiba-hentai/">Demon Slayer</a></h2>
+			</div>
+		  </div><div class="thumb">
+			<div class="g_type g_type_pop">
+				<a class="g_latest" href="/parody/bleach-hentai/">Latest</a>
+				<a class="g_popular" href="/parody/bleach/popular/">Popular</a>
+			</div>
+			<div class="inner_thumb">
+				<a href="/parody/bleach-hentai/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3826952/thumb.jpg" alt="" /></a>
+			</div>
+			<div class="caption">
+				<h2 class="g_title_popular"><a title="Bleach" href="/parody/bleach-hentai/">Bleach</a></h2>
+			</div>
+		  </div><div class="thumb">
+			<div class="g_type g_type_pop">
+				<a class="g_latest" href="/parody/overwatch/">Latest</a>
+				<a class="g_popular" href="/parody/overwatch/popular/">Popular</a>
+			</div>
+			<div class="inner_thumb">
+				<a href="/parody/overwatch/"><img class="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 0 70 70'%3E%3C/svg%3E" data-src="https://i3.hentaifox.com/004/3578330/thumb.jpg" alt="" /></a>
+			</div>
+			<div class="caption">
+				<h2 class="g_title_popular"><a title="Overwatch" href="/parody/overwatch/">Overwatch</a></h2>
+			</div>
+		  </div></div>
+
+			<div class="more_popular">
+				<a class="more_popular_parodies" href="https://hentaifox.com/parodies/popular/">More Popular Parodies <i class="fa fa-angle-double-right"></i></a>
+			</div>
+</div>
+
+<div class="sidebar">	
+	
+
+    <div class="sidebar_title first_title">Daily Top Rated</div>
+    <div class="top_daily">
+    <div id="main_top_daily"><a id="today_content" href="/gallery/159275/"><img src="//i3.hentaifox.com/004/3836552/thumb.jpg" alt="Uruwashi no Wife | Mature Wife Ch.1-2"></a><a id="yesterday_content" href="/gallery/159174/"><img src="//i3.hentaifox.com/004/3833978/thumb.jpg" alt="Shijuukunichi no Toge | Thorns of the Forty-Ninth Day"></a></div>
+    <button id="today_btn" name="today_btn">Today</button>
+    <button id="yesterday_btn" name="yesterday_btn">Yesterday</button>
+    </div>
+
+    <div class="top_buttons">
+        <a href="/faplist/"><i class="fa fa-star"></i> Faplist</a>
+        <button id="blacklist_pop"><i class="fa fa-eye-slash"></i> Blacklist</button>
+        <a target="_blank" href="https://twitter.com/HentaiFox1g"><i class="fa fa-twitter"></i> Twitter</a>
+        <a class="discord_btn" target="_blank" href="https://discord.gg/BdNqEWX"><span class="dclass"></span> Discord</a>
+    </div>
+    
+    <div class="sidebar_title">Weekly Featured</div>
+
+    <div class="outer_sidebar">
+
+        <div class="top_sidebar">
+            <button class="sidebar_btn_active" id="top_rated_btn"><i class="fa fa-star"></i> Top Rated</button>
+            <button id="top_faved_btn"><i class="fa fa-heart"></i> Most Faved</button>
+        </div><div class="middle_sidebar" id="middle_sidebar"><div class="item">
+                            <div class="image">
+                                <a href="/gallery/158692/"><img src="//i3.hentaifox.com/004/3817997/thumb.jpg" alt="2-nen C-gumi Gakuen Oppabu no Cast ni Imouto ga Ita | My Little Sister Was a Hostess at Class 2-C&#039;s School Festival Boobs Bar"></a>
+                            </div>
+                    </div><div class="item">
+                            <div class="image">
+                                <a href="/gallery/158698/"><img src="//i3.hentaifox.com/004/3818186/thumb.jpg" alt="The Big-Breasted Lady at the Delivery Destination Is Way Too Lewd"></a>
+                            </div>
+                    </div><div class="item">
+                            <div class="image">
+                                <a href="/gallery/158792/"><img src="//i3.hentaifox.com/004/3821881/thumb.jpg" alt="Jimoto no Dekai Gal 2"></a>
+                            </div>
+                    </div><div class="item">
+                            <div class="image">
+                                <a href="/gallery/158859/"><img src="//i3.hentaifox.com/004/3824251/thumb.jpg" alt="Sex Shinai to Derarenai Hotel 2 | The hotel you can&#039;t leave without having sex 2"></a>
+                            </div>
+                    </div><div class="item">
+                            <div class="image">
+                                <a href="/gallery/158589/"><img src="//i3.hentaifox.com/004/3815912/thumb.jpg" alt="&quot;Nee... Onii-san shimasen ka&quot; | &quot;Hey… wanna do it, Onii-san&quot;"></a>
+                            </div>
+                    </div><div class="item">
+                            <div class="image">
+                                <a href="/gallery/158761/"><img src="//i3.hentaifox.com/004/3821234/thumb.jpg" alt="The story of how I ended up living with my mom in a four-and-a-half tatami room 1."></a>
+                            </div>
+                    </div><div class="item">
+                            <div class="image">
+                                <a href="/gallery/158487/"><img src="//i3.hentaifox.com/004/3813439/thumb.jpg" alt="Amoral Island"></a>
+                            </div>
+                    </div><div class="item">
+                            <div class="image">
+                                <a href="/gallery/158811/"><img src="//i3.hentaifox.com/004/3822843/thumb.jpg" alt="A Hokkaido Woman Experiences Genuine Osaka Kansai Dialect Speaking Style XL Emotional SEX"></a>
+                            </div>
+                    </div><div class="item">
+                            <div class="image">
+                                <a href="/gallery/158373/"><img src="//i3.hentaifox.com/004/3809317/thumb.jpg" alt="Since i&#039;m going to die anyway, do whatever you want with me"></a>
+                            </div>
+                    </div><div class="item">
+                            <div class="image">
+                                <a href="/gallery/158773/"><img src="//i3.hentaifox.com/004/3821534/thumb.jpg" alt="Honeori! Osewa Girl♡ | SK8er Girl Lends Me a Hand!"></a>
+                            </div>
+                    </div></div><div class="bottom_sidebar">
+            <button id="top_fapped_btn"><i class="fa fa-smile-o"></i> Most Fapped</button>
+            <button id="top_downloaded_btn"><i class="fa fa-arrow-circle-down"></i> Downloaded</button>
         </div>
     </div>
-    <ul class="pagination">
-        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1">Previous</a></li>
-        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-        <li class="page-item"><a class="page-link" href="//hentaifox.com/page/2/">2</a></li>
-        <li class="page-item"><a class="page-link" href="//hentaifox.com/pag/3/">3</a></li>
-        <li class="page-item"><a class="page-link" href="//hentaifox.com/pag/4/">4</a></li>
-        <li class="page-item"><a class="page-link" href="//hentaifox.com/pag/5/">5</a></li>
-        <li class="page-item"><a class="page-link" href="//hentaifox.com/pag/6/">6</a></li>
-        <li class="page-item"><a class="page-link" href="//hentaifox.com/pag/7/">7</a></li>
-        <li class="page-item"><a class="page-link" href="//hentaifox.com/pag/8/">8</a></li>
-        <li class="page-item"><a class="page-link" href="//hentaifox.com/pag/9/">9</a></li>
-        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1">...</a></li>
-        <li class="page-item"><a class="page-link" href="//hentaifox.com/pag/7321/">7321</a></li>
-        <li class="page-item"><a class="page-link" href="//hentaifox.com/pag/7322/">7322</a></li>
-        <li class="page-item"><a class="page-link" href="//hentaifox.com/page/2/">Next</a></li>
-    </ul>
+    </div>
+
+</div></div>
+
 </div>
+
+<div class="clear"></div>
+
+<div class="main_section">
+	<div class="wrap">
+		<h1 class="main_bar">HentaiFox: Free Hentai Manga, Doujinshi and Anime Porn Videos</h1>	</div>
+</div>
+
+<div class="footer">
+	<div class="top_footer">
+		<div class="wrap">
+			<p class="main_description">HentaiFox is one of the most popular free hentai sites around for English translated hentai<span id="more_dots"> ...</span><span id="more_text"> manga and doujinshi, at HentaiFox we have thousands of xxx galleries that can be downloaded by simply registering a free account. If drawn art isn't enough HentaiFox even has a vast amount of hentai anime videos streamed free online. With daily updates our collection never stops growing. All the characters featured on this website are 18+ even if they look younger, this is just the style of some Japanese manga artists, it is drawn fictional work. Please don't hesitate to contact us if you have any concerns or feedback.</span><button onclick="show_more()" id="show_more_btn">Show More</button></p>		</div>
+	</div>
+	<div class="bottom_footer">
+		<div class="wrap">
+			<ul>
+				<li><a href="/">Home</a></li>
+			<li><a href="https://hentaifox.com/tag/comic/">Hentai Comics</a></li>
+            <li><a target="_blank" href="https://hentaifox.tv/">Videos</a></li>
+			<li><a href="/tos/">TOS</a></li>
+            <li><a href="/contact/">Contact</a></li>
+          <li id="offsite_link"><i class="fa fa-arrow-down"></i></li>			</ul>
+			<ul>
+				<div class="offsite">
+                        <li><a target="_blank" rel="nofollow noopener" href="https://theporndude.com">PornDude</a></li>
+                        <li><a target="_blank" href="https://imhentai.xxx">IMHentai</a></li>
+						<li><a target="_blank" rel="noopener" href="https://comicporn.xxx">Comic Porn</a></li>
+						<li><a target="_blank" rel="noopener" href="https://hentaiera.com">HentaiEra</a></li>
+						<li><a target="_blank" rel="noopener" href="https://hentaienvy.com/">HentaiEnvy</a></li>
+						<li><a target="_blank" rel="noopener" href="https://nhentai.xxx/">nHentai</a></li>
+						<li><a target="_blank" rel="nofollow noopener" href="https://hentaiclap.com">HentaiClap</a></li>
+						<li><a target="_blank" rel="nofollow noopener" href="https://hentai.pro/">Hentai</a></li>
+						<li><a target="_blank" rel="nofollow noopener" href="https://animeporn.org">Anime Porn</a></li>
+                    </div>			</ul>
+		</div>
+	</div>
+</div>
+
+<script>
+  $(function(){ applyAllBlacklists(window.USER_BLACKLIST); });
+</script>
+
+<div class="stealth"></div>
+
+<script src="https://hentaifox.com/js/ajs.min.js?v=66943"></script>
+
+<div id="slider" class="slider_wrapper slider_notransition" style="max-width: 426px;right: 0px;">
+
+	<div id="slider_video_container" playsinline webkit-playsinline>
+		<video id="slider_video" autoplay loop muted playsinline>
+			<source id="slider_source" src="https://hentaifox.com/242529197.mp4" type="video/mp4">
+		</video>
+		<div id="slider_close" class="slider_close">
+			<div id="slider_close_text" class="slider_close_text">Close ad</div>
+			<svg id="slider_close_x" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display: block;">
+				<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path>
+				<path d="M0 0h24v24H0z" fill="none"></path>
+			</svg>
+		</div>
+		<div id="slider_replay_button" style="display: none;">
+			<svg style="fill: #FFFFFF;" viewBox="4 4.5 27 27" xmlns="http://www.w3.org/2000/svg">
+				<path d="M 18,11 V 7 l -5,5 5,5 v -4 c 3.3,0 6,2.7 6,6 0,3.3 -2.7,6 -6,6 -3.3,0 -6,-2.7 -6,-6 h -2 c 0,4.4 3.6,8 8,8 4.4,0 8,-3.6 8,-8 0,-4.4 -3.6,-8 -8,-8 z"></path>
+			</svg>
+		</div>
+		<div id="slider_mute_button">
+			<svg id="slider_mute_off" viewBox="0 0 15 19" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+				<path d="m0 5.5924v5.8152h3.7778l4.7222 4.8461v-15.507l-4.7222 4.8461h-3.7778zm12.75 2.9076c0-1.7155-0.9633-3.1887-2.3611-3.9059v7.8021c1.3978-0.7075 2.3611-2.1807 2.3611-3.8962zm-2.3611-8.5v1.9966c2.7294 0.83352 4.7222 3.431 4.7222 6.5034 0 3.0724-1.9928 5.6699-4.7222 6.5034v1.9966c3.7872-0.882 6.6111-4.3518 6.6111-8.5 0-4.1482-2.8239-7.618-6.6111-8.5z"></path>
+			</svg>
+			<svg id="slider_mute_on" viewBox="0 0 15 19" xmlns="http://www.w3.org/2000/svg" style="display: block;">
+				<path d="m12.75 8.5c0-1.6717-0.9633-3.1072-2.3611-3.8061v2.0872l2.3139 2.3139c0.0283-0.18889 0.0472-0.38722 0.0472-0.595zm2.3611 0c0 0.88778-0.1889 1.7189-0.51 2.4933l1.4261 1.4261c0.6234-1.1711 0.9728-2.5027 0.9728-3.9194 0-4.0422-2.8239-7.4233-6.6111-8.2828v1.9456c2.7294 0.81222 4.7222 3.3433 4.7222 6.3372zm-13.912-8.5l-1.1994 1.1994 4.4672 4.4672h-4.4672v5.6666h3.7778l4.7222 4.7223v-6.3562l4.0139 4.0139c-0.6328 0.4911-1.3411 0.8784-2.125 1.1145v1.9455c1.3033-0.2927 2.4839-0.8972 3.485-1.7094l1.9267 1.9361 1.1994-1.1994-8.5-8.5-7.3006-7.3006zm7.3006 0.94444l-1.9739 1.9739 1.9739 1.9739v-3.9478z"></path>
+			</svg>
+		</div>
+		<div class="progress_slider_wrapper">
+			<div id="slider_progress" class="slider_progressbar" style="width: 0%;">
+			</div>
+		</div>
+	</div>
+
+</div>
+
+
+<div class="tracker">
+	<a href="https://whos.amung.us/show/98idgf0jt6"><img src="https://whos.amung.us/widget/98idgf0jt6.png" alt="web counter"></a>
+</div>
+
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-WE45ZCL607"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-WE45ZCL607');
+</script>
+
+
+<script type='text/javascript'>
+<!--//<![CDATA[
+document.write ("<scr"+"ipt type='text/javascript' src='https://go.hentaigold.net/id/11/'><\/scr"+"ipt>");
+//]]>-->
+</script>
+
+
+
+<script type='text/javascript'>
+<!--//<![CDATA[
+document.write ("<scr"+"ipt type='text/javascript' src='https://go.hentaigold.net/id/90/'><\/scr"+"ipt>");
+//]]>-->
+</script>
+
+
+</body>
+
+<script src="https://hentaifox.com/js/lazyload.min.js?v=98826"></script>
+<script>
+(function () {
+	
+	function logElementEvent(eventName, element) {
+	  console.log(Date.now(), eventName, element.getAttribute("data-src"));
+	}
+	
+	var callback_error = function (element) {
+	  element.src =
+		"https://hentaifox.com/images/load_error.png";
+	};
+	
+	var ll = new LazyLoad({
+		threshold: 0,
+		callback_error: callback_error
+	});
+})();
+</script>
+
+<script src="https://hentaifox.com/js/reader.min.js?v=70878"></script>
+<script src="https://hentaifox.com/js/snackbar.min.js?v=21958"></script>
+
+</html>

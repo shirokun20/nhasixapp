@@ -22,7 +22,7 @@
       "home": {
         "url": "/",
         "list": {
-          "container": ".thumb",
+          "container": ".galleries_overview .lc_galleries > .thumb",
           "fields": {
             "id": {"selector": ".inner_thumb a", "attribute": "href", "transform": "slug"},
             "title": {"selector": ".caption a"},
