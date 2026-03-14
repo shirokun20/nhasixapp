@@ -17,8 +17,8 @@
   },
   "api": {
     "endpoints": {
-      "allGalleries": "/manga?limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&hasAvailableChapters=true&order[createdAt]=desc",
-      "search": "/manga?title={query}&limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]={language}&hasAvailableChapters=true",
+      "allGalleries": "/manga?limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh&hasAvailableChapters=true&order[createdAt]=desc",
+      "search": "/manga?title={query}&limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh&hasAvailableChapters=true",
       "detail": "/manga/{id}?includes[]=cover_art&includes[]=author&includes[]=artist"
     },
     "list": {
@@ -83,7 +83,7 @@
     },
     "detail": {
       "chapters": {
-        "endpoint": "/chapter?manga={id}&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic",
+        "endpoint": "/chapter?manga={id}&limit=100&order[chapter]=desc&translatedLanguage[]=id&translatedLanguage[]=en&translatedLanguage[]=ja&translatedLanguage[]=zh&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic",
         "items": "$.data[*]",
         "fields": {
           "id": {
