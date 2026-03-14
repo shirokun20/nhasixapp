@@ -1,0 +1,125 @@
+{
+  "source": "your_source_id",
+  "version": "1.0.0",
+  "enabled": true,
+  "defaultLanguage": "english",
+  "baseUrl": "https://example.com",
+  "configUrl": "https://raw.githubusercontent.com/<owner>/<repo>/refs/heads/<branch>/app/config/your-source-config.json",
+  "ui": {
+    "displayName": "Your Scraper Source",
+    "iconPath": "https://raw.githubusercontent.com/<owner>/<repo>/refs/heads/<branch>/app/images/your-source.png",
+    "brandColor": "#FF7043"
+  },
+  "network": {
+    "requiresBypass": false,
+    "headers": {
+      "Referer": "https://example.com/",
+      "User-Agent": "Mozilla/5.0"
+    }
+  },
+  "scraper": {
+    "enabled": true,
+    "urlPatterns": {
+      "home": {
+        "url": "/",
+        "list": {
+          "container": ".gallery-list .item",
+          "fields": {
+            "id": { "selector": "a", "attribute": "href", "transform": "slug" },
+            "title": { "selector": ".title" },
+            "coverUrl": { "selector": "img", "attribute": "src" }
+          },
+          "pagination": {
+            "next": ".pagination .next",
+            "links": ".pagination a"
+          }
+        }
+      },
+      "homePage": {
+        "url": "/page/{page}/",
+        "inherits": "home"
+      },
+      "search": {
+        "url": "/search/?q={query}",
+        "inherits": "home"
+      },
+      "searchPage": {
+        "url": "/search/?q={query}&page={page}",
+        "inherits": "home"
+      },
+      "genreSearch": {
+        "url": "/tag/{tag}/",
+        "inherits": "home"
+      },
+      "genreSearchPage": {
+        "url": "/tag/{tag}/page/{page}/",
+        "inherits": "home"
+      },
+      "detail": "/gallery/{id}/",
+      "chapter": "/gallery/{id}/"
+    },
+    "selectors": {
+      "detail": {
+        "fields": {
+          "title": { "selector": "h1.title" },
+          "coverUrl": { "selector": ".cover img", "attribute": "src" },
+          "uploadDate": { "selector": ".meta .date" },
+          "favorites": { "selector": ".meta .likes", "regex": "(\\d+)" },
+          "tags": { "selector": ".tags a", "multi": true },
+          "pageCount": { "selector": ".meta .pages", "regex": "(\\d+)" }
+        },
+        "chapters": {
+          "container": ".chapter-list li",
+          "fields": {
+            "id": { "selector": "a", "attribute": "href", "transform": "slug" },
+            "title": { "selector": ".chapter-title" },
+            "date": { "selector": ".chapter-date" }
+          }
+        }
+      },
+      "reader": {
+        "container": "#reader",
+        "images": {
+          "selector": "img.page",
+          "attribute": "src"
+        },
+        "nav": {
+          "next": ".nav-next",
+          "prev": ".nav-prev"
+        }
+      }
+    }
+  },
+  "searchForm": {
+    "urlPattern": "search",
+    "params": {
+      "query": {
+        "queryParam": "q",
+        "type": "text",
+        "placeholder": "Search..."
+      },
+      "genre": {
+        "queryParam": "genre",
+        "type": "tag",
+        "urlPattern": "genreSearch",
+        "placeholder": "Genre slug"
+      },
+      "order": {
+        "queryParam": "order",
+        "type": "select",
+        "options": ["latest", "popular"]
+      },
+      "page": {
+        "queryParam": "page",
+        "type": "page"
+      }
+    }
+  },
+  "features": {
+    "comments": false,
+    "related": false,
+    "download": false,
+    "favorite": false,
+    "chapters": true
+  }
+}

@@ -508,13 +508,9 @@ class GenericRestAdapter implements GenericAdapter {
       rawConfig,
       requestedLanguage: filter.language,
     );
-    if (_sourceId == 'mangadex') {
-      url = _ensureMangaDexSupportedLanguages(
-        url,
-        paramName: 'availableTranslatedLanguage[]',
-      );
-      url = _ensureMangaDexHasAvailableChapters(url);
-    }
+    final queryRules = (api['queryRules'] as Map<String, dynamic>?)?['search']
+        as Map<String, dynamic>?;
+    url = _applyQueryRules(url, queryRules);
     _logger.d('$_sourceId REST [new schema] search: $url');
 
     try {
@@ -669,24 +665,23 @@ class GenericRestAdapter implements GenericAdapter {
           var chapterUrl =
               '$baseApiUrl${fullPath.replaceAll('{id}', contentId)}';
           chapterUrl = _applyLanguagePlaceholder(chapterUrl, rawConfig);
-          if (_sourceId == 'mangadex') {
-            chapterUrl = _ensureMangaDexSupportedLanguages(
-              chapterUrl,
-              paramName: 'translatedLanguage[]',
-            );
-            chapterUrl = _ensureMangaDexChapterContentRatings(chapterUrl);
-          }
+          final chapterQueryRules = (api['queryRules']
+              as Map<String, dynamic>?)?['chapters'] as Map<String, dynamic>?;
+          chapterUrl = _applyQueryRules(chapterUrl, chapterQueryRules);
 
           try {
             final itemsSelector = chaptersCfg['items'] as String?;
             if (itemsSelector != null) {
               final cFields =
                   (chaptersCfg['fields'] as Map<String, dynamic>?) ?? {};
+              final fallbackFields =
+                  (chaptersCfg['fallbackFields'] as Map<String, dynamic>?);
               chapters = await _fetchChapters(
                 chapterUrl,
                 itemsSelector: itemsSelector,
                 cFields: cFields,
                 rawConfig: rawConfig,
+                fallbackFields: fallbackFields,
               );
             }
           } catch (e) {
@@ -1438,6 +1433,7 @@ class GenericRestAdapter implements GenericAdapter {
     required String itemsSelector,
     required Map<String, dynamic> cFields,
     required Map<String, dynamic> rawConfig,
+    Map<String, dynamic>? fallbackFields,
   }) async {
     await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
     final chapterRes = await _dio.get<dynamic>(url);
@@ -1450,23 +1446,7 @@ class GenericRestAdapter implements GenericAdapter {
     return rawChapters.map((c) {
       final cFieldsExtracted = _extractRestFields(c, cFields);
 
-      // Backward compatibility for older remote configs that don't map
-      // chapter language field yet.
-      if (_sourceId == 'mangadex') {
-        final hasLanguage =
-            (cFieldsExtracted['language']?.toString().trim().isNotEmpty ??
-                false);
-        if (!hasLanguage) {
-          final attrs = c['attributes'];
-          if (attrs is Map<String, dynamic>) {
-            final translatedLanguage = attrs['translatedLanguage'];
-            if (translatedLanguage != null &&
-                translatedLanguage.toString().trim().isNotEmpty) {
-              cFieldsExtracted['language'] = translatedLanguage.toString();
-            }
-          }
-        }
-      }
+      _applyFallbackFields(cFieldsExtracted, c, fallbackFields);
 
       return GenericContentMapper.toChapter(cFieldsExtracted);
     }).toList();
@@ -1563,32 +1543,118 @@ class GenericRestAdapter implements GenericAdapter {
     return '$path?${pairs.join('&')}';
   }
 
-  String _ensureMangaDexChapterContentRatings(String url) {
-    if (url.contains('contentRating[]=')) return url;
-    const suffix =
-        'contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic';
-    return url.contains('?') ? '$url&$suffix' : '$url?$suffix';
+  String _applyQueryRules(String url, Map<String, dynamic>? rules) {
+    if (rules == null) return url;
+
+    var normalized = url;
+
+    final enforceMulti =
+        rules['enforceMultiValueParams'] as Map<String, dynamic>?;
+    if (enforceMulti != null) {
+      for (final entry in enforceMulti.entries) {
+        final values = _toStringList(entry.value);
+        if (values.isEmpty) continue;
+        normalized = _replaceMultiValueParam(
+          normalized,
+          paramName: entry.key,
+          values: values,
+        );
+      }
+    }
+
+    final ensureSingle = rules['ensureParams'] as Map<String, dynamic>?;
+    if (ensureSingle != null) {
+      for (final entry in ensureSingle.entries) {
+        final value = entry.value?.toString().trim() ?? '';
+        if (value.isEmpty) continue;
+        normalized = _ensureQueryParam(normalized, entry.key, value);
+      }
+    }
+
+    final ensureMultiIfMissing =
+        rules['ensureMultiValueParamsIfMissing'] as Map<String, dynamic>?;
+    if (ensureMultiIfMissing != null) {
+      for (final entry in ensureMultiIfMissing.entries) {
+        final values = _toStringList(entry.value);
+        if (values.isEmpty) continue;
+        normalized = _ensureMultiValueParamIfMissing(
+          normalized,
+          paramName: entry.key,
+          values: values,
+        );
+      }
+    }
+
+    return normalized;
   }
 
-  String _ensureMangaDexHasAvailableChapters(String url) {
-    if (url.contains('hasAvailableChapters=')) return url;
-    return url.contains('?')
-        ? '$url&hasAvailableChapters=true'
-        : '$url?hasAvailableChapters=true';
+  List<String> _toStringList(dynamic raw) {
+    if (raw is! List) return const [];
+    return raw
+        .map((e) => e.toString().trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
   }
 
-  String _ensureMangaDexSupportedLanguages(
+  String _replaceMultiValueParam(
     String url, {
     required String paramName,
+    required List<String> values,
   }) {
     var normalized = _removeQueryParam(url, paramName);
-    const allowed = ['id', 'en', 'ja', 'zh'];
-    for (final lang in allowed) {
+    for (final value in values) {
       normalized = normalized.contains('?')
-          ? '$normalized&$paramName=$lang'
-          : '$normalized?$paramName=$lang';
+          ? '$normalized&$paramName=$value'
+          : '$normalized?$paramName=$value';
     }
     return normalized;
+  }
+
+  String _ensureQueryParam(String url, String paramName, String value) {
+    if (url.contains('$paramName=')) return url;
+    return url.contains('?')
+        ? '$url&$paramName=$value'
+        : '$url?$paramName=$value';
+  }
+
+  String _ensureMultiValueParamIfMissing(
+    String url, {
+    required String paramName,
+    required List<String> values,
+  }) {
+    if (url.contains('$paramName=')) return url;
+    var normalized = url;
+    for (final value in values) {
+      normalized = normalized.contains('?')
+          ? '$normalized&$paramName=$value'
+          : '$normalized?$paramName=$value';
+    }
+    return normalized;
+  }
+
+  void _applyFallbackFields(
+    Map<String, dynamic> extracted,
+    dynamic item,
+    Map<String, dynamic>? fallbackFields,
+  ) {
+    if (fallbackFields == null || fallbackFields.isEmpty) return;
+
+    for (final entry in fallbackFields.entries) {
+      final fieldName = entry.key;
+      final selector = entry.value?.toString().trim() ?? '';
+      if (selector.isEmpty) continue;
+
+      final current = extracted[fieldName]?.toString().trim() ?? '';
+      if (current.isNotEmpty) continue;
+
+      final value = _parser.extractString(
+        item,
+        FieldSelector(selector: selector),
+      );
+      if (value != null && value.trim().isNotEmpty) {
+        extracted[fieldName] = value.trim();
+      }
+    }
   }
 
   /// Build the full list of image URLs for a detail response using the

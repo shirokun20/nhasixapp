@@ -20,6 +20,24 @@ const _config = {
   'baseUrl': _baseUrl,
   'defaultLanguage': 'english',
   'api': {
+    'queryRules': {
+      'search': {
+        'enforceMultiValueParams': {
+          'availableTranslatedLanguage[]': ['id', 'en', 'ja', 'zh'],
+        },
+        'ensureParams': {
+          'hasAvailableChapters': 'true',
+        },
+      },
+      'chapters': {
+        'enforceMultiValueParams': {
+          'translatedLanguage[]': ['id', 'en', 'ja', 'zh'],
+        },
+        'ensureMultiValueParamsIfMissing': {
+          'contentRating[]': ['safe', 'suggestive', 'erotica', 'pornographic'],
+        },
+      },
+    },
     'endpoints': {
       'allGalleries':
           '/manga?limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh&order[followedCount]=desc&hasAvailableChapters=true',
@@ -73,6 +91,9 @@ const _config = {
         'endpoint':
             '/chapter?manga={id}&limit=100&order[chapter]=desc&translatedLanguage[]=id&translatedLanguage[]=en&translatedLanguage[]=ja&translatedLanguage[]=zh&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic',
         'items': r'$.data[*]',
+        'fallbackFields': {
+          'language': r'$.attributes.translatedLanguage',
+        },
         'fields': {
           'id': {'selector': r'$.id'},
           'chapterNum': {'selector': r'$.attributes.chapter'},
