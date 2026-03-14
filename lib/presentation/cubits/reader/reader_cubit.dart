@@ -473,7 +473,11 @@ class ReaderCubit extends Cubit<ReaderState> {
       return null;
     }
 
-    final targetIndex = currentIndex + step;
+    final isAscending = _isAscendingByChapterNumber(chapterPool);
+    final effectiveStep =
+        isAscending == null ? step : (isAscending ? step : -step);
+
+    final targetIndex = currentIndex + effectiveStep;
     if (targetIndex < 0 || targetIndex >= chapterPool.length) {
       return null;
     }
@@ -496,6 +500,37 @@ class ReaderCubit extends Cubit<ReaderState> {
       return null;
     }
     return raw.split('-').first;
+  }
+
+  bool? _isAscendingByChapterNumber(List<Chapter> chapters) {
+    if (chapters.length < 2) {
+      return null;
+    }
+
+    for (int i = 0; i < chapters.length - 1; i++) {
+      final current = _extractChapterNumber(chapters[i]);
+      final next = _extractChapterNumber(chapters[i + 1]);
+      if (current == null || next == null || current == next) {
+        continue;
+      }
+      return next > current;
+    }
+
+    return null;
+  }
+
+  double? _extractChapterNumber(Chapter chapter) {
+    final titleMatch = RegExp(r'(\d+(?:\.\d+)?)').firstMatch(chapter.title);
+    if (titleMatch != null) {
+      return double.tryParse(titleMatch.group(1)!);
+    }
+
+    final idMatch = RegExp(r'(\d+(?:\.\d+)?)').firstMatch(chapter.id);
+    if (idMatch != null) {
+      return double.tryParse(idMatch.group(1)!);
+    }
+
+    return null;
   }
 
   Future<void> loadChapter(String chapterId) async {
