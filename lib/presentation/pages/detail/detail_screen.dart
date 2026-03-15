@@ -261,7 +261,11 @@ class _DetailScreenState extends State<DetailScreen> {
 
       // Navigate to ContentByTagScreen
       if (mounted) {
-        AppRouter.goToContentByTag(context, query);
+        AppRouter.goToContentByTag(
+          context,
+          query,
+          displayLabel: tagName,
+        );
       } else {
         Logger().w('Widget unmounted before navigation for tag: $tagName');
       }

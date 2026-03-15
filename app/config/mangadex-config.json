@@ -117,6 +117,24 @@
       }
     },
     "detail": {
+      "tagRelations": {
+        "sourcePath": "$.data.relationships[*]",
+        "mappings": [
+          {
+            "relationshipType": "author",
+            "tagType": "author",
+            "namePath": "attributes.name",
+            "idPath": "id"
+          },
+          {
+            "relationshipType": "artist",
+            "tagType": "artist",
+            "namePath": "attributes.name",
+            "idPath": "id",
+            "appendToArtists": true
+          }
+        ]
+      },
       "chapters": {
         "endpoint": "/chapter?manga={id}&limit=100&order[chapter]=desc&translatedLanguage[]=id&translatedLanguage[]=en&translatedLanguage[]=ja&translatedLanguage[]=zh&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic",
         "items": "$.data[*]",

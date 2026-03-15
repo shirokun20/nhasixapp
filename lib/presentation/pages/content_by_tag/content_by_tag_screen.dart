@@ -27,9 +27,11 @@ class ContentByTagScreen extends StatefulWidget {
   const ContentByTagScreen({
     super.key,
     required this.tagQuery,
+    this.displayLabel,
   });
 
   final String tagQuery;
+  final String? displayLabel;
 
   @override
   State<ContentByTagScreen> createState() => _ContentByTagScreenState();
@@ -39,6 +41,29 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
   late final ContentBloc _contentBloc;
   SearchFilter? _currentSearchFilter;
   SortOption _currentSortOption = SortOption.newest;
+
+  String get _screenTitle {
+    final label = widget.displayLabel?.trim();
+    if (label != null && label.isNotEmpty) {
+      return label;
+    }
+
+    final raw = widget.tagQuery.trim();
+    if (raw.startsWith('raw:')) {
+      final query = raw.substring(4);
+      final idx = query.indexOf('=');
+      if (idx > 0) {
+        final key = query.substring(0, idx).replaceAll('[]', '');
+        final value = query.substring(idx + 1);
+        final shortValue =
+            value.length > 16 ? '${value.substring(0, 16)}...' : value;
+        return '$key: $shortValue';
+      }
+      return 'Filtered Results';
+    }
+
+    return raw;
+  }
 
   @override
   void initState() {
@@ -97,10 +122,10 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
     return BlocProvider.value(
       value: _contentBloc,
       child: AppScaffoldWithOffline(
-        title: widget.tagQuery.toUpperCase(),
+        title: _screenTitle.toUpperCase(),
         appBar: AppBar(
           title: Text(
-            widget.tagQuery.toUpperCase(),
+            _screenTitle.toUpperCase(),
             style: TextStyleConst.headingMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),

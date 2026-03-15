@@ -120,7 +120,11 @@ class AppRouter {
         name: AppRoute.contentByTagName,
         builder: (context, state) {
           final query = state.uri.queryParameters['q'] ?? '';
-          return ContentByTagScreen(tagQuery: query);
+          final displayLabel = state.uri.queryParameters['label'];
+          return ContentByTagScreen(
+            tagQuery: query,
+            displayLabel: displayLabel,
+          );
         },
       ),
 
@@ -395,8 +399,18 @@ class AppRouter {
     context.push(AppRoute.search);
   }
 
-  static void goToContentByTag(BuildContext context, String tagQuery) {
-    context.push('${AppRoute.contentByTag}?q=$tagQuery');
+  static void goToContentByTag(
+    BuildContext context,
+    String tagQuery, {
+    String? displayLabel,
+  }) {
+    final encodedQuery = Uri.encodeQueryComponent(tagQuery);
+    final encodedLabel =
+        displayLabel == null ? null : Uri.encodeQueryComponent(displayLabel);
+    final labelQuery = (encodedLabel == null || encodedLabel.isEmpty)
+        ? ''
+        : '&label=$encodedLabel';
+    context.push('${AppRoute.contentByTag}?q=$encodedQuery$labelQuery');
   }
 
   static Future<SearchFilter?> goToContentDetail(

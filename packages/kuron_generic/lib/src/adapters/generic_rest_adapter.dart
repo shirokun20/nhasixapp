@@ -939,6 +939,13 @@ class GenericRestAdapter implements GenericAdapter {
         _selectorOrDefault(selectors, 'groups',
             const FieldSelector(selector: r'$.groups[*].name')),
       );
+
+      _applyConfiguredTagRelations(
+        data: data,
+        rawConfig: rawConfig,
+        tags: tags,
+        artistsRaw: artistsRaw,
+      );
     }
 
     final pageCountStr = _extract(data, selectors, 'pageCount');
@@ -1258,6 +1265,72 @@ class GenericRestAdapter implements GenericAdapter {
         imageUrls: const [],
         uploadDate: DateTime.fromMillisecondsSinceEpoch(0),
       );
+
+  void _applyConfiguredTagRelations({
+    required dynamic data,
+    required Map<String, dynamic> rawConfig,
+    required List<Tag> tags,
+    required List<String> artistsRaw,
+  }) {
+    final api = rawConfig['api'] as Map<String, dynamic>?;
+    final detail = api?['detail'] as Map<String, dynamic>?;
+    final relationConfig = detail?['tagRelations'] as Map<String, dynamic>?;
+    if (relationConfig == null) return;
+
+    final sourcePath = relationConfig['sourcePath'] as String?;
+    final mappings = relationConfig['mappings'] as List<dynamic>?;
+    if (sourcePath == null || sourcePath.isEmpty || mappings == null) {
+      return;
+    }
+
+    final relations =
+        _parser.extractItems(data, FieldSelector(selector: sourcePath));
+    if (relations.isEmpty) return;
+
+    for (final rawMapping in mappings.whereType<Map<String, dynamic>>()) {
+      final relationType =
+          (rawMapping['relationshipType'] as String? ?? '').toLowerCase();
+      final tagType = (rawMapping['tagType'] as String? ?? relationType)
+          .trim()
+          .toLowerCase();
+      final namePath =
+          (rawMapping['namePath'] as String? ?? 'attributes.name').trim();
+      final idPath = (rawMapping['idPath'] as String? ?? 'id').trim();
+      final appendToArtists = rawMapping['appendToArtists'] == true;
+
+      if (relationType.isEmpty || tagType.isEmpty) continue;
+
+      for (final rel in relations.whereType<Map<String, dynamic>>()) {
+        final relType = (rel['type'] as String? ?? '').trim().toLowerCase();
+        if (relType != relationType) continue;
+
+        final relName =
+            _extractSimplePathValue(rel, namePath)?.toString().trim() ?? '';
+        if (relName.isEmpty) continue;
+
+        final relId =
+            _extractSimplePathValue(rel, idPath)?.toString().trim() ?? '';
+        final slug = relId.isEmpty ? null : relId;
+
+        if (appendToArtists && !artistsRaw.contains(relName)) {
+          artistsRaw.add(relName);
+        }
+
+        final exists = tags.any((t) =>
+            t.type.toLowerCase() == tagType &&
+            t.name.toLowerCase() == relName.toLowerCase());
+        if (!exists) {
+          tags.add(Tag(
+            id: 0,
+            name: relName,
+            type: tagType,
+            count: 0,
+            slug: slug,
+          ));
+        }
+      }
+    }
+  }
 
   // ── URL builder helpers ────────────────────────────────────────────────────
 
