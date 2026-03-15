@@ -2380,14 +2380,8 @@ class _DetailScreenState extends State<DetailScreen> {
 
   /// Build source-aware content URL
   String _buildContentUrl(Content content) {
-    if (content.sourceUrl != null && content.sourceUrl!.isNotEmpty) {
-      return content.sourceUrl!;
-    }
-
-    if (content.url != null && content.url!.isNotEmpty) {
-      return content.url!;
-    }
-
+    // Prefer config-driven canonical web URL for sharing when available.
+    // This prevents sharing API detail endpoints for sources like MangaDex.
     final configDrivenUrl = SourceUrlResolver.buildContentUrl(
       remoteConfigService: getIt<RemoteConfigService>(),
       sourceId: content.sourceId,
@@ -2397,26 +2391,19 @@ class _DetailScreenState extends State<DetailScreen> {
       return configDrivenUrl;
     }
 
-    // Helper to get base URL for a specific source
+    if (content.sourceUrl != null && content.sourceUrl?.isNotEmpty == true) {
+      return content.sourceUrl!;
+    }
+
+    if (content.url != null && content.url?.isNotEmpty == true) {
+      return '${content.url}';
+    }
+
+    // Generic legacy fallback when no config/content URL is available.
     final baseUrl = _getSourceBaseUrl();
 
-    if (content.sourceId == SourceType.crotpedia.id) {
-      // Crotpedia uses /baca/series/{slug}/
-      return '$baseUrl/baca/series/${content.id}/';
-    } else if (content.sourceId == 'mangadex') {
-      final slug = content.title
-          .toLowerCase()
-          .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
-          .replaceAll(RegExp(r'-+'), '-')
-          .replaceAll(RegExp(r'^-|-$'), '');
-      if (slug.isNotEmpty) {
-        return 'https://mangadex.org/title/${content.id}/$slug';
-      }
-      return 'https://mangadex.org/title/${content.id}';
-    } else {
-      // nhentai uses numeric IDs: /g/{id}/
-      return '$baseUrl/g/${content.id}/';
-    }
+    // Keeps backward compatibility for nhentai-style routes.
+    return '$baseUrl/g/${content.id}/';
   }
 
   void _shareContent(Content content) async {
