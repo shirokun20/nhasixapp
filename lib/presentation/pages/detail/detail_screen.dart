@@ -48,24 +48,23 @@ class _DetailScreenState extends State<DetailScreen> {
       false; // Add navigation lock to prevent multiple simultaneous navigation
 
   String? _resolveTagIdFromLoadedContent(
-      String tagName, String normalizedType) {
+    String tagName,
+    List<String> candidateTypes,
+  ) {
     final detailState = context.read<DetailCubit>().state;
     if (detailState is! DetailLoaded) return null;
 
-    bool typeMatches(String candidateType) {
-      if (normalizedType.isEmpty) return true;
-      if (candidateType == normalizedType) return true;
-      // Author/artist are often interchangeable in MangaDex search param.
-      if ((normalizedType == 'author' && candidateType == 'artist') ||
-          (normalizedType == 'artist' && candidateType == 'author')) {
-        return true;
-      }
-      return false;
-    }
+    final normalizedCandidates = candidateTypes
+        .map((e) => e.toLowerCase().trim())
+        .where((e) => e.isNotEmpty)
+        .toSet();
+    final matchAllTypes = normalizedCandidates.isEmpty;
 
     for (final tag in detailState.content.tags) {
       final candidateType = tag.type.toLowerCase().trim();
-      if (!typeMatches(candidateType)) continue;
+      if (!matchAllTypes && !normalizedCandidates.contains(candidateType)) {
+        continue;
+      }
       if (tag.name.toLowerCase().trim() != tagName.toLowerCase().trim()) {
         continue;
       }
@@ -219,12 +218,20 @@ class _DetailScreenState extends State<DetailScreen> {
 
         final valueSource =
             (mapping['valueSource'] as String? ?? 'tagIdOrName').trim();
+        final sameAsTypes =
+            (mapping['sameAsTypes'] as List<dynamic>? ?? const [])
+                .map((e) => e.toString().toLowerCase().trim())
+                .where((e) => e.isNotEmpty)
+                .toList();
+        final candidateTypes = <String>[normalizedType, ...sameAsTypes]
+            .where((e) => e.isNotEmpty)
+            .toList();
         var resolvedTagId = tagId?.trim();
         if (resolvedTagId == null ||
             resolvedTagId.isEmpty ||
             int.tryParse(resolvedTagId) != null) {
           resolvedTagId =
-              _resolveTagIdFromLoadedContent(tagName, normalizedType);
+              _resolveTagIdFromLoadedContent(tagName, candidateTypes);
         }
 
         String value;
@@ -241,15 +248,10 @@ class _DetailScreenState extends State<DetailScreen> {
         if (value.isEmpty) return '';
 
         final param = (mapping['param'] as String? ?? '').trim();
-        final configRequiredPattern =
+        final requiredPattern =
             (mapping['requiredPattern'] as String? ?? '').trim();
-        final effectiveRequiredPattern = configRequiredPattern.isNotEmpty
-            ? configRequiredPattern
-            : (param == 'authorOrArtist'
-                ? r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
-                : '');
-        if (effectiveRequiredPattern.isNotEmpty &&
-            !RegExp(effectiveRequiredPattern).hasMatch(value)) {
+        if (requiredPattern.isNotEmpty &&
+            !RegExp(requiredPattern).hasMatch(value)) {
           return '';
         }
 
