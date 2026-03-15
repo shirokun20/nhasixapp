@@ -563,6 +563,8 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     final selectedValues = selected.map((e) => e.value).toSet();
     var query = '';
 
+    if (!mounted) return;
+
     final result = await showModalBottomSheet<List<_DynamicOption>>(
       context: context,
       isScrollControlled: true,
