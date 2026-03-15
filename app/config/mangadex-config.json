@@ -208,6 +208,15 @@
   },
   "searchForm": {
     "urlPattern": "search",
+    "dataSources": {
+      "mangaTags": {
+        "endpoint": "/manga/tag",
+        "itemsPath": "data",
+        "valuePath": "id",
+        "labelPath": "attributes.name.en",
+        "groupPath": "attributes.group"
+      }
+    },
     "params": {
       "title": {
         "queryParam": "title",
@@ -217,12 +226,22 @@
       "includedTag": {
         "queryParam": "includedTags[]",
         "type": "tag",
-        "placeholder": "Include tag UUID"
+        "placeholder": "Choose included tags",
+        "ui": {
+          "selector": "picker",
+          "multi": true,
+          "dataSource": "mangaTags"
+        }
       },
       "excludedTag": {
         "queryParam": "excludedTags[]",
         "type": "tag",
-        "placeholder": "Exclude tag UUID"
+        "placeholder": "Choose excluded tags",
+        "ui": {
+          "selector": "picker",
+          "multi": true,
+          "dataSource": "mangaTags"
+        }
       },
       "includedTagsMode": {
         "queryParam": "includedTagsMode",

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
+import 'package:dio/dio.dart';
 import 'package:nhasixapp/core/config/config_models.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/domain/entities/search_filter.dart';
@@ -36,24 +38,50 @@ class DynamicFormSearchUI extends StatefulWidget {
 class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   final _formKey = GlobalKey<FormState>();
   final _logger = getIt<Logger>();
+  final _dio = getIt<Dio>();
+  final _remoteConfigService = getIt<RemoteConfigService>();
 
   // Keyed by field logical name (e.g. "query", "status", "order", "genre")
   final Map<String, TextEditingController> _textControllers = {};
   final Map<String, String?> _selectValues = {};
+  final Map<String, List<_DynamicOption>> _multiSelectValues = {};
+  final Map<String, List<String>> _pendingMultiRestore = {};
+
+  Map<String, dynamic>? _rawSearchForm;
+  Map<String, dynamic> _dataSources = const {};
+  final Map<String, List<_DynamicOption>> _optionCacheBySource = {};
 
   @override
   void initState() {
     super.initState();
+    _initRawSearchForm();
     _initFields();
     context
         .read<SearchBloc>()
         .add(SearchInitializeEvent(sourceId: widget.sourceId));
-    _restoreSaved();
+    _initializeDynamicOptions();
+  }
+
+  void _initRawSearchForm() {
+    final rawSource = _remoteConfigService.getRawConfig(widget.sourceId);
+    final rawForm = rawSource?['searchForm'];
+    if (rawForm is Map<String, dynamic>) {
+      _rawSearchForm = rawForm;
+      final dynamic dataSources = rawForm['dataSources'];
+      if (dataSources is Map<String, dynamic>) {
+        _dataSources = dataSources;
+      }
+    }
   }
 
   void _initFields() {
     for (final entry in widget.config.params.entries) {
       final field = entry.value;
+      if (_isPickerField(entry.key, field)) {
+        _multiSelectValues[entry.key] = [];
+        continue;
+      }
+
       switch (field.type) {
         case 'text':
         case 'tag':
@@ -62,6 +90,65 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
           _selectValues[entry.key] = null; // null = "all" / no filter
         default:
           break; // 'page' and unknown types are ignored in the UI
+      }
+    }
+  }
+
+  Future<void> _initializeDynamicOptions() async {
+    await _loadPickerOptions();
+    await _restoreSaved();
+  }
+
+  Future<void> _loadPickerOptions() async {
+    final sourceIds = <String>{};
+    for (final entry in widget.config.params.entries) {
+      final sourceId = _pickerDataSource(entry.key, entry.value);
+      if (sourceId != null && sourceId.isNotEmpty) {
+        sourceIds.add(sourceId);
+      }
+    }
+
+    for (final sourceId in sourceIds) {
+      if (_optionCacheBySource.containsKey(sourceId)) continue;
+
+      final dynamic sourceConfig = _dataSources[sourceId];
+      if (sourceConfig is! Map<String, dynamic>) continue;
+
+      try {
+        final endpoint = sourceConfig['endpoint'] as String?;
+        if (endpoint == null || endpoint.isEmpty) continue;
+
+        final rawConfig = _remoteConfigService.getRawConfig(widget.sourceId);
+        final baseUrl = (rawConfig?['baseUrl'] as String?) ?? '';
+        final url = endpoint.startsWith('http')
+            ? endpoint
+            : '${baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl}${endpoint.startsWith('/') ? endpoint : '/$endpoint'}';
+
+        final response = await _dio.get<dynamic>(url);
+        final payload = response.data;
+        final itemsPath = sourceConfig['itemsPath'] as String? ?? 'data';
+        final valuePath = sourceConfig['valuePath'] as String? ?? 'id';
+        final labelPath = sourceConfig['labelPath'] as String? ?? 'id';
+        final groupPath = sourceConfig['groupPath'] as String?;
+
+        final items = _extractByPath(payload, itemsPath);
+        if (items is! List) continue;
+
+        final options = <_DynamicOption>[];
+        for (final item in items) {
+          final value = _extractByPath(item, valuePath)?.toString() ?? '';
+          final label = _extractByPath(item, labelPath)?.toString() ?? value;
+          if (value.isEmpty || label.isEmpty) continue;
+          final group = groupPath == null
+              ? null
+              : _extractByPath(item, groupPath)?.toString();
+          options.add(_DynamicOption(value: value, label: label, group: group));
+        }
+
+        _optionCacheBySource[sourceId] = options;
+      } catch (e) {
+        _logger.w('DynamicFormSearchUI: failed loading source $sourceId: $e');
+        _optionCacheBySource[sourceId] = const [];
       }
     }
   }
@@ -84,6 +171,15 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
         if (qp == null) continue;
 
         final val = parsed[qp]?.first;
+        final multiVals = parsed[qp] ?? const <String>[];
+
+        if (_isPickerField(entry.key, field)) {
+          if (multiVals.isNotEmpty) {
+            _pendingMultiRestore[entry.key] = multiVals;
+          }
+          continue;
+        }
+
         if (val == null) continue;
 
         switch (field.type) {
@@ -96,9 +192,36 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
             break;
         }
       }
+
+      _applyPendingMultiRestore();
     } catch (e) {
       _logger.w('DynamicFormSearchUI: failed to restore filter: $e');
     }
+  }
+
+  void _applyPendingMultiRestore() {
+    if (_pendingMultiRestore.isEmpty) return;
+
+    for (final entry in _pendingMultiRestore.entries) {
+      final fieldName = entry.key;
+      final field = widget.config.params[fieldName];
+      if (field == null) continue;
+      final sourceId = _pickerDataSource(fieldName, field);
+      if (sourceId == null) continue;
+
+      final options =
+          _optionCacheBySource[sourceId] ?? const <_DynamicOption>[];
+      final selected = entry.value
+          .map((value) => options.firstWhere(
+                (o) => o.value == value,
+                orElse: () => _DynamicOption(value: value, label: value),
+              ))
+          .toList();
+      _multiSelectValues[fieldName] = selected;
+    }
+
+    _pendingMultiRestore.clear();
+    if (mounted) setState(() {});
   }
 
   Map<String, List<String>> _parseRaw(String raw) {
@@ -146,6 +269,15 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
             parts.add('${Uri.encodeComponent(qp)}=${Uri.encodeComponent(val)}');
           }
         default:
+          if (_isPickerField(name, field)) {
+            final selected =
+                _multiSelectValues[name] ?? const <_DynamicOption>[];
+            for (final option in selected) {
+              parts.add(
+                '${Uri.encodeComponent(qp)}=${Uri.encodeComponent(option.value)}',
+              );
+            }
+          }
           break; // 'page' handled by adapter internally
       }
     }
@@ -174,6 +306,9 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     setState(() {
       for (final key in _selectValues.keys) {
         _selectValues[key] = null;
+      }
+      for (final key in _multiSelectValues.keys) {
+        _multiSelectValues[key] = [];
       }
     });
   }
@@ -223,6 +358,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: switch (field.type) {
+        _ when _isPickerField(name, field) => _buildPickerField(name, field),
         'text' => _buildTextField(name, field),
         'tag' => _buildTagField(name, field),
         'select' => _buildSelectField(name, field),
@@ -259,6 +395,212 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
       textInputAction: TextInputAction.search,
       onFieldSubmitted: (_) => _onSearch(),
     );
+  }
+
+  Widget _buildPickerField(String name, SearchFormFieldConfig field) {
+    final selected = _multiSelectValues[name] ?? const <_DynamicOption>[];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _labelFor(name).toUpperCase(),
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () => _openPicker(name, field),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Theme.of(context).colorScheme.outline),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.list_alt),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    selected.isEmpty
+                        ? (field.placeholder ?? 'Choose ${_labelFor(name)}')
+                        : '${selected.length} selected',
+                  ),
+                ),
+                const Icon(Icons.chevron_right),
+              ],
+            ),
+          ),
+        ),
+        if (selected.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: selected
+                .map(
+                  (e) => InputChip(
+                    label: Text(e.label),
+                    onDeleted: () {
+                      setState(() {
+                        _multiSelectValues[name] =
+                            selected.where((x) => x.value != e.value).toList();
+                      });
+                    },
+                  ),
+                )
+                .toList(),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _openPicker(String name, SearchFormFieldConfig field) async {
+    final sourceId = _pickerDataSource(name, field);
+    if (sourceId == null) return;
+
+    final options = List<_DynamicOption>.from(
+      _optionCacheBySource[sourceId] ?? const <_DynamicOption>[],
+    );
+    if (options.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No options available for this field')),
+      );
+      return;
+    }
+
+    final selected = List<_DynamicOption>.from(_multiSelectValues[name] ?? []);
+    final selectedValues = selected.map((e) => e.value).toSet();
+    var query = '';
+
+    final result = await showModalBottomSheet<List<_DynamicOption>>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final filtered = options.where((o) {
+              if (query.isEmpty) return true;
+              return o.label.toLowerCase().contains(query.toLowerCase());
+            }).toList();
+
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Text(
+                      'Select ${_labelFor(name)}',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.search),
+                        hintText: 'Search...',
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (v) => setSheetState(() => query = v),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final option = filtered[index];
+                          final checked = selectedValues.contains(option.value);
+                          return CheckboxListTile(
+                            value: checked,
+                            title: Text(option.label),
+                            subtitle: option.group == null
+                                ? null
+                                : Text(option.group!),
+                            onChanged: (v) {
+                              setSheetState(() {
+                                if (v == true) {
+                                  selectedValues.add(option.value);
+                                } else {
+                                  selectedValues.remove(option.value);
+                                }
+                              });
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    FilledButton(
+                      onPressed: () {
+                        final applied = options
+                            .where((o) => selectedValues.contains(o.value))
+                            .toList();
+                        Navigator.of(context).pop(applied);
+                      },
+                      child: const Text('Apply'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _multiSelectValues[name] = result;
+      });
+    }
+  }
+
+  bool _isPickerField(String name, SearchFormFieldConfig field) {
+    if (field.type != 'tag') return false;
+    final rawField = _rawFieldConfig(name);
+    final ui = rawField?['ui'];
+    if (ui is Map<String, dynamic>) {
+      return (ui['selector'] as String?) == 'picker' &&
+          (ui['multi'] as bool? ?? false);
+    }
+    return false;
+  }
+
+  String? _pickerDataSource(String name, SearchFormFieldConfig field) {
+    final rawField = _rawFieldConfig(name);
+    final ui = rawField?['ui'];
+    if (ui is Map<String, dynamic>) {
+      return ui['dataSource'] as String?;
+    }
+    return null;
+  }
+
+  Map<String, dynamic>? _rawFieldConfig(String name) {
+    final rawParams = _rawSearchForm?['params'];
+    if (rawParams is! Map<String, dynamic>) return null;
+    final dynamic field = rawParams[name];
+    if (field is Map<String, dynamic>) return field;
+    return null;
+  }
+
+  dynamic _extractByPath(dynamic node, String path) {
+    if (path.isEmpty) return node;
+    dynamic current = node;
+    for (final seg in path.split('.')) {
+      if (current is Map<String, dynamic>) {
+        current = current[seg];
+      } else if (current is Map) {
+        current = current[seg];
+      } else {
+        return null;
+      }
+    }
+    return current;
   }
 
   Widget _buildSelectField(String name, SearchFormFieldConfig field) {
@@ -321,4 +663,16 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
 
   String _capitalize(String s) =>
       s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
+}
+
+class _DynamicOption {
+  const _DynamicOption({
+    required this.value,
+    required this.label,
+    this.group,
+  });
+
+  final String value;
+  final String label;
+  final String? group;
 }
