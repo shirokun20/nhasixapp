@@ -162,8 +162,48 @@ class _DetailScreenState extends State<DetailScreen> {
                   .content
                   .sourceId
               : 'nhentai');
+      final rawConfig =
+          getIt<RemoteConfigService>().getRawConfig(actualSourceId);
+      final navigation = rawConfig?['navigation'];
+      final tagQueryMapping = navigation is Map<String, dynamic>
+          ? navigation['tagQueryMapping'] as Map<String, dynamic>?
+          : null;
 
-      if (actualSourceId == 'nhentai') {
+      String? resolveByTagMapping() {
+        if (tagQueryMapping == null) return null;
+
+        final normalizedType = (tagType ?? '').toLowerCase().trim();
+        final mapping = tagQueryMapping[normalizedType] ??
+            tagQueryMapping['default'] as Map<String, dynamic>?;
+        if (mapping is! Map<String, dynamic>) return null;
+
+        final mode = (mapping['mode'] as String? ?? 'rawParam').trim();
+        if (mode == 'name') {
+          return tagName;
+        }
+
+        final valueSource =
+            (mapping['valueSource'] as String? ?? 'tagIdOrName').trim();
+        final preferredValue = (tagId != null && int.tryParse(tagId) == null)
+            ? tagId.trim()
+            : tagName.trim();
+
+        var value = valueSource == 'tagName' ? tagName.trim() : preferredValue;
+        final transform = (mapping['transform'] as String? ?? '').trim();
+        if (transform == 'lowercase') {
+          value = value.toLowerCase();
+        }
+
+        final param = (mapping['param'] as String? ?? '').trim();
+        if (param.isEmpty) return null;
+
+        return 'raw:$param=$value';
+      }
+
+      final mappedQuery = resolveByTagMapping();
+      if (mappedQuery != null && mappedQuery.isNotEmpty) {
+        query = mappedQuery;
+      } else if (actualSourceId == 'nhentai') {
         // SPECIAL HANDLING FOR NHENTAI
         // User requested strict slug format: lowercase + hyphens
         // e.g. "Big Breasts" -> "big-breasts", "Lucy Heartfilia" -> "lucy-heartfilia"
@@ -187,8 +227,6 @@ class _DetailScreenState extends State<DetailScreen> {
         // Config-driven genre route support for generic scraper sources
         // (e.g. crotpedia, komiktap): if source defines `genreSearch` pattern,
         // clicking a genre tag should route to that pattern via prefix query.
-        final rawConfig =
-            getIt<RemoteConfigService>().getRawConfig(actualSourceId);
         final scraper = rawConfig?['scraper'];
         final urlPatterns = scraper is Map<String, dynamic>
             ? scraper['urlPatterns'] as Map<String, dynamic>?

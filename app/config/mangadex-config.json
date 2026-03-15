@@ -51,8 +51,8 @@
       }
     },
     "endpoints": {
-      "allGalleries": "/manga?limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh&hasAvailableChapters=true&order[createdAt]=desc",
-      "search": "/manga?title={query}&limit=30&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh&hasAvailableChapters=true",
+      "allGalleries": "/manga?limit=100&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh&hasAvailableChapters=true&order[createdAt]=desc",
+      "search": "/manga?title={query}&limit=100&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh&hasAvailableChapters=true",
       "detail": "/manga/{id}?includes[]=cover_art&includes[]=author&includes[]=artist"
     },
     "list": {
@@ -68,7 +68,8 @@
         "offset": {
           "path": "$.offset"
         },
-        "pageSize": 30
+        "pageSize": 100,
+        "maxOffset": 9900
       },
       "fields": {
         "id": {
@@ -317,5 +318,31 @@
     "download": false,
     "favorite": true,
     "chapters": true
+  },
+  "navigation": {
+    "tagQueryMapping": {
+      "author": {
+        "mode": "rawParam",
+        "param": "authorOrArtist",
+        "valueSource": "tagIdOrName"
+      },
+      "artist": {
+        "mode": "rawParam",
+        "param": "authorOrArtist",
+        "valueSource": "tagIdOrName"
+      },
+      "demographic": {
+        "mode": "rawParam",
+        "param": "publicationDemographic[]",
+        "valueSource": "tagName",
+        "transform": "lowercase"
+      },
+      "group": {
+        "mode": "name"
+      },
+      "scanlation_group": {
+        "mode": "name"
+      }
+    }
   }
 }

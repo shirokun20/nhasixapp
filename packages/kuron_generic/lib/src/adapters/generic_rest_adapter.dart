@@ -500,7 +500,12 @@ class GenericRestAdapter implements GenericAdapter {
         (apiList['pagination'] as Map<String, dynamic>?) ?? {};
     if (paginationCfg['offsetMode'] == true) {
       final pageSize = paginationCfg['pageSize'] as int? ?? 20;
-      final offset = ((filter.page > 0 ? filter.page : 1) - 1) * pageSize;
+      final maxOffset = paginationCfg['maxOffset'] as int?;
+      var offset = ((filter.page > 0 ? filter.page : 1) - 1) * pageSize;
+      // Guard offset-based sources that enforce strict query window caps.
+      if (maxOffset != null && offset > maxOffset) {
+        offset = maxOffset;
+      }
       url = url.replaceAll('{offset}', offset.toString());
     }
     url = _applyLanguagePlaceholder(
@@ -546,6 +551,7 @@ class GenericRestAdapter implements GenericAdapter {
         final totalStr = _extractRestScalar(data, paginationCfg['total']);
         final limitStr = _extractRestScalar(data, paginationCfg['limit']);
         final offsetStr = _extractRestScalar(data, paginationCfg['offset']);
+        final maxOffset = paginationCfg['maxOffset'] as int?;
 
         final total = int.tryParse(totalStr ?? '');
         final limit = int.tryParse(limitStr ?? '');
@@ -554,6 +560,19 @@ class GenericRestAdapter implements GenericAdapter {
         if (total != null && limit != null && offset != null) {
           hasNext = (offset + limit) < total;
           totalPages = (total / limit).ceil();
+
+          if (maxOffset != null && limit > 0) {
+            final maxReachablePages = (maxOffset ~/ limit) + 1;
+            if (totalPages > maxReachablePages) {
+              totalPages = maxReachablePages;
+            }
+
+            // Prevent next-page navigation beyond allowed offset window.
+            final nextOffset = offset + limit;
+            if (nextOffset > maxOffset) {
+              hasNext = false;
+            }
+          }
         }
       } else {
         final totalPagesStr =
