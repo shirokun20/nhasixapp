@@ -47,6 +47,38 @@ class _DetailScreenState extends State<DetailScreen> {
   bool _isNavigating =
       false; // Add navigation lock to prevent multiple simultaneous navigation
 
+  String? _resolveTagIdFromLoadedContent(
+      String tagName, String normalizedType) {
+    final detailState = context.read<DetailCubit>().state;
+    if (detailState is! DetailLoaded) return null;
+
+    bool typeMatches(String candidateType) {
+      if (normalizedType.isEmpty) return true;
+      if (candidateType == normalizedType) return true;
+      // Author/artist are often interchangeable in MangaDex search param.
+      if ((normalizedType == 'author' && candidateType == 'artist') ||
+          (normalizedType == 'artist' && candidateType == 'author')) {
+        return true;
+      }
+      return false;
+    }
+
+    for (final tag in detailState.content.tags) {
+      final candidateType = tag.type.toLowerCase().trim();
+      if (!typeMatches(candidateType)) continue;
+      if (tag.name.toLowerCase().trim() != tagName.toLowerCase().trim()) {
+        continue;
+      }
+
+      final slug = tag.slug?.trim();
+      if (slug == null || slug.isEmpty) continue;
+      if (int.tryParse(slug) != null) continue;
+      return slug;
+    }
+
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -169,6 +201,8 @@ class _DetailScreenState extends State<DetailScreen> {
           ? navigation['tagQueryMapping'] as Map<String, dynamic>?
           : null;
 
+      var hasExplicitTagMapping = false;
+
       String? resolveByTagMapping() {
         if (tagQueryMapping == null) return null;
 
@@ -176,6 +210,7 @@ class _DetailScreenState extends State<DetailScreen> {
         final mapping = tagQueryMapping[normalizedType] ??
             tagQueryMapping['default'] as Map<String, dynamic>?;
         if (mapping is! Map<String, dynamic>) return null;
+        hasExplicitTagMapping = true;
 
         final mode = (mapping['mode'] as String? ?? 'rawParam').trim();
         if (mode == 'name') {
@@ -184,23 +219,67 @@ class _DetailScreenState extends State<DetailScreen> {
 
         final valueSource =
             (mapping['valueSource'] as String? ?? 'tagIdOrName').trim();
-        final preferredValue = (tagId != null && int.tryParse(tagId) == null)
-            ? tagId.trim()
-            : tagName.trim();
+        var resolvedTagId = tagId?.trim();
+        if (resolvedTagId == null ||
+            resolvedTagId.isEmpty ||
+            int.tryParse(resolvedTagId) != null) {
+          resolvedTagId =
+              _resolveTagIdFromLoadedContent(tagName, normalizedType);
+        }
 
-        var value = valueSource == 'tagName' ? tagName.trim() : preferredValue;
+        String value;
+        if (valueSource == 'tagName') {
+          value = tagName.trim();
+        } else if (valueSource == 'tagId') {
+          value = (resolvedTagId ?? '').trim();
+        } else {
+          value = (resolvedTagId != null && resolvedTagId.isNotEmpty)
+              ? resolvedTagId
+              : tagName.trim();
+        }
+
+        if (value.isEmpty) return '';
+
+        final param = (mapping['param'] as String? ?? '').trim();
+        final configRequiredPattern =
+            (mapping['requiredPattern'] as String? ?? '').trim();
+        final effectiveRequiredPattern = configRequiredPattern.isNotEmpty
+            ? configRequiredPattern
+            : (param == 'authorOrArtist'
+                ? r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+                : '');
+        if (effectiveRequiredPattern.isNotEmpty &&
+            !RegExp(effectiveRequiredPattern).hasMatch(value)) {
+          return '';
+        }
+
         final transform = (mapping['transform'] as String? ?? '').trim();
         if (transform == 'lowercase') {
           value = value.toLowerCase();
         }
 
-        final param = (mapping['param'] as String? ?? '').trim();
         if (param.isEmpty) return null;
 
         return 'raw:$param=$value';
       }
 
       final mappedQuery = resolveByTagMapping();
+      if (hasExplicitTagMapping &&
+          (mappedQuery == null || mappedQuery.isEmpty)) {
+        Logger().w(
+          'Tag mapping failed for $tagType:$tagName (tagId=$tagId), navigation cancelled to avoid invalid query',
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.errorBrowsingTag),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+        return;
+      }
+
       if (mappedQuery != null && mappedQuery.isNotEmpty) {
         query = mappedQuery;
       } else if (actualSourceId == 'nhentai') {

@@ -1,6 +1,6 @@
 {
   "source": "mangadex",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "enabled": true,
   "defaultLanguage": "english",
   "baseUrl": "https://api.mangadex.org",
@@ -361,12 +361,14 @@
       "author": {
         "mode": "rawParam",
         "param": "authorOrArtist",
-        "valueSource": "tagIdOrName"
+        "valueSource": "tagId",
+        "requiredPattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
       },
       "artist": {
         "mode": "rawParam",
         "param": "authorOrArtist",
-        "valueSource": "tagIdOrName"
+        "valueSource": "tagId",
+        "requiredPattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
       },
       "demographic": {
         "mode": "rawParam",
