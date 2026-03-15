@@ -631,6 +631,14 @@ class GenericRestAdapter implements GenericAdapter {
       final fieldsConfig = (apiDetail['fields'] as Map<String, dynamic>?) ?? {};
       final fields = _extractRestFields(data, fieldsConfig);
 
+      // Enrich tags/artists from configurable relationship mapping so UI chips
+      // can carry stable IDs (e.g., UUID for authorOrArtist navigation).
+      _applyConfiguredTagRelationsToFields(
+        data: data,
+        rawConfig: rawConfig,
+        fields: fields,
+      );
+
       // Optional statistics enrichment (e.g., MangaDex follows count).
       final statsCfg = api['statistics'] as Map<String, dynamic>?;
       if (statsCfg != null) {
@@ -1265,6 +1273,46 @@ class GenericRestAdapter implements GenericAdapter {
         imageUrls: const [],
         uploadDate: DateTime.fromMillisecondsSinceEpoch(0),
       );
+
+  void _applyConfiguredTagRelationsToFields({
+    required dynamic data,
+    required Map<String, dynamic> rawConfig,
+    required Map<String, dynamic> fields,
+  }) {
+    final currentTags = fields['tags'];
+    final tags = <Tag>[];
+
+    if (currentTags is List<Tag>) {
+      tags.addAll(currentTags);
+    } else if (currentTags is List) {
+      tags.addAll(
+        currentTags
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty)
+            .map((name) => Tag(id: 0, name: name, type: 'tag', count: 0)),
+      );
+    }
+
+    final artists = <String>[];
+    final currentArtists = fields['artists'];
+    if (currentArtists is List) {
+      artists.addAll(
+        currentArtists
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty),
+      );
+    }
+
+    _applyConfiguredTagRelations(
+      data: data,
+      rawConfig: rawConfig,
+      tags: tags,
+      artistsRaw: artists,
+    );
+
+    fields['tags'] = tags;
+    fields['artists'] = artists;
+  }
 
   void _applyConfiguredTagRelations({
     required dynamic data,
