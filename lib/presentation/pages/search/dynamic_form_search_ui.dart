@@ -50,6 +50,8 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   Map<String, dynamic>? _rawSearchForm;
   Map<String, dynamic> _dataSources = const {};
   final Map<String, List<_DynamicOption>> _optionCacheBySource = {};
+  final Set<String> _loadingPickerSources = <String>{};
+  final Map<String, String> _pickerLoadErrorBySource = <String, String>{};
 
   @override
   void initState() {
@@ -110,46 +112,72 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
 
     for (final sourceId in sourceIds) {
       if (_optionCacheBySource.containsKey(sourceId)) continue;
+      await _loadPickerOptionsForSource(sourceId);
+    }
+  }
 
-      final dynamic sourceConfig = _dataSources[sourceId];
-      if (sourceConfig is! Map<String, dynamic>) continue;
+  Future<void> _loadPickerOptionsForSource(String sourceId,
+      {bool force = false}) async {
+    if (_loadingPickerSources.contains(sourceId)) return;
+    if (!force && _optionCacheBySource.containsKey(sourceId)) return;
 
-      try {
-        final endpoint = sourceConfig['endpoint'] as String?;
-        if (endpoint == null || endpoint.isEmpty) continue;
+    final dynamic sourceConfig = _dataSources[sourceId];
+    if (sourceConfig is! Map<String, dynamic>) return;
 
-        final rawConfig = _remoteConfigService.getRawConfig(widget.sourceId);
-        final baseUrl = (rawConfig?['baseUrl'] as String?) ?? '';
-        final url = endpoint.startsWith('http')
-            ? endpoint
-            : '${baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl}${endpoint.startsWith('/') ? endpoint : '/$endpoint'}';
+    final endpoint = sourceConfig['endpoint'] as String?;
+    if (endpoint == null || endpoint.isEmpty) {
+      _optionCacheBySource[sourceId] = const [];
+      _pickerLoadErrorBySource[sourceId] = 'Missing endpoint';
+      return;
+    }
 
-        final response = await _dio.get<dynamic>(url);
-        final payload = response.data;
-        final itemsPath = sourceConfig['itemsPath'] as String? ?? 'data';
-        final valuePath = sourceConfig['valuePath'] as String? ?? 'id';
-        final labelPath = sourceConfig['labelPath'] as String? ?? 'id';
-        final groupPath = sourceConfig['groupPath'] as String?;
+    _loadingPickerSources.add(sourceId);
+    if (mounted) setState(() {});
 
-        final items = _extractByPath(payload, itemsPath);
-        if (items is! List) continue;
+    try {
+      final rawConfig = _remoteConfigService.getRawConfig(widget.sourceId);
+      final baseUrl = ((rawConfig?['api'] as Map?)?['baseUrl'] as String?) ??
+          (rawConfig?['baseUrl'] as String?) ??
+          '';
+      final url = endpoint.startsWith('http')
+          ? endpoint
+          : '${baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl}${endpoint.startsWith('/') ? endpoint : '/$endpoint'}';
 
-        final options = <_DynamicOption>[];
-        for (final item in items) {
-          final value = _extractByPath(item, valuePath)?.toString() ?? '';
-          final label = _extractByPath(item, labelPath)?.toString() ?? value;
-          if (value.isEmpty || label.isEmpty) continue;
-          final group = groupPath == null
-              ? null
-              : _extractByPath(item, groupPath)?.toString();
-          options.add(_DynamicOption(value: value, label: label, group: group));
-        }
+      final response = await _dio.get<dynamic>(url);
+      final payload = response.data;
+      final itemsPath = sourceConfig['itemsPath'] as String? ?? 'data';
+      final valuePath = sourceConfig['valuePath'] as String? ?? 'id';
+      final labelPath = sourceConfig['labelPath'] as String? ?? 'id';
+      final groupPath = sourceConfig['groupPath'] as String?;
 
-        _optionCacheBySource[sourceId] = options;
-      } catch (e) {
-        _logger.w('DynamicFormSearchUI: failed loading source $sourceId: $e');
+      final items = _extractByPath(payload, itemsPath);
+      if (items is! List) {
         _optionCacheBySource[sourceId] = const [];
+        _pickerLoadErrorBySource[sourceId] =
+            'Invalid response shape at "$itemsPath"';
+        return;
       }
+
+      final options = <_DynamicOption>[];
+      for (final item in items) {
+        final value = _extractByPath(item, valuePath)?.toString() ?? '';
+        final label = _extractByPath(item, labelPath)?.toString() ?? value;
+        if (value.isEmpty || label.isEmpty) continue;
+        final group = groupPath == null
+            ? null
+            : _extractByPath(item, groupPath)?.toString();
+        options.add(_DynamicOption(value: value, label: label, group: group));
+      }
+
+      _optionCacheBySource[sourceId] = options;
+      _pickerLoadErrorBySource.remove(sourceId);
+    } catch (e) {
+      _logger.w('DynamicFormSearchUI: failed loading source $sourceId: $e');
+      _optionCacheBySource[sourceId] = const [];
+      _pickerLoadErrorBySource[sourceId] = e.toString();
+    } finally {
+      _loadingPickerSources.remove(sourceId);
+      if (mounted) setState(() {});
     }
   }
 
@@ -399,6 +427,13 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
 
   Widget _buildPickerField(String name, SearchFormFieldConfig field) {
     final selected = _multiSelectValues[name] ?? const <_DynamicOption>[];
+    final sourceId = _pickerDataSource(name, field);
+    final isLoading =
+        sourceId != null && _loadingPickerSources.contains(sourceId);
+    final hasLoadError =
+        sourceId != null && _pickerLoadErrorBySource.containsKey(sourceId);
+    final hasCachedOptions = sourceId != null &&
+        (_optionCacheBySource[sourceId]?.isNotEmpty ?? false);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,29 +446,59 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
               ),
         ),
         const SizedBox(height: 8),
-        InkWell(
-          onTap: () => _openPicker(name, field),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Theme.of(context).colorScheme.outline),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.list_alt),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    selected.isEmpty
-                        ? (field.placeholder ?? 'Choose ${_labelFor(name)}')
-                        : '${selected.length} selected',
-                  ),
+        Material(
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => _openPicker(name, field),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: hasLoadError
+                      ? Theme.of(context).colorScheme.error
+                      : Theme.of(context).colorScheme.outline,
                 ),
-                const Icon(Icons.chevron_right),
-              ],
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    hasLoadError ? Icons.warning_amber_rounded : Icons.list_alt,
+                    color: hasLoadError
+                        ? Theme.of(context).colorScheme.error
+                        : null,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      selected.isEmpty
+                          ? (isLoading
+                              ? 'Loading options...'
+                              : hasLoadError
+                                  ? 'Failed to load options. Tap to retry.'
+                                  : hasCachedOptions
+                                      ? (field.placeholder ??
+                                          'Choose ${_labelFor(name)}')
+                                      : 'Tap to load options')
+                          : '${selected.length} selected',
+                    ),
+                  ),
+                  if (isLoading)
+                    SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    )
+                  else
+                    const Icon(Icons.chevron_right),
+                ],
+              ),
             ),
           ),
         ),
@@ -465,13 +530,31 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     final sourceId = _pickerDataSource(name, field);
     if (sourceId == null) return;
 
+    if (_loadingPickerSources.contains(sourceId)) {
+      return;
+    }
+
+    final hasOptions = _optionCacheBySource[sourceId]?.isNotEmpty ?? false;
+    if (!hasOptions) {
+      await _loadPickerOptionsForSource(sourceId, force: true);
+    }
+
     final options = List<_DynamicOption>.from(
       _optionCacheBySource[sourceId] ?? const <_DynamicOption>[],
     );
     if (options.isEmpty) {
       if (!mounted) return;
+      final loadError = _pickerLoadErrorBySource[sourceId];
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No options available for this field')),
+        SnackBar(
+          content: Text(loadError == null || loadError.isEmpty
+              ? 'No options available for this field'
+              : 'Failed loading options. Check connection and try again.'),
+          action: SnackBarAction(
+            label: 'Retry',
+            onPressed: () => _openPicker(name, field),
+          ),
+        ),
       );
       return;
     }
