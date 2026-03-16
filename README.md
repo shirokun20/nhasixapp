@@ -4,7 +4,7 @@
 [![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
 [![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com)
 [![18+](https://img.shields.io/badge/Age_Restriction-18%2B-red?style=for-the-badge&logo=warning&logoColor=white)](#)
-[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.12-green?style=for-the-badge&logo=android&logoColor=white)](#)
+[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.13-green?style=for-the-badge&logo=android&logoColor=white)](#)
 
 > [!TIP]  
 > **[🇮🇩 Baca dalam Bahasa Indonesia](README_ID.md)**
@@ -15,7 +15,7 @@
 
 ## 📥 **Download Latest Release**
 
-[📦 **Get v0.9.12+20**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.12%2B20)
+[📦 **Get v0.9.13+21**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.13%2B21)
 
 | Variant | Size | Best For | Status |
 |:-------|:----:|:---------|:------:|

@@ -114,6 +114,9 @@ Anda bisa:
 
 Pergi ke **Tentang → Periksa Pembaruan**. Anda akan diberi tahu ketika versi baru tersedia di GitHub.
 
+Rilis terbaru saat ini: **v0.9.13+21**
+https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.13%2B21
+
 ---
 
 **Q: Mengapa aplikasi tidak ada di Play Store?**

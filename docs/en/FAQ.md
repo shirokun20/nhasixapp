@@ -114,6 +114,9 @@ You can either:
 
 Go to **About → Check for Updates**. You'll be notified when a new version is available on GitHub.
 
+Current latest release: **v0.9.13+21**
+https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.13%2B21
+
 ---
 
 **Q: Why isn't the app on Play Store?**
