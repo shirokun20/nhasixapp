@@ -477,6 +477,30 @@ void main() {
       expect(result.totalPages, 2);
     });
 
+    test('raw search preserves included/excluded tag UUIDs and modes',
+        () async {
+      const expectedUrl =
+          '$_baseUrl/manga?limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&hasAvailableChapters=true&includedTags[]=391b0423-d847-456f-aff0-8b0cfc03066b&excludedTags[]=5920b825-4181-4a17-beeb-9918b0ff7a30&excludedTags[]=a3c67850-4684-404e-9b7f-c69850ee5da6&includedTagsMode=AND&excludedTagsMode=OR&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh';
+
+      dioAdapter.onGet(
+        expectedUrl,
+        (server) => server.reply(200, _listResponse),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(
+          query:
+              'raw:includedTags[]=391b0423-d847-456f-aff0-8b0cfc03066b&excludedTags[]=5920b825-4181-4a17-beeb-9918b0ff7a30&excludedTags[]=a3c67850-4684-404e-9b7f-c69850ee5da6&includedTagsMode=AND&excludedTagsMode=OR',
+          page: 1,
+        ),
+        _config,
+      );
+
+      expect(result.items, hasLength(1));
+      expect(result.items.first.id, _mangaId);
+      expect(result.items.first.title, 'Solo Leveling');
+    });
+
     test('search handles missing cover relationship without crashing',
         () async {
       dioAdapter.onGet(

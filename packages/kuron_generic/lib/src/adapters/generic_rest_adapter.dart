@@ -1675,7 +1675,16 @@ class GenericRestAdapter implements GenericAdapter {
     final templateParams = _parseUrlQueryParams(baseUrl);
     final rawMap = _parseRawQueryParams(rawParams);
 
-    final merged = <String, List<String>>{...templateParams};
+    final merged = <String, List<String>>{};
+
+    for (final entry in templateParams.entries) {
+      final hasAnyValue =
+          entry.value.any((v) => v.trim().isNotEmpty || v == '{offset}');
+      if (hasAnyValue || rawMap.containsKey(entry.key)) {
+        merged[entry.key] = entry.value;
+      }
+    }
+
     for (final entry in rawMap.entries) {
       merged[entry.key] = entry.value;
     }

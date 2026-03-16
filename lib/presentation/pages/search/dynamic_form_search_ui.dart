@@ -291,6 +291,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     if (!_formKey.currentState!.validate()) return;
 
     final parts = <String>[];
+    final selectedTagItems = <FilterItem>[];
 
     for (final entry in widget.config.params.entries) {
       final name = entry.key;
@@ -298,8 +299,28 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
       final qp = field.queryParam;
       if (qp == null) continue;
 
+      if (_isPickerField(name, field)) {
+        final selected = _multiSelectValues[name] ?? const <_DynamicOption>[];
+        for (final option in selected) {
+          parts.add(
+            '${Uri.encodeComponent(qp)}=${Uri.encodeComponent(option.value)}',
+          );
+          selectedTagItems.add(
+            FilterItem(
+              value: option.label,
+              isExcluded: _isExcludedTagField(name, field),
+            ),
+          );
+        }
+        continue;
+      }
+
       switch (field.type) {
         case 'text':
+          final val = _textControllers[name]?.text.trim() ?? '';
+          if (val.isNotEmpty) {
+            parts.add('${Uri.encodeComponent(qp)}=${Uri.encodeComponent(val)}');
+          }
         case 'tag':
           final val = _textControllers[name]?.text.trim() ?? '';
           if (val.isNotEmpty) {
@@ -311,21 +332,12 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
             parts.add('${Uri.encodeComponent(qp)}=${Uri.encodeComponent(val)}');
           }
         default:
-          if (_isPickerField(name, field)) {
-            final selected =
-                _multiSelectValues[name] ?? const <_DynamicOption>[];
-            for (final option in selected) {
-              parts.add(
-                '${Uri.encodeComponent(qp)}=${Uri.encodeComponent(option.value)}',
-              );
-            }
-          }
           break; // 'page' handled by adapter internally
       }
     }
 
     final rawQuery = parts.isNotEmpty ? 'raw:${parts.join('&')}' : '';
-    final filter = SearchFilter(query: rawQuery, tags: []);
+    final filter = SearchFilter(query: rawQuery, tags: selectedTagItems);
 
     try {
       await getIt<LocalDataSource>()
@@ -358,7 +370,9 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   @override
   Widget build(BuildContext context) {
     final visibleFields = widget.config.params.entries
-        .where((e) => e.value.type != 'page')
+        .where((e) =>
+            e.value.type != 'page' &&
+            !_shouldHideBecauseCombinedPicker(e.key, e.value))
         .toList();
 
     return Column(
@@ -397,6 +411,25 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   }
 
   Widget _buildField(String name, SearchFormFieldConfig field) {
+    if (_isPickerField(name, field) && _isIncludedTagField(name, field)) {
+      final excludedName = _findPairedExcludedFieldName();
+      if (excludedName != null) {
+        final excludedField = widget.config.params[excludedName];
+        if (excludedField != null &&
+            _isPickerField(excludedName, excludedField)) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: _buildCombinedPickerField(
+              includedName: name,
+              includedField: field,
+              excludedName: excludedName,
+              excludedField: excludedField,
+            ),
+          );
+        }
+      }
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: switch (field.type) {
@@ -553,6 +586,490 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
         ],
       ],
     );
+  }
+
+  Widget _buildCombinedPickerField({
+    required String includedName,
+    required SearchFormFieldConfig includedField,
+    required String excludedName,
+    required SearchFormFieldConfig excludedField,
+  }) {
+    final included =
+        _multiSelectValues[includedName] ?? const <_DynamicOption>[];
+    final excluded =
+        _multiSelectValues[excludedName] ?? const <_DynamicOption>[];
+
+    final sourceId = _pickerDataSource(includedName, includedField) ??
+        _pickerDataSource(excludedName, excludedField);
+    final isLoading =
+        sourceId != null && _loadingPickerSources.contains(sourceId);
+    final hasLoadError =
+        sourceId != null && _pickerLoadErrorBySource.containsKey(sourceId);
+    final hasCachedOptions = sourceId != null &&
+        (_optionCacheBySource[sourceId]?.isNotEmpty ?? false);
+
+    final includeColor =
+        _pickerAccentColor(includedName, includedField, context);
+    final excludeColor =
+        _pickerAccentColor(excludedName, excludedField, context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'FILTER TAGS',
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+        ),
+        const SizedBox(height: 8),
+        Material(
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => _openCombinedPicker(
+              includedName: includedName,
+              includedField: includedField,
+              excludedName: excludedName,
+              excludedField: excludedField,
+            ),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: hasLoadError
+                      ? Theme.of(context).colorScheme.error
+                      : Theme.of(context).colorScheme.outline,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    hasLoadError ? Icons.warning_amber_rounded : Icons.tune,
+                    color: hasLoadError
+                        ? Theme.of(context).colorScheme.error
+                        : Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      (included.isEmpty && excluded.isEmpty)
+                          ? (isLoading
+                              ? 'Loading options...'
+                              : hasLoadError
+                                  ? 'Failed to load options. Tap to retry.'
+                                  : hasCachedOptions
+                                      ? 'Tap to choose included/excluded tags'
+                                      : 'Tap to load options')
+                          : 'Include ${included.length} • Exclude ${excluded.length}',
+                    ),
+                  ),
+                  if (isLoading)
+                    SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    )
+                  else
+                    const Icon(Icons.chevron_right),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (included.isNotEmpty || excluded.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              ...included.map(
+                (e) => InputChip(
+                  label: Text(e.label),
+                  avatar: Icon(Icons.add, size: 14, color: includeColor),
+                  backgroundColor: includeColor.withValues(alpha: 0.14),
+                  side: BorderSide(color: includeColor.withValues(alpha: 0.55)),
+                  deleteIconColor: includeColor,
+                  onDeleted: () {
+                    setState(() {
+                      _multiSelectValues[includedName] =
+                          included.where((x) => x.value != e.value).toList();
+                    });
+                  },
+                ),
+              ),
+              ...excluded.map(
+                (e) => InputChip(
+                  label: Text(e.label),
+                  avatar: Icon(Icons.remove, size: 14, color: excludeColor),
+                  backgroundColor: excludeColor.withValues(alpha: 0.14),
+                  side: BorderSide(color: excludeColor.withValues(alpha: 0.55)),
+                  deleteIconColor: excludeColor,
+                  onDeleted: () {
+                    setState(() {
+                      _multiSelectValues[excludedName] =
+                          excluded.where((x) => x.value != e.value).toList();
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _openCombinedPicker({
+    required String includedName,
+    required SearchFormFieldConfig includedField,
+    required String excludedName,
+    required SearchFormFieldConfig excludedField,
+  }) async {
+    final sourceId = _pickerDataSource(includedName, includedField) ??
+        _pickerDataSource(excludedName, excludedField);
+    if (sourceId == null) return;
+
+    if (_loadingPickerSources.contains(sourceId)) return;
+
+    final hasOptions = _optionCacheBySource[sourceId]?.isNotEmpty ?? false;
+    if (!hasOptions) {
+      await _loadPickerOptionsForSource(sourceId, force: true);
+    }
+
+    final options = List<_DynamicOption>.from(
+      _optionCacheBySource[sourceId] ?? const <_DynamicOption>[],
+    );
+
+    if (options.isEmpty) {
+      if (!mounted) return;
+      final loadError = _pickerLoadErrorBySource[sourceId];
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(loadError == null || loadError.isEmpty
+              ? 'No options available for this field'
+              : 'Failed loading options. Check connection and try again.'),
+          action: SnackBarAction(
+            label: 'Retry',
+            onPressed: () => _openCombinedPicker(
+              includedName: includedName,
+              includedField: includedField,
+              excludedName: excludedName,
+              excludedField: excludedField,
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+
+    final includeColor =
+        _pickerAccentColor(includedName, includedField, context);
+    final excludeColor =
+        _pickerAccentColor(excludedName, excludedField, context);
+
+    final selectedState = <String, _TagPickState>{
+      for (final o
+          in _multiSelectValues[includedName] ?? const <_DynamicOption>[])
+        o.value: _TagPickState.include,
+      for (final o
+          in _multiSelectValues[excludedName] ?? const <_DynamicOption>[])
+        o.value: _TagPickState.exclude,
+    };
+
+    var query = '';
+
+    if (!mounted) return;
+
+    final result = await showModalBottomSheet<_CombinedPickerResult>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.9,
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final filtered = options.where((o) {
+              if (query.isEmpty) return true;
+              return o.label.toLowerCase().contains(query.toLowerCase());
+            }).toList();
+
+            final grouped = <String, List<_DynamicOption>>{};
+            for (final option in filtered) {
+              final groupRaw = option.group?.trim();
+              final key = (groupRaw == null || groupRaw.isEmpty)
+                  ? 'other'
+                  : groupRaw.toLowerCase();
+              (grouped[key] ??= <_DynamicOption>[]).add(option);
+            }
+
+            const groupOrder = <String>[
+              'format',
+              'genre',
+              'theme',
+              'content',
+              'other',
+            ];
+
+            final groupKeys = grouped.keys.toList()
+              ..sort((a, b) {
+                final ia = groupOrder.indexOf(a);
+                final ib = groupOrder.indexOf(b);
+                final ra = ia == -1 ? groupOrder.length : ia;
+                final rb = ib == -1 ? groupOrder.length : ib;
+                if (ra != rb) return ra.compareTo(rb);
+                return a.compareTo(b);
+              });
+
+            int includeCount = 0;
+            int excludeCount = 0;
+            for (final state in selectedState.values) {
+              if (state == _TagPickState.include) includeCount++;
+              if (state == _TagPickState.exclude) excludeCount++;
+            }
+
+            return DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: 0.78,
+              minChildSize: 0.45,
+              maxChildSize: 0.95,
+              builder: (context, scrollController) {
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .outlineVariant
+                              .withValues(alpha: 0.8),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Filter Tags',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: selectedState.isEmpty
+                                ? null
+                                : () => setSheetState(selectedState.clear),
+                            child: const Text('Reset'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.add_circle_outline,
+                              size: 16, color: includeColor),
+                          const SizedBox(width: 4),
+                          Text('Include $includeCount'),
+                          const SizedBox(width: 12),
+                          Icon(Icons.remove_circle_outline,
+                              size: 16, color: excludeColor),
+                          const SizedBox(width: 4),
+                          Text('Exclude $excludeCount'),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.search),
+                          hintText: 'Search tags...',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                        ),
+                        onChanged: (v) => setSheetState(() => query = v),
+                      ),
+                      const SizedBox(height: 10),
+                      Expanded(
+                        child: filtered.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'No tags found',
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                              )
+                            : ListView(
+                                controller: scrollController,
+                                children: [
+                                  for (final groupKey in groupKeys) ...[
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                          top: 6, bottom: 8),
+                                      child: Text(
+                                        _capitalize(groupKey),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                    ),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children:
+                                          grouped[groupKey]!.map((option) {
+                                        final pickState =
+                                            selectedState[option.value];
+                                        final isInclude =
+                                            pickState == _TagPickState.include;
+                                        final isExclude =
+                                            pickState == _TagPickState.exclude;
+                                        final chipColor = isInclude
+                                            ? includeColor
+                                            : isExclude
+                                                ? excludeColor
+                                                : Theme.of(context)
+                                                    .colorScheme
+                                                    .outlineVariant;
+
+                                        return FilterChip(
+                                          label: Text(option.label),
+                                          selected: isInclude || isExclude,
+                                          avatar: isInclude
+                                              ? Icon(Icons.add,
+                                                  size: 14, color: includeColor)
+                                              : isExclude
+                                                  ? Icon(Icons.remove,
+                                                      size: 14,
+                                                      color: excludeColor)
+                                                  : null,
+                                          backgroundColor: Theme.of(context)
+                                              .colorScheme
+                                              .surfaceContainerLow,
+                                          selectedColor:
+                                              chipColor.withValues(alpha: 0.2),
+                                          side: BorderSide(
+                                            color: (isInclude || isExclude)
+                                                ? chipColor.withValues(
+                                                    alpha: 0.8)
+                                                : Theme.of(context)
+                                                    .colorScheme
+                                                    .outlineVariant,
+                                          ),
+                                          checkmarkColor: chipColor,
+                                          labelStyle: TextStyle(
+                                            color: (isInclude || isExclude)
+                                                ? chipColor
+                                                : null,
+                                            fontWeight: (isInclude || isExclude)
+                                                ? FontWeight.w600
+                                                : FontWeight.w500,
+                                          ),
+                                          onSelected: (_) {
+                                            setSheetState(() {
+                                              final current =
+                                                  selectedState[option.value];
+                                              if (current == null) {
+                                                selectedState[option.value] =
+                                                    _TagPickState.include;
+                                              } else if (current ==
+                                                  _TagPickState.include) {
+                                                selectedState[option.value] =
+                                                    _TagPickState.exclude;
+                                              } else {
+                                                selectedState
+                                                    .remove(option.value);
+                                              }
+                                            });
+                                          },
+                                        );
+                                      }).toList(),
+                                    ),
+                                    const SizedBox(height: 12),
+                                  ],
+                                  const SizedBox(height: 8),
+                                ],
+                              ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: () {
+                            final include = options
+                                .where((o) =>
+                                    selectedState[o.value] ==
+                                    _TagPickState.include)
+                                .toList();
+                            final exclude = options
+                                .where((o) =>
+                                    selectedState[o.value] ==
+                                    _TagPickState.exclude)
+                                .toList();
+                            Navigator.of(context).pop(
+                              _CombinedPickerResult(
+                                included: include,
+                                excluded: exclude,
+                              ),
+                            );
+                          },
+                          child: Text('Apply ($includeCount / $excludeCount)'),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _multiSelectValues[includedName] = result.included;
+        _multiSelectValues[excludedName] = result.excluded;
+
+        if (result.included.isNotEmpty) {
+          final includedModeName =
+              _findFieldNameByQueryParam('includedTagsMode');
+          if (includedModeName != null &&
+              _selectValues[includedModeName] == null) {
+            _selectValues[includedModeName] = 'AND';
+          }
+        }
+
+        if (result.excluded.isNotEmpty) {
+          final excludedModeName =
+              _findFieldNameByQueryParam('excludedTagsMode');
+          if (excludedModeName != null &&
+              _selectValues[excludedModeName] == null) {
+            _selectValues[excludedModeName] = 'AND';
+          }
+        }
+      });
+    }
   }
 
   Future<void> _openPicker(String name, SearchFormFieldConfig field) async {
@@ -840,6 +1357,40 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
         lowerQueryParam.contains('excludedtags');
   }
 
+  bool _shouldHideBecauseCombinedPicker(
+      String name, SearchFormFieldConfig field) {
+    if (!_isPickerField(name, field)) return false;
+    if (!_isExcludedTagField(name, field)) return false;
+    return _findPairedIncludedFieldName() != null;
+  }
+
+  String? _findPairedIncludedFieldName() {
+    for (final entry in widget.config.params.entries) {
+      if (_isIncludedTagField(entry.key, entry.value)) {
+        return entry.key;
+      }
+    }
+    return null;
+  }
+
+  String? _findPairedExcludedFieldName() {
+    for (final entry in widget.config.params.entries) {
+      if (_isExcludedTagField(entry.key, entry.value)) {
+        return entry.key;
+      }
+    }
+    return null;
+  }
+
+  String? _findFieldNameByQueryParam(String queryParam) {
+    for (final entry in widget.config.params.entries) {
+      if (entry.value.queryParam == queryParam) {
+        return entry.key;
+      }
+    }
+    return null;
+  }
+
   IconData _pickerLeadingIcon(String name, SearchFormFieldConfig field) {
     if (_isIncludedTagField(name, field)) {
       return Icons.add_circle_outline;
@@ -974,4 +1525,19 @@ class _DynamicOption {
   final String value;
   final String label;
   final String? group;
+}
+
+enum _TagPickState {
+  include,
+  exclude,
+}
+
+class _CombinedPickerResult {
+  const _CombinedPickerResult({
+    required this.included,
+    required this.excluded,
+  });
+
+  final List<_DynamicOption> included;
+  final List<_DynamicOption> excluded;
 }
