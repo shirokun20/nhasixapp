@@ -6,6 +6,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.13] - 2026-03-16
+
+### 🚀 New Features
+- **MangaDex Expansion**:
+  - Added full MangaDex source support with language-aware gallery/chapter retrieval
+  - Added original language and available translation metadata in API responses
+  - Added chapter pagination support and integration tests for chapter fetch flow
+- **Search UX Upgrade**:
+  - Added included/excluded tag filtering with multi-select and combined picker support
+  - Improved dynamic tag loading, endpoint sorting, and query mapping for search forms
+  - Added raw query parameter support for advanced search scenarios
+- **Metadata & Detail Enrichment**:
+  - Added configurable tag-relations mapping to enrich tags and artists in detail pages
+  - Improved detail field label routing and multi-candidate tag resolution
+- **HentaiFox Support Improvements**:
+  - Added API-first comments handling with CSRF/session fallback support
+  - Added favorites/comments integration and robust full-resolution image fallback handling
+  - Added upload date extraction and relative date parsing improvements
+
+### 🛠 Fixes
+- **Reader Navigation Stability**:
+  - Fixed chapter navigation language and reading direction handling in reader settings
+  - Fixed chapter list presentation to show chapter index consistently in detail view
+  - Added fallback chapter title (`Oneshot`) for empty chapter title fields
+- **Search Robustness**:
+  - Prevented modal invocation when widget is unmounted to avoid runtime errors
+  - Improved picker error handling, loading-state flow, and cache invalidation requirement handling
+
+### 🛠 Improvements
+- **Architecture & Source Management**:
+  - Removed KomikTap dependency and refactored URL generation to use `SourceUrlResolver`
+  - Refactored content URL building to prioritize config-driven URLs while keeping backward compatibility
+  - Enhanced generic adapter query-rule support for multi-value parameters
+- **Data & Performance**:
+  - Added batch loading for completed downloads from local database
+  - Improved chapter retrieval fallback logic and chapter ordering detection
+
+### 🔧 Technical
+- Updated `pubspec.yaml` to version `0.9.13+21`
+- Updated MangaDex config versions through `1.1.4` with related manifest metadata updates
+
+---
+
 ## [0.9.12] - 2026-02-15
 
 ### 🚀 New Features
