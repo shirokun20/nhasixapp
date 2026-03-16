@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -144,7 +146,19 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
           : '${baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl}${endpoint.startsWith('/') ? endpoint : '/$endpoint'}';
 
       final response = await _dio.get<dynamic>(url);
-      final payload = response.data;
+      // The global Dio client uses ResponseType.plain, so data may arrive as a
+      // raw JSON string. Decode it so _extractByPath can navigate the Map/List.
+      dynamic payload = response.data;
+      if (payload is String) {
+        try {
+          payload = jsonDecode(payload);
+        } catch (e) {
+          _optionCacheBySource[sourceId] = const [];
+          _pickerLoadErrorBySource[sourceId] =
+              'Failed to parse response as JSON: $e';
+          return;
+        }
+      }
       final itemsPath = sourceConfig['itemsPath'] as String? ?? 'data';
       final valuePath = sourceConfig['valuePath'] as String? ?? 'id';
       final labelPath = sourceConfig['labelPath'] as String? ?? 'id';
@@ -428,6 +442,8 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   Widget _buildPickerField(String name, SearchFormFieldConfig field) {
     final selected = _multiSelectValues[name] ?? const <_DynamicOption>[];
     final sourceId = _pickerDataSource(name, field);
+    final accentColor = _pickerAccentColor(name, field, context);
+    final baseIcon = _pickerLeadingIcon(name, field);
     final isLoading =
         sourceId != null && _loadingPickerSources.contains(sourceId);
     final hasLoadError =
@@ -442,7 +458,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
           _labelFor(name).toUpperCase(),
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
+                color: accentColor,
               ),
         ),
         const SizedBox(height: 8),
@@ -460,16 +476,18 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                 border: Border.all(
                   color: hasLoadError
                       ? Theme.of(context).colorScheme.error
-                      : Theme.of(context).colorScheme.outline,
+                      : selected.isEmpty
+                          ? Theme.of(context).colorScheme.outline
+                          : accentColor.withValues(alpha: 0.75),
                 ),
               ),
               child: Row(
                 children: [
                   Icon(
-                    hasLoadError ? Icons.warning_amber_rounded : Icons.list_alt,
+                    hasLoadError ? Icons.warning_amber_rounded : baseIcon,
                     color: hasLoadError
                         ? Theme.of(context).colorScheme.error
-                        : null,
+                        : accentColor,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -484,6 +502,12 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                                           'Choose ${_labelFor(name)}')
                                       : 'Tap to load options')
                           : '${selected.length} selected',
+                      style: selected.isEmpty
+                          ? null
+                          : TextStyle(
+                              color: accentColor,
+                              fontWeight: FontWeight.w600,
+                            ),
                     ),
                   ),
                   if (isLoading)
@@ -492,11 +516,11 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: accentColor,
                       ),
                     )
                   else
-                    const Icon(Icons.chevron_right),
+                    Icon(Icons.chevron_right, color: accentColor),
                 ],
               ),
             ),
@@ -511,6 +535,11 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                 .map(
                   (e) => InputChip(
                     label: Text(e.label),
+                    backgroundColor: accentColor.withValues(alpha: 0.14),
+                    side: BorderSide(
+                      color: accentColor.withValues(alpha: 0.55),
+                    ),
+                    deleteIconColor: accentColor,
                     onDeleted: () {
                       setState(() {
                         _multiSelectValues[name] =
@@ -528,6 +557,8 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
 
   Future<void> _openPicker(String name, SearchFormFieldConfig field) async {
     final sourceId = _pickerDataSource(name, field);
+    final accentColor = _pickerAccentColor(name, field, context);
+    final pickerIcon = _pickerLeadingIcon(name, field);
     if (sourceId == null) return;
 
     if (_loadingPickerSources.contains(sourceId)) {
@@ -568,6 +599,14 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     final result = await showModalBottomSheet<List<_DynamicOption>>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.9,
+      ),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -576,62 +615,193 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
               return o.label.toLowerCase().contains(query.toLowerCase());
             }).toList();
 
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Text(
-                      'Select ${_labelFor(name)}',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.search),
-                        hintText: 'Search...',
-                        border: OutlineInputBorder(),
+            final grouped = <String, List<_DynamicOption>>{};
+            for (final option in filtered) {
+              final groupRaw = option.group?.trim();
+              final key = (groupRaw == null || groupRaw.isEmpty)
+                  ? 'other'
+                  : groupRaw.toLowerCase();
+              (grouped[key] ??= <_DynamicOption>[]).add(option);
+            }
+
+            const groupOrder = <String>[
+              'format',
+              'genre',
+              'theme',
+              'content',
+              'other',
+            ];
+
+            final groupKeys = grouped.keys.toList()
+              ..sort((a, b) {
+                final ia = groupOrder.indexOf(a);
+                final ib = groupOrder.indexOf(b);
+                final ra = ia == -1 ? groupOrder.length : ia;
+                final rb = ib == -1 ? groupOrder.length : ib;
+                if (ra != rb) return ra.compareTo(rb);
+                return a.compareTo(b);
+              });
+
+            return DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: 0.78,
+              minChildSize: 0.45,
+              maxChildSize: 0.95,
+              builder: (context, scrollController) {
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .outlineVariant
+                              .withValues(alpha: 0.8),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
                       ),
-                      onChanged: (v) => setSheetState(() => query = v),
-                    ),
-                    const SizedBox(height: 12),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: filtered.length,
-                        itemBuilder: (context, index) {
-                          final option = filtered[index];
-                          final checked = selectedValues.contains(option.value);
-                          return CheckboxListTile(
-                            value: checked,
-                            title: Text(option.label),
-                            subtitle: option.group == null
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Icon(pickerIcon, color: accentColor),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Select ${_labelFor(name)}',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              foregroundColor: accentColor,
+                            ),
+                            onPressed: selectedValues.isEmpty
                                 ? null
-                                : Text(option.group!),
-                            onChanged: (v) {
-                              setSheetState(() {
-                                if (v == true) {
-                                  selectedValues.add(option.value);
-                                } else {
-                                  selectedValues.remove(option.value);
-                                }
-                              });
-                            },
-                          );
-                        },
+                                : () =>
+                                    setSheetState(() => selectedValues.clear()),
+                            child: const Text('Reset'),
+                          ),
+                        ],
                       ),
-                    ),
-                    FilledButton(
-                      onPressed: () {
-                        final applied = options
-                            .where((o) => selectedValues.contains(o.value))
-                            .toList();
-                        Navigator.of(context).pop(applied);
-                      },
-                      child: const Text('Apply'),
-                    ),
-                  ],
-                ),
-              ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.search),
+                          hintText: 'Search tags...',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                        ),
+                        onChanged: (v) => setSheetState(() => query = v),
+                      ),
+                      const SizedBox(height: 10),
+                      Expanded(
+                        child: filtered.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'No tags found',
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                              )
+                            : ListView(
+                                controller: scrollController,
+                                children: [
+                                  for (final groupKey in groupKeys) ...[
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                          top: 6, bottom: 8),
+                                      child: Text(
+                                        _capitalize(groupKey),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                    ),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children: grouped[groupKey]!.map(
+                                        (option) {
+                                          final isSelected = selectedValues
+                                              .contains(option.value);
+                                          return FilterChip(
+                                            label: Text(option.label),
+                                            selected: isSelected,
+                                            backgroundColor: Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerLow,
+                                            selectedColor: accentColor
+                                                .withValues(alpha: 0.2),
+                                            side: BorderSide(
+                                              color: isSelected
+                                                  ? accentColor.withValues(
+                                                      alpha: 0.8)
+                                                  : Theme.of(context)
+                                                      .colorScheme
+                                                      .outlineVariant,
+                                            ),
+                                            checkmarkColor: accentColor,
+                                            labelStyle: TextStyle(
+                                              color: isSelected
+                                                  ? accentColor
+                                                  : null,
+                                              fontWeight: isSelected
+                                                  ? FontWeight.w600
+                                                  : FontWeight.w500,
+                                            ),
+                                            onSelected: (isSelected) {
+                                              setSheetState(() {
+                                                if (isSelected) {
+                                                  selectedValues
+                                                      .add(option.value);
+                                                } else {
+                                                  selectedValues
+                                                      .remove(option.value);
+                                                }
+                                              });
+                                            },
+                                          );
+                                        },
+                                      ).toList(),
+                                    ),
+                                    const SizedBox(height: 12),
+                                  ],
+                                  const SizedBox(height: 8),
+                                ],
+                              ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: accentColor,
+                            foregroundColor: _onAccentColor(accentColor),
+                            textStyle: Theme.of(context)
+                                .textTheme
+                                .labelLarge
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          onPressed: () {
+                            final applied = options
+                                .where((o) => selectedValues.contains(o.value))
+                                .toList();
+                            Navigator.of(context).pop(applied);
+                          },
+                          child: Text('Apply (${selectedValues.length})'),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             );
           },
         );
@@ -654,6 +824,50 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
           (ui['multi'] as bool? ?? false);
     }
     return false;
+  }
+
+  bool _isIncludedTagField(String name, SearchFormFieldConfig field) {
+    final lowerName = name.toLowerCase();
+    final lowerQueryParam = (field.queryParam ?? '').toLowerCase();
+    return lowerName.contains('included') ||
+        lowerQueryParam.contains('includedtags');
+  }
+
+  bool _isExcludedTagField(String name, SearchFormFieldConfig field) {
+    final lowerName = name.toLowerCase();
+    final lowerQueryParam = (field.queryParam ?? '').toLowerCase();
+    return lowerName.contains('excluded') ||
+        lowerQueryParam.contains('excludedtags');
+  }
+
+  IconData _pickerLeadingIcon(String name, SearchFormFieldConfig field) {
+    if (_isIncludedTagField(name, field)) {
+      return Icons.add_circle_outline;
+    }
+    if (_isExcludedTagField(name, field)) {
+      return Icons.remove_circle_outline;
+    }
+    return Icons.local_offer_outlined;
+  }
+
+  Color _pickerAccentColor(
+    String name,
+    SearchFormFieldConfig field,
+    BuildContext context,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    if (_isIncludedTagField(name, field)) {
+      return colorScheme.tertiary;
+    }
+    if (_isExcludedTagField(name, field)) {
+      return colorScheme.error;
+    }
+    return colorScheme.primary;
+  }
+
+  Color _onAccentColor(Color accentColor) {
+    final brightness = ThemeData.estimateBrightnessForColor(accentColor);
+    return brightness == Brightness.dark ? Colors.white : Colors.black;
   }
 
   String? _pickerDataSource(String name, SearchFormFieldConfig field) {

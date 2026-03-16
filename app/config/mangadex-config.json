@@ -51,7 +51,7 @@
       }
     },
     "endpoints": {
-      "allGalleries": "/manga?limit=100&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh&hasAvailableChapters=true&order[createdAt]=desc",
+      "allGalleries": "/manga?limit=100&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh&hasAvailableChapters=true&order[latestUploadedChapter]=desc",
       "search": "/manga?title={query}&limit=100&offset={offset}&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh&hasAvailableChapters=true",
       "detail": "/manga/{id}?includes[]=cover_art&includes[]=author&includes[]=artist",
       "contentUrl": "https://mangadex.org/title/{id}"
