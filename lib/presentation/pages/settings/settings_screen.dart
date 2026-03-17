@@ -146,19 +146,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               theme: theme,
             ),
             _buildDivider(theme),
-            _buildDropdownTile(
-              context: context,
-              title: l10n.gridColumns,
-              subtitle: l10n.gridColumnsDescription,
-              value: prefs.columnsPortrait,
-              items: [2, 3]
-                  .map((c) => DropdownMenuItem(value: c, child: Text('$c')))
-                  .toList(),
-              onChanged: (v) =>
-                  context.read<SettingsCubit>().updateColumnsPortrait(v!),
-              theme: theme,
-            ),
-            _buildDivider(theme),
             _buildSwitchTile(
               title: l10n.blurThumbnails,
               subtitle: l10n.blurThumbnailsDescription,
@@ -168,10 +155,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               theme: theme,
             ),
           ], theme),
-
-          // Grid Preview
-          const SizedBox(height: 12),
-          _buildGridPreview(prefs.columnsPortrait, theme, l10n),
 
           const SizedBox(height: 24),
 
@@ -318,15 +301,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               actionLabel: l10n.clearCacheButton,
               onTap: () => AppUpdateTest.forceClearCache(context),
               isDestructive: true,
-              theme: theme,
-            ),
-            _buildDivider(theme),
-            _buildActionTile(
-              title: 'Sync KomikTap Config (Manifest)',
-              subtitle:
-                  'Cek manifest.json dulu, lalu download config KomikTap sesuai entry manifest',
-              actionLabel: 'Sync',
-              onTap: () => _syncKomiktapConfigFromManifest(context),
               theme: theme,
             ),
           ], theme),
@@ -517,65 +491,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildGridPreview(
-    int columns,
-    ThemeData theme,
-    AppLocalizations l10n,
-  ) {
-    return Card(
-      elevation: 0,
-      color: theme.colorScheme.surfaceContainer.withValues(alpha: 0.5),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.gridPreview,
-              style: TextStyleConst.bodyMedium.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 12),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: columns,
-                childAspectRatio: 0.7,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-              ),
-              itemCount: columns * 2,
-              itemBuilder: (context, index) {
-                return Container(
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer.withValues(
-                      alpha: 0.5,
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: theme.colorScheme.outline.withValues(alpha: 0.2),
-                    ),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.image_outlined,
-                      color: theme.colorScheme.primary.withValues(alpha: 0.5),
-                      size: 24,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildInfoBanner(String text, IconData icon, ThemeData theme) {
     return Container(
       padding: const EdgeInsets.all(14),
@@ -745,61 +660,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
-  }
-
-  Future<void> _syncKomiktapConfigFromManifest(BuildContext context) async {
-    final messenger = ScaffoldMessenger.of(context);
-
-    messenger.showSnackBar(
-      const SnackBar(
-        content: Text('Checking manifest and syncing KomikTap config...'),
-      ),
-    );
-
-    try {
-      final remoteConfig = getIt<RemoteConfigService>();
-      await remoteConfig.downloadAndApplySourceConfigFromManifest(
-        sourceId: 'komiktap',
-      );
-      await remoteConfig.markSourceInstalled('komiktap');
-
-      final registry = getIt<ContentSourceRegistry>();
-      final resolver = getIt<SourceFactoryResolver>();
-      final raw = remoteConfig.getRawConfig('komiktap');
-
-      if (raw == null) {
-        throw StateError('komiktap config missing after download');
-      }
-
-      final wasActive = registry.currentSourceId == 'komiktap';
-      if (registry.hasSource('komiktap')) {
-        registry.unregister('komiktap');
-      }
-      registry.register(resolver.createSource(raw));
-      if (wasActive) {
-        registry.switchSource('komiktap');
-      }
-
-      if (!context.mounted) return;
-
-      context.read<SourceCubit>().refreshSources();
-
-      if (!context.mounted) return;
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('KomikTap config synced from manifest successfully.'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text('Failed to sync KomikTap config: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
 
   /// Build the "Available Sources" section showing installable sources from manifest
