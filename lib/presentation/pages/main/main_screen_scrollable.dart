@@ -1522,17 +1522,45 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     if (sourceId == null || sourceId.isEmpty) return null;
 
     final rawConfig = getIt<RemoteConfigService>().getRawConfig(sourceId);
-    if (rawConfig == null) return null;
-
-    final ui = rawConfig['ui'] as Map<String, dynamic>?;
+    final ui = rawConfig?['ui'] as Map<String, dynamic>?;
     final candidate =
-        (ui?['openInBrowserUrl'] ?? rawConfig['openInBrowserUrl']) as String?;
+        (ui?['openInBrowserUrl'] ?? rawConfig?['openInBrowserUrl']) as String?;
 
-    if (candidate == null || candidate.trim().isEmpty) {
-      return null;
+    if (candidate != null && candidate.trim().isNotEmpty) {
+      return candidate.trim();
     }
 
-    return candidate.trim();
+    // Fallback for API-first sources (e.g. api.mangadex.org) so browser opens
+    // the public website root instead of API/search query endpoints.
+    final inferredWebUrl = _inferPublicWebBaseUrlFromApi();
+    if (inferredWebUrl != null) {
+      return inferredWebUrl;
+    }
+
+    return null;
+  }
+
+  String? _inferPublicWebBaseUrlFromApi() {
+    final sourceBaseUrl = _getSourceBaseUrl();
+    if (sourceBaseUrl.trim().isEmpty) return null;
+
+    try {
+      final uri = Uri.parse(sourceBaseUrl);
+      final host = uri.host.toLowerCase();
+      if (host.isEmpty) return null;
+
+      if (host.startsWith('api.')) {
+        final publicHost = host.replaceFirst('api.', '');
+        if (publicHost.isNotEmpty) {
+          return '${uri.scheme}://$publicHost';
+        }
+      }
+
+      return null;
+    } catch (e) {
+      Logger().w('Failed to infer public web URL from source base URL: $e');
+      return null;
+    }
   }
 
   /// Download all galleries in current page
