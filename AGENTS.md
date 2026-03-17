@@ -7,6 +7,17 @@
 ## 📝 Project Memory
 **CRITICAL**: Read `project_memory.md` at project root for full context. Update it after every session.
 
+## 🤖 Codex Compatibility
+**CRITICAL**: For Codex, `AGENTS.md` is the primary local instruction file.
+
+- Reuse existing project rules instead of creating a parallel Codex-specific rule set.
+- Prefer project-local Codex skills in `.codex/skills/*/SKILL.md` for this repository.
+- Read `.opencode/skills/*/SKILL.md` as the primary local skill source when the task matches a listed skill.
+- Use `.agent/skills/*/SKILL.md` and `.agent/rules/asix-rules.md` as secondary references when the `.opencode` version is missing or less complete.
+- Treat `@planner`, `@architect`, `@flutter-architect`, `@feature-dev`, `@code-reviewer`, `@ui-designer`, `@test-engineer`, and `@test-writer` as role intentions that Codex should emulate directly unless explicit sub-agent delegation is requested.
+- Keep `.github/copilot-instructions.md` aligned with this file; if guidance overlaps, follow the stricter local project rule.
+- For every session, Codex must still follow the same startup sequence: `project_memory.md` -> active `projects/onprogress-plan/` -> active `progress.md` -> active main spec.
+
 ## ⚡ Core Commands
 - **Build/Run**: `flutter clean && flutter pub get` | `flutter run --debug` | `flutter build apk --release`
 - **Build Optimized**: `./build_optimized.sh debug` | `release`
@@ -173,6 +184,13 @@ Use these specialized tools to maintain velocity and quality.
 - **`project-management`**: Manage project lifecycle (init, start, finish, progress, issue).
 - **`gen-test`**: Generate unit tests for Dart classes.
 - **`search-tools`**: Modern search tools guide (rg, ugrep, semgrep).
+
+### Skill Source of Truth
+- Project-local Codex skills: `.codex/skills/[skill]/SKILL.md`
+- Primary local skills: `.opencode/skills/[skill]/SKILL.md`
+- Secondary local skills: `.agent/skills/[skill]/SKILL.md`
+- If a task clearly matches one of these skills, read the relevant `SKILL.md` before editing code.
+- Prefer the existing project skill content over generic Codex defaults when they conflict.
 
 ## 🚀 Quality & Performance
 - **Git**: Conventional Commits (`feat(auth): msg`). Branches: `master` (prod), `develop`, `feature/`.

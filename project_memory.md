@@ -1,7 +1,7 @@
 # 🧠 Kuron — Project Memory
 
 > **Unified context file** untuk tracking progress lintas AI tools.
-> Dibaca oleh: **OpenCode** | **GitHub Copilot** | **Antigravity** | **Manual Review**
+> Dibaca oleh: **Codex** | **OpenCode** | **GitHub Copilot** | **Antigravity** | **Manual Review**
 
 ---
 
@@ -125,6 +125,15 @@ Project ini menggunakan search tools modern sebagai pengganti `grep`:
 - **Agents**: `planner`, `architect`, `test-engineer`, `test-writer`, `code-reviewer`, `feature-dev`, `flutter-architect`, `ui-designer`
 - **Skills**: `clean-arch`, `bloc-pattern`, `create-bloc`, `create-feature`, `di-setup`, `gen-test`, `manager-assistant`, `project-management`, `project-workflow`, `run-codegen`
 
+### Codex
+- **Config**: `AGENTS.md`, `.codex/README.md`, `.codex/skills/`
+- **Startup Context**: `project_memory.md` -> active `projects/onprogress-plan/` -> active `progress.md` -> active main spec
+- **Primary Skill Source**: `.codex/skills/*/SKILL.md`
+- **Upstream Skill Mirrors**: `.opencode/skills/*/SKILL.md`
+- **Secondary Skill Source**: `.agent/skills/*/SKILL.md`
+- **Rule Mirrors**: `.github/copilot-instructions.md`, `.agent/rules/asix-rules.md`
+- **Behavior**: Emulate local `@agent` roles directly when no explicit sub-agent delegation is requested
+
 ### GitHub Copilot
 - **Config**: `.github/copilot-instructions.md`
 - **Behavior**: Follows Clean Architecture, snake_case files, uses logger
@@ -154,6 +163,7 @@ Project ini menggunakan search tools modern sebagai pengganti `grep`:
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
 | 2026-03-16 | Copilot | MangaDex search filter parity fix (include/exclude + raw URL) | ✅ Done | Fixed DynamicForm tag serialization order so picker UUID values are preserved, introduced combined include/exclude tri-state picker, persisted selected tags into SearchFilter summary state, removed empty template params (e.g. `title=`) in raw URL merge, updated default list ordering to latestUploadedChapter, added MangaDex integration regression test for included/excluded tags + mode params, and documented manifest-version cache invalidation requirement to prevent stale runtime source config. |
+| 2026-03-17 | Codex | Codex repo alignment | ✅ Done | Added Codex compatibility guidance to `AGENTS.md`, created `.codex/README.md`, installed project-scoped skills under `.codex/skills/`, and registered Codex in `project_memory.md` so local skills/rules remain the single source of truth. |
 | 2026-03-15 | Copilot | MangaDex author/artist tag navigation hardcode removal | ✅ Done | Replaced source-specific branch in generic REST detail parser with config-driven `api.detail.tagRelations`, updated MangaDex config mapping, added content-by-tag display label routing for human-readable AppBar while preserving UUID-based `authorOrArtist` search behavior. |
 | 2026-03-15 | Copilot | Cross-source search UI and config design pack | ✅ Done | Created analysis package with per-provider search UI designs and draft `searchFormV2` configs for nhentai, mangadex, komiktap, crotpedia, and hentaifox under `projects/analysis-plan/cross_source_search_ui_config_design/`, validated with Explore subagent audit and Context7 MangaDex docs. |
 | 2026-03-14 | Copilot | Reader chapter navigation language+direction fix | ✅ Done | Fixed end-of-chapter next/prev fallback to use chapter list context, scoped chapter selector in reader settings to active language, and corrected semantic direction (next: 35→36, prev: 36→35) with descending-list inference. |

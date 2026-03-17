@@ -17,7 +17,9 @@
 | Project Name | Progress | % | Status |
 |---|---|---|---|
 | **app_audit_hardcode_ui_desktop** | `..........` | 0% | Pending |
+| **app_config_externalization_audit** | `..........` | 0% | Pending |
 | **builtin-dns-resolver** | `..........` | 0% | Pending |
+| **cross_source_search_ui_config_design** | `..........` | 0% | Pending |
 | **download_metadata_revamp** | `..........` | 0% | Pending |
 | **flutter-desktop-migration** | `..........` | 0% | Pending |
 | **komiktap_migration** | `..........` | 0% | Pending |
@@ -54,6 +56,8 @@
 | source-switch-shimmer-bug-analysis | Unknown | 🔴 Open |
 | fix-implementation-summary | Unknown | 🔴 Open |
 | download metadata chapter parentid | 2026-02-15 | 🔴 Open |
+| cross-source-search-revamp-analysis | 2026-03-15 | 🔴 Open |
+| mangadex-detail-navigation-pagination-bug | 2026-03-15 | 🔴 Open |
 
 ---
 _Generated automatically by Advanced Engineering Project Manager_
