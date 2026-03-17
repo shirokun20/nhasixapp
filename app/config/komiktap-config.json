@@ -200,7 +200,7 @@
     "comments": true,
     "related": false,
     "download": false,
-    "favorite": false,
+    "favorite": true,
     "chapters": true
   }
 }
