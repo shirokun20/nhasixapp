@@ -1,13 +1,14 @@
 {
   "source": "hentaifox",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "enabled": true,
   "defaultLanguage": "english",
   "baseUrl": "https://hentaifox.com",
   "ui": {
     "displayName": "HentaiFox",
     "iconPath": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/images/hentaifox.png",
-    "brandColor": "#E3456F"
+    "brandColor": "#E3456F",
+    "openInBrowserUrl": "https://hentaifox.com"
   },
   "network": {
     "requiresBypass": false,

@@ -1351,7 +1351,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       // Build URL based on current page and context
       String url;
 
-      if (_isShowingSearchResults && _currentSearchFilter != null) {
+      final configuredUrl = _getConfiguredOpenBrowserUrl();
+      if (configuredUrl != null && configuredUrl.isNotEmpty) {
+        url = configuredUrl;
+      } else if (_isShowingSearchResults && _currentSearchFilter != null) {
         // Search results page - use current search filter
         final filter =
             _currentSearchFilter!.copyWith(page: contentState.currentPage);
@@ -1508,6 +1511,28 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   String _getSourceBaseUrl() {
     final source = _getActiveSource();
     return source?.baseUrl ?? 'https://nhentai.net';
+  }
+
+  /// Optional config-driven override for Open Browser action.
+  ///
+  /// If present, this URL is used directly instead of building route-based
+  /// links from source baseUrl.
+  String? _getConfiguredOpenBrowserUrl() {
+    final sourceId = _getActiveSource()?.id;
+    if (sourceId == null || sourceId.isEmpty) return null;
+
+    final rawConfig = getIt<RemoteConfigService>().getRawConfig(sourceId);
+    if (rawConfig == null) return null;
+
+    final ui = rawConfig['ui'] as Map<String, dynamic>?;
+    final candidate =
+        (ui?['openInBrowserUrl'] ?? rawConfig['openInBrowserUrl']) as String?;
+
+    if (candidate == null || candidate.trim().isEmpty) {
+      return null;
+    }
+
+    return candidate.trim();
   }
 
   /// Download all galleries in current page

@@ -1,6 +1,6 @@
 {
     "source": "crotpedia",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "enabled": true,
     "defaultLanguage": "indonesian",
     "configUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/config/crotpedia-config.json",
@@ -9,7 +9,8 @@
         "displayName": "Crotpedia",
         "iconPath": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/images/crotpedia.png",
         "themeColor": "#1E88E5",
-        "cardStyle": "standard"
+        "cardStyle": "standard",
+        "openInBrowserUrl": "https://crotpedia.net"
     },
     "network": {
         "requiresBypass": true,
