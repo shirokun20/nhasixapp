@@ -452,7 +452,9 @@ class GenericScraperAdapter implements GenericAdapter {
     if (detailTemplate.isEmpty) return const [];
 
     final selectors = (scraper?['selectors'] as Map<String, dynamic>?) ?? {};
-    final commentsCfg = selectors['comments'] as Map<String, dynamic>?;
+    final detailCfg = selectors['detail'] as Map<String, dynamic>?;
+    final commentsCfg = (detailCfg?['comments'] as Map<String, dynamic>?) ??
+        (selectors['comments'] as Map<String, dynamic>?);
     if (commentsCfg == null) return const [];
 
     final url = _urlBuilder.buildDetailUrl(detailTemplate, contentId);

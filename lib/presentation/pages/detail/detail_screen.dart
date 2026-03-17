@@ -742,7 +742,10 @@ class _DetailScreenState extends State<DetailScreen> {
                     ],
 
                     // Comments section — gated by feature flag + maintenance check
-                    _buildCommentsGate(content),
+                    _buildCommentsGate(
+                      content,
+                      preloadedComments: state.comments ?? const [],
+                    ),
                     const SizedBox(height: 32),
                   ],
                 ),
@@ -1908,7 +1911,10 @@ class _DetailScreenState extends State<DetailScreen> {
   /// - Feature disabled in config → hidden (`SizedBox.shrink`)
   /// - Feature enabled but under maintenance → shows maintenance banner
   /// - Feature enabled and available → shows [CommentsSectionWidget]
-  Widget _buildCommentsGate(Content content) {
+  Widget _buildCommentsGate(
+    Content content, {
+    List<Comment>? preloadedComments,
+  }) {
     final remoteConfig = getIt<RemoteConfigService>();
     final sourceId = content.sourceId;
 
@@ -1986,7 +1992,10 @@ class _DetailScreenState extends State<DetailScreen> {
     }
 
     // 3) Feature enabled and available — show normally
-    return CommentsSectionWidget(contentId: content.id);
+    return CommentsSectionWidget(
+      contentId: content.id,
+      preloadedComments: preloadedComments,
+    );
   }
 
   Widget _buildRelatedContentCard(Content relatedContent) {
