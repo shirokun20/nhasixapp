@@ -1,6 +1,6 @@
 {
     "source": "crotpedia",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "enabled": true,
     "defaultLanguage": "indonesian",
     "configUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/config/crotpedia-config.json",
@@ -121,6 +121,10 @@
                         "selector": ".series-thumb img",
                         "attribute": "src"
                     },
+                    "uploadDate": {
+                        "selector": ".series-infolist li:nth-child(2) span",
+                        "regex": "(\\d{4})"
+                    },
                     "tags": {
                         "selector": ".series-genres a",
                         "multi": true
@@ -139,6 +143,30 @@
                         },
                         "date": {
                             "selector": ".flexch-infoz .date"
+                        }
+                    }
+                },
+                "comments": {
+                    "container": "#wpdcom .wpd-comment",
+                    "fields": {
+                        "id": {
+                            "selector": ".wpd-comment-right",
+                            "attribute": "id",
+                            "regex": "comment-(\\d+)"
+                        },
+                        "username": {
+                            "selector": ".wpd-comment-author"
+                        },
+                        "body": {
+                            "selector": ".wpd-comment-text"
+                        },
+                        "avatarUrl": {
+                            "selector": ".wpd-avatar img",
+                            "attribute": "src"
+                        },
+                        "postDate": {
+                            "selector": ".wpd-comment-date",
+                            "attribute": "title"
                         }
                     }
                 }
@@ -441,7 +469,7 @@
         "favorite": false,
         "bookmark": true,
         "supportsAuth": true,
-        "comments": false,
+        "comments": true,
         "related": false
     }
 }

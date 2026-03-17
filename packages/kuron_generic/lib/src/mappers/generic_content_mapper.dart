@@ -58,7 +58,7 @@ class GenericContentMapper {
           : _resolveLanguage(fields),
       pageCount: _int(fields, 'pageCount'),
       imageUrls: const [],
-      uploadDate: _date(fields, 'uploadDate'),
+      uploadDate: _resolveUploadDate(fields),
       favorites: _int(fields, 'favorites'),
       status: _status(fields),
       totalChapters: _intOrNull(fields, 'pageCount'),
@@ -111,7 +111,7 @@ class GenericContentMapper {
       pageCount: pageCount,
       imageUrls: imageUrls,
       chapters: chapters,
-      uploadDate: _date(fields, 'uploadDate'),
+      uploadDate: _resolveUploadDate(fields),
       favorites: _int(fields, 'favorites'),
       mediaId: fields['mediaId'] as String?,
       englishTitle: fields['englishTitle'] as String?,
@@ -370,8 +370,13 @@ class GenericContentMapper {
     return value > 0 ? value : null;
   }
 
-  static DateTime _date(Map<String, dynamic> f, String key) {
-    return _dateNullable(f, key) ?? DateTime.fromMillisecondsSinceEpoch(0);
+  static DateTime _resolveUploadDate(Map<String, dynamic> fields) {
+    return _dateNullable(fields, 'uploadDate') ??
+        _dateNullable(fields, 'updatedDate') ??
+        _dateNullable(fields, 'updatedOn') ??
+        _dateNullable(fields, 'publishedDate') ??
+        _dateNullable(fields, 'postedOn') ??
+        DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   static DateTime? _dateNullable(Map<String, dynamic> f, String key) {
@@ -380,9 +385,21 @@ class GenericContentMapper {
     if (v is String && v.isNotEmpty) {
       final cleaned = v.trim();
 
-      final seconds = int.tryParse(v);
-      if (seconds != null) {
-        return DateTime.fromMillisecondsSinceEpoch(seconds * 1000);
+      final numeric = int.tryParse(cleaned);
+      if (numeric != null) {
+        // Year-only values (e.g. "2022") should be treated as calendar years,
+        // not Unix seconds (which would incorrectly map to 1970).
+        if (RegExp(r'^\d{4}$').hasMatch(cleaned) &&
+            numeric >= 1900 &&
+            numeric <= 2100) {
+          return DateTime(numeric, 1, 1);
+        }
+
+        // 13+ digits are likely milliseconds; <=10 digits are likely seconds.
+        if (cleaned.length >= 13) {
+          return DateTime.fromMillisecondsSinceEpoch(numeric);
+        }
+        return DateTime.fromMillisecondsSinceEpoch(numeric * 1000);
       }
 
       final absolute = DateTime.tryParse(cleaned);

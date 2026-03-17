@@ -1,6 +1,6 @@
 {
   "source": "komiktap",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "enabled": true,
   "defaultLanguage": "indonesian",
   "configUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/config/komiktap-config.json",
@@ -91,6 +91,14 @@
             "selector": ".thumb img",
             "attribute": "src"
           },
+          "publishedDate": {
+            "selector": "time[itemprop='datePublished']",
+            "attribute": "datetime"
+          },
+          "uploadDate": {
+            "selector": "time[itemprop='dateModified']",
+            "attribute": "datetime"
+          },
           "tags": {
             "selector": ".seriestugenre a",
             "multi": true
@@ -109,6 +117,28 @@
             },
             "date": {
               "selector": ".chbox .chapterdate"
+            }
+          }
+        },
+        "comments": {
+          "container": "#comments .comment-list > li.comment",
+          "fields": {
+            "id": {
+              "selector": "a.comment-reply-link",
+              "attribute": "data-commentid"
+            },
+            "username": {
+              "selector": ".comment-author .fn"
+            },
+            "body": {
+              "selector": "p"
+            },
+            "avatarUrl": {
+              "selector": ".comment-author img",
+              "attribute": "src"
+            },
+            "postDate": {
+              "selector": ".comment-meta a"
             }
           }
         }
@@ -167,7 +197,7 @@
   },
   "contentIdPattern": "/manga/([^/]+)",
   "features": {
-    "comments": false,
+    "comments": true,
     "related": false,
     "download": false,
     "favorite": false,
