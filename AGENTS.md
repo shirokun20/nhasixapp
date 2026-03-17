@@ -7,16 +7,27 @@
 ## 📝 Project Memory
 **CRITICAL**: Read `project_memory.md` at project root for full context. Update it after every session.
 
-## 🤖 Codex Compatibility
-**CRITICAL**: For Codex, `AGENTS.md` is the primary local instruction file.
+## 🤖 AI Tool Compatibility
 
-- Reuse existing project rules instead of creating a parallel Codex-specific rule set.
-- Prefer project-local Codex skills in `.codex/skills/*/SKILL.md` for this repository.
-- Read `.opencode/skills/*/SKILL.md` as the primary local skill source when the task matches a listed skill.
-- Use `.agent/skills/*/SKILL.md` and `.agent/rules/asix-rules.md` as secondary references when the `.opencode` version is missing or less complete.
-- Treat `@planner`, `@architect`, `@flutter-architect`, `@feature-dev`, `@code-reviewer`, `@ui-designer`, `@test-engineer`, and `@test-writer` as role intentions that Codex should emulate directly unless explicit sub-agent delegation is requested.
+### Claude Code
+- **Primary instruction file**: `CLAUDE.md` (auto-loaded by Claude Code).
+- **Slash commands**: `.claude/commands/*.md` — invoked via `/command-name`.
+- Available commands: `/project`, `/feature`, `/bloc`, `/api`, `/di`, `/test`, `/codegen`, `/arch`, `/state`, `/scraper`, `/native`, `/git`, `/search`, `/simplify`.
+
+### Codex
+- **Primary instruction file**: `AGENTS.md`.
+- Prefer project-local Codex skills in `.codex/skills/*/SKILL.md`.
+- Read `.opencode/skills/*/SKILL.md` as primary local skill source when the task matches a listed skill.
+
+### OpenCode / Aider / Other Agents
+- Read `.opencode/skills/*/SKILL.md` as primary skill source.
+- Use `.agent/skills/*/SKILL.md` as secondary references.
+
+### General Rules (All AI Tools)
+- Reuse existing project rules instead of creating parallel rule sets.
 - Keep `.github/copilot-instructions.md` aligned with this file; if guidance overlaps, follow the stricter local project rule.
-- For every session, Codex must still follow the same startup sequence: `project_memory.md` -> active `projects/onprogress-plan/` -> active `progress.md` -> active main spec.
+- Treat `@planner`, `@architect`, `@flutter-architect`, `@feature-dev`, `@code-reviewer`, `@ui-designer`, `@test-engineer`, and `@test-writer` as role intentions to emulate directly unless explicit sub-agent delegation is requested.
+- Startup sequence: `project_memory.md` -> active `projects/onprogress-plan/` -> active `progress.md` -> active main spec.
 
 ## ⚡ Core Commands
 - **Build/Run**: `flutter clean && flutter pub get` | `flutter run --debug` | `flutter build apk --release`
@@ -174,23 +185,31 @@ Use these specialized tools to maintain velocity and quality.
 - **`@test-engineer`**: Writes comprehensive unit and widget tests.
 - **`@test-writer`**: Writes comprehensive test coverage.
 
-### Skills (Loaded automatically when needed)
-- **`clean-arch`**: Clean Architecture implementation patterns.
-- **`bloc-pattern`**: BLoC/Cubit state management patterns (Freezed + Injectable).
-- **`create-bloc`**: Scaffolds a new Bloc component with Freezed and Injectable.
-- **`create-feature`**: Scaffolds complete Clean Architecture feature structure.
-- **`di-setup`**: Dependency Injection with GetIt setup.
-- **`run-codegen`**: Run Flutter build_runner to regenerate code.
-- **`project-management`**: Manage project lifecycle (init, start, finish, progress, issue).
-- **`gen-test`**: Generate unit tests for Dart classes.
-- **`search-tools`**: Modern search tools guide (rg, ugrep, semgrep).
+### Skills (cross-platform, loaded automatically when needed)
 
-### Skill Source of Truth
-- Project-local Codex skills: `.codex/skills/[skill]/SKILL.md`
-- Primary local skills: `.opencode/skills/[skill]/SKILL.md`
-- Secondary local skills: `.agent/skills/[skill]/SKILL.md`
-- If a task clearly matches one of these skills, read the relevant `SKILL.md` before editing code.
-- Prefer the existing project skill content over generic Codex defaults when they conflict.
+| Skill | Purpose | Claude Code | OpenCode/Codex |
+|-------|---------|-------------|----------------|
+| **Architecture** | Clean Architecture patterns | `/arch` | `clean-arch` |
+| **State Management** | BLoC/Cubit patterns | `/state` | `bloc-pattern`, `bloc-cubit` |
+| **Create BLoC** | Scaffold BLoC with Freezed | `/bloc` | `create-bloc` |
+| **Create Feature** | Scaffold feature structure | `/feature` | `create-feature` |
+| **API Integration** | Endpoint integration guide | `/api` | `api-integration` |
+| **DI Setup** | GetIt dependency injection | `/di` | `di-setup` |
+| **Test Generation** | Generate unit tests | `/test` | `gen-test` |
+| **Codegen** | Run build_runner | `/codegen` | `run-codegen` |
+| **Project Lifecycle** | 4-phase project management | `/project` | `project-management`, `project-workflow` |
+| **Scraper Debug** | Fix HTML scrapers | `/scraper` | `scraper-debug` |
+| **Native Integration** | Platform Channels + Kotlin | `/native` | `native-integration` |
+| **Git Workflow** | Branching + Conventional Commits | `/git` | `git-workflow` |
+| **Search Tools** | rg, ugrep, semgrep guide | `/search` | `search-tools` |
+
+### Skill Source of Truth (priority order)
+1. **Claude Code**: `.claude/commands/*.md` (consolidated, authoritative)
+2. **Codex**: `.codex/skills/*/SKILL.md`
+3. **OpenCode**: `.opencode/skills/*/SKILL.md`
+4. **Agent**: `.agent/skills/*/SKILL.md`
+
+If a task matches a listed skill, read the relevant file before editing code.
 
 ## 🚀 Quality & Performance
 - **Git**: Conventional Commits (`feat(auth): msg`). Branches: `master` (prod), `develop`, `feature/`.
