@@ -1,6 +1,6 @@
 {
     "source": "crotpedia",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "enabled": true,
     "defaultLanguage": "indonesian",
     "configUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/config/crotpedia-config.json",
@@ -466,9 +466,9 @@
     "features": {
         "search": true,
         "chapters": true,
-        "download": true,
-        "favorite": false,
-        "bookmark": true,
+        "download": false,
+        "favorite": true,
+        "bookmark": false,
         "supportsAuth": true,
         "comments": true,
         "related": false
