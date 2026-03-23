@@ -41,10 +41,10 @@
       "home": {
         "url": "/?page={page}",
         "list": {
-          "container": ".gl1t",
+          "container": ".itg.gltc > tr",
           "fields": {
             "id": {
-              "selector": ".glink",
+              "selector": ".gl3c.glname a",
               "attribute": "href",
               "regex": "/g/([0-9]+/[a-zA-Z0-9]+)/"
             },
@@ -52,13 +52,13 @@
               "selector": ".glink"
             },
             "coverUrl": {
-              "selector": "img",
+              "selector": ".gl2c img",
               "attribute": "src"
             }
           },
           "pagination": {
-            "next": ".ptt a:last-child",
-            "links": ".ptt a"
+            "next": "#unext",
+            "links": ".searchnav a"
           }
         }
       },
