@@ -936,7 +936,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
             return _buildChapterNavigationPage(state);
           }
           final imageUrl = state.content?.imageUrls[index] ?? '';
-          return _buildImageViewer(imageUrl, index + 1);
+          return _buildImageViewer(
+            imageUrl,
+            index + 1,
+            sourceId: state.content?.sourceId,
+          );
         },
       ),
     );
@@ -985,6 +989,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             index + 1,
             isContinuous: true,
             enableZoom: enableZoom,
+            sourceId: state.content?.sourceId,
           );
         },
       ),
@@ -992,7 +997,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   Widget _buildImageViewer(String imageUrl, int pageNumber,
-      {bool isContinuous = false, bool? enableZoom}) {
+      {bool isContinuous = false, bool? enableZoom, String? sourceId}) {
     // Debug logging removed to reduce log spam during normal scrolling
     // Uncomment below for debugging image viewer builds:
     // debugPrint('🖼️ Building image viewer for page $pageNumber with URL: $imageUrl');
@@ -1001,6 +1006,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
     // Pass enableZoom as parameter instead of reading from state
     if (isContinuous) {
       final zoom = enableZoom ?? true;
+      final headers = sourceId == null
+          ? null
+          : getIt<ContentSourceRegistry>()
+              .getSource(sourceId)
+              ?.getImageDownloadHeaders(imageUrl: imageUrl);
       return Container(
         key: ValueKey(
             'image_viewer_$pageNumber'), // 🐛 FIX: Preserve widget identity to prevent re-loading
@@ -1010,6 +1020,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           contentId: widget.contentId,
           pageNumber: pageNumber,
           readingMode: ReadingMode.continuousScroll,
+          httpHeaders: headers,
           enableZoom: zoom,
           onImageLoaded:
               _readerCubit.onImageLoaded, // 🎨 Auto-detect webtoon/manhwa
@@ -1021,6 +1032,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
     return BlocBuilder<ReaderCubit, ReaderState>(
       builder: (context, state) {
         final zoom = enableZoom ?? state.enableZoom ?? true;
+        final resolvedSourceId = sourceId ?? state.content?.sourceId;
+        final headers = resolvedSourceId == null
+            ? null
+            : getIt<ContentSourceRegistry>()
+                .getSource(resolvedSourceId)
+                ?.getImageDownloadHeaders(imageUrl: imageUrl);
 
         // 🚀 FEATURE FLAG: Toggle between ExtendedImage (new) and PhotoView (legacy)
         const bool useExtendedImage = true; // Set to false for rollback
@@ -1032,6 +1049,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             contentId: widget.contentId,
             pageNumber: pageNumber,
             readingMode: state.readingMode ?? ReadingMode.singlePage,
+            httpHeaders: headers,
             enableZoom: zoom,
             onImageLoaded:
                 _readerCubit.onImageLoaded, // 🎨 Auto-detect webtoon/manhwa

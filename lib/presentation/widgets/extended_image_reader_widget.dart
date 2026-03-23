@@ -21,6 +21,7 @@ class ExtendedImageReaderWidget extends StatefulWidget {
     required this.contentId,
     required this.pageNumber,
     required this.readingMode,
+    this.httpHeaders,
     this.enableZoom = true,
     this.onLoadError,
     this.onImageLoaded,
@@ -30,6 +31,7 @@ class ExtendedImageReaderWidget extends StatefulWidget {
   final String contentId;
   final int pageNumber;
   final ReadingMode readingMode;
+  final Map<String, String>? httpHeaders;
   final bool enableZoom;
   final VoidCallback? onLoadError;
 
@@ -234,6 +236,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         widget.imageUrl,
         key:
             ValueKey('extended_image_${widget.contentId}_${widget.pageNumber}'),
+        headers: widget.httpHeaders,
         fit: _getAdaptiveBoxFit(),
         mode: widget.enableZoom &&
                 widget.readingMode != ReadingMode.continuousScroll

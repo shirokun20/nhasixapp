@@ -32,7 +32,7 @@
       "home": {
         "url": "/",
         "list": {
-          "container": ".index-gallery",
+          "container": ".columns.is-multiline.is-mobile > .column",
           "fields": {
             "id": {
               "selector": "a",
@@ -40,7 +40,7 @@
               "regex": "/view/([0-9]+)"
             },
             "title": {
-              "selector": ".title"
+              "selector": ".card-header-title"
             },
             "coverUrl": {
               "selector": "img",
@@ -53,8 +53,16 @@
           }
         }
       },
+      "homePage": {
+        "url": "/page/{page}",
+        "inherits": "home"
+      },
       "search": {
-        "url": "/?q={query}&page={page}",
+        "url": "/?q={query}",
+        "inherits": "home"
+      },
+      "searchPage": {
+        "url": "/page/{page}?q={query}",
         "inherits": "home"
       },
       "detail": "/view/{id}",

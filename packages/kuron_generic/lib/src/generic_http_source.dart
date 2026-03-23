@@ -44,6 +44,7 @@ class GenericHttpSource implements ContentSource {
     required Logger logger,
     HeadersGenerator? headersGenerator,
     DelayApplier? delayApplier,
+    GenericAdapter? adapterOverride,
   })  : _rawConfig = rawConfig,
         _logger = logger,
         _filterTransformer = const GenericFilterTransformer(),
@@ -59,8 +60,9 @@ class GenericHttpSource implements ContentSource {
             false,
         _defaultHeaders = _resolveHeaders(rawConfig),
         _brandColorValue = _resolveBrandColor(rawConfig),
-        _adapter = _buildAdapter(
-            rawConfig, dio, logger, headersGenerator, delayApplier);
+        _adapter = adapterOverride ??
+            _buildAdapter(
+                rawConfig, dio, logger, headersGenerator, delayApplier);
 
   // ── ContentSource identity ─────────────────────────────────────────────────
 

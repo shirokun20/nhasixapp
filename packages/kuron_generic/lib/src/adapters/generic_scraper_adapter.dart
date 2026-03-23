@@ -331,7 +331,8 @@ class GenericScraperAdapter implements GenericAdapter {
 
       final selectors = (scraper?['selectors'] as Map<String, dynamic>?) ?? {};
       final detailCfg = (selectors['detail'] as Map<String, dynamic>?) ?? {};
-      final fieldsConfig = (detailCfg['fields'] as Map<String, dynamic>?) ?? {};
+      final fieldsConfig =
+          (detailCfg['fields'] as Map?)?.cast<String, dynamic>() ?? {};
 
       final fields = _extractDocumentFields(doc, fieldsConfig);
 
@@ -341,7 +342,7 @@ class GenericScraperAdapter implements GenericAdapter {
       if (chaptersCfg != null) {
         final containerSel = chaptersCfg['container'] as String?;
         final chFieldsCfg =
-            (chaptersCfg['fields'] as Map<String, dynamic>?) ?? {};
+            (chaptersCfg['fields'] as Map?)?.cast<String, dynamic>() ?? {};
         if (containerSel != null) {
           final chEls = _parser.selectAll(doc, containerSel);
           chapters = chEls.map((el) {
@@ -978,7 +979,7 @@ class GenericScraperAdapter implements GenericAdapter {
 
       final container = listConfig['container'] as String?;
       final fieldsConfig =
-          (listConfig['fields'] as Map<String, dynamic>?) ?? {};
+          (listConfig['fields'] as Map?)?.cast<String, dynamic>() ?? {};
       final paginationConfig =
           (listConfig['pagination'] as Map<String, dynamic>?) ?? {};
 
@@ -1117,6 +1118,7 @@ class GenericScraperAdapter implements GenericAdapter {
   /// Normalise a field definition value to `Map<String, dynamic>`.
   Map<String, dynamic>? _toDefMap(dynamic def) {
     if (def is Map<String, dynamic>) return def;
+    if (def is Map) return def.cast<String, dynamic>();
     if (def is String) return <String, dynamic>{'selector': def};
     return null;
   }

@@ -420,6 +420,19 @@ void _setupDataSources() {
           sessionAdapter: getIt<WebViewSessionAdapter>(),
           logger: getIt<Logger>(),
         ),
+        EHentaiSourceFactory(
+          dio: getIt<Dio>(),
+          cookieJar: getIt<PersistCookieJar>(),
+          logger: getIt<Logger>(),
+        ),
+        HentaiNexusSourceFactory(
+          dio: getIt<Dio>(),
+          logger: getIt<Logger>(),
+        ),
+        HitomiSourceFactory(
+          dio: getIt<Dio>(),
+          logger: getIt<Logger>(),
+        ),
       ],
       defaultFactory: getIt<GenericSourceFactory>(),
     );

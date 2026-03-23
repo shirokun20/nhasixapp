@@ -74,6 +74,18 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
   String? _cachedLocalPath;
   bool _isLocalPathResolved = false;
 
+  String _networkCacheKey() {
+    final headers = widget.httpHeaders;
+    if (headers == null || headers.isEmpty) {
+      return widget.networkUrl;
+    }
+
+    final keys = headers.keys.toList()..sort();
+    final normalized =
+        keys.map((key) => '$key=${headers[key] ?? ''}').join('&');
+    return '${widget.networkUrl}::h=$normalized';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -294,6 +306,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
 
     Widget imageWidget = CachedNetworkImage(
       imageUrl: widget.networkUrl,
+      cacheKey: _networkCacheKey(),
       width: widget.width,
       height: widget.height,
       fit: widget.fit,

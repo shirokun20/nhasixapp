@@ -41,7 +41,7 @@
       "home": {
         "url": "/?page={page}",
         "list": {
-          "container": ".itg.gltc > tr",
+          "container": ".itg.gltc tr",
           "fields": {
             "id": {
               "selector": ".gl3c.glname a",
