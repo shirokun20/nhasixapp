@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "lastUpdated": "2026-03-17T10:45:00+07:00",
+  "lastUpdated": "2026-03-23T12:30:00+07:00",
   "minimumAppVersion": "0.9.0",
   "installableSources": [
     {
@@ -61,6 +61,51 @@
         "requiresAuth": false,
         "requiresSpecialAdapter": false,
         "sizeKb": 5
+      }
+    },
+    {
+      "id": "ehentai",
+      "version": "1.0.0",
+      "url": "config/ehentai-config.json",
+      "meta": {
+        "displayName": "E-Hentai",
+        "description": "Gallery source with session/cookie-aware fetching",
+        "iconUrl": "images/ehentai.png",
+        "contentType": "doujinshi",
+        "language": "en",
+        "requiresAuth": true,
+        "requiresSpecialAdapter": true,
+        "sizeKb": 7
+      }
+    },
+    {
+      "id": "hentainexus",
+      "version": "1.0.0",
+      "url": "config/hentainexus-config.json",
+      "meta": {
+        "displayName": "HentaiNexus",
+        "description": "Encrypted reader source with client-side decrypt adapter",
+        "iconUrl": "images/hentainexus.png",
+        "contentType": "doujinshi",
+        "language": "en",
+        "requiresAuth": false,
+        "requiresSpecialAdapter": true,
+        "sizeKb": 7
+      }
+    },
+    {
+      "id": "hitomi",
+      "version": "1.0.0",
+      "url": "config/hitomi-config.json",
+      "meta": {
+        "displayName": "Hitomi.la",
+        "description": "Gate-B fallback registration pending full protocol adapter",
+        "iconUrl": "images/hitomi.png",
+        "contentType": "doujinshi",
+        "language": "en",
+        "requiresAuth": false,
+        "requiresSpecialAdapter": true,
+        "sizeKb": 6
       }
     }
   ]

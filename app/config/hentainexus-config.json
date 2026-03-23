@@ -1,0 +1,104 @@
+{
+  "source": "hentainexus",
+  "version": "1.0.0",
+  "enabled": true,
+  "defaultLanguage": "english",
+  "baseUrl": "https://hentainexus.com",
+  "ui": {
+    "displayName": "HentaiNexus",
+    "iconPath": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/images/hentainexus.png",
+    "brandColor": "#2F7DDE",
+    "openInBrowserUrl": "https://hentainexus.com"
+  },
+  "network": {
+    "requiresBypass": false,
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+      "Referer": "https://hentainexus.com/"
+    },
+    "rateLimit": {
+      "requestsPerSecond": 1,
+      "maxConcurrentRequests": 2
+    }
+  },
+  "decryption": {
+    "method": "initReader_xor_rc4_variant",
+    "readerPath": "/read/{id}",
+    "encryptedDataPattern": "initReader\\(\\s*\"([^\"]+)\""
+  },
+  "scraper": {
+    "enabled": true,
+    "urlPatterns": {
+      "home": {
+        "url": "/",
+        "list": {
+          "container": ".index-gallery",
+          "fields": {
+            "id": {
+              "selector": "a",
+              "attribute": "href",
+              "regex": "/view/([0-9]+)"
+            },
+            "title": {
+              "selector": ".title"
+            },
+            "coverUrl": {
+              "selector": "img",
+              "attribute": "src"
+            }
+          },
+          "pagination": {
+            "next": "nav.pagination a.pagination-next",
+            "links": "nav.pagination a.pagination-link"
+          }
+        }
+      },
+      "search": {
+        "url": "/?q={query}&page={page}",
+        "inherits": "home"
+      },
+      "detail": "/view/{id}",
+      "chapter": "/read/{id}"
+    },
+    "selectors": {
+      "detail": {
+        "fields": {
+          "title": {
+            "selector": "h1"
+          },
+          "coverUrl": {
+            "selector": "img",
+            "attribute": "src"
+          },
+          "tags": {
+            "selector": "a.tag, .label",
+            "multi": true
+          }
+        }
+      }
+    }
+  },
+  "searchForm": {
+    "urlPattern": "search",
+    "params": {
+      "query": {
+        "queryParam": "q",
+        "type": "text",
+        "placeholder": "Search HentaiNexus..."
+      },
+      "page": {
+        "queryParam": "page",
+        "type": "page"
+      }
+    }
+  },
+  "features": {
+    "search": true,
+    "chapters": false,
+    "download": false,
+    "favorite": true,
+    "supportsAuth": false,
+    "comments": false,
+    "related": false
+  }
+}

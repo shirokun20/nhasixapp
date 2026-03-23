@@ -1,0 +1,126 @@
+{
+  "source": "ehentai",
+  "version": "1.0.0",
+  "enabled": true,
+  "defaultLanguage": "english",
+  "baseUrl": "https://e-hentai.org",
+  "ui": {
+    "displayName": "E-Hentai",
+    "iconPath": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/images/ehentai.png",
+    "brandColor": "#4CAF50",
+    "openInBrowserUrl": "https://e-hentai.org"
+  },
+  "network": {
+    "requiresBypass": true,
+    "exBaseUrl": "https://exhentai.org",
+    "cloudflare": {
+      "bypassEnabled": true,
+      "antiDetection": false
+    },
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+      "Referer": "https://e-hentai.org/"
+    },
+    "rateLimit": {
+      "requestsPerSecond": 1,
+      "maxConcurrentRequests": 3
+    }
+  },
+  "auth": {
+    "enabled": true,
+    "preferExhentai": false,
+    "contentWarningBypass": true,
+    "loginUrl": "https://forums.e-hentai.org/index.php?act=Login&CODE=01",
+    "registerUrl": "https://forums.e-hentai.org/index.php?act=Reg&CODE=00",
+    "cookieVerifyKey": "igneous",
+    "loginSuccessFilter": "exhentai.org"
+  },
+  "scraper": {
+    "enabled": true,
+    "urlPatterns": {
+      "home": {
+        "url": "/?page={page}",
+        "list": {
+          "container": ".gl1t",
+          "fields": {
+            "id": {
+              "selector": ".glink",
+              "attribute": "href",
+              "regex": "/g/([0-9]+/[a-zA-Z0-9]+)/"
+            },
+            "title": {
+              "selector": ".glink"
+            },
+            "coverUrl": {
+              "selector": "img",
+              "attribute": "src"
+            }
+          },
+          "pagination": {
+            "next": ".ptt a:last-child",
+            "links": ".ptt a"
+          }
+        }
+      },
+      "search": {
+        "url": "/?f_search={query}&page={page}",
+        "inherits": "home"
+      },
+      "detail": "/g/{id}/",
+      "chapter": "/g/{id}/"
+    },
+    "selectors": {
+      "detail": {
+        "fields": {
+          "title": {
+            "selector": "#gn"
+          },
+          "coverUrl": {
+            "selector": "#gd1 img",
+            "attribute": "src"
+          },
+          "tags": {
+            "selector": "div.gt",
+            "attribute": "title",
+            "multi": true
+          },
+          "pageCount": {
+            "selector": "#gdd tr:nth-child(6) td.gdt2",
+            "regex": "([0-9]+)"
+          }
+        },
+        "imageUrls": {
+          "mode": "ehentai_page_fetch",
+          "imageSelector": "#img"
+        }
+      }
+    }
+  },
+  "searchForm": {
+    "urlPattern": "search",
+    "params": {
+      "query": {
+        "queryParam": "f_search",
+        "type": "text",
+        "placeholder": "Search E-Hentai..."
+      },
+      "page": {
+        "queryParam": "page",
+        "type": "page"
+      }
+    }
+  },
+  "navigation": {
+    "genreQueryPrefix": "tag:",
+    "genreTagType": "tag"
+  },
+  "features": {
+    "search": true,
+    "chapters": false,
+    "download": false,
+    "favorite": true,
+    "supportsAuth": true,
+    "comments": false,
+    "related": false
+  }
+}

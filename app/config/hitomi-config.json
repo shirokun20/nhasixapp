@@ -1,0 +1,97 @@
+{
+  "source": "hitomi",
+  "version": "1.0.0",
+  "enabled": true,
+  "defaultLanguage": "english",
+  "baseUrl": "https://hitomi.la",
+  "ui": {
+    "displayName": "Hitomi.la",
+    "iconPath": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/images/hitomi.png",
+    "brandColor": "#F25E32",
+    "openInBrowserUrl": "https://hitomi.la"
+  },
+  "network": {
+    "requiresBypass": false,
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+      "Referer": "https://hitomi.la/"
+    },
+    "rateLimit": {
+      "requestsPerSecond": 2,
+      "maxConcurrentRequests": 2
+    }
+  },
+  "hitomiProtocol": {
+    "enabled": true,
+    "galleryJsEndpoint": "https://ltn.gold-usergeneratedcontent.net/galleries/{id}.js",
+    "ggJsEndpoint": "https://ltn.gold-usergeneratedcontent.net/gg.js",
+    "mode": "gate_b_fallback"
+  },
+  "scraper": {
+    "enabled": true,
+    "urlPatterns": {
+      "home": {
+        "url": "/index-all.html",
+        "list": {
+          "container": ".gallery-content > div, .gallery-content > .galleryblock",
+          "fields": {
+            "id": {
+              "selector": "a",
+              "attribute": "href",
+              "regex": "/([0-9]+)\\.html"
+            },
+            "title": {
+              "selector": "h1.lillie a, .gallery-title"
+            },
+            "coverUrl": {
+              "selector": "img",
+              "attribute": "src"
+            }
+          },
+          "pagination": {
+            "next": ".next-page a",
+            "links": ".page-container a"
+          }
+        }
+      },
+      "search": {
+        "url": "/search.html?{query}",
+        "inherits": "home"
+      },
+      "detail": "/galleries/{id}.html",
+      "chapter": "/reader/{id}.html"
+    },
+    "selectors": {
+      "detail": {
+        "fields": {
+          "title": {
+            "selector": "h1"
+          },
+          "tags": {
+            "selector": ".relatedtags a",
+            "multi": true
+          }
+        }
+      }
+    }
+  },
+  "searchForm": {
+    "urlPattern": "search",
+    "params": {
+      "query": {
+        "queryParam": "q",
+        "type": "text",
+        "placeholder": "Search Hitomi.la..."
+      }
+    }
+  },
+  "features": {
+    "search": true,
+    "chapters": false,
+    "download": false,
+    "favorite": true,
+    "supportsAuth": false,
+    "comments": false,
+    "related": false
+  }
+}
