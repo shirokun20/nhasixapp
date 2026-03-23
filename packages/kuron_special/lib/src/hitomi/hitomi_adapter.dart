@@ -16,6 +16,7 @@ class HitomiAdapter implements GenericAdapter {
   final Map<int, int> _offsetMap = <int, int>{};
   String _commonImageId = '';
   DateTime? _ggFetchedAt;
+  DateTime? _lastRequestAt;
 
   HitomiAdapter({
     required Dio dio,
@@ -133,6 +134,7 @@ class HitomiAdapter implements GenericAdapter {
         : tagEndpointTemplate.replaceAll(
             '{query}', Uri.encodeComponent(queryTrim));
 
+    await _throttle(rawConfig);
     final response = await _dio.get<List<int>>(
       nozomiUrl,
       options: Options(responseType: ResponseType.bytes),
@@ -181,6 +183,7 @@ class HitomiAdapter implements GenericAdapter {
         'https://ltn.gold-usergeneratedcontent.net/galleries/{id}.js';
     final endpoint = endpointTemplate.replaceAll('{id}', id);
 
+    await _throttle(rawConfig);
     final response = await _dio.get<String>(
       endpoint,
       options: Options(responseType: ResponseType.plain),
@@ -324,6 +327,7 @@ class HitomiAdapter implements GenericAdapter {
     final ggEndpoint = (protocol['ggJsEndpoint'] as String?) ??
         'https://ltn.gold-usergeneratedcontent.net/gg.js';
 
+    await _throttle(rawConfig);
     final response = await _dio.get<String>(
       ggEndpoint,
       options: Options(responseType: ResponseType.plain),
@@ -442,5 +446,31 @@ class HitomiAdapter implements GenericAdapter {
     }
 
     return tags;
+  }
+
+  Future<void> _throttle(Map<String, dynamic> rawConfig) async {
+    final network = (rawConfig['network'] as Map?)?.cast<String, dynamic>() ??
+        const <String, dynamic>{};
+    final rateLimit = (network['rateLimit'] as Map?)?.cast<String, dynamic>() ??
+        const <String, dynamic>{};
+    final requestsPerSecond =
+        (rateLimit['requestsPerSecond'] as num?)?.toDouble() ?? 0;
+
+    if (requestsPerSecond <= 0) {
+      return;
+    }
+
+    final minIntervalMs = (1000 / requestsPerSecond).ceil();
+    final now = DateTime.now();
+
+    if (_lastRequestAt != null) {
+      final elapsed = now.difference(_lastRequestAt!).inMilliseconds;
+      final waitMs = minIntervalMs - elapsed;
+      if (waitMs > 0) {
+        await Future.delayed(Duration(milliseconds: waitMs));
+      }
+    }
+
+    _lastRequestAt = DateTime.now();
   }
 }

@@ -12,6 +12,7 @@ class WebViewSessionConfig {
   final String loginUrl;
   final String registerUrl;
   final String bookmarkVerifyUrl;
+  final String cookieVerifyKey;
   final String nonceRegex;
   final String loginSuccessFilter;
 
@@ -21,6 +22,7 @@ class WebViewSessionConfig {
     this.loginUrl = '',
     this.registerUrl = '',
     this.bookmarkVerifyUrl = '',
+    this.cookieVerifyKey = '',
     this.nonceRegex = '',
     this.loginSuccessFilter = '',
   });
@@ -36,6 +38,7 @@ class WebViewSessionConfig {
       loginUrl: (auth['loginUrl'] as String?) ?? '',
       registerUrl: (auth['registerUrl'] as String?) ?? '',
       bookmarkVerifyUrl: (auth['bookmarkUrl'] as String?) ?? '',
+      cookieVerifyKey: (auth['cookieVerifyKey'] as String?) ?? '',
       nonceRegex: (auth['nonceRegex'] as String?) ?? '',
       loginSuccessFilter: (auth['loginSuccessFilter'] as String?) ?? '',
     );
@@ -379,16 +382,28 @@ class WebViewSessionAdapter {
 
   /// Used to check if we have a valid login session (usually by accessing bookmark endpoint)
   Future<bool> _verifyLoginSession() async {
-    if (_config.bookmarkVerifyUrl.isEmpty) return false;
-
-    try {
-      final res = await _dio.get(_config.bookmarkVerifyUrl,
-          options: Options(followRedirects: false));
-      // Accessing bookmark should return 200. If we get 302, it redirects to login=unauthenticated
-      return res.statusCode == 200;
-    } catch (_) {
-      return false;
+    if (_config.bookmarkVerifyUrl.isNotEmpty) {
+      try {
+        final res = await _dio.get(_config.bookmarkVerifyUrl,
+            options: Options(followRedirects: false));
+        // Accessing bookmark should return 200. If we get 302, it redirects to login=unauthenticated
+        if (res.statusCode == 200) {
+          return true;
+        }
+      } catch (_) {
+        // Fallback to cookie verification below.
+      }
     }
+
+    if (_config.cookieVerifyKey.isNotEmpty) {
+      final cookies = await getCookiesForDomain(_baseUrl);
+      final cookieValue = cookies[_config.cookieVerifyKey];
+      if (cookieValue != null && cookieValue.isNotEmpty) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   Future<bool> tryAutoLogin() async {

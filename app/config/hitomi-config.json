@@ -94,6 +94,6 @@
     "favorite": true,
     "supportsAuth": false,
     "comments": false,
-    "related": false
+    "related": true
   }
 }

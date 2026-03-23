@@ -32,6 +32,7 @@
     "contentWarningBypass": true,
     "loginUrl": "https://forums.e-hentai.org/index.php?act=Login&CODE=01",
     "registerUrl": "https://forums.e-hentai.org/index.php?act=Reg&CODE=00",
+    "bookmarkUrl": "https://e-hentai.org/favorites.php",
     "cookieVerifyKey": "igneous",
     "loginSuccessFilter": "exhentai.org"
   },

@@ -8,6 +8,7 @@ import 'package:logger/logger.dart';
 class EHentaiScraperAdapter implements GenericAdapter {
   final Dio _dio;
   final GenericScraperAdapter _delegate;
+  DateTime? _lastRequestAt;
 
   EHentaiScraperAdapter({
     required Dio dio,
@@ -64,6 +65,7 @@ class EHentaiScraperAdapter implements GenericAdapter {
         baseUrl: baseUrl,
         detailPattern: detailPattern,
         contentId: contentId,
+        rawConfig: rawConfig,
       );
       if (detailHtml.isEmpty) {
         return AdapterDetailResult(
@@ -87,6 +89,7 @@ class EHentaiScraperAdapter implements GenericAdapter {
 
       for (final link in readerLinks) {
         final absUrl = link.startsWith('http') ? link : '$baseUrl$link';
+        await _throttle(rawConfig);
         final pageResponse = await _dio.get<dynamic>(
           absUrl,
           options: Options(responseType: ResponseType.plain),
@@ -193,6 +196,7 @@ class EHentaiScraperAdapter implements GenericAdapter {
     required String baseUrl,
     required String detailPattern,
     required String contentId,
+    required Map<String, dynamic> rawConfig,
   }) async {
     final candidates = <String>{detailUrl};
 
@@ -225,6 +229,7 @@ class EHentaiScraperAdapter implements GenericAdapter {
 
     for (final url in candidates) {
       try {
+        await _throttle(rawConfig);
         final response = await _dio.get<dynamic>(
           url,
           options: Options(responseType: ResponseType.plain),
@@ -424,5 +429,31 @@ class EHentaiScraperAdapter implements GenericAdapter {
       default:
         return TagType.tag;
     }
+  }
+
+  Future<void> _throttle(Map<String, dynamic> rawConfig) async {
+    final network = (rawConfig['network'] as Map?)?.cast<String, dynamic>() ??
+        const <String, dynamic>{};
+    final rateLimit = (network['rateLimit'] as Map?)?.cast<String, dynamic>() ??
+        const <String, dynamic>{};
+    final requestsPerSecond =
+        (rateLimit['requestsPerSecond'] as num?)?.toDouble() ?? 0;
+
+    if (requestsPerSecond <= 0) {
+      return;
+    }
+
+    final minIntervalMs = (1000 / requestsPerSecond).ceil();
+    final now = DateTime.now();
+
+    if (_lastRequestAt != null) {
+      final elapsed = now.difference(_lastRequestAt!).inMilliseconds;
+      final waitMs = minIntervalMs - elapsed;
+      if (waitMs > 0) {
+        await Future.delayed(Duration(milliseconds: waitMs));
+      }
+    }
+
+    _lastRequestAt = DateTime.now();
   }
 }

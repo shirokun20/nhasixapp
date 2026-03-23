@@ -23,6 +23,7 @@
   },
   "decryption": {
     "method": "initReader_xor_rc4_variant",
+    "hostname": "hentainexus.com",
     "readerPath": "/read/{id}",
     "encryptedDataPattern": "initReader\\(\\s*\"([^\"]+)\""
   },
