@@ -23,9 +23,11 @@
   },
   "hitomiProtocol": {
     "enabled": true,
+    "indexNozomiEndpoint": "https://ltn.gold-usergeneratedcontent.net/index-all.nozomi",
+    "tagNozomiEndpoint": "https://ltn.gold-usergeneratedcontent.net/tag/{query}-all.nozomi",
     "galleryJsEndpoint": "https://ltn.gold-usergeneratedcontent.net/galleries/{id}.js",
     "ggJsEndpoint": "https://ltn.gold-usergeneratedcontent.net/gg.js",
-    "mode": "gate_b_fallback"
+    "mode": "simplified_protocol"
   },
   "scraper": {
     "enabled": true,
