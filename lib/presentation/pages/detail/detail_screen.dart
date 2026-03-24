@@ -271,6 +271,13 @@ class _DetailScreenState extends State<DetailScreen> {
           value = '$value$valueSuffix';
         }
 
+        // Raw search pipeline will encode query values later in the adapter.
+        // For HentaiNexus q-param mapping, keep semantic value as plain text
+        // to avoid ending up with a literal plus (%2B) in final URL.
+        if (actualSourceId == 'hentainexus' && param == 'q') {
+          value = Uri.decodeComponent(value).replaceAll('+', ' ');
+        }
+
         if (param.isEmpty) return null;
 
         return 'raw:$param=$value';

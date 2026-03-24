@@ -292,19 +292,31 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
 
     final parts = <String>[];
     final selectedTagItems = <FilterItem>[];
+    final partsByParam = <String, List<String>>{};
+    final joinModeByParam = <String, String>{};
+
+    void addParamValue(String queryParam, String value, {String? joinMode}) {
+      final normalized = value.trim();
+      if (normalized.isEmpty) return;
+      (partsByParam[queryParam] ??= <String>[]).add(normalized);
+      if (joinMode != null && joinMode.isNotEmpty) {
+        joinModeByParam[queryParam] = joinMode;
+      }
+    }
 
     for (final entry in widget.config.params.entries) {
       final name = entry.key;
       final field = entry.value;
       final qp = field.queryParam;
       if (qp == null) continue;
+      final rawField = _rawFieldConfig(name);
+      final joinMode = (rawField?['joinMode'] as String?)?.trim();
 
       if (_isPickerField(name, field)) {
         final selected = _multiSelectValues[name] ?? const <_DynamicOption>[];
         for (final option in selected) {
-          parts.add(
-            '${Uri.encodeComponent(qp)}=${Uri.encodeComponent(option.value)}',
-          );
+          final formatted = _formatFieldValue(rawField, option.value);
+          addParamValue(qp, formatted, joinMode: joinMode);
           selectedTagItems.add(
             FilterItem(
               value: option.label,
@@ -319,22 +331,43 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
         case 'text':
           final val = _textControllers[name]?.text.trim() ?? '';
           if (val.isNotEmpty) {
-            parts.add('${Uri.encodeComponent(qp)}=${Uri.encodeComponent(val)}');
+            final formatted = _formatFieldValue(rawField, val);
+            addParamValue(qp, formatted, joinMode: joinMode);
           }
         case 'tag':
           final val = _textControllers[name]?.text.trim() ?? '';
           if (val.isNotEmpty) {
-            parts.add('${Uri.encodeComponent(qp)}=${Uri.encodeComponent(val)}');
+            final formatted = _formatFieldValue(rawField, val);
+            addParamValue(qp, formatted, joinMode: joinMode);
           }
         case 'select':
           final val = _selectValues[name];
           if (val != null && val.isNotEmpty) {
-            parts.add('${Uri.encodeComponent(qp)}=${Uri.encodeComponent(val)}');
+            final formatted = _formatFieldValue(rawField, val);
+            addParamValue(qp, formatted, joinMode: joinMode);
           }
         default:
           break; // 'page' handled by adapter internally
       }
     }
+
+    partsByParam.forEach((queryParam, values) {
+      if (values.isEmpty) return;
+      final mode = (joinModeByParam[queryParam] ?? '').toLowerCase();
+      if (mode == 'space') {
+        final joined = values.join(' ');
+        parts.add(
+          '${Uri.encodeComponent(queryParam)}=${Uri.encodeComponent(joined)}',
+        );
+        return;
+      }
+
+      for (final value in values) {
+        parts.add(
+          '${Uri.encodeComponent(queryParam)}=${Uri.encodeComponent(value)}',
+        );
+      }
+    });
 
     final rawQuery = parts.isNotEmpty ? 'raw:${parts.join('&')}' : '';
     final filter = SearchFilter(query: rawQuery, tags: selectedTagItems);
@@ -1438,6 +1471,39 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     return null;
   }
 
+  String _formatFieldValue(Map<String, dynamic>? rawField, String value) {
+    var result = value.trim();
+    if (result.isEmpty) return result;
+
+    final transform = (rawField?['transform'] as String? ?? '').trim();
+    if (transform == 'lowercase') {
+      result = result.toLowerCase();
+    } else if (transform == 'uppercase') {
+      result = result.toUpperCase();
+    } else if (transform == 'spaceToPlus') {
+      result = result.replaceAll(' ', '+');
+    }
+
+    final quoteIfContainsSpace = rawField?['quoteIfContainsSpace'] as bool?;
+    if (quoteIfContainsSpace == true &&
+        result.contains(' ') &&
+        !result.startsWith('"') &&
+        !result.endsWith('"')) {
+      result = '"$result"';
+    }
+
+    final valuePrefix = (rawField?['valuePrefix'] as String? ?? '').trim();
+    final valueSuffix = (rawField?['valueSuffix'] as String? ?? '').trim();
+    if (valuePrefix.isNotEmpty) {
+      result = '$valuePrefix$result';
+    }
+    if (valueSuffix.isNotEmpty) {
+      result = '$result$valueSuffix';
+    }
+
+    return result;
+  }
+
   dynamic _extractByPath(dynamic node, String path) {
     if (path.isEmpty) return node;
     dynamic current = node;
@@ -1494,6 +1560,10 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   }
 
   String _labelFor(String name) => switch (name) {
+        _ when _rawFieldConfig(name)?['label'] is String =>
+          (_rawFieldConfig(name)?['label'] as String).trim().isEmpty
+              ? _capitalize(name)
+              : (_rawFieldConfig(name)?['label'] as String),
         'query' => 'Search',
         'genre' => 'Genre',
         'status' => 'Status',

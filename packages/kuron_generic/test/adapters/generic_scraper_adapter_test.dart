@@ -116,6 +116,8 @@ const _config = {
 
 const _hfBaseUrl = 'https://hentaifox.com';
 
+const _hentaiNexusBaseUrl = 'https://hentainexus.com';
+
 const _hentaiFoxConfig = {
   'source': 'hentaifox',
   'baseUrl': _hfBaseUrl,
@@ -164,6 +166,44 @@ const _hentaiFoxConfig = {
         'readerImageAttr': 'data-src',
         'readerPageCountSelector': '#pages',
         'readerPageCountAttr': 'value',
+      },
+    },
+  },
+};
+
+const _hentaiNexusConfig = {
+  'source': 'hentainexus',
+  'baseUrl': _hentaiNexusBaseUrl,
+  'scraper': {
+    'urlPatterns': {
+      'search': {
+        'url': '/?q={query}',
+        'list': {
+          'container': '.bsx',
+          'fields': {
+            'id': {
+              'selector': 'a[href]',
+              'attribute': 'href',
+              'transform': 'slug'
+            },
+            'title': {'selector': '.tt'},
+            'coverUrl': {'selector': '.limit img', 'attribute': 'src'},
+          },
+          'pagination': {'next': '.pagination .next.page-numbers'},
+        },
+      },
+    },
+  },
+  'searchForm': {
+    'urlPattern': 'search',
+    'params': {
+      'query': {
+        'queryParam': 'q',
+        'type': 'text',
+      },
+      'page': {
+        'queryParam': 'page',
+        'type': 'page',
       },
     },
   },
@@ -372,6 +412,18 @@ GenericScraperAdapter _buildHentaiFoxAdapter(Dio dio) {
 }
 
 Dio _buildHentaiFoxDio() => Dio(BaseOptions(baseUrl: _hfBaseUrl));
+
+GenericScraperAdapter _buildHentaiNexusAdapter(Dio dio) {
+  return GenericScraperAdapter(
+    dio: dio,
+    urlBuilder: const GenericUrlBuilder(baseUrl: _hentaiNexusBaseUrl),
+    parser: GenericHtmlParser(logger: Logger(printer: PrettyPrinter())),
+    logger: Logger(printer: PrettyPrinter()),
+    sourceId: 'hentainexus',
+  );
+}
+
+Dio _buildHentaiNexusDio() => Dio(BaseOptions(baseUrl: _hentaiNexusBaseUrl));
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Tests
@@ -637,6 +689,54 @@ void main() {
         _config,
       );
       expect(result.hasNextPage, isTrue);
+    });
+  });
+
+  group('GenericScraperAdapter.search() — HentaiNexus raw q encoding', () {
+    late Dio dio;
+    late DioAdapter dioAdapter;
+    late GenericScraperAdapter adapter;
+
+    setUp(() {
+      dio = _buildHentaiNexusDio();
+      dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
+      adapter = _buildHentaiNexusAdapter(dio);
+    });
+
+    test('keeps space semantics as + for q value from detail-tag mapping',
+        () async {
+      dioAdapter.onGet(
+        '$_hentaiNexusBaseUrl/?q=tag%3A%22first+time%22',
+        (s) => s.reply(200, _searchHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: 'raw:q=tag:"first time"', page: 1),
+        _hentaiNexusConfig,
+      );
+
+      expect(result.items, hasLength(2));
+      expect(result.items.first.id, 'search-result-one');
+    });
+
+    test('normalizes encoded plus (%2B) to + for HentaiNexus q value',
+        () async {
+      dioAdapter.onGet(
+        '$_hentaiNexusBaseUrl/?q=tag%3A%22first+time%22',
+        (s) => s.reply(200, _searchHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: 'raw:q=tag%3A%22first%2Btime%22', page: 1),
+        _hentaiNexusConfig,
+      );
+
+      expect(result.items, hasLength(2));
+      expect(result.items.first.title, 'Search Result One');
     });
   });
 

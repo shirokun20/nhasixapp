@@ -283,7 +283,7 @@ class GenericScraperAdapter implements GenericAdapter {
         if (page > 1 && key.endsWith('[]')) {
           key = '${key.substring(0, key.length - 2)}[$i]';
         }
-        queryParts.add('$key=${Uri.encodeComponent(values[i])}');
+        queryParts.add('$key=${_encodeRawQueryValue(key, values[i])}');
       }
     });
 
@@ -300,6 +300,18 @@ class GenericScraperAdapter implements GenericAdapter {
     _logger.d('$_sourceId scraper [raw/$patternKey]: $finalUrl');
     return _fetchListPage(finalUrl, listConfig,
         defaultLanguage: rawConfig['defaultLanguage'] as String?);
+  }
+
+  String _encodeRawQueryValue(String key, String value) {
+    // HentaiNexus query grammar treats '+' as word separator in q values.
+    // Normalize user-entered '+' to spaces so query encoding emits '+'
+    // (instead of '%2B') and matches the site's expected parser behavior.
+    if (_sourceId == 'hentainexus' && key == 'q') {
+      final normalized = value.replaceAll('+', ' ');
+      return Uri.encodeQueryComponent(normalized);
+    }
+
+    return Uri.encodeComponent(value);
   }
 
   // ── fetchDetail ────────────────────────────────────────────────────────────
