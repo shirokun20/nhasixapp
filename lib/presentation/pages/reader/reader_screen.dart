@@ -62,6 +62,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
   final Set<int> _prefetchedPages = <int>{};
   static const int _prefetchCount = 3;
 
+  // 🚀 ODD/EVEN BATCHING: For heavy sources like HentaiNexus
+  // Split prefetch into odd/even pages for pseudo-parallel loading
+  static const int _heavySourcePrefetchCount =
+      4; // Prefetch 4 pages but batched
+  final Set<int> _oddPrefetchedPages = <int>{};
+  final Set<int> _evenPrefetchedPages = <int>{};
+
   // Throttle expensive continuous-scroll computations.
   // 🔥 THERMAL: Increased from 90ms to 150ms to reduce concurrent decoders
   static const Duration _scrollProcessInterval = Duration(milliseconds: 150);
@@ -466,14 +473,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
       {String? sourceId}) {
     if (imageUrls.isEmpty) return;
 
-    // HentaiNexus image pages are typically large. Aggressive background
-    // prefetch can saturate network/decoder and make current visible image
-    // feel slower than web reader behavior.
+    // HentaiNexus image pages are typically large. Instead of disabling prefetch,
+    // use ODD/EVEN batching for pseudo-parallel loading with rate limiting.
+    // This allows faster image appearance while respecting server constraints.
     if (_isHeavyPrefetchSource(sourceId)) {
+      _prefetchImagesOddEvenBatched(
+          currentPage, imageUrls, imageMetadata, sourceId);
       return;
     }
 
-    // Prefetch next _prefetchCount pages
+    // Prefetch next _prefetchCount pages (standard for lighter sources)
     for (int i = 1; i <= _prefetchCount; i++) {
       final targetPage = currentPage + i;
 
@@ -559,6 +568,113 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final lowered = url.toLowerCase();
     return lowered.contains('/s/') &&
         (lowered.contains('e-hentai.org') || lowered.contains('exhentai.org'));
+  }
+
+  /// 🚀 ODD/EVEN BATCHING: Smart prefetch for heavy sources like HentaiNexus
+  ///
+  /// Strategy: Instead of sequential prefetch (1→2→3→4), split into:
+  /// - Batch A (Odd):  pages 1, 3, 5, 7...
+  /// - Batch B (Even): pages 2, 4, 6, 8...
+  ///
+  /// Benefits:
+  /// 1. Pseudo-parallel loading (two batches dequeued concurrently)
+  /// 2. Rate limiter still works per-batch
+  /// 3. User sees progressive image appearance
+  /// 4. Respects 1req/sec, 2concurrent limits of HentaiNexus
+  void _prefetchImagesOddEvenBatched(int currentPage, List<String> imageUrls,
+      List<ImageMetadata>? imageMetadata, String? sourceId) {
+    if (imageUrls.isEmpty) return;
+
+    // Collect odd and even pages to prefetch
+    final oddPages = <int>[];
+    final evenPages = <int>[];
+
+    for (int i = 1; i <= _heavySourcePrefetchCount; i++) {
+      final targetPage = currentPage + i;
+
+      if (targetPage <= imageUrls.length) {
+        if (targetPage % 2 == 1) {
+          oddPages.add(targetPage);
+        } else {
+          evenPages.add(targetPage);
+        }
+      }
+    }
+
+    // Prefetch both batches - they'll queue independently
+    if (oddPages.isNotEmpty) {
+      _prefetchBatch(oddPages, imageUrls, imageMetadata, sourceId,
+          batchName: 'ODD');
+    }
+    if (evenPages.isNotEmpty) {
+      _prefetchBatch(evenPages, imageUrls, imageMetadata, sourceId,
+          batchName: 'EVEN');
+    }
+  }
+
+  /// Prefetch a batch of pages with validation
+  void _prefetchBatch(List<int> pages, List<String> imageUrls,
+      List<ImageMetadata>? imageMetadata, String? sourceId,
+      {required String batchName}) {
+    for (final targetPage in pages) {
+      // Track by batch to avoid cross-duplication
+      final cacheSet =
+          batchName == 'ODD' ? _oddPrefetchedPages : _evenPrefetchedPages;
+
+      if (cacheSet.contains(targetPage)) {
+        continue; // Already prefetching this batch
+      }
+
+      cacheSet.add(targetPage);
+      final imageUrl = imageUrls[targetPage - 1]; // Convert to 0-based index
+
+      // Skip EHentai reader pages (resolved lazily per visible page)
+      if (_isEhentaiReaderPageUrl(imageUrl, sourceId)) {
+        cacheSet.remove(targetPage);
+        continue;
+      }
+
+      // Quick metadata validation
+      bool isValid = true;
+      if (imageMetadata != null && imageMetadata.isNotEmpty) {
+        final metadata = imageMetadata.where((m) {
+          return m.pageNumber == targetPage;
+        }).firstOrNull;
+
+        if (metadata != null) {
+          isValid = metadata.imageUrl == imageUrl;
+        }
+      }
+
+      if (!isValid) {
+        cacheSet.remove(targetPage);
+        debugPrint(
+            '⚠️ METADATA MISMATCH (batch $batchName): Page $targetPage metadata URL != actual URL');
+        continue;
+      }
+
+      // Skip local files
+      if (!imageUrl.startsWith('http') &&
+          (imageUrl.startsWith('/') || imageUrl.startsWith('file://'))) {
+        cacheSet.remove(targetPage);
+        continue;
+      }
+
+      // Prefetch with batch tracking for debugging
+      LocalImagePreloader.downloadAndCacheImage(
+        imageUrl,
+        widget.contentId,
+        targetPage,
+      ).then((_) {
+        if (mounted) {
+          debugPrint('📥 ✅ Prefetched [batch:$batchName] page $targetPage');
+        }
+      }).catchError((error) {
+        cacheSet.remove(targetPage);
+        debugPrint(
+            '❌ Prefetch [batch:$batchName] page $targetPage failed: $error');
+      });
+    }
   }
 
   bool _isHeavyPrefetchSource(String? sourceId) {

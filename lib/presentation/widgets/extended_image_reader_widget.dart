@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
@@ -70,6 +71,11 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
+  // 🔄 AUTO-RETRY: Track retry attempts for timeout/network errors
+  int _imageLoadRetries = 0;
+  static const int _maxImageLoadRetries = 3;
+  Timer? _autoRetryTimer;
+
   // 🎯 PHASE 2: Cache loaded image size for webtoon detection
   // Size? _loadedImageSize;
 
@@ -115,6 +121,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   void dispose() {
     _zoomController.dispose();
     _pulseController.dispose();
+    _autoRetryTimer?.cancel();
     super.dispose();
   }
 
@@ -352,8 +359,14 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
           case LoadState.loading:
             return _buildLoadingIndicator(context);
           case LoadState.failed:
+            // 🔄 AUTO-RETRY: Check if should auto-retry (timeout/network error)
+            if (_shouldAutoRetryImage(state) &&
+                _imageLoadRetries < _maxImageLoadRetries) {
+              _scheduleAutoRetry(state);
+            }
             return _buildErrorWidget(context, state);
           case LoadState.completed:
+            _imageLoadRetries = 0; // Reset retries on success
             if (widget.onImageLoaded != null &&
                 state.extendedImageInfo?.image != null) {
               final image = state.extendedImageInfo!.image;
@@ -644,19 +657,25 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
                 const SizedBox(height: 12),
 
-                // Error message
+                // Error message or auto-retry indicator
                 Text(
-                  'Failed to load',
+                  (_autoRetryTimer?.isActive ?? false)
+                      ? 'Retrying...'
+                      : 'Failed to load',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
+                        color: (_autoRetryTimer?.isActive ?? false)
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w500,
                       ),
                   textAlign: TextAlign.center,
                 ),
 
-                // Page number
+                // Page number and retry count
                 Text(
-                  'Page ${widget.pageNumber}',
+                  (_autoRetryTimer?.isActive ?? false)
+                      ? 'Page ${widget.pageNumber} • Attempt $_imageLoadRetries/$_maxImageLoadRetries'
+                      : 'Page ${widget.pageNumber}',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -665,27 +684,29 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
                 const SizedBox(height: 12),
 
-                // Retry button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      state.reLoadImage();
-                    },
-                    icon: const Icon(Icons.refresh, size: 16),
-                    label: Text(AppLocalizations.of(context)!.retry),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                      elevation: 2,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                // Retry button (hidden if already retrying)
+                if (!(_autoRetryTimer?.isActive ?? false))
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        state.reLoadImage();
+                      },
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: Text(AppLocalizations.of(context)!.retry),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onPrimary,
+                        elevation: 2,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
@@ -766,5 +787,55 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         );
       },
     );
+  }
+
+  /// 🔄 AUTO-RETRY: Check if should auto-retry (timeout/network errors)
+  ///
+  /// HentaiNexus images often timeout on initial load due to:
+  /// - Large file sizes (20-40s download)
+  /// - Rate limiting (1 req/sec, 2 concurrent max)
+  /// - Global 30s timeout threshold
+  ///
+  /// Auto-retry with exponential backoff helps recover automatically
+  /// without requiring user to manually click retry button.
+  bool _shouldAutoRetryImage(ExtendedImageState state) {
+    if (widget.readingMode != ReadingMode.continuousScroll) {
+      return false; // Only auto-retry in continuous scroll (where it matters most)
+    }
+
+    // Only auto-retry for HentaiNexus (heavy source known to timeout)
+    if (widget.sourceId != 'hentainexus') {
+      return false;
+    }
+
+    // Don't auto-retry if already retrying
+    if (_autoRetryTimer?.isActive ?? false) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /// 🔄 AUTO-RETRY: Schedule retry with exponential backoff
+  ///
+  /// Delays increase: 2s, 4s, 8s for retries 1, 2, 3
+  /// This gives the network/server time to recover.
+  void _scheduleAutoRetry(ExtendedImageState state) {
+    _imageLoadRetries++;
+    _autoRetryTimer?.cancel();
+
+    // Exponential backoff: 2^retry * 1000ms (2s, 4s, 8s)
+    final delayMs = (1000 * (1 << (_imageLoadRetries - 1))).toInt();
+
+    debugPrint(
+      '🔄 Auto-retrying HentaiNexus image (page ${widget.pageNumber}): '
+      'Attempt $_imageLoadRetries/$_maxImageLoadRetries after ${delayMs}ms',
+    );
+
+    _autoRetryTimer = Timer(Duration(milliseconds: delayMs), () {
+      if (mounted) {
+        state.reLoadImage();
+      }
+    });
   }
 }
