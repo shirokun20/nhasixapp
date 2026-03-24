@@ -75,7 +75,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
   // 🚀 OPTIMIZATION: Keep widget alive in ListView to prevent reload
   @override
-  bool get wantKeepAlive => true;
+  bool get wantKeepAlive => widget.readingMode != ReadingMode.continuousScroll;
 
   @override
   void initState() {
@@ -215,7 +215,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 widget.readingMode != ReadingMode.continuousScroll
             ? ExtendedImageMode.gesture
             : ExtendedImageMode.none,
-        clearMemoryCacheWhenDispose: false,
+        clearMemoryCacheWhenDispose:
+            widget.readingMode == ReadingMode.continuousScroll,
         enableLoadState: true,
         extendedImageGestureKey: _gestureKey,
         initGestureConfigHandler: (state) {
@@ -307,17 +308,26 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     String url, {
     Map<String, String>? headers,
   }) {
+    final decodeWidth = _targetDecodeWidth(context);
+
     return ExtendedImage.network(
       url,
       key: ValueKey('extended_image_${widget.contentId}_${widget.pageNumber}'),
       headers: headers,
       fit: _getAdaptiveBoxFit(),
+      // 🔥 THERMAL: Use none for HentaiNexus; medium for others. Skips quality downsampling.
+      filterQuality: _isHeavyReaderSource() &&
+              widget.readingMode == ReadingMode.continuousScroll
+          ? FilterQuality.none
+          : (_isHeavyReaderSource() ? FilterQuality.low : FilterQuality.medium),
       mode: widget.enableZoom &&
               widget.readingMode != ReadingMode.continuousScroll
           ? ExtendedImageMode.gesture
           : ExtendedImageMode.none,
-      clearMemoryCacheWhenDispose: false,
+      clearMemoryCacheWhenDispose:
+          widget.readingMode == ReadingMode.continuousScroll,
       cache: true,
+      cacheWidth: decodeWidth,
       enableLoadState: true,
       extendedImageGestureKey: _gestureKey,
       initGestureConfigHandler: (state) {
@@ -369,6 +379,23 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     final lowered = url.toLowerCase();
     return lowered.contains('/s/') &&
         (lowered.contains('e-hentai.org') || lowered.contains('exhentai.org'));
+  }
+
+  bool _isHeavyReaderSource() {
+    return widget.sourceId == 'hentainexus';
+  }
+
+  int? _targetDecodeWidth(BuildContext context) {
+    if (!_isHeavyReaderSource() ||
+        widget.readingMode != ReadingMode.continuousScroll) {
+      return null;
+    }
+
+    final mediaQuery = MediaQuery.of(context);
+    // 🔥 THERMAL: Reduce decode width to 50% of screen (vs 100%) for aggressive GPU load reduction
+    // HentaiNexus images are large; 50% width is still readable with minimal quality loss
+    return ((mediaQuery.size.width * 0.5) * mediaQuery.devicePixelRatio)
+        .round();
   }
 
   Map<String, String> _buildEhentaiImageHeaders(String readerPageUrl) {

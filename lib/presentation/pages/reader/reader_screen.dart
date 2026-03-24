@@ -63,7 +63,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
   static const int _prefetchCount = 3;
 
   // Throttle expensive continuous-scroll computations.
-  static const Duration _scrollProcessInterval = Duration(milliseconds: 90);
+  // 🔥 THERMAL: Increased from 90ms to 150ms to reduce concurrent decoders
+  static const Duration _scrollProcessInterval = Duration(milliseconds: 150);
   DateTime _lastScrollProcessAt = DateTime.fromMillisecondsSinceEpoch(0);
 
   // Debounce mechanism to prevent onPageChanged loops
@@ -345,14 +346,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
       estimatedPage = ((metrics.pixels / estimatedItemHeight) + 1)
           .round()
           .clamp(1, totalPages);
-
-      Logger().t('📐 Using fallback estimation (maxScrollExtent not ready)');
-    }
-
-    // Debug logging (only when page changes)
-    if (estimatedPage != _lastReportedPage) {
-      Logger().t(
-          '📄 Page: $estimatedPage/$totalPages (scroll: ${metrics.pixels.toStringAsFixed(0)}px / ${metrics.maxScrollExtent.toStringAsFixed(0)}px, center: ${viewportCenter.toStringAsFixed(0)}px)');
     }
 
     // Update current page for progress bar with debounce
@@ -377,7 +370,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
         metrics.pixels >= metrics.maxScrollExtent - 50; // 50px threshold
 
     if (isAtBottom && _lastSavedPage < totalPages) {
-      Logger().i('📍 User reached bottom - marking as complete');
       // User reached bottom -> save to DB with debounce to avoid spam
       _debounceSaveHistory(state, totalPages);
     }
@@ -414,17 +406,26 @@ class _ReaderScreenState extends State<ReaderScreen> {
       return; // Skip saving if scrolling backwards
     }
 
+    final isHeavySource = _isHeavyPrefetchSource(state.content?.sourceId);
+    final isTinyAdvance = page - _lastSavedPage < 2;
+    if (isHeavySource && isTinyAdvance) {
+      return;
+    }
+
     _pageUpdateTimer?.cancel();
-    _pageUpdateTimer = Timer(const Duration(milliseconds: 800), () {
-      // Save page progress after user stops scrolling for 800ms
-      // This prevents DB spam when user scrolls up/down repeatedly
-      _lastSavedPage = page; // Update last saved page
-      if (state.readingMode == ReadingMode.continuousScroll) {
-        _readerCubit.updateCurrentPageSilent(page);
-      } else {
-        _readerCubit.updateCurrentPageFromSwipe(page);
-      }
-    });
+    _pageUpdateTimer = Timer(
+      Duration(milliseconds: isHeavySource ? 1400 : 800),
+      () {
+        // Save page progress after user stops scrolling for 800ms
+        // This prevents DB spam when user scrolls up/down repeatedly
+        _lastSavedPage = page; // Update last saved page
+        if (state.readingMode == ReadingMode.continuousScroll) {
+          _readerCubit.updateCurrentPageSilent(page);
+        } else {
+          _readerCubit.updateCurrentPageFromSwipe(page);
+        }
+      },
+    );
   }
 
   /// 🚀 OPTIMIZATION: Debounce UI toggle to prevent flickering
@@ -464,6 +465,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
       List<ImageMetadata>? imageMetadata,
       {String? sourceId}) {
     if (imageUrls.isEmpty) return;
+
+    // HentaiNexus image pages are typically large. Aggressive background
+    // prefetch can saturate network/decoder and make current visible image
+    // feel slower than web reader behavior.
+    if (_isHeavyPrefetchSource(sourceId)) {
+      return;
+    }
 
     // Prefetch next _prefetchCount pages
     for (int i = 1; i <= _prefetchCount; i++) {
@@ -551,6 +559,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final lowered = url.toLowerCase();
     return lowered.contains('/s/') &&
         (lowered.contains('e-hentai.org') || lowered.contains('exhentai.org'));
+  }
+
+  bool _isHeavyPrefetchSource(String? sourceId) {
+    return sourceId == 'hentainexus';
   }
 
   void _syncControllersWithState(ReaderState state) {
@@ -1012,6 +1024,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     // 🚀 OPTIMIZATION: Get enableZoom once outside itemBuilder to avoid BlocBuilder in ListView
     final enableZoom = state.enableZoom ?? true;
+    final isHeavySource = _isHeavyPrefetchSource(state.content?.sourceId);
+    final viewportHeight = MediaQuery.of(context).size.height;
 
     // 🐛 FIX: Wrap ListView with NotificationListener for accurate scroll tracking
     return NotificationListener<ScrollNotification>(
@@ -1023,11 +1037,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
       },
       child: ListView.builder(
         controller: _scrollController,
-        physics: const BouncingScrollPhysics(), // Smoother scroll
-        cacheExtent:
-            2500.0, // Keep nearby pages warm without overbuilding too many widgets
+        physics: isHeavySource
+            ? const ClampingScrollPhysics()
+            : const BouncingScrollPhysics(),
+        cacheExtent: isHeavySource
+            ? viewportHeight * 0.5 // 🔥 THERMAL: Reduced from 0.8x to 0.5x
+            : 2500.0, // Keep fewer offscreen pages for heavy sources
         addAutomaticKeepAlives:
-            true, // Keep widgets alive when scrolled out of view
+            false, // 🔥 THERMAL: Disabled for all modes to reduce memory
         itemCount: totalItems,
         itemBuilder: (context, index) {
           if (showNavigation && index == pageCount) {
@@ -1037,12 +1054,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
             );
           }
           final imageUrl = state.content?.imageUrls[index] ?? '';
-          return _buildImageViewer(
-            imageUrl,
-            index + 1,
-            isContinuous: true,
-            enableZoom: enableZoom,
-            sourceId: state.content?.sourceId,
+          return RepaintBoundary(
+            child: _buildImageViewer(
+              imageUrl,
+              index + 1,
+              isContinuous: true,
+              enableZoom: enableZoom,
+              sourceId: state.content?.sourceId,
+            ),
           );
         },
       ),
