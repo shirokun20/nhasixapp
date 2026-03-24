@@ -260,6 +260,11 @@ class _DetailScreenState extends State<DetailScreen> {
           value = value.toLowerCase();
         }
 
+        final valuePrefix = (mapping['valuePrefix'] as String? ?? '').trim();
+        if (valuePrefix.isNotEmpty) {
+          value = '$valuePrefix$value';
+        }
+
         if (param.isEmpty) return null;
 
         return 'raw:$param=$value';
@@ -2272,6 +2277,13 @@ class _DetailScreenState extends State<DetailScreen> {
   String _formatDate(DateTime date) {
     final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
+
+    // Some sources use Unix epoch as a placeholder when upload date is unknown.
+    // Avoid showing misleading strings like "56 years ago" in the UI.
+    if (date.year <= 1971 || date.isAfter(now.add(const Duration(days: 1)))) {
+      return l10n.unknown;
+    }
+
     final difference = now.difference(date);
 
     if (difference.inDays > 365) {

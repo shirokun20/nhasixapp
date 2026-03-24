@@ -1,6 +1,6 @@
 {
   "source": "hentainexus",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "configUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/config/hentainexus-config.json",
   "enabled": true,
   "defaultLanguage": "english",
@@ -114,6 +114,24 @@
       "page": {
         "queryParam": "page",
         "type": "page"
+      }
+    }
+  },
+  "navigation": {
+    "tagQueryMapping": {
+      "tag": {
+        "mode": "rawParam",
+        "param": "q",
+        "valueSource": "tagName",
+        "valuePrefix": "tag:",
+        "transform": "lowercase"
+      },
+      "default": {
+        "mode": "rawParam",
+        "param": "q",
+        "valueSource": "tagName",
+        "valuePrefix": "tag:",
+        "transform": "lowercase"
       }
     }
   },
