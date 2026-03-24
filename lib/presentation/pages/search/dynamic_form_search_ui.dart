@@ -250,6 +250,12 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
         }
       }
 
+      // Chip/text/select restoration does not always go through
+      // _applyPendingMultiRestore(), so ensure UI reflects restored values.
+      if (mounted) {
+        setState(() {});
+      }
+
       _applyPendingMultiRestore();
     } catch (e) {
       _logger.w('DynamicFormSearchUI: failed to restore filter: $e');
@@ -305,88 +311,8 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   Future<void> _onSearch() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final parts = <String>[];
     final selectedTagItems = <FilterItem>[];
-    final partsByParam = <String, List<String>>{};
-    final joinModeByParam = <String, String>{};
-
-    void addParamValue(String queryParam, String value, {String? joinMode}) {
-      final normalized = value.trim();
-      if (normalized.isEmpty) return;
-      (partsByParam[queryParam] ??= <String>[]).add(normalized);
-      if (joinMode != null && joinMode.isNotEmpty) {
-        joinModeByParam[queryParam] = joinMode;
-      }
-    }
-
-    for (final entry in widget.config.params.entries) {
-      final name = entry.key;
-      final field = entry.value;
-      final qp = field.queryParam;
-      if (qp == null) continue;
-      final rawField = _rawFieldConfig(name);
-      final joinMode = (rawField?['joinMode'] as String?)?.trim();
-
-      if (_isPickerField(name, field)) {
-        final selected = _multiSelectValues[name] ?? const <_DynamicOption>[];
-        for (final option in selected) {
-          final formatted = _formatFieldValue(rawField, option.value);
-          addParamValue(qp, formatted, joinMode: joinMode);
-          selectedTagItems.add(
-            FilterItem(
-              value: option.label,
-              isExcluded: _isExcludedTagField(name, field),
-            ),
-          );
-        }
-        continue;
-      }
-
-      switch (field.type) {
-        case 'text':
-          final val = _textControllers[name]?.text.trim() ?? '';
-          if (val.isNotEmpty) {
-            final splitValues = _splitFieldInput(rawField, val, field.type);
-            for (final item in splitValues) {
-              final formatted = _formatFieldValue(rawField, item);
-              addParamValue(qp, formatted, joinMode: joinMode);
-            }
-          }
-        case 'tag':
-          final values = _collectTagFieldValues(name, rawField);
-          for (final item in values) {
-            final formatted = _formatFieldValue(rawField, item);
-            addParamValue(qp, formatted, joinMode: joinMode);
-          }
-        case 'select':
-          final val = _selectValues[name];
-          if (val != null && val.isNotEmpty) {
-            final formatted = _formatFieldValue(rawField, val);
-            addParamValue(qp, formatted, joinMode: joinMode);
-          }
-        default:
-          break; // 'page' handled by adapter internally
-      }
-    }
-
-    partsByParam.forEach((queryParam, values) {
-      if (values.isEmpty) return;
-      final mode = (joinModeByParam[queryParam] ?? '').toLowerCase();
-      if (mode == 'space') {
-        final joined = values.join(' ');
-        parts.add(
-          '${Uri.encodeComponent(queryParam)}=${Uri.encodeComponent(joined)}',
-        );
-        return;
-      }
-
-      for (final value in values) {
-        parts.add(
-          '${Uri.encodeComponent(queryParam)}=${Uri.encodeComponent(value)}',
-        );
-      }
-    });
-
+    final parts = _collectEncodedQueryParts(selectedTagItems: selectedTagItems);
     final rawQuery = parts.isNotEmpty ? 'raw:${parts.join('&')}' : '';
     final filter = SearchFilter(query: rawQuery, tags: selectedTagItems);
 
@@ -441,6 +367,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                 children: [
                   for (final entry in visibleFields)
                     _buildField(entry.key, entry.value),
+                  _buildQueryPreviewCard(),
                   const SizedBox(height: 24),
                   FilledButton.icon(
                     onPressed: _onSearch,
@@ -509,6 +436,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
         filled: true,
       ),
       textInputAction: TextInputAction.search,
+      onChanged: (_) => setState(() {}),
       onFieldSubmitted: (_) => _onSearch(),
     );
   }
@@ -524,6 +452,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
         filled: true,
       ),
       textInputAction: TextInputAction.search,
+      onChanged: (_) => setState(() {}),
       onFieldSubmitted: (_) => _onSearch(),
     );
   }
@@ -571,7 +500,18 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
             filled: true,
           ),
           textInputAction: TextInputAction.done,
+          onChanged: (_) => setState(() {}),
           onFieldSubmitted: (_) => addCurrentInput(),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Tip: tekan Enter atau tombol + untuk menambah tag. Bisa ketik banyak tag pakai koma/baris baru.',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurfaceVariant
+                    .withValues(alpha: 0.9),
+              ),
         ),
         if (chips.isNotEmpty) ...[
           const SizedBox(height: 8),
@@ -1681,6 +1621,136 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     }
 
     return values;
+  }
+
+  List<String> _collectEncodedQueryParts({List<FilterItem>? selectedTagItems}) {
+    final parts = <String>[];
+    final partsByParam = <String, List<String>>{};
+    final joinModeByParam = <String, String>{};
+
+    void addParamValue(String queryParam, String value, {String? joinMode}) {
+      final normalized = value.trim();
+      if (normalized.isEmpty) return;
+      (partsByParam[queryParam] ??= <String>[]).add(normalized);
+      if (joinMode != null && joinMode.isNotEmpty) {
+        joinModeByParam[queryParam] = joinMode;
+      }
+    }
+
+    for (final entry in widget.config.params.entries) {
+      final name = entry.key;
+      final field = entry.value;
+      final qp = field.queryParam;
+      if (qp == null) continue;
+      final rawField = _rawFieldConfig(name);
+      final joinMode = (rawField?['joinMode'] as String?)?.trim();
+
+      if (_isPickerField(name, field)) {
+        final selected = _multiSelectValues[name] ?? const <_DynamicOption>[];
+        for (final option in selected) {
+          final formatted = _formatFieldValue(rawField, option.value);
+          addParamValue(qp, formatted, joinMode: joinMode);
+
+          if (selectedTagItems != null) {
+            selectedTagItems.add(
+              FilterItem(
+                value: option.label,
+                isExcluded: _isExcludedTagField(name, field),
+              ),
+            );
+          }
+        }
+        continue;
+      }
+
+      switch (field.type) {
+        case 'text':
+          final val = _textControllers[name]?.text.trim() ?? '';
+          if (val.isNotEmpty) {
+            final splitValues = _splitFieldInput(rawField, val, field.type);
+            for (final item in splitValues) {
+              final formatted = _formatFieldValue(rawField, item);
+              addParamValue(qp, formatted, joinMode: joinMode);
+            }
+          }
+        case 'tag':
+          final values = _collectTagFieldValues(name, rawField);
+          for (final item in values) {
+            final formatted = _formatFieldValue(rawField, item);
+            addParamValue(qp, formatted, joinMode: joinMode);
+          }
+        case 'select':
+          final val = _selectValues[name];
+          if (val != null && val.isNotEmpty) {
+            final formatted = _formatFieldValue(rawField, val);
+            addParamValue(qp, formatted, joinMode: joinMode);
+          }
+        default:
+          break;
+      }
+    }
+
+    partsByParam.forEach((queryParam, values) {
+      if (values.isEmpty) return;
+      final mode = (joinModeByParam[queryParam] ?? '').toLowerCase();
+      if (mode == 'space') {
+        final joined = values.join(' ');
+        parts.add(
+          '${Uri.encodeComponent(queryParam)}=${Uri.encodeComponent(joined)}',
+        );
+        return;
+      }
+
+      for (final value in values) {
+        parts.add(
+          '${Uri.encodeComponent(queryParam)}=${Uri.encodeComponent(value)}',
+        );
+      }
+    });
+
+    return parts;
+  }
+
+  Widget _buildQueryPreviewCard() {
+    final parts = _collectEncodedQueryParts();
+    if (parts.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final rawQuery = 'raw:${parts.join('&')}';
+    final parsed = _parseRaw(rawQuery.substring(4));
+    final queryExpression = (parsed['q'] ?? const <String>[]).join(' ').trim();
+    if (queryExpression.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Preview Query (q)',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 6),
+          SelectableText(
+            queryExpression,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
   }
 
   void _restoreJoinedParamGroup(
