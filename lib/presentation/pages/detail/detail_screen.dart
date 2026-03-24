@@ -2808,7 +2808,8 @@ class _DetailScreenState extends State<DetailScreen> {
   void _navigateToRelatedContent(Content relatedContent) {
     // Option 1: Replace current detail instead of push to avoid nested navigation
     if (mounted) {
-      context.pushReplacement('/content/${relatedContent.id}');
+      final encodedContentId = Uri.encodeComponent(relatedContent.id);
+      context.pushReplacement('/content/$encodedContentId');
     }
   }
 

@@ -353,10 +353,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
         .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
         .join('&');
 
-    Logger().d('🔗 Navigating to: /content/$targetContentId?$queryString');
+    final encodedContentId = Uri.encodeComponent(targetContentId);
+
+    Logger().d('🔗 Navigating to: /content/$encodedContentId?$queryString');
 
     // Navigate to detail screen
-    context.push('/content/$targetContentId?$queryString');
+    context.push('/content/$encodedContentId?$queryString');
   }
 
   void _navigateToCleanupSettings(BuildContext context) {

@@ -22,6 +22,7 @@ dependencies:
   logger: ^2.0.2+1
   native_dio_adapter: ^1.2.1
   path_provider: ^2.1.1
+  html: ^0.15.6
 
 dev_dependencies:
   flutter_test:

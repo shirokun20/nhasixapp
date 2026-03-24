@@ -23,6 +23,8 @@ part 'reader_state.dart';
 
 /// Simple cubit for managing reader functionality with offline support
 class ReaderCubit extends Cubit<ReaderState> {
+  static const String _ehentaiChunkPrefix = '__ehchunk__';
+
   ReaderCubit({
     required this.getContentDetailUseCase,
     required this.getChapterImagesUseCase,
@@ -393,6 +395,12 @@ class ReaderCubit extends Cubit<ReaderState> {
       _logger.d('No next chapter available');
       return;
     }
+
+    if (_isEhentaiChunkId(nextChapterId)) {
+      await _appendEhentaiChunk(nextChapterId);
+      return;
+    }
+
     await loadChapter(nextChapterId);
   }
 
@@ -403,7 +411,70 @@ class ReaderCubit extends Cubit<ReaderState> {
       _logger.d('No previous chapter available');
       return;
     }
+
+    if (_isEhentaiChunkId(previousChapterId)) {
+      _logger.d('Previous EHentai chunk navigation is not enabled');
+      return;
+    }
+
     await loadChapter(previousChapterId);
+  }
+
+  bool _isEhentaiChunkId(String id) => id.startsWith(_ehentaiChunkPrefix);
+
+  Future<void> _appendEhentaiChunk(String chunkId) async {
+    if (state.content == null) {
+      return;
+    }
+
+    final sourceId = _parentContent?.sourceId ?? state.content!.sourceId;
+    final beforeCount = state.content!.imageUrls.length;
+
+    try {
+      final chunkData =
+          await getChapterImagesUseCase(GetChapterImagesParams.fromString(
+        chunkId,
+        sourceId: sourceId,
+      ));
+
+      if (chunkData.images.isEmpty) {
+        _logger.w('EHentai chunk returned no images: $chunkId');
+        return;
+      }
+
+      final merged = <String>[];
+      final seen = <String>{};
+      for (final url in state.content!.imageUrls) {
+        if (seen.add(url)) merged.add(url);
+      }
+      for (final url in chunkData.images) {
+        if (seen.add(url)) merged.add(url);
+      }
+
+      final newContent = state.content!.copyWith(
+        imageUrls: merged,
+        pageCount: merged.length,
+      );
+
+      var targetPage = state.currentPage ?? 1;
+      if (targetPage >= beforeCount) {
+        targetPage = (beforeCount + 1).clamp(1, merged.length);
+      }
+
+      emit(ReaderLoaded(state.copyWith(
+        content: newContent,
+        currentPage: targetPage,
+        chapterData: chunkData,
+      )));
+
+      _logger.i(
+          'Appended EHentai chunk: +${chunkData.images.length} images (total ${merged.length})');
+
+      await _saveReaderPosition();
+      await _saveToHistory();
+    } catch (e) {
+      _logger.e('Failed to append EHentai chunk $chunkId: $e');
+    }
   }
 
   bool get hasNextChapter => _resolveNextChapterId() != null;

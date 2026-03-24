@@ -364,7 +364,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
       // Prefetch next images
       _prefetchImages(
-          estimatedPage, state.content!.imageUrls, state.imageMetadata);
+        estimatedPage,
+        state.content!.imageUrls,
+        state.imageMetadata,
+        sourceId: state.content?.sourceId,
+      );
     }
 
     // 🐛 FIX: Check if user truly reached bottom using scroll metrics
@@ -457,7 +461,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   /// Prefetch next few images in background for smoother reading experience
   void _prefetchImages(int currentPage, List<String> imageUrls,
-      List<ImageMetadata>? imageMetadata) {
+      List<ImageMetadata>? imageMetadata,
+      {String? sourceId}) {
     if (imageUrls.isEmpty) return;
 
     // Prefetch next _prefetchCount pages
@@ -470,6 +475,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
         _prefetchedPages.add(targetPage);
 
         final imageUrl = imageUrls[targetPage - 1]; // Convert to 0-based index
+
+        // EHentai uses /s/... reader pages that are resolved to real image
+        // URLs lazily per visible page. Skip image prefetch on reader pages.
+        if (_isEhentaiReaderPageUrl(imageUrl, sourceId)) {
+          continue;
+        }
 
         // 🚀 OPTIMIZATION: Use metadata lookup instead of URL validation for performance
         bool isValid = true;
@@ -530,6 +541,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
         });
       }
     }
+  }
+
+  bool _isEhentaiReaderPageUrl(String url, String? sourceId) {
+    if (sourceId != 'ehentai') {
+      return false;
+    }
+
+    final lowered = url.toLowerCase();
+    return lowered.contains('/s/') &&
+        (lowered.contains('e-hentai.org') || lowered.contains('exhentai.org'));
   }
 
   void _syncControllersWithState(ReaderState state) {
@@ -693,7 +714,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
           if (state.content != null && state.content!.imageUrls.isNotEmpty) {
             final currentPage = state.currentPage ?? widget.initialPage;
             _prefetchImages(
-                currentPage, state.content!.imageUrls, state.imageMetadata);
+              currentPage,
+              state.content!.imageUrls,
+              state.imageMetadata,
+              sourceId: state.content?.sourceId,
+            );
           }
         },
         child: BlocBuilder<ReaderCubit, ReaderState>(
@@ -702,6 +727,24 @@ class _ReaderScreenState extends State<ReaderScreen> {
             final currContentId = current.content?.id;
             final prevImageCount = previous.content?.imageUrls.length ?? 0;
             final currImageCount = current.content?.imageUrls.length ?? 0;
+
+            final onlyCurrentPageChanged =
+                previous.currentPage != current.currentPage &&
+                    previous.runtimeType == current.runtimeType &&
+                    prevContentId == currContentId &&
+                    prevImageCount == currImageCount &&
+                    previous.showUI == current.showUI &&
+                    previous.readingMode == current.readingMode &&
+                    previous.enableZoom == current.enableZoom &&
+                    previous.keepScreenOn == current.keepScreenOn &&
+                    previous.isOfflineMode == current.isOfflineMode;
+
+            final isContinuousMode =
+                current.readingMode == ReadingMode.continuousScroll;
+
+            if (isContinuousMode && onlyCurrentPageChanged) {
+              return false;
+            }
 
             // Prevent full-screen rebuild every second from readingTimer.
             return previous.runtimeType != current.runtimeType ||
@@ -859,7 +902,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
           final imageUrls = state.content?.imageUrls ?? [];
           // Don't prefetch for navigation page
           if (index < pageCount) {
-            _prefetchImages(reportPage, imageUrls, state.imageMetadata);
+            _prefetchImages(
+              reportPage,
+              imageUrls,
+              state.imageMetadata,
+              sourceId: state.content?.sourceId,
+            );
           }
 
           // Update ReaderCubit state
@@ -922,7 +970,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
           final imageUrls = state.content?.imageUrls ?? [];
           // Don't prefetch for navigation page
           if (index < pageCount) {
-            _prefetchImages(reportPage, imageUrls, state.imageMetadata);
+            _prefetchImages(
+              reportPage,
+              imageUrls,
+              state.imageMetadata,
+              sourceId: state.content?.sourceId,
+            );
           }
 
           // Update ReaderCubit state
@@ -1020,6 +1073,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           contentId: widget.contentId,
           pageNumber: pageNumber,
           readingMode: ReadingMode.continuousScroll,
+          sourceId: sourceId,
           httpHeaders: headers,
           enableZoom: zoom,
           onImageLoaded:
@@ -1049,6 +1103,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             contentId: widget.contentId,
             pageNumber: pageNumber,
             readingMode: state.readingMode ?? ReadingMode.singlePage,
+            sourceId: resolvedSourceId,
             httpHeaders: headers,
             enableZoom: zoom,
             onImageLoaded:

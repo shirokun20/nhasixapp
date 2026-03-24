@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:html/dom.dart' as dom;
 import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_generic/kuron_generic.dart';
 import 'package:logger/logger.dart';
@@ -6,8 +7,13 @@ import 'package:logger/logger.dart';
 /// E-Hentai adapter that delegates generic scraping and adds per-page image
 /// extraction from reader links (`/s/{hash}/{gid}-{page}`).
 class EHentaiScraperAdapter implements GenericAdapter {
+  static const String _chunkPrefix = '__ehchunk__';
+
   final Dio _dio;
+  final GenericUrlBuilder _urlBuilder;
+  final GenericHtmlParser _parser;
   final GenericScraperAdapter _delegate;
+  final Map<String, String> _pageUrlCache = <String, String>{};
   DateTime? _lastRequestAt;
 
   EHentaiScraperAdapter({
@@ -17,6 +23,8 @@ class EHentaiScraperAdapter implements GenericAdapter {
     required Logger logger,
     required String sourceId,
   })  : _dio = dio,
+        _urlBuilder = urlBuilder,
+        _parser = parser,
         _delegate = GenericScraperAdapter(
           dio: dio,
           urlBuilder: urlBuilder,
@@ -29,8 +37,268 @@ class EHentaiScraperAdapter implements GenericAdapter {
   Future<AdapterSearchResult> search(
     SearchFilter filter,
     Map<String, dynamic> rawConfig,
-  ) {
-    return _delegate.search(filter, rawConfig);
+  ) async {
+    final searchContext = await _buildSearchContext(filter, rawConfig);
+
+    var delegated = await _delegate.search(
+      searchContext.filter,
+      searchContext.config,
+    );
+
+    var enrichmentFilter = searchContext.filter;
+    var enrichmentConfig = searchContext.config;
+
+    // `next=` token pagination in query mode can intermittently return a 200
+    // response with an empty list. Retry with the standard search URL format
+    // as a safety fallback so UI does not get stuck on ContentEmpty.
+    final isQueryPage = filter.query.trim().isNotEmpty && filter.page > 1;
+    if (delegated.items.isEmpty && isQueryPage) {
+      final fallback = await _delegate.search(filter, rawConfig);
+      if (fallback.items.isNotEmpty) {
+        delegated = fallback;
+        enrichmentFilter = filter;
+        enrichmentConfig = rawConfig;
+      }
+    }
+
+    if (delegated.items.isEmpty) {
+      return delegated;
+    }
+
+    // Extract covers and languages in single pass to avoid duplicate HTTP requests
+    final combinedData = await _extractListCoversAndLanguages(
+      filter: enrichmentFilter,
+      rawConfig: enrichmentConfig,
+    );
+    if (combinedData.isEmpty) {
+      return delegated;
+    }
+
+    final enriched = <Content>[];
+    for (final current in delegated.items) {
+      final data = combinedData[current.id] ?? {};
+      final cover = (data['cover'] as String?) ?? '';
+      final currentCover = current.coverUrl.trim();
+      final needsFix = currentCover.isEmpty || currentCover.startsWith('data:');
+
+      var updated = current;
+      if (needsFix && cover.isNotEmpty) {
+        updated = updated.copyWith(coverUrl: cover);
+      }
+
+      // Set language from home page tag if found
+      final language = (data['language'] as String?);
+      if (language != null && language.isNotEmpty) {
+        updated = updated.copyWith(language: language);
+      }
+
+      enriched.add(updated);
+    }
+
+    return AdapterSearchResult(
+      items: enriched,
+      hasNextPage: delegated.hasNextPage,
+      totalPages: delegated.totalPages,
+    );
+  }
+
+  Future<_SearchContext> _buildSearchContext(
+    SearchFilter filter,
+    Map<String, dynamic> rawConfig,
+  ) async {
+    final isHomeMode =
+        filter.query.trim().isEmpty && filter.includeTags.isEmpty;
+    final isQueryMode = filter.query.trim().isNotEmpty;
+
+    if ((!isHomeMode && !isQueryMode) || filter.page <= 1) {
+      return _SearchContext(filter: filter, config: rawConfig);
+    }
+
+    final pageUrl = await _resolveListPageUrl(
+      targetPage: filter.page,
+      filter: filter,
+      rawConfig: rawConfig,
+    );
+    if (pageUrl == null || pageUrl.isEmpty) {
+      return _SearchContext(filter: filter, config: rawConfig);
+    }
+
+    final patchedConfig = _cloneMap(rawConfig);
+    final scraper = ((patchedConfig['scraper'] as Map?) ?? <String, dynamic>{})
+        .cast<String, dynamic>();
+    patchedConfig['scraper'] = scraper;
+    final urlPatterns =
+        ((scraper['urlPatterns'] as Map?) ?? <String, dynamic>{})
+            .cast<String, dynamic>();
+    scraper['urlPatterns'] = urlPatterns;
+
+    final patternKey = isHomeMode ? 'home' : 'search';
+    final inheritedListConfig = _resolveInheritedListConfig(
+      urlPatterns: urlPatterns,
+      patternKey: patternKey,
+    );
+
+    // Force delegate to use resolved URL by running with page=1.
+    urlPatterns[patternKey] = <String, dynamic>{
+      'url': pageUrl,
+      'list': inheritedListConfig,
+    };
+
+    return _SearchContext(
+      filter: filter.copyWith(page: 1),
+      config: patchedConfig,
+    );
+  }
+
+  Future<String?> _resolveListPageUrl({
+    required int targetPage,
+    required SearchFilter filter,
+    required Map<String, dynamic> rawConfig,
+  }) async {
+    final query = filter.query.trim();
+    // `next=` tokens in search URLs can be short-lived. Reusing cached token
+    // URLs may return 200 with empty list content, so only cache stable
+    // home-page pagination URLs.
+    final allowCache = query.isEmpty;
+    final queryKey = query.isEmpty
+        ? 'home:$targetPage'
+        : 'search:${query.toLowerCase()}:$targetPage';
+    if (allowCache) {
+      final cached = _pageUrlCache[queryKey];
+      if (cached != null && cached.isNotEmpty) {
+        return cached;
+      }
+    }
+
+    final currentQuery = query.isEmpty
+        ? '/?page=1'
+        : '/?f_search=${Uri.encodeQueryComponent(query)}';
+    var currentUrl = _urlBuilder.resolve(currentQuery, const {});
+    if (targetPage <= 1) {
+      if (allowCache) {
+        _pageUrlCache[queryKey] = currentUrl;
+      }
+      return currentUrl;
+    }
+
+    for (var page = 2; page <= targetPage; page++) {
+      try {
+        await _throttle(rawConfig);
+        final response = await _dio.get<String>(
+          currentUrl,
+          options: Options(responseType: ResponseType.plain),
+        );
+        final html = response.data ?? '';
+        if (html.isEmpty) {
+          return null;
+        }
+
+        final nextUrl = _extractNextPageUrl(html);
+        if (nextUrl == null || nextUrl.isEmpty) {
+          // Parse prev nav too so search-page pagination handling stays
+          // symmetric with next/prev token formats.
+          _extractPreviousPageUrl(html);
+          return null;
+        }
+        currentUrl = nextUrl;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    if (allowCache) {
+      _pageUrlCache[queryKey] = currentUrl;
+    }
+    return currentUrl;
+  }
+
+  String? _extractNextPageUrl(String html) {
+    return _extractSearchNavUrl(html, isNext: true);
+  }
+
+  String? _extractPreviousPageUrl(String html) {
+    return _extractSearchNavUrl(html, isNext: false);
+  }
+
+  String? _extractSearchNavUrl(String html, {required bool isNext}) {
+    final doc = _parser.parse(html);
+    final directId = isNext ? '#unext' : '#uprev';
+    final legacyId = isNext ? '#dnext' : '#dprev';
+    final hrefPattern = isNext ? 'next=' : 'prev=';
+
+    final navEl = doc.querySelector(directId) ??
+        doc.querySelector(legacyId) ??
+        doc.querySelector('.searchnav a$directId') ??
+        doc.querySelector('.searchnav a$legacyId') ??
+        doc.querySelector('.searchnav a[href*="$hrefPattern"]');
+    final href = navEl?.attributes['href']?.trim();
+    if (href != null && href.isNotEmpty) {
+      if (href.startsWith('http')) return href;
+      return _urlBuilder.resolve(href, const {});
+    }
+
+    final scriptVar = isNext ? 'nexturl' : 'prevurl';
+    // Fallback: search pages expose navigation URL in script vars.
+    final scriptMatch = RegExp('var\\s+$scriptVar\\s*=\\s*"([^"]+)"')
+        .firstMatch(html)
+        ?.group(1)
+        ?.trim();
+    if (scriptMatch == null || scriptMatch.isEmpty) {
+      return null;
+    }
+    if (scriptMatch.startsWith('http')) return scriptMatch;
+    return _urlBuilder.resolve(scriptMatch, const {});
+  }
+
+  Map<String, dynamic> _extractListConfig(dynamic patternValue) {
+    if (patternValue is Map) {
+      final map = patternValue.cast<String, dynamic>();
+      final list = map['list'];
+      if (list is Map) {
+        return list.cast<String, dynamic>();
+      }
+    }
+    return <String, dynamic>{};
+  }
+
+  Map<String, dynamic> _resolveInheritedListConfig({
+    required Map<String, dynamic> urlPatterns,
+    required String patternKey,
+  }) {
+    final direct = _extractListConfig(urlPatterns[patternKey]);
+    if (direct.isNotEmpty) {
+      return direct;
+    }
+
+    final patternMap = urlPatterns[patternKey];
+    if (patternMap is Map) {
+      final inherits = patternMap['inherits'] as String?;
+      if (inherits != null && inherits.isNotEmpty) {
+        final inherited = _extractListConfig(urlPatterns[inherits]);
+        if (inherited.isNotEmpty) {
+          return inherited;
+        }
+      }
+    }
+
+    return <String, dynamic>{};
+  }
+
+  Map<String, dynamic> _cloneMap(Map<String, dynamic> input) {
+    final result = <String, dynamic>{};
+    input.forEach((key, value) {
+      if (value is Map) {
+        result[key] = _cloneMap(value.cast<String, dynamic>());
+      } else if (value is List) {
+        result[key] = value
+            .map((item) =>
+                item is Map ? _cloneMap(item.cast<String, dynamic>()) : item)
+            .toList();
+      } else {
+        result[key] = value;
+      }
+    });
+    return result;
   }
 
   @override
@@ -76,43 +344,25 @@ class EHentaiScraperAdapter implements GenericAdapter {
 
       normalizedContent = _hydrateDetailMetadata(normalizedContent, detailHtml);
 
-      final readerLinks = _extractReaderLinks(detailHtml);
-      if (readerLinks.isEmpty) {
-        return AdapterDetailResult(
-          content: normalizedContent,
-          imageUrls: fallbackImages,
-        );
-      }
+      final expectedPageCount = _extractExpectedPageCount(detailHtml);
 
-      final imageUrls = <String>[];
-      final imageSelector = _resolveImageSelector(rawConfig);
+      // Keep detail screen fast: do not crawl gallery pagination here.
+      // Full reader link collection is handled in fetchChapterImages().
+      final firstPageLinks = _extractReaderLinks(detailHtml).length;
 
-      for (final link in readerLinks) {
-        final absUrl = link.startsWith('http') ? link : '$baseUrl$link';
-        await _throttle(rawConfig);
-        final pageResponse = await _dio.get<dynamic>(
-          absUrl,
-          options: Options(responseType: ResponseType.plain),
-        );
-        final pageHtml = pageResponse.data?.toString() ?? '';
-        final imageUrl = _extractImageUrl(pageHtml, imageSelector);
-        if (imageUrl != null && imageUrl.isNotEmpty) {
-          imageUrls.add(imageUrl);
-        }
-      }
+      // ✅ LAZY LOADING: Don't fetch reader pages during detail screen
+      // Reader screen will call fetchChapterImages() to load images
+      // This prevents blocking detail screen for large galleries.
 
-      if (imageUrls.isEmpty) {
-        return AdapterDetailResult(
-          content: normalizedContent,
-          imageUrls: fallbackImages,
-        );
-      }
-
+      // Set pageCount from expected count (parsed from detail HTML)
       final updated = normalizedContent.copyWith(
-        imageUrls: imageUrls,
-        pageCount: imageUrls.length,
+        pageCount: expectedPageCount > 0 ? expectedPageCount : firstPageLinks,
       );
-      return AdapterDetailResult(content: updated, imageUrls: imageUrls);
+
+      return AdapterDetailResult(
+        content: updated,
+        imageUrls: fallbackImages, // Empty - will be loaded by reader screen
+      );
     } catch (_) {
       return AdapterDetailResult(
         content: normalizedContent,
@@ -141,22 +391,201 @@ class EHentaiScraperAdapter implements GenericAdapter {
   Future<ChapterData?> fetchChapterImages(
     String chapterId,
     Map<String, dynamic> rawConfig,
-  ) {
-    return _delegate.fetchChapterImages(chapterId, rawConfig);
+  ) async {
+    final scraperMap = (rawConfig['scraper'] as Map?)?.cast<String, dynamic>();
+    final urlPatterns =
+        (scraperMap?['urlPatterns'] as Map?)?.cast<String, dynamic>() ?? {};
+    final detailPattern = _patternUrl(urlPatterns, 'detail').isNotEmpty
+        ? _patternUrl(urlPatterns, 'detail')
+        : '/g/{id}/';
+
+    final chunkId = _parseChunkId(chapterId);
+
+    String galleryIdentity = chapterId;
+    int targetGalleryPage = 0;
+    if (chunkId != null) {
+      galleryIdentity = '${chunkId.gid}/${chunkId.token}';
+      targetGalleryPage = chunkId.page;
+    }
+
+    final baseUrl = (rawConfig['baseUrl'] as String?) ?? '';
+    if (baseUrl.isEmpty) {
+      return null;
+    }
+
+    final detailUrl = GenericUrlBuilder(baseUrl: baseUrl)
+        .buildDetailUrl(detailPattern, galleryIdentity);
+
+    var detailHtml = '';
+    if (targetGalleryPage == 0) {
+      try {
+        await _throttle(rawConfig);
+        final directResponse = await _dio.get<dynamic>(
+          detailUrl,
+          options: Options(responseType: ResponseType.plain),
+        );
+        detailHtml = directResponse.data?.toString() ?? '';
+      } catch (_) {
+        // Fall through to resilient URL probing below.
+      }
+
+      if (detailHtml.isEmpty) {
+        detailHtml = await _fetchDetailHtml(
+          detailUrl: detailUrl,
+          baseUrl: baseUrl,
+          detailPattern: detailPattern,
+          contentId: galleryIdentity,
+          rawConfig: rawConfig,
+        );
+      }
+    } else {
+      final pageUri = Uri.parse(detailUrl).replace(
+        queryParameters: <String, String>{
+          ...Uri.parse(detailUrl).queryParameters,
+          'p': targetGalleryPage.toString(),
+        },
+      );
+      try {
+        await _throttle(rawConfig);
+        final response = await _dio.get<dynamic>(
+          pageUri.toString(),
+          options: Options(responseType: ResponseType.plain),
+        );
+        detailHtml = response.data?.toString() ?? '';
+      } catch (_) {
+        detailHtml = '';
+      }
+    }
+
+    if (detailHtml.isEmpty) {
+      return null;
+    }
+
+    final readerLinks = _extractReaderLinks(detailHtml);
+    final expectedPageCount = _extractExpectedPageCount(detailHtml);
+
+    if (readerLinks.isEmpty) {
+      return null;
+    }
+
+    final pages = <String>[];
+    final seen = <String>{};
+    for (final link in readerLinks) {
+      final readerUrl = _toAbsoluteUrl(link, baseUrl);
+      if (seen.add(readerUrl)) {
+        pages.add(readerUrl);
+      }
+    }
+
+    if (pages.isEmpty) {
+      return null;
+    }
+
+    final identity = _extractGalleryIdentity(galleryIdentity);
+    final maxGalleryPage = _estimateMaxGalleryPage(
+      html: detailHtml,
+      expectedPageCount: expectedPageCount,
+    );
+
+    String? nextChunkId;
+    if (identity != null && targetGalleryPage < maxGalleryPage) {
+      nextChunkId = _buildChunkId(
+        gid: identity.gid,
+        token: identity.token,
+        page: targetGalleryPage + 1,
+      );
+    }
+
+    // Return reader page URLs quickly.
+    // Reader widget resolves each /s/... page to #img lazily per visible page.
+    return ChapterData(
+      images: pages,
+      nextChapterId: nextChunkId,
+      nextChapterTitle: nextChunkId == null ? null : 'Load more images',
+    );
+  }
+
+  int _estimateMaxGalleryPage({
+    required String html,
+    required int expectedPageCount,
+  }) {
+    final firstPageLinks = _extractReaderLinks(html).length;
+    final window = _extractGalleryWindow(html);
+
+    final expectedTotal = (() {
+      final fromWindow = window?.totalImages ?? 0;
+      return fromWindow > expectedPageCount ? fromWindow : expectedPageCount;
+    })();
+
+    final perPage = (() {
+      final fromWindow = window?.itemsPerPage ?? 0;
+      if (fromWindow > 0) return fromWindow;
+      if (firstPageLinks > 0) return firstPageLinks;
+      return 0;
+    })();
+
+    final expectedMaxPage = (expectedTotal > 0 && perPage > 0)
+        ? ((expectedTotal - 1) / perPage).floor()
+        : 0;
+    final navMaxPage = _extractMaxGalleryThumbPage(html);
+    return navMaxPage > 0 ? navMaxPage : expectedMaxPage;
+  }
+
+  String _buildChunkId({
+    required String gid,
+    required String token,
+    required int page,
+  }) {
+    return '$_chunkPrefix:$gid:$token:$page';
+  }
+
+  _EhentaiChunkId? _parseChunkId(String value) {
+    final match = RegExp(
+      r'^__ehchunk__:(\d+):([A-Za-z0-9_-]+):(\d+)$',
+    ).firstMatch(value);
+    if (match == null) return null;
+
+    final gid = match.group(1);
+    final token = match.group(2);
+    final page = int.tryParse(match.group(3) ?? '');
+    if (gid == null || token == null || page == null) {
+      return null;
+    }
+    return _EhentaiChunkId(gid: gid, token: token, page: page);
+  }
+
+  _GalleryIdentity? _extractGalleryIdentity(String value) {
+    final match = RegExp(r'([0-9]+)/([A-Za-z0-9_-]+)').firstMatch(value);
+    if (match == null) return null;
+    final gid = match.group(1);
+    final token = match.group(2);
+    if (gid == null || token == null) return null;
+    return _GalleryIdentity(gid: gid, token: token);
+  }
+
+  String _toAbsoluteUrl(String link, String baseUrl) {
+    if (link.startsWith('http://') || link.startsWith('https://')) {
+      return link;
+    }
+    if (link.startsWith('//')) {
+      return 'https:$link';
+    }
+    return _urlBuilder.resolve(link, const {});
   }
 
   List<String> _extractReaderLinks(String html) {
+    final normalizedHtml = html.replaceAll(r'\/', '/');
     final matches = RegExp(
-      r'href="((?:https?://e-hentai\.org)?/s/[^"]+)"',
+      r'((?:(?:https?:)?//(?:e-hentai|exhentai)\.org)?/s/[A-Za-z0-9_-]+/[0-9]+-[0-9]+)',
       caseSensitive: false,
-    ).allMatches(html);
+    ).allMatches(normalizedHtml);
     final seen = <String>{};
     final links = <String>[];
 
     for (final match in matches) {
       final link = match.group(1);
       if (link == null || link.isEmpty) continue;
-      final normalized = link.startsWith('http') ? Uri.parse(link).path : link;
+      final normalized = _normalizeReaderLink(link);
       if (seen.add(normalized)) {
         links.add(normalized);
       }
@@ -164,22 +593,87 @@ class EHentaiScraperAdapter implements GenericAdapter {
     return links;
   }
 
-  String _resolveImageSelector(Map<String, dynamic> rawConfig) {
-    final scraper = (rawConfig['scraper'] as Map?)?.cast<String, dynamic>();
-    final selectors =
-        (scraper?['selectors'] as Map?)?.cast<String, dynamic>() ?? {};
-    final detail = (selectors['detail'] as Map<String, dynamic>?) ?? {};
-    final imageUrls = (detail['imageUrls'] as Map<String, dynamic>?) ?? {};
-    return (imageUrls['imageSelector'] as String?) ?? '#img';
+  int _extractExpectedPageCount(String html) {
+    final direct = RegExp(
+      r'<td[^>]*class="gdt2"[^>]*>\s*([0-9]+)\s+pages?\s*</td>',
+      caseSensitive: false,
+    ).firstMatch(html);
+    if (direct != null) {
+      return int.tryParse(direct.group(1) ?? '') ?? 0;
+    }
+
+    final fallback = RegExp(r'([0-9]+)\s+pages?', caseSensitive: false)
+        .firstMatch(html)
+        ?.group(1);
+    return int.tryParse(fallback ?? '') ?? 0;
   }
 
-  String? _extractImageUrl(String html, String imageSelector) {
-    if (imageSelector == '#img') {
-      return RegExp(r'<img[^>]*id="img"[^>]*src="([^"]+)"')
-          .firstMatch(html)
-          ?.group(1);
+  _GalleryWindow? _extractGalleryWindow(String html) {
+    final match = RegExp(
+      r'Showing\s+(\d+)\s*-\s*(\d+)\s+of\s+(\d+)\s+images',
+      caseSensitive: false,
+    ).firstMatch(html);
+    if (match == null) {
+      return null;
     }
-    return RegExp(r'<img[^>]*src="([^"]+)"').firstMatch(html)?.group(1);
+
+    final start = int.tryParse(match.group(1) ?? '');
+    final end = int.tryParse(match.group(2) ?? '');
+    final total = int.tryParse(match.group(3) ?? '');
+
+    if (start == null || end == null || total == null) {
+      return null;
+    }
+    if (end < start || total <= 0) {
+      return null;
+    }
+
+    return _GalleryWindow(
+      itemsPerPage: end - start + 1,
+      totalImages: total,
+    );
+  }
+
+  int _extractMaxGalleryThumbPage(String html) {
+    final doc = _parser.parse(html);
+    final anchors = doc.querySelectorAll('a[href*="?p="]');
+
+    var maxPage = 0;
+    for (final anchor in anchors) {
+      final href = anchor.attributes['href'] ?? '';
+      if (href.isEmpty) continue;
+
+      try {
+        final uri =
+            Uri.parse(href.startsWith('http') ? href : 'https://x$href');
+        final value = uri.queryParameters['p'];
+        final page = int.tryParse(value ?? '');
+        if (page != null && page > maxPage) {
+          maxPage = page;
+        }
+      } catch (_) {
+        continue;
+      }
+    }
+
+    return maxPage;
+  }
+
+  String _normalizeReaderLink(String link) {
+    final decoded = link.replaceAll('&amp;', '&').trim();
+    if (decoded.startsWith('//')) {
+      final uri = Uri.parse('https:$decoded');
+      final query = uri.query.isEmpty ? '' : '?${uri.query}';
+      return '${uri.path}$query';
+    }
+
+    if (decoded.startsWith('http')) {
+      final uri = Uri.parse(decoded);
+      final query = uri.query.isEmpty ? '' : '?${uri.query}';
+      return '${uri.path}$query';
+    }
+
+    return decoded;
   }
 
   String _patternUrl(Map<String, dynamic> patterns, String key) {
@@ -282,13 +776,39 @@ class EHentaiScraperAdapter implements GenericAdapter {
       }
     }
 
+    // Extract upload date
+    final uploadDate = _extractUploadDate(html);
+
     final hydrated = content.copyWith(
       title: title.isEmpty ? content.title : title,
       coverUrl: coverUrl.isEmpty ? content.coverUrl : coverUrl,
       tags: tags,
+      uploadDate: uploadDate ?? content.uploadDate,
     );
 
     return _normalizeEhentaiTags(hydrated);
+  }
+
+  DateTime? _extractUploadDate(String html) {
+    /// E-Hentai detail page date format:
+    /// <td class="gdt2">2026-03-24 03:00</td>
+    final dateMatch = RegExp(
+      r'<td[^>]*class="gdt2"[^>]*>(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})',
+    ).firstMatch(html);
+
+    if (dateMatch == null) return null;
+
+    try {
+      final year = int.parse(dateMatch.group(1) ?? '0');
+      final month = int.parse(dateMatch.group(2) ?? '1');
+      final day = int.parse(dateMatch.group(3) ?? '1');
+      final hour = int.parse(dateMatch.group(4) ?? '0');
+      final minute = int.parse(dateMatch.group(5) ?? '0');
+
+      return DateTime(year, month, day, hour, minute);
+    } catch (_) {
+      return null;
+    }
   }
 
   String _extractTitle(String html) {
@@ -323,16 +843,51 @@ class EHentaiScraperAdapter implements GenericAdapter {
   }
 
   List<Tag> _extractTags(String html) {
-    final matches = RegExp(
-      r'<div[^>]*class="[^"]*\bgt\b[^"]*"[^>]*title="([^"]+)"',
-    ).allMatches(html);
+    /// E-Hentai detail page tag structure:
+    /// <div id="td_language:korean" class="gt" ...>
+    ///   <a id="ta_language:korean" href="..." class="">korean</a>
+    /// </div>
+    /// Parse tags from div ID attribute: "td_TYPE:VALUE"
+    final doc = _parser.parse(html);
+    final tagDivs = doc.querySelectorAll('div.gt[id^="td_"]');
 
     final tags = <Tag>[];
-    for (final match in matches) {
-      final name = _cleanHtmlText(match.group(1) ?? '');
-      if (name.isEmpty) continue;
-      tags.add(Tag(id: 0, name: name, type: TagType.tag, count: 0));
+    for (final div in tagDivs) {
+      final id = div.attributes['id'] ?? '';
+      if (!id.startsWith('td_')) continue;
+
+      // Extract type:value from ID (td_language:korean -> language:korean)
+      final tagSpec = id.substring(3);
+      if (tagSpec.isEmpty) continue;
+
+      // Extract text from <a> tag inside
+      final link = div.querySelector('a');
+      final tagText = link?.text.trim() ?? '';
+      if (tagText.isEmpty) continue;
+
+      // Reconstruct full tag name as "type:value"
+      final fullTagName = tagSpec;
+
+      tags.add(Tag(
+        id: 0,
+        name: fullTagName,
+        type: TagType.tag,
+        count: 0,
+      ));
     }
+
+    // Fallback for legacy pages using title="type:value" directly.
+    if (tags.isEmpty) {
+      final matches = RegExp(
+        r'<div[^>]*class="[^"]*\bgt\b[^"]*"[^>]*title="([^"]+)"',
+      ).allMatches(html);
+      for (final match in matches) {
+        final name = _cleanHtmlText(match.group(1) ?? '');
+        if (name.isEmpty) continue;
+        tags.add(Tag(id: 0, name: name, type: TagType.tag, count: 0));
+      }
+    }
+
     return tags;
   }
 
@@ -393,7 +948,10 @@ class EHentaiScraperAdapter implements GenericAdapter {
           groups.add(name);
           break;
         case TagType.language:
-          if (language == 'unknown' || language.isEmpty) {
+          final normalized = name.toLowerCase();
+          if (normalized != 'translated') {
+            language = name;
+          } else if (language == 'unknown' || language.isEmpty) {
             language = name;
           }
           break;
@@ -456,4 +1014,375 @@ class EHentaiScraperAdapter implements GenericAdapter {
 
     _lastRequestAt = DateTime.now();
   }
+
+  /// Extract both covers and languages in a single HTTP request
+  /// Returns Map<String, String> where key is ID and value contains 'cover' and 'language'
+  Future<Map<String, Map<String, dynamic>>> _extractListCoversAndLanguages({
+    required SearchFilter filter,
+    required Map<String, dynamic> rawConfig,
+  }) async {
+    final scraper = (rawConfig['scraper'] as Map?)?.cast<String, dynamic>();
+    final urlPatterns =
+        (scraper?['urlPatterns'] as Map?)?.cast<String, dynamic>() ?? {};
+    if (urlPatterns.isEmpty) return const <String, Map<String, dynamic>>{};
+
+    final patternKey = _resolveSearchPatternKey(filter, urlPatterns);
+    final resolved =
+        _resolveListPattern(urlPatterns: urlPatterns, patternKey: patternKey);
+    if (resolved == null) return const <String, Map<String, dynamic>>{};
+
+    final urlTemplate = _applyPageOverride(
+      patternMap: resolved.patternMap,
+      fallbackTemplate: resolved.urlTemplate,
+      page: filter.page,
+    );
+
+    final url = _urlBuilder.resolve(urlTemplate, {
+      'page': filter.page.toString(),
+      'query': Uri.encodeQueryComponent(filter.query),
+      'tag': filter.includeTags.isNotEmpty
+          ? filter.includeTags.first.name.toLowerCase().replaceAll(' ', '-')
+          : '',
+    });
+
+    try {
+      await _throttle(rawConfig);
+      final response = await _dio.get<String>(
+        url,
+        options: Options(responseType: ResponseType.plain),
+      );
+      final html = response.data ?? '';
+      if (html.isEmpty) return const <String, Map<String, dynamic>>{};
+
+      final doc = _parser.parse(html);
+      final container = resolved.listConfig['container'] as String?;
+      if (container == null || container.isEmpty) {
+        return const <String, Map<String, dynamic>>{};
+      }
+
+      final fields =
+          (resolved.listConfig['fields'] as Map?)?.cast<String, dynamic>() ??
+              const <String, dynamic>{};
+      final coverDef = (fields['coverUrl'] as Map?)?.cast<String, dynamic>();
+      final idDef = (fields['id'] as Map?)?.cast<String, dynamic>();
+      final idSelector = idDef?['selector'] as String?;
+      final idAttribute = (idDef?['attribute'] as String?) ?? 'href';
+
+      final result = <String, Map<String, dynamic>>{};
+      for (final row in _parser.selectAll(doc, container)) {
+        // Extract ID first
+        if (idSelector == null || idSelector.isEmpty) {
+          continue;
+        }
+        final idElement = row.querySelector(idSelector);
+        if (idElement == null) continue;
+
+        String? idValue = idElement.attributes[idAttribute];
+        if (idValue == null || idValue.isEmpty) continue;
+
+        // Extract regex if defined
+        final idRegex = idDef?['regex'] as String?;
+        if (idRegex != null && idRegex.isNotEmpty) {
+          final match = RegExp(idRegex).firstMatch(idValue);
+          if (match != null && match.groupCount > 0) {
+            idValue = match.group(1);
+          }
+        }
+
+        if (idValue == null || idValue.isEmpty) continue;
+
+        // Extract cover for this ID
+        final cover = _extractCoverFromRow(row, coverDef);
+
+        // Extract language for this ID
+        final language = _extractLanguageFromRow(row);
+
+        // Store combined data
+        result[idValue] = {
+          'cover': cover,
+          'language': language,
+        };
+      }
+
+      return result;
+    } catch (_) {
+      return const <String, Map<String, dynamic>>{};
+    }
+  }
+
+  /// Extract language tags from home page HTML
+  /// Returns Map<String, String> where key is content ID and value is language
+  /// Example: "english", "chinese", "japanese", etc.
+  /// Extract language tag from a single row element
+  /// Looks for <div class="gt" title="language:xxx"> tags
+  String _extractLanguageFromRow(dom.Element row) {
+    final tags = row.querySelectorAll('.gt[title]');
+    for (final tag in tags) {
+      final title = tag.attributes['title'] ?? '';
+      if (title.contains('language:')) {
+        // Parse "language:english" -> "english"
+        final parts = title.split(':');
+        if (parts.length >= 2) {
+          final language = parts.sublist(1).join(':').trim();
+          if (language.isNotEmpty) {
+            return language;
+          }
+        }
+      }
+    }
+    return '';
+  }
+
+  String _resolveSearchPatternKey(
+    SearchFilter filter,
+    Map<String, dynamic> urlPatterns,
+  ) {
+    if (filter.includeTags.isNotEmpty &&
+        urlPatterns.containsKey('genreSearch')) {
+      return filter.page > 1 && urlPatterns.containsKey('genreSearchPage')
+          ? 'genreSearchPage'
+          : 'genreSearch';
+    }
+
+    if (filter.query.trim().isNotEmpty) {
+      return filter.page > 1 && urlPatterns.containsKey('searchPage')
+          ? 'searchPage'
+          : 'search';
+    }
+
+    return filter.page > 1 && urlPatterns.containsKey('homePage')
+        ? 'homePage'
+        : 'home';
+  }
+
+  _ResolvedListPattern? _resolveListPattern({
+    required Map<String, dynamic> urlPatterns,
+    required String patternKey,
+  }) {
+    final value = urlPatterns[patternKey];
+    if (value is String) {
+      return null;
+    }
+    if (value is! Map) {
+      return null;
+    }
+
+    final patternMap = value.cast<String, dynamic>();
+    final urlTemplate = (patternMap['url'] as String?) ?? '';
+    if (urlTemplate.isEmpty) return null;
+
+    final localList =
+        (patternMap['list'] as Map?)?.cast<String, dynamic>() ?? {};
+
+    Map<String, dynamic> mergedList = {...localList};
+    final parentKey = patternMap['inherits'] as String?;
+    if (parentKey != null) {
+      final parent = urlPatterns[parentKey];
+      if (parent is Map) {
+        final parentMap = parent.cast<String, dynamic>();
+        final parentList =
+            (parentMap['list'] as Map?)?.cast<String, dynamic>() ?? {};
+        mergedList = {...parentList, ...localList};
+
+        final parentFields =
+            (parentList['fields'] as Map?)?.cast<String, dynamic>() ?? {};
+        final localFields =
+            (localList['fields'] as Map?)?.cast<String, dynamic>() ?? {};
+        if (parentFields.isNotEmpty || localFields.isNotEmpty) {
+          mergedList['fields'] = {...parentFields, ...localFields};
+        }
+
+        final parentPagination =
+            (parentList['pagination'] as Map?)?.cast<String, dynamic>() ?? {};
+        final localPagination =
+            (localList['pagination'] as Map?)?.cast<String, dynamic>() ?? {};
+        if (parentPagination.isNotEmpty || localPagination.isNotEmpty) {
+          mergedList['pagination'] = {
+            ...parentPagination,
+            ...localPagination,
+          };
+        }
+      }
+    }
+
+    return _ResolvedListPattern(
+      urlTemplate: urlTemplate,
+      listConfig: mergedList,
+      patternMap: patternMap,
+    );
+  }
+
+  String _applyPageOverride({
+    required Map<String, dynamic> patternMap,
+    required String fallbackTemplate,
+    required int page,
+  }) {
+    final pageOverrides =
+        (patternMap['pageOverrides'] as Map?)?.cast<String, dynamic>();
+    final overrideTemplate = pageOverrides?[page.toString()] as String?;
+    if (overrideTemplate != null && overrideTemplate.isNotEmpty) {
+      return overrideTemplate;
+    }
+    return fallbackTemplate;
+  }
+
+  String _extractCoverFromRow(
+    dom.Element row,
+    Map<String, dynamic>? coverDef,
+  ) {
+    if (coverDef != null) {
+      final selector = coverDef['selector'] as String?;
+      final attribute = coverDef['attribute'] as String?;
+      final regexPattern = coverDef['regex'] as String?;
+
+      if (selector != null && selector.isNotEmpty) {
+        final node = row.querySelector(selector);
+        if (node != null) {
+          var value = '';
+          if (attribute != null && attribute.isNotEmpty) {
+            value = (node.attributes[attribute] ?? '').trim();
+
+            // If src is a data: URI (placeholder) or empty, try fallbacks
+            if ((value.isEmpty || value.startsWith('data:')) &&
+                attribute == 'src') {
+              value = (node.attributes['data-src'] ??
+                      node.attributes['data-lazy-src'] ??
+                      node.attributes['srcset']
+                          ?.split(',')
+                          .first
+                          .split(' ')
+                          .first ??
+                      '')
+                  .trim();
+            }
+          } else {
+            value = node.text.trim();
+          }
+
+          if (regexPattern != null &&
+              regexPattern.isNotEmpty &&
+              value.isNotEmpty) {
+            final match =
+                RegExp(regexPattern, caseSensitive: false).firstMatch(value);
+            if (match != null) {
+              value =
+                  (match.groupCount > 0 ? match.group(1) : match.group(0)) ??
+                      '';
+            }
+          }
+
+          if (value.isNotEmpty) {
+            return _cleanCoverUrl(value);
+          }
+        }
+      }
+    }
+
+    final styleValue = row.querySelector('.glthumb div')?.attributes['style'] ??
+        row.querySelector('.gl1t div')?.attributes['style'] ??
+        '';
+    if (styleValue.isNotEmpty) {
+      final styleMatch = RegExp(
+        "url\\(([\\\"']?)([^\\\"')]+)\\1\\)",
+        caseSensitive: false,
+      ).firstMatch(styleValue);
+      final styleUrl = styleMatch?.group(2) ?? '';
+      if (styleUrl.isNotEmpty) {
+        return _cleanCoverUrl(styleUrl);
+      }
+    }
+
+    final img = row.querySelector('.gl2c img, .glthumb img, .gl1t img');
+    if (img != null) {
+      var imgUrl = (img.attributes['src'] ?? '').trim();
+
+      // If src is placeholder (data: URI), use data-src instead
+      if (imgUrl.startsWith('data:')) {
+        imgUrl = (img.attributes['data-src'] ??
+                img.attributes['data-lazy-src'] ??
+                '')
+            .trim();
+      }
+
+      // If still empty, try srcset
+      if (imgUrl.isEmpty) {
+        imgUrl =
+            (img.attributes['srcset']?.split(',').first.split(' ').first ?? '')
+                .trim();
+      }
+
+      if (imgUrl.isNotEmpty) {
+        return _cleanCoverUrl(imgUrl);
+      }
+    }
+
+    return '';
+  }
+
+  String _cleanCoverUrl(String value) {
+    var cleaned = value.trim().replaceAll('&amp;', '&');
+    if (cleaned.length >= 2) {
+      if (cleaned.startsWith('"') || cleaned.startsWith("'")) {
+        cleaned = cleaned.substring(1);
+      }
+      if (cleaned.endsWith('"') || cleaned.endsWith("'")) {
+        cleaned = cleaned.substring(0, cleaned.length - 1);
+      }
+    }
+    return cleaned;
+  }
+}
+
+class _ResolvedListPattern {
+  final String urlTemplate;
+  final Map<String, dynamic> listConfig;
+  final Map<String, dynamic> patternMap;
+
+  _ResolvedListPattern({
+    required this.urlTemplate,
+    required this.listConfig,
+    required this.patternMap,
+  });
+}
+
+class _SearchContext {
+  final SearchFilter filter;
+  final Map<String, dynamic> config;
+
+  _SearchContext({
+    required this.filter,
+    required this.config,
+  });
+}
+
+class _GalleryWindow {
+  final int itemsPerPage;
+  final int totalImages;
+
+  _GalleryWindow({
+    required this.itemsPerPage,
+    required this.totalImages,
+  });
+}
+
+class _GalleryIdentity {
+  final String gid;
+  final String token;
+
+  _GalleryIdentity({
+    required this.gid,
+    required this.token,
+  });
+}
+
+class _EhentaiChunkId {
+  final String gid;
+  final String token;
+  final int page;
+
+  _EhentaiChunkId({
+    required this.gid,
+    required this.token,
+    required this.page,
+  });
 }

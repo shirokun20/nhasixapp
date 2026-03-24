@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:extended_image/extended_image.dart';
 // import '../../core/utils/webtoon_detector.dart';
 import '../../data/models/reader_settings_model.dart';
@@ -21,6 +22,7 @@ class ExtendedImageReaderWidget extends StatefulWidget {
     required this.contentId,
     required this.pageNumber,
     required this.readingMode,
+    this.sourceId,
     this.httpHeaders,
     this.enableZoom = true,
     this.onLoadError,
@@ -31,6 +33,7 @@ class ExtendedImageReaderWidget extends StatefulWidget {
   final String contentId;
   final int pageNumber;
   final ReadingMode readingMode;
+  final String? sourceId;
   final Map<String, String>? httpHeaders;
   final bool enableZoom;
   final VoidCallback? onLoadError;
@@ -45,9 +48,23 @@ class ExtendedImageReaderWidget extends StatefulWidget {
 
 class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+  static final Dio _ehentaiResolverDio = Dio(
+    BaseOptions(
+      responseType: ResponseType.plain,
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 20),
+      sendTimeout: const Duration(seconds: 15),
+    ),
+  );
+  static final Map<String, String> _ehentaiResolvedImageCache =
+      <String, String>{};
+  static final Map<String, Future<String?>> _ehentaiResolveInFlight =
+      <String, Future<String?>>{};
+
   late AnimationController _zoomController;
   late Animation<double> _zoomAnimation;
   final GlobalKey<ExtendedImageGestureState> _gestureKey = GlobalKey();
+  Future<String?>? _ehentaiResolvedImageFuture;
 
   // Animation controllers for enhanced UI
   late AnimationController _pulseController;
@@ -78,6 +95,20 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     _pulseAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+
+    _prepareEhentaiResolveFuture();
+  }
+
+  @override
+  void didUpdateWidget(covariant ExtendedImageReaderWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final sourceChanged = oldWidget.sourceId != widget.sourceId;
+    final imageChanged = oldWidget.imageUrl != widget.imageUrl;
+
+    if (sourceChanged || imageChanged) {
+      _prepareEhentaiResolveFuture();
+    }
   }
 
   @override
@@ -231,65 +262,218 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         },
       );
     } else {
-      // Use ExtendedImage.network for URLs
-      return ExtendedImage.network(
-        widget.imageUrl,
-        key:
-            ValueKey('extended_image_${widget.contentId}_${widget.pageNumber}'),
-        headers: widget.httpHeaders,
-        fit: _getAdaptiveBoxFit(),
-        mode: widget.enableZoom &&
-                widget.readingMode != ReadingMode.continuousScroll
-            ? ExtendedImageMode.gesture
-            : ExtendedImageMode.none,
-        clearMemoryCacheWhenDispose: false,
-        cache: true,
-        enableLoadState: true,
-        extendedImageGestureKey: _gestureKey,
-        initGestureConfigHandler: (state) {
-          return GestureConfig(
-            minScale: 1.0, // No zoom out - always at fit scale
-            maxScale: 3.0, // Max 3x zoom for reading small text
-            animationMinScale: 0.9, // Smooth bounce back animation
-            animationMaxScale: 3.5,
-            speed: 1.0,
-            inertialSpeed: 100.0,
-            initialScale: 1.0, // Start at fit scale (no zoom)
-            // 🐛 BUG FIX: Only use PageView optimization for actual PageView modes
-            // For continuous scroll (ListView), set to false to avoid gesture conflicts
-            inPageView: widget.readingMode != ReadingMode.continuousScroll,
-            cacheGesture: false, // Don't cache zoom state between pages
-            initialAlignment: InitialAlignment.center,
-          );
-        },
-        onDoubleTap: widget.enableZoom
-            ? (ExtendedImageGestureState state) => _handleDoubleTap(state)
-            : null,
-        loadStateChanged: (ExtendedImageState state) {
-          switch (state.extendedImageLoadState) {
-            case LoadState.loading:
-              return _buildLoadingIndicator(context);
-            case LoadState.failed:
-              return _buildErrorWidget(context, state);
-            case LoadState.completed:
-              // 🎯 PHASE 1: Report image dimensions when loaded
-              if (widget.onImageLoaded != null &&
-                  state.extendedImageInfo?.image != null) {
-                final image = state.extendedImageInfo!.image;
-                final imageSize = Size(
-                  image.width.toDouble(),
-                  image.height.toDouble(),
-                );
-                // Call callback on next frame to avoid calling during build
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  widget.onImageLoaded?.call(widget.pageNumber, imageSize);
-                });
-              }
-              return _buildCompletedImage(context, state);
+      final isEhentaiReaderUrl = _isEhentaiReaderPageUrl(widget.imageUrl);
+      if (!isEhentaiReaderUrl) {
+        return _buildNetworkImage(
+          context,
+          widget.imageUrl,
+          headers: widget.httpHeaders,
+        );
+      }
+
+      return FutureBuilder<String?>(
+        future: _ehentaiResolvedImageFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return _buildLoadingIndicator(context);
           }
+
+          final resolved = snapshot.data;
+          if (resolved == null || resolved.isEmpty) {
+            return _buildStandaloneErrorWidget(context);
+          }
+
+          return _buildNetworkImage(
+            context,
+            resolved,
+            headers: _buildEhentaiImageHeaders(widget.imageUrl),
+          );
         },
       );
     }
+  }
+
+  void _prepareEhentaiResolveFuture() {
+    if (_isEhentaiReaderPageUrl(widget.imageUrl)) {
+      _ehentaiResolvedImageFuture = _resolveEhentaiImageUrl(widget.imageUrl);
+      return;
+    }
+
+    _ehentaiResolvedImageFuture = null;
+  }
+
+  Widget _buildNetworkImage(
+    BuildContext context,
+    String url, {
+    Map<String, String>? headers,
+  }) {
+    return ExtendedImage.network(
+      url,
+      key: ValueKey('extended_image_${widget.contentId}_${widget.pageNumber}'),
+      headers: headers,
+      fit: _getAdaptiveBoxFit(),
+      mode: widget.enableZoom &&
+              widget.readingMode != ReadingMode.continuousScroll
+          ? ExtendedImageMode.gesture
+          : ExtendedImageMode.none,
+      clearMemoryCacheWhenDispose: false,
+      cache: true,
+      enableLoadState: true,
+      extendedImageGestureKey: _gestureKey,
+      initGestureConfigHandler: (state) {
+        return GestureConfig(
+          minScale: 1.0,
+          maxScale: 3.0,
+          animationMinScale: 0.9,
+          animationMaxScale: 3.5,
+          speed: 1.0,
+          inertialSpeed: 100.0,
+          initialScale: 1.0,
+          inPageView: widget.readingMode != ReadingMode.continuousScroll,
+          cacheGesture: false,
+          initialAlignment: InitialAlignment.center,
+        );
+      },
+      onDoubleTap: widget.enableZoom
+          ? (ExtendedImageGestureState state) => _handleDoubleTap(state)
+          : null,
+      loadStateChanged: (ExtendedImageState state) {
+        switch (state.extendedImageLoadState) {
+          case LoadState.loading:
+            return _buildLoadingIndicator(context);
+          case LoadState.failed:
+            return _buildErrorWidget(context, state);
+          case LoadState.completed:
+            if (widget.onImageLoaded != null &&
+                state.extendedImageInfo?.image != null) {
+              final image = state.extendedImageInfo!.image;
+              final imageSize = Size(
+                image.width.toDouble(),
+                image.height.toDouble(),
+              );
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                widget.onImageLoaded?.call(widget.pageNumber, imageSize);
+              });
+            }
+            return _buildCompletedImage(context, state);
+        }
+      },
+    );
+  }
+
+  bool _isEhentaiReaderPageUrl(String url) {
+    if (widget.sourceId != 'ehentai') {
+      return false;
+    }
+
+    final lowered = url.toLowerCase();
+    return lowered.contains('/s/') &&
+        (lowered.contains('e-hentai.org') || lowered.contains('exhentai.org'));
+  }
+
+  Map<String, String> _buildEhentaiImageHeaders(String readerPageUrl) {
+    final headers = <String, String>{...?widget.httpHeaders};
+    headers['Referer'] = readerPageUrl;
+    return headers;
+  }
+
+  Future<String?> _resolveEhentaiImageUrl(String readerPageUrl) async {
+    final cached = _ehentaiResolvedImageCache[readerPageUrl];
+    if (cached != null && cached.isNotEmpty) {
+      return cached;
+    }
+
+    final inFlight = _ehentaiResolveInFlight[readerPageUrl];
+    if (inFlight != null) {
+      return inFlight;
+    }
+
+    final resolver = _resolveEhentaiImageUrlInternal(readerPageUrl);
+    _ehentaiResolveInFlight[readerPageUrl] = resolver;
+    try {
+      return await resolver;
+    } finally {
+      await _ehentaiResolveInFlight.remove(readerPageUrl);
+    }
+  }
+
+  Future<String?> _resolveEhentaiImageUrlInternal(String readerPageUrl) async {
+    try {
+      final response = await _ehentaiResolverDio.get<dynamic>(
+        readerPageUrl,
+        options: Options(
+          responseType: ResponseType.plain,
+          headers: widget.httpHeaders,
+          followRedirects: true,
+          validateStatus: (status) => (status ?? 0) < 400,
+        ),
+      );
+
+      final html = response.data?.toString() ?? '';
+      if (html.isEmpty) {
+        return null;
+      }
+
+      final imageUrl = _extractEhentaiImageUrl(html, readerPageUrl);
+      if (imageUrl != null && imageUrl.isNotEmpty) {
+        _ehentaiResolvedImageCache[readerPageUrl] = imageUrl;
+      }
+      return imageUrl;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String? _extractEhentaiImageUrl(String html, String baseUrl) {
+    final srcOrDataSrc = RegExp(
+      '<img[^>]*id=["\']img["\'][^>]*(?:src|data-src)=["\']([^"\']+)["\']',
+      caseSensitive: false,
+    ).firstMatch(html)?.group(1);
+
+    if (srcOrDataSrc != null && srcOrDataSrc.trim().isNotEmpty) {
+      return _toAbsoluteUrl(srcOrDataSrc.trim(), baseUrl);
+    }
+
+    final srcSet = RegExp(
+      '<img[^>]*id=["\']img["\'][^>]*srcset=["\']([^"\']+)["\']',
+      caseSensitive: false,
+    ).firstMatch(html)?.group(1);
+    if (srcSet != null && srcSet.trim().isNotEmpty) {
+      final first = srcSet.split(',').first.trim().split(' ').first.trim();
+      if (first.isNotEmpty) {
+        return _toAbsoluteUrl(first, baseUrl);
+      }
+    }
+
+    return null;
+  }
+
+  String _toAbsoluteUrl(String value, String baseUrl) {
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+    if (value.startsWith('//')) {
+      return 'https:$value';
+    }
+
+    try {
+      return Uri.parse(baseUrl).resolve(value).toString();
+    } catch (_) {
+      return value;
+    }
+  }
+
+  Widget _buildStandaloneErrorWidget(BuildContext context) {
+    return Container(
+      color: Theme.of(context).colorScheme.surface,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.all(16),
+      child: Text(
+        'Failed to load image',
+        style: Theme.of(context).textTheme.bodyMedium,
+        textAlign: TextAlign.center,
+      ),
+    );
   }
 
   /// Build loading indicator with logo and circular progress

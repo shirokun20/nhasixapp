@@ -135,7 +135,8 @@ class AppRouter {
         path: AppRoute.contentDetail,
         name: AppRoute.contentDetailName,
         pageBuilder: (context, state) {
-          final contentId = state.pathParameters['id']!;
+          final encodedId = state.pathParameters['id']!;
+          final contentId = Uri.decodeComponent(encodedId);
           final sourceId = state.uri.queryParameters['sourceId'];
           return AppAnimations.animatedPageBuilder(
             context,
@@ -154,7 +155,8 @@ class AppRouter {
         path: AppRoute.reader,
         name: AppRoute.readerName,
         builder: (context, state) {
-          final contentId = state.pathParameters['id']!;
+          final contentId =
+              Uri.decodeComponent(state.pathParameters['id'] ?? '');
           final page =
               int.tryParse(state.uri.queryParameters['page'] ?? '1') ?? 1;
           final forceStartFromBeginning =
@@ -418,8 +420,9 @@ class AppRouter {
   static Future<SearchFilter?> goToContentDetail(
       BuildContext context, String contentId,
       {String? sourceId}) async {
+    final encodedContentId = Uri.encodeComponent(contentId);
     final query = sourceId != null ? '?sourceId=$sourceId' : '';
-    return await context.push<SearchFilter>('/content/$contentId$query');
+    return await context.push<SearchFilter>('/content/$encodedContentId$query');
   }
 
   static void goToReader(BuildContext context, String contentId,
@@ -432,8 +435,9 @@ class AppRouter {
       List<Chapter>? allChapters, // All chapters for navigation
       Chapter? currentChapter}) {
     // Current chapter being read
+    final encodedContentId = Uri.encodeComponent(contentId);
     context.push(
-        '/reader/$contentId?page=$page&forceStartFromBeginning=$forceStartFromBeginning',
+        '/reader/$encodedContentId?page=$page&forceStartFromBeginning=$forceStartFromBeginning',
         extra: {
           'content': content,
           'imageMetadata': imageMetadata,

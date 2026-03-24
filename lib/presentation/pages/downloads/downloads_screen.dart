@@ -608,8 +608,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       if (offlineContent != null && offlineContent.imageUrls.isNotEmpty) {
         // ✅ Offline content loaded successfully, navigate with preloaded data
         if (!mounted) return;
-        await context.push('/reader/${download.contentId}',
-            extra: offlineContent);
+        final encodedContentId = Uri.encodeComponent(download.contentId);
+        await context.push('/reader/$encodedContentId', extra: offlineContent);
         return;
       }
     } catch (e) {
@@ -638,7 +638,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     );
 
     if (!mounted) return;
-    await context.push('/reader/${download.contentId}', extra: content);
+    final encodedContentId = Uri.encodeComponent(download.contentId);
+    await context.push('/reader/$encodedContentId', extra: content);
   }
 
   void _handleDownloadAction(

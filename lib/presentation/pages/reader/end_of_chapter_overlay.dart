@@ -21,6 +21,15 @@ class EndOfChapterOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final previousLabel =
+        (state.chapterData?.prevChapterTitle?.trim().isNotEmpty ?? false)
+            ? state.chapterData!.prevChapterTitle!.trim()
+            : 'Prev Chapter';
+    final nextLabel =
+        (state.chapterData?.nextChapterTitle?.trim().isNotEmpty ?? false)
+            ? state.chapterData!.nextChapterTitle!.trim()
+            : 'Next Chapter';
+
     return Container(
       color: Theme.of(context).colorScheme.surface,
       child: Center(
@@ -72,8 +81,7 @@ class EndOfChapterOverlay extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: onPreviousChapter,
                       icon: const Icon(Icons.skip_previous),
-                      label: const Text('Prev Chapter',
-                          textAlign: TextAlign.center),
+                      label: Text(previousLabel, textAlign: TextAlign.center),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
@@ -90,8 +98,7 @@ class EndOfChapterOverlay extends StatelessWidget {
                     child: FilledButton.icon(
                       onPressed: onNextChapter,
                       icon: const Icon(Icons.skip_next),
-                      label: const Text('Next Chapter',
-                          textAlign: TextAlign.center),
+                      label: Text(nextLabel, textAlign: TextAlign.center),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),

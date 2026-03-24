@@ -365,6 +365,12 @@ void _setupDataSources() {
     );
   });
 
+  // PersistCookieJar for EHentai — cookie persistence for auth & session mgmt
+  getIt.registerLazySingleton<PersistCookieJar>(() {
+    final cookieStorage = GenericCookieStorage('ehentai');
+    return PersistCookieJar(storage: cookieStorage);
+  });
+
   // Generic Source Factory — catch-all factory for config-driven providers
   getIt.registerLazySingleton<GenericSourceFactory>(() => GenericSourceFactory(
         dio: getIt<Dio>(),
