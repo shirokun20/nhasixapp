@@ -76,12 +76,28 @@
             "selector": "h1"
           },
           "coverUrl": {
-            "selector": "img",
+            "selector": "figure.image img",
             "attribute": "src"
           },
+          "description": {
+            "selector": "table.view-page-details tbody tr:nth-child(6) td:nth-child(2)"
+          },
           "tags": {
-            "selector": "a.tag, .label",
-            "multi": true
+            "selector": "table.view-page-details tbody tr:nth-child(5) td span.tag a",
+            "multi": true,
+            "regex": "([a-z0-9 ]+)\\s*\\("
+          },
+          "favorites": {
+            "selector": "table.view-page-details tbody tr:nth-child(4) td:nth-child(2)",
+            "regex": "([0-9]+)"
+          },
+          "artist": {
+            "selector": "table.view-page-details tbody tr:nth-child(1) td a.has-text-primary",
+            "text": true
+          },
+          "publisher": {
+            "selector": "table.view-page-details tbody tr:nth-child(2) td a.has-text-primary",
+            "text": true
           }
         }
       }
