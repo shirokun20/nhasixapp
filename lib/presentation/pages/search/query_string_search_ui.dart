@@ -310,6 +310,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
       context,
       filterType: filterType,
       selectedFilters: currentSelection,
+      sourceId: widget.sourceId,
       hideOtherTabs: true, // Only show this filter type
       supportsExclude: _supportsExclude,
     );

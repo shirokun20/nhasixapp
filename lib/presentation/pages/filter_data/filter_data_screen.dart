@@ -19,12 +19,14 @@ class FilterDataScreen extends StatefulWidget {
   const FilterDataScreen({
     super.key,
     required this.filterType,
+    this.sourceId = 'nhentai',
     required this.selectedFilters,
     this.hideOtherTabs = false,
     this.supportsExclude = true,
   });
 
   final String filterType;
+  final String sourceId;
   final List<FilterItem> selectedFilters;
   final bool hideOtherTabs;
   final bool supportsExclude;
@@ -74,6 +76,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
     // Initialize cubit
     _filterDataCubit.initialize(
       filterType: widget.filterType,
+      sourceId: widget.sourceId,
       selectedFilters: widget.selectedFilters,
     );
   }
@@ -320,6 +323,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                   onPressed: () {
                     _filterDataCubit.initialize(
                       filterType: widget.filterType,
+                      sourceId: widget.sourceId,
                       selectedFilters: widget.selectedFilters,
                     );
                   },

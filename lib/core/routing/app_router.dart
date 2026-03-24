@@ -72,6 +72,7 @@ class AppRouter {
         name: AppRoute.filterDataName,
         builder: (context, state) {
           final filterType = state.uri.queryParameters['type'] ?? 'tag';
+          final sourceId = state.uri.queryParameters['source'] ?? 'nhentai';
           final hideOtherTabs =
               state.uri.queryParameters['hideOtherTabs'] == 'true';
           final supportsExclude =
@@ -98,6 +99,7 @@ class AppRouter {
 
           return FilterDataScreen(
             filterType: filterType,
+            sourceId: sourceId,
             selectedFilters: selectedFilters,
             hideOtherTabs: hideOtherTabs,
             supportsExclude: supportsExclude,
@@ -494,12 +496,13 @@ class AppRouter {
     BuildContext context, {
     required String filterType,
     required List<FilterItem> selectedFilters,
+    String sourceId = 'nhentai',
     bool hideOtherTabs = false,
     bool supportsExclude = true,
   }) async {
     try {
       final result = await context.push<List<FilterItem>>(
-        '${AppRoute.filterData}?type=$filterType&hideOtherTabs=$hideOtherTabs&supportsExclude=$supportsExclude',
+        '${AppRoute.filterData}?type=$filterType&source=$sourceId&hideOtherTabs=$hideOtherTabs&supportsExclude=$supportsExclude',
         extra: selectedFilters,
       );
 
