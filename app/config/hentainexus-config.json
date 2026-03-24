@@ -120,6 +120,10 @@
         "type": "tag",
         "label": "Include Tag",
         "placeholder": "e.g. ahegao or heart pupils",
+        "multiInput": true,
+        "ui": {
+          "selector": "chips"
+        },
         "valuePrefix": "tag:",
         "quoteIfContainsSpace": true,
         "joinMode": "space"
@@ -129,6 +133,10 @@
         "type": "tag",
         "label": "Exclude Tag",
         "placeholder": "e.g. x-ray",
+        "multiInput": true,
+        "ui": {
+          "selector": "chips"
+        },
         "valuePrefix": "-tag:",
         "quoteIfContainsSpace": true,
         "joinMode": "space"

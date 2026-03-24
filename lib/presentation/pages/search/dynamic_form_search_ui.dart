@@ -47,6 +47,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   final Map<String, TextEditingController> _textControllers = {};
   final Map<String, String?> _selectValues = {};
   final Map<String, List<_DynamicOption>> _multiSelectValues = {};
+  final Map<String, List<String>> _tagChipValues = {};
   final Map<String, List<String>> _pendingMultiRestore = {};
 
   Map<String, dynamic>? _rawSearchForm;
@@ -83,6 +84,12 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
       final field = entry.value;
       if (_isPickerField(entry.key, field)) {
         _multiSelectValues[entry.key] = [];
+        continue;
+      }
+
+      if (_isTagChipsField(entry.key, field)) {
+        _textControllers[entry.key] = TextEditingController();
+        _tagChipValues[entry.key] = <String>[];
         continue;
       }
 
@@ -207,31 +214,39 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
 
       final parsed = _parseRaw(query.substring(4));
 
+      final fieldsByParam =
+          <String, List<MapEntry<String, SearchFormFieldConfig>>>{};
       for (final entry in widget.config.params.entries) {
-        final field = entry.value;
-        final qp = field.queryParam;
+        final qp = entry.value.queryParam;
         if (qp == null) continue;
+        (fieldsByParam[qp] ??= <MapEntry<String, SearchFormFieldConfig>>[])
+            .add(entry);
+      }
 
-        final val = parsed[qp]?.first;
-        final multiVals = parsed[qp] ?? const <String>[];
+      for (final grouped in fieldsByParam.entries) {
+        final queryParam = grouped.key;
+        final fields = grouped.value;
+        final values = parsed[queryParam] ?? const <String>[];
+        if (values.isEmpty) continue;
 
-        if (_isPickerField(entry.key, field)) {
-          if (multiVals.isNotEmpty) {
-            _pendingMultiRestore[entry.key] = multiVals;
-          }
+        final hasSpaceJoin = fields.any((entry) {
+          final raw = _rawFieldConfig(entry.key);
+          return ((raw?['joinMode'] as String?)?.trim().toLowerCase() ?? '') ==
+              'space';
+        });
+
+        if (fields.length > 1 && hasSpaceJoin) {
+          _restoreJoinedParamGroup(queryParam, values.first, fields);
           continue;
         }
 
-        if (val == null) continue;
-
-        switch (field.type) {
-          case 'text':
-          case 'tag':
-            _textControllers[entry.key]?.text = val;
-          case 'select':
-            if (mounted) setState(() => _selectValues[entry.key] = val);
-          default:
-            break;
+        for (final entry in fields) {
+          final field = entry.value;
+          if (_isPickerField(entry.key, field)) {
+            _pendingMultiRestore[entry.key] = values;
+            continue;
+          }
+          _setRestoredFieldValue(entry.key, field, values);
         }
       }
 
@@ -331,13 +346,16 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
         case 'text':
           final val = _textControllers[name]?.text.trim() ?? '';
           if (val.isNotEmpty) {
-            final formatted = _formatFieldValue(rawField, val);
-            addParamValue(qp, formatted, joinMode: joinMode);
+            final splitValues = _splitFieldInput(rawField, val, field.type);
+            for (final item in splitValues) {
+              final formatted = _formatFieldValue(rawField, item);
+              addParamValue(qp, formatted, joinMode: joinMode);
+            }
           }
         case 'tag':
-          final val = _textControllers[name]?.text.trim() ?? '';
-          if (val.isNotEmpty) {
-            final formatted = _formatFieldValue(rawField, val);
+          final values = _collectTagFieldValues(name, rawField);
+          for (final item in values) {
+            final formatted = _formatFieldValue(rawField, item);
             addParamValue(qp, formatted, joinMode: joinMode);
           }
         case 'select':
@@ -396,6 +414,9 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
       }
       for (final key in _multiSelectValues.keys) {
         _multiSelectValues[key] = [];
+      }
+      for (final key in _tagChipValues.keys) {
+        _tagChipValues[key] = [];
       }
     });
   }
@@ -468,7 +489,9 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
       child: switch (field.type) {
         _ when _isPickerField(name, field) => _buildPickerField(name, field),
         'text' => _buildTextField(name, field),
-        'tag' => _buildTagField(name, field),
+        'tag' => _isTagChipsField(name, field)
+            ? _buildTagChipsField(name, field)
+            : _buildTagField(name, field),
         'select' => _buildSelectField(name, field),
         _ => const SizedBox.shrink(),
       },
@@ -502,6 +525,78 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
       ),
       textInputAction: TextInputAction.search,
       onFieldSubmitted: (_) => _onSearch(),
+    );
+  }
+
+  Widget _buildTagChipsField(String name, SearchFormFieldConfig field) {
+    final chips = _tagChipValues[name] ?? const <String>[];
+    final controller = _textControllers[name];
+    final accent = _isExcludedTagField(name, field)
+        ? Theme.of(context).colorScheme.error
+        : Theme.of(context).colorScheme.tertiary;
+
+    void addCurrentInput() {
+      final value = controller?.text.trim() ?? '';
+      if (value.isEmpty) return;
+      final split = _splitFieldInput(_rawFieldConfig(name), value, field.type);
+      if (split.isEmpty) return;
+
+      setState(() {
+        final next = <String>[...chips];
+        for (final item in split) {
+          if (!next.contains(item)) {
+            next.add(item);
+          }
+        }
+        _tagChipValues[name] = next;
+        controller?.clear();
+      });
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          controller: controller,
+          decoration: InputDecoration(
+            labelText: _labelFor(name),
+            hintText: field.placeholder ?? 'Add tag and press +',
+            prefixIcon: const Icon(Icons.tag),
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.add),
+              tooltip: 'Add tag',
+              onPressed: addCurrentInput,
+            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            filled: true,
+          ),
+          textInputAction: TextInputAction.done,
+          onFieldSubmitted: (_) => addCurrentInput(),
+        ),
+        if (chips.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: chips
+                .map(
+                  (chip) => InputChip(
+                    label: Text(chip),
+                    backgroundColor: accent.withValues(alpha: 0.14),
+                    side: BorderSide(color: accent.withValues(alpha: 0.55)),
+                    deleteIconColor: accent,
+                    onDeleted: () {
+                      setState(() {
+                        _tagChipValues[name] =
+                            chips.where((x) => x != chip).toList();
+                      });
+                    },
+                  ),
+                )
+                .toList(),
+          ),
+        ],
+      ],
     );
   }
 
@@ -1376,6 +1471,16 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     return false;
   }
 
+  bool _isTagChipsField(String name, SearchFormFieldConfig field) {
+    if (field.type != 'tag') return false;
+    final rawField = _rawFieldConfig(name);
+    final ui = rawField?['ui'];
+    if (ui is Map<String, dynamic>) {
+      return (ui['selector'] as String?) == 'chips';
+    }
+    return false;
+  }
+
   bool _isIncludedTagField(String name, SearchFormFieldConfig field) {
     final lowerName = name.toLowerCase();
     final lowerQueryParam = (field.queryParam ?? '').toLowerCase();
@@ -1502,6 +1607,208 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     }
 
     return result;
+  }
+
+  List<String> _splitFieldInput(
+    Map<String, dynamic>? rawField,
+    String rawValue,
+    String fieldType,
+  ) {
+    final value = rawValue.trim();
+    if (value.isEmpty) return const <String>[];
+
+    final multiInput = rawField?['multiInput'] as bool? ?? false;
+    final shouldSplit = fieldType == 'tag' || multiInput;
+    if (!shouldSplit) return <String>[value];
+
+    return value
+        .split(RegExp(r'[\n,]+'))
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+  }
+
+  void _setRestoredFieldValue(
+    String name,
+    SearchFormFieldConfig field,
+    List<String> values,
+  ) {
+    if (values.isEmpty) return;
+
+    switch (field.type) {
+      case 'text':
+      case 'tag':
+        if (_isTagChipsField(name, field)) {
+          final parsed = <String>[];
+          for (final value in values) {
+            parsed
+                .addAll(_splitFieldInput(_rawFieldConfig(name), value, 'tag'));
+          }
+          _tagChipValues[name] = parsed.toSet().toList();
+          _textControllers[name]?.clear();
+        } else {
+          _textControllers[name]?.text = values.join(', ');
+        }
+      case 'select':
+        _selectValues[name] = values.first;
+      default:
+        break;
+    }
+  }
+
+  List<String> _collectTagFieldValues(
+    String name,
+    Map<String, dynamic>? rawField,
+  ) {
+    final field = widget.config.params[name];
+    if (field == null || field.type != 'tag') return const <String>[];
+
+    final values = <String>[];
+    if (_isTagChipsField(name, field)) {
+      values.addAll(_tagChipValues[name] ?? const <String>[]);
+
+      final trailingInput = _textControllers[name]?.text.trim() ?? '';
+      if (trailingInput.isNotEmpty) {
+        values.addAll(_splitFieldInput(rawField, trailingInput, field.type));
+      }
+
+      return values;
+    }
+
+    final val = _textControllers[name]?.text.trim() ?? '';
+    if (val.isNotEmpty) {
+      values.addAll(_splitFieldInput(rawField, val, field.type));
+    }
+
+    return values;
+  }
+
+  void _restoreJoinedParamGroup(
+    String queryParam,
+    String joinedValue,
+    List<MapEntry<String, SearchFormFieldConfig>> fields,
+  ) {
+    final tokens = _tokenizeQueryExpression(joinedValue);
+    final consumed = List<bool>.filled(tokens.length, false);
+
+    for (final entry in fields) {
+      final name = entry.key;
+      final field = entry.value;
+      final rawField = _rawFieldConfig(name);
+
+      if (_isPickerField(name, field)) continue;
+
+      final hasAffix =
+          ((rawField?['valuePrefix'] as String?)?.isNotEmpty ?? false) ||
+              ((rawField?['valueSuffix'] as String?)?.isNotEmpty ?? false);
+      if (!hasAffix) continue;
+
+      final matched = <String>[];
+      for (var i = 0; i < tokens.length; i++) {
+        if (consumed[i]) continue;
+        final extracted = _extractFieldCoreFromToken(tokens[i], rawField);
+        if (extracted == null) continue;
+        matched.add(extracted);
+        consumed[i] = true;
+      }
+
+      if (matched.isNotEmpty) {
+        _setRestoredFieldValue(name, field, matched);
+      }
+    }
+
+    final leftovers = <String>[];
+    for (var i = 0; i < tokens.length; i++) {
+      if (!consumed[i]) leftovers.add(tokens[i]);
+    }
+
+    if (leftovers.isEmpty) return;
+
+    MapEntry<String, SearchFormFieldConfig>? fallback;
+    for (final entry in fields) {
+      final name = entry.key;
+      final field = entry.value;
+      final rawField = _rawFieldConfig(name);
+      if (_isPickerField(name, field)) continue;
+      if (field.type != 'text' && field.type != 'tag') continue;
+
+      final hasAffix =
+          ((rawField?['valuePrefix'] as String?)?.isNotEmpty ?? false) ||
+              ((rawField?['valueSuffix'] as String?)?.isNotEmpty ?? false);
+      if (!hasAffix) {
+        if (name == 'query') {
+          fallback = entry;
+          break;
+        }
+        fallback ??= entry;
+      }
+    }
+
+    if (fallback != null) {
+      _setRestoredFieldValue(
+        fallback.key,
+        fallback.value,
+        <String>[leftovers.join(' ')],
+      );
+    }
+  }
+
+  List<String> _tokenizeQueryExpression(String expression) {
+    final tokens = <String>[];
+    final buffer = StringBuffer();
+    var inQuotes = false;
+
+    for (final rune in expression.runes) {
+      final ch = String.fromCharCode(rune);
+      if (ch == '"') {
+        inQuotes = !inQuotes;
+        buffer.write(ch);
+        continue;
+      }
+
+      if (!inQuotes && ch.trim().isEmpty) {
+        final token = buffer.toString().trim();
+        if (token.isNotEmpty) tokens.add(token);
+        buffer.clear();
+        continue;
+      }
+
+      buffer.write(ch);
+    }
+
+    final last = buffer.toString().trim();
+    if (last.isNotEmpty) tokens.add(last);
+
+    return tokens;
+  }
+
+  String? _extractFieldCoreFromToken(
+    String token,
+    Map<String, dynamic>? rawField,
+  ) {
+    var current = token.trim();
+    if (current.isEmpty) return null;
+
+    final prefix = (rawField?['valuePrefix'] as String? ?? '').trim();
+    final suffix = (rawField?['valueSuffix'] as String? ?? '').trim();
+
+    if (prefix.isNotEmpty) {
+      if (!current.startsWith(prefix)) return null;
+      current = current.substring(prefix.length);
+    }
+
+    if (suffix.isNotEmpty) {
+      if (!current.endsWith(suffix)) return null;
+      current = current.substring(0, current.length - suffix.length);
+    }
+
+    if (current.length >= 2 &&
+        current.startsWith('"') &&
+        current.endsWith('"')) {
+      current = current.substring(1, current.length - 1);
+    }
+
+    return current.trim().isEmpty ? null : current.trim();
   }
 
   dynamic _extractByPath(dynamic node, String path) {
