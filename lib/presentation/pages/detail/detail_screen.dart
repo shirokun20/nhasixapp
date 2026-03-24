@@ -258,6 +258,8 @@ class _DetailScreenState extends State<DetailScreen> {
         final transform = (mapping['transform'] as String? ?? '').trim();
         if (transform == 'lowercase') {
           value = value.toLowerCase();
+        } else if (transform == 'spaceToPlus') {
+          value = value.replaceAll(' ', '+');
         }
 
         final valuePrefix = (mapping['valuePrefix'] as String? ?? '').trim();
@@ -863,8 +865,10 @@ class _DetailScreenState extends State<DetailScreen> {
           if (content.groups.isNotEmpty)
             _buildMetadataRow(AppLocalizations.of(context)!.groupsLabel,
                 content.groups.join(', '), Icons.group),
-          _buildMetadataRow(AppLocalizations.of(context)!.uploadedLabel,
-              _formatDate(content.uploadDate), Icons.schedule),
+          if (_formatDate(content.uploadDate) !=
+              AppLocalizations.of(context)!.unknown)
+            _buildMetadataRow(AppLocalizations.of(context)!.uploadedLabel,
+                _formatDate(content.uploadDate), Icons.schedule),
           _buildMetadataRow(AppLocalizations.of(context)!.favoritesLabel,
               _formatNumber(content.favorites), Icons.favorite),
         ],
