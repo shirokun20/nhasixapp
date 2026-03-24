@@ -21,6 +21,7 @@ class FilterDataCubit extends Cubit<FilterDataState> {
 
   // Internal state
   String _currentFilterType = 'tag';
+  String _currentSourceId = 'nhentai';
   List<FilterItem> _selectedFilters = [];
   List<Tag> _filteredTags = [];
   String _searchQuery = '';
@@ -28,23 +29,24 @@ class FilterDataCubit extends Cubit<FilterDataState> {
   /// Initialize filter data screen
   Future<void> initialize({
     required String filterType,
+    String sourceId = 'nhentai',
     required List<FilterItem> selectedFilters,
   }) async {
     try {
-      _logger.i('FilterDataCubit: Initializing with type: $filterType');
+      _logger.i(
+          'FilterDataCubit: Initializing with type: $filterType, source: $sourceId');
 
       _currentFilterType = filterType;
+      _currentSourceId = sourceId;
       _selectedFilters = List<FilterItem>.from(selectedFilters);
       emit(FilterDataLoading(state));
-      // Ensure tag data is cached for default source (nhentai) for now
-      // Make FilterDataCubit source-aware
-      if (!_tagDataManager.hasTags('nhentai')) {
-        await _tagDataManager.initialize(source: 'nhentai');
+      if (!_tagDataManager.hasTags(_currentSourceId)) {
+        await _tagDataManager.initialize(source: _currentSourceId);
       }
 
       // Get tags by type
       _filteredTags = await _tagDataManager.getTagsByType(filterType,
-          limit: 100, source: 'nhentai');
+          limit: 100, source: _currentSourceId);
       emit(
         state.copyWith(
           filterType: _currentFilterType,
@@ -79,14 +81,18 @@ class FilterDataCubit extends Cubit<FilterDataState> {
 
       if (_searchQuery.isEmpty) {
         // Show all tags for current type
-        _filteredTags =
-            await _tagDataManager.getTagsByType(_currentFilterType, limit: 100);
+        _filteredTags = await _tagDataManager.getTagsByType(
+          _currentFilterType,
+          limit: 100,
+          source: _currentSourceId,
+        );
       } else {
         // Search tags by query and filter by type
         _filteredTags = await _tagDataManager.searchTags(
           _searchQuery,
           type: _currentFilterType,
           limit: 50,
+          source: _currentSourceId,
         );
       }
 
@@ -120,8 +126,11 @@ class FilterDataCubit extends Cubit<FilterDataState> {
       emit(FilterDataLoading(state));
 
       // Get tags by new type
-      _filteredTags =
-          await _tagDataManager.getTagsByType(filterType, limit: 100);
+      _filteredTags = await _tagDataManager.getTagsByType(
+        filterType,
+        limit: 100,
+        source: _currentSourceId,
+      );
 
       emit(state.copyWith(
         filterType: _currentFilterType,
