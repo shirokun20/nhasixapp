@@ -342,9 +342,13 @@ void main() {
         expect(coverUrl, isNotNull);
         expect(coverUrl, contains('images.hentainexus.com'));
 
-        expect(parser.extractString(doc, artistSel), 'Satou Tomoyuki (6)');
-        expect(
-            parser.extractString(doc, publisherSel), 'Irodori Comics (2,622)');
+        final artistRaw = parser.extractString(doc, artistSel) ?? '';
+        final publisherRaw = parser.extractString(doc, publisherSel) ?? '';
+        final artist = artistRaw.replaceAll(RegExp(r'\s+'), ' ').trim();
+        final publisher = publisherRaw.replaceAll(RegExp(r'\s+'), ' ').trim();
+
+        expect(artist, 'Satou Tomoyuki (6)');
+        expect(publisher, 'Irodori Comics (2,622)');
         expect(parser.extractString(doc, favoritesSel), '733');
 
         final tags = parser.extractList(doc, tagsSel);

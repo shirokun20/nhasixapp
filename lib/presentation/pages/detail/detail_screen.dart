@@ -264,6 +264,10 @@ class _DetailScreenState extends State<DetailScreen> {
         if (valuePrefix.isNotEmpty) {
           value = '$valuePrefix$value';
         }
+        final valueSuffix = (mapping['valueSuffix'] as String? ?? '').trim();
+        if (valueSuffix.isNotEmpty) {
+          value = '$value$valueSuffix';
+        }
 
         if (param.isEmpty) return null;
 

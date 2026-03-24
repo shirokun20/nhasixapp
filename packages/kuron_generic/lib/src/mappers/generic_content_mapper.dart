@@ -43,16 +43,16 @@ class GenericContentMapper {
       tags: tagsResolved.tags,
       artists: tagsResolved.artists.isNotEmpty
           ? tagsResolved.artists
-          : _strList(fields, 'artists'),
+          : _strListAny(fields, const ['artists', 'artist']),
       characters: tagsResolved.characters.isNotEmpty
           ? tagsResolved.characters
-          : _strList(fields, 'characters'),
+          : _strListAny(fields, const ['characters', 'character']),
       parodies: tagsResolved.parodies.isNotEmpty
           ? tagsResolved.parodies
-          : _strList(fields, 'parodies'),
+          : _strListAny(fields, const ['parodies', 'parody']),
       groups: tagsResolved.groups.isNotEmpty
           ? tagsResolved.groups
-          : _strList(fields, 'groups'),
+          : _strListAny(fields, const ['groups', 'group', 'publisher']),
       language: tagsResolved.language.isNotEmpty
           ? tagsResolved.language
           : _resolveLanguage(fields),
@@ -95,16 +95,16 @@ class GenericContentMapper {
       tags: tagsResolved.tags,
       artists: tagsResolved.artists.isNotEmpty
           ? tagsResolved.artists
-          : _strList(fields, 'artists'),
+          : _strListAny(fields, const ['artists', 'artist']),
       characters: tagsResolved.characters.isNotEmpty
           ? tagsResolved.characters
-          : _strList(fields, 'characters'),
+          : _strListAny(fields, const ['characters', 'character']),
       parodies: tagsResolved.parodies.isNotEmpty
           ? tagsResolved.parodies
-          : _strList(fields, 'parodies'),
+          : _strListAny(fields, const ['parodies', 'parody']),
       groups: tagsResolved.groups.isNotEmpty
           ? tagsResolved.groups
-          : _strList(fields, 'groups'),
+          : _strListAny(fields, const ['groups', 'group', 'publisher']),
       language: tagsResolved.language.isNotEmpty
           ? tagsResolved.language
           : _resolveLanguage(fields),
@@ -249,10 +249,32 @@ class GenericContentMapper {
     final v = f[key];
     if (v is List<String>) return v;
     if (v is List) {
-      return v.map((e) => e.toString()).where((s) => s.isNotEmpty).toList();
+      return v
+          .map((e) => _normalizeEntityName(e.toString()))
+          .where((s) => s.isNotEmpty)
+          .toList();
     }
-    if (v is String && v.isNotEmpty) return [v];
+    if (v is String && v.isNotEmpty) {
+      final normalized = _normalizeEntityName(v);
+      return normalized.isEmpty ? const [] : [normalized];
+    }
     return const [];
+  }
+
+  static List<String> _strListAny(Map<String, dynamic> f, List<String> keys) {
+    for (final key in keys) {
+      final values = _strList(f, key);
+      if (values.isNotEmpty) return values;
+    }
+    return const [];
+  }
+
+  static String _normalizeEntityName(String raw) {
+    final cleaned = raw.trim();
+    if (cleaned.isEmpty) return '';
+
+    // Drop trailing count labels like "Satou Tomoyuki (6)".
+    return cleaned.replaceFirst(RegExp(r'\s*\([0-9,]+\)\s*$'), '').trim();
   }
 
   static String _extractTitle(Map<String, dynamic> fields) {

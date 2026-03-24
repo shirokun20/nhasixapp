@@ -176,6 +176,21 @@ void main() {
       expect(result.groups, ['group-d']);
     });
 
+    test('maps singular artist/publisher aliases and strips trailing counts',
+        () {
+      final result = GenericContentMapper.toListItem(
+        {
+          'id': 'x',
+          'artist': 'Satou Tomoyuki (6)',
+          'publisher': 'Irodori Comics (2,622)',
+        },
+        sourceId: sourceId,
+      );
+
+      expect(result.artists, ['Satou Tomoyuki']);
+      expect(result.groups, ['Irodori Comics']);
+    });
+
     group('with tagObjects (nhentai-style)', () {
       final tagObjects = [
         {'id': 1, 'name': 'english', 'type': 'language', 'count': 0},
@@ -377,6 +392,20 @@ void main() {
         sourceId: sourceId,
       );
       expect(result.favorites, 77);
+    });
+
+    test('detail supports singular artist/publisher aliases', () {
+      final result = GenericContentMapper.toDetail(
+        'x',
+        {
+          'artist': 'Satou Tomoyuki (6)',
+          'publisher': 'Irodori Comics (2,622)',
+        },
+        sourceId: sourceId,
+      );
+
+      expect(result.artists, ['Satou Tomoyuki']);
+      expect(result.groups, ['Irodori Comics']);
     });
   });
 

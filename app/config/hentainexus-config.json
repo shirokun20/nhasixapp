@@ -1,6 +1,6 @@
 {
   "source": "hentainexus",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "configUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/config/hentainexus-config.json",
   "enabled": true,
   "defaultLanguage": "english",
@@ -94,10 +94,12 @@
             "regex": "Favorites\\s*([0-9]+)"
           },
           "artist": {
-            "selector": "table.view-page-details a[href*=\"q=artist:%22\"]"
+            "selector": "table.view-page-details a[href*=\"q=artist:%22\"]",
+            "regex": "^(.+?)(?:\\s+\\([0-9,]+\\))?$"
           },
           "publisher": {
-            "selector": "table.view-page-details a[href*=\"q=publisher:%22\"]"
+            "selector": "table.view-page-details a[href*=\"q=publisher:%22\"]",
+            "regex": "^(.+?)(?:\\s+\\([0-9,]+\\))?$"
           }
         }
       }
@@ -119,6 +121,20 @@
   },
   "navigation": {
     "tagQueryMapping": {
+      "artist": {
+        "mode": "rawParam",
+        "param": "q",
+        "valueSource": "tagName",
+        "valuePrefix": "artist:\"",
+        "valueSuffix": "\""
+      },
+      "group": {
+        "mode": "rawParam",
+        "param": "q",
+        "valueSource": "tagName",
+        "valuePrefix": "publisher:\"",
+        "valueSuffix": "\""
+      },
       "tag": {
         "mode": "rawParam",
         "param": "q",
