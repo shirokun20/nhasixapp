@@ -1,6 +1,6 @@
 {
   "source": "hentainexus",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "configUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/config/hentainexus-config.json",
   "enabled": true,
   "defaultLanguage": "english",
@@ -152,6 +152,76 @@
         "transform": "spaceToPlus"
       }
     }
+  },
+  "searchRules": {
+    "multipleTagsRequirePrefix": true,
+    "spacedTagsRequireQuotes": true,
+    "excludePrefix": "-",
+    "queryFormat": "prefix:value -prefix:value text search",
+    "examples": [
+      {
+        "query": "tag:ahegao",
+        "description": "Search for single tag"
+      },
+      {
+        "query": "tag:\"heart pupils\"",
+        "description": "Search for tag with spaces (auto-converts to tag:%22heart+pupils%22)"
+      },
+      {
+        "query": "artist:NaPaTa tag:vanilla",
+        "description": "Search for multiple tags (requires prefix for each)"
+      },
+      {
+        "query": "-tag:x-ray The Real tag:kogal",
+        "description": "Exclude tag and text search combined"
+      },
+      {
+        "query": "tag:ahegao pages:>=20",
+        "description": "Filter by page count"
+      }
+    ],
+    "tagPrefixes": {
+      "tag": "tag",
+      "artist": "artist",
+      "group": "publisher",
+      "character": "character",
+      "parody": "parody",
+      "language": "language",
+      "title": "title",
+      "description": "description",
+      "pages": "pages",
+      "favorited": "favorited"
+    },
+    "operators": [
+      {
+        "operator": ":",
+        "description": "Include tag with prefix"
+      },
+      {
+        "operator": "-",
+        "description": "Exclude tag"
+      },
+      {
+        "operator": ">",
+        "description": "Greater than (pages:>20)"
+      },
+      {
+        "operator": ">=",
+        "description": "Greater than or equal"
+      },
+      {
+        "operator": "<",
+        "description": "Less than"
+      },
+      {
+        "operator": "<=",
+        "description": "Less than or equal"
+      },
+      {
+        "operator": "=",
+        "description": "Equal to (pages:=20)"
+      }
+    ]
   },
   "features": {
     "search": true,
