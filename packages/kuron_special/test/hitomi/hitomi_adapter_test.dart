@@ -382,6 +382,68 @@ void main() {
       expect(encoded, contains('"comments"'));
       expect(encoded, contains('"reader"'));
     });
+
+    test('normalizes raw-encoded query from DynamicFormSearchUI', () async {
+      // When DynamicFormSearchUI submits with multi-field form, it encodes query as:
+      // "raw:q=url_encoded_value&other_param=..."
+      // HitomiAdapter must extract the plain tag from the q parameter
+      mockNozomi(
+        url:
+            'https://ltn.gold-usergeneratedcontent.net/tag/female%3Aanal-all.nozomi',
+        ids: const [10],
+      );
+      mockGg();
+      mockGallery(id: 10, title: 'Search via raw', files: const [_sampleFile]);
+
+      final result = await adapter.search(
+        const SearchFilter(query: 'raw:q=female%3Aanal', page: 1),
+        config,
+      );
+
+      expect(result.items.length, 1);
+      expect(result.items.first.id, '10');
+    });
+
+    test('handles raw-encoded multi-field query with space-joined tokens',
+        () async {
+      // If config ever adds multi-field that join with spaces,
+      // raw query might be: "raw:q=female%3Aanal&q=artist%3Aname"
+      // Should handle multiple q params gracefully
+      mockNozomi(
+        url:
+            'https://ltn.gold-usergeneratedcontent.net/tag/female%3Aanal%20artist%3Aname-all.nozomi',
+        ids: const [11],
+      );
+      mockGg();
+      mockGallery(id: 11, title: 'Multi-param', files: const [_sampleFile]);
+
+      final result = await adapter.search(
+        const SearchFilter(
+            query: 'raw:q=female%3Aanal&q=artist%3Aname', page: 1),
+        config,
+      );
+
+      expect(result.items.length, 1);
+      expect(result.items.first.id, '11');
+    });
+
+    test('leaves plain query unchanged', () async {
+      mockNozomi(
+        url:
+            'https://ltn.gold-usergeneratedcontent.net/tag/male%3Akan-all.nozomi',
+        ids: const [12],
+      );
+      mockGg();
+      mockGallery(id: 12, title: 'Plain query', files: const [_sampleFile]);
+
+      final result = await adapter.search(
+        const SearchFilter(query: 'male:kan', page: 1),
+        config,
+      );
+
+      expect(result.items.length, 1);
+      expect(result.items.first.id, '12');
+    });
   });
 }
 

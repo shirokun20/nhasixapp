@@ -29,7 +29,12 @@ class HitomiAdapter implements GenericAdapter {
     SearchFilter filter,
     Map<String, dynamic> rawConfig,
   ) async {
-    final allIds = await _loadIds(filter.query, rawConfig);
+    // Normalize query: extract plain tag from raw format if present
+    // DynamicFormSearchUI passes query as "raw:q=value1&..." for multi-field forms
+    // Hitomi nozomi protocol only understands plain tag queries like "female:anal"
+    final normalizedQuery = _normalizeQuery(filter.query);
+
+    final allIds = await _loadIds(normalizedQuery, rawConfig);
     if (allIds.isEmpty) {
       return const AdapterSearchResult(
         items: <Content>[],
@@ -446,6 +451,49 @@ class HitomiAdapter implements GenericAdapter {
     }
 
     return tags;
+  }
+
+  /// Normalize query for Hitomi nozomi protocol.
+  ///
+  /// DynamicFormSearchUI produces queries in "raw:" format when using multi-field
+  /// forms. This method extracts the bare query string that nozomi protocol expects.
+  ///
+  /// Examples:
+  ///   - "female:anal" → "female:anal" (no change, plain query)
+  ///   - "raw:q=female%3Aanal" → "female:anal" (extract & decode q param)
+  ///   - "" → ""
+  String _normalizeQuery(String input) {
+    if (input.isEmpty) return '';
+
+    // Check if this is a raw-encoded format from DynamicFormSearchUI
+    if (input.startsWith('raw:')) {
+      final rawParams = input.substring(4);
+
+      // Parse key=value pairs
+      final params = <String, List<String>>{};
+      for (final pair in rawParams.split('&')) {
+        if (pair.isEmpty) continue;
+        final idx = pair.indexOf('=');
+        if (idx < 0) continue;
+        final k = Uri.decodeComponent(pair.substring(0, idx));
+        final v = Uri.decodeComponent(pair.substring(idx + 1));
+        (params[k] ??= []).add(v);
+      }
+
+      // Extract 'q' parameter which contains the joined query tokens
+      // (For hitomi, this should be a single tag like "female:anal")
+      final qValues = params['q'] ?? [];
+      if (qValues.isNotEmpty) {
+        // Join multiple q values with space (in case multi-field generates multiple tokens)
+        return qValues.join(' ').trim();
+      }
+
+      // No 'q' param, return empty
+      return '';
+    }
+
+    // Not raw-encoded, return as-is (already a plain query)
+    return input.trim();
   }
 
   Future<void> _throttle(Map<String, dynamic> rawConfig) async {
