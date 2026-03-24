@@ -26,6 +26,8 @@ void main() {
       'hitomiProtocol': {
         'indexNozomiEndpoint':
             'https://ltn.gold-usergeneratedcontent.net/index-all.nozomi',
+        'searchNozomiEndpoint':
+            'https://ltn.gold-usergeneratedcontent.net/search/{hash}-all.nozomi',
         'tagNozomiEndpoint':
             'https://ltn.gold-usergeneratedcontent.net/tag/{query}-all.nozomi',
         'galleryJsEndpoint':
@@ -427,17 +429,17 @@ void main() {
       expect(result.items.first.id, '11');
     });
 
-    test('leaves plain query unchanged', () async {
+    test('plain query uses hash search nozomi endpoint', () async {
       mockNozomi(
         url:
-            'https://ltn.gold-usergeneratedcontent.net/tag/male%3Akan-all.nozomi',
+            'https://ltn.gold-usergeneratedcontent.net/search/016526330aaf250542e5acc9103d9f663a8a5bb00d1b8607a1b170b6d93d6401-all.nozomi',
         ids: const [12],
       );
       mockGg();
       mockGallery(id: 12, title: 'Plain query', files: const [_sampleFile]);
 
       final result = await adapter.search(
-        const SearchFilter(query: 'male:kan', page: 1),
+        const SearchFilter(query: 'neko', page: 1),
         config,
       );
 

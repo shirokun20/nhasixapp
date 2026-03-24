@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:extended_image/extended_image.dart';
@@ -61,20 +62,22 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       <String, String>{};
   static final Map<String, Future<String?>> _ehentaiResolveInFlight =
       <String, Future<String?>>{};
+  static final Map<String, double> _syntheticProgressByImageKey =
+      <String, double>{};
 
   late AnimationController _zoomController;
   late Animation<double> _zoomAnimation;
   final GlobalKey<ExtendedImageGestureState> _gestureKey = GlobalKey();
   Future<String?>? _ehentaiResolvedImageFuture;
 
-  // Animation controllers for enhanced UI
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
-
   // 🔄 AUTO-RETRY: Track retry attempts for timeout/network errors
   int _imageLoadRetries = 0;
   static const int _maxImageLoadRetries = 3;
   Timer? _autoRetryTimer;
+  Timer? _syntheticProgressTimer;
+  double _syntheticProgressValue = 0.0;
+
+  String get _imageProgressKey => '${widget.contentId}_${widget.pageNumber}';
 
   // 🎯 PHASE 2: Cache loaded image size for webtoon detection
   // Size? _loadedImageSize;
@@ -93,14 +96,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     // Initialize with dummy animation (will be replaced on double-tap)
     _zoomAnimation = _zoomController.drive(Tween<double>(begin: 1.0, end: 1.0));
 
-    // Initialize pulse animation for loading indicator
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    _syntheticProgressValue =
+        _syntheticProgressByImageKey[_imageProgressKey] ?? 0.0;
 
     _prepareEhentaiResolveFuture();
   }
@@ -120,9 +117,57 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   @override
   void dispose() {
     _zoomController.dispose();
-    _pulseController.dispose();
     _autoRetryTimer?.cancel();
+    _syntheticProgressTimer?.cancel();
     super.dispose();
+  }
+
+  bool _hasRealByteProgress(ExtendedImageState state) {
+    try {
+      final dynamic progressEvent = (state as dynamic).loadingProgress;
+      final dynamic loadedRaw = progressEvent?.cumulativeBytesLoaded;
+      return loadedRaw is num && loadedRaw > 0;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void _startSyntheticProgress() {
+    if (_syntheticProgressTimer != null) return;
+
+    if (_syntheticProgressValue <= 0.0) {
+      _syntheticProgressValue = 0.05;
+      _syntheticProgressByImageKey[_imageProgressKey] = _syntheticProgressValue;
+    }
+
+    _syntheticProgressTimer =
+        Timer.periodic(const Duration(milliseconds: 180), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        _syntheticProgressTimer = null;
+        return;
+      }
+
+      setState(() {
+        // Slow down as it approaches completion to look natural.
+        final step = _syntheticProgressValue > 0.9 ? 0.006 : 0.015;
+        _syntheticProgressValue =
+            (_syntheticProgressValue + step).clamp(0.05, 0.99);
+        _syntheticProgressByImageKey[_imageProgressKey] =
+            _syntheticProgressValue;
+      });
+    });
+  }
+
+  void _stopSyntheticProgress({bool reset = false}) {
+    _syntheticProgressTimer?.cancel();
+    _syntheticProgressTimer = null;
+    if (reset) {
+      _syntheticProgressValue = 0.0;
+      _syntheticProgressByImageKey.remove(_imageProgressKey);
+    } else {
+      _syntheticProgressByImageKey[_imageProgressKey] = _syntheticProgressValue;
+    }
   }
 
   /// Adaptive BoxFit based on reading mode and image type for optimal reading comfort.
@@ -248,10 +293,17 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         loadStateChanged: (ExtendedImageState state) {
           switch (state.extendedImageLoadState) {
             case LoadState.loading:
-              return _buildLoadingIndicator(context);
+              if (_hasRealByteProgress(state)) {
+                _stopSyntheticProgress();
+              } else {
+                _startSyntheticProgress();
+              }
+              return _buildLoadingIndicator(context, state: state);
             case LoadState.failed:
+              _stopSyntheticProgress(reset: true);
               return _buildErrorWidget(context, state);
             case LoadState.completed:
+              _stopSyntheticProgress(reset: true);
               // 🎯 PHASE 1: Report image dimensions when loaded
               if (widget.onImageLoaded != null &&
                   state.extendedImageInfo?.image != null) {
@@ -272,10 +324,14 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     } else {
       final isEhentaiReaderUrl = _isEhentaiReaderPageUrl(widget.imageUrl);
       if (!isEhentaiReaderUrl) {
+        final headers = widget.sourceId == 'hentainexus'
+            ? _buildHentainexusImageHeaders(widget.imageUrl)
+            : widget.httpHeaders;
+
         return _buildNetworkImage(
           context,
           widget.imageUrl,
-          headers: widget.httpHeaders,
+          headers: headers,
         );
       }
 
@@ -325,14 +381,17 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       // 🔥 THERMAL: Use none for HentaiNexus; medium for others. Skips quality downsampling.
       filterQuality: _isHeavyReaderSource() &&
               widget.readingMode == ReadingMode.continuousScroll
-          ? FilterQuality.none
+          ? FilterQuality.low
           : (_isHeavyReaderSource() ? FilterQuality.low : FilterQuality.medium),
       mode: widget.enableZoom &&
               widget.readingMode != ReadingMode.continuousScroll
           ? ExtendedImageMode.gesture
           : ExtendedImageMode.none,
+      // Keep RAM cache for heavy sources so scrolling back to older pages
+      // does not trigger full reload/decode again.
       clearMemoryCacheWhenDispose:
-          widget.readingMode == ReadingMode.continuousScroll,
+          widget.readingMode == ReadingMode.continuousScroll &&
+              !_isHeavyReaderSource(),
       cache: true,
       cacheWidth: decodeWidth,
       enableLoadState: true,
@@ -357,8 +416,14 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       loadStateChanged: (ExtendedImageState state) {
         switch (state.extendedImageLoadState) {
           case LoadState.loading:
-            return _buildLoadingIndicator(context);
+            if (_hasRealByteProgress(state)) {
+              _stopSyntheticProgress();
+            } else {
+              _startSyntheticProgress();
+            }
+            return _buildLoadingIndicator(context, state: state);
           case LoadState.failed:
+            _stopSyntheticProgress(reset: true);
             // 🔄 AUTO-RETRY: Check if should auto-retry (timeout/network error)
             if (_shouldAutoRetryImage(state) &&
                 _imageLoadRetries < _maxImageLoadRetries) {
@@ -366,6 +431,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             }
             return _buildErrorWidget(context, state);
           case LoadState.completed:
+            _stopSyntheticProgress(reset: true);
+            _syntheticProgressByImageKey[_imageProgressKey] = 1.0;
             _imageLoadRetries = 0; // Reset retries on success
             if (widget.onImageLoaded != null &&
                 state.extendedImageInfo?.image != null) {
@@ -405,15 +472,24 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
 
     final mediaQuery = MediaQuery.of(context);
-    // 🔥 THERMAL: Reduce decode width to 50% of screen (vs 100%) for aggressive GPU load reduction
-    // HentaiNexus images are large; 50% width is still readable with minimal quality loss
-    return ((mediaQuery.size.width * 0.5) * mediaQuery.devicePixelRatio)
+    // Use 75% width to keep text/details sharp while still limiting decoder load.
+    return ((mediaQuery.size.width * 0.75) * mediaQuery.devicePixelRatio)
         .round();
   }
 
   Map<String, String> _buildEhentaiImageHeaders(String readerPageUrl) {
     final headers = <String, String>{...?widget.httpHeaders};
     headers['Referer'] = readerPageUrl;
+    return headers;
+  }
+
+  Map<String, String> _buildHentainexusImageHeaders(String imageUrl) {
+    final headers = <String, String>{...?widget.httpHeaders};
+    headers['Accept'] =
+        'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8';
+    headers['Accept-Language'] = 'en-US,en;q=0.6';
+    headers['Origin'] = 'https://hentainexus.com';
+    headers['Referer'] = 'https://hentainexus.com/';
     return headers;
   }
 
@@ -503,6 +579,21 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
   }
 
+  String _formatByteSize(int bytes) {
+    if (bytes <= 0) {
+      return '0 B';
+    }
+    if (bytes < 1024) {
+      return '$bytes B';
+    }
+    final kb = bytes / 1024;
+    if (kb < 1024) {
+      return '${kb.toStringAsFixed(1)} KB';
+    }
+    final mb = kb / 1024;
+    return '${mb.toStringAsFixed(2)} MB';
+  }
+
   Widget _buildStandaloneErrorWidget(BuildContext context) {
     return Container(
       color: Theme.of(context).colorScheme.surface,
@@ -516,16 +607,57 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     );
   }
 
-  /// Build loading indicator with logo and circular progress
-  Widget _buildLoadingIndicator(BuildContext context) {
+  /// Build loading indicator with download progress.
+  ///
+  /// Note: PNG/JPG progressive partial rendering is format/server dependent.
+  /// We provide byte-level progress to indicate how close the image is to display.
+  Widget _buildLoadingIndicator(BuildContext context,
+      {ExtendedImageState? state}) {
     // Responsive sizing based on reading mode
     final bool isContinuousScroll =
         widget.readingMode == ReadingMode.continuousScroll;
 
-    final double cardSize = isContinuousScroll ? 250 : 200;
-    final double logoSize = isContinuousScroll ? 100 : 100;
-    final double progressSize = isContinuousScroll ? 120 : 160;
-    final double strokeWidth = isContinuousScroll ? 6 : 8;
+    final double cardWidth = isContinuousScroll ? 280 : 240;
+    final double previewHeight = isContinuousScroll ? 150 : 170;
+
+    double? progressValue;
+    int? progressPercent;
+    int loadedBytes = 0;
+    int? totalBytes;
+    try {
+      final dynamic progressEvent = (state as dynamic).loadingProgress;
+      final loadedRaw = progressEvent?.cumulativeBytesLoaded;
+      final totalRaw = progressEvent?.expectedTotalBytes;
+
+      if (loadedRaw is num) {
+        loadedBytes = loadedRaw.toInt();
+      }
+      if (totalRaw is num) {
+        totalBytes = totalRaw.toInt();
+      }
+
+      if (totalBytes != null && totalBytes > 0) {
+        progressValue = (loadedBytes / totalBytes).clamp(0.0, 1.0);
+        progressPercent = (progressValue * 100).floor();
+      } else if (loadedBytes > 0) {
+        // Fallback estimate when server does not send total bytes.
+        // Smoothly approaches 95% and avoids a flat indeterminate loader.
+        final estimated = 1 - math.exp(-(loadedBytes / (320 * 1024)));
+        progressValue = estimated.clamp(0.02, 0.95);
+        progressPercent = (progressValue * 100).floor();
+      }
+
+      if (progressValue == null && _syntheticProgressValue > 0) {
+        progressValue = _syntheticProgressValue;
+        progressPercent = (progressValue * 100).floor();
+      }
+    } catch (_) {
+      // Keep indicator indeterminate when progress fields are unavailable.
+      if (_syntheticProgressValue > 0) {
+        progressValue = _syntheticProgressValue;
+        progressPercent = (progressValue * 100).floor();
+      }
+    }
 
     return Container(
       color: Theme.of(context).colorScheme.surface,
@@ -533,58 +665,68 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
           ? const EdgeInsets.symmetric(vertical: 20)
           : EdgeInsets.zero,
       child: Center(
-        child: AnimatedBuilder(
-          animation: _pulseAnimation,
-          builder: (context, child) {
-            return Card(
-              elevation: 8,
-              shadowColor:
-                  Theme.of(context).colorScheme.shadow.withValues(alpha: 0.3),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Container(
-                width: cardSize,
-                padding: const EdgeInsets.all(16),
-                child: Stack(
+        child: Card(
+          elevation: 6,
+          shadowColor:
+              Theme.of(context).colorScheme.shadow.withValues(alpha: 0.2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            width: cardWidth,
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  height: previewHeight,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   alignment: Alignment.center,
-                  children: [
-                    // Circular progress indicator background
-                    SizedBox(
-                      width: progressSize,
-                      height: progressSize,
-                      child: CircularProgressIndicator(
-                        strokeWidth: strokeWidth,
-                        backgroundColor: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Theme.of(context).colorScheme.primary,
+                  child: Text(
+                    progressPercent != null
+                        ? '$progressPercent%'
+                        : 'Loading...',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
                         ),
-                      ),
-                    ),
-
-                    // Logo in center
-                    Container(
-                      width: logoSize,
-                      height: logoSize,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        image: const DecorationImage(
-                          image: AssetImage('assets/icons/logo_app.png'),
-                          fit: BoxFit.cover,
-                        ),
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.surface,
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            );
-          },
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: progressValue,
+                    minHeight: 7,
+                    backgroundColor:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  totalBytes != null && totalBytes > 0
+                      ? '${_formatByteSize(loadedBytes)} / ${_formatByteSize(totalBytes)}'
+                      : progressPercent != null
+                          ? (loadedBytes > 0
+                              ? '${_formatByteSize(loadedBytes)} downloaded'
+                              : 'Estimating progress...')
+                          : 'Downloading image data...',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -804,16 +946,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
 
     // Only auto-retry for HentaiNexus (heavy source known to timeout)
-    if (widget.sourceId != 'hentainexus') {
-      return false;
-    }
-
-    // Don't auto-retry if already retrying
-    if (_autoRetryTimer?.isActive ?? false) {
-      return false;
-    }
-
-    return true;
+    return false;
   }
 
   /// 🔄 AUTO-RETRY: Schedule retry with exponential backoff

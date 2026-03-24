@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_generic/kuron_generic.dart';
@@ -131,25 +132,61 @@ class HitomiAdapter implements GenericAdapter {
 
     final indexEndpoint = (protocol['indexNozomiEndpoint'] as String?) ??
         'https://ltn.gold-usergeneratedcontent.net/index-all.nozomi';
+    final searchEndpointTemplate = (protocol['searchNozomiEndpoint']
+            as String?) ??
+        'https://ltn.gold-usergeneratedcontent.net/search/{hash}-all.nozomi';
     final tagEndpointTemplate = (protocol['tagNozomiEndpoint'] as String?) ??
         'https://ltn.gold-usergeneratedcontent.net/tag/{query}-all.nozomi';
 
-    final nozomiUrl = queryTrim.isEmpty
+    final usesTagEndpoint = _looksLikeTagQuery(queryTrim);
+    final primaryUrl = queryTrim.isEmpty
         ? indexEndpoint
-        : tagEndpointTemplate.replaceAll(
-            '{query}', Uri.encodeComponent(queryTrim));
+        : usesTagEndpoint
+            ? tagEndpointTemplate.replaceAll(
+                '{query}',
+                Uri.encodeComponent(queryTrim),
+              )
+            : searchEndpointTemplate.replaceAll(
+                '{hash}',
+                sha256.convert(utf8.encode(queryTrim.toLowerCase())).toString(),
+              );
 
-    await _throttle(rawConfig);
-    final response = await _dio.get<List<int>>(
-      nozomiUrl,
-      options: Options(responseType: ResponseType.bytes),
-    );
-    final bytes = response.data;
-    if (bytes == null || bytes.isEmpty) {
-      return const <int>[];
+    Future<List<int>> fetchIds(String url) async {
+      await _throttle(rawConfig);
+      final response = await _dio.get<List<int>>(
+        url,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final bytes = response.data;
+      if (bytes == null || bytes.isEmpty) {
+        return const <int>[];
+      }
+
+      return _decodeNozomiIds(Uint8List.fromList(bytes));
     }
 
-    return _decodeNozomiIds(Uint8List.fromList(bytes));
+    try {
+      return await fetchIds(primaryUrl);
+    } on DioException catch (e) {
+      if (queryTrim.isEmpty || e.response?.statusCode != 404) {
+        rethrow;
+      }
+
+      final fallbackUrl = usesTagEndpoint
+          ? searchEndpointTemplate.replaceAll(
+              '{hash}',
+              sha256.convert(utf8.encode(queryTrim.toLowerCase())).toString(),
+            )
+          : tagEndpointTemplate.replaceAll(
+              '{query}',
+              Uri.encodeComponent(queryTrim),
+            );
+
+      _logger.w(
+        'Hitomi nozomi 404 on primary endpoint, retrying with fallback URL: $fallbackUrl',
+      );
+      return fetchIds(fallbackUrl);
+    }
   }
 
   List<int> _decodeNozomiIds(Uint8List bytes) {
@@ -494,6 +531,20 @@ class HitomiAdapter implements GenericAdapter {
 
     // Not raw-encoded, return as-is (already a plain query)
     return input.trim();
+  }
+
+  bool _looksLikeTagQuery(String query) {
+    if (query.isEmpty) return false;
+
+    final tokens = query
+        .split(RegExp(r'\s+'))
+        .where((token) => token.isNotEmpty)
+        .toList(growable: false);
+    if (tokens.isEmpty) return false;
+
+    // Hitomi tag nozomi endpoint expects namespaced tokens such as:
+    // female:anal, male:kan, artist:name, group:name, language:english, etc.
+    return tokens.every((token) => token.contains(':'));
   }
 
   Future<void> _throttle(Map<String, dynamic> rawConfig) async {

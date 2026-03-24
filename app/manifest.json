@@ -95,7 +95,7 @@
     },
     {
       "id": "hitomi",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "url": "config/hitomi-config.json",
       "meta": {
         "displayName": "Hitomi.la",
