@@ -270,6 +270,28 @@ class GenericHttpSource implements ContentSource {
   }) {
     final headers = Map<String, String>.from(_defaultHeaders);
     headers['Referer'] = refererHeader;
+
+    // 🔥 HOTFIX: HentaiNexus throttles requests with minimal headers
+    // Add full browser headers to bypass server-side rate limiting
+    if (_id == 'hentainexus') {
+      headers['Accept'] =
+          'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8';
+      headers['Accept-Encoding'] = 'gzip, deflate, br';
+      headers['Accept-Language'] = 'en-US,en;q=0.9';
+      headers['DNT'] = '1';
+      headers['Sec-Fetch-Dest'] = 'image';
+      headers['Sec-Fetch-Mode'] = 'no-cors';
+      headers['Sec-Fetch-Site'] = 'cross-site';
+      // Already have Referer, don't override
+
+      // Enhance User-Agent to look more like Chrome
+      if (!headers.containsKey('User-Agent') ||
+          headers['User-Agent']?.isEmpty == true) {
+        headers['User-Agent'] =
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
+      }
+    }
+
     if (cookies != null && cookies.isNotEmpty) {
       headers['Cookie'] =
           cookies.entries.map((e) => '${e.key}=${e.value}').join('; ');
