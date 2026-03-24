@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
@@ -9,6 +10,7 @@ import 'package:logger/logger.dart';
 
 class HitomiAdapter implements GenericAdapter {
   static const int _pageSize = 20;
+  static const int _hitomiNodeSizeBytes = 464;
 
   final Dio _dio;
   final Logger _logger;
@@ -129,64 +131,328 @@ class HitomiAdapter implements GenericAdapter {
   ) async {
     final protocol = _protocol(rawConfig);
     final queryTrim = query.trim();
+    final defaultLanguage =
+        (protocol['defaultNozomiLanguage'] as String?)?.trim().toLowerCase();
+    final language = (defaultLanguage == null || defaultLanguage.isEmpty)
+        ? 'all'
+        : defaultLanguage;
 
     final indexEndpoint = (protocol['indexNozomiEndpoint'] as String?) ??
         'https://ltn.gold-usergeneratedcontent.net/index-all.nozomi';
-    final searchEndpointTemplate = (protocol['searchNozomiEndpoint']
-            as String?) ??
-        'https://ltn.gold-usergeneratedcontent.net/search/{hash}-all.nozomi';
     final tagEndpointTemplate = (protocol['tagNozomiEndpoint'] as String?) ??
         'https://ltn.gold-usergeneratedcontent.net/tag/{query}-all.nozomi';
+    final galleriesIndexVersionEndpoint =
+        (protocol['galleriesIndexVersionEndpoint'] as String?) ??
+            'https://ltn.gold-usergeneratedcontent.net/galleriesindex/version';
+    final galleriesIndexIndexEndpointTemplate = (protocol[
+            'galleriesIndexIndexEndpoint'] as String?) ??
+        'https://ltn.gold-usergeneratedcontent.net/galleriesindex/galleries.{version}.index';
+    final galleriesIndexDataEndpointTemplate = (protocol[
+            'galleriesIndexDataEndpoint'] as String?) ??
+        'https://ltn.gold-usergeneratedcontent.net/galleriesindex/galleries.{version}.data';
 
-    final usesTagEndpoint = _looksLikeTagQuery(queryTrim);
-    final primaryUrl = queryTrim.isEmpty
-        ? indexEndpoint
-        : usesTagEndpoint
-            ? tagEndpointTemplate.replaceAll(
-                '{query}',
-                Uri.encodeComponent(queryTrim),
-              )
-            : searchEndpointTemplate.replaceAll(
-                '{hash}',
-                sha256.convert(utf8.encode(queryTrim.toLowerCase())).toString(),
-              );
+    Future<List<int>> fetchNozomiIds(String url) async {
+      final bytes = await _getBytes(url, rawConfig: rawConfig);
+      if (bytes.isEmpty) return const <int>[];
+      return _decodeNozomiIds(bytes);
+    }
 
-    Future<List<int>> fetchIds(String url) async {
-      await _throttle(rawConfig);
-      final response = await _dio.get<List<int>>(
-        url,
-        options: Options(responseType: ResponseType.bytes),
+    if (queryTrim.isEmpty) {
+      return fetchNozomiIds(indexEndpoint);
+    }
+
+    Future<Set<int>> getIdsForQueryToken(String token) async {
+      final normalized = token.trim().toLowerCase().replaceAll('_', ' ');
+      if (normalized.isEmpty) return <int>{};
+
+      if (normalized.contains(':')) {
+        final splitIndex = normalized.indexOf(':');
+        final ns = normalized.substring(0, splitIndex);
+        var tag = normalized.substring(splitIndex + 1);
+
+        String? area = ns;
+        var lang = language;
+
+        switch (ns) {
+          case 'female':
+          case 'male':
+            area = 'tag';
+            tag = normalized;
+            break;
+          case 'language':
+            area = null;
+            lang = tag;
+            tag = 'index';
+            break;
+          default:
+            lang = 'all';
+            break;
+        }
+
+        final nozomiUrl = area == null
+            ? 'https://ltn.gold-usergeneratedcontent.net/$tag-$lang.nozomi'
+            : area == 'tag'
+                ? tagEndpointTemplate.replaceAll(
+                    '{query}',
+                    Uri.encodeComponent(tag),
+                  )
+                : 'https://ltn.gold-usergeneratedcontent.net/$area/$tag-$lang.nozomi';
+
+        return fetchNozomiIds(nozomiUrl).then((ids) => ids.toSet());
+      }
+
+      final versionBytes =
+          await _getBytes(galleriesIndexVersionEndpoint, rawConfig: rawConfig);
+      final version = utf8.decode(versionBytes).trim();
+      if (version.isEmpty) {
+        _logger.w('Hitomi galleriesindex version is empty for token "$token"');
+        return <int>{};
+      }
+
+      final indexUrl = galleriesIndexIndexEndpointTemplate.replaceAll(
+        '{version}',
+        version,
       );
-      final bytes = response.data;
-      if (bytes == null || bytes.isEmpty) {
+      final dataUrl = galleriesIndexDataEndpointTemplate.replaceAll(
+        '{version}',
+        version,
+      );
+
+      final keyHash = _hashTerm(normalized);
+      final rootNodeBytes = await _getBytes(
+        indexUrl,
+        rawConfig: rawConfig,
+        range: const _ByteRange(0, _hitomiNodeSizeBytes - 1),
+      );
+      final rootNode = _decodeNode(rootNodeBytes);
+      final dataRef = await _bSearch(keyHash, rootNode, indexUrl, rawConfig);
+      if (dataRef == null) return <int>{};
+
+      final dataBytes = await _getBytes(
+        dataUrl,
+        rawConfig: rawConfig,
+        range: _ByteRange(dataRef.offset, dataRef.offset + dataRef.length - 1),
+      );
+      return _decodeGalleryIdsFromData(dataBytes);
+    }
+
+    final terms = queryTrim
+        .toLowerCase()
+        .split(RegExp(r'\s+'))
+        .where((term) => term.isNotEmpty)
+        .toList(growable: false);
+
+    if (terms.isEmpty) {
+      return const <int>[];
+    }
+
+    final positiveTerms =
+        terms.where((term) => !term.startsWith('-')).toList(growable: false);
+    final negativeTerms = terms
+        .where((term) => term.startsWith('-'))
+        .map((term) => term.substring(1))
+        .where((term) => term.isNotEmpty)
+        .toList(growable: false);
+
+    final result = <int>{};
+    var initialized = false;
+
+    for (final term in positiveTerms) {
+      final ids = await getIdsForQueryToken(term);
+      if (!initialized) {
+        result.addAll(ids);
+        initialized = true;
+      } else {
+        result.retainAll(ids);
+      }
+
+      if (result.isEmpty) {
         return const <int>[];
       }
-
-      return _decodeNozomiIds(Uint8List.fromList(bytes));
     }
 
-    try {
-      return await fetchIds(primaryUrl);
-    } on DioException catch (e) {
-      if (queryTrim.isEmpty || e.response?.statusCode != 404) {
-        rethrow;
+    if (!initialized) {
+      result.addAll(await fetchNozomiIds(indexEndpoint));
+    }
+
+    for (final term in negativeTerms) {
+      final ids = await getIdsForQueryToken(term);
+      result.removeAll(ids);
+    }
+
+    return result.toList(growable: false);
+  }
+
+  Future<Uint8List> _getBytes(
+    String url, {
+    required Map<String, dynamic> rawConfig,
+    _ByteRange? range,
+  }) async {
+    await _throttle(rawConfig);
+    final headers = <String, String>{};
+    if (range != null) {
+      headers['Range'] = 'bytes=${range.start}-${range.end}';
+    }
+
+    final response = await _dio.get<List<int>>(
+      url,
+      options: Options(
+        responseType: ResponseType.bytes,
+        headers: headers.isEmpty ? null : headers,
+      ),
+    );
+    final data = response.data;
+    if (data == null || data.isEmpty) {
+      return Uint8List(0);
+    }
+
+    return Uint8List.fromList(data);
+  }
+
+  Uint8List _hashTerm(String term) {
+    final digest = sha256.convert(utf8.encode(term)).bytes;
+    return Uint8List.fromList(digest.take(4).toList(growable: false));
+  }
+
+  _HitomiNode _decodeNode(Uint8List data) {
+    final buffer = ByteData.sublistView(data);
+    var position = 0;
+
+    if (buffer.lengthInBytes < 4) {
+      throw const FormatException('Invalid Hitomi node: missing key count');
+    }
+
+    final numberOfKeys = buffer.getUint32(position, Endian.big);
+    position += 4;
+    final keys = <Uint8List>[];
+
+    for (var i = 0; i < numberOfKeys; i++) {
+      if (position + 4 > buffer.lengthInBytes) {
+        throw const FormatException('Invalid Hitomi node: missing key size');
       }
 
-      final fallbackUrl = usesTagEndpoint
-          ? searchEndpointTemplate.replaceAll(
-              '{hash}',
-              sha256.convert(utf8.encode(queryTrim.toLowerCase())).toString(),
-            )
-          : tagEndpointTemplate.replaceAll(
-              '{query}',
-              Uri.encodeComponent(queryTrim),
-            );
+      final keySize = buffer.getUint32(position, Endian.big);
+      position += 4;
+      if (keySize == 0 || keySize > 32) {
+        throw const FormatException('Invalid Hitomi node key size');
+      }
+      if (position + keySize > buffer.lengthInBytes) {
+        throw const FormatException('Invalid Hitomi node: truncated key');
+      }
 
-      _logger.w(
-        'Hitomi nozomi 404 on primary endpoint, retrying with fallback URL: $fallbackUrl',
-      );
-      return fetchIds(fallbackUrl);
+      final keyBytes = data.sublist(position, position + keySize);
+      keys.add(Uint8List.fromList(keyBytes));
+      position += keySize;
     }
+
+    if (position + 4 > buffer.lengthInBytes) {
+      throw const FormatException('Invalid Hitomi node: missing data count');
+    }
+
+    final numberOfDatas = buffer.getUint32(position, Endian.big);
+    position += 4;
+    final datas = <_NodeDataRef>[];
+
+    for (var i = 0; i < numberOfDatas; i++) {
+      if (position + 12 > buffer.lengthInBytes) {
+        throw const FormatException(
+            'Invalid Hitomi node: truncated data entry');
+      }
+
+      final offset = buffer.getUint64(position, Endian.big);
+      position += 8;
+      final length = buffer.getUint32(position, Endian.big);
+      position += 4;
+      datas.add(_NodeDataRef(offset: offset, length: length));
+    }
+
+    const subNodeCount = 17;
+    final subNodeAddresses = <int>[];
+    for (var i = 0; i < subNodeCount; i++) {
+      if (position + 8 > buffer.lengthInBytes) {
+        throw const FormatException('Invalid Hitomi node: truncated sub-node');
+      }
+      subNodeAddresses.add(buffer.getUint64(position, Endian.big));
+      position += 8;
+    }
+
+    return _HitomiNode(
+      keys: keys,
+      datas: datas,
+      subNodeAddresses: subNodeAddresses,
+    );
+  }
+
+  int _compareBytes(Uint8List a, Uint8List b) {
+    final limit = min(a.length, b.length);
+    for (var i = 0; i < limit; i++) {
+      if (a[i] < b[i]) return -1;
+      if (a[i] > b[i]) return 1;
+    }
+    return 0;
+  }
+
+  ({bool found, int index}) _locateKey(Uint8List key, _HitomiNode node) {
+    for (var i = 0; i < node.keys.length; i++) {
+      final cmp = _compareBytes(key, node.keys[i]);
+      if (cmp <= 0) {
+        return (found: cmp == 0, index: i);
+      }
+    }
+    return (found: false, index: node.keys.length);
+  }
+
+  bool _isLeaf(_HitomiNode node) =>
+      node.subNodeAddresses.every((address) => address == 0);
+
+  Future<_NodeDataRef?> _bSearch(
+    Uint8List key,
+    _HitomiNode node,
+    String indexUrl,
+    Map<String, dynamic> rawConfig,
+  ) async {
+    if (node.keys.isEmpty) return null;
+
+    final located = _locateKey(key, node);
+    if (located.found) {
+      return node.datas[located.index];
+    }
+    if (_isLeaf(node)) {
+      return null;
+    }
+
+    final nextAddress = node.subNodeAddresses[located.index];
+    final nextNodeBytes = await _getBytes(
+      indexUrl,
+      rawConfig: rawConfig,
+      range: _ByteRange(
+        nextAddress,
+        nextAddress + _hitomiNodeSizeBytes - 1,
+      ),
+    );
+    final nextNode = _decodeNode(nextNodeBytes);
+    return _bSearch(key, nextNode, indexUrl, rawConfig);
+  }
+
+  Set<int> _decodeGalleryIdsFromData(Uint8List inbuf) {
+    if (inbuf.length < 4) return const <int>{};
+
+    final buffer = ByteData.sublistView(inbuf);
+    final numberOfGalleryIds = buffer.getUint32(0, Endian.big);
+    final expectedLength = numberOfGalleryIds * 4 + 4;
+
+    if (numberOfGalleryIds == 0 || inbuf.length < expectedLength) {
+      return const <int>{};
+    }
+
+    final ids = <int>{};
+    var offset = 4;
+    for (var i = 0; i < numberOfGalleryIds; i++) {
+      ids.add(buffer.getUint32(offset, Endian.big));
+      offset += 4;
+    }
+
+    return ids;
   }
 
   List<int> _decodeNozomiIds(Uint8List bytes) {
@@ -309,6 +575,8 @@ class HitomiAdapter implements GenericAdapter {
     Map<String, dynamic> rawConfig,
   ) async {
     await _refreshGg(rawConfig);
+    final protocol = _protocol(rawConfig);
+    final preferAvif = (protocol['preferAvif'] as bool?) ?? false;
 
     final sourceId = (rawConfig['source'] as String?) ?? 'hitomi';
     final id = gallery['id']?.toString() ?? '';
@@ -326,7 +594,13 @@ class HitomiAdapter implements GenericAdapter {
       final hash = item['hash']?.toString();
       final name = item['name']?.toString() ?? '';
       if (hash == null || hash.isEmpty) continue;
-      imageUrls.add(_buildImageUrl(hash: hash, fileName: name));
+      imageUrls.add(
+        _buildImageUrl(
+          hash: hash,
+          fileName: name,
+          preferAvif: preferAvif,
+        ),
+      );
     }
 
     final coverUrl = imageUrls.isNotEmpty
@@ -401,12 +675,19 @@ class HitomiAdapter implements GenericAdapter {
   String _buildImageUrl({
     required String hash,
     required String fileName,
+    required bool preferAvif,
   }) {
     final imageId = _imageIdFromHash(hash);
     final offset = _offsetMap[imageId] ?? _defaultOffset;
-    final isGif = fileName.endsWith('.gif') || fileName.endsWith('.webp');
-    final type = isGif ? 'webp' : 'avif';
-    final subDomain = isGif ? 'w${offset + 1}' : 'a${offset + 1}';
+    final lowerName = fileName.toLowerCase();
+    final isGif = lowerName.endsWith('.gif');
+    final isWebp = lowerName.endsWith('.webp');
+
+    // Default to WEBP for device compatibility (notably some MIUI builds).
+    // AVIF can be enabled explicitly by config when decoding support is stable.
+    final useAvif = preferAvif && !isGif && !isWebp;
+    final type = useAvif ? 'avif' : 'webp';
+    final subDomain = useAvif ? 'a${offset + 1}' : 'w${offset + 1}';
 
     return 'https://$subDomain.gold-usergeneratedcontent.net/$_commonImageId$imageId/$hash.$type';
   }
@@ -533,20 +814,6 @@ class HitomiAdapter implements GenericAdapter {
     return input.trim();
   }
 
-  bool _looksLikeTagQuery(String query) {
-    if (query.isEmpty) return false;
-
-    final tokens = query
-        .split(RegExp(r'\s+'))
-        .where((token) => token.isNotEmpty)
-        .toList(growable: false);
-    if (tokens.isEmpty) return false;
-
-    // Hitomi tag nozomi endpoint expects namespaced tokens such as:
-    // female:anal, male:kan, artist:name, group:name, language:english, etc.
-    return tokens.every((token) => token.contains(':'));
-  }
-
   Future<void> _throttle(Map<String, dynamic> rawConfig) async {
     final network = (rawConfig['network'] as Map?)?.cast<String, dynamic>() ??
         const <String, dynamic>{};
@@ -572,4 +839,33 @@ class HitomiAdapter implements GenericAdapter {
 
     _lastRequestAt = DateTime.now();
   }
+}
+
+class _ByteRange {
+  final int start;
+  final int end;
+
+  const _ByteRange(this.start, this.end);
+}
+
+class _NodeDataRef {
+  final int offset;
+  final int length;
+
+  const _NodeDataRef({
+    required this.offset,
+    required this.length,
+  });
+}
+
+class _HitomiNode {
+  final List<Uint8List> keys;
+  final List<_NodeDataRef> datas;
+  final List<int> subNodeAddresses;
+
+  const _HitomiNode({
+    required this.keys,
+    required this.datas,
+    required this.subNodeAddresses,
+  });
 }

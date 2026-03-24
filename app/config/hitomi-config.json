@@ -1,6 +1,6 @@
 {
   "source": "hitomi",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "enabled": true,
   "defaultLanguage": "english",
   "baseUrl": "https://hitomi.la",
@@ -23,9 +23,13 @@
   },
   "hitomiProtocol": {
     "enabled": true,
+    "preferAvif": false,
+    "defaultNozomiLanguage": "all",
     "indexNozomiEndpoint": "https://ltn.gold-usergeneratedcontent.net/index-all.nozomi",
-    "searchNozomiEndpoint": "https://ltn.gold-usergeneratedcontent.net/search/{hash}-all.nozomi",
     "tagNozomiEndpoint": "https://ltn.gold-usergeneratedcontent.net/tag/{query}-all.nozomi",
+    "galleriesIndexVersionEndpoint": "https://ltn.gold-usergeneratedcontent.net/galleriesindex/version",
+    "galleriesIndexIndexEndpoint": "https://ltn.gold-usergeneratedcontent.net/galleriesindex/galleries.{version}.index",
+    "galleriesIndexDataEndpoint": "https://ltn.gold-usergeneratedcontent.net/galleriesindex/galleries.{version}.data",
     "galleryJsEndpoint": "https://ltn.gold-usergeneratedcontent.net/galleries/{id}.js",
     "ggJsEndpoint": "https://ltn.gold-usergeneratedcontent.net/gg.js",
     "mode": "simplified_protocol"

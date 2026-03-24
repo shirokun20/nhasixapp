@@ -26,10 +26,14 @@ void main() {
       'hitomiProtocol': {
         'indexNozomiEndpoint':
             'https://ltn.gold-usergeneratedcontent.net/index-all.nozomi',
-        'searchNozomiEndpoint':
-            'https://ltn.gold-usergeneratedcontent.net/search/{hash}-all.nozomi',
         'tagNozomiEndpoint':
             'https://ltn.gold-usergeneratedcontent.net/tag/{query}-all.nozomi',
+        'galleriesIndexVersionEndpoint':
+            'https://ltn.gold-usergeneratedcontent.net/galleriesindex/version',
+        'galleriesIndexIndexEndpoint':
+            'https://ltn.gold-usergeneratedcontent.net/galleriesindex/galleries.{version}.index',
+        'galleriesIndexDataEndpoint':
+            'https://ltn.gold-usergeneratedcontent.net/galleriesindex/galleries.{version}.data',
         'galleryJsEndpoint':
             'https://ltn.gold-usergeneratedcontent.net/galleries/{id}.js',
         'ggJsEndpoint': 'https://ltn.gold-usergeneratedcontent.net/gg.js',
@@ -57,6 +61,32 @@ void main() {
       mock.onGet(
         url,
         (server) => server.reply(200, _encodeNozomi(ids)),
+      );
+    }
+
+    void mockPlainSearchViaGalleriesIndex({
+      required List<int> keyPrefix,
+      required List<int> ids,
+      String version = 'v1',
+    }) {
+      final dataPayload = _encodeGalleriesIndexData(ids);
+      final nodePayload = _encodeGalleriesIndexNode(
+        keyPrefix: keyPrefix,
+        dataOffset: 0,
+        dataLength: dataPayload.length,
+      );
+
+      mock.onGet(
+        'https://ltn.gold-usergeneratedcontent.net/galleriesindex/version',
+        (server) => server.reply(200, Uint8List.fromList(utf8.encode(version))),
+      );
+      mock.onGet(
+        'https://ltn.gold-usergeneratedcontent.net/galleriesindex/galleries.$version.index',
+        (server) => server.reply(200, nodePayload),
+      );
+      mock.onGet(
+        'https://ltn.gold-usergeneratedcontent.net/galleriesindex/galleries.$version.data',
+        (server) => server.reply(200, dataPayload),
       );
     }
 
@@ -413,7 +443,11 @@ void main() {
       // Should handle multiple q params gracefully
       mockNozomi(
         url:
-            'https://ltn.gold-usergeneratedcontent.net/tag/female%3Aanal%20artist%3Aname-all.nozomi',
+            'https://ltn.gold-usergeneratedcontent.net/tag/female%3Aanal-all.nozomi',
+        ids: const [11, 12],
+      );
+      mockNozomi(
+        url: 'https://ltn.gold-usergeneratedcontent.net/artist/name-all.nozomi',
         ids: const [11],
       );
       mockGg();
@@ -429,10 +463,10 @@ void main() {
       expect(result.items.first.id, '11');
     });
 
-    test('plain query uses hash search nozomi endpoint', () async {
-      mockNozomi(
-        url:
-            'https://ltn.gold-usergeneratedcontent.net/search/016526330aaf250542e5acc9103d9f663a8a5bb00d1b8607a1b170b6d93d6401-all.nozomi',
+    test('plain query uses galleriesindex btree lookup', () async {
+      // sha256("neko") starts with bytes 01 65 26 33.
+      mockPlainSearchViaGalleriesIndex(
+        keyPrefix: const [0x01, 0x65, 0x26, 0x33],
         ids: const [12],
       );
       mockGg();
@@ -446,6 +480,32 @@ void main() {
       expect(result.items.length, 1);
       expect(result.items.first.id, '12');
     });
+
+    test('uses webp image URL by default for non-webp source files', () async {
+      mockNozomi(
+        url: 'https://ltn.gold-usergeneratedcontent.net/index-all.nozomi',
+        ids: const [13],
+      );
+      mockGg();
+      mockGallery(
+        id: 13,
+        title: 'Jpg source still webp URL',
+        files: const [
+          _HitomiFile(
+            hash:
+                '4444444444444444444444444444444444444444444444444444444444444444',
+            name: '01.jpg',
+          ),
+        ],
+      );
+
+      final result = await adapter.search(const SearchFilter(page: 1), config);
+
+      expect(result.items, isNotEmpty);
+      expect(result.items.first.imageUrls, isNotEmpty);
+      expect(result.items.first.imageUrls.first, contains('.webp'));
+      expect(result.items.first.imageUrls.first, contains('://w'));
+    });
   });
 }
 
@@ -453,6 +513,43 @@ Uint8List _encodeNozomi(List<int> ids) {
   final bytes = ByteData(ids.length * 4);
   for (var i = 0; i < ids.length; i++) {
     bytes.setUint32(i * 4, ids[i], Endian.big);
+  }
+  return bytes.buffer.asUint8List();
+}
+
+Uint8List _encodeGalleriesIndexNode({
+  required List<int> keyPrefix,
+  required int dataOffset,
+  required int dataLength,
+}) {
+  final bytes = ByteData(464);
+  var offset = 0;
+
+  bytes.setUint32(offset, 1, Endian.big);
+  offset += 4;
+
+  bytes.setUint32(offset, keyPrefix.length, Endian.big);
+  offset += 4;
+
+  for (final b in keyPrefix) {
+    bytes.setUint8(offset++, b);
+  }
+
+  bytes.setUint32(offset, 1, Endian.big);
+  offset += 4;
+
+  bytes.setUint64(offset, dataOffset, Endian.big);
+  offset += 8;
+  bytes.setUint32(offset, dataLength, Endian.big);
+
+  return bytes.buffer.asUint8List();
+}
+
+Uint8List _encodeGalleriesIndexData(List<int> ids) {
+  final bytes = ByteData(4 + (ids.length * 4));
+  bytes.setUint32(0, ids.length, Endian.big);
+  for (var i = 0; i < ids.length; i++) {
+    bytes.setUint32(4 + (i * 4), ids[i], Endian.big);
   }
   return bytes.buffer.asUint8List();
 }
