@@ -69,6 +69,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   late Animation<double> _zoomAnimation;
   final GlobalKey<ExtendedImageGestureState> _gestureKey = GlobalKey();
   Future<String?>? _ehentaiResolvedImageFuture;
+  String? _hitomiFallbackImageUrl;
 
   // 🔄 AUTO-RETRY: Track retry attempts for timeout/network errors
   int _imageLoadRetries = 0;
@@ -110,6 +111,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     final imageChanged = oldWidget.imageUrl != widget.imageUrl;
 
     if (sourceChanged || imageChanged) {
+      _hitomiFallbackImageUrl = null;
       _prepareEhentaiResolveFuture();
     }
   }
@@ -322,15 +324,16 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         },
       );
     } else {
-      final isEhentaiReaderUrl = _isEhentaiReaderPageUrl(widget.imageUrl);
+      final effectiveImageUrl = _hitomiFallbackImageUrl ?? widget.imageUrl;
+      final isEhentaiReaderUrl = _isEhentaiReaderPageUrl(effectiveImageUrl);
       if (!isEhentaiReaderUrl) {
         final headers = widget.sourceId == 'hentainexus'
-            ? _buildHentainexusImageHeaders(widget.imageUrl)
+            ? _buildHentainexusImageHeaders(effectiveImageUrl)
             : widget.httpHeaders;
 
         return _buildNetworkImage(
           context,
-          widget.imageUrl,
+          effectiveImageUrl,
           headers: headers,
         );
       }
@@ -424,6 +427,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             return _buildLoadingIndicator(context, state: state);
           case LoadState.failed:
             _stopSyntheticProgress(reset: true);
+            if (_tryHitomiAvifFallback(url)) {
+              return _buildLoadingIndicator(context);
+            }
             // 🔄 AUTO-RETRY: Check if should auto-retry (timeout/network error)
             if (_shouldAutoRetryImage(state) &&
                 _imageLoadRetries < _maxImageLoadRetries) {
@@ -459,6 +465,51 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     final lowered = url.toLowerCase();
     return lowered.contains('/s/') &&
         (lowered.contains('e-hentai.org') || lowered.contains('exhentai.org'));
+  }
+
+  bool _tryHitomiAvifFallback(String failedUrl) {
+    if ((widget.sourceId ?? '').toLowerCase() != 'hitomi') {
+      return false;
+    }
+    if (_hitomiFallbackImageUrl != null) {
+      return false;
+    }
+
+    final lowered = failedUrl.toLowerCase();
+    if (!lowered.contains('gold-usergeneratedcontent.net') ||
+        !lowered.contains('.avif')) {
+      return false;
+    }
+
+    final webpUrl = _toHitomiWebpUrl(failedUrl);
+    if (webpUrl == failedUrl) {
+      return false;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _imageLoadRetries = 0;
+        _hitomiFallbackImageUrl = webpUrl;
+      });
+    });
+    return true;
+  }
+
+  String _toHitomiWebpUrl(String url) {
+    final withWebpHost = url.replaceFirstMapped(
+      RegExp(r'^(https://)a(\d+)\.gold-usergeneratedcontent\.net',
+          caseSensitive: false),
+      (match) =>
+          '${match.group(1)}w${match.group(2)}.gold-usergeneratedcontent.net',
+    );
+
+    return withWebpHost.replaceFirstMapped(
+      RegExp(r'\.avif(?=($|[?#]))', caseSensitive: false),
+      (_) => '.webp',
+    );
   }
 
   bool _isHeavyReaderSource() {
