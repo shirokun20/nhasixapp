@@ -73,31 +73,29 @@
       "detail": {
         "fields": {
           "title": {
-            "selector": "h1"
+            "selector": "h1.title"
           },
           "coverUrl": {
             "selector": "figure.image img",
             "attribute": "src"
           },
           "description": {
-            "selector": "table.view-page-details tbody tr:nth-child(6) td:nth-child(2)"
+            "selector": "table.view-page-details tr:nth-of-type(6) td:not(.viewcolumn)"
           },
           "tags": {
-            "selector": "table.view-page-details tbody tr:nth-child(5) td span.tag a",
+            "selector": "table.view-page-details tr:nth-of-type(5) span.tag a",
             "multi": true,
-            "regex": "([a-z0-9 ]+)\\s*\\("
+            "regex": "^([a-z0-9 ]+)\\s+\\("
           },
           "favorites": {
-            "selector": "table.view-page-details tbody tr:nth-child(4) td:nth-child(2)",
+            "selector": "table.view-page-details tr:nth-of-type(4) td:not(.viewcolumn)",
             "regex": "([0-9]+)"
           },
           "artist": {
-            "selector": "table.view-page-details tbody tr:nth-child(1) td a.has-text-primary",
-            "text": true
+            "selector": "table.view-page-details tr:nth-of-type(1) td:not(.viewcolumn) a"
           },
           "publisher": {
-            "selector": "table.view-page-details tbody tr:nth-child(2) td a.has-text-primary",
-            "text": true
+            "selector": "table.view-page-details tr:nth-of-type(2) td:not(.viewcolumn) a"
           }
         }
       }
