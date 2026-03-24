@@ -19,6 +19,9 @@ class GenericHtmlParser {
   dom.Document parse(String htmlString) => html_parser.parse(htmlString);
 
   /// Extract a single string value from [document] using [selector].
+  ///
+  /// If [selector.regex] is provided and selector has multiple matching elements,
+  /// scans through them and returns the first value that matches the regex.
   String? extractString(dom.Document document, FieldSelector selector) {
     try {
       if (selector.regex != null) {
@@ -26,6 +29,9 @@ class GenericHtmlParser {
         // value that matches the regex. This is useful for repeated selectors
         // where only one node contains the desired token.
         final elements = document.querySelectorAll(selector.selector);
+        _logger.d(
+            'GenericHtmlParser.extractString: selector="${selector.selector}", regex=${selector.regex}, found ${elements.length} elements');
+
         for (final element in elements) {
           final value = selector.attribute != null
               ? element.attributes[selector.attribute]
@@ -34,18 +40,32 @@ class GenericHtmlParser {
 
           final matched = _applyRegex(value, selector.regex!);
           if (matched != null && matched.isNotEmpty) {
+            _logger.d(
+                'GenericHtmlParser.extractString: regex matched on element: "$value" → "$matched"');
             return matched;
           }
         }
+        _logger.w(
+            'GenericHtmlParser.extractString: regex did not match any element for "${selector.selector}"');
         return selector.fallback;
       }
 
       final element = document.querySelector(selector.selector);
-      if (element == null) return selector.fallback;
+      if (element == null) {
+        _logger.t(
+            'GenericHtmlParser.extractString: selector "${selector.selector}" matched no elements');
+        return selector.fallback;
+      }
       final value = selector.attribute != null
           ? element.attributes[selector.attribute]
           : element.text.trim();
-      if (value == null || value.isEmpty) return selector.fallback;
+      if (value == null || value.isEmpty) {
+        _logger.t(
+            'GenericHtmlParser.extractString: selector "${selector.selector}" matched element but value empty');
+        return selector.fallback;
+      }
+      _logger.d(
+          'GenericHtmlParser.extractString: selector="${selector.selector}" → "$value"');
       return value;
     } catch (e) {
       _logger.w('GenericHtmlParser: failed to extract "${selector.selector}"',
@@ -55,15 +75,46 @@ class GenericHtmlParser {
   }
 
   /// Extract a list of string values from [document] using [selector].
+  ///
+  /// If [selector.regex] is provided, applies regex to each extracted value
+  /// and keeps only values where regex produces a match (group 1 if available,
+  /// else group 0). This is critical for multi-extraction with regex filtering
+  /// (e.g. tags where you want "ahegao" from "ahegao (123)").
   List<String> extractList(dom.Document document, FieldSelector selector) {
     try {
       final elements = document.querySelectorAll(selector.selector);
-      return elements
+      _logger.d(
+          'GenericHtmlParser.extractList: selector="${selector.selector}", multi=true, regex=${selector.regex}, found ${elements.length} elements');
+
+      final rawValues = elements
           .map((el) => selector.attribute != null
               ? (el.attributes[selector.attribute] ?? '')
               : el.text.trim())
           .where((s) => s.isNotEmpty)
           .toList();
+
+      if (selector.regex == null) {
+        _logger.d(
+            'GenericHtmlParser.extractList: no regex, returning ${rawValues.length} raw values');
+        return rawValues;
+      }
+
+      // Apply regex to each value
+      final regexed = <String>[];
+      for (final value in rawValues) {
+        final matched = _applyRegex(value, selector.regex!);
+        if (matched != null && matched.isNotEmpty) {
+          regexed.add(matched);
+          _logger.t(
+              'GenericHtmlParser.extractList: regex matched: "$value" → "$matched"');
+        } else {
+          _logger.t(
+              'GenericHtmlParser.extractList: regex rejected: "$value" (pattern: ${selector.regex})');
+        }
+      }
+      _logger.d(
+          'GenericHtmlParser.extractList: regex-filtered ${rawValues.length} → ${regexed.length} values');
+      return regexed;
     } catch (e) {
       _logger.w(
           'GenericHtmlParser: failed to extract list "${selector.selector}"',

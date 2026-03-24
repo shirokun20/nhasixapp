@@ -1,6 +1,6 @@
 {
   "source": "hentainexus",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "configUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/config/hentainexus-config.json",
   "enabled": true,
   "defaultLanguage": "english",
@@ -81,22 +81,23 @@
             "attribute": "src"
           },
           "description": {
-            "selector": "table.view-page-details tr:nth-of-type(6) td:not(.viewcolumn)"
+            "selector": "meta[property=\"og:description\"]",
+            "attribute": "content"
           },
           "tags": {
-            "selector": "table.view-page-details tr:nth-of-type(5) span.tag a",
+            "selector": "table.view-page-details span.tag a",
             "multi": true,
             "regex": "^([a-z0-9 ]+)\\s+\\("
           },
           "favorites": {
-            "selector": "table.view-page-details tr:nth-of-type(4) td:not(.viewcolumn)",
-            "regex": "([0-9]+)"
+            "selector": "table.view-page-details tr",
+            "regex": "Favorites\\s*([0-9]+)"
           },
           "artist": {
-            "selector": "table.view-page-details tr:nth-of-type(1) td:not(.viewcolumn) a"
+            "selector": "table.view-page-details a[href*=\"q=artist:%22\"]"
           },
           "publisher": {
-            "selector": "table.view-page-details tr:nth-of-type(2) td:not(.viewcolumn) a"
+            "selector": "table.view-page-details a[href*=\"q=publisher:%22\"]"
           }
         }
       }

@@ -1035,6 +1035,9 @@ class GenericScraperAdapter implements GenericAdapter {
     Map<String, dynamic> fieldsConfig,
   ) {
     final result = <String, dynamic>{};
+    _logger.d(
+        '$_sourceId: extracting ${fieldsConfig.length} fields from detail page');
+
     for (final entry in fieldsConfig.entries) {
       final defMap = _toDefMap(entry.value);
       if (defMap == null) continue;
@@ -1052,12 +1055,16 @@ class GenericScraperAdapter implements GenericAdapter {
               .where((v) => v.isNotEmpty)
               .toList();
         }
+        _logger.d(
+            '$_sourceId: extracted field "${entry.key}" (multi): ${values.length} values = $values');
         result[entry.key] = values;
       } else {
         var value = _parser.extractString(doc, sel) ?? '';
         if (transform == 'slug' && value.isNotEmpty) {
           value = _extractSlugFromUrl(value);
         }
+        _logger
+            .d('$_sourceId: extracted field "${entry.key}" (single): "$value"');
         result[entry.key] = value;
       }
     }
@@ -1087,6 +1094,16 @@ class GenericScraperAdapter implements GenericAdapter {
                 : c.text.trim())
             .where((s) => s.isNotEmpty)
             .toList();
+
+        // Apply regex filter if present
+        if (sel.regex != null) {
+          values = values
+              .map((v) => _applyRegex(v, sel.regex!))
+              .where((v) => v != null && v.isNotEmpty)
+              .cast<String>()
+              .toList();
+        }
+
         if (transform == 'slug') {
           values = values
               .map(_extractSlugFromUrl)
@@ -1173,6 +1190,19 @@ class GenericScraperAdapter implements GenericAdapter {
     match = chapterRegex.firstMatch(url);
     if (match != null) return match.group(1) ?? '';
     return '';
+  }
+
+  /// Apply a regex pattern to extract a substring.
+  /// Returns the first capture group if it exists, else the entire match (group 0).
+  String? _applyRegex(String input, String pattern) {
+    try {
+      final match = RegExp(pattern).firstMatch(input);
+      if (match == null) return null;
+      return match.groupCount > 0 ? match.group(1) : match.group(0);
+    } catch (e) {
+      _logger.w('$_sourceId: regex pattern error: $pattern', error: e);
+      return null;
+    }
   }
 
   bool _hasEnabledLink(dom.Document doc, String selector) {
