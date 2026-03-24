@@ -1,6 +1,7 @@
 {
   "source": "hentainexus",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "configUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app/config/hentainexus-config.json",
   "enabled": true,
   "defaultLanguage": "english",
   "baseUrl": "https://hentainexus.com",

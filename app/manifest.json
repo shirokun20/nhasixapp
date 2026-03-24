@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "lastUpdated": "2026-03-23T12:30:00+07:00",
+  "lastUpdated": "2026-03-24T12:30:00+07:00",
   "minimumAppVersion": "0.9.0",
   "installableSources": [
     {
@@ -80,7 +80,7 @@
     },
     {
       "id": "hentainexus",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "url": "config/hentainexus-config.json",
       "meta": {
         "displayName": "HentaiNexus",
