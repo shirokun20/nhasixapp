@@ -641,7 +641,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
 
     final wrappedAnchorHref = RegExp(
-      '<a[^>]*href=["\']([^"\']+)["\'][^>]*>\s*<img[^>]*id=["\']img["\']',
+      r'''<a[^>]*href=["']([^"']+)["'][^>]*>\s*<img[^>]*id=["']img["']''',
       caseSensitive: false,
     ).firstMatch(html)?.group(1);
     if (wrappedAnchorHref != null && wrappedAnchorHref.trim().isNotEmpty) {
