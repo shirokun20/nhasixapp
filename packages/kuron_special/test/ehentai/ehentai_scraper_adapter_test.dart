@@ -108,6 +108,36 @@ void main() {
     const page2Html =
         '<html><body><img id="img" src="https://img.example/2.webp"></body></html>';
 
+    const searchPage1WithNextTokenHtml = '''
+<html><body>
+  <script>
+    var nexturl = "https://e-hentai.org/?f_search=neko&next=12345";
+  </script>
+  <div class="searchnav">
+    <a id="unext" href="https://e-hentai.org/?f_search=neko&next=12345">Next</a>
+  </div>
+  <table class="itg gltc">
+    <tr>
+      <td class="gl2c"><img src="https://thumb.example/search-p1.webp"></td>
+      <td class="gl3c glname"><a href="/g/111/aaa/"><span class="glink">P1</span></a></td>
+    </tr>
+  </table>
+</body></html>
+''';
+
+    const searchPage2TokenHtml = '''
+<html><body>
+  <table class="itg gltc">
+    <tr>
+      <td class="gl2c">
+        <img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" data-src="https://thumb.example/search-p2.webp">
+      </td>
+      <td class="gl3c glname"><a href="/g/222/bbb/"><span class="glink">P2</span></a></td>
+    </tr>
+  </table>
+</body></html>
+''';
+
     setUp(() {
       dio = Dio();
       mock = DioAdapter(dio: dio);
@@ -530,6 +560,51 @@ void main() {
       expect(result.items[0].coverUrl, 'https://thumb.example/a.webp');
       expect(result.items[1].coverUrl, 'https://thumb.example/b.webp');
       expect(result.items[2].coverUrl, 'https://thumb.example/c.webp');
+    });
+
+    test('search raw query page 2 follows token pagination and keeps covers',
+        () async {
+      mock.onGet(
+        'https://e-hentai.org/?f_search=neko',
+        (server) => server.reply(
+          200,
+          searchPage1WithNextTokenHtml,
+          headers: {
+            'content-type': ['text/html; charset=utf-8'],
+          },
+        ),
+      );
+      mock.onGet(
+        'https://e-hentai.org/?f_search=neko&next=12345',
+        (server) => server.reply(
+          200,
+          searchPage2TokenHtml,
+          headers: {
+            'content-type': ['text/html; charset=utf-8'],
+          },
+        ),
+      );
+      mock.onGet(
+        'https://e-hentai.org/?f_search=neko&page=2',
+        (server) => server.reply(
+          200,
+          searchPage2TokenHtml,
+          headers: {
+            'content-type': ['text/html; charset=utf-8'],
+          },
+        ),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: 'raw:f_search=neko', page: 2),
+        config,
+      );
+
+      expect(result.items.length, 1);
+      expect(result.items.first.id, '/g/222/bbb/');
+      expect(result.items.first.title, 'P2');
+      expect(
+          result.items.first.coverUrl, 'https://thumb.example/search-p2.webp');
     });
   });
 }

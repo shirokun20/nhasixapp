@@ -325,7 +325,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       );
     } else {
       final effectiveImageUrl = _hitomiFallbackImageUrl ?? widget.imageUrl;
-      final isEhentaiReaderUrl = _isEhentaiReaderPageUrl(effectiveImageUrl);
+      final isEhentaiReaderUrl =
+          _shouldResolveEhentaiImageUrl(effectiveImageUrl);
       if (!isEhentaiReaderUrl) {
         final headers = widget.sourceId == 'hentainexus'
             ? _buildHentainexusImageHeaders(effectiveImageUrl)
@@ -361,7 +362,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   }
 
   void _prepareEhentaiResolveFuture() {
-    if (_isEhentaiReaderPageUrl(widget.imageUrl)) {
+    if (_shouldResolveEhentaiImageUrl(widget.imageUrl)) {
       _ehentaiResolvedImageFuture = _resolveEhentaiImageUrl(widget.imageUrl);
       return;
     }
@@ -457,14 +458,41 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     );
   }
 
-  bool _isEhentaiReaderPageUrl(String url) {
+  bool _shouldResolveEhentaiImageUrl(String url) {
     if (widget.sourceId != 'ehentai') {
       return false;
     }
 
     final lowered = url.toLowerCase();
-    return lowered.contains('/s/') &&
-        (lowered.contains('e-hentai.org') || lowered.contains('exhentai.org'));
+    if (lowered.startsWith('/s/') || lowered.startsWith('/fullimg/')) {
+      return true;
+    }
+
+    final uri = Uri.tryParse(url);
+    if (uri == null) {
+      return false;
+    }
+
+    final host = uri.host.toLowerCase();
+    if (!(host.contains('e-hentai.org') || host.contains('exhentai.org'))) {
+      return false;
+    }
+
+    final loweredPath = uri.path.toLowerCase();
+    if (loweredPath.contains('/s/') || loweredPath.contains('/fullimg/')) {
+      return true;
+    }
+
+    return !_looksLikeDirectImagePath(loweredPath);
+  }
+
+  bool _looksLikeDirectImagePath(String path) {
+    return path.endsWith('.jpg') ||
+        path.endsWith('.jpeg') ||
+        path.endsWith('.png') ||
+        path.endsWith('.webp') ||
+        path.endsWith('.gif') ||
+        path.endsWith('.avif');
   }
 
   bool _tryHitomiAvifFallback(String failedUrl) {
@@ -610,6 +638,22 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       if (first.isNotEmpty) {
         return _toAbsoluteUrl(first, baseUrl);
       }
+    }
+
+    final wrappedAnchorHref = RegExp(
+      '<a[^>]*href=["\']([^"\']+)["\'][^>]*>\s*<img[^>]*id=["\']img["\']',
+      caseSensitive: false,
+    ).firstMatch(html)?.group(1);
+    if (wrappedAnchorHref != null && wrappedAnchorHref.trim().isNotEmpty) {
+      return _toAbsoluteUrl(wrappedAnchorHref.trim(), baseUrl);
+    }
+
+    final fullImageHref = RegExp(
+      '<a[^>]*href=["\']([^"\']*?/fullimg/[^"\']+)["\']',
+      caseSensitive: false,
+    ).firstMatch(html)?.group(1);
+    if (fullImageHref != null && fullImageHref.trim().isNotEmpty) {
+      return _toAbsoluteUrl(fullImageHref.trim(), baseUrl);
     }
 
     return null;

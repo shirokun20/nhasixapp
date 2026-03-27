@@ -579,29 +579,79 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
 
     for (int i = 0; i < chapters.length - 1; i++) {
-      final current = _extractChapterNumber(chapters[i]);
-      final next = _extractChapterNumber(chapters[i + 1]);
-      if (current == null || next == null || current == next) {
+      final comparison = _compareChapterOrder(chapters[i], chapters[i + 1]);
+      if (comparison == null || comparison == 0) {
         continue;
       }
-      return next > current;
+      return comparison > 0;
     }
 
     return null;
   }
 
-  double? _extractChapterNumber(Chapter chapter) {
-    final titleMatch = RegExp(r'(\d+(?:\.\d+)?)').firstMatch(chapter.title);
-    if (titleMatch != null) {
-      return double.tryParse(titleMatch.group(1)!);
+  int? _compareChapterOrder(Chapter current, Chapter next) {
+    final currentOrder = _extractChapterOrder(current);
+    final nextOrder = _extractChapterOrder(next);
+
+    if (currentOrder == null || nextOrder == null) {
+      return null;
     }
 
-    final idMatch = RegExp(r'(\d+(?:\.\d+)?)').firstMatch(chapter.id);
-    if (idMatch != null) {
-      return double.tryParse(idMatch.group(1)!);
+    if (currentOrder.volume != null || nextOrder.volume != null) {
+      final volumeCompare = (nextOrder.volume ?? 0).compareTo(
+        currentOrder.volume ?? 0,
+      );
+      if (volumeCompare != 0) {
+        return volumeCompare;
+      }
+    }
+
+    return nextOrder.chapter.compareTo(currentOrder.chapter);
+  }
+
+  _ChapterOrder? _extractChapterOrder(Chapter chapter) {
+    final title = chapter.title;
+    final id = chapter.id;
+
+    final chapterValue =
+        _extractChapterValue(title) ?? _extractChapterValue(id);
+    if (chapterValue == null) {
+      return null;
+    }
+
+    final volumeValue = _extractVolumeValue(title) ?? _extractVolumeValue(id);
+    return _ChapterOrder(chapter: chapterValue, volume: volumeValue);
+  }
+
+  double? _extractChapterValue(String input) {
+    final chapterPattern = RegExp(
+      r'(?:\bch(?:apter)?\b\s*[:\.-]?)\s*(\d+(?:\.\d+)?)',
+      caseSensitive: false,
+    );
+    final chapterMatch = chapterPattern.firstMatch(input);
+    if (chapterMatch != null) {
+      return double.tryParse(chapterMatch.group(1) ?? '');
+    }
+
+    final numericMatch = RegExp(r'(\d+(?:\.\d+)?)').firstMatch(input);
+    if (numericMatch != null) {
+      return double.tryParse(numericMatch.group(1) ?? '');
     }
 
     return null;
+  }
+
+  double? _extractVolumeValue(String input) {
+    final volumePattern = RegExp(
+      r'(?:\bvol(?:ume)?\b\s*[:\.-]?)\s*(\d+(?:\.\d+)?)',
+      caseSensitive: false,
+    );
+    final volumeMatch = volumePattern.firstMatch(input);
+    if (volumeMatch == null) {
+      return null;
+    }
+
+    return double.tryParse(volumeMatch.group(1) ?? '');
   }
 
   Future<void> loadChapter(String chapterId) async {
@@ -1422,4 +1472,14 @@ class ReaderCubit extends Cubit<ReaderState> {
 
     return super.close();
   }
+}
+
+class _ChapterOrder {
+  const _ChapterOrder({
+    required this.chapter,
+    required this.volume,
+  });
+
+  final double chapter;
+  final double? volume;
 }

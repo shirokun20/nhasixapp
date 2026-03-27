@@ -38,6 +38,8 @@ class EHentaiScraperAdapter implements GenericAdapter {
     SearchFilter filter,
     Map<String, dynamic> rawConfig,
   ) async {
+    final resolvedQuery = _resolveSearchQuery(filter, rawConfig);
+    final normalizedFilter = filter.copyWith(query: resolvedQuery);
     final searchContext = await _buildSearchContext(filter, rawConfig);
 
     var delegated = await _delegate.search(
@@ -51,12 +53,12 @@ class EHentaiScraperAdapter implements GenericAdapter {
     // `next=` token pagination in query mode can intermittently return a 200
     // response with an empty list. Retry with the standard search URL format
     // as a safety fallback so UI does not get stuck on ContentEmpty.
-    final isQueryPage = filter.query.trim().isNotEmpty && filter.page > 1;
+    final isQueryPage = resolvedQuery.isNotEmpty && filter.page > 1;
     if (delegated.items.isEmpty && isQueryPage) {
-      final fallback = await _delegate.search(filter, rawConfig);
+      final fallback = await _delegate.search(normalizedFilter, rawConfig);
       if (fallback.items.isNotEmpty) {
         delegated = fallback;
-        enrichmentFilter = filter;
+        enrichmentFilter = normalizedFilter;
         enrichmentConfig = rawConfig;
       }
     }
@@ -69,6 +71,7 @@ class EHentaiScraperAdapter implements GenericAdapter {
     final combinedData = await _extractListCoversAndLanguages(
       filter: enrichmentFilter,
       rawConfig: enrichmentConfig,
+      resolvedQuery: resolvedQuery,
     );
     if (combinedData.isEmpty) {
       return delegated;
@@ -106,9 +109,9 @@ class EHentaiScraperAdapter implements GenericAdapter {
     SearchFilter filter,
     Map<String, dynamic> rawConfig,
   ) async {
-    final isHomeMode =
-        filter.query.trim().isEmpty && filter.includeTags.isEmpty;
-    final isQueryMode = filter.query.trim().isNotEmpty;
+    final resolvedQuery = _resolveSearchQuery(filter, rawConfig);
+    final isHomeMode = resolvedQuery.isEmpty && filter.includeTags.isEmpty;
+    final isQueryMode = resolvedQuery.isNotEmpty;
 
     if ((!isHomeMode && !isQueryMode) || filter.page <= 1) {
       return _SearchContext(filter: filter, config: rawConfig);
@@ -116,7 +119,7 @@ class EHentaiScraperAdapter implements GenericAdapter {
 
     final pageUrl = await _resolveListPageUrl(
       targetPage: filter.page,
-      filter: filter,
+      query: resolvedQuery,
       rawConfig: rawConfig,
     );
     if (pageUrl == null || pageUrl.isEmpty) {
@@ -145,24 +148,24 @@ class EHentaiScraperAdapter implements GenericAdapter {
     };
 
     return _SearchContext(
-      filter: filter.copyWith(page: 1),
+      filter: filter.copyWith(page: 1, query: resolvedQuery),
       config: patchedConfig,
     );
   }
 
   Future<String?> _resolveListPageUrl({
     required int targetPage,
-    required SearchFilter filter,
+    required String query,
     required Map<String, dynamic> rawConfig,
   }) async {
-    final query = filter.query.trim();
+    final normalizedQuery = query.trim();
     // `next=` tokens in search URLs can be short-lived. Reusing cached token
     // URLs may return 200 with empty list content, so only cache stable
     // home-page pagination URLs.
-    final allowCache = query.isEmpty;
-    final queryKey = query.isEmpty
+    final allowCache = normalizedQuery.isEmpty;
+    final queryKey = normalizedQuery.isEmpty
         ? 'home:$targetPage'
-        : 'search:${query.toLowerCase()}:$targetPage';
+        : 'search:${normalizedQuery.toLowerCase()}:$targetPage';
     if (allowCache) {
       final cached = _pageUrlCache[queryKey];
       if (cached != null && cached.isNotEmpty) {
@@ -170,9 +173,9 @@ class EHentaiScraperAdapter implements GenericAdapter {
       }
     }
 
-    final currentQuery = query.isEmpty
+    final currentQuery = normalizedQuery.isEmpty
         ? '/?page=1'
-        : '/?f_search=${Uri.encodeQueryComponent(query)}';
+        : '/?f_search=${Uri.encodeQueryComponent(normalizedQuery)}';
     var currentUrl = _urlBuilder.resolve(currentQuery, const {});
     if (targetPage <= 1) {
       if (allowCache) {
@@ -1020,6 +1023,7 @@ class EHentaiScraperAdapter implements GenericAdapter {
   Future<Map<String, Map<String, dynamic>>> _extractListCoversAndLanguages({
     required SearchFilter filter,
     required Map<String, dynamic> rawConfig,
+    required String resolvedQuery,
   }) async {
     final scraper = (rawConfig['scraper'] as Map?)?.cast<String, dynamic>();
     final urlPatterns =
@@ -1039,7 +1043,7 @@ class EHentaiScraperAdapter implements GenericAdapter {
 
     final url = _urlBuilder.resolve(urlTemplate, {
       'page': filter.page.toString(),
-      'query': Uri.encodeQueryComponent(filter.query),
+      'query': Uri.encodeQueryComponent(resolvedQuery),
       'tag': filter.includeTags.isNotEmpty
           ? filter.includeTags.first.name.toLowerCase().replaceAll(' ', '-')
           : '',
@@ -1153,6 +1157,47 @@ class EHentaiScraperAdapter implements GenericAdapter {
     return filter.page > 1 && urlPatterns.containsKey('homePage')
         ? 'homePage'
         : 'home';
+  }
+
+  String _resolveSearchQuery(
+    SearchFilter filter,
+    Map<String, dynamic> rawConfig,
+  ) {
+    final query = filter.query.trim();
+    if (!query.startsWith('raw:')) {
+      return query;
+    }
+
+    final payload = query.substring(4);
+    if (payload.isEmpty) {
+      return '';
+    }
+
+    final queryParamName = _resolveRawQueryParamName(rawConfig);
+    for (final pair in payload.split('&')) {
+      if (pair.isEmpty) continue;
+      final idx = pair.indexOf('=');
+      if (idx < 0) continue;
+
+      final key = Uri.decodeComponent(pair.substring(0, idx));
+      if (key != queryParamName) continue;
+
+      return Uri.decodeComponent(pair.substring(idx + 1)).trim();
+    }
+
+    return '';
+  }
+
+  String _resolveRawQueryParamName(Map<String, dynamic> rawConfig) {
+    final searchForm =
+        (rawConfig['searchForm'] as Map?)?.cast<String, dynamic>();
+    final params = (searchForm?['params'] as Map?)?.cast<String, dynamic>();
+    final queryDef = (params?['query'] as Map?)?.cast<String, dynamic>();
+    final configured = (queryDef?['queryParam'] as String?)?.trim();
+    if (configured != null && configured.isNotEmpty) {
+      return configured;
+    }
+    return 'f_search';
   }
 
   _ResolvedListPattern? _resolveListPattern({
