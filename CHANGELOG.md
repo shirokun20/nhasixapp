@@ -6,6 +6,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.14] - 2026-03-28
+
+### 🎉 Phase 6 Complete: Multi-Provider Special Adapters
+- **E-Hentai Source Added**:
+  - Full E-Hentai gallery support with per-page reader image extraction
+  - E-Hentai session adapter with igneous cookie verification and content warning bypass
+  - Dynamic search form with token-based pagination
+  - All smoke tests passing (Search→Detail→Reader validated)
+- **HentaiNexus Source Added**:
+  - HentaiNexus decryption adapter with Base64 → XOR stream decryption
+  - Full image URL decryption pipeline for reader support
+  - Gate A validation passed on live samples
+  - All smoke tests passing (Search→Detail→Reader validated)
+- **Hitomi Fallback Support Added**:
+  - Hitomi source with fallback-safe registration (full protocol deferred due to gg.js volatility)
+  - All smoke tests passing (Search→Detail→Reader via fallback mode validated)
+- **Architecture Improvements**:
+  - Added adapter override hook in GenericHttpSource for provider-specific adapters
+  - Enhanced factory pattern across source resolvers for extensibility
+  - All configs staged in manifest-driven `app/config/` layer
+
+### ✅ Verification
+- All Phase 6 tasks complete (10/10)
+- Test coverage: 8 EHentai + 2 HentaiNexus tests passing
+- flutter analyze: No issues found
+- Smoke tests: All 3 providers (E-Hentai, HentaiNexus, Hitomi) validated
+
+### 📊 Project Milestone
+- **Multi-Provider Integration**: 100% complete (Phase 0-6)
+- **Total projects completed**: 12/12 from onprogress → success-plan
+- **Ready for**: Production rollout
+
+---
+
 ## [0.9.13] - 2026-03-16
 
 ### 🚀 New Features

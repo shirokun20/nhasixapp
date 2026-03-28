@@ -13,7 +13,7 @@
 | **Repo** | `shirokun20/nhasixapp` |
 | **Platform** | Android (Flutter) |
 | **Flutter SDK** | Stable (3.24+, Dart 3.5+ via FVM) |
-| **Version** | 0.9.12+20 |
+| **Version** | 0.9.14+22 |
 | **Architecture** | Clean Architecture (Domain → Data → Presentation) |
 | **State Management** | `flutter_bloc` / `Cubit` (extending `BaseCubit`) |
 | **DI** | `GetIt` (`core/di/`) |
@@ -72,21 +72,22 @@ lib/
 
 > Synced from `projects/README.md` — Last updated: 2026-03-07
 
-### ✅ Completed (11)
+### ✅ Completed (12)
 - chapter_reading_history_navigation
 - crotpedia_ui_modernization
 - doujin_search_highlight
 - favorites_bug_fix
 - fix_app_drawer_transparency_on_list_screens
 - komiktap_navigation_lists
+- multi_provider_integration ✨ **NEW** (Phase 0-6 complete, all providers tested)
 - offline_search_highlight
 - reader_header_auto_show
 - smart-caching-and-fixes
 - unity-ads-fix
 - view_comments
 
-### 🚧 In Progress (1)
-- **multi_provider_integration** — 88% — Phase 0 ✅, Phase 0B ✅, Phase 1 ✅, Phase 2 ✅, Phase 3 ✅, Phase 4 ✅, Phase 5 ✅ (Phase 6 next)
+### 🚧 In Progress (0)
+- *(None)*
 
 ### 📋 Analysis Phase (5)
 - app_audit_hardcode_ui_desktop
@@ -199,7 +200,23 @@ Project ini menggunakan search tools modern sebagai pengganti `grep`:
 
 ---
 
-## 📦 Key Commands
+## � Latest Session — Phase 6 Complete (2026-03-28)
+
+### multi_provider_integration Status: **100% COMPLETE** ✅
+
+✅ **Phase 6: Special Adapters Delivery (E-Hentai, HentaiNexus, Hitomi) — ALL TESTED & MIGRATED**
+
+All 3 providers fully wired, registered, and smoke tested:
+- **E-Hentai**: Full support → Search→Detail→Reader validated ✅
+- **HentaiNexus**: Full support → Search→Detail→Reader validated ✅
+- **Hitomi**: Fallback support → Search→Detail→Reader validated ✅
+- **Test Coverage**: 8 EHentai + 2 HentaiNexus tests passing ✅
+
+**Project Status**: Version 0.9.14+22 | Moved to `success-plan/` | Production-Ready
+
+---
+
+## �📦 Key Commands
 
 ```bash
 # Build & Run
