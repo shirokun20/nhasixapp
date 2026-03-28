@@ -673,7 +673,10 @@ class OfflineContentManager {
                 json.decode(metadataContent) as Map<String, dynamic>;
             final metadata = {
               'id': contentId,
-              'title': fileMetadata['title'] ?? contentId,
+              'title': DownloadStorageUtils.getSafeTitleFromMetadata(
+                fileMetadata,
+                contentId,
+              ),
               'coverUrl':
                   fileMetadata['coverUrl'] ?? fileMetadata['cover_url'] ?? '',
               'source': 'metadata_file',
@@ -811,7 +814,10 @@ class OfflineContentManager {
         if (await metadataFile.exists()) {
           final metadataContent = await metadataFile.readAsString();
           metadata = json.decode(metadataContent) as Map<String, dynamic>;
-          title = metadata['title'] ?? contentId;
+          title = DownloadStorageUtils.getSafeTitleFromMetadata(
+            metadata,
+            contentId,
+          );
         }
       } catch (e) {
         _logger.w('Error reading metadata for $contentId: $e');
@@ -962,7 +968,10 @@ class OfflineContentManager {
         if (await metadataFile.exists()) {
           final metadataContent = await metadataFile.readAsString();
           metadata = json.decode(metadataContent) as Map<String, dynamic>;
-          title = metadata['title'] ?? contentId;
+          title = DownloadStorageUtils.getSafeTitleFromMetadata(
+            metadata,
+            contentId,
+          );
           titleMatch = title.toLowerCase().contains(queryLower);
         }
         // Store metadata for later use
@@ -1233,7 +1242,10 @@ class OfflineContentManager {
           final metadataContent = await metadataFile.readAsString();
           metadata = json.decode(metadataContent) as Map<String, dynamic>;
 
-          title = metadata['title'] ?? contentId;
+          title = DownloadStorageUtils.getSafeTitleFromMetadata(
+            metadata,
+            contentId,
+          );
 
           // CRITICAL FIX: Use the original ID stored in metadata if available
           // This handles the case where folder name is Elegant ID but content ID is long

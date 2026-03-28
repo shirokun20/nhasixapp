@@ -2409,7 +2409,11 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       if (localMetadata != null) {
         // Use local metadata for offline support
-        contentTitle = localMetadata['title'] as String? ?? event.contentId;
+        // FIX: Use safe title extraction to handle empty strings
+        contentTitle = DownloadStorageUtils.getSafeTitleFromMetadata(
+          localMetadata,
+          event.contentId,
+        );
         // If sourceId was still null (legacy path), try to get it from metadata
         if (sourceId == null && localMetadata['source'] != null) {
           sourceId = localMetadata['source'] as String;

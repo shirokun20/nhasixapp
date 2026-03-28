@@ -232,6 +232,18 @@ class DownloadStorageUtils {
     }
   }
 
+  /// Extract safe title from metadata - handles both null and empty string cases
+  /// If title is null or empty, returns contentId as fallback
+  /// Critical for metadata sync operations where title field might be missing
+  static String getSafeTitleFromMetadata(
+    Map<String, dynamic>? metadata,
+    String contentId,
+  ) {
+    if (metadata == null) return contentId;
+    final title = metadata['title'] as String? ?? '';
+    return title.isNotEmpty ? title : contentId;
+  }
+
   /// Save metadata to file
   ///
   /// This is CRITICAL for the Safe ID strategy.
