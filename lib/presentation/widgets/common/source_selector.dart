@@ -118,96 +118,130 @@ class SourceSelector extends StatelessWidget {
     );
   }
 
-  /// Show source selection popup menu with proper sizing
+  /// Show source selection in a bottom sheet for better scalability.
   void _showSourceMenu(
     BuildContext context,
     SourceState state,
     ColorScheme colorScheme,
   ) {
-    final RenderBox button = context.findRenderObject() as RenderBox;
-    final RenderBox overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox;
-    final Offset position =
-        button.localToGlobal(Offset.zero, ancestor: overlay);
-
-    showMenu<String>(
+    showModalBottomSheet<String>(
       context: context,
-      position: RelativeRect.fromLTRB(
-        position.dx,
-        position.dy + button.size.height + 4,
-        position.dx + button.size.width,
-        position.dy + button.size.height + 300,
-      ),
+      isScrollControlled: true,
+      useSafeArea: true,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
       ),
-      color: colorScheme.surfaceContainer,
+      backgroundColor: colorScheme.surfaceContainer,
       elevation: 8,
-      constraints: BoxConstraints(
-        minWidth: button.size.width,
-        maxWidth: button.size.width,
-      ),
-      items: state.availableSources.map((source) {
-        final sourceLoader = getIt<SourceLoader>();
-        final isActive = source.id == state.activeSource?.id;
-        final isUnderMaintenance = sourceLoader.isUnderMaintenance(source.id);
-        return PopupMenuItem<String>(
-          enabled: !isUnderMaintenance,
-          value: source.id,
-          height: 56,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? colorScheme.primary.withValues(alpha: 0.2)
-                      : colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: _buildSourceIconWidget(
-                  iconPath: source.iconPath,
-                  color: isActive
-                      ? colorScheme.primary
-                      : colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  isUnderMaintenance
-                      ? '${source.displayName} (Maintenance)'
-                      : source.displayName,
-                  style: TextStyleConst.bodyMedium.copyWith(
-                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                    color: isUnderMaintenance
-                        ? colorScheme.error
-                        : (isActive
-                            ? colorScheme.primary
-                            : colorScheme.onSurface),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(sheetContext).size.height * 0.75,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 10),
+                Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colorScheme.outline.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(99),
                   ),
                 ),
-              ),
-              if (isUnderMaintenance)
+                const SizedBox(height: 10),
                 Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: Icon(
-                    Icons.warning_amber_rounded,
-                    size: 18,
-                    color: colorScheme.error,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Select Source',
+                        style: TextStyleConst.headingSmall.copyWith(
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              if (isActive)
-                Icon(
-                  Icons.check_circle_rounded,
-                  size: 20,
-                  color: colorScheme.primary,
+                const Divider(height: 1),
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: state.availableSources.length,
+                    itemBuilder: (context, index) {
+                      final source = state.availableSources[index];
+                      final sourceLoader = getIt<SourceLoader>();
+                      final isActive = source.id == state.activeSource?.id;
+                      final isUnderMaintenance =
+                          sourceLoader.isUnderMaintenance(source.id);
+
+                      return ListTile(
+                        enabled: !isUnderMaintenance,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 2),
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: isActive
+                                ? colorScheme.primary.withValues(alpha: 0.2)
+                                : colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: _buildSourceIconWidget(
+                            iconPath: source.iconPath,
+                            color: isActive
+                                ? colorScheme.primary
+                                : colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        title: Text(
+                          isUnderMaintenance
+                              ? '${source.displayName} (Maintenance)'
+                              : source.displayName,
+                          style: TextStyleConst.bodyMedium.copyWith(
+                            fontWeight:
+                                isActive ? FontWeight.w700 : FontWeight.w500,
+                            color: isUnderMaintenance
+                                ? colorScheme.error
+                                : (isActive
+                                    ? colorScheme.primary
+                                    : colorScheme.onSurface),
+                          ),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isUnderMaintenance)
+                              Icon(
+                                Icons.warning_amber_rounded,
+                                size: 18,
+                                color: colorScheme.error,
+                              ),
+                            if (isActive) ...[
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.check_circle_rounded,
+                                size: 20,
+                                color: colorScheme.primary,
+                              ),
+                            ],
+                          ],
+                        ),
+                        onTap: isUnderMaintenance
+                            ? null
+                            : () => Navigator.of(sheetContext).pop(source.id),
+                      );
+                    },
+                  ),
                 ),
-            ],
+              ],
+            ),
           ),
         );
-      }).toList(),
+      },
     ).then((selectedId) {
       if (selectedId != null && context.mounted) {
         context.read<SourceCubit>().switchSource(selectedId);

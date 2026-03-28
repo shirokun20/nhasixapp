@@ -42,10 +42,12 @@ class KuronNativePlugin :
     private lateinit var context: Context
     private var activityBinding: ActivityPluginBinding? = null
     private var pendingResult: Result? = null
+    private var pendingPickFileMimeType: String? = null
     private lateinit var downloadHandler: id.nhasix.kuron_native.kuron_native.download.DownloadHandler
     
     private val WEBVIEW_REQUEST_CODE = 1001
     private val PICK_DIRECTORY_REQUEST_CODE = 1002
+    private val PICK_FILE_REQUEST_CODE = 1003
     
     companion object {
         const val TAG = "KuronNativePlugin"
@@ -100,6 +102,9 @@ class KuronNativePlugin :
             }
             "pickDirectory" -> {
                 handlePickDirectory(result)
+            }
+            "pickTextFile" -> {
+                handlePickTextFile(call, result)
             }
             // Delegate native download methods to handler
             "kuronNativeStartDownload", 
@@ -576,6 +581,37 @@ class KuronNativePlugin :
             }
             return true
         }
+
+        if (requestCode == PICK_FILE_REQUEST_CODE) {
+            if (pendingResult != null) {
+                if (resultCode == Activity.RESULT_OK && data != null) {
+                    val uri = data.data
+                    if (uri != null) {
+                        try {
+                            val takeFlags: Int = data.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+                            context.contentResolver.takePersistableUriPermission(uri, takeFlags)
+                        } catch (e: Exception) {
+                            // Ignore persist permission failures.
+                        }
+
+                        try {
+                            val content = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                            pendingResult?.success(content)
+                        } catch (e: Exception) {
+                            pendingResult?.error("READ_FILE_FAILED", e.message, null)
+                        }
+                    } else {
+                        pendingResult?.error("NO_URI", "No file selected", null)
+                    }
+                } else {
+                    pendingResult?.success(null) // Cancelled
+                }
+
+                pendingPickFileMimeType = null
+                pendingResult = null
+            }
+            return true
+        }
         return false
     }
 
@@ -632,6 +668,35 @@ class KuronNativePlugin :
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
             activity.startActivityForResult(intent, PICK_DIRECTORY_REQUEST_CODE)
         } catch (e: Exception) {
+            pendingResult = null
+            result.error("LAUNCH_FAILED", e.message, null)
+        }
+    }
+
+    private fun handlePickTextFile(call: MethodCall, result: Result) {
+        val activity = activityBinding?.activity
+        if (activity == null) {
+            result.error("NO_ACTIVITY", "Activity is not available", null)
+            return
+        }
+
+        if (pendingResult != null) {
+            result.error("BUSY", "Another operation is in progress", null)
+            return
+        }
+
+        pendingResult = result
+        pendingPickFileMimeType = call.argument<String>("mimeType")
+
+        try {
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = pendingPickFileMimeType ?: "*/*"
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+            }
+            activity.startActivityForResult(intent, PICK_FILE_REQUEST_CODE)
+        } catch (e: Exception) {
+            pendingPickFileMimeType = null
             pendingResult = null
             result.error("LAUNCH_FAILED", e.message, null)
         }

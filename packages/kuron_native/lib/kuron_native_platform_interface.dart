@@ -37,6 +37,13 @@ abstract class KuronNativePlatform extends PlatformInterface {
     throw UnimplementedError('pickDirectory() has not been implemented.');
   }
 
+  /// Pick a text file and return its content.
+  ///
+  /// [mimeType] defaults can be provided by caller, e.g. `application/json`.
+  Future<String?> pickTextFile({String? mimeType}) {
+    throw UnimplementedError('pickTextFile() has not been implemented.');
+  }
+
   /// Start a system download
   Future<String?> startDownload({
     required String url,

@@ -18,6 +18,10 @@ class MockKuronNativePlatform
   Future<String?> pickDirectory() => Future.value('picked_path');
 
   @override
+  Future<String?> pickTextFile({String? mimeType}) =>
+      Future.value('{"mock": true}');
+
+  @override
   Future<String?> startDownload({
     required String url,
     required String fileName,

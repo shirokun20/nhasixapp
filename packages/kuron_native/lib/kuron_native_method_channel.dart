@@ -57,6 +57,14 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }
 
   @override
+  Future<String?> pickTextFile({String? mimeType}) async {
+    final content = await methodChannel.invokeMethod<String>('pickTextFile', {
+      'mimeType': mimeType,
+    });
+    return content;
+  }
+
+  @override
   Future<String?> startDownload({
     required String url,
     required String fileName,

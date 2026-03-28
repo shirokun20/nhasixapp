@@ -9,9 +9,14 @@ class MockKuronNativePlatform
     with MockPlatformInterfaceMixin
     implements KuronNativePlatform {
   String? mockPickedDirectory;
+  String? mockPickedFileContent;
 
   @override
   Future<String?> pickDirectory() async => mockPickedDirectory;
+
+  @override
+  Future<String?> pickTextFile({String? mimeType}) async =>
+      mockPickedFileContent;
 
   @override
   Future<String?> getPlatformVersion() => Future.value('1.0.0');
@@ -158,77 +163,48 @@ void main() {
   });
 
   group('BackupUtils.importJson', () {
-    test('imports JSON from selected directory successfully', () async {
-      // Setup: Create a test backup file
-      final fileName = 'backup.json';
+    test('imports JSON from selected file successfully', () async {
       final testData = '{"imported": "data"}';
-      final file = File('${testDir.path}/$fileName');
-      await file.writeAsString(testData);
 
-      // Mock picker to return our test directory
-      mockPlatform.mockPickedDirectory = testDir.path;
+      // Mock file picker content result
+      mockPlatform.mockPickedFileContent = testData;
 
-      final result = await BackupUtils.importJson(fileName: fileName);
+      final result = await BackupUtils.importJson(fileName: 'backup.json');
 
       expect(result, isNotNull);
       expect(result, equals(testData));
     });
 
-    test('returns null when user cancels directory picker', () async {
+    test('returns null when user cancels file picker', () async {
       // Mock picker to return null (user cancelled)
-      mockPlatform.mockPickedDirectory = null;
+      mockPlatform.mockPickedFileContent = null;
 
       final result = await BackupUtils.importJson();
-
-      expect(result, isNull);
-    });
-
-    test('returns null when backup file does not exist', () async {
-      // Mock picker to return directory without backup file
-      mockPlatform.mockPickedDirectory = testDir.path;
-
-      final result = await BackupUtils.importJson(fileName: 'nonexistent.json');
 
       expect(result, isNull);
     });
 
     test('imports with custom fileName parameter', () async {
-      final customFileName = 'my_custom_backup.json';
       final testData = '{"custom": "backup"}';
-      final file = File('${testDir.path}/$customFileName');
-      await file.writeAsString(testData);
+      mockPlatform.mockPickedFileContent = testData;
 
-      mockPlatform.mockPickedDirectory = testDir.path;
-
-      final result = await BackupUtils.importJson(fileName: customFileName);
+      final result = await BackupUtils.importJson(
+        fileName: 'my_custom_backup.json',
+      );
 
       expect(result, equals(testData));
     });
 
-    test('handles file read errors gracefully', () async {
-      // Create a directory instead of file to trigger read error
-      final fakeFile = Directory('${testDir.path}/backup.json');
-      await fakeFile.create();
-
-      mockPlatform.mockPickedDirectory = testDir.path;
-
-      final result = await BackupUtils.importJson();
-
-      expect(result, isNull);
-    });
-
     test('imports large JSON successfully', () async {
-      final fileName = 'large_backup.json';
       // Create a larger test data (1000 entries)
       final entries = List.generate(1000, (i) => '"item$i": "value$i"');
       final testData = '{${entries.join(',')}}';
 
-      final file = File('${testDir.path}/$fileName');
-      await file.writeAsString(testData);
+      mockPlatform.mockPickedFileContent = testData;
 
-      mockPlatform.mockPickedDirectory = testDir.path;
-
-      final result = await BackupUtils.importJson(fileName: fileName);
+      final result = await BackupUtils.importJson(
+        fileName: 'large_backup.json',
+      );
 
       expect(result, isNotNull);
       expect(result!.length, greaterThan(10000)); // Should be quite large
@@ -250,7 +226,7 @@ void main() {
       expect(exportPath, isNotNull);
 
       // Import
-      mockPlatform.mockPickedDirectory = testDir.path;
+      mockPlatform.mockPickedFileContent = testData;
       final importedData = await BackupUtils.importJson(fileName: fileName);
 
       expect(importedData, equals(testData));

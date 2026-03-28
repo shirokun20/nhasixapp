@@ -22,6 +22,11 @@ class KuronNative {
     return KuronNativePlatform.instance.pickDirectory();
   }
 
+  /// Pick a text file using native file picker and return file content.
+  Future<String?> pickTextFile({String? mimeType}) {
+    return KuronNativePlatform.instance.pickTextFile(mimeType: mimeType);
+  }
+
   Future<String?> startDownload({
     required String url,
     required String fileName,
