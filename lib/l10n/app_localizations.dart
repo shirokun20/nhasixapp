@@ -5777,6 +5777,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Estimated Recovery'**
   String get estimatedRecovery;
+
+  /// No description provided for @fullColor.
+  ///
+  /// In en, this message translates to:
+  /// **'full color'**
+  String get fullColor;
+
+  /// No description provided for @downloadBlocInitializedWithDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'DownloadBloc: Initialized with {count} downloads'**
+  String downloadBlocInitializedWithDownloads(int count);
+
+  /// No description provided for @downloadBlocProgressStreamSubscriptionInitialized.
+  ///
+  /// In en, this message translates to:
+  /// **'DownloadBloc: Progress stream subscription initialized'**
+  String get downloadBlocProgressStreamSubscriptionInitialized;
+
+  /// No description provided for @downloadBlocNotificationCallbacksConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'DownloadBloc: Notification callbacks configured'**
+  String get downloadBlocNotificationCallbacksConfigured;
+
+  /// No description provided for @downloadBlocReceivedProgressUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'DownloadBloc: Received progress update: {update}'**
+  String downloadBlocReceivedProgressUpdate(String update);
+
+  /// No description provided for @downloadBlocReceivedCompletionEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'DownloadBloc: Received completion event for {contentId}'**
+  String downloadBlocReceivedCompletionEvent(String contentId);
+
+  /// No description provided for @downloadBlocProgressStreamError.
+  ///
+  /// In en, this message translates to:
+  /// **'DownloadBloc: Progress stream error: {error}'**
+  String downloadBlocProgressStreamError(String error);
+
+  /// No description provided for @notificationActionPauseRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'NotificationAction: Pause requested for {contentId}'**
+  String notificationActionPauseRequested(String contentId);
+
+  /// No description provided for @notificationActionResumeRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'NotificationAction: Resume requested for {contentId}'**
+  String notificationActionResumeRequested(String contentId);
+
+  /// No description provided for @notificationActionCancelRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'NotificationAction: Cancel requested for {contentId}'**
+  String notificationActionCancelRequested(String contentId);
+
+  /// No description provided for @notificationActionRetryRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'NotificationAction: Retry requested for {contentId}'**
+  String notificationActionRetryRequested(String contentId);
+
+  /// No description provided for @notificationActionPdfRetryRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'NotificationAction: PDF retry requested for {contentId}'**
+  String notificationActionPdfRetryRequested(String contentId);
+
+  /// No description provided for @notificationActionOpenDownloadRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'NotificationAction: Open download requested for {contentId}'**
+  String notificationActionOpenDownloadRequested(String contentId);
+
+  /// No description provided for @notificationActionNavigateToDownloadsRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'NotificationAction: Navigate to downloads requested for {contentId}'**
+  String notificationActionNavigateToDownloadsRequested(String contentId);
+
+  /// No description provided for @downloadBlocErrorInitializing.
+  ///
+  /// In en, this message translates to:
+  /// **'DownloadBloc: Error initializing'**
+  String get downloadBlocErrorInitializing;
+
+  /// No description provided for @downloadBlocFailedToReadDownloadBlocState.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to read DownloadBloc state, falling back to filesystem check: {error}'**
+  String downloadBlocFailedToReadDownloadBlocState(String error);
+
+  /// No description provided for @sourceSelectorSelectSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Source'**
+  String get sourceSelectorSelectSource;
+
+  /// No description provided for @sourceSelectorDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch provider for feed, detail, search, and reader data.'**
+  String get sourceSelectorDescription;
+
+  /// No description provided for @sourceSelectorNoSourceSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No source selected'**
+  String get sourceSelectorNoSourceSelected;
+
+  /// No description provided for @sourceSelectorActiveSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Active source'**
+  String get sourceSelectorActiveSource;
+
+  /// No description provided for @sourceSelectorUnderMaintenance.
+  ///
+  /// In en, this message translates to:
+  /// **'Under maintenance'**
+  String get sourceSelectorUnderMaintenance;
+
+  /// No description provided for @sourceSelectorCurrentlySelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Currently selected'**
+  String get sourceSelectorCurrentlySelected;
+
+  /// No description provided for @sourceSelectorTapToSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to switch'**
+  String get sourceSelectorTapToSwitch;
+
+  /// No description provided for @sourceSelectorSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search source'**
+  String get sourceSelectorSearchHint;
+
+  /// No description provided for @sourceSelectorNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No source matches your search'**
+  String get sourceSelectorNoResults;
 }
 
 class _AppLocalizationsDelegate

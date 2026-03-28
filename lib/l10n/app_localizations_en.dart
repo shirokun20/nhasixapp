@@ -3350,4 +3350,107 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get estimatedRecovery => 'Estimated Recovery';
+
+  @override
+  String get fullColor => 'full color';
+
+  @override
+  String downloadBlocInitializedWithDownloads(int count) {
+    return 'DownloadBloc: Initialized with $count downloads';
+  }
+
+  @override
+  String get downloadBlocProgressStreamSubscriptionInitialized =>
+      'DownloadBloc: Progress stream subscription initialized';
+
+  @override
+  String get downloadBlocNotificationCallbacksConfigured =>
+      'DownloadBloc: Notification callbacks configured';
+
+  @override
+  String downloadBlocReceivedProgressUpdate(String update) {
+    return 'DownloadBloc: Received progress update: $update';
+  }
+
+  @override
+  String downloadBlocReceivedCompletionEvent(String contentId) {
+    return 'DownloadBloc: Received completion event for $contentId';
+  }
+
+  @override
+  String downloadBlocProgressStreamError(String error) {
+    return 'DownloadBloc: Progress stream error: $error';
+  }
+
+  @override
+  String notificationActionPauseRequested(String contentId) {
+    return 'NotificationAction: Pause requested for $contentId';
+  }
+
+  @override
+  String notificationActionResumeRequested(String contentId) {
+    return 'NotificationAction: Resume requested for $contentId';
+  }
+
+  @override
+  String notificationActionCancelRequested(String contentId) {
+    return 'NotificationAction: Cancel requested for $contentId';
+  }
+
+  @override
+  String notificationActionRetryRequested(String contentId) {
+    return 'NotificationAction: Retry requested for $contentId';
+  }
+
+  @override
+  String notificationActionPdfRetryRequested(String contentId) {
+    return 'NotificationAction: PDF retry requested for $contentId';
+  }
+
+  @override
+  String notificationActionOpenDownloadRequested(String contentId) {
+    return 'NotificationAction: Open download requested for $contentId';
+  }
+
+  @override
+  String notificationActionNavigateToDownloadsRequested(String contentId) {
+    return 'NotificationAction: Navigate to downloads requested for $contentId';
+  }
+
+  @override
+  String get downloadBlocErrorInitializing =>
+      'DownloadBloc: Error initializing';
+
+  @override
+  String downloadBlocFailedToReadDownloadBlocState(String error) {
+    return 'Failed to read DownloadBloc state, falling back to filesystem check: $error';
+  }
+
+  @override
+  String get sourceSelectorSelectSource => 'Select Source';
+
+  @override
+  String get sourceSelectorDescription =>
+      'Switch provider for feed, detail, search, and reader data.';
+
+  @override
+  String get sourceSelectorNoSourceSelected => 'No source selected';
+
+  @override
+  String get sourceSelectorActiveSource => 'Active source';
+
+  @override
+  String get sourceSelectorUnderMaintenance => 'Under maintenance';
+
+  @override
+  String get sourceSelectorCurrentlySelected => 'Currently selected';
+
+  @override
+  String get sourceSelectorTapToSwitch => 'Tap to switch';
+
+  @override
+  String get sourceSelectorSearchHint => 'Search source';
+
+  @override
+  String get sourceSelectorNoResults => 'No source matches your search';
 }

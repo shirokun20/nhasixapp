@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/config/source_loader.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_state.dart';
 
@@ -71,7 +72,9 @@ class SourceSelector extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            state.activeSource?.displayName ?? 'Select Source',
+                            state.activeSource?.displayName ??
+                                AppLocalizations.of(context)!
+                                    .sourceSelectorSelectSource,
                             style: TextStyleConst.bodyMedium.copyWith(
                               fontWeight: FontWeight.w500,
                               color:
@@ -82,7 +85,8 @@ class SourceSelector extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.only(top: 2),
                               child: Text(
-                                'Under maintenance',
+                                AppLocalizations.of(context)!
+                                    .sourceSelectorUnderMaintenance,
                                 style: TextStyleConst.bodySmall.copyWith(
                                   color: colorScheme.error,
                                   fontWeight: FontWeight.w600,
@@ -124,7 +128,9 @@ class SourceSelector extends StatelessWidget {
     SourceState state,
     ColorScheme colorScheme,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final sourceLoader = getIt<SourceLoader>();
+    String searchQuery = '';
 
     showModalBottomSheet<String>(
       context: context,
@@ -138,150 +144,217 @@ class SourceSelector extends StatelessWidget {
       builder: (sheetContext) {
         final activeSource = state.activeSource;
 
-        return SafeArea(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(sheetContext).size.height * 0.75,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 10),
-                Container(
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: colorScheme.outline.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(99),
-                  ),
+        return StatefulBuilder(
+          builder: (statefulContext, setSheetState) {
+            final normalizedQuery = searchQuery.trim().toLowerCase();
+            final filteredSources = state.availableSources.where((source) {
+              if (normalizedQuery.isEmpty) return true;
+
+              final name = source.displayName.toLowerCase();
+              final id = source.id.toLowerCase();
+              return name.contains(normalizedQuery) ||
+                  id.contains(normalizedQuery);
+            }).toList();
+
+            return SafeArea(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(sheetContext).size.height * 0.75,
                 ),
-                const SizedBox(height: 10),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 10),
+                    Container(
+                      width: 44,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: colorScheme.outline.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color:
-                                  colorScheme.primary.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.hub_outlined,
-                              size: 16,
-                              color: colorScheme.primary,
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primary
+                                      .withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.hub_outlined,
+                                  size: 16,
+                                  color: colorScheme.primary,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                l10n.sourceSelectorSelectSource,
+                                style: TextStyleConst.headingSmall.copyWith(
+                                  color: colorScheme.onSurface,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            l10n.sourceSelectorDescription,
+                            style: TextStyleConst.bodySmall.copyWith(
+                              color: colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.9),
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          Text(
-                            'Select Source',
-                            style: TextStyleConst.headingSmall.copyWith(
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHighest
+                                  .withValues(alpha: 0.45),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color:
+                                    colorScheme.outline.withValues(alpha: 0.2),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: _buildSourceIconWidget(
+                                    iconPath: activeSource?.iconPath,
+                                    color: colorScheme.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        activeSource?.displayName ??
+                                            l10n.sourceSelectorNoSourceSelected,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style:
+                                            TextStyleConst.bodyMedium.copyWith(
+                                          color: colorScheme.onSurface,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        l10n.sourceSelectorActiveSource,
+                                        style:
+                                            TextStyleConst.bodySmall.copyWith(
+                                          color: colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.check_circle_rounded,
+                                  size: 20,
+                                  color: colorScheme.primary,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          TextField(
+                            onChanged: (value) {
+                              setSheetState(() {
+                                searchQuery = value;
+                              });
+                            },
+                            style: TextStyleConst.bodyMedium.copyWith(
                               color: colorScheme.onSurface,
-                              fontWeight: FontWeight.w700,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: l10n.sourceSelectorSearchHint,
+                              prefixIcon: Icon(
+                                Icons.search_rounded,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                              filled: true,
+                              fillColor: colorScheme.surface,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 12),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Switch provider for feed, detail, search, and reader data.',
-                        style: TextStyleConst.bodySmall.copyWith(
-                          color: colorScheme.onSurfaceVariant
-                              .withValues(alpha: 0.9),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest
-                              .withValues(alpha: 0.45),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: colorScheme.outline.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: _buildSourceIconWidget(
-                                iconPath: activeSource?.iconPath,
-                                color: colorScheme.primary,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    activeSource?.displayName ??
-                                        'No source selected',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyleConst.bodyMedium.copyWith(
-                                      color: colorScheme.onSurface,
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                    ),
+                    const Divider(height: 1),
+                    Flexible(
+                      child: filteredSources.isEmpty
+                          ? Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Text(
+                                  l10n.sourceSelectorNoResults,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyleConst.bodyMedium.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Active source',
-                                    style: TextStyleConst.bodySmall.copyWith(
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
-                            ),
-                            Icon(
-                              Icons.check_circle_rounded,
-                              size: 20,
-                              color: colorScheme.primary,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1),
-                Flexible(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-                    itemCount: state.availableSources.length,
-                    itemBuilder: (context, index) {
-                      final source = state.availableSources[index];
-                      final isActive = source.id == state.activeSource?.id;
-                      final isUnderMaintenance =
-                          sourceLoader.isUnderMaintenance(source.id);
+                            )
+                          : ListView.builder(
+                              shrinkWrap: true,
+                              padding:
+                                  const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                              itemCount: filteredSources.length,
+                              itemBuilder: (context, index) {
+                                final source = filteredSources[index];
+                                final isActive =
+                                    source.id == state.activeSource?.id;
+                                final isUnderMaintenance =
+                                    sourceLoader.isUnderMaintenance(source.id);
 
-                      return _buildSourceSheetItem(
-                        context: sheetContext,
-                        colorScheme: colorScheme,
-                        source: source,
-                        isActive: isActive,
-                        isUnderMaintenance: isUnderMaintenance,
-                        onTap: isUnderMaintenance
-                            ? null
-                            : () => Navigator.of(sheetContext).pop(source.id),
-                      );
-                    },
-                  ),
+                                return _buildSourceSheetItem(
+                                  context: sheetContext,
+                                  colorScheme: colorScheme,
+                                  source: source,
+                                  isActive: isActive,
+                                  isUnderMaintenance: isUnderMaintenance,
+                                  underMaintenanceLabel:
+                                      l10n.sourceSelectorUnderMaintenance,
+                                  currentlySelectedLabel:
+                                      l10n.sourceSelectorCurrentlySelected,
+                                  tapToSwitchLabel:
+                                      l10n.sourceSelectorTapToSwitch,
+                                  onTap: isUnderMaintenance
+                                      ? null
+                                      : () => Navigator.of(sheetContext)
+                                          .pop(source.id),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     ).then((selectedId) {
@@ -297,6 +370,9 @@ class SourceSelector extends StatelessWidget {
     required dynamic source,
     required bool isActive,
     required bool isUnderMaintenance,
+    required String underMaintenanceLabel,
+    required String currentlySelectedLabel,
+    required String tapToSwitchLabel,
     required VoidCallback? onTap,
   }) {
     final titleColor = isUnderMaintenance
@@ -357,7 +433,7 @@ class SourceSelector extends StatelessWidget {
                       if (isUnderMaintenance) ...[
                         const SizedBox(height: 4),
                         Text(
-                          'Under maintenance',
+                          underMaintenanceLabel,
                           style: TextStyleConst.bodySmall.copyWith(
                             color: colorScheme.error,
                             fontWeight: FontWeight.w600,
@@ -366,7 +442,7 @@ class SourceSelector extends StatelessWidget {
                       ] else ...[
                         const SizedBox(height: 4),
                         Text(
-                          isActive ? 'Currently selected' : 'Tap to switch',
+                          isActive ? currentlySelectedLabel : tapToSwitchLabel,
                           style: TextStyleConst.bodySmall.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),

@@ -2330,5 +2330,114 @@
   "selectFolder": "Select Folder",
   "premiumFeature": "Premium Feature",
   "commentsMaintenance": "Comments Under Maintenance",
-  "estimatedRecovery": "Estimated Recovery"
+  "estimatedRecovery": "Estimated Recovery",
+  "fullColor": "full color",
+  "downloadBlocInitializedWithDownloads": "DownloadBloc: Initialized with {count} downloads",
+  "@downloadBlocInitializedWithDownloads": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadBlocProgressStreamSubscriptionInitialized": "DownloadBloc: Progress stream subscription initialized",
+  "downloadBlocNotificationCallbacksConfigured": "DownloadBloc: Notification callbacks configured",
+  "downloadBlocReceivedProgressUpdate": "DownloadBloc: Received progress update: {update}",
+  "@downloadBlocReceivedProgressUpdate": {
+    "placeholders": {
+      "update": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadBlocReceivedCompletionEvent": "DownloadBloc: Received completion event for {contentId}",
+  "@downloadBlocReceivedCompletionEvent": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadBlocProgressStreamError": "DownloadBloc: Progress stream error: {error}",
+  "@downloadBlocProgressStreamError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionPauseRequested": "NotificationAction: Pause requested for {contentId}",
+  "@notificationActionPauseRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionResumeRequested": "NotificationAction: Resume requested for {contentId}",
+  "@notificationActionResumeRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionCancelRequested": "NotificationAction: Cancel requested for {contentId}",
+  "@notificationActionCancelRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionRetryRequested": "NotificationAction: Retry requested for {contentId}",
+  "@notificationActionRetryRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionPdfRetryRequested": "NotificationAction: PDF retry requested for {contentId}",
+  "@notificationActionPdfRetryRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionOpenDownloadRequested": "NotificationAction: Open download requested for {contentId}",
+  "@notificationActionOpenDownloadRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionNavigateToDownloadsRequested": "NotificationAction: Navigate to downloads requested for {contentId}",
+  "@notificationActionNavigateToDownloadsRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadBlocErrorInitializing": "DownloadBloc: Error initializing",
+  "downloadBlocFailedToReadDownloadBlocState": "Failed to read DownloadBloc state, falling back to filesystem check: {error}",
+  "@downloadBlocFailedToReadDownloadBlocState": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceSelectorSelectSource": "Select Source",
+  "sourceSelectorDescription": "Switch provider for feed, detail, search, and reader data.",
+  "sourceSelectorNoSourceSelected": "No source selected",
+  "sourceSelectorActiveSource": "Active source",
+  "sourceSelectorUnderMaintenance": "Under maintenance",
+  "sourceSelectorCurrentlySelected": "Currently selected",
+  "sourceSelectorTapToSwitch": "Tap to switch",
+  "sourceSelectorSearchHint": "Search source",
+  "sourceSelectorNoResults": "No source matches your search"
 }

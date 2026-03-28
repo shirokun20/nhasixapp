@@ -3267,4 +3267,105 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get estimatedRecovery => '预计恢复时间';
+
+  @override
+  String get fullColor => '全彩';
+
+  @override
+  String downloadBlocInitializedWithDownloads(int count) {
+    return 'DownloadBloc：已初始化，共 $count 个下载';
+  }
+
+  @override
+  String get downloadBlocProgressStreamSubscriptionInitialized =>
+      'DownloadBloc：进度流订阅已初始化';
+
+  @override
+  String get downloadBlocNotificationCallbacksConfigured =>
+      'DownloadBloc：通知回调已配置';
+
+  @override
+  String downloadBlocReceivedProgressUpdate(String update) {
+    return 'DownloadBloc：收到进度更新：$update';
+  }
+
+  @override
+  String downloadBlocReceivedCompletionEvent(String contentId) {
+    return 'DownloadBloc：收到 $contentId 的完成事件';
+  }
+
+  @override
+  String downloadBlocProgressStreamError(String error) {
+    return 'DownloadBloc：进度流错误：$error';
+  }
+
+  @override
+  String notificationActionPauseRequested(String contentId) {
+    return 'NotificationAction：请求暂停 $contentId';
+  }
+
+  @override
+  String notificationActionResumeRequested(String contentId) {
+    return 'NotificationAction：请求继续 $contentId';
+  }
+
+  @override
+  String notificationActionCancelRequested(String contentId) {
+    return 'NotificationAction：请求取消 $contentId';
+  }
+
+  @override
+  String notificationActionRetryRequested(String contentId) {
+    return 'NotificationAction：请求重试 $contentId';
+  }
+
+  @override
+  String notificationActionPdfRetryRequested(String contentId) {
+    return 'NotificationAction：请求重试 PDF $contentId';
+  }
+
+  @override
+  String notificationActionOpenDownloadRequested(String contentId) {
+    return 'NotificationAction：请求打开下载 $contentId';
+  }
+
+  @override
+  String notificationActionNavigateToDownloadsRequested(String contentId) {
+    return 'NotificationAction：请求跳转到下载页面 $contentId';
+  }
+
+  @override
+  String get downloadBlocErrorInitializing => 'DownloadBloc：初始化时发生错误';
+
+  @override
+  String downloadBlocFailedToReadDownloadBlocState(String error) {
+    return '读取 DownloadBloc 状态失败，回退到文件系统检查：$error';
+  }
+
+  @override
+  String get sourceSelectorSelectSource => '选择来源';
+
+  @override
+  String get sourceSelectorDescription => '切换提供方以更改首页、详情、搜索和阅读数据来源。';
+
+  @override
+  String get sourceSelectorNoSourceSelected => '未选择来源';
+
+  @override
+  String get sourceSelectorActiveSource => '当前来源';
+
+  @override
+  String get sourceSelectorUnderMaintenance => '维护中';
+
+  @override
+  String get sourceSelectorCurrentlySelected => '当前已选择';
+
+  @override
+  String get sourceSelectorTapToSwitch => '点击切换';
+
+  @override
+  String get sourceSelectorSearchHint => '搜索来源';
+
+  @override
+  String get sourceSelectorNoResults => '没有匹配的来源';
 }

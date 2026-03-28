@@ -2537,5 +2537,113 @@
   "selectFolder": "选择文件夹",
   "premiumFeature": "Premium Feature",
   "commentsMaintenance": "评论正在维护中",
-  "estimatedRecovery": "预计恢复时间"
+  "estimatedRecovery": "预计恢复时间",
+  "downloadBlocInitializedWithDownloads": "DownloadBloc：已初始化，共 {count} 个下载",
+  "@downloadBlocInitializedWithDownloads": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadBlocProgressStreamSubscriptionInitialized": "DownloadBloc：进度流订阅已初始化",
+  "downloadBlocNotificationCallbacksConfigured": "DownloadBloc：通知回调已配置",
+  "downloadBlocReceivedProgressUpdate": "DownloadBloc：收到进度更新：{update}",
+  "@downloadBlocReceivedProgressUpdate": {
+    "placeholders": {
+      "update": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadBlocReceivedCompletionEvent": "DownloadBloc：收到 {contentId} 的完成事件",
+  "@downloadBlocReceivedCompletionEvent": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadBlocProgressStreamError": "DownloadBloc：进度流错误：{error}",
+  "@downloadBlocProgressStreamError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionPauseRequested": "NotificationAction：请求暂停 {contentId}",
+  "@notificationActionPauseRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionResumeRequested": "NotificationAction：请求继续 {contentId}",
+  "@notificationActionResumeRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionCancelRequested": "NotificationAction：请求取消 {contentId}",
+  "@notificationActionCancelRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionRetryRequested": "NotificationAction：请求重试 {contentId}",
+  "@notificationActionRetryRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionPdfRetryRequested": "NotificationAction：请求重试 PDF {contentId}",
+  "@notificationActionPdfRetryRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionOpenDownloadRequested": "NotificationAction：请求打开下载 {contentId}",
+  "@notificationActionOpenDownloadRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionNavigateToDownloadsRequested": "NotificationAction：请求跳转到下载页面 {contentId}",
+  "@notificationActionNavigateToDownloadsRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadBlocErrorInitializing": "DownloadBloc：初始化时发生错误",
+  "downloadBlocFailedToReadDownloadBlocState": "读取 DownloadBloc 状态失败，回退到文件系统检查：{error}",
+  "@downloadBlocFailedToReadDownloadBlocState": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceSelectorSelectSource": "选择来源",
+  "sourceSelectorDescription": "切换提供方以更改首页、详情、搜索和阅读数据来源。",
+  "sourceSelectorNoSourceSelected": "未选择来源",
+  "sourceSelectorActiveSource": "当前来源",
+  "sourceSelectorUnderMaintenance": "维护中",
+  "sourceSelectorCurrentlySelected": "当前已选择",
+  "sourceSelectorTapToSwitch": "点击切换",
+  "sourceSelectorSearchHint": "搜索来源",
+  "sourceSelectorNoResults": "没有匹配的来源"
 }

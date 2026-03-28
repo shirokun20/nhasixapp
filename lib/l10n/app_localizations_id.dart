@@ -3364,4 +3364,107 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get estimatedRecovery => 'Perkiraan Pemulihan';
+
+  @override
+  String get fullColor => 'full color';
+
+  @override
+  String downloadBlocInitializedWithDownloads(int count) {
+    return 'DownloadBloc: Diinisialisasi dengan $count unduhan';
+  }
+
+  @override
+  String get downloadBlocProgressStreamSubscriptionInitialized =>
+      'DownloadBloc: Langganan stream progress diinisialisasi';
+
+  @override
+  String get downloadBlocNotificationCallbacksConfigured =>
+      'DownloadBloc: Callback notifikasi dikonfigurasi';
+
+  @override
+  String downloadBlocReceivedProgressUpdate(String update) {
+    return 'DownloadBloc: Menerima pembaruan progress: $update';
+  }
+
+  @override
+  String downloadBlocReceivedCompletionEvent(String contentId) {
+    return 'DownloadBloc: Menerima event penyelesaian untuk $contentId';
+  }
+
+  @override
+  String downloadBlocProgressStreamError(String error) {
+    return 'DownloadBloc: Kesalahan stream progress: $error';
+  }
+
+  @override
+  String notificationActionPauseRequested(String contentId) {
+    return 'NotificationAction: Pause diminta untuk $contentId';
+  }
+
+  @override
+  String notificationActionResumeRequested(String contentId) {
+    return 'NotificationAction: Resume diminta untuk $contentId';
+  }
+
+  @override
+  String notificationActionCancelRequested(String contentId) {
+    return 'NotificationAction: Cancel diminta untuk $contentId';
+  }
+
+  @override
+  String notificationActionRetryRequested(String contentId) {
+    return 'NotificationAction: Retry diminta untuk $contentId';
+  }
+
+  @override
+  String notificationActionPdfRetryRequested(String contentId) {
+    return 'NotificationAction: PDF retry diminta untuk $contentId';
+  }
+
+  @override
+  String notificationActionOpenDownloadRequested(String contentId) {
+    return 'NotificationAction: Open download diminta untuk $contentId';
+  }
+
+  @override
+  String notificationActionNavigateToDownloadsRequested(String contentId) {
+    return 'NotificationAction: Navigasi ke downloads diminta untuk $contentId';
+  }
+
+  @override
+  String get downloadBlocErrorInitializing =>
+      'DownloadBloc: Kesalahan saat inisialisasi';
+
+  @override
+  String downloadBlocFailedToReadDownloadBlocState(String error) {
+    return 'Gagal membaca state DownloadBloc, kembali ke pengecekan filesystem: $error';
+  }
+
+  @override
+  String get sourceSelectorSelectSource => 'Pilih Sumber';
+
+  @override
+  String get sourceSelectorDescription =>
+      'Ganti provider untuk feed, detail, pencarian, dan data reader.';
+
+  @override
+  String get sourceSelectorNoSourceSelected => 'Belum ada sumber dipilih';
+
+  @override
+  String get sourceSelectorActiveSource => 'Sumber aktif';
+
+  @override
+  String get sourceSelectorUnderMaintenance => 'Dalam pemeliharaan';
+
+  @override
+  String get sourceSelectorCurrentlySelected => 'Sedang dipilih';
+
+  @override
+  String get sourceSelectorTapToSwitch => 'Ketuk untuk mengganti';
+
+  @override
+  String get sourceSelectorSearchHint => 'Cari sumber';
+
+  @override
+  String get sourceSelectorNoResults => 'Tidak ada sumber yang cocok';
 }

@@ -1976,5 +1976,14 @@
   "selectFolder": "Pilih Folder",
   "premiumFeature": "Fitur Premium",
   "commentsMaintenance": "Komentar Dalam Pemeliharaan",
-  "estimatedRecovery": "Perkiraan Pemulihan"
+  "estimatedRecovery": "Perkiraan Pemulihan",
+  "sourceSelectorSelectSource": "Pilih Sumber",
+  "sourceSelectorDescription": "Ganti provider untuk feed, detail, pencarian, dan data reader.",
+  "sourceSelectorNoSourceSelected": "Belum ada sumber dipilih",
+  "sourceSelectorActiveSource": "Sumber aktif",
+  "sourceSelectorUnderMaintenance": "Dalam pemeliharaan",
+  "sourceSelectorCurrentlySelected": "Sedang dipilih",
+  "sourceSelectorTapToSwitch": "Ketuk untuk mengganti",
+  "sourceSelectorSearchHint": "Cari sumber",
+  "sourceSelectorNoResults": "Tidak ada sumber yang cocok"
 }
