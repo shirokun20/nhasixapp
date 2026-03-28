@@ -1,16 +1,17 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'dart:convert';
 import '../../widgets/shimmer_loading_widgets.dart';
 
 import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/web.dart';
 import 'package:kuron_native/utils/backup_utils.dart';
-import 'package:intl/intl.dart';
 
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/routing/app_router.dart';
+import '../../../core/utils/storage_settings.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/responsive_grid_delegate.dart';
 import '../../cubits/favorite/favorite_cubit.dart';
@@ -185,7 +186,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   Future<void> _showExportDialog() async {
-    await showDialog(
+    final progressNotifier = ValueNotifier<double>(0.0);
+    final progressTextNotifier = ValueNotifier<String>('Preparing export...');
+
+    unawaited(showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
@@ -198,35 +202,66 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(
-              color: Theme.of(context).colorScheme.primary,
+            ValueListenableBuilder<double>(
+              valueListenable: progressNotifier,
+              builder: (context, value, _) {
+                return LinearProgressIndicator(
+                  value: value,
+                  minHeight: 8,
+                  borderRadius: BorderRadius.circular(999),
+                  color: Theme.of(context).colorScheme.primary,
+                  backgroundColor:
+                      Theme.of(context).colorScheme.surfaceContainerHighest,
+                );
+              },
             ),
             const SizedBox(height: 16),
-            Text(
-              AppLocalizations.of(context)!.exportingFavorites,
-              style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
-                  Theme.of(context).colorScheme.onSurfaceVariant),
+            ValueListenableBuilder<String>(
+              valueListenable: progressTextNotifier,
+              builder: (context, text, _) => Text(
+                text,
+                style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                    Theme.of(context).colorScheme.onSurfaceVariant),
+              ),
             ),
           ],
         ),
       ),
-    );
+    ));
 
     try {
+      progressNotifier.value = 0.15;
+      progressTextNotifier.value = 'Reading favorites from database...';
+
       // Get export data from cubit
       final exportData = await _favoriteCubit.exportFavorites();
       final totalCount = exportData['total_count'] as int;
 
+      progressNotifier.value = 0.6;
+      progressTextNotifier.value = 'Encoding favorites data...';
+
       // Convert to JSON string
       final jsonString = jsonEncode(exportData);
 
-      // Generate filename with timestamp
-      final timestamp =
-          DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now());
-      final fileName = 'favorites_$timestamp.json';
+      // Keep a fixed name so import can find the same file easily.
+      const fileName = 'favorites.json';
+
+      // Use custom storage root from Settings when available.
+      final customDirectory = await StorageSettings.getCustomRootPath();
+
+      progressNotifier.value = 0.85;
+      progressTextNotifier.value = 'Writing export file...';
 
       // Save to file
-      final filePath = await BackupUtils.exportJson(jsonString, fileName);
+      final filePath = await BackupUtils.exportJson(
+        jsonString,
+        fileName,
+        customDirectory: customDirectory,
+      );
+
+      progressNotifier.value = 1.0;
+      progressTextNotifier.value = 'Finalizing export...';
+      await Future<void>.delayed(const Duration(milliseconds: 120));
 
       if (mounted) {
         Navigator.of(context).pop(); // Close loading dialog
@@ -236,7 +271,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Exported $totalCount favorites to:\n$fileName',
+                'Exported favorites only ($totalCount items) to:\n$filePath',
                 style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
                     Theme.of(context).colorScheme.onPrimary),
               ),
@@ -278,11 +313,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           ),
         );
       }
+    } finally {
+      progressNotifier.dispose();
+      progressTextNotifier.dispose();
     }
   }
 
   Future<void> _showImportDialog() async {
-    await showDialog(
+    unawaited(showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
@@ -307,7 +345,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           ],
         ),
       ),
-    );
+    ));
 
     try {
       // Import JSON file via native picker
