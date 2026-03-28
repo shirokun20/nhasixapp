@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/config/source_loader.dart';
@@ -492,6 +494,24 @@ class SourceSelector extends StatelessWidget {
     final iconUri = Uri.tryParse(iconPath);
     final isRemote = iconUri != null &&
         (iconUri.scheme == 'http' || iconUri.scheme == 'https');
+    final isFileUri = iconUri?.scheme == 'file';
+    final isAbsoluteLocalPath = iconPath.startsWith('/');
+
+    if (isFileUri || isAbsoluteLocalPath) {
+      final resolvedPath = isFileUri ? iconUri!.toFilePath() : iconPath;
+      return Image.file(
+        File(resolvedPath),
+        width: 20,
+        height: 20,
+        errorBuilder: (context, error, stackTrace) {
+          return Icon(
+            Icons.dns_rounded,
+            size: 20,
+            color: color,
+          );
+        },
+      );
+    }
 
     if (isRemote) {
       return Image.network(

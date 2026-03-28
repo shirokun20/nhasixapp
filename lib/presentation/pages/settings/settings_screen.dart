@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
@@ -13,6 +14,8 @@ import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import '../../../domain/entities/user_preferences.dart';
 
 import '../../cubits/settings/settings_cubit.dart';
@@ -1302,6 +1305,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       displayName: entry.displayName,
       description: entry.description,
     );
+    await _cacheIconForLinkCandidate(
+      sourceId: entry.id,
+      configMap: configMap,
+      entryIconUrl: entry.iconUrl,
+      baseLink: baseLink,
+      dio: dio,
+    );
 
     return _InstallCandidate(
       sourceId: entry.id,
@@ -1541,6 +1551,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           displayName: selectedEntry.displayName,
           description: selectedEntry.description,
         );
+        await _cacheIconForZipCandidate(
+          sourceId: selectedEntry.id,
+          configMap: configMap,
+          archive: archive,
+          entryIconUrl: selectedEntry.iconUrl,
+        );
 
         candidates.add(
           _InstallCandidate(
@@ -1642,6 +1658,160 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (meta.isNotEmpty) {
       configMap['meta'] = meta;
+    }
+  }
+
+  Future<void> _cacheIconForZipCandidate({
+    required String sourceId,
+    required Map<String, dynamic> configMap,
+    required Archive archive,
+    String? entryIconUrl,
+  }) async {
+    final configIconPath = _readConfigIconPath(configMap);
+    final candidatePath =
+        (entryIconUrl != null && entryIconUrl.trim().isNotEmpty)
+            ? entryIconUrl.trim()
+            : configIconPath;
+    if (candidatePath == null || candidatePath.isEmpty) {
+      return;
+    }
+
+    final iconFile = _findConfigFileInArchive(
+      archive: archive,
+      targetPath: candidatePath,
+    );
+    if (iconFile == null) {
+      return;
+    }
+
+    final iconBytes = _archiveFileBytes(iconFile);
+    final localPath = await _persistSourceIconBytes(
+      sourceId: sourceId,
+      iconBytes: iconBytes,
+      originalPath: candidatePath,
+    );
+    if (localPath != null) {
+      _setConfigIconPath(configMap, localPath);
+    }
+  }
+
+  Future<void> _cacheIconForLinkCandidate({
+    required String sourceId,
+    required Map<String, dynamic> configMap,
+    required String baseLink,
+    required Dio dio,
+    String? entryIconUrl,
+  }) async {
+    final configIconPath = _readConfigIconPath(configMap);
+    final candidatePath =
+        (entryIconUrl != null && entryIconUrl.trim().isNotEmpty)
+            ? entryIconUrl.trim()
+            : configIconPath;
+    if (candidatePath == null || candidatePath.isEmpty) {
+      return;
+    }
+
+    final iconUri = Uri.tryParse(candidatePath);
+    final isAbsoluteHttp = iconUri != null &&
+        (iconUri.scheme == 'http' || iconUri.scheme == 'https');
+    final resolvedUrl = isAbsoluteHttp
+        ? candidatePath
+        : Uri.parse(baseLink).resolve(candidatePath).toString();
+
+    try {
+      final response = await dio.get<List<int>>(
+        resolvedUrl,
+        options: Options(
+          responseType: ResponseType.bytes,
+          receiveTimeout: const Duration(seconds: 15),
+        ),
+      );
+      final bytes = response.data;
+      if (bytes == null || bytes.isEmpty) {
+        return;
+      }
+
+      final localPath = await _persistSourceIconBytes(
+        sourceId: sourceId,
+        iconBytes: bytes,
+        originalPath: candidatePath,
+      );
+      if (localPath != null) {
+        _setConfigIconPath(configMap, localPath);
+      }
+    } catch (e, stackTrace) {
+      Logger().w(
+        'Failed to cache icon for $sourceId from $resolvedUrl',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  String? _readConfigIconPath(Map<String, dynamic> configMap) {
+    final rawTopLevel = configMap['iconPath'] as String?;
+    if (rawTopLevel != null && rawTopLevel.trim().isNotEmpty) {
+      return rawTopLevel.trim();
+    }
+
+    final uiMap = (configMap['ui'] as Map?)?.cast<String, dynamic>();
+    final rawUi = uiMap?['iconPath'] as String?;
+    if (rawUi != null && rawUi.trim().isNotEmpty) {
+      return rawUi.trim();
+    }
+    return null;
+  }
+
+  void _setConfigIconPath(Map<String, dynamic> configMap, String localPath) {
+    configMap['iconPath'] = localPath;
+
+    final uiMap = (configMap['ui'] as Map?)?.cast<String, dynamic>() ??
+        <String, dynamic>{};
+    uiMap['iconPath'] = localPath;
+    configMap['ui'] = uiMap;
+  }
+
+  Future<String?> _persistSourceIconBytes({
+    required String sourceId,
+    required List<int> iconBytes,
+    required String originalPath,
+  }) async {
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      final iconDir = Directory(p.join(appDir.path, 'source_icons'));
+      if (!await iconDir.exists()) {
+        await iconDir.create(recursive: true);
+      }
+
+      final extension = _resolveImageExtension(originalPath);
+      final filePath = p.join(iconDir.path, '$sourceId$extension');
+      final iconFile = File(filePath);
+      await iconFile.writeAsBytes(iconBytes, flush: true);
+      return filePath;
+    } catch (e, stackTrace) {
+      Logger().w(
+        'Failed to persist local icon for $sourceId',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
+  String _resolveImageExtension(String pathOrUrl) {
+    final uri = Uri.tryParse(pathOrUrl);
+    final rawPath = (uri?.path.isNotEmpty == true) ? uri!.path : pathOrUrl;
+    final ext = p.extension(rawPath).toLowerCase();
+    switch (ext) {
+      case '.png':
+      case '.jpg':
+      case '.jpeg':
+      case '.webp':
+      case '.gif':
+      case '.svg':
+        return ext;
+      default:
+        return '.png';
     }
   }
 
@@ -1887,6 +2057,7 @@ class _GlobalManifestEntry {
     required this.checksumSha256,
     required this.displayName,
     required this.description,
+    required this.iconUrl,
   });
 
   final String id;
@@ -1895,6 +2066,7 @@ class _GlobalManifestEntry {
   final String? checksumSha256;
   final String? displayName;
   final String? description;
+  final String? iconUrl;
 
   static _GlobalManifestEntry fromMap(
     Map<String, dynamic> map,
@@ -1911,9 +2083,11 @@ class _GlobalManifestEntry {
     final meta = map['meta'];
     String? displayName;
     String? description;
+    String? iconUrl;
     if (meta is Map<String, dynamic>) {
       displayName = (meta['displayName'] as String?)?.trim();
       description = (meta['description'] as String?)?.trim();
+      iconUrl = (meta['iconUrl'] as String?)?.trim();
     }
 
     return _GlobalManifestEntry(
@@ -1923,6 +2097,7 @@ class _GlobalManifestEntry {
       checksumSha256: (map['checksum'] as String?)?.trim(),
       displayName: displayName,
       description: description,
+      iconUrl: iconUrl,
     );
   }
 }
