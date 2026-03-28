@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:path/path.dart' as path;
@@ -14,9 +13,6 @@ import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/config/remote_config_service.dart';
 import '../../../core/utils/source_url_resolver.dart';
-
-import 'package:kuron_special/kuron_special.dart';
-import 'package:kuron_generic/kuron_generic.dart';
 
 import '../../../domain/entities/entities.dart';
 import '../../../domain/entities/download_task.dart';
@@ -55,8 +51,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     required PdfConversionQueueManager pdfConversionQueueManager,
     required RemoteConfigService remoteConfigService,
     AppLocalizations? appLocalizations,
-    WebViewSessionAdapter?
-        crotpediaAuthManager, // Optional for cookie extraction
     DownloadManager? downloadManager, // NEW: Optional for testing
   })  : _downloadContentUseCase = downloadContentUseCase,
         _getContentDetailUseCase = getContentDetailUseCase,
@@ -69,7 +63,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _pdfConversionQueueManager = pdfConversionQueueManager,
         _remoteConfigService = remoteConfigService,
         _appLocalizations = appLocalizations,
-        _crotpediaAuthManager = crotpediaAuthManager,
         _downloadManager = downloadManager ??
             DownloadManager(), // Use injected or default singleton
         super(const DownloadInitial()) {
@@ -123,7 +116,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   final PdfConversionQueueManager _pdfConversionQueueManager;
   final RemoteConfigService _remoteConfigService;
   final AppLocalizations? _appLocalizations;
-  final WebViewSessionAdapter? _crotpediaAuthManager;
   final DownloadManager
       _downloadManager; // Use instance variable instead of singleton directly
 
@@ -142,27 +134,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       }
     }
 
-    if (sourceId == SourceType.nhentai.id ||
-        (sourceId == null && contentId.length <= 6)) {
-      // Config-driven URL via GenericHttpSource (nhentai primary source)
-      final sid = sourceId ?? SourceType.nhentai.id;
-      final source = getIt<ContentSourceRegistry>().getSource(sid);
-      if (source is GenericHttpSource) {
-        final url = source.buildContentUrl(contentId);
-        if (url.isNotEmpty) return url;
-      }
-      // Fallback: build from config template via RemoteConfigService
-      final raw = getIt<RemoteConfigService>().getRawConfig('nhentai');
-      final base = raw?['baseUrl'] as String? ?? '';
-      final api = raw?['api'] as Map<String, dynamic>?;
-      final template = ((api?['endpoints']
-              as Map<String, dynamic>?)?['contentUrl'] as String?) ??
-          '';
-      if (base.isNotEmpty && template.isNotEmpty) {
-        return '$base${template.replaceAll('{id}', contentId)}';
-      }
-      return '';
-    }
     return ''; // Unknown source
   }
 
@@ -935,53 +906,16 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _logger.w('Failed to save resume state for worker: $e');
       }
 
-      // NEW: Extract cookies for Crotpedia protected content
+      // Generic-only mode: do not use source-specific auth extraction in DownloadBloc.
       Map<String, String>? cookies;
 
-      // DEBUG: Log source and auth manager state
-      _logger.i('🔍 Download sourceId: ${content.sourceId}');
-      _logger.i('🔍 AuthManager null?: ${_crotpediaAuthManager == null}');
-
-      if (content.sourceId == SourceType.crotpedia.id &&
-          _crotpediaAuthManager != null) {
-        _logger.i('✅ Entering cookie extraction block');
-        try {
-          final crotpediaBaseUrl = SourceUrlResolver.resolveBaseUrl(
-            remoteConfigService: _remoteConfigService,
-            sourceId: SourceType.crotpedia.id,
-          );
-          cookies = await _crotpediaAuthManager.getCookiesForDomain(
-              crotpediaBaseUrl.isNotEmpty
-                  ? crotpediaBaseUrl
-                  : 'https://crotpedia.net');
-
-          _logger.i('🍪 Cookie Count: ${cookies.length}');
-          _logger.i('🍪 Cookie Keys: ${cookies.keys.join(", ")}');
-
-          if (cookies.isNotEmpty) {
-            _logger.i(
-                'DownloadBloc: Extracted ${cookies.length} cookies for protected download');
-          }
-        } catch (e) {
-          _logger.w('DownloadBloc: Failed to extract cookies: $e');
-          // Continue without cookies - may fail for protected content
-        }
-      } else {
-        _logger.w(
-            '❌ Skipped cookie extraction - sourceId: ${content.sourceId}, authManager null: ${_crotpediaAuthManager == null}');
-      }
-
-      // Extract source-specific HTTP headers.
-      // Priority 1: network.headers from remote config JSON (e.g. Hitomi.la)
-      // Priority 2: ContentSource.getImageDownloadHeaders() for bundled sources
-      //             like KomikTap whose headers are defined in code, not config.
+      // Extract HTTP headers from source config only.
       Map<String, String>? networkHeaders;
       try {
-        final rawConfig =
-            _remoteConfigService.getRawConfig(content.sourceId);
+        final rawConfig = _remoteConfigService.getRawConfig(content.sourceId);
         if (rawConfig != null) {
-          final network = (rawConfig['network'] as Map?)
-              ?.cast<String, dynamic>();
+          final network =
+              (rawConfig['network'] as Map?)?.cast<String, dynamic>();
           final configHeaders = network?['headers'];
           if (configHeaders is Map) {
             networkHeaders = configHeaders
@@ -990,26 +924,31 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           }
         }
 
-        // Fallback: use ContentSource.getImageDownloadHeaders() for bundled
-        // sources (KomikTap, Crotpedia, etc.) that don't expose headers via config.
-        if (networkHeaders == null || networkHeaders.isEmpty) {
-          final sampleUrl = content.imageUrls.isNotEmpty
-              ? content.imageUrls.first
-              : content.coverUrl;
-          final source = getIt<ContentSourceRegistry>()
-              .getSource(content.sourceId);
-          if (source != null) {
-            final sourceHeaders =
-                source.getImageDownloadHeaders(imageUrl: sampleUrl);
-            if (sourceHeaders.isNotEmpty) {
-              networkHeaders = sourceHeaders;
-            }
-          }
-        }
-
         if (networkHeaders != null && networkHeaders.isNotEmpty) {
           _logger.i(
               '🌐 Loaded ${networkHeaders.length} network headers for ${content.sourceId}: ${networkHeaders.keys.join(", ")}');
+        }
+
+        // Anti-hotlink hardening: prefer dynamic referer/origin from current content URL
+        // (chapter/detail URL) so native worker behaves closer to reader requests.
+        if (content.url != null && content.url!.isNotEmpty) {
+          final parsedContentUri = Uri.tryParse(content.url!);
+          if (parsedContentUri != null && parsedContentUri.scheme.isNotEmpty) {
+            networkHeaders ??= <String, String>{};
+
+            final normalizedReferer =
+                content.url!.endsWith('/') ? content.url! : '${content.url!}/';
+            final origin =
+                '${parsedContentUri.scheme}://${parsedContentUri.host}';
+
+            networkHeaders['Referer'] = normalizedReferer;
+            networkHeaders['referer'] = normalizedReferer;
+            networkHeaders['Origin'] = origin;
+            networkHeaders['origin'] = origin;
+
+            _logger.i(
+                '🌐 Applied dynamic referer/origin for ${content.sourceId}: $normalizedReferer');
+          }
         }
       } catch (e) {
         _logger.w('DownloadBloc: Failed to extract network headers: $e');

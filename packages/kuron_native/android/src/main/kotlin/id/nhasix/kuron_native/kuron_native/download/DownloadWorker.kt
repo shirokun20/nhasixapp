@@ -21,9 +21,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 import android.util.Log
+import org.json.JSONObject
 import java.io.File
 import java.io.IOException
+import java.net.URI
 import java.util.concurrent.TimeUnit
 
 class DownloadWorker(
@@ -48,7 +51,7 @@ class DownloadWorker(
         const val KEY_PROGRESS = "progress"
         
         private const val TAG = "DownloadWorker"
-        private const val ALLOWED_COOKIE_DOMAIN = "crotpedia.com"  // Security - only allow crotpedia.com
+        private val ALLOWED_COOKIE_DOMAINS = setOf("crotpedia.net", "crotpedia.com")
     }
     
     // Parse cookies from inputData and create HTTP client with authentication
@@ -230,18 +233,18 @@ class DownloadWorker(
     private fun parseHeaders(headersJson: String?): Map<String, String> {
         if (headersJson.isNullOrBlank()) return emptyMap()
         return try {
-            val trimmed = headersJson.trim().removeSurrounding("{", "}")
-            if (trimmed.isEmpty()) return emptyMap()
-            trimmed.split(",")
-                .mapNotNull { entry ->
-                    val eqIdx = entry.indexOf(':')
-                    if (eqIdx < 0) return@mapNotNull null
-                    val k = entry.substring(0, eqIdx).trim().removeSurrounding("\"")
-                    val v = entry.substring(eqIdx + 1).trim().removeSurrounding("\"")
-                    if (k.isNotEmpty() && v.isNotEmpty()) k to v else null
+            val json = JSONObject(headersJson)
+            val parsed = mutableMapOf<String, String>()
+            val keys = json.keys()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                val value = json.optString(key)
+                if (key.isNotBlank() && value.isNotBlank()) {
+                    parsed[key] = value
                 }
-                .toMap()
-                .also { h -> Log.d(TAG, "Parsed ${h.size} custom headers from config") }
+            }
+            Log.d(TAG, "Parsed ${parsed.size} custom headers from config")
+            parsed
         } catch (e: Exception) {
             Log.e(TAG, "Failed to parse headers JSON", e)
             emptyMap()
@@ -249,21 +252,123 @@ class DownloadWorker(
     }
 
     private fun downloadImage(url: String, destFile: File) {
-        val requestBuilder = Request.Builder().url(url)
-        // Apply source-specific headers (e.g. Referer for Hitomi.la CDN)
-        customHeaders.forEach { (name, value) -> requestBuilder.header(name, value) }
-        val request = requestBuilder.build()
-        
-        okHttpClient.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw IOException("HTTP ${response.code} for URL: $url")
+        val initialHeaders = customHeaders.toMutableMap()
+        val attempts = buildHeaderAttempts(url, initialHeaders)
+
+        var lastCode = -1
+        for ((index, headers) in attempts.withIndex()) {
+            val code = executeDownloadRequest(url, headers, destFile)
+            if (code in 200..299) {
+                if (index > 0) {
+                    Log.i(TAG, "Image download succeeded on retry attempt=${index + 1} code=$code")
+                }
+                return
             }
-            
+
+            lastCode = code
+            if (code != 403) {
+                break
+            }
+        }
+
+        throw IOException("HTTP $lastCode for URL: $url")
+    }
+
+    private fun buildHeaderAttempts(
+        imageUrl: String,
+        baseHeaders: Map<String, String>
+    ): List<Map<String, String>> {
+        val attempts = mutableListOf<Map<String, String>>()
+        val seen = mutableSetOf<String>()
+
+        fun addAttempt(headers: Map<String, String>) {
+            val key = headers.entries
+                .sortedBy { it.key.lowercase() }
+                .joinToString("|") { "${it.key.lowercase()}=${it.value}" }
+            if (seen.add(key)) {
+                attempts.add(headers)
+            }
+        }
+
+        // Attempt 1: original headers from Flutter/config.
+        addAttempt(baseHeaders)
+
+        val imageUri = try {
+            URI(imageUrl)
+        } catch (_: Exception) {
+            null
+        }
+
+        val currentReferer = baseHeaders["Referer"] ?: baseHeaders["referer"]
+        val refererCandidates = mutableListOf<String>()
+
+        if (!currentReferer.isNullOrBlank()) {
+            refererCandidates.add(currentReferer)
+            if (!currentReferer.endsWith('/')) {
+                refererCandidates.add("$currentReferer/")
+            }
+            try {
+                val uri = URI(currentReferer)
+                refererCandidates.add("${uri.scheme}://${uri.host}/")
+            } catch (_: Exception) {
+                // ignore malformed referer
+            }
+        }
+
+        if (imageUri != null) {
+            // Some CDNs allow self-host parent as referer.
+            val origin = "${imageUri.scheme}://${imageUri.host}"
+            refererCandidates.add("$origin/")
+        }
+
+        for (referer in refererCandidates.distinct()) {
+            val withOrigin = baseHeaders.toMutableMap().apply {
+                this["Referer"] = referer
+                this["referer"] = referer
+                try {
+                    val uri = URI(referer)
+                    val origin = "${uri.scheme}://${uri.host}"
+                    this["Origin"] = origin
+                    this["origin"] = origin
+                } catch (_: Exception) {
+                    remove("Origin")
+                    remove("origin")
+                }
+            }
+            addAttempt(withOrigin)
+
+            // Some anti-hotlink checks fail if Origin exists for image requests.
+            val withoutOrigin = withOrigin.toMutableMap().apply {
+                remove("Origin")
+                remove("origin")
+            }
+            addAttempt(withoutOrigin)
+        }
+
+        Log.d(TAG, "Prepared ${attempts.size} header attempts for image host retry")
+        return attempts
+    }
+
+    private fun executeDownloadRequest(
+        url: String,
+        headers: Map<String, String>,
+        destFile: File
+    ): Int {
+        val requestBuilder = Request.Builder().url(url)
+        headers.forEach { (name, value) -> requestBuilder.header(name, value) }
+        val request = requestBuilder.build()
+
+        okHttpClient.newCall(request).execute().use { response: Response ->
+            if (!response.isSuccessful) {
+                return response.code
+            }
+
             response.body?.byteStream()?.use { input ->
                 destFile.outputStream().use { output ->
                     input.copyTo(output)
                 }
             }
+            return response.code
         }
     }
     
@@ -277,23 +382,22 @@ class DownloadWorker(
         if (cookiesJson.isNullOrBlank()) return null
         
         return try {
-            // Simple JSON parsing without external library
-            val trimmed = cookiesJson.trim().removeSurrounding("{", "}")
-            if (trimmed.isEmpty()) return null
-            
-            trimmed.split(",")
-                .mapNotNull { entry ->
-                    val parts = entry.split(":")
-                    if (parts.size == 2) {
-                        val key = parts[0].trim().removeSurrounding("\"")
-                        val value = parts[1].trim().removeSurrounding("\"")
-                        key to value
-                    } else null
+            val json = JSONObject(cookiesJson)
+            val parsed = mutableMapOf<String, String>()
+            val keys = json.keys()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                val value = json.optString(key)
+                if (key.isNotBlank() && value.isNotBlank()) {
+                    parsed[key] = value
                 }
-                .toMap()
-                .also { cookies ->
-                    Log.d(TAG, "Parsed ${cookies.size} cookies from JSON")
-                }
+            }
+            if (parsed.isEmpty()) {
+                null
+            } else {
+                Log.d(TAG, "Parsed ${parsed.size} cookies from JSON")
+                parsed
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to parse cookies JSON", e)
             null
@@ -312,7 +416,10 @@ class DownloadWorker(
             
             override fun loadForRequest(url: okhttp3.HttpUrl): List<okhttp3.Cookie> {
                 // Security: Only return cookies for allowed domain
-                if (!url.host.endsWith(ALLOWED_COOKIE_DOMAIN)) {
+                val allowed = ALLOWED_COOKIE_DOMAINS.any { allowedDomain ->
+                    url.host.endsWith(allowedDomain)
+                }
+                if (!allowed) {
                     Log.d(TAG, "No cookies for domain: ${url.host}")
                     return emptyList()
                 }

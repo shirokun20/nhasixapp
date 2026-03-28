@@ -670,8 +670,6 @@ void _setupBlocs() {
         pdfConversionQueueManager: getIt<PdfConversionQueueManager>(),
         remoteConfigService: getIt<RemoteConfigService>(),
         appLocalizations: null, // Initialized during main setup
-        crotpediaAuthManager:
-            getIt<WebViewSessionAdapter>(), // Inject for cookie extraction
       ));
 
   // Register other BLoCs when implemented

@@ -1,15 +1,20 @@
 package id.nhasix.kuron_native.kuron_native.download
 
 import android.content.Context
+import android.util.Log
 import androidx.work.Constraints
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 class NativeDownloadManager(private val context: Context) {
+    companion object {
+        private const val TAG = "NativeDownloadManager"
+    }
     
     fun queueDownload(
         contentId: String,
@@ -26,28 +31,24 @@ class NativeDownloadManager(private val context: Context) {
         backupFolderName: String = "nhasix"  // ✅ NEW: Configurable backup folder name
     ): String {
         // Convert cookies Map to JSON string for WorkManager Data
-        val cookiesJson = cookies?.let { map ->
-            map.entries.joinToString(",", "{", "}") { (key, value) ->
-                "\"$key\":\"$value\""
-            }
-        }
+        val cookiesJson = cookies?.let { map -> JSONObject(map).toString() }
 
         // Convert headers Map to JSON string for WorkManager Data
-        val headersJson = headers?.let { map ->
-            map.entries.joinToString(",", "{", "}") { (key, value) ->
-                "\"$key\":\"$value\""
-            }
-        }
+        val headersJson = headers?.let { map -> JSONObject(map).toString() }
         
         // FIX: WorkManager has 10KB Data limit. Large lists (>200 items) cause crash.
         // Solution: Write URLs to a temporary file and pass file path to Worker.
-        val urlsFile = java.io.File(context.cacheDir, "download_urls_$contentId.json")
+        val safeKey = contentId.replace(Regex("[^A-Za-z0-9._-]"), "_").take(80)
+        val urlsFile = java.io.File(context.cacheDir, "download_urls_${safeKey}_${contentId.hashCode()}.json")
         try {
             val jsonArray = org.json.JSONArray(imageUrls)
             urlsFile.writeText(jsonArray.toString())
         } catch (e: Exception) {
-            // Fallback to empty file or log error, but we can't really proceed if this fails
-            e.printStackTrace()
+            Log.e(TAG, "Failed to persist image URL list for contentId=$contentId", e)
+            throw IllegalStateException(
+                "Failed to persist image URL list for native worker",
+                e
+            )
         }
 
         val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()

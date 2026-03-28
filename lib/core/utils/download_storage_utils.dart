@@ -175,31 +175,46 @@ class DownloadStorageUtils {
     try {
       _logger.d('Reading local metadata for content: $contentId');
 
-      final downloadsPath = await getDownloadsDirectory();
-      final effectiveSourceId = sourceId ?? AppStorage.defaultSourceId;
+      File? metadataFile;
 
-      // Try new path structure first: nhasix/{source}/{contentId}/
-      var metadataFile = File(path.join(
-        downloadsPath,
-        AppStorage.backupFolderName,
-        effectiveSourceId,
-        contentId,
-        AppStorage.metadataFileName,
-      ));
+      if (sourceId != null && sourceId.isNotEmpty) {
+        final contentDir =
+            await getContentDirectory(contentId, sourceId: sourceId);
+        final candidate =
+            File(path.join(contentDir, AppStorage.metadataFileName));
+        if (await candidate.exists()) {
+          metadataFile = candidate;
+        }
+      } else {
+        for (final knownSourceId in AppStorage.knownSources) {
+          final contentDir =
+              await getContentDirectory(contentId, sourceId: knownSourceId);
+          final candidate =
+              File(path.join(contentDir, AppStorage.metadataFileName));
+          if (await candidate.exists()) {
+            metadataFile = candidate;
+            break;
+          }
+        }
+      }
 
-      // Fallback to legacy path: nhasix/{contentId}/ (for backward compatibility)
-      if (!await metadataFile.exists()) {
-        metadataFile = File(path.join(
+      // Fallback to legacy path: nhasix/{contentId}/metadata.json
+      if (metadataFile == null) {
+        final downloadsPath = await getDownloadsDirectory();
+        final legacyCandidate = File(path.join(
           downloadsPath,
           AppStorage.backupFolderName,
           contentId,
           AppStorage.metadataFileName,
         ));
+        if (await legacyCandidate.exists()) {
+          metadataFile = legacyCandidate;
+        }
       }
 
       // Check if metadata file exists
-      if (!await metadataFile.exists()) {
-        _logger.w('Metadata file does not exist: ${metadataFile.path}');
+      if (metadataFile == null || !await metadataFile.exists()) {
+        _logger.w('Metadata file does not exist for content: $contentId');
         return null;
       }
 
