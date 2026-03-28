@@ -20,6 +20,7 @@ class NativeDownloadService {
     required List<String> imageUrls,
     required String destinationPath,
     Map<String, String>? cookies,
+    Map<String, String>? headers, // Source-specific HTTP headers (e.g. Referer for Hitomi)
     // Metadata v2.1 fields
     String? title,
     String? url,
@@ -36,6 +37,7 @@ class NativeDownloadService {
         'imageUrls': imageUrls,
         'destinationPath': destinationPath,
         'cookies': cookies,
+        'headers': headers, // Source-specific headers (Referer, User-Agent, etc.)
         // Metadata v2.1
         'title': title,
         'url': url,

@@ -38,6 +38,7 @@ class DownloadWorker(
         const val KEY_IMAGE_URLS_FILE = "image_urls_file" // New key for file path
         const val KEY_DESTINATION_PATH = "destination_path"
         const val KEY_COOKIES = "cookies"  // Cookies as JSON string
+        const val KEY_HEADERS = "headers"  // Source-specific HTTP headers as JSON string
         // Metadata fields for v2.1
         const val KEY_TITLE = "title"
         const val KEY_URL = "url"
@@ -222,8 +223,36 @@ class DownloadWorker(
         return File(downloadsDir, "$backupFolderName${File.separator}$sourceId${File.separator}$contentId")
     }
     
+    private val customHeaders: Map<String, String> by lazy {
+        parseHeaders(inputData.getString(KEY_HEADERS))
+    }
+
+    private fun parseHeaders(headersJson: String?): Map<String, String> {
+        if (headersJson.isNullOrBlank()) return emptyMap()
+        return try {
+            val trimmed = headersJson.trim().removeSurrounding("{", "}")
+            if (trimmed.isEmpty()) return emptyMap()
+            trimmed.split(",")
+                .mapNotNull { entry ->
+                    val eqIdx = entry.indexOf(':')
+                    if (eqIdx < 0) return@mapNotNull null
+                    val k = entry.substring(0, eqIdx).trim().removeSurrounding("\"")
+                    val v = entry.substring(eqIdx + 1).trim().removeSurrounding("\"")
+                    if (k.isNotEmpty() && v.isNotEmpty()) k to v else null
+                }
+                .toMap()
+                .also { h -> Log.d(TAG, "Parsed ${h.size} custom headers from config") }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse headers JSON", e)
+            emptyMap()
+        }
+    }
+
     private fun downloadImage(url: String, destFile: File) {
-        val request = Request.Builder().url(url).build()
+        val requestBuilder = Request.Builder().url(url)
+        // Apply source-specific headers (e.g. Referer for Hitomi.la CDN)
+        customHeaders.forEach { (name, value) -> requestBuilder.header(name, value) }
+        val request = requestBuilder.build()
         
         okHttpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {

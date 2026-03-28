@@ -214,6 +214,9 @@ class DownloadHandler(
             
             @Suppress("UNCHECKED_CAST")
             val cookies = call.argument<Map<String, String>>("cookies")
+
+            @Suppress("UNCHECKED_CAST")
+            val headers = call.argument<Map<String, String>>("headers")
             
             // Extract metadata for v2.1
             val title = call.argument<String>("title") ?: "Unknown"
@@ -229,6 +232,7 @@ class DownloadHandler(
                 imageUrls, 
                 destinationPath,
                 cookies,
+                headers,
                 title,
                 url,
                 coverUrl,

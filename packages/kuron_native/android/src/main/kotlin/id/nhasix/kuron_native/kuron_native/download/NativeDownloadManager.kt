@@ -17,6 +17,7 @@ class NativeDownloadManager(private val context: Context) {
         imageUrls: List<String>,
         destinationPath: String,
         cookies: Map<String, String>? = null,  // Optional cookies for authentication
+        headers: Map<String, String>? = null,  // Optional source-specific HTTP headers
         // Metadata for v2.1
         title: String = "Unknown",
         url: String = "",
@@ -26,6 +27,13 @@ class NativeDownloadManager(private val context: Context) {
     ): String {
         // Convert cookies Map to JSON string for WorkManager Data
         val cookiesJson = cookies?.let { map ->
+            map.entries.joinToString(",", "{", "}") { (key, value) ->
+                "\"$key\":\"$value\""
+            }
+        }
+
+        // Convert headers Map to JSON string for WorkManager Data
+        val headersJson = headers?.let { map ->
             map.entries.joinToString(",", "{", "}") { (key, value) ->
                 "\"$key\":\"$value\""
             }
@@ -50,6 +58,7 @@ class NativeDownloadManager(private val context: Context) {
                 DownloadWorker.KEY_IMAGE_URLS_FILE to urlsFile.absolutePath,
                 DownloadWorker.KEY_DESTINATION_PATH to destinationPath,
                 DownloadWorker.KEY_COOKIES to cookiesJson,
+                DownloadWorker.KEY_HEADERS to headersJson,
                 // Pass metadata
                 DownloadWorker.KEY_TITLE to title,
                 DownloadWorker.KEY_URL to url,

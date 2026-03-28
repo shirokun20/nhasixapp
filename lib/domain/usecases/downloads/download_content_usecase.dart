@@ -104,6 +104,7 @@ class DownloadContentUseCase
           params.startPage,
           params.endPage,
           params.cookies,
+          params.headers,
           effectiveSavePath,
           // STRICTLY DISABLE NATIVE NOTIFICATIONS
           // Hardcoded to false to ensure native notifications are NEVER shown,
@@ -148,6 +149,7 @@ class DownloadContentUseCase
     int? startPage,
     int? endPage,
     Map<String, String>? cookies,
+    Map<String, String>? headers,
     String? savePath,
     bool enableNotifications, // Replaced by strict false in call()
   ) async {
@@ -208,6 +210,7 @@ class DownloadContentUseCase
         imageUrls: rangeImageUrls,
         destinationPath: destination,
         cookies: cookies,
+        headers: headers, // Source-specific headers (Referer for Hitomi, etc.)
         title: content.title,
         url: content.url,
         coverUrl: content.coverUrl,
@@ -344,6 +347,7 @@ class DownloadContentParams extends UseCaseParams {
     this.startPage, // NEW: Start page for range download
     this.endPage, // NEW: End page for range download
     this.cookies, // NEW: Cookies for authentication
+    this.headers, // NEW: Source-specific HTTP headers (Referer, User-Agent, etc.)
     this.savePath, // NEW: Custom save path
     this.enableNotifications = true, // NEW
   });
@@ -359,6 +363,7 @@ class DownloadContentParams extends UseCaseParams {
   final int? startPage; // NEW: Start page for range download (1-based)
   final int? endPage; // NEW: End page for range download (1-based)
   final Map<String, String>? cookies; // NEW: Cookies for authentication
+  final Map<String, String>? headers; // NEW: Source-specific HTTP headers
   final String? savePath; // NEW: Custom save path
   final bool enableNotifications; // NEW
 
@@ -384,6 +389,7 @@ class DownloadContentParams extends UseCaseParams {
         startPage,
         endPage,
         cookies, // NEW
+        headers, // NEW
         savePath, // NEW
         enableNotifications, // NEW
       ];
@@ -400,6 +406,7 @@ class DownloadContentParams extends UseCaseParams {
     int? startPage,
     int? endPage,
     Map<String, String>? cookies, // NEW
+    Map<String, String>? headers, // NEW
     String? savePath, // NEW
     bool? enableNotifications, // NEW
   }) {
@@ -415,6 +422,7 @@ class DownloadContentParams extends UseCaseParams {
       startPage: startPage ?? this.startPage,
       endPage: endPage ?? this.endPage,
       cookies: cookies ?? this.cookies, // NEW
+      headers: headers ?? this.headers, // NEW
       savePath: savePath ?? this.savePath, // NEW
       enableNotifications:
           enableNotifications ?? this.enableNotifications, // NEW
@@ -465,6 +473,7 @@ class DownloadContentParams extends UseCaseParams {
     // NEW
     int? endPage,
     Map<String, String>? cookies,
+    Map<String, String>? headers,
     String? savePath,
     bool enableNotifications = true, // NEW
   }) {
@@ -478,6 +487,7 @@ class DownloadContentParams extends UseCaseParams {
       startPage: startPage,
       endPage: endPage,
       cookies: cookies, // NEW
+      headers: headers, // NEW
       savePath: savePath, // NEW
       enableNotifications: enableNotifications, // NEW
     );

@@ -966,6 +966,29 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             '❌ Skipped cookie extraction - sourceId: ${content.sourceId}, authManager null: ${_crotpediaAuthManager == null}');
       }
 
+      // Extract source-specific HTTP headers from config (e.g. Referer for Hitomi.la)
+      Map<String, String>? networkHeaders;
+      try {
+        final rawConfig =
+            _remoteConfigService.getRawConfig(content.sourceId);
+        if (rawConfig != null) {
+          final network = (rawConfig['network'] as Map?)
+              ?.cast<String, dynamic>();
+          final configHeaders = network?['headers'];
+          if (configHeaders is Map) {
+            networkHeaders = configHeaders
+                .cast<String, dynamic>()
+                .map((k, v) => MapEntry(k, v.toString()));
+            if (networkHeaders.isNotEmpty) {
+              _logger.i(
+                  '🌐 Loaded ${networkHeaders.length} network headers for ${content.sourceId}: ${networkHeaders.keys.join(", ")}');
+            }
+          }
+        }
+      } catch (e) {
+        _logger.w('DownloadBloc: Failed to extract network headers: $e');
+      }
+
       // Start actual download
       final downloadParams = DownloadContentParams.immediate(
         content,
@@ -974,6 +997,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         startPage: updatedDownload.startPage,
         endPage: updatedDownload.endPage,
         cookies: cookies, // NEW: Pass cookies
+        headers: networkHeaders, // NEW: Pass source-specific HTTP headers
         savePath: savePath, // NEW: Pass savePath
         enableNotifications:
             currentState.settings.enableNotifications, // NEW: Pass settings
