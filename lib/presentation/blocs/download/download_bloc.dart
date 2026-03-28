@@ -785,10 +785,15 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Fallback chapter image logic
       if (content.imageUrls.isEmpty) {
         _logger.i(
-            'DownloadBloc: Content has empty images, trying getChapterImages fallback for ${event.contentId}');
+            'DownloadBloc: Content has empty images, trying getChapterImages fallback for ${event.contentId} (source: ${updatedDownload.sourceId})');
         try {
+          // FIX: Pass sourceId so the correct source (e.g. komiktap) is used,
+          // not the currently active source which may be different.
           final chapterData = await _getChapterImagesUseCase.call(
-            GetChapterImagesParams.fromString(event.contentId),
+            GetChapterImagesParams.fromString(
+              event.contentId,
+              sourceId: updatedDownload.sourceId,
+            ),
           );
 
           if (chapterData.images.isNotEmpty) {
@@ -966,7 +971,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             '❌ Skipped cookie extraction - sourceId: ${content.sourceId}, authManager null: ${_crotpediaAuthManager == null}');
       }
 
-      // Extract source-specific HTTP headers from config (e.g. Referer for Hitomi.la)
+      // Extract source-specific HTTP headers.
+      // Priority 1: network.headers from remote config JSON (e.g. Hitomi.la)
+      // Priority 2: ContentSource.getImageDownloadHeaders() for bundled sources
+      //             like KomikTap whose headers are defined in code, not config.
       Map<String, String>? networkHeaders;
       try {
         final rawConfig =
@@ -979,11 +987,29 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             networkHeaders = configHeaders
                 .cast<String, dynamic>()
                 .map((k, v) => MapEntry(k, v.toString()));
-            if (networkHeaders.isNotEmpty) {
-              _logger.i(
-                  '🌐 Loaded ${networkHeaders.length} network headers for ${content.sourceId}: ${networkHeaders.keys.join(", ")}');
+          }
+        }
+
+        // Fallback: use ContentSource.getImageDownloadHeaders() for bundled
+        // sources (KomikTap, Crotpedia, etc.) that don't expose headers via config.
+        if (networkHeaders == null || networkHeaders.isEmpty) {
+          final sampleUrl = content.imageUrls.isNotEmpty
+              ? content.imageUrls.first
+              : content.coverUrl;
+          final source = getIt<ContentSourceRegistry>()
+              .getSource(content.sourceId);
+          if (source != null) {
+            final sourceHeaders =
+                source.getImageDownloadHeaders(imageUrl: sampleUrl);
+            if (sourceHeaders.isNotEmpty) {
+              networkHeaders = sourceHeaders;
             }
           }
+        }
+
+        if (networkHeaders != null && networkHeaders.isNotEmpty) {
+          _logger.i(
+              '🌐 Loaded ${networkHeaders.length} network headers for ${content.sourceId}: ${networkHeaders.keys.join(", ")}');
         }
       } catch (e) {
         _logger.w('DownloadBloc: Failed to extract network headers: $e');
