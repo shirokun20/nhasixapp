@@ -4,18 +4,18 @@
 [![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
 [![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com)
 [![18+](https://img.shields.io/badge/Batasan_Usia-18%2B-red?style=for-the-badge&logo=warning&logoColor=white)](#)
-[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.13-green?style=for-the-badge&logo=android&logoColor=white)](#)
+[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.14-green?style=for-the-badge&logo=android&logoColor=white)](#)
 
 > [!TIP]
 > **[🇺🇸 Read in English](README.md)**
 
-**Kuron** (sebelumnya NhasixApp) menghadirkan pengalaman membaca komik mobile **70% lebih cepat** dengan privasi sebagai prioritas utama. Dibangun dengan **Clean Architecture**, aplikasi ini fitur membaca offline cerdas, mode penyamaran (App Disguise), dan desain Material 3 yang modern.
+**Kuron** (sebelumnya NhasixApp) menghadirkan pengalaman membaca komik mobile **70% lebih cepat** dengan privasi sebagai prioritas utama. Dibangun dengan **Clean Architecture**, aplikasi ini fitur membaca offline cerdas, mode penyamaran (App Disguise), desain Material 3 yang modern, dan dukungan **multiple content providers** termasuk E-Hentai, HentaiNexus, dan Hitomi.
 
 ---
 
 ## 📥 **Download Rilis Terbaru**
 
-[📦 **Download v0.9.13+21**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.13%2B21)
+[📦 **Download v0.9.14+22**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.14)
 
 | Varian | Ukuran | Cocok Untuk | Status |
 |:-------|:----:|:---------|:------:|
@@ -26,7 +26,13 @@
 
 ## ✨ **Fitur Utama**
 
-### 💬 **Interaksi Komunitas (Baru!)**
+### 💬 **Dukungan Multi-Provider (BARU di v0.9.14!)**
+- **E-Hentai Gallery**: Dukungan penuh dengan session adapter dan pembaca per-halaman.
+- **HentaiNexus**: XOR decryption adapter dengan transformasi URL gambar.
+- **Dukungan Hitomi**: Registrasi fallback-safe untuk jangkauan konten yang lebih luas.
+- **Paginasi Cerdas**: Token-based & indexed pagination di semua provider.
+
+### 💬 **Interaksi Komunitas**
 - **Lihat Komentar**: Baca diskusi langsung di halaman detail.
 - **Tampilan Modern**: UI komentar berbentuk kartu yang rapi di mode Terang & Gelap.
 - **Data Realtime**: Menggunakan API resmi untuk data komentar yang akurat dan cepat.

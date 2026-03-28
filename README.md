@@ -4,18 +4,18 @@
 [![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
 [![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com)
 [![18+](https://img.shields.io/badge/Age_Restriction-18%2B-red?style=for-the-badge&logo=warning&logoColor=white)](#)
-[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.13-green?style=for-the-badge&logo=android&logoColor=white)](#)
+[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.14-green?style=for-the-badge&logo=android&logoColor=white)](#)
 
 > [!TIP]  
 > **[🇮🇩 Baca dalam Bahasa Indonesia](README_ID.md)**
 
-**Kuron** (formerly NhasixApp) provides a **70% faster** mobile reading experience with privacy at its core. Built with **Clean Architecture** and optimized for performance, it features smart offline reading, App Disguise mode, and a modern Material 3 design.
+**Kuron** (formerly NhasixApp) provides a **70% faster** mobile reading experience with privacy at its core. Built with **Clean Architecture** and optimized for performance, it features smart offline reading, App Disguise mode, a modern Material 3 design, and support for **multiple content providers** including E-Hentai, HentaiNexus, and Hitomi.
 
 ---
 
 ## 📥 **Download Latest Release**
 
-[📦 **Get v0.9.13+21**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.13%2B21)
+[📦 **Get v0.9.14+22**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.14)
 
 | Variant | Size | Best For | Status |
 |:-------|:----:|:---------|:------:|
@@ -26,7 +26,13 @@
 
 ## ✨ **Key Features**
 
-### 💬 **Community Interaction (New!)**
+### 💬 **Multi-Provider Support (NEW in v0.9.14!)**
+- **E-Hentai Gallery**: Full support with session adapter and per-page reader.
+- **HentaiNexus**: XOR decryption adapter with image URL transformation.
+- **Hitomi Support**: Fallback-safe registration for enhanced content breadth.
+- **Smart Pagination**: Token-based & indexed pagination across all providers.
+
+### 💬 **Community Interaction**
 - **View Comments**: Read discussions directly on detail pages.
 - **Modern UI**: Clean, card-based layout optimized for both Light & Dark modes.
 - **Realtime Data**: Uses official API for reliable and fast comment loading.
