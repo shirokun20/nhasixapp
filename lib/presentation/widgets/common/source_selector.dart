@@ -124,16 +124,20 @@ class SourceSelector extends StatelessWidget {
     SourceState state,
     ColorScheme colorScheme,
   ) {
+    final sourceLoader = getIt<SourceLoader>();
+
     showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       backgroundColor: colorScheme.surfaceContainer,
       elevation: 8,
       builder: (sheetContext) {
+        final activeSource = state.activeSource;
+
         return SafeArea(
           child: ConstrainedBox(
             constraints: BoxConstraints(
@@ -153,14 +157,98 @@ class SourceSelector extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
+                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color:
+                                  colorScheme.primary.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.hub_outlined,
+                              size: 16,
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Select Source',
+                            style: TextStyleConst.headingSmall.copyWith(
+                              color: colorScheme.onSurface,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
                       Text(
-                        'Select Source',
-                        style: TextStyleConst.headingSmall.copyWith(
-                          color: colorScheme.onSurface,
+                        'Switch provider for feed, detail, search, and reader data.',
+                        style: TextStyleConst.bodySmall.copyWith(
+                          color: colorScheme.onSurfaceVariant
+                              .withValues(alpha: 0.9),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.45),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: colorScheme.outline.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: _buildSourceIconWidget(
+                                iconPath: activeSource?.iconPath,
+                                color: colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    activeSource?.displayName ??
+                                        'No source selected',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyleConst.bodyMedium.copyWith(
+                                      color: colorScheme.onSurface,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Active source',
+                                    style: TextStyleConst.bodySmall.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              Icons.check_circle_rounded,
+                              size: 20,
+                              color: colorScheme.primary,
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -170,66 +258,20 @@ class SourceSelector extends StatelessWidget {
                 Flexible(
                   child: ListView.builder(
                     shrinkWrap: true,
+                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
                     itemCount: state.availableSources.length,
                     itemBuilder: (context, index) {
                       final source = state.availableSources[index];
-                      final sourceLoader = getIt<SourceLoader>();
                       final isActive = source.id == state.activeSource?.id;
                       final isUnderMaintenance =
                           sourceLoader.isUnderMaintenance(source.id);
 
-                      return ListTile(
-                        enabled: !isUnderMaintenance,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 2),
-                        leading: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: isActive
-                                ? colorScheme.primary.withValues(alpha: 0.2)
-                                : colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: _buildSourceIconWidget(
-                            iconPath: source.iconPath,
-                            color: isActive
-                                ? colorScheme.primary
-                                : colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        title: Text(
-                          isUnderMaintenance
-                              ? '${source.displayName} (Maintenance)'
-                              : source.displayName,
-                          style: TextStyleConst.bodyMedium.copyWith(
-                            fontWeight:
-                                isActive ? FontWeight.w700 : FontWeight.w500,
-                            color: isUnderMaintenance
-                                ? colorScheme.error
-                                : (isActive
-                                    ? colorScheme.primary
-                                    : colorScheme.onSurface),
-                          ),
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (isUnderMaintenance)
-                              Icon(
-                                Icons.warning_amber_rounded,
-                                size: 18,
-                                color: colorScheme.error,
-                              ),
-                            if (isActive) ...[
-                              const SizedBox(width: 8),
-                              Icon(
-                                Icons.check_circle_rounded,
-                                size: 20,
-                                color: colorScheme.primary,
-                              ),
-                            ],
-                          ],
-                        ),
+                      return _buildSourceSheetItem(
+                        context: sheetContext,
+                        colorScheme: colorScheme,
+                        source: source,
+                        isActive: isActive,
+                        isUnderMaintenance: isUnderMaintenance,
                         onTap: isUnderMaintenance
                             ? null
                             : () => Navigator.of(sheetContext).pop(source.id),
@@ -247,6 +289,116 @@ class SourceSelector extends StatelessWidget {
         context.read<SourceCubit>().switchSource(selectedId);
       }
     });
+  }
+
+  Widget _buildSourceSheetItem({
+    required BuildContext context,
+    required ColorScheme colorScheme,
+    required dynamic source,
+    required bool isActive,
+    required bool isUnderMaintenance,
+    required VoidCallback? onTap,
+  }) {
+    final titleColor = isUnderMaintenance
+        ? colorScheme.error
+        : (isActive ? colorScheme.primary : colorScheme.onSurface);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: isActive
+                  ? colorScheme.primary.withValues(alpha: 0.1)
+                  : colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isActive
+                    ? colorScheme.primary.withValues(alpha: 0.45)
+                    : colorScheme.outline.withValues(alpha: 0.14),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: _buildSourceIconWidget(
+                    iconPath: source.iconPath,
+                    color: isActive
+                        ? colorScheme.primary
+                        : colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        source.displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyleConst.bodyMedium.copyWith(
+                          fontWeight:
+                              isActive ? FontWeight.w700 : FontWeight.w600,
+                          color: titleColor,
+                        ),
+                      ),
+                      if (isUnderMaintenance) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Under maintenance',
+                          style: TextStyleConst.bodySmall.copyWith(
+                            color: colorScheme.error,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ] else ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          isActive ? 'Currently selected' : 'Tap to switch',
+                          style: TextStyleConst.bodySmall.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (isUnderMaintenance)
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    size: 20,
+                    color: colorScheme.error,
+                  )
+                else if (isActive)
+                  Icon(
+                    Icons.check_circle_rounded,
+                    size: 22,
+                    color: colorScheme.primary,
+                  )
+                else
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 22,
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildSourceIconWidget({
