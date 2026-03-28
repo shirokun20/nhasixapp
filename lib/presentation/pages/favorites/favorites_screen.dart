@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:convert';
 import '../../widgets/shimmer_loading_widgets.dart';
 
 import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/web.dart';
+import 'package:kuron_native/utils/backup_utils.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
@@ -210,36 +213,134 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
 
     try {
+      // Get export data from cubit
       final exportData = await _favoriteCubit.exportFavorites();
+      final totalCount = exportData['total_count'] as int;
+
+      // Convert to JSON string
+      final jsonString = jsonEncode(exportData);
+
+      // Generate filename with timestamp
+      final timestamp =
+          DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now());
+      final fileName = 'favorites_$timestamp.json';
+
+      // Save to file
+      final filePath = await BackupUtils.exportJson(jsonString, fileName);
 
       if (mounted) {
         Navigator.of(context).pop(); // Close loading dialog
 
-        // Show export result
-        await showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-            title: Text(
-              'Export Complete',
-              style: TextStyleConst.withColor(TextStyleConst.headingMedium,
-                  Theme.of(context).colorScheme.onSurface),
+        if (filePath != null) {
+          // ✅ Show success notification
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Exported $totalCount favorites to:\n$fileName',
+                style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                    Theme.of(context).colorScheme.onPrimary),
+              ),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              duration: const Duration(seconds: 3),
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(16),
             ),
+          );
+        } else {
+          // ❌ Save failed
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to save export file',
+                style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                    Theme.of(context).colorScheme.onError),
+              ),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+
+        // ❌ Show error notification
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
             content: Text(
-              'Exported ${exportData['total_count']} favorites successfully.',
+              AppLocalizations.of(context)!.exportFailed(e.toString()),
+              style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                  Theme.of(context).colorScheme.onError),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showImportDialog() async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+        title: Text(
+          'Import Favorites',
+          style: TextStyleConst.withColor(TextStyleConst.headingMedium,
+              Theme.of(context).colorScheme.onSurface),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              AppLocalizations.of(context)!.importingFavoritesData,
               style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
                   Theme.of(context).colorScheme.onSurfaceVariant),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(
-                  AppLocalizations.of(context)!.ok,
-                  style: TextStyleConst.withColor(TextStyleConst.buttonMedium,
-                      Theme.of(context).colorScheme.primary),
-                ),
-              ),
-            ],
+          ],
+        ),
+      ),
+    );
+
+    try {
+      // Import JSON file via native picker
+      final jsonString =
+          await BackupUtils.importJson(fileName: 'favorites.json');
+
+      if (jsonString == null) {
+        if (mounted) Navigator.of(context).pop(); // Close loading dialog
+        return; // User cancelled
+      }
+
+      // Parse JSON
+      final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
+
+      // Import via cubit
+      await _favoriteCubit.importFavorites(jsonData);
+
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+
+        // Show success result
+        final importedCount = (jsonData['favorites'] as List?)?.length ?? 0;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Successfully imported $importedCount favorites',
+              style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                  Theme.of(context).colorScheme.onPrimary),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
           ),
         );
       }
@@ -250,11 +351,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppLocalizations.of(context)!.exportFailed(e.toString()),
+              'Import failed: ${e.toString()}',
               style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
                   Theme.of(context).colorScheme.onError),
             ),
             backgroundColor: Theme.of(context).colorScheme.error,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -321,6 +423,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 case 'export':
                   _showExportDialog();
                   break;
+                case 'import':
+                  _showImportDialog();
+                  break;
                 case 'refresh':
                   _favoriteCubit.refresh();
                   break;
@@ -336,6 +441,21 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     const SizedBox(width: 12),
                     Text(
                       AppLocalizations.of(context)!.exportAction,
+                      style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                          Theme.of(context).colorScheme.onSurface),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'import',
+                child: Row(
+                  children: [
+                    Icon(Icons.upload,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Import Favorites',
                       style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
                           Theme.of(context).colorScheme.onSurface),
                     ),

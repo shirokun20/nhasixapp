@@ -43,6 +43,11 @@ abstract class UserDataRepository {
   /// Returns total number of favorites
   Future<int> getFavoritesCount();
 
+  /// Get all favorites at once (for export)
+  ///
+  /// Returns all favorite items without pagination
+  Future<List<Map<String, dynamic>>> getAllFavoritesForExport();
+
   // ==================== DOWNLOADS ====================
 
   /// Save download status

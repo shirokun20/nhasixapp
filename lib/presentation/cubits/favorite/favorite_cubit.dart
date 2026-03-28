@@ -307,19 +307,8 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     try {
       logInfo('Exporting favorites data');
 
-      final allFavorites = <Map<String, dynamic>>[];
-      int page = 1;
-      bool hasMore = true;
-
-      // Get all favorites
-      while (hasMore) {
-        final params = GetFavoritesParams.page(page, limit: 100);
-        final favorites = await _getFavoritesUseCase(params);
-
-        allFavorites.addAll(favorites);
-        hasMore = favorites.length == 100;
-        page++;
-      }
+      // Get all favorites at once (no pagination - much faster!)
+      final allFavorites = await _userDataRepository.getAllFavoritesForExport();
 
       final exportData = {
         'version': '1.0',

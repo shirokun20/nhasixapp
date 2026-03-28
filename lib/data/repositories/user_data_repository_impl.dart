@@ -95,6 +95,21 @@ class UserDataRepositoryImpl implements UserDataRepository {
     }
   }
 
+  @override
+  Future<List<Map<String, dynamic>>> getAllFavoritesForExport() async {
+    try {
+      _logger.i('Getting all favorites for export');
+      // Query all favorites at once (no pagination for export)
+      final favorites = await localDataSource.getAllFavorites();
+      _logger.d('Retrieved ${favorites.length} favorites for export');
+      return favorites;
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get all favorites for export',
+          error: e, stackTrace: stackTrace);
+      return [];
+    }
+  }
+
   // ==================== DOWNLOADS ====================
 
   @override

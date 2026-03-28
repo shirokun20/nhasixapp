@@ -196,6 +196,35 @@ class LocalDataSource {
     }
   }
 
+  /// Get all favorites at once (for export - no pagination)
+  Future<List<Map<String, dynamic>>> getAllFavorites() async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) {
+        _logger.e('Database not available, cannot get all favorites');
+        return [];
+      }
+
+      final result = await db.rawQuery('''
+        SELECT 
+          f.id,
+          f.source_id,
+          f.cover_url,
+          f.added_at,
+          COALESCE(f.title, h.title, d.title) as title
+        FROM favorites f
+        LEFT JOIN history h ON f.id = h.id AND f.source_id = h.source_id
+        LEFT JOIN downloads d ON f.id = d.id AND f.source_id = d.source_id
+        ORDER BY f.added_at DESC
+      ''');
+
+      return result;
+    } catch (e) {
+      _logger.e('Error getting all favorites: $e');
+      return [];
+    }
+  }
+
   // ==================== DOWNLOAD OPERATIONS ====================
 
   /// Save download status (with title and cover_url)
