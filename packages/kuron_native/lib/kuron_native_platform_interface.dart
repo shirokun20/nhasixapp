@@ -1,4 +1,5 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import 'dart:typed_data';
 
 import 'kuron_native_method_channel.dart';
 
@@ -42,6 +43,11 @@ abstract class KuronNativePlatform extends PlatformInterface {
   /// [mimeType] defaults can be provided by caller, e.g. `application/json`.
   Future<String?> pickTextFile({String? mimeType}) {
     throw UnimplementedError('pickTextFile() has not been implemented.');
+  }
+
+  /// Pick a binary file and return raw bytes.
+  Future<Uint8List?> pickBinaryFile({String? mimeType}) {
+    throw UnimplementedError('pickBinaryFile() has not been implemented.');
   }
 
   /// Start a system download

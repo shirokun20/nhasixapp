@@ -85,8 +85,17 @@ class _CrotpediaDioInterceptor with DioMixin implements Dio {
       path = uri.toString();
     }
 
+    // Force 4xx to throw so WebViewSessionAdapter can detect Cloudflare 403
+    // and trigger native bypass flow. Redirects (3xx) remain non-throwing.
+    final passthroughOptions = (options ?? Options()).copyWith(
+      validateStatus: (status) => status != null && status < 400,
+    );
+
     // As `requestWithBypass` natively returns `Response<T>`, this works cleanly
-    return _sessionAdapter.requestWithBypass<T>(path, options: options);
+    return _sessionAdapter.requestWithBypass<T>(
+      path,
+      options: passthroughOptions,
+    );
   }
 
   // Delegate other core requests back to baseDio

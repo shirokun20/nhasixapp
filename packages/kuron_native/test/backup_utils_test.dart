@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kuron_native/kuron_native.dart';
 import 'package:kuron_native/utils/backup_utils.dart';
@@ -17,6 +18,10 @@ class MockKuronNativePlatform
   @override
   Future<String?> pickTextFile({String? mimeType}) async =>
       mockPickedFileContent;
+
+  @override
+  Future<Uint8List?> pickBinaryFile({String? mimeType}) async =>
+      Uint8List.fromList(<int>[]);
 
   @override
   Future<String?> getPlatformVersion() => Future.value('1.0.0');

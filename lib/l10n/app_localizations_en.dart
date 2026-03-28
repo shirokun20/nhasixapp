@@ -3453,4 +3453,95 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sourceSelectorNoResults => 'No source matches your search';
+
+  @override
+  String get settingsCustomSourceTitle => 'Add Custom Source';
+
+  @override
+  String get settingsCustomSourceSubtitle =>
+      'Install source package from signed manifest URL or ZIP package.';
+
+  @override
+  String get settingsAddViaLink => 'Add via Link';
+
+  @override
+  String get settingsImportZip => 'Import ZIP';
+
+  @override
+  String get sourceImportLinkDialogTitle => 'Install Source via Link';
+
+  @override
+  String get sourceImportConfigUrlLabel => 'Manifest URL';
+
+  @override
+  String get sourceImportConfigUrlHint =>
+      'https://example.com/source-manifest.json';
+
+  @override
+  String get sourceImportInstallingFromLink => 'Installing source from link...';
+
+  @override
+  String get sourceImportInstallingFromZip => 'Importing source from ZIP...';
+
+  @override
+  String get sourceImportPreviewTitle => 'Install Source Preview';
+
+  @override
+  String get sourceImportPreviewSourceId => 'Source ID';
+
+  @override
+  String get sourceImportPreviewVersion => 'Version';
+
+  @override
+  String get sourceImportPreviewDisplayName => 'Display name';
+
+  @override
+  String get sourceImportPreviewVerified => 'Integrity';
+
+  @override
+  String get sourceImportPreviewVerifiedYes => 'Verified';
+
+  @override
+  String get sourceImportPreviewVerifiedNo => 'Unverified';
+
+  @override
+  String get sourceImportConfirmInstall => 'Install';
+
+  @override
+  String get sourceImportManifestInvalid => 'Invalid source manifest format.';
+
+  @override
+  String get sourceImportConfigEmpty => 'Downloaded source config is empty.';
+
+  @override
+  String get sourceImportZipManifestRequired =>
+      'ZIP must contain manifest.json.';
+
+  @override
+  String get sourceImportChecksumMismatch =>
+      'Source checksum verification failed.';
+
+  @override
+  String get sourceImportSourceMismatch =>
+      'Source ID mismatch between manifest and config.';
+
+  @override
+  String sourceImportInstalledFromLink(String sourceId) {
+    return '$sourceId installed from link';
+  }
+
+  @override
+  String sourceImportInstalledFromZip(String sourceId) {
+    return '$sourceId installed from ZIP';
+  }
+
+  @override
+  String sourceImportFailedFromLink(String error) {
+    return 'Failed to install source from link: $error';
+  }
+
+  @override
+  String sourceImportFailedFromZip(String error) {
+    return 'Failed to import ZIP source: $error';
+  }
 }

@@ -455,22 +455,23 @@ void _setupDataSources() {
     // nhentai — primary (config-driven via GenericHttpSource)
     registry.register(getIt<GenericHttpSource>());
 
-    // Dynamically register other sources from manifest
-    final manifest = remoteConfig.manifest;
-    if (manifest != null) {
-      for (final source in manifest.installableSources) {
-        final rawConfig = remoteConfig.getRawConfig(source.id);
-        if (rawConfig != null && rawConfig.isNotEmpty) {
-          final config =
-              jsonDecode(jsonEncode(rawConfig)) as Map<String, dynamic>;
-          try {
-            final sourceInstance = resolver.createSource(config);
-            registry.register(sourceInstance);
-            logger.d('Dynamically registered source: ${source.id}');
-          } catch (e) {
-            logger.e('Failed to register dynamic source ${source.id}: $e');
-          }
-        }
+    // Register all loaded non-bundled sources from RemoteConfigService.
+    // This keeps manual Link/ZIP installed sources available after hot restart,
+    // even when manifest/CDN mode is disabled.
+    final loadedSources = remoteConfig.getAllSourceConfigsRaw();
+    for (final source in loadedSources) {
+      if (source.source == 'nhentai') continue;
+
+      final rawConfig = remoteConfig.getRawConfig(source.source);
+      if (rawConfig == null || rawConfig.isEmpty) continue;
+
+      final config = jsonDecode(jsonEncode(rawConfig)) as Map<String, dynamic>;
+      try {
+        final sourceInstance = resolver.createSource(config);
+        registry.register(sourceInstance);
+        logger.d('Dynamically registered source: ${source.source}');
+      } catch (e) {
+        logger.e('Failed to register dynamic source ${source.source}: $e');
       }
     }
 

@@ -1,4 +1,5 @@
 import 'kuron_native_platform_interface.dart';
+import 'dart:typed_data';
 
 export 'utils/backup_utils.dart'; // Export for users
 export 'widgets/kuron_widgets.dart'; // Export Widgets
@@ -25,6 +26,11 @@ class KuronNative {
   /// Pick a text file using native file picker and return file content.
   Future<String?> pickTextFile({String? mimeType}) {
     return KuronNativePlatform.instance.pickTextFile(mimeType: mimeType);
+  }
+
+  /// Pick a binary file using native file picker and return raw bytes.
+  Future<Uint8List?> pickBinaryFile({String? mimeType}) {
+    return KuronNativePlatform.instance.pickBinaryFile(mimeType: mimeType);
   }
 
   Future<String?> startDownload({

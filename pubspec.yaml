@@ -69,6 +69,7 @@ dependencies:
   wakelock_plus: ^1.2.8
 
   # File Management & Sharing
+  archive: ^4.0.7
   open_file: ^3.5.7
   share_plus: ^12.0.1
   url_launcher: ^6.3.1

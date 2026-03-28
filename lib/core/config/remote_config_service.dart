@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
@@ -17,27 +16,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// 2. **assets/configs/** — Bundled defaults (read-only, always present)
 /// 3. **Hardcoded defaults** — Last-resort constants
 ///
-/// ### Manifest-driven sync
+/// ### Startup sync strategy
 /// On [smartInitialize] the service:
-/// 1. Downloads `manifest.json` from [_manifestUrl] (5 s timeout).
-/// 2. For each source in the manifest: compares manifest version vs cached
-///    version in SharedPreferences. If different, downloads new config.
-/// 3. Falls back to bundled asset if download fails.
+/// 1. Loads bundled defaults (`nhentai`, `app`, `tags`).
+/// 2. Restores manually installed sources from local cache.
+/// 3. Performs best-effort self-refresh via each source's `configUrl`.
 ///
 /// Config is intentionally **not time-expiring** — invalidation is purely
 /// version-driven (bumping version in manifest triggers re-download).
 class RemoteConfigService {
   final Dio _dio;
   final Logger _logger;
-
-  // ── CDN / remote URLs ───────────────────────────────────────────────────────
-
-  /// CDN base URL for the config repo. All relative `url` fields in the
-  /// manifest are resolved against this.
-  static const String _cdnBase =
-      'https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/app';
-
-  static const String _manifestUrl = '$_cdnBase/manifest.json';
 
   // Legacy tags URLs (kept for backward compatibility)
   static const String _tagsBaseUrl =
@@ -65,7 +54,6 @@ class RemoteConfigService {
 
   // ── SharedPreferences keys ───────────────────────────────────────────────────
 
-  static const String _prefManifestVersion = 'config_manifest_version';
   static const String _prefLastSyncMs = 'config_last_sync_timestamp';
   static const String _prefInstalledSourceIds = 'installed_source_ids';
 
@@ -107,95 +95,37 @@ class RemoteConfigService {
 
     try {
       final configDir = await _getConfigDirectory();
-      onProgress?.call(0.05, 'Checking remote manifest…');
+      onProgress?.call(0.05, 'Loading bundled defaults…');
 
       // Preload guaranteed bundled defaults first so critical sources like
-      // nhentai are always available, even if manifest/installable parsing fails.
+      // nhentai are always available.
       await _loadSourceFromBundledFallback('nhentai');
       await _loadSourceFromBundledFallback('app');
 
-      // Step 1 — try to download and apply the remote manifest
-      SourceManifest? manifest;
-      try {
-        manifest = await _downloadManifest(configDir);
-        _manifest = manifest;
-        _logger.i(
-          'Manifest fetched: ${manifest.installableSources.length} installable sources',
-        );
-      } catch (e) {
-        _logger.w('Manifest download failed, using bundled configs', error: e);
+      // Manifest CDN mode is disabled. Keep in-memory manifest empty.
+      _manifest = null;
+
+      onProgress?.call(0.25, 'Restoring installed local sources…');
+      await _restoreInstalledSourcesFromCache(configDir);
+
+      // Safety net: bundled sources must always be available.
+      for (final bundledId in _bundledSourceIds) {
+        await _loadSourceFromBundledFallback(bundledId);
       }
 
-      final double progressPerSource = manifest != null ? 0.7 / 2 : 0.7 / 2;
-
-      double progress = 0.1;
-
-      if (manifest != null) {
-        // Step 2 — restore only previously installed installable sources.
-        final prefs = await SharedPreferences.getInstance();
-        final installedIds =
-            (prefs.getStringList(_prefInstalledSourceIds) ?? const <String>[])
-                .toSet();
-        final installedEntries = manifest.installableSources
-            .where((entry) => installedIds.contains(entry.id))
-            .toList();
-
-        if (installedEntries.isNotEmpty) {
-          _logger.i(
-            'Restoring ${installedEntries.length} installed source(s): ${installedEntries.map((e) => e.id).join(', ')}',
-          );
-        }
-
-        for (final entry in installedEntries) {
-          onProgress?.call(progress, 'Restoring ${entry.id} config…');
-          await _syncSourceConfig(entry, configDir);
-          progress += progressPerSource;
-        }
-
-        // Step 3 — sync app config
-        if (manifest.appConfig != null) {
-          onProgress?.call(progress, 'Loading app config…');
-          await _syncAppConfig(manifest.appConfig!, configDir);
-          progress += progressPerSource;
-        }
-
-        // Safety net: bundled sources must always be available even when
-        // manifest intentionally lists only installable providers.
-        for (final bundledId in _bundledSourceIds) {
-          // FOR DEVELOPMENT: Force load from asset fallback to overwrite any cached GitHub config!
-          _logger.w(
-              'DEV OVERRIDE: Forcing bundled source "$bundledId" to load from asset fallback!');
-          await _loadSourceFromBundledFallback(bundledId);
-        }
-
-        // Ensure app config exists as fallback if manifest omits appConfig.
-        if (_appConfig == null && !_rawSourceConfigs.containsKey('app')) {
-          _logger.w(
-            'App config missing after manifest sync; loading bundled app config',
-          );
-          await _loadSourceFromBundledFallback('app');
-        }
-      } else {
-        // Fallback: load only bundled configs (nhentai + app).
-        // Installable sources require the manifest to know which ones are
-        // installed; without it we cannot safely load them.
-        for (final sourceId in ['nhentai', 'app']) {
-          onProgress?.call(progress, 'Loading $sourceId config…');
-          await _loadSourceFromBundledFallback(sourceId);
-          progress += progressPerSource;
-        }
+      if (_appConfig == null && !_rawSourceConfigs.containsKey('app')) {
+        await _loadSourceFromBundledFallback('app');
       }
 
       // Tags manifest is always loaded from asset (it's metadata, not config)
-      onProgress?.call(0.85, 'Loading tags config…');
+      onProgress?.call(0.55, 'Loading tags config…');
       await _loadTagsManifest();
 
       // Attempt a background self-refresh for every source that carries a
-      // configUrl field but wasn't covered by the CDN manifest (or the
-      // manifest didn't update it). This keeps installable/dev configs fresh
-      // without requiring a full manifest bump.
-      onProgress?.call(0.92, 'Checking source self-updates…');
-      await _selfRefreshAllFromConfigUrl(manifest);
+      // configUrl field. With manifest mode disabled, this is the only
+      // network-based refresh path.
+      onProgress?.call(0.85, 'Checking source self-updates…');
+      await _selfRefreshAllFromConfigUrl(null);
 
       // Persist sync timestamp
       final prefs = await SharedPreferences.getInstance();
@@ -272,30 +202,8 @@ class RemoteConfigService {
   TagsManifest? get tagsManifest => _tagsManifest;
   SourceManifest? get manifest => _manifest;
 
-  /// Resolves manifest metadata paths (e.g., iconUrl) against the CDN base.
-  ///
-  /// Accepts both absolute URLs and relative paths.
-  String resolveRemotePath(String urlOrPath) => _resolveUrl(urlOrPath);
-
   Map<String, dynamic>? getRawConfig(String source) =>
       _rawSourceConfigs[source];
-
-  /// Ensures `manifest.json` is available in memory.
-  ///
-  /// If the manifest has not been loaded yet, this attempts a fresh download.
-  /// Returns `null` when loading fails.
-  Future<SourceManifest?> ensureManifestLoaded() async {
-    if (_manifest != null) return _manifest;
-
-    try {
-      final configDir = await _getConfigDirectory();
-      _manifest = await _downloadManifest(configDir);
-      return _manifest;
-    } catch (e) {
-      _logger.w('Failed to ensure manifest is loaded', error: e);
-      return null;
-    }
-  }
 
   /// Manually register a source config (used for testing/generic sources)
   void registerSourceConfig(String sourceId, Map<String, dynamic> rawConfig) {
@@ -397,7 +305,9 @@ class RemoteConfigService {
       final rawJson = response.data;
       if (rawJson == null) return false;
 
-      final decoded = jsonDecode(rawJson) as Map<String, dynamic>;
+      final decoded = _normalizeSourceConfigForCompatibility(
+        jsonDecode(rawJson) as Map<String, dynamic>,
+      );
       final remoteVersion = decoded['version'] as String?;
       final localVersion = raw?['version'] as String?;
 
@@ -411,7 +321,7 @@ class RemoteConfigService {
       // Persist to AppDocDir so it survives app restarts.
       final configDir = await _getConfigDirectory();
       final cachedFile = File(p.join(configDir.path, '$sourceId-config.json'));
-      await cachedFile.writeAsString(rawJson);
+      await cachedFile.writeAsString(jsonEncode(decoded));
 
       // Also update the version pref so manifest sync skips re-download.
       if (remoteVersion != null) {
@@ -465,7 +375,27 @@ class RemoteConfigService {
       throw const FormatException('Downloaded config is empty');
     }
 
-    final decoded = jsonDecode(rawJson) as Map<String, dynamic>;
+    return applySourceConfigFromJson(
+      sourceId: sourceId,
+      rawJson: rawJson,
+      sourceLabel: 'URL',
+    );
+  }
+
+  /// Applies a source config from raw JSON string, persists it to cache,
+  /// updates in-memory maps, and stores version metadata when available.
+  Future<SourceConfig> applySourceConfigFromJson({
+    required String sourceId,
+    required String rawJson,
+    String sourceLabel = 'raw',
+  }) async {
+    if (rawJson.trim().isEmpty) {
+      throw const FormatException('Source config JSON is empty');
+    }
+
+    final decoded = _normalizeSourceConfigForCompatibility(
+      jsonDecode(rawJson) as Map<String, dynamic>,
+    );
 
     final declaredSource = decoded['source'] as String?;
     if (declaredSource == null || declaredSource.isEmpty) {
@@ -481,7 +411,7 @@ class RemoteConfigService {
 
     final configDir = await _getConfigDirectory();
     final cachedFile = File(p.join(configDir.path, '$sourceId-config.json'));
-    await cachedFile.writeAsString(rawJson);
+    await cachedFile.writeAsString(jsonEncode(decoded));
 
     final version = decoded['version'] as String?;
     if (version != null && version.isNotEmpty) {
@@ -493,93 +423,7 @@ class RemoteConfigService {
     _sourceConfigs[sourceId] = parsed;
 
     _logger.i(
-      '✅ Applied source config from URL for $sourceId (v${version ?? 'unknown'})',
-    );
-    return parsed;
-  }
-
-  /// Downloads and applies source config using manifest entry (URL + version).
-  ///
-  /// Caller only needs to provide `sourceId`; this method resolves source URL
-  /// from `manifest.json`, downloads it, caches it, and updates in-memory maps.
-  Future<SourceConfig?> downloadAndApplySourceConfigFromManifest({
-    required String sourceId,
-  }) async {
-    final manifest = await ensureManifestLoaded();
-    if (manifest == null) {
-      throw StateError('manifest.json is not available');
-    }
-
-    SourceManifestEntry? targetEntry;
-    for (final entry in manifest.installableSources) {
-      if (entry.id == sourceId) {
-        targetEntry = entry;
-        break;
-      }
-    }
-
-    if (targetEntry == null) {
-      throw StateError('Source "$sourceId" not found in manifest.json');
-    }
-
-    final resolvedUrl = _resolveUrl(targetEntry.url);
-    final response = await _dio.get<String>(
-      '$resolvedUrl?v=${targetEntry.version}',
-      options: Options(
-        receiveTimeout: const Duration(seconds: 12),
-        responseType: ResponseType.plain,
-      ),
-    );
-
-    final rawJson = response.data;
-    if (rawJson == null || rawJson.trim().isEmpty) {
-      throw const FormatException(
-        'Downloaded config from manifest URL is empty',
-      );
-    }
-
-    if (targetEntry.checksum != null && targetEntry.checksum!.isNotEmpty) {
-      _validateChecksum(rawJson, targetEntry.checksum!, sourceId);
-    }
-
-    final decoded = jsonDecode(rawJson) as Map<String, dynamic>;
-    final declaredSource = decoded['source'] as String?;
-    if (declaredSource == null || declaredSource.isEmpty) {
-      throw const FormatException('Config is missing required "source" field');
-    }
-    if (declaredSource != sourceId) {
-      throw FormatException(
-        'Source mismatch: expected "$sourceId" but got "$declaredSource"',
-      );
-    }
-
-    SourceConfig? parsed;
-    try {
-      parsed = SourceConfig.fromJson(decoded);
-    } catch (e, stackTrace) {
-      _logger.w(
-        'Typed SourceConfig parse failed for $sourceId; raw config kept for runtime adapter compatibility',
-        error: 'version=${decoded['version']}, '
-            'hasSearchConfig=${decoded['searchConfig'] != null}, '
-            'hasSearchForm=${decoded['searchForm'] != null} | $e',
-        stackTrace: stackTrace,
-      );
-    }
-
-    final configDir = await _getConfigDirectory();
-    final cachedFile = File(p.join(configDir.path, '$sourceId-config.json'));
-    await cachedFile.writeAsString(rawJson);
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefSourceVersion(sourceId), targetEntry.version);
-
-    _rawSourceConfigs[sourceId] = decoded;
-    if (parsed != null) {
-      _sourceConfigs[sourceId] = parsed;
-    }
-
-    _logger.i(
-      '✅ Applied source config from manifest for $sourceId (v${targetEntry.version})',
+      '✅ Applied source config from $sourceLabel for $sourceId (v${version ?? 'unknown'})',
     );
     return parsed;
   }
@@ -734,118 +578,31 @@ class RemoteConfigService {
     return configDir;
   }
 
-  /// Download and parse `manifest.json` from CDN. Saves to [configDir].
-  Future<SourceManifest> _downloadManifest(Directory configDir) async {
-    final response = await _dio.get<String>(
-      _manifestUrl,
-      options: Options(
-        receiveTimeout: const Duration(seconds: 5),
-        responseType: ResponseType.plain,
-      ),
-    );
-
-    final rawJson = response.data!;
-    final manifestFile = File(p.join(configDir.path, 'manifest.json'));
-    await manifestFile.writeAsString(rawJson);
-
-    final manifest = SourceManifest.fromJson(
-      jsonDecode(rawJson) as Map<String, dynamic>,
-    );
-
+  /// Restore manually installed source configs from local cache.
+  Future<void> _restoreInstalledSourcesFromCache(Directory configDir) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _prefManifestVersion,
-      manifest.schemaVersion.toString(),
+    final installedIds =
+        (prefs.getStringList(_prefInstalledSourceIds) ?? const <String>[])
+            .toSet();
+
+    if (installedIds.isEmpty) return;
+
+    _logger.i(
+      'Restoring ${installedIds.length} local installed source(s): ${installedIds.join(', ')}',
     );
 
-    return manifest;
-  }
-
-  /// Sync one installable source config from CDN with cache/version fallback.
-  Future<void> _syncSourceConfig(
-    SourceManifestEntry entry,
-    Directory configDir,
-  ) async {
-    final sourceId = entry.id;
-    final manifestVersion = entry.version;
-
-    final prefs = await SharedPreferences.getInstance();
-    final cachedVersion = prefs.getString(_prefSourceVersion(sourceId));
-    final cachedFile = File(p.join(configDir.path, '$sourceId-config.json'));
-
-    // Use cached file if version matches.
-    if (cachedVersion == manifestVersion && cachedFile.existsSync()) {
-      _logger.d('Using cached config for $sourceId v$manifestVersion');
-      await _loadFromFile(sourceId, cachedFile);
-      final raw = _rawSourceConfigs[sourceId];
-      _logger.d(
-        'Cached $sourceId summary: version=${raw?['version']}, '
-        'hasSearchConfig=${raw?['searchConfig'] != null}, '
-        'hasSearchForm=${raw?['searchForm'] != null}',
-      );
-      return;
-    }
-
-    final configUrl = _resolveUrl(entry.url);
-    try {
-      _logger.i('Downloading config for $sourceId from $configUrl');
-      final response = await _dio.get<String>(
-        '$configUrl?v=$manifestVersion',
-        options: Options(
-          receiveTimeout: const Duration(seconds: 10),
-          responseType: ResponseType.plain,
-        ),
-      );
-
-      final rawJson = response.data!;
-      if (entry.checksum != null && entry.checksum!.isNotEmpty) {
-        _validateChecksum(rawJson, entry.checksum!, sourceId);
+    for (final sourceId in installedIds) {
+      final cachedFile = File(p.join(configDir.path, '$sourceId-config.json'));
+      if (!cachedFile.existsSync()) {
+        _logger.w('Cached config not found for installed source: $sourceId');
+        continue;
       }
 
-      await cachedFile.writeAsString(rawJson);
-      await prefs.setString(_prefSourceVersion(sourceId), manifestVersion);
-      await _loadFromFile(sourceId, cachedFile);
-      _logger.i('✅ Config synced for $sourceId v$manifestVersion');
-    } catch (e) {
-      // Installable source restore is best-effort; keep app startup resilient.
-      _logger.w('Restore failed for installable source $sourceId', error: e);
-    }
-  }
-
-  /// Sync app-config.json from CDN.
-  Future<void> _syncAppConfig(
-    SourceManifestAppEntry entry,
-    Directory configDir,
-  ) async {
-    final prefs = await SharedPreferences.getInstance();
-    final cachedVersion = prefs.getString(_prefSourceVersion('app'));
-    final cachedFile = File(p.join(configDir.path, 'app-config.json'));
-
-    if (cachedVersion == entry.version && cachedFile.existsSync()) {
-      _logger.d('Using cached app config v${entry.version}');
-      final raw = jsonDecode(await cachedFile.readAsString());
-      _appConfig = AppConfig.fromJson(raw as Map<String, dynamic>);
-      return;
-    }
-
-    final configUrl = _resolveUrl(entry.url);
-    try {
-      final response = await _dio.get<String>(
-        '$configUrl?v=${entry.version}',
-        options: Options(
-          receiveTimeout: const Duration(seconds: 10),
-          responseType: ResponseType.plain,
-        ),
-      );
-      final rawJson = response.data!;
-      await cachedFile.writeAsString(rawJson);
-      await prefs.setString(_prefSourceVersion('app'), entry.version);
-      _appConfig = AppConfig.fromJson(
-        jsonDecode(rawJson) as Map<String, dynamic>,
-      );
-    } catch (e) {
-      _logger.w('App config download failed, using bundled', error: e);
-      await _loadSourceFromBundledFallback('app');
+      try {
+        await _loadFromFile(sourceId, cachedFile);
+      } catch (e) {
+        _logger.w('Failed to restore installed source: $sourceId', error: e);
+      }
     }
   }
 
@@ -918,23 +675,6 @@ class RemoteConfigService {
     }
   }
 
-  /// Resolve a relative config URL against the CDN base.
-  String _resolveUrl(String relativeUrl) {
-    if (relativeUrl.startsWith('http')) return relativeUrl;
-    return '$_cdnBase/$relativeUrl';
-  }
-
-  /// Validate SHA-256 checksum of [content].
-  void _validateChecksum(String content, String expected, String sourceId) {
-    final actual = 'sha256:${sha256.convert(utf8.encode(content)).toString()}';
-    if (actual != expected) {
-      _logger.w(
-        'Checksum mismatch for $sourceId: expected $expected, got $actual',
-      );
-      // Non-fatal: log and continue — config may still be valid.
-    }
-  }
-
   /// For each loaded source that has a `configUrl` field and whose version
   /// was NOT already refreshed by the manifest during this init cycle, try a
   /// lightweight self-refresh.
@@ -957,5 +697,56 @@ class RemoteConfigService {
 
     if (futures.isEmpty) return;
     await Future.wait(futures, eagerError: false);
+  }
+
+  /// Normalize older source config schemas into the typed model expected by
+  /// current app parsers.
+  ///
+  /// Current compatibility fix:
+  /// - `network.rateLimit.requestsPerSecond` -> `requestsPerMinute`
+  /// - fills missing `minDelayMs` with derived/default value
+  Map<String, dynamic> _normalizeSourceConfigForCompatibility(
+    Map<String, dynamic> raw,
+  ) {
+    final normalized = jsonDecode(jsonEncode(raw)) as Map<String, dynamic>;
+
+    final network = normalized['network'];
+    if (network is! Map) {
+      return normalized;
+    }
+
+    final networkMap = network.cast<String, dynamic>();
+    final rateLimit = networkMap['rateLimit'];
+    if (rateLimit is! Map) {
+      return normalized;
+    }
+
+    final rateMap = rateLimit.cast<String, dynamic>();
+
+    final requestsPerSecondRaw = rateMap['requestsPerSecond'];
+    int? requestsPerSecond;
+    if (requestsPerSecondRaw is num) {
+      requestsPerSecond = requestsPerSecondRaw.toInt();
+    }
+
+    if (rateMap['requestsPerMinute'] == null) {
+      if (requestsPerSecond != null && requestsPerSecond > 0) {
+        rateMap['requestsPerMinute'] = requestsPerSecond * 60;
+      } else {
+        rateMap['requestsPerMinute'] = 30;
+      }
+    }
+
+    if (rateMap['minDelayMs'] == null) {
+      if (requestsPerSecond != null && requestsPerSecond > 0) {
+        rateMap['minDelayMs'] = (1000 / requestsPerSecond).ceil();
+      } else {
+        rateMap['minDelayMs'] = 1500;
+      }
+    }
+
+    networkMap['rateLimit'] = rateMap;
+    normalized['network'] = networkMap;
+    return normalized;
   }
 }

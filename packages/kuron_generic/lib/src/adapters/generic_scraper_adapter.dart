@@ -166,7 +166,7 @@ class GenericScraperAdapter implements GenericAdapter {
     }
 
     _logger.d('$_sourceId scraper [$patternKey]: $url');
-    return _fetchListPage(url, listConfig,
+    return _fetchListPage(url, rawConfig, listConfig,
         defaultLanguage: rawConfig['defaultLanguage'] as String?);
   }
 
@@ -298,7 +298,7 @@ class GenericScraperAdapter implements GenericAdapter {
         queryParts.isEmpty ? baseUrl : '$baseUrl?${queryParts.join('&')}';
 
     _logger.d('$_sourceId scraper [raw/$patternKey]: $finalUrl');
-    return _fetchListPage(finalUrl, listConfig,
+    return _fetchListPage(finalUrl, rawConfig, listConfig,
         defaultLanguage: rawConfig['defaultLanguage'] as String?);
   }
 
@@ -312,6 +312,190 @@ class GenericScraperAdapter implements GenericAdapter {
     }
 
     return Uri.encodeComponent(value);
+  }
+
+  Future<Response<String>> _getWithRedirectFallback(
+    String url, {
+    required Map<String, dynamic> rawConfig,
+  }) async {
+    final headers = _resolveRequestHeaders(rawConfig, fallbackReferer: url);
+
+    final initialResponse = await _dio.get<String>(
+      url,
+      options: Options(
+        responseType: ResponseType.plain,
+        headers: headers,
+        followRedirects: false,
+        validateStatus: (status) => status != null && status < 500,
+      ),
+    );
+
+    final initialStatus = initialResponse.statusCode ?? 0;
+    if (_isSuccessStatus(initialStatus)) {
+      return initialResponse;
+    }
+
+    if (_isRedirectStatus(initialStatus)) {
+      final location = initialResponse.headers.value('location')?.trim();
+      if (location != null && location.isNotEmpty) {
+        final resolvedUrl = Uri.parse(url).resolve(location).toString();
+        final resolvedResponse = await _dio.get<String>(
+          resolvedUrl,
+          options: Options(
+            responseType: ResponseType.plain,
+            headers: headers,
+            validateStatus: (status) => status != null && status < 500,
+          ),
+        );
+
+        if (_isSuccessStatus(resolvedResponse.statusCode)) {
+          return resolvedResponse;
+        }
+      }
+
+      // Some WAFs (for example Sucuri) may respond with redirect status but no
+      // Location header when client fingerprint looks suspicious. In that case,
+      // retry once with an isolated clean Dio instance so inherited global
+      // headers from other sources do not leak into this request.
+      if (location == null || location.isEmpty) {
+        _logger.w(
+          '$_sourceId redirect loop without Location, retrying with isolated client: $url',
+        );
+
+        final isolatedHeaders = _resolveIsolatedHeaders(headers);
+        final fallbackUrls = _buildRedirectLoopFallbackUrls(
+          url,
+          rawConfig: rawConfig,
+        );
+
+        for (final candidateUrl in fallbackUrls) {
+          try {
+            final isolatedResponse = await _fetchWithIsolatedClient(
+              candidateUrl,
+              headers: isolatedHeaders,
+            );
+
+            if (_isSuccessStatus(isolatedResponse.statusCode)) {
+              _logger.i(
+                '$_sourceId isolated fallback succeeded: $candidateUrl (${isolatedResponse.statusCode})',
+              );
+              return isolatedResponse;
+            }
+          } on DioException catch (isolatedError) {
+            _logger.w(
+              '$_sourceId isolated fallback failed for $candidateUrl',
+              error: isolatedError,
+            );
+          }
+        }
+      }
+    }
+
+    throw DioException.badResponse(
+      statusCode: initialStatus,
+      requestOptions: initialResponse.requestOptions,
+      response: initialResponse,
+    );
+  }
+
+  Future<Response<String>> _fetchWithIsolatedClient(
+    String url, {
+    required Map<String, dynamic> headers,
+  }) async {
+    final isolatedDio = Dio(
+      BaseOptions(
+        connectTimeout: _dio.options.connectTimeout,
+        receiveTimeout: _dio.options.receiveTimeout,
+        sendTimeout: _dio.options.sendTimeout,
+        responseType: ResponseType.plain,
+        followRedirects: false,
+        maxRedirects: 5,
+        headers: headers,
+      ),
+    );
+
+    try {
+      return await isolatedDio.get<String>(
+        url,
+        options: Options(
+          responseType: ResponseType.plain,
+          validateStatus: (status) => status != null && status < 500,
+        ),
+      );
+    } finally {
+      isolatedDio.close(force: true);
+    }
+  }
+
+  Map<String, dynamic> _resolveIsolatedHeaders(Map<String, dynamic> headers) {
+    final isolated = <String, dynamic>{};
+
+    final userAgent = headers['User-Agent']?.toString();
+    final referer = headers['Referer']?.toString();
+
+    isolated['User-Agent'] = (userAgent == null || userAgent.isEmpty)
+        ? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+            '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        : userAgent;
+    isolated['Accept'] =
+        'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8';
+    isolated['Accept-Language'] = 'en-US,en;q=0.9';
+    if (referer != null && referer.isNotEmpty) {
+      isolated['Referer'] = referer;
+    }
+
+    return isolated;
+  }
+
+  Map<String, dynamic> _resolveRequestHeaders(
+    Map<String, dynamic> rawConfig, {
+    required String fallbackReferer,
+  }) {
+    final headers = <String, dynamic>{};
+    final network = rawConfig['network'];
+    if (network is Map<String, dynamic>) {
+      final rawHeaders = network['headers'];
+      if (rawHeaders is Map<String, dynamic>) {
+        headers.addAll(rawHeaders);
+      }
+    }
+
+    headers.putIfAbsent('Referer', () => fallbackReferer);
+    return headers;
+  }
+
+  bool _isRedirectStatus(int statusCode) {
+    return statusCode == 301 ||
+        statusCode == 302 ||
+        statusCode == 303 ||
+        statusCode == 307 ||
+        statusCode == 308;
+  }
+
+  bool _isSuccessStatus(int? statusCode) {
+    if (statusCode == null) return false;
+    return statusCode >= 200 && statusCode < 300;
+  }
+
+  List<String> _buildRedirectLoopFallbackUrls(
+    String originalUrl, {
+    required Map<String, dynamic> rawConfig,
+  }) {
+    final urls = <String>[originalUrl];
+
+    final baseUrl = rawConfig['baseUrl'] as String?;
+    if (baseUrl != null && baseUrl.isNotEmpty) {
+      final normalizedBase = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
+      urls.add(normalizedBase);
+      urls.add('${normalizedBase}page/1/');
+    }
+
+    final originalUri = Uri.tryParse(originalUrl);
+    if (originalUri != null && originalUri.path == '/') {
+      urls.add(originalUri.replace(path: '/page/1/').toString());
+    }
+
+    return urls.toSet().toList();
   }
 
   // ── fetchDetail ────────────────────────────────────────────────────────────
@@ -979,13 +1163,14 @@ class GenericScraperAdapter implements GenericAdapter {
 
   Future<AdapterSearchResult> _fetchListPage(
     String url,
+    Map<String, dynamic> rawConfig,
     Map<String, dynamic> listConfig, {
     String? defaultLanguage,
   }) async {
     try {
-      final response = await _dio.get<String>(
+      final response = await _getWithRedirectFallback(
         url,
-        options: Options(responseType: ResponseType.plain),
+        rawConfig: rawConfig,
       );
       final doc = _parser.parse(response.data ?? '');
 

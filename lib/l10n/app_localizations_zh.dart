@@ -3368,4 +3368,91 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sourceSelectorNoResults => '没有匹配的来源';
+
+  @override
+  String get settingsCustomSourceTitle => '添加自定义来源';
+
+  @override
+  String get settingsCustomSourceSubtitle => '通过已签名清单 URL 或 ZIP 包安装来源。';
+
+  @override
+  String get settingsAddViaLink => '通过链接添加';
+
+  @override
+  String get settingsImportZip => '导入 ZIP';
+
+  @override
+  String get sourceImportLinkDialogTitle => '通过链接安装来源';
+
+  @override
+  String get sourceImportConfigUrlLabel => '清单 URL';
+
+  @override
+  String get sourceImportConfigUrlHint =>
+      'https://example.com/source-manifest.json';
+
+  @override
+  String get sourceImportInstallingFromLink => '正在从链接安装来源...';
+
+  @override
+  String get sourceImportInstallingFromZip => '正在从 ZIP 导入来源...';
+
+  @override
+  String get sourceImportPreviewTitle => '来源安装预览';
+
+  @override
+  String get sourceImportPreviewSourceId => '来源 ID';
+
+  @override
+  String get sourceImportPreviewVersion => '版本';
+
+  @override
+  String get sourceImportPreviewDisplayName => '显示名称';
+
+  @override
+  String get sourceImportPreviewVerified => '完整性';
+
+  @override
+  String get sourceImportPreviewVerifiedYes => '已验证';
+
+  @override
+  String get sourceImportPreviewVerifiedNo => '未验证';
+
+  @override
+  String get sourceImportConfirmInstall => '安装';
+
+  @override
+  String get sourceImportManifestInvalid => '来源清单格式无效。';
+
+  @override
+  String get sourceImportConfigEmpty => '下载的来源配置为空。';
+
+  @override
+  String get sourceImportZipManifestRequired => 'ZIP 必须包含 manifest.json。';
+
+  @override
+  String get sourceImportChecksumMismatch => '来源校验和验证失败。';
+
+  @override
+  String get sourceImportSourceMismatch => '清单与配置中的来源 ID 不匹配。';
+
+  @override
+  String sourceImportInstalledFromLink(String sourceId) {
+    return '已通过链接安装 $sourceId';
+  }
+
+  @override
+  String sourceImportInstalledFromZip(String sourceId) {
+    return '已通过 ZIP 安装 $sourceId';
+  }
+
+  @override
+  String sourceImportFailedFromLink(String error) {
+    return '通过链接安装来源失败：$error';
+  }
+
+  @override
+  String sourceImportFailedFromZip(String error) {
+    return '导入 ZIP 来源失败：$error';
+  }
 }

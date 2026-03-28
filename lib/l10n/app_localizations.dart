@@ -5927,6 +5927,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No source matches your search'**
   String get sourceSelectorNoResults;
+
+  /// No description provided for @settingsCustomSourceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Custom Source'**
+  String get settingsCustomSourceTitle;
+
+  /// No description provided for @settingsCustomSourceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Install source package from signed manifest URL or ZIP package.'**
+  String get settingsCustomSourceSubtitle;
+
+  /// No description provided for @settingsAddViaLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Add via Link'**
+  String get settingsAddViaLink;
+
+  /// No description provided for @settingsImportZip.
+  ///
+  /// In en, this message translates to:
+  /// **'Import ZIP'**
+  String get settingsImportZip;
+
+  /// No description provided for @sourceImportLinkDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Install Source via Link'**
+  String get sourceImportLinkDialogTitle;
+
+  /// No description provided for @sourceImportConfigUrlLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Manifest URL'**
+  String get sourceImportConfigUrlLabel;
+
+  /// No description provided for @sourceImportConfigUrlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'https://example.com/source-manifest.json'**
+  String get sourceImportConfigUrlHint;
+
+  /// No description provided for @sourceImportInstallingFromLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Installing source from link...'**
+  String get sourceImportInstallingFromLink;
+
+  /// No description provided for @sourceImportInstallingFromZip.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing source from ZIP...'**
+  String get sourceImportInstallingFromZip;
+
+  /// No description provided for @sourceImportPreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Install Source Preview'**
+  String get sourceImportPreviewTitle;
+
+  /// No description provided for @sourceImportPreviewSourceId.
+  ///
+  /// In en, this message translates to:
+  /// **'Source ID'**
+  String get sourceImportPreviewSourceId;
+
+  /// No description provided for @sourceImportPreviewVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get sourceImportPreviewVersion;
+
+  /// No description provided for @sourceImportPreviewDisplayName.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name'**
+  String get sourceImportPreviewDisplayName;
+
+  /// No description provided for @sourceImportPreviewVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Integrity'**
+  String get sourceImportPreviewVerified;
+
+  /// No description provided for @sourceImportPreviewVerifiedYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get sourceImportPreviewVerifiedYes;
+
+  /// No description provided for @sourceImportPreviewVerifiedNo.
+  ///
+  /// In en, this message translates to:
+  /// **'Unverified'**
+  String get sourceImportPreviewVerifiedNo;
+
+  /// No description provided for @sourceImportConfirmInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Install'**
+  String get sourceImportConfirmInstall;
+
+  /// No description provided for @sourceImportManifestInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid source manifest format.'**
+  String get sourceImportManifestInvalid;
+
+  /// No description provided for @sourceImportConfigEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded source config is empty.'**
+  String get sourceImportConfigEmpty;
+
+  /// No description provided for @sourceImportZipManifestRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'ZIP must contain manifest.json.'**
+  String get sourceImportZipManifestRequired;
+
+  /// No description provided for @sourceImportChecksumMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Source checksum verification failed.'**
+  String get sourceImportChecksumMismatch;
+
+  /// No description provided for @sourceImportSourceMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Source ID mismatch between manifest and config.'**
+  String get sourceImportSourceMismatch;
+
+  /// No description provided for @sourceImportInstalledFromLink.
+  ///
+  /// In en, this message translates to:
+  /// **'{sourceId} installed from link'**
+  String sourceImportInstalledFromLink(String sourceId);
+
+  /// No description provided for @sourceImportInstalledFromZip.
+  ///
+  /// In en, this message translates to:
+  /// **'{sourceId} installed from ZIP'**
+  String sourceImportInstalledFromZip(String sourceId);
+
+  /// No description provided for @sourceImportFailedFromLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to install source from link: {error}'**
+  String sourceImportFailedFromLink(String error);
+
+  /// No description provided for @sourceImportFailedFromZip.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to import ZIP source: {error}'**
+  String sourceImportFailedFromZip(String error);
 }
 
 class _AppLocalizationsDelegate

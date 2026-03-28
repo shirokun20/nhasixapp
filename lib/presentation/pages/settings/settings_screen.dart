@@ -1,6 +1,13 @@
+import 'dart:convert';
+
+import 'package:archive/archive.dart';
+import 'package:crypto/crypto.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kuron_core/kuron_core.dart';
+import 'package:kuron_generic/kuron_generic.dart';
+import 'package:kuron_native/kuron_native.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -10,9 +17,9 @@ import '../../../domain/entities/user_preferences.dart';
 
 import '../../cubits/settings/settings_cubit.dart';
 import '../../cubits/source/source_cubit.dart';
+import '../../cubits/source/source_state.dart';
 import '../../../core/utils/app_update_test.dart';
 import '../../widgets/app_main_drawer_widget.dart';
-import '../../../data/datasources/local/local_data_source.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -22,16 +29,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  late Future<void> _manifestLoadFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    // Preload manifest so settings actions can resolve provider URLs from it.
-    _manifestLoadFuture =
-        getIt<RemoteConfigService>().ensureManifestLoaded().then((_) => null);
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -267,15 +264,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // Available Sources Section
-          FutureBuilder<void>(
-            future: _manifestLoadFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              return _buildAvailableSourcesSection(theme, l10n);
-            },
-          ),
+          _buildAvailableSourcesSection(theme, l10n),
 
           const SizedBox(height: 24),
 
@@ -662,18 +651,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  /// Build the "Available Sources" section showing installable sources from manifest
+  /// Build the "Available Sources" section for manual Link/ZIP installation.
   Widget _buildAvailableSourcesSection(ThemeData theme, AppLocalizations l10n) {
-    final remoteConfig = getIt<RemoteConfigService>();
-    final manifest = remoteConfig.manifest;
-
-    // If no manifest or no installable sources, return empty
-    if (manifest == null || manifest.installableSources.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final registry = getIt<ContentSourceRegistry>();
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -685,325 +664,1265 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const SizedBox(height: 12),
 
-        // List of installable sources
-        ...manifest.installableSources.map((entry) {
-          final isInstalled = registry.hasSource(entry.id);
-          final isUnderMaintenance = entry.maintenance?.active ?? false;
-
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.colorScheme.outline.withValues(alpha: 0.2),
+        _buildSettingsCard([
+          ListTile(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            title: Text(
+              l10n.settingsCustomSourceTitle,
+              style: TextStyleConst.bodyLarge.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
               ),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Icon
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: _buildSourceIcon(entry.meta?.iconUrl, theme),
+            subtitle: Text(
+              l10n.settingsCustomSourceSubtitle,
+              style: TextStyleConst.bodySmall.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _installSourceFromLink(context),
+                    icon: const Icon(Icons.link),
+                    label: Text(l10n.settingsAddViaLink),
                   ),
-                  const SizedBox(width: 14),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _installSourceFromZip(context),
+                    icon: const Icon(Icons.folder_zip_outlined),
+                    label: Text(l10n.settingsImportZip),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ], theme),
 
-                  // Info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          entry.meta?.displayName ?? entry.id,
-                          style: TextStyleConst.bodyMedium.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                        ),
-                        if (isUnderMaintenance)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 6),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.errorContainer,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                'Maintenance',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: theme.colorScheme.onErrorContainer,
-                                ),
-                              ),
-                            ),
-                          ),
-                        if (entry.meta?.description != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              entry.meta!.description!,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        if (isUnderMaintenance &&
-                            (entry.maintenance?.reason?.isNotEmpty ?? false))
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              entry.maintenance!.reason!,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: theme.colorScheme.error,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                      ],
+        const SizedBox(height: 12),
+
+        BlocBuilder<SourceCubit, SourceState>(
+          builder: (context, state) {
+            return _buildSettingsCard([
+              ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                title: Text(
+                  l10n.sourceSelectorSelectSource,
+                  style: TextStyleConst.bodyLarge.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                subtitle: Text(
+                  '${state.availableSources.length} source(s) installed',
+                  style: TextStyleConst.bodySmall.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              if (state.availableSources.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Text(
+                    l10n.sourceSelectorNoSourceSelected,
+                    style: TextStyleConst.bodySmall.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
-                  const SizedBox(width: 12),
-
-                  // Install/Uninstall Button
-                  FilledButton(
-                    onPressed: isInstalled
-                        ? () => _uninstallSource(context, entry.id)
-                        : () => _installSource(context, entry.id),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: isInstalled
-                          ? theme.colorScheme.errorContainer
-                          : theme.colorScheme.primary,
-                      foregroundColor: isInstalled
-                          ? theme.colorScheme.onErrorContainer
-                          : theme.colorScheme.onPrimary,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 8,
-                        horizontal: 12,
+                )
+              else
+                ...state.availableSources.map((source) {
+                  final isActive = state.activeSource?.id == source.id;
+                  final canUninstall = source.id != 'nhentai';
+                  final remoteConfig = getIt<RemoteConfigService>();
+                  final rawConfig = remoteConfig.getRawConfig(source.id);
+                  final meta = rawConfig?['meta'] as Map<String, dynamic>?;
+                  final ui = rawConfig?['ui'] as Map<String, dynamic>?;
+                  final description =
+                      (meta?['description'] as String?)?.trim() ??
+                          (ui?['description'] as String?)?.trim();
+                  return ListTile(
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                    leading: CircleAvatar(
+                      radius: 14,
+                      backgroundColor:
+                          theme.colorScheme.surfaceContainerHighest,
+                      child: Icon(
+                        Icons.extension_outlined,
+                        size: 16,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
-                    child: Text(
-                      isInstalled ? 'Uninstall' : 'Install',
-                      style: const TextStyle(fontSize: 12),
+                    title: Text(
+                      source.displayName,
+                      style: TextStyleConst.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
+                    subtitle: Text(
+                      (description != null && description.isNotEmpty)
+                          ? '$description\n${source.id}'
+                          : source.id,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isActive)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary
+                                  .withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              l10n.sourceSelectorActiveSource,
+                              style: TextStyleConst.bodySmall.copyWith(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        if (canUninstall) ...[
+                          if (isActive) const SizedBox(width: 4),
+                          IconButton(
+                            tooltip: 'Uninstall source',
+                            onPressed: () =>
+                                _confirmAndUninstallSource(context, source.id),
+                            icon: Icon(
+                              Icons.delete_outline,
+                              color: theme.colorScheme.error,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                }),
+            ], theme);
+          },
+        ),
       ],
     );
   }
 
-  /// Build source icon widget
-  Widget _buildSourceIcon(String? iconUrl, ThemeData theme) {
-    if (iconUrl == null || iconUrl.isEmpty) {
-      return Icon(
-        Icons.extension_outlined,
-        size: 20,
-        color: theme.colorScheme.onSurfaceVariant,
-      );
-    }
-
+  Future<void> _registerSourceInRegistry(
+    BuildContext context,
+    String sourceId,
+  ) async {
     final remoteConfig = getIt<RemoteConfigService>();
-    final resolvedIconUrl = remoteConfig.resolveRemotePath(iconUrl);
-    final iconUri = Uri.tryParse(resolvedIconUrl);
-    final isRemote = iconUri != null &&
-        (iconUri.scheme == 'http' || iconUri.scheme == 'https');
+    final registry = getIt<ContentSourceRegistry>();
+    final resolver = getIt<SourceFactoryResolver>();
+    final logger = getIt<Logger>();
+    final raw = remoteConfig.getRawConfig(sourceId);
 
-    if (isRemote) {
-      return Image.network(
-        resolvedIconUrl,
-        width: 20,
-        height: 20,
-        errorBuilder: (context, error, stackTrace) {
-          return Icon(
-            Icons.extension_outlined,
-            size: 20,
-            color: theme.colorScheme.onSurfaceVariant,
-          );
-        },
-      );
+    if (raw == null) {
+      throw StateError('$sourceId config missing after apply');
     }
 
-    return Image.asset(
-      resolvedIconUrl,
-      width: 20,
-      height: 20,
-      errorBuilder: (context, error, stackTrace) {
-        return Icon(
-          Icons.extension_outlined,
-          size: 20,
-          color: theme.colorScheme.onSurfaceVariant,
-        );
-      },
-    );
+    final wasActive = registry.currentSourceId == sourceId;
+    if (registry.hasSource(sourceId)) {
+      registry.unregister(sourceId);
+    }
+
+    ContentSource instance;
+    try {
+      instance = resolver.createSource(raw);
+    } catch (e, stackTrace) {
+      logger.w(
+        'Specialized source factory failed for $sourceId, falling back to GenericSourceFactory',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      instance = getIt<GenericSourceFactory>().create(raw);
+    }
+
+    registry.register(instance);
+    if (wasActive) {
+      registry.switchSource(sourceId);
+    }
+
+    context.read<SourceCubit>().refreshSources();
+    setState(() {});
   }
 
-  /// Uninstall an installable source from local device.
-  Future<void> _uninstallSource(BuildContext context, String sourceId) async {
+  Future<void> _confirmAndUninstallSource(
+    BuildContext context,
+    String sourceId,
+  ) async {
+    if (sourceId == 'nhentai') {
+      return;
+    }
+
+    final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
-    final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context);
-
-    // Show Confirmation Dialog
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: theme.colorScheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Text('Uninstall $sourceId?', style: TextStyleConst.headingSmall),
-        content: Text(
-          'Warning: This will also delete all history and favorites associated with this source. This action cannot be undone.',
-          style: TextStyleConst.bodyMedium,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n?.cancel ?? 'Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: theme.colorScheme.error,
-              foregroundColor: theme.colorScheme.onError,
+    final sourceCubit = context.read<SourceCubit>();
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Uninstall Source'),
+            content: Text(
+              'Remove "$sourceId" from local installed sources?',
             ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Uninstall'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(l10n.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Uninstall'),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        ) ??
+        false;
 
-    if (confirm != true) return;
+    if (!confirmed) return;
 
     try {
       final remoteConfig = getIt<RemoteConfigService>();
       final registry = getIt<ContentSourceRegistry>();
-      final localDb = getIt<LocalDataSource>();
-
-      // Delete user data (History & Favorites)
-      await localDb.deleteHistoryBySourceId(sourceId);
-      await localDb.deleteFavoritesBySourceId(sourceId);
+      final wasActive = registry.currentSourceId == sourceId;
 
       await remoteConfig.uninstallSourceConfig(sourceId);
       if (registry.hasSource(sourceId)) {
         registry.unregister(sourceId);
       }
 
-      if (!context.mounted) return;
-      context.read<SourceCubit>().refreshSources();
+      sourceCubit.refreshSources();
+
+      if (wasActive && registry.currentSourceId != null) {
+        sourceCubit.switchSource(registry.currentSourceId!);
+        sourceCubit.clearSwitching();
+      }
+
+      if (!mounted) return;
+      setState(() {});
 
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
         SnackBar(
-          content:
-              Text('✅ $sourceId uninstalled and data cleaned successfully'),
+          content: Text('Source "$sourceId" uninstalled.'),
           backgroundColor: Colors.green.shade700,
         ),
       );
-
-      setState(() {});
     } catch (e, stackTrace) {
-      Logger().e(
-        'Failed to uninstall source "$sourceId": $e details: $stackTrace',
-      );
-      if (!context.mounted) return;
+      Logger().e('Failed to uninstall source: $e', stackTrace: stackTrace);
+      if (!mounted) return;
 
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
         SnackBar(
-          content: Text('❌ Failed to uninstall $sourceId: $e'),
+          content: Text('Failed to uninstall "$sourceId": $e'),
           backgroundColor: Colors.red,
         ),
       );
     }
   }
 
-  /// Install a source from the manifest
-  Future<void> _installSource(BuildContext context, String sourceId) async {
+  Future<void> _installSourceFromLink(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final controller = TextEditingController();
 
-    // Show loading
+    final link = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.sourceImportLinkDialogTitle),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: l10n.sourceImportConfigUrlHint,
+            labelText: l10n.sourceImportConfigUrlLabel,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: Text(l10n.sourceImportConfirmInstall),
+          ),
+        ],
+      ),
+    );
+
+    if (link == null || link.isEmpty) return;
+
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(
       SnackBar(
-        content: Text('Installing $sourceId...'),
+        content: Text(l10n.sourceImportInstallingFromLink),
         duration: const Duration(seconds: 30),
       ),
     );
 
     try {
-      final remoteConfig = getIt<RemoteConfigService>();
-
-      // Download and apply config from manifest
-      await remoteConfig.downloadAndApplySourceConfigFromManifest(
-        sourceId: sourceId,
+      final dio = getIt<Dio>();
+      final candidate = await _buildCandidateFromLinkManifest(
+        link: link,
+        dio: dio,
+        l10n: l10n,
       );
-      await remoteConfig.markSourceInstalled(sourceId);
-
-      final registry = getIt<ContentSourceRegistry>();
-      final resolver = getIt<SourceFactoryResolver>();
-      final raw = remoteConfig.getRawConfig(sourceId);
-
-      if (raw == null) {
-        throw StateError('$sourceId config missing after download');
-      }
-
-      // Register source
-      final wasActive = registry.currentSourceId == sourceId;
-      if (registry.hasSource(sourceId)) {
-        registry.unregister(sourceId);
-      }
-      registry.register(resolver.createSource(raw));
-      if (wasActive) {
-        registry.switchSource(sourceId);
-      }
 
       if (!context.mounted) return;
+      final shouldInstall = await _showInstallPreviewDialog(
+        context,
+        candidate,
+      );
+      if (!shouldInstall) {
+        messenger.hideCurrentSnackBar();
+        return;
+      }
 
-      // Refresh UI state
-      context.read<SourceCubit>().refreshSources();
+      final remoteConfig = getIt<RemoteConfigService>();
+      await remoteConfig.applySourceConfigFromJson(
+        sourceId: candidate.sourceId,
+        rawJson: candidate.rawJson,
+        sourceLabel: 'link',
+      );
+      await remoteConfig.markSourceInstalled(candidate.sourceId);
 
-      // Show success
+      if (!context.mounted) return;
+      await _registerSourceInRegistry(context, candidate.sourceId);
+
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
         SnackBar(
-          content: Text('✅ $sourceId installed successfully'),
+          content: Text(l10n.sourceImportInstalledFromLink(candidate.sourceId)),
           backgroundColor: Colors.green.shade700,
         ),
       );
-
-      // Trigger rebuild to update button state
-      setState(() {});
     } catch (e, stackTrace) {
-      Logger().e(
-        'Failed to install source "$sourceId": $e details: $stackTrace',
-      );
+      Logger()
+          .e('Failed to install source from link: $e', stackTrace: stackTrace);
       if (!context.mounted) return;
 
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
         SnackBar(
-          content: Text('❌ Failed to install $sourceId: $e'),
+          content: Text(l10n.sourceImportFailedFromLink(e.toString())),
           backgroundColor: Colors.red,
         ),
       );
     }
+  }
+
+  Future<void> _installSourceFromZip(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
+
+    try {
+      final bytes = await KuronNative.instance.pickBinaryFile(
+        mimeType: 'application/zip',
+      );
+      if (bytes == null || bytes.isEmpty) {
+        return;
+      }
+
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.sourceImportInstallingFromZip),
+          duration: const Duration(seconds: 30),
+        ),
+      );
+
+      if (!context.mounted) return;
+
+      final candidates = await _buildCandidateFromZip(
+        context: context,
+        bytes: bytes,
+        l10n: l10n,
+      );
+
+      if (candidates.isEmpty) {
+        messenger.hideCurrentSnackBar();
+        return;
+      }
+
+      if (!context.mounted) return;
+      final shouldInstall = candidates.length == 1
+          // ignore: use_build_context_synchronously
+          ? await _showInstallPreviewDialog(context, candidates.first)
+          // ignore: use_build_context_synchronously
+          : await _showBatchInstallPreviewDialog(context, candidates);
+      if (!shouldInstall) {
+        messenger.hideCurrentSnackBar();
+        return;
+      }
+
+      final remoteConfig = getIt<RemoteConfigService>();
+      final installed = <String>[];
+      final failed = <String>[];
+      final failedReasons = <String, String>{};
+
+      for (final candidate in candidates) {
+        try {
+          await remoteConfig.applySourceConfigFromJson(
+            sourceId: candidate.sourceId,
+            rawJson: candidate.rawJson,
+            sourceLabel: 'ZIP',
+          );
+          await remoteConfig.markSourceInstalled(candidate.sourceId);
+
+          if (!context.mounted) return;
+          await _registerSourceInRegistry(context, candidate.sourceId);
+          installed.add(candidate.sourceId);
+        } catch (e, stackTrace) {
+          Logger().e(
+            'Failed installing ZIP source ${candidate.sourceId}: $e',
+            stackTrace: stackTrace,
+          );
+          failed.add(candidate.sourceId);
+          failedReasons[candidate.sourceId] = e.toString();
+        }
+      }
+
+      if (!context.mounted) return;
+      messenger.hideCurrentSnackBar();
+      if (failed.isEmpty) {
+        final message = installed.length == 1
+            ? l10n.sourceImportInstalledFromZip(installed.first)
+            : 'Installed ${installed.length} sources from ZIP';
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.green.shade700,
+          ),
+        );
+      } else {
+        final reasonHint = failed.isNotEmpty
+            ? ' • ${failed.first}: ${failedReasons[failed.first] ?? 'unknown error'}'
+            : '';
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              'Installed ${installed.length}, failed ${failed.length}: ${failed.join(', ')}$reasonHint',
+            ),
+            backgroundColor: Colors.orange.shade700,
+          ),
+        );
+      }
+    } catch (e, stackTrace) {
+      Logger()
+          .e('Failed to install source from ZIP: $e', stackTrace: stackTrace);
+      if (!context.mounted) return;
+
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.sourceImportFailedFromZip(e.toString())),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<_InstallCandidate> _buildCandidateFromLinkManifest({
+    required String link,
+    required Dio dio,
+    required AppLocalizations l10n,
+  }) async {
+    final manifestResponse = await dio.get<String>(
+      link,
+      options: Options(
+        receiveTimeout: const Duration(seconds: 15),
+        responseType: ResponseType.plain,
+      ),
+    );
+
+    final manifestRaw = manifestResponse.data;
+    if (manifestRaw == null || manifestRaw.trim().isEmpty) {
+      throw FormatException(l10n.sourceImportManifestInvalid);
+    }
+
+    final manifestMap = _decodeJsonObject(
+      rawJson: manifestRaw,
+      invalidMessage: l10n.sourceImportManifestInvalid,
+    );
+
+    // Case A: direct source config JSON (legacy/admin friendly).
+    if (manifestMap.containsKey('source')) {
+      final sourceId = _requiredString(
+        manifestMap,
+        'source',
+        l10n.sourceImportSourceMismatch,
+      );
+      final version = (manifestMap['version'] as String?)?.trim() ?? 'unknown';
+      return _InstallCandidate(
+        sourceId: sourceId,
+        version: version,
+        displayName: null,
+        description: null,
+        rawJson: manifestRaw,
+        isVerified: false,
+      );
+    }
+
+    // Case B: global app manifest with installableSources list.
+    final installableSources =
+        _parseGlobalManifestEntries(manifestMap, l10n).toList();
+    if (installableSources.isNotEmpty) {
+      if (!mounted) {
+        throw StateError('SettingsScreen is no longer mounted');
+      }
+      final selectedEntry = await _selectGlobalManifestEntry(
+        context: context,
+        entries: installableSources,
+      );
+      if (selectedEntry == null) {
+        throw const FormatException('Source selection cancelled');
+      }
+
+      return _downloadCandidateFromEntry(
+        baseLink: link,
+        dio: dio,
+        entry: selectedEntry,
+        l10n: l10n,
+      );
+    }
+
+    // Case C: package-level manifest for a single source.
+    final manifest = _SourcePackageManifest.fromMap(manifestMap, l10n);
+    final resolvedConfigUrl =
+        Uri.parse(link).resolve(manifest.configPath).toString();
+    final configResponse = await dio.get<String>(
+      resolvedConfigUrl,
+      options: Options(
+        receiveTimeout: const Duration(seconds: 15),
+        responseType: ResponseType.plain,
+      ),
+    );
+
+    final rawJson = configResponse.data;
+    if (rawJson == null || rawJson.trim().isEmpty) {
+      throw FormatException(l10n.sourceImportConfigEmpty);
+    }
+
+    final configBytes = utf8.encode(rawJson);
+    _validateChecksum(
+      contentBytes: configBytes,
+      expectedSha256: manifest.checksumSha256,
+      checksumMismatchMessage: l10n.sourceImportChecksumMismatch,
+    );
+
+    final configMap = _decodeJsonObject(
+      rawJson: rawJson,
+      invalidMessage: l10n.sourceImportManifestInvalid,
+    );
+    final sourceIdFromConfig = _requiredString(
+      configMap,
+      'source',
+      l10n.sourceImportSourceMismatch,
+    );
+    if (sourceIdFromConfig != manifest.sourceId) {
+      throw FormatException(l10n.sourceImportSourceMismatch);
+    }
+
+    return _InstallCandidate(
+      sourceId: manifest.sourceId,
+      version: manifest.version,
+      displayName: manifest.displayName,
+      description: null,
+      rawJson: rawJson,
+      isVerified: true,
+    );
+  }
+
+  Future<_InstallCandidate> _downloadCandidateFromEntry({
+    required String baseLink,
+    required Dio dio,
+    required _GlobalManifestEntry entry,
+    required AppLocalizations l10n,
+  }) async {
+    final resolvedConfigUrl = Uri.parse(baseLink).resolve(entry.url).toString();
+    final configResponse = await dio.get<String>(
+      resolvedConfigUrl,
+      options: Options(
+        receiveTimeout: const Duration(seconds: 15),
+        responseType: ResponseType.plain,
+      ),
+    );
+
+    final rawJson = configResponse.data;
+    if (rawJson == null || rawJson.trim().isEmpty) {
+      throw FormatException(l10n.sourceImportConfigEmpty);
+    }
+
+    var isVerified = false;
+    final checksum = entry.checksumSha256;
+    if (checksum != null && checksum.isNotEmpty) {
+      final configBytes = utf8.encode(rawJson);
+      _validateChecksum(
+        contentBytes: configBytes,
+        expectedSha256: checksum,
+        checksumMismatchMessage: l10n.sourceImportChecksumMismatch,
+      );
+      isVerified = true;
+    }
+
+    final configMap = _decodeJsonObject(
+      rawJson: rawJson,
+      invalidMessage: l10n.sourceImportManifestInvalid,
+    );
+    final sourceIdFromConfig = _requiredString(
+      configMap,
+      'source',
+      l10n.sourceImportSourceMismatch,
+    );
+    if (sourceIdFromConfig != entry.id) {
+      throw FormatException(l10n.sourceImportSourceMismatch);
+    }
+
+    _attachManifestMetadata(
+      configMap,
+      displayName: entry.displayName,
+      description: entry.description,
+    );
+
+    return _InstallCandidate(
+      sourceId: entry.id,
+      version: entry.version,
+      displayName: entry.displayName,
+      description: entry.description,
+      rawJson: jsonEncode(configMap),
+      isVerified: isVerified,
+    );
+  }
+
+  Iterable<_GlobalManifestEntry> _parseGlobalManifestEntries(
+    Map<String, dynamic> map,
+    AppLocalizations l10n,
+  ) sync* {
+    final rawList = map['installableSources'];
+    if (rawList is! List<dynamic>) return;
+
+    for (final item in rawList) {
+      if (item is! Map<String, dynamic>) {
+        continue;
+      }
+      try {
+        yield _GlobalManifestEntry.fromMap(item, l10n);
+      } catch (_) {
+        continue;
+      }
+    }
+  }
+
+  Future<_GlobalManifestEntry?> _selectGlobalManifestEntry({
+    required BuildContext context,
+    required List<_GlobalManifestEntry> entries,
+  }) async {
+    if (entries.length == 1) {
+      return entries.first;
+    }
+
+    return showModalBottomSheet<_GlobalManifestEntry>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ListTile(
+              title: Text('Select Source from Manifest'),
+              subtitle: Text('Choose one source to install.'),
+            ),
+            Flexible(
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: entries.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (ctx, index) {
+                  final entry = entries[index];
+                  return ListTile(
+                    title: Text(entry.displayName ?? entry.id),
+                    subtitle: Text('${entry.id} • v${entry.version}'),
+                    onTap: () => Navigator.pop(ctx, entry),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<List<_GlobalManifestEntry>> _selectGlobalManifestEntries({
+    required BuildContext context,
+    required List<_GlobalManifestEntry> entries,
+  }) async {
+    if (entries.length == 1) {
+      return entries;
+    }
+
+    final selected = <_GlobalManifestEntry>{};
+    final result = await showModalBottomSheet<List<_GlobalManifestEntry>>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(ctx).size.height * 0.75,
+            child: Column(
+              children: [
+                const ListTile(
+                  title: Text('Select Source from Manifest'),
+                  subtitle: Text('Choose one or more sources to install.'),
+                ),
+                Expanded(
+                  child: ListView.separated(
+                    itemCount: entries.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (_, index) {
+                      final entry = entries[index];
+                      final isSelected = selected.contains(entry);
+                      return CheckboxListTile(
+                        value: isSelected,
+                        title: Text(entry.displayName ?? entry.id),
+                        subtitle: Text('${entry.id} • v${entry.version}'),
+                        onChanged: (value) {
+                          setModalState(() {
+                            if (value == true) {
+                              selected.add(entry);
+                            } else {
+                              selected.remove(entry);
+                            }
+                          });
+                        },
+                      );
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(ctx, const []),
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: selected.isEmpty
+                              ? null
+                              : () => Navigator.pop(
+                                    ctx,
+                                    entries
+                                        .where(
+                                            (entry) => selected.contains(entry))
+                                        .toList(growable: false),
+                                  ),
+                          child: Text('Install Selected (${selected.length})'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    return result ?? const [];
+  }
+
+  Future<List<_InstallCandidate>> _buildCandidateFromZip({
+    required BuildContext context,
+    required List<int> bytes,
+    required AppLocalizations l10n,
+  }) async {
+    final archive = ZipDecoder().decodeBytes(bytes);
+
+    final manifestFile = archive.files.where((file) {
+      if (!file.isFile) return false;
+      final segments = file.name.split('/');
+      final name = segments.isEmpty ? file.name : segments.last;
+      return name.toLowerCase() == 'manifest.json';
+    }).firstOrNull;
+
+    if (manifestFile == null) {
+      throw FormatException(l10n.sourceImportZipManifestRequired);
+    }
+
+    final manifestBytes = _archiveFileBytes(manifestFile);
+    final manifestRaw = utf8.decode(manifestBytes);
+    final manifestMap = _decodeJsonObject(
+      rawJson: manifestRaw,
+      invalidMessage: l10n.sourceImportManifestInvalid,
+    );
+
+    // ZIP may contain a global manifest (`installableSources`) similar to
+    // app/manifest.json. Let user choose one source and load its config file
+    // from within the same ZIP package.
+    final installableSources =
+        _parseGlobalManifestEntries(manifestMap, l10n).toList(growable: false);
+    if (installableSources.isNotEmpty) {
+      if (!mounted) {
+        throw StateError('SettingsScreen is no longer mounted');
+      }
+
+      final selectedEntries = await _selectGlobalManifestEntries(
+        context: context,
+        entries: installableSources,
+      );
+      if (selectedEntries.isEmpty) {
+        return const [];
+      }
+
+      final candidates = <_InstallCandidate>[];
+      for (final selectedEntry in selectedEntries) {
+        final configFile = _findConfigFileInArchive(
+          archive: archive,
+          targetPath: selectedEntry.url,
+        );
+        if (configFile == null) {
+          continue;
+        }
+
+        final configBytes = _archiveFileBytes(configFile);
+        final checksum = selectedEntry.checksumSha256;
+        var isVerified = false;
+        if (checksum != null && checksum.isNotEmpty) {
+          _validateChecksum(
+            contentBytes: configBytes,
+            expectedSha256: checksum,
+            checksumMismatchMessage: l10n.sourceImportChecksumMismatch,
+          );
+          isVerified = true;
+        }
+
+        final rawJson = utf8.decode(configBytes);
+        final configMap = _decodeJsonObject(
+          rawJson: rawJson,
+          invalidMessage: l10n.sourceImportManifestInvalid,
+        );
+        final sourceIdFromConfig = _requiredString(
+          configMap,
+          'source',
+          l10n.sourceImportSourceMismatch,
+        );
+        if (sourceIdFromConfig != selectedEntry.id) {
+          continue;
+        }
+
+        _attachManifestMetadata(
+          configMap,
+          displayName: selectedEntry.displayName,
+          description: selectedEntry.description,
+        );
+
+        candidates.add(
+          _InstallCandidate(
+            sourceId: selectedEntry.id,
+            version: selectedEntry.version,
+            displayName: selectedEntry.displayName,
+            description: selectedEntry.description,
+            rawJson: jsonEncode(configMap),
+            isVerified: isVerified,
+          ),
+        );
+      }
+
+      return candidates;
+    }
+
+    // Backward-compatible path: some legacy ZIPs put source config directly
+    // in manifest.json without package wrapper fields.
+    if (manifestMap.containsKey('source')) {
+      final sourceId = _requiredString(
+        manifestMap,
+        'source',
+        l10n.sourceImportSourceMismatch,
+      );
+      final version = (manifestMap['version'] as String?)?.trim() ?? 'unknown';
+      return [
+        _InstallCandidate(
+          sourceId: sourceId,
+          version: version,
+          displayName: null,
+          description: null,
+          rawJson: manifestRaw,
+          isVerified: false,
+        ),
+      ];
+    }
+
+    final manifest = _SourcePackageManifest.fromMap(manifestMap, l10n);
+
+    final configFile = _findConfigFileInArchive(
+      archive: archive,
+      targetPath: manifest.configPath,
+    );
+
+    if (configFile == null) {
+      throw FormatException(l10n.sourceImportManifestInvalid);
+    }
+
+    final configBytes = _archiveFileBytes(configFile);
+    if (manifest.checksumSha256.isNotEmpty) {
+      _validateChecksum(
+        contentBytes: configBytes,
+        expectedSha256: manifest.checksumSha256,
+        checksumMismatchMessage: l10n.sourceImportChecksumMismatch,
+      );
+    }
+
+    final rawJson = utf8.decode(configBytes);
+    final configMap = _decodeJsonObject(
+      rawJson: rawJson,
+      invalidMessage: l10n.sourceImportManifestInvalid,
+    );
+    final sourceIdFromConfig = _requiredString(
+      configMap,
+      'source',
+      l10n.sourceImportSourceMismatch,
+    );
+
+    if (sourceIdFromConfig != manifest.sourceId) {
+      throw FormatException(l10n.sourceImportSourceMismatch);
+    }
+
+    return [
+      _InstallCandidate(
+        sourceId: manifest.sourceId,
+        version: manifest.version,
+        displayName: manifest.displayName,
+        description: null,
+        rawJson: rawJson,
+        isVerified: manifest.checksumSha256.isNotEmpty,
+      ),
+    ];
+  }
+
+  void _attachManifestMetadata(
+    Map<String, dynamic> configMap, {
+    String? displayName,
+    String? description,
+  }) {
+    final meta = (configMap['meta'] as Map?)?.cast<String, dynamic>() ??
+        <String, dynamic>{};
+
+    if (displayName != null && displayName.trim().isNotEmpty) {
+      meta['displayName'] = displayName.trim();
+    }
+    if (description != null && description.trim().isNotEmpty) {
+      meta['description'] = description.trim();
+    }
+
+    if (meta.isNotEmpty) {
+      configMap['meta'] = meta;
+    }
+  }
+
+  ArchiveFile? _findConfigFileInArchive({
+    required Archive archive,
+    required String targetPath,
+  }) {
+    final target = targetPath.replaceAll('\\', '/').toLowerCase();
+    return archive.files.where((file) {
+      if (!file.isFile) return false;
+      final normalized = file.name.replaceAll('\\', '/').toLowerCase();
+      return normalized == target || normalized.endsWith('/$target');
+    }).firstOrNull;
+  }
+
+  Future<bool> _showInstallPreviewDialog(
+    BuildContext context,
+    _InstallCandidate candidate,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.sourceImportPreviewTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('${l10n.sourceImportPreviewSourceId}: ${candidate.sourceId}'),
+            const SizedBox(height: 6),
+            Text('${l10n.sourceImportPreviewVersion}: ${candidate.version}'),
+            if (candidate.displayName != null &&
+                candidate.displayName!.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                  '${l10n.sourceImportPreviewDisplayName}: ${candidate.displayName}'),
+            ],
+            const SizedBox(height: 6),
+            Text(
+              '${l10n.sourceImportPreviewVerified}: ${candidate.isVerified ? l10n.sourceImportPreviewVerifiedYes : l10n.sourceImportPreviewVerifiedNo}',
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.sourceImportConfirmInstall),
+          ),
+        ],
+      ),
+    );
+
+    return result ?? false;
+  }
+
+  Future<bool> _showBatchInstallPreviewDialog(
+    BuildContext context,
+    List<_InstallCandidate> candidates,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.sourceImportPreviewTitle),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Selected sources: ${candidates.length}'),
+              const SizedBox(height: 8),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: candidates.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 4),
+                  itemBuilder: (_, index) {
+                    final candidate = candidates[index];
+                    return Text(
+                      '- ${candidate.displayName ?? candidate.sourceId} (v${candidate.version})',
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Install Selected'),
+          ),
+        ],
+      ),
+    );
+
+    return result ?? false;
+  }
+
+  Map<String, dynamic> _decodeJsonObject({
+    required String rawJson,
+    required String invalidMessage,
+  }) {
+    final decoded = jsonDecode(rawJson);
+    if (decoded is! Map<String, dynamic>) {
+      throw FormatException(invalidMessage);
+    }
+    return decoded;
+  }
+
+  String _requiredString(
+    Map<String, dynamic> map,
+    String key,
+    String errorMessage,
+  ) {
+    final value = map[key] as String?;
+    if (value == null || value.trim().isEmpty) {
+      throw FormatException(errorMessage);
+    }
+    return value.trim();
+  }
+
+  List<int> _archiveFileBytes(ArchiveFile file) {
+    return file.content;
+  }
+
+  void _validateChecksum({
+    required List<int> contentBytes,
+    required String expectedSha256,
+    required String checksumMismatchMessage,
+  }) {
+    final actual = sha256.convert(contentBytes).toString().toLowerCase();
+    if (actual != expectedSha256.toLowerCase()) {
+      throw FormatException(checksumMismatchMessage);
+    }
+  }
+}
+
+class _SourcePackageManifest {
+  const _SourcePackageManifest({
+    required this.schemaVersion,
+    required this.sourceId,
+    required this.version,
+    required this.configPath,
+    required this.checksumSha256,
+    required this.displayName,
+  });
+
+  final int schemaVersion;
+  final String sourceId;
+  final String version;
+  final String configPath;
+  final String checksumSha256;
+  final String? displayName;
+
+  static _SourcePackageManifest fromMap(
+    Map<String, dynamic> map,
+    AppLocalizations l10n,
+  ) {
+    final rawSchemaVersion = map['schemaVersion'];
+    final schemaVersion = rawSchemaVersion is int ? rawSchemaVersion : 1;
+
+    String readAnyString(List<String> keys, {bool required = true}) {
+      for (final key in keys) {
+        final value = map[key] as String?;
+        if (value != null && value.trim().isNotEmpty) {
+          return value.trim();
+        }
+      }
+      if (!required) return '';
+      throw FormatException(l10n.sourceImportManifestInvalid);
+    }
+
+    String normalizeConfigPath(String rawPath) {
+      if (rawPath.startsWith('http://') || rawPath.startsWith('https://')) {
+        final uri = Uri.tryParse(rawPath);
+        if (uri != null && uri.path.isNotEmpty) {
+          rawPath = uri.path;
+        }
+      }
+
+      var normalized = rawPath.replaceAll('\\', '/').trim();
+      while (normalized.startsWith('/')) {
+        normalized = normalized.substring(1);
+      }
+      if (normalized.startsWith('./')) {
+        normalized = normalized.substring(2);
+      }
+      return normalized;
+    }
+
+    final sourceId = readAnyString(const ['sourceId', 'id', 'source']);
+    final version = readAnyString(const ['version']);
+    final configPathRaw = readAnyString(const ['configPath', 'path', 'url']);
+    final checksum = readAnyString(
+      const ['checksumSha256', 'checksum'],
+      required: false,
+    );
+
+    return _SourcePackageManifest(
+      schemaVersion: schemaVersion,
+      sourceId: sourceId,
+      version: version,
+      configPath: normalizeConfigPath(configPathRaw),
+      checksumSha256: checksum,
+      displayName: (map['displayName'] as String?)?.trim(),
+    );
+  }
+}
+
+class _InstallCandidate {
+  const _InstallCandidate({
+    required this.sourceId,
+    required this.version,
+    required this.displayName,
+    required this.description,
+    required this.rawJson,
+    required this.isVerified,
+  });
+
+  final String sourceId;
+  final String version;
+  final String? displayName;
+  final String? description;
+  final String rawJson;
+  final bool isVerified;
+}
+
+class _GlobalManifestEntry {
+  const _GlobalManifestEntry({
+    required this.id,
+    required this.version,
+    required this.url,
+    required this.checksumSha256,
+    required this.displayName,
+    required this.description,
+  });
+
+  final String id;
+  final String version;
+  final String url;
+  final String? checksumSha256;
+  final String? displayName;
+  final String? description;
+
+  static _GlobalManifestEntry fromMap(
+    Map<String, dynamic> map,
+    AppLocalizations l10n,
+  ) {
+    String readRequired(String key) {
+      final value = map[key] as String?;
+      if (value == null || value.trim().isEmpty) {
+        throw FormatException(l10n.sourceImportManifestInvalid);
+      }
+      return value.trim();
+    }
+
+    final meta = map['meta'];
+    String? displayName;
+    String? description;
+    if (meta is Map<String, dynamic>) {
+      displayName = (meta['displayName'] as String?)?.trim();
+      description = (meta['description'] as String?)?.trim();
+    }
+
+    return _GlobalManifestEntry(
+      id: readRequired('id'),
+      version: readRequired('version'),
+      url: readRequired('url'),
+      checksumSha256: (map['checksum'] as String?)?.trim(),
+      displayName: displayName,
+      description: description,
+    );
   }
 }

@@ -3,6 +3,7 @@ import 'package:kuron_native/kuron_native.dart';
 import 'package:kuron_native/kuron_native_platform_interface.dart';
 import 'package:kuron_native/kuron_native_method_channel.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import 'dart:typed_data';
 
 class MockKuronNativePlatform
     with MockPlatformInterfaceMixin
@@ -20,6 +21,10 @@ class MockKuronNativePlatform
   @override
   Future<String?> pickTextFile({String? mimeType}) =>
       Future.value('{"mock": true}');
+
+  @override
+  Future<Uint8List?> pickBinaryFile({String? mimeType}) =>
+      Future.value(Uint8List.fromList([1, 2, 3]));
 
   @override
   Future<String?> startDownload({

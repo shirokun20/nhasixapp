@@ -2645,5 +2645,59 @@
   "sourceSelectorCurrentlySelected": "当前已选择",
   "sourceSelectorTapToSwitch": "点击切换",
   "sourceSelectorSearchHint": "搜索来源",
-  "sourceSelectorNoResults": "没有匹配的来源"
+  "sourceSelectorNoResults": "没有匹配的来源",
+  "settingsCustomSourceTitle": "添加自定义来源",
+  "settingsCustomSourceSubtitle": "通过已签名清单 URL 或 ZIP 包安装来源。",
+  "settingsAddViaLink": "通过链接添加",
+  "settingsImportZip": "导入 ZIP",
+  "sourceImportLinkDialogTitle": "通过链接安装来源",
+  "sourceImportConfigUrlLabel": "清单 URL",
+  "sourceImportConfigUrlHint": "https://example.com/source-manifest.json",
+  "sourceImportInstallingFromLink": "正在从链接安装来源...",
+  "sourceImportInstallingFromZip": "正在从 ZIP 导入来源...",
+  "sourceImportPreviewTitle": "来源安装预览",
+  "sourceImportPreviewSourceId": "来源 ID",
+  "sourceImportPreviewVersion": "版本",
+  "sourceImportPreviewDisplayName": "显示名称",
+  "sourceImportPreviewVerified": "完整性",
+  "sourceImportPreviewVerifiedYes": "已验证",
+  "sourceImportPreviewVerifiedNo": "未验证",
+  "sourceImportConfirmInstall": "安装",
+  "sourceImportManifestInvalid": "来源清单格式无效。",
+  "sourceImportConfigEmpty": "下载的来源配置为空。",
+  "sourceImportZipManifestRequired": "ZIP 必须包含 manifest.json。",
+  "sourceImportChecksumMismatch": "来源校验和验证失败。",
+  "sourceImportSourceMismatch": "清单与配置中的来源 ID 不匹配。",
+  "sourceImportInstalledFromLink": "已通过链接安装 {sourceId}",
+  "@sourceImportInstalledFromLink": {
+    "placeholders": {
+      "sourceId": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceImportInstalledFromZip": "已通过 ZIP 安装 {sourceId}",
+  "@sourceImportInstalledFromZip": {
+    "placeholders": {
+      "sourceId": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceImportFailedFromLink": "通过链接安装来源失败：{error}",
+  "@sourceImportFailedFromLink": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceImportFailedFromZip": "导入 ZIP 来源失败：{error}",
+  "@sourceImportFailedFromZip": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

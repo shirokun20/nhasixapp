@@ -1985,5 +1985,59 @@
   "sourceSelectorCurrentlySelected": "Sedang dipilih",
   "sourceSelectorTapToSwitch": "Ketuk untuk mengganti",
   "sourceSelectorSearchHint": "Cari sumber",
-  "sourceSelectorNoResults": "Tidak ada sumber yang cocok"
+  "sourceSelectorNoResults": "Tidak ada sumber yang cocok",
+  "settingsCustomSourceTitle": "Tambah Sumber Kustom",
+  "settingsCustomSourceSubtitle": "Pasang paket sumber dari URL manifest bertanda tangan atau paket ZIP.",
+  "settingsAddViaLink": "Tambah via Link",
+  "settingsImportZip": "Impor ZIP",
+  "sourceImportLinkDialogTitle": "Pasang Sumber via Link",
+  "sourceImportConfigUrlLabel": "URL Manifest",
+  "sourceImportConfigUrlHint": "https://example.com/source-manifest.json",
+  "sourceImportInstallingFromLink": "Memasang sumber dari link...",
+  "sourceImportInstallingFromZip": "Mengimpor sumber dari ZIP...",
+  "sourceImportPreviewTitle": "Pratinjau Instalasi Sumber",
+  "sourceImportPreviewSourceId": "ID Sumber",
+  "sourceImportPreviewVersion": "Versi",
+  "sourceImportPreviewDisplayName": "Nama tampilan",
+  "sourceImportPreviewVerified": "Integritas",
+  "sourceImportPreviewVerifiedYes": "Terverifikasi",
+  "sourceImportPreviewVerifiedNo": "Tidak terverifikasi",
+  "sourceImportConfirmInstall": "Pasang",
+  "sourceImportManifestInvalid": "Format manifest sumber tidak valid.",
+  "sourceImportConfigEmpty": "Konfigurasi sumber yang diunduh kosong.",
+  "sourceImportZipManifestRequired": "ZIP harus berisi manifest.json.",
+  "sourceImportChecksumMismatch": "Verifikasi checksum sumber gagal.",
+  "sourceImportSourceMismatch": "ID sumber antara manifest dan config tidak cocok.",
+  "sourceImportInstalledFromLink": "{sourceId} berhasil dipasang dari link",
+  "@sourceImportInstalledFromLink": {
+    "placeholders": {
+      "sourceId": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceImportInstalledFromZip": "{sourceId} berhasil dipasang dari ZIP",
+  "@sourceImportInstalledFromZip": {
+    "placeholders": {
+      "sourceId": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceImportFailedFromLink": "Gagal memasang sumber dari link: {error}",
+  "@sourceImportFailedFromLink": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceImportFailedFromZip": "Gagal mengimpor sumber ZIP: {error}",
+  "@sourceImportFailedFromZip": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

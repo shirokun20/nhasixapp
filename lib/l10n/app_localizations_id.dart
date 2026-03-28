@@ -3467,4 +3467,97 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get sourceSelectorNoResults => 'Tidak ada sumber yang cocok';
+
+  @override
+  String get settingsCustomSourceTitle => 'Tambah Sumber Kustom';
+
+  @override
+  String get settingsCustomSourceSubtitle =>
+      'Pasang paket sumber dari URL manifest bertanda tangan atau paket ZIP.';
+
+  @override
+  String get settingsAddViaLink => 'Tambah via Link';
+
+  @override
+  String get settingsImportZip => 'Impor ZIP';
+
+  @override
+  String get sourceImportLinkDialogTitle => 'Pasang Sumber via Link';
+
+  @override
+  String get sourceImportConfigUrlLabel => 'URL Manifest';
+
+  @override
+  String get sourceImportConfigUrlHint =>
+      'https://example.com/source-manifest.json';
+
+  @override
+  String get sourceImportInstallingFromLink => 'Memasang sumber dari link...';
+
+  @override
+  String get sourceImportInstallingFromZip => 'Mengimpor sumber dari ZIP...';
+
+  @override
+  String get sourceImportPreviewTitle => 'Pratinjau Instalasi Sumber';
+
+  @override
+  String get sourceImportPreviewSourceId => 'ID Sumber';
+
+  @override
+  String get sourceImportPreviewVersion => 'Versi';
+
+  @override
+  String get sourceImportPreviewDisplayName => 'Nama tampilan';
+
+  @override
+  String get sourceImportPreviewVerified => 'Integritas';
+
+  @override
+  String get sourceImportPreviewVerifiedYes => 'Terverifikasi';
+
+  @override
+  String get sourceImportPreviewVerifiedNo => 'Tidak terverifikasi';
+
+  @override
+  String get sourceImportConfirmInstall => 'Pasang';
+
+  @override
+  String get sourceImportManifestInvalid =>
+      'Format manifest sumber tidak valid.';
+
+  @override
+  String get sourceImportConfigEmpty =>
+      'Konfigurasi sumber yang diunduh kosong.';
+
+  @override
+  String get sourceImportZipManifestRequired =>
+      'ZIP harus berisi manifest.json.';
+
+  @override
+  String get sourceImportChecksumMismatch =>
+      'Verifikasi checksum sumber gagal.';
+
+  @override
+  String get sourceImportSourceMismatch =>
+      'ID sumber antara manifest dan config tidak cocok.';
+
+  @override
+  String sourceImportInstalledFromLink(String sourceId) {
+    return '$sourceId berhasil dipasang dari link';
+  }
+
+  @override
+  String sourceImportInstalledFromZip(String sourceId) {
+    return '$sourceId berhasil dipasang dari ZIP';
+  }
+
+  @override
+  String sourceImportFailedFromLink(String error) {
+    return 'Gagal memasang sumber dari link: $error';
+  }
+
+  @override
+  String sourceImportFailedFromZip(String error) {
+    return 'Gagal mengimpor sumber ZIP: $error';
+  }
 }

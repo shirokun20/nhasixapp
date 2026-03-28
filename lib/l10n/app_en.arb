@@ -2439,5 +2439,59 @@
   "sourceSelectorCurrentlySelected": "Currently selected",
   "sourceSelectorTapToSwitch": "Tap to switch",
   "sourceSelectorSearchHint": "Search source",
-  "sourceSelectorNoResults": "No source matches your search"
+  "sourceSelectorNoResults": "No source matches your search",
+  "settingsCustomSourceTitle": "Add Custom Source",
+  "settingsCustomSourceSubtitle": "Install source package from signed manifest URL or ZIP package.",
+  "settingsAddViaLink": "Add via Link",
+  "settingsImportZip": "Import ZIP",
+  "sourceImportLinkDialogTitle": "Install Source via Link",
+  "sourceImportConfigUrlLabel": "Manifest URL",
+  "sourceImportConfigUrlHint": "https://example.com/source-manifest.json",
+  "sourceImportInstallingFromLink": "Installing source from link...",
+  "sourceImportInstallingFromZip": "Importing source from ZIP...",
+  "sourceImportPreviewTitle": "Install Source Preview",
+  "sourceImportPreviewSourceId": "Source ID",
+  "sourceImportPreviewVersion": "Version",
+  "sourceImportPreviewDisplayName": "Display name",
+  "sourceImportPreviewVerified": "Integrity",
+  "sourceImportPreviewVerifiedYes": "Verified",
+  "sourceImportPreviewVerifiedNo": "Unverified",
+  "sourceImportConfirmInstall": "Install",
+  "sourceImportManifestInvalid": "Invalid source manifest format.",
+  "sourceImportConfigEmpty": "Downloaded source config is empty.",
+  "sourceImportZipManifestRequired": "ZIP must contain manifest.json.",
+  "sourceImportChecksumMismatch": "Source checksum verification failed.",
+  "sourceImportSourceMismatch": "Source ID mismatch between manifest and config.",
+  "sourceImportInstalledFromLink": "{sourceId} installed from link",
+  "@sourceImportInstalledFromLink": {
+    "placeholders": {
+      "sourceId": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceImportInstalledFromZip": "{sourceId} installed from ZIP",
+  "@sourceImportInstalledFromZip": {
+    "placeholders": {
+      "sourceId": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceImportFailedFromLink": "Failed to install source from link: {error}",
+  "@sourceImportFailedFromLink": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceImportFailedFromZip": "Failed to import ZIP source: {error}",
+  "@sourceImportFailedFromZip": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

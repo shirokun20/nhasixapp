@@ -43,6 +43,7 @@ class KuronNativePlugin :
     private var activityBinding: ActivityPluginBinding? = null
     private var pendingResult: Result? = null
     private var pendingPickFileMimeType: String? = null
+    private var pendingPickFileMode: String? = null
     private lateinit var downloadHandler: id.nhasix.kuron_native.kuron_native.download.DownloadHandler
     
     private val WEBVIEW_REQUEST_CODE = 1001
@@ -105,6 +106,9 @@ class KuronNativePlugin :
             }
             "pickTextFile" -> {
                 handlePickTextFile(call, result)
+            }
+            "pickBinaryFile" -> {
+                handlePickBinaryFile(call, result)
             }
             // Delegate native download methods to handler
             "kuronNativeStartDownload", 
@@ -595,8 +599,20 @@ class KuronNativePlugin :
                         }
 
                         try {
-                            val content = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
-                            pendingResult?.success(content)
+                            val stream = context.contentResolver.openInputStream(uri)
+                            if (stream == null) {
+                                pendingResult?.error("READ_FILE_FAILED", "Unable to open selected file", null)
+                            } else {
+                                stream.use { input ->
+                                    if (pendingPickFileMode == "binary") {
+                                        val bytes = input.readBytes()
+                                        pendingResult?.success(bytes)
+                                    } else {
+                                        val content = input.bufferedReader().use { it.readText() }
+                                        pendingResult?.success(content)
+                                    }
+                                }
+                            }
                         } catch (e: Exception) {
                             pendingResult?.error("READ_FILE_FAILED", e.message, null)
                         }
@@ -608,6 +624,7 @@ class KuronNativePlugin :
                 }
 
                 pendingPickFileMimeType = null
+                pendingPickFileMode = null
                 pendingResult = null
             }
             return true
@@ -687,6 +704,7 @@ class KuronNativePlugin :
 
         pendingResult = result
         pendingPickFileMimeType = call.argument<String>("mimeType")
+        pendingPickFileMode = "text"
 
         try {
             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
@@ -697,6 +715,38 @@ class KuronNativePlugin :
             activity.startActivityForResult(intent, PICK_FILE_REQUEST_CODE)
         } catch (e: Exception) {
             pendingPickFileMimeType = null
+            pendingPickFileMode = null
+            pendingResult = null
+            result.error("LAUNCH_FAILED", e.message, null)
+        }
+    }
+
+    private fun handlePickBinaryFile(call: MethodCall, result: Result) {
+        val activity = activityBinding?.activity
+        if (activity == null) {
+            result.error("NO_ACTIVITY", "Activity is not available", null)
+            return
+        }
+
+        if (pendingResult != null) {
+            result.error("BUSY", "Another operation is in progress", null)
+            return
+        }
+
+        pendingResult = result
+        pendingPickFileMimeType = call.argument<String>("mimeType")
+        pendingPickFileMode = "binary"
+
+        try {
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = pendingPickFileMimeType ?: "*/*"
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+            }
+            activity.startActivityForResult(intent, PICK_FILE_REQUEST_CODE)
+        } catch (e: Exception) {
+            pendingPickFileMimeType = null
+            pendingPickFileMode = null
             pendingResult = null
             result.error("LAUNCH_FAILED", e.message, null)
         }

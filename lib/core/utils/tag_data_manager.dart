@@ -98,7 +98,12 @@ class TagDataManager {
         _logger.i(
           'TagDataManager: Tag update required for $source (v$remoteVersion != v$localVersion, hasData: $hasData). Downloading...',
         );
-        await downloadTags(migration.remoteUrl!, remoteVersion, source);
+        await downloadTags(
+          '${migration.remoteUrl}',
+          remoteVersion,
+          source,
+          fallbackUrl: migration.fallbackUrl,
+        );
       } else {
         _logger.d(
             'TagDataManager: Tags for $source are up to date (v$localVersion)');
@@ -110,13 +115,44 @@ class TagDataManager {
   }
 
   /// Download and cache tags
-  Future<bool> downloadTags(String url, String version, String source) async {
+  Future<bool> downloadTags(
+    String url,
+    String version,
+    String source, {
+    String? fallbackUrl,
+  }) async {
     try {
       final docDir = await getApplicationDocumentsDirectory();
       final filePath = '${docDir.path}/tags_$source.json';
+      final candidateUrls = <String>[url];
+      if (fallbackUrl != null && fallbackUrl.isNotEmpty && fallbackUrl != url) {
+        candidateUrls.add(fallbackUrl);
+      }
 
-      _logger.i('TagDataManager: Downloading tags from $url for $source...');
-      await _dio.download(url, filePath);
+      DioException? lastDioError;
+      bool downloaded = false;
+
+      for (final candidateUrl in candidateUrls) {
+        try {
+          _logger.i(
+            'TagDataManager: Downloading tags from $candidateUrl for $source...',
+          );
+          await _dio.download(candidateUrl, filePath);
+          downloaded = true;
+          break;
+        } on DioException catch (e) {
+          lastDioError = e;
+          _logger.w(
+            'TagDataManager: Failed downloading tags from $candidateUrl for $source',
+            error: e,
+          );
+        }
+      }
+
+      if (!downloaded) {
+        throw lastDioError ??
+            Exception('Failed to download tags from all candidate URLs');
+      }
 
       // Verify the downloaded file is valid JSON before updating prefs
       final file = File(filePath);

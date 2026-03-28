@@ -65,6 +65,15 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }
 
   @override
+  Future<Uint8List?> pickBinaryFile({String? mimeType}) async {
+    final bytes = await methodChannel.invokeMethod<Uint8List>(
+      'pickBinaryFile',
+      {'mimeType': mimeType},
+    );
+    return bytes;
+  }
+
+  @override
   Future<String?> startDownload({
     required String url,
     required String fileName,
