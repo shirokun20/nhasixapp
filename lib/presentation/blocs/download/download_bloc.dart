@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:path/path.dart' as path;
@@ -921,6 +922,36 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             networkHeaders = configHeaders
                 .cast<String, dynamic>()
                 .map((k, v) => MapEntry(k, v.toString()));
+          }
+        }
+
+        // Keep download headers aligned with Reader behavior: if source-specific
+        // headers are missing/incomplete in config, fallback to source-provided
+        // `getImageDownloadHeaders(...)` (works for GenericHttpSource too).
+        final hasReferer = networkHeaders != null &&
+            networkHeaders.keys.any((k) => k.toLowerCase() == 'referer') &&
+            (networkHeaders.entries
+                .firstWhere(
+                  (e) => e.key.toLowerCase() == 'referer',
+                  orElse: () => const MapEntry('', ''),
+                )
+                .value
+                .isNotEmpty);
+        if (networkHeaders == null || networkHeaders.isEmpty || !hasReferer) {
+          final sampleUrl = content.imageUrls.isNotEmpty
+              ? content.imageUrls.first
+              : (content.url ?? content.coverUrl);
+          final source =
+              getIt<ContentSourceRegistry>().getSource(content.sourceId);
+          if (source != null && sampleUrl.isNotEmpty) {
+            final sourceHeaders =
+                source.getImageDownloadHeaders(imageUrl: sampleUrl);
+            if (sourceHeaders.isNotEmpty) {
+              networkHeaders ??= <String, String>{};
+              networkHeaders.addAll(sourceHeaders);
+              _logger.i(
+                  '🌐 Fallback headers loaded from source for ${content.sourceId}: ${sourceHeaders.keys.join(", ")}');
+            }
           }
         }
 
