@@ -335,6 +335,23 @@ class GenericScraperAdapter implements GenericAdapter {
       return initialResponse;
     }
 
+    // 🚀 CRITICAL: Detect Cloudflare 403 and throw so WebViewSessionAdapter can handle it
+    // GenericScraperAdapter uses validateStatus < 500 to be permissive, but this prevents
+    // Cloudflare 403 from being caught by WebViewSessionAdapter.
+    // Solution: manually check for CF 403 and throw DioException so WebView can trigger.
+    if (initialStatus == 403) {
+      final cfMitigated = initialResponse.headers.value('cf-mitigated');
+      if (cfMitigated != null) {
+        _logger.w(
+            '$_sourceId detected Cloudflare 403 (cf-mitigated: $cfMitigated), throwing for WebViewSessionAdapter');
+        throw DioException.badResponse(
+          statusCode: 403,
+          requestOptions: initialResponse.requestOptions,
+          response: initialResponse,
+        );
+      }
+    }
+
     if (_isRedirectStatus(initialStatus)) {
       final location = initialResponse.headers.value('location')?.trim();
       if (location != null && location.isNotEmpty) {
@@ -350,6 +367,21 @@ class GenericScraperAdapter implements GenericAdapter {
 
         if (_isSuccessStatus(resolvedResponse.statusCode)) {
           return resolvedResponse;
+        }
+
+        // 🚀 Also detect CF 403 in resolved redirect response
+        final resolvedStatus = resolvedResponse.statusCode ?? 0;
+        if (resolvedStatus == 403) {
+          final cfMitigated = resolvedResponse.headers.value('cf-mitigated');
+          if (cfMitigated != null) {
+            _logger.w(
+                '$_sourceId detected Cloudflare 403 in redirect target (cf-mitigated: $cfMitigated), throwing for WebViewSessionAdapter');
+            throw DioException.badResponse(
+              statusCode: 403,
+              requestOptions: resolvedResponse.requestOptions,
+              response: resolvedResponse,
+            );
+          }
         }
       }
 
@@ -380,6 +412,22 @@ class GenericScraperAdapter implements GenericAdapter {
                 '$_sourceId isolated fallback succeeded: $candidateUrl (${isolatedResponse.statusCode})',
               );
               return isolatedResponse;
+            }
+
+            // 🚀 Also check for CF 403 in isolated response
+            final isolatedStatus = isolatedResponse.statusCode ?? 0;
+            if (isolatedStatus == 403) {
+              final cfMitigated =
+                  isolatedResponse.headers.value('cf-mitigated');
+              if (cfMitigated != null) {
+                _logger.w(
+                    '$_sourceId detected Cloudflare 403 in isolated fallback (cf-mitigated: $cfMitigated), throwing for WebViewSessionAdapter');
+                throw DioException.badResponse(
+                  statusCode: 403,
+                  requestOptions: isolatedResponse.requestOptions,
+                  response: isolatedResponse,
+                );
+              }
             }
           } on DioException catch (isolatedError) {
             _logger.w(
@@ -564,6 +612,19 @@ class GenericScraperAdapter implements GenericAdapter {
       }
 
       return AdapterDetailResult(content: content, imageUrls: const []);
+    } on DioException catch (e) {
+      // 🚀 Re-throw Cloudflare 403 so WebViewSessionAdapter can handle it
+      if (e.response?.statusCode == 403) {
+        final cfMitigated = e.response?.headers.value('cf-mitigated');
+        if (cfMitigated != null) {
+          _logger.w(
+              '$_sourceId detected Cloudflare 403 in detail page for $contentId, re-throwing for WebViewSessionAdapter');
+          rethrow;
+        }
+      }
+      _logger.e('$_sourceId scraper detail failed for $contentId', error: e);
+      return AdapterDetailResult(
+          content: _emptyContent(contentId), imageUrls: []);
     } catch (e) {
       _logger.e('$_sourceId scraper detail failed for $contentId', error: e);
       return AdapterDetailResult(
@@ -630,6 +691,19 @@ class GenericScraperAdapter implements GenericAdapter {
       }
 
       return related;
+    } on DioException catch (e) {
+      // 🚀 Re-throw Cloudflare 403 so WebViewSessionAdapter can handle it
+      if (e.response?.statusCode == 403) {
+        final cfMitigated = e.response?.headers.value('cf-mitigated');
+        if (cfMitigated != null) {
+          _logger.w(
+              '$_sourceId detected Cloudflare 403 in related content for $contentId, re-throwing for WebViewSessionAdapter');
+          rethrow;
+        }
+      }
+      _logger.e('$_sourceId scraper related fetch failed for $contentId',
+          error: e);
+      return const [];
     } catch (e) {
       _logger.e('$_sourceId scraper related fetch failed for $contentId',
           error: e);
@@ -705,6 +779,15 @@ class GenericScraperAdapter implements GenericAdapter {
           return apiComments;
         }
       } catch (e) {
+        // 🚀 Re-throw Cloudflare 403 so WebViewSessionAdapter can handle it
+        if (e is DioException && e.response?.statusCode == 403) {
+          final cfMitigated = e.response?.headers.value('cf-mitigated');
+          if (cfMitigated != null) {
+            _logger.w(
+                '$_sourceId detected Cloudflare 403 in comments API for $contentId, re-throwing for WebViewSessionAdapter');
+            rethrow;
+          }
+        }
         _logger.w('$_sourceId comments API failed for $contentId', error: e);
       }
     }
@@ -760,6 +843,19 @@ class GenericScraperAdapter implements GenericAdapter {
       }
 
       return comments;
+    } on DioException catch (e) {
+      // 🚀 Re-throw Cloudflare 403 so WebViewSessionAdapter can handle it
+      if (e.response?.statusCode == 403) {
+        final cfMitigated = e.response?.headers.value('cf-mitigated');
+        if (cfMitigated != null) {
+          _logger.w(
+              '$_sourceId detected Cloudflare 403 in HTML comments for $contentId, re-throwing for WebViewSessionAdapter');
+          rethrow;
+        }
+      }
+      _logger.e('$_sourceId scraper comments fetch failed for $contentId',
+          error: e);
+      return const [];
     } catch (e) {
       _logger.e('$_sourceId scraper comments fetch failed for $contentId',
           error: e);
@@ -1071,6 +1167,19 @@ class GenericScraperAdapter implements GenericAdapter {
         nextChapterId: nextId,
         prevChapterId: prevId,
       );
+    } on DioException catch (e) {
+      // 🚀 Re-throw Cloudflare 403 so WebViewSessionAdapter can handle it
+      if (e.response?.statusCode == 403) {
+        final cfMitigated = e.response?.headers.value('cf-mitigated');
+        if (cfMitigated != null) {
+          _logger.w(
+              '$_sourceId detected Cloudflare 403 in chapter fetch for $chapterId, re-throwing for WebViewSessionAdapter');
+          rethrow;
+        }
+      }
+      _logger.e('$_sourceId scraper chapter fetch failed for $chapterId',
+          error: e);
+      return null;
     } catch (e) {
       _logger.e('$_sourceId scraper chapter fetch failed for $chapterId',
           error: e);
