@@ -171,7 +171,7 @@ class GenericRestAdapter implements GenericAdapter {
           : response.data;
 
       final selectors = (rawConfig['selectors'] as Map<String, dynamic>?) ?? {};
-      final items = _parseItemList(data, selectors);
+      final items = _parseItemList(data, selectors, rawConfig);
       _logger.d('$_sourceId REST search: Parsed ${items.length} items');
 
       final hasNext = _parseHasNextPage(data, selectors);
@@ -267,7 +267,7 @@ class GenericRestAdapter implements GenericAdapter {
           ? jsonDecode(response.data as String)
           : response.data;
       final selectors = (rawConfig['selectors'] as Map<String, dynamic>?) ?? {};
-      return _parseItemList(data, selectors);
+      return _parseItemList(data, selectors, rawConfig);
     } catch (e) {
       _logger.w('$_sourceId: fetchRelated failed for $contentId', error: e);
       return const [];
@@ -788,13 +788,17 @@ class GenericRestAdapter implements GenericAdapter {
 
   // ── Private parsers ────────────────────────────────────────────────────────
 
-  List<Content> _parseItemList(dynamic data, Map<String, dynamic> selectors) {
+  List<Content> _parseItemList(
+    dynamic data,
+    Map<String, dynamic> selectors,
+    Map<String, dynamic> rawConfig,
+  ) {
     final itemsSelector = _selectorOrNull(selectors, 'items') ??
         _selectorOrNull(selectors, 'results');
     if (itemsSelector == null) return const [];
 
     final items = _parser.extractItems(data, itemsSelector);
-    return items.map((item) => _parseItem(item, selectors)).toList();
+    return items.map((item) => _parseItem(item, selectors, rawConfig)).toList();
   }
 
   List<Comment> _parseCommentList(dynamic data, Map<String, dynamic> selectors,
@@ -842,16 +846,32 @@ class GenericRestAdapter implements GenericAdapter {
   }
 
   Content _parseItem(
-      Map<String, dynamic> item, Map<String, dynamic> selectors) {
+    Map<String, dynamic> item,
+    Map<String, dynamic> selectors,
+    Map<String, dynamic> rawConfig,
+  ) {
     final id = _extract(item, selectors, 'id') ?? '';
-    final title = (_extract(item, selectors, 'title')?.trim().isNotEmpty ??
-            false)
-        ? _extract(item, selectors, 'title')!
-        : _extractNhentaiV2ListTitle(item);
+    final title = _extract(item, selectors, 'listTitle') ??
+        _extract(item, selectors, 'title') ??
+        _extractNhentaiV2ListTitle(item);
     final mediaId = _extract(item, selectors, 'mediaId');
 
-    // Build cover URL: prefer explicit selector, then coverUrlBuilder, then empty
-    final coverUrl = _resolveNhentaiV2CoverUrl(item) ??
+    // Build cover URL: prefer config-driven relative asset path, then legacy fields.
+    final coverUrl = _extractResolvedAsset(
+          item,
+          selectors,
+          key: 'listThumbnailPath',
+          rawConfig: rawConfig,
+          hostKey: 'thumbnail',
+        ) ??
+        _extractResolvedAsset(
+          item,
+          selectors,
+          key: 'listCoverPath',
+          rawConfig: rawConfig,
+          hostKey: 'thumbnail',
+        ) ??
+        _resolveNhentaiV2CoverUrl(item) ??
         _extract(item, selectors, 'thumbnail') ??
         _extract(item, selectors, 'coverUrl') ??
         _buildCoverUrl(item, selectors, mediaId) ??
@@ -897,12 +917,25 @@ class GenericRestAdapter implements GenericAdapter {
     List<String> imageUrls,
   ) {
     final id = _extract(data, selectors, 'id') ?? contentId;
-    final title = (_extract(data, selectors, 'title')?.trim().isNotEmpty ??
-            false)
-        ? _extract(data, selectors, 'title')!
-        : _extractNhentaiV2DetailTitle(data);
+    final title = _extract(data, selectors, 'detailTitle') ??
+        _extract(data, selectors, 'title') ??
+        _extractNhentaiV2DetailTitle(data);
     final mediaId = _extract(data, selectors, 'mediaId');
-    final coverUrl = _resolveNhentaiV2CoverUrl(data) ??
+    final coverUrl = _extractResolvedAsset(
+          data,
+          selectors,
+          key: 'detailCoverPath',
+          rawConfig: rawConfig,
+          hostKey: 'thumbnail',
+        ) ??
+        _extractResolvedAsset(
+          data,
+          selectors,
+          key: 'detailThumbnailPath',
+          rawConfig: rawConfig,
+          hostKey: 'thumbnail',
+        ) ??
+        _resolveNhentaiV2CoverUrl(data) ??
         _extract(data, selectors, 'thumbnail') ??
         _extract(data, selectors, 'coverUrl') ??
         _buildCoverUrl(data, selectors, mediaId) ??
@@ -981,9 +1014,11 @@ class GenericRestAdapter implements GenericAdapter {
       pageCount: pageCount,
       imageUrls: imageUrls,
       uploadDate: _parseDate(_extract(data, selectors, 'uploadDate')),
-      englishTitle: _extract(data, selectors, 'englishTitle') ??
+      englishTitle: _extract(data, selectors, 'detailEnglishTitle') ??
+          _extract(data, selectors, 'englishTitle') ??
           _extractNhentaiV2Field(data, 'english'),
-      japaneseTitle: _extract(data, selectors, 'japaneseTitle') ??
+      japaneseTitle: _extract(data, selectors, 'detailJapaneseTitle') ??
+          _extract(data, selectors, 'japaneseTitle') ??
           _extractNhentaiV2Field(data, 'japanese'),
       mediaId: mediaId,
     );
@@ -1000,6 +1035,17 @@ class GenericRestAdapter implements GenericAdapter {
     Map<String, dynamic> selectors,
     Map<String, dynamic> rawConfig,
   ) {
+    final configuredPaths = _extractResolvedAssetList(
+      data,
+      selectors,
+      key: 'imagePaths',
+      rawConfig: rawConfig,
+      hostKey: 'image',
+    );
+    if (configuredPaths.isNotEmpty) {
+      return configuredPaths;
+    }
+
     final nhentaiV2Urls = _resolveNhentaiV2ImageUrls(data);
     if (nhentaiV2Urls.isNotEmpty) {
       return nhentaiV2Urls;
@@ -1163,6 +1209,56 @@ class GenericRestAdapter implements GenericAdapter {
     }
     // Bare relative path (nhentai: `avatars/3407292.png?_=…`)
     return base.isNotEmpty ? '$base/$raw' : raw;
+  }
+
+  String? _extractResolvedAsset(
+    dynamic data,
+    Map<String, dynamic> selectors, {
+    required String key,
+    required Map<String, dynamic> rawConfig,
+    required String hostKey,
+  }) {
+    final value = _extract(data, selectors, key);
+    if (value == null || value.trim().isEmpty) return null;
+    return _resolveConfiguredAssetUrl(value, rawConfig, hostKey: hostKey);
+  }
+
+  List<String> _extractResolvedAssetList(
+    dynamic data,
+    Map<String, dynamic> selectors, {
+    required String key,
+    required Map<String, dynamic> rawConfig,
+    required String hostKey,
+  }) {
+    final selector = _selectorOrNull(selectors, key);
+    if (selector == null) return const [];
+
+    return _parser
+        .extractList(data, selector)
+        .where((value) => value.trim().isNotEmpty)
+        .map((value) =>
+            _resolveConfiguredAssetUrl(value, rawConfig, hostKey: hostKey))
+        .toList();
+  }
+
+  String _resolveConfiguredAssetUrl(
+    String rawPath,
+    Map<String, dynamic> rawConfig, {
+    required String hostKey,
+  }) {
+    if (rawPath.startsWith('https://') || rawPath.startsWith('http://')) {
+      return rawPath;
+    }
+
+    final assetHosts =
+        (rawConfig['assetHosts'] as Map<String, dynamic>?) ?? const {};
+    final host = assetHosts[hostKey]?.toString().trim() ?? '';
+    if (host.isEmpty) return rawPath;
+
+    final normalizedHost = host.replaceAll(RegExp(r'/+$'), '');
+    final normalizedPath =
+        rawPath.startsWith('/') ? rawPath.substring(1) : rawPath;
+    return '$normalizedHost/$normalizedPath';
   }
 
   String _extractNhentaiV2ListTitle(dynamic data) {
