@@ -46,7 +46,26 @@ class GenericUrlBuilder {
       queryParam: Uri.encodeQueryComponent(filter.query),
       ...extraParams,
     };
-    return resolve(template, params);
+    var url = resolve(template, params);
+    for (final entry in params.entries) {
+      if (entry.value.isEmpty) {
+        url = _removeQueryParam(url, entry.key);
+      }
+    }
+    return url;
+  }
+
+  String _removeQueryParam(String url, String paramName) {
+    final escaped = RegExp.escape(paramName);
+    final cleaned = url
+        .replaceAll(RegExp('([?&])$escaped=[^&]*(?=&|\$)'), '')
+        .replaceAll('?&', '?')
+        .replaceAll('&&', '&')
+        .replaceAll(RegExp(r'[?&]$'), '');
+    if (!cleaned.contains('?') && cleaned.contains('&')) {
+      return cleaned.replaceFirst('&', '?');
+    }
+    return cleaned;
   }
 
   /// Build a content detail URL.
