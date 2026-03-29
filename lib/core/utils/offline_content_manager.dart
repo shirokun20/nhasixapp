@@ -382,14 +382,17 @@ class OfflineContentManager {
         '001.jpg',
         '001.png',
         '001.webp',
+        '001.avif',
         '001.jpeg',
         '1.jpg',
         '1.png',
         '1.webp',
+        '1.avif',
         '1.jpeg',
         '0001.jpg',
         '0001.png',
         '0001.webp',
+        '0001.avif',
       ];
 
       // Try new structure first
@@ -1299,7 +1302,7 @@ class OfflineContentManager {
   /// Helper method to check if file is an image
   bool _isImageFile(String filePath) {
     final extension = path.extension(filePath).toLowerCase();
-    return ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
+    return ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.bmp']
         .contains(extension);
   }
 

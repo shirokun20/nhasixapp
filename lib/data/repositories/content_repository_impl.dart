@@ -109,9 +109,17 @@ class ContentRepositoryImpl implements ContentRepository {
           if (multiLayerCached != null) {
             try {
               final cachedModel = ContentModel.fromJson(multiLayerCached);
-              if (cachedModel.imageUrls.isNotEmpty) {
+              if (cachedModel.imageUrls.isNotEmpty &&
+                  !_shouldBypassDetailCache(
+                    cachedModel.toEntity(),
+                    requestedSourceId: sourceId,
+                  )) {
                 return cachedModel.toEntity();
               }
+              _logger.i(
+                'Bypassing multi-layer detail cache for ${contentId.value} '
+                '(source=${cachedModel.sourceId}) to refresh expiring image URLs',
+              );
             } catch (e) {
               _logger.w('Failed to parse cached content for $contentId: $e');
               // Proceed to fallback
@@ -121,11 +129,19 @@ class ContentRepositoryImpl implements ContentRepository {
           final legacyCached =
               await detailCacheService.getCachedDetail(contentId.value);
           if (legacyCached != null) {
-            if (legacyCached.imageUrls.isNotEmpty) {
+            if (legacyCached.imageUrls.isNotEmpty &&
+                !_shouldBypassDetailCache(
+                  legacyCached,
+                  requestedSourceId: sourceId,
+                )) {
               await contentCacheManager.set(
                   cacheKey, ContentModel.fromEntity(legacyCached).toJson());
               return legacyCached;
             }
+            _logger.i(
+              'Bypassing legacy detail cache for ${contentId.value} '
+              '(source=${legacyCached.sourceId}) to refresh expiring image URLs',
+            );
           }
 
           _logger.d('Cache MISS for content detail: ${contentId.value}');
@@ -376,6 +392,23 @@ class ContentRepositoryImpl implements ContentRepository {
 
   /// Return core Content directly (no mapping needed since types are unified)
   Content _mapToAppContent(core.Content coreContent) => coreContent;
+
+  bool _shouldBypassDetailCache(
+    Content content, {
+    String? requestedSourceId,
+  }) {
+    final source = (requestedSourceId ?? content.sourceId).toLowerCase();
+    if (source == 'hitomi') {
+      return true;
+    }
+
+    if (content.coverUrl.contains('gold-usergeneratedcontent.net')) {
+      return true;
+    }
+
+    return content.imageUrls
+        .any((url) => url.contains('gold-usergeneratedcontent.net'));
+  }
 
   core.SearchFilter _mapToCoreSearchFilter(SearchFilter appFilter) {
     // Map SortOption

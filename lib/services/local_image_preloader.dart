@@ -334,27 +334,11 @@ class LocalImagePreloader {
       String contentId, int pageNumber) async {
     try {
       final basePaths = await _getPossibleBasePaths();
+      final primaryPatterns = _pageFilePatterns(pageNumber);
 
       // Check all possible base paths for downloaded content
       for (final basePath in basePaths) {
-        // Priority 1: Downloaded content with standard naming
-        final downloadedPath =
-            path.join(basePath, contentId, 'images', 'page_$pageNumber.jpg');
-        final downloadedFile = File(downloadedPath);
-        if (await downloadedFile.exists()) {
-          _logger.d('🐛 Found downloaded image: $downloadedPath');
-          return downloadedPath;
-        }
-
-        // Alternative naming patterns for downloaded content
-        final altPatterns = [
-          'page_${pageNumber.toString().padLeft(3, '0')}.jpg',
-          '${pageNumber.toString().padLeft(3, '0')}.jpg',
-          '$pageNumber.jpg',
-          'image_$pageNumber.jpg',
-        ];
-
-        for (final pattern in altPatterns) {
+        for (final pattern in primaryPatterns) {
           final altPath = path.join(basePath, contentId, 'images', pattern);
           final altFile = File(altPath);
           if (await altFile.exists()) {
@@ -408,11 +392,35 @@ class LocalImagePreloader {
       // Check downloaded cover patterns in all base paths
       final downloadedCoverPatterns = [
         'cover.jpg',
+        'cover.jpeg',
+        'cover.png',
+        'cover.webp',
+        'cover.avif',
         'thumbnail.jpg',
+        'thumbnail.jpeg',
+        'thumbnail.png',
+        'thumbnail.webp',
+        'thumbnail.avif',
         'thumb.jpg',
+        'thumb.jpeg',
+        'thumb.png',
+        'thumb.webp',
+        'thumb.avif',
         '1.jpg', // First page as cover
+        '1.jpeg',
+        '1.png',
+        '1.webp',
+        '1.avif',
         'page_1.jpg',
+        'page_1.jpeg',
+        'page_1.png',
+        'page_1.webp',
+        'page_1.avif',
         'page_001.jpg',
+        'page_001.jpeg',
+        'page_001.png',
+        'page_001.webp',
+        'page_001.avif',
       ];
 
       for (final basePath in basePaths) {
@@ -713,8 +721,24 @@ class LocalImagePreloader {
   /// Helper method to check if file is an image
   static bool _isImageFile(String filePath) {
     final extension = path.extension(filePath).toLowerCase();
-    return ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
+    return ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.bmp']
         .contains(extension);
+  }
+
+  static List<String> _pageFilePatterns(int pageNumber) {
+    final padded = pageNumber.toString().padLeft(3, '0');
+    final extensions = ['jpg', 'jpeg', 'png', 'webp', 'avif', 'gif', 'bmp'];
+    final patterns = <String>[];
+
+    for (final ext in extensions) {
+      patterns.add('page_$pageNumber.$ext');
+      patterns.add('page_$padded.$ext');
+      patterns.add('$padded.$ext');
+      patterns.add('$pageNumber.$ext');
+      patterns.add('image_$pageNumber.$ext');
+    }
+
+    return patterns.toSet().toList();
   }
 
   /// Helper method to extract page number from filename

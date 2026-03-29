@@ -107,7 +107,7 @@ class DownloadWorker(
         
         try {
             val downloadDir = getDownloadDirectory(sourceId, contentId, destinationPath)
-            downloadImages(contentId, sourceId, imageUrls, destinationPath)
+            val downloadedFiles = downloadImages(contentId, sourceId, imageUrls, destinationPath)
             
             // Create metadata and .nomedia after successful download
             val title = inputData.getString(KEY_TITLE) ?: "Unknown"
@@ -123,7 +123,7 @@ class DownloadWorker(
                 url,
                 coverUrl,
                 language,
-                imageUrls
+                downloadedFiles
             )
             createNoMediaFile(downloadDir)
             
@@ -157,10 +157,11 @@ class DownloadWorker(
         sourceId: String, 
         imageUrls: List<String>, 
         destinationPath: String?
-    ) {
+    ): List<String> {
         val downloadDir = getDownloadDirectory(sourceId, contentId, destinationPath)
         // Create /images/ subfolder to match Flutter pattern
         val imagesDir = File(downloadDir, "images")
+        val downloadedFiles = mutableListOf<String>()
         
         Log.d(TAG, "Target Download Dir: ${downloadDir.absolutePath}")
         Log.d(TAG, "Target Images Dir: ${imagesDir.absolutePath}")
@@ -180,19 +181,26 @@ class DownloadWorker(
         imageUrls.forEachIndexed { index, url ->
             if (isStopped) throw CancellationException("Work cancelled")
             
-            // Use page_001.jpg format to match Flutter pattern
             val pageNumber = index + 1
-            val fileName = "page_${pageNumber.toString().padStart(3, '0')}.jpg"
+            val extension = resolveFileExtension(url)
+            val fileName = "page_${pageNumber.toString().padStart(3, '0')}$extension"
             val destFile = File(imagesDir, fileName)
             
             // Skip if already exists (resume capability)
             if (!destFile.exists() || destFile.length() == 0L) {
-                if (index == 0) Log.d(TAG, "Downloading first file to: ${destFile.absolutePath}")
+                if (index == 0) {
+                    Log.d(
+                        TAG,
+                        "Downloading first file to: ${destFile.absolutePath} (source=${shortUrl(url)})"
+                    )
+                }
                 downloadImage(url, destFile)
                 if (index == 0 && destFile.exists()) Log.d(TAG, "First file created successfully: size=${destFile.length()}")
             } else {
                  if (index == 0) Log.d(TAG, "Skipping first file (already exists): ${destFile.absolutePath}")
             }
+
+            downloadedFiles.add(fileName)
             
             
             val progress = ((index + 1).toFloat() / imageUrls.size * 100).toInt()
@@ -210,6 +218,8 @@ class DownloadWorker(
                 KEY_CONTENT_ID to contentId
             ))
         }
+
+        return downloadedFiles
     }
     
     private fun getDownloadDirectory(sourceId: String, contentId: String, destinationPath: String?): File {
@@ -257,6 +267,12 @@ class DownloadWorker(
 
         var lastCode = -1
         for ((index, headers) in attempts.withIndex()) {
+            if (index == 0) {
+                Log.d(
+                    TAG,
+                    "Downloading image: url=${shortUrl(url)}, target=${destFile.name}, headerKeys=${headers.keys.sorted()}"
+                )
+            }
             val code = executeDownloadRequest(url, headers, destFile)
             if (code in 200..299) {
                 if (index > 0) {
@@ -359,6 +375,10 @@ class DownloadWorker(
         val request = requestBuilder.build()
 
         okHttpClient.newCall(request).execute().use { response: Response ->
+            Log.d(
+                TAG,
+                "HTTP ${response.code} for ${shortUrl(url)} -> ${destFile.name} contentType=${response.body?.contentType()}"
+            )
             if (!response.isSuccessful) {
                 return response.code
             }
@@ -370,6 +390,29 @@ class DownloadWorker(
             }
             return response.code
         }
+    }
+
+    private fun resolveFileExtension(url: String): String {
+        val normalizedPath = try {
+            URI(url).path.lowercase()
+        } catch (_: Exception) {
+            url.lowercase()
+        }
+
+        return when {
+            normalizedPath.endsWith(".avif") -> ".avif"
+            normalizedPath.endsWith(".webp") -> ".webp"
+            normalizedPath.endsWith(".png") -> ".png"
+            normalizedPath.endsWith(".gif") -> ".gif"
+            normalizedPath.endsWith(".bmp") -> ".bmp"
+            normalizedPath.endsWith(".jpeg") -> ".jpeg"
+            normalizedPath.endsWith(".jpg") -> ".jpg"
+            else -> ".jpg"
+        }
+    }
+
+    private fun shortUrl(url: String, maxLength: Int = 120): String {
+        return if (url.length <= maxLength) url else "${url.take(maxLength)}..."
     }
     
     // ============ Cookie Handling Methods ============
@@ -457,11 +500,6 @@ class DownloadWorker(
         imageFiles: List<String>
     ) {
         try {
-            // Generate file list (basenames only)
-            val files = imageFiles.mapIndexed { index, _ ->
-                "page_${(index + 1).toString().padStart(3, '0')}.jpg"
-            }
-            
             val metadata = mapOf(
                 "schemaVersion" to "2.1",
                 "source" to sourceId,
@@ -476,7 +514,7 @@ class DownloadWorker(
                 }.format(java.util.Date()),
                 "total_pages" to imageFiles.size,
                 "downloaded_files" to imageFiles.size,
-                "files" to files,
+                "files" to imageFiles,
                 "language" to language,
                 "cover_url" to coverUrl,
                 "is_range_download" to false,

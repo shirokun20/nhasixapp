@@ -371,10 +371,17 @@ class DownloadHandler(
         val imagesDir = File(dir, "images")
         if (!imagesDir.exists()) return emptyList()
 
-        return imagesDir.listFiles()?.filter { it.isFile && it.extension == "jpg" }
+        return imagesDir.listFiles()?.filter { it.isFile && isSupportedImageFile(it) }
             ?.sortedBy { it.name }
             ?.map { it.absolutePath }
             ?: emptyList()
+    }
+
+    private fun isSupportedImageFile(file: File): Boolean {
+        return when (file.extension.lowercase()) {
+            "jpg", "jpeg", "png", "gif", "webp", "avif", "bmp" -> true
+            else -> false
+        }
     }
 
     private fun getDownloadPathForContent(contentId: String): String? {

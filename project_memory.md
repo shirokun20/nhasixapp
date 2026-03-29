@@ -246,3 +246,33 @@ dart scripts/project_status.dart           # Update dashboards
 ./scripts/smart_search.sh audit            # Architecture audit
 ./scripts/smart_search.sh debugprint       # Find print violations
 ```
+
+---
+
+## Latest Session — 2026-03-29
+
+### Hitomi Release Diagnostics + Native Download Extension Fix
+
+- Added targeted Hitomi diagnostics in release path:
+  - `packages/kuron_special/lib/src/hitomi/hitomi_adapter.dart`
+  - `packages/kuron_generic/lib/src/generic_http_source.dart`
+  - `lib/presentation/widgets/extended_image_reader_widget.dart`
+- Root cause found for inconsistent Hitomi download/offline behavior:
+  - native downloader hardcoded every page filename to `.jpg`
+  - native `getDownloadedFiles/count` only recognized `.jpg`
+  - Dart offline helpers partially ignored `.avif`
+- Additional root cause found from release logcat:
+  - Hitomi detail cache persisted `gold-usergeneratedcontent.net` image URLs that later expired and returned `404`
+  - `clear cache all` temporarily fixed downloads because it forced a fresh detail fetch
+- Fixed native worker and offline readers:
+  - `DownloadWorker.kt` now preserves extension from source URL (`.webp`, `.avif`, etc.)
+  - metadata file list now stores real filenames instead of forced `.jpg`
+  - added native request/response diagnostics for first-image download flow
+  - `DownloadHandler.kt` now counts and lists `.jpg/.jpeg/.png/.gif/.webp/.avif/.bmp`
+  - Dart offline helpers now recognize `.avif` in preload/storage/metadata validation
+- Fixed repository cache behavior:
+  - `ContentRepositoryImpl.getContentDetail()` now bypasses cached detail for Hitomi / `gold-usergeneratedcontent.net` image sets and refreshes from source
+- Verification:
+  - `fvm dart analyze ...` for touched Dart files passed with `No issues found!`
+- Operational note:
+  - previously downloaded Hitomi galleries that already contain wrongly named `.jpg` files may need re-download or manual cleanup to fully normalize old data.

@@ -239,6 +239,7 @@ class ImageMetadataService {
         '.png',
         '.gif',
         '.webp',
+        '.avif',
         '.bmp'
       ];
 

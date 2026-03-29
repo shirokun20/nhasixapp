@@ -410,7 +410,13 @@ class DownloadService {
 
       final files = await downloadDir
           .list()
-          .where((entity) => entity is File && entity.path.endsWith('.jpg'))
+          .where((entity) =>
+              entity is File &&
+              (entity.path.endsWith('.jpg') ||
+                  entity.path.endsWith('.jpeg') ||
+                  entity.path.endsWith('.png') ||
+                  entity.path.endsWith('.webp') ||
+                  entity.path.endsWith('.avif')))
           .cast<File>()
           .toList();
 
@@ -839,7 +845,8 @@ class DownloadService {
               (entity.path.endsWith('.jpg') ||
                   entity.path.endsWith('.jpeg') ||
                   entity.path.endsWith('.png') ||
-                  entity.path.endsWith('.webp')))
+                  entity.path.endsWith('.webp') ||
+                  entity.path.endsWith('.avif')))
           .length;
 
       _logger.i(

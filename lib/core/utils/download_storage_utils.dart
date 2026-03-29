@@ -319,7 +319,7 @@ class DownloadStorageUtils {
           .whereType<File>()
           .where((file) {
             final extension = path.extension(file.path).toLowerCase();
-            return ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+            return ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif']
                 .contains(extension);
           })
           .map((file) => file.path)
