@@ -723,11 +723,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     final contentId = favorite['id'].toString();
     final coverUrl = favorite['cover_url']?.toString() ?? '';
     final sourceId = favorite['source_id']?.toString();
-    final imageHeaders = sourceId == null
-        ? null
-        : getIt<ContentSourceRegistry>()
-            .getSource(sourceId)
-            ?.getImageDownloadHeaders(imageUrl: coverUrl);
 
     return GestureDetector(
       onTap: () {
@@ -763,11 +758,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(12),
                     ),
-                    child: ContentCard.buildImage(
-                      imageUrl: coverUrl,
-                      fit: BoxFit.cover,
-                      httpHeaders: imageHeaders,
-                      context: context,
+                    child: _FavoriteCoverImage(
+                      contentId: contentId,
+                      sourceId: sourceId,
+                      coverUrl: coverUrl,
                     ),
                   ),
                 ),
@@ -1077,5 +1071,113 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       // Log error for debugging (use logger instead of print in production)
       // print('Error removing favorite $contentId: $e');
     }
+  }
+}
+
+class _FavoriteCoverImage extends StatefulWidget {
+  const _FavoriteCoverImage({
+    required this.contentId,
+    required this.sourceId,
+    required this.coverUrl,
+  });
+
+  final String contentId;
+  final String? sourceId;
+  final String coverUrl;
+
+  @override
+  State<_FavoriteCoverImage> createState() => _FavoriteCoverImageState();
+}
+
+class _FavoriteCoverImageState extends State<_FavoriteCoverImage> {
+  static final Map<String, String> _resolvedHitomiCoverCache =
+      <String, String>{};
+  static final Map<String, Future<String?>> _hitomiCoverInFlight =
+      <String, Future<String?>>{};
+
+  String? _resolvedCoverUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolvedCoverUrl = widget.coverUrl;
+    _refreshHitomiCoverIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(covariant _FavoriteCoverImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.contentId != widget.contentId ||
+        oldWidget.coverUrl != widget.coverUrl ||
+        oldWidget.sourceId != widget.sourceId) {
+      _resolvedCoverUrl =
+          _resolvedHitomiCoverCache[widget.contentId] ?? widget.coverUrl;
+      _refreshHitomiCoverIfNeeded();
+    }
+  }
+
+  Future<void> _refreshHitomiCoverIfNeeded() async {
+    if (widget.sourceId != 'hitomi') return;
+
+    final cachedUrl = _resolvedHitomiCoverCache[widget.contentId];
+    if (cachedUrl != null && cachedUrl.isNotEmpty) {
+      if (mounted) {
+        setState(() {
+          _resolvedCoverUrl = cachedUrl;
+        });
+      }
+      return;
+    }
+
+    final inFlight = _hitomiCoverInFlight.putIfAbsent(
+      widget.contentId,
+      () => _resolveLatestHitomiCover(),
+    );
+    final latestCoverUrl = await inFlight;
+    final removedFuture = _hitomiCoverInFlight.remove(widget.contentId);
+    if (removedFuture != null && !identical(removedFuture, inFlight)) {
+      _hitomiCoverInFlight[widget.contentId] = removedFuture;
+    }
+
+    if (latestCoverUrl == null || latestCoverUrl.isEmpty || !mounted) return;
+
+    setState(() {
+      _resolvedCoverUrl = latestCoverUrl;
+    });
+  }
+
+  Future<String?> _resolveLatestHitomiCover() async {
+    final source = getIt<ContentSourceRegistry>().getSource('hitomi');
+    if (source == null) return null;
+
+    try {
+      final latest = await source.getDetail(widget.contentId);
+      final latestCoverUrl = latest.coverUrl.trim();
+      if (latestCoverUrl.isEmpty) return null;
+      _resolvedHitomiCoverCache[widget.contentId] = latestCoverUrl;
+      return latestCoverUrl;
+    } catch (_) {
+      // Keep the persisted URL as fallback when refresh fails.
+      return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final displayUrl = (_resolvedCoverUrl?.isNotEmpty ?? false)
+        ? _resolvedCoverUrl!
+        : widget.coverUrl;
+    final headers = widget.sourceId == null
+        ? null
+        : getIt<ContentSourceRegistry>()
+            .getSource(widget.sourceId!)
+            ?.getImageDownloadHeaders(imageUrl: displayUrl);
+
+    return ContentCard.buildImage(
+      imageUrl: displayUrl,
+      fit: BoxFit.cover,
+      httpHeaders: headers,
+      context: context,
+    );
   }
 }
