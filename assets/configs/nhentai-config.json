@@ -9,6 +9,11 @@
         "image": "https://i.nhentai.net",
         "thumbnail": "https://t.nhentai.net"
     },
+    "languageTagMap": {
+        "6346": "japanese",
+        "12227": "english",
+        "29963": "chinese"
+    },
     "api": {
         "enabled": true,
         "apiBase": "https://nhentai.net/api/v2",
@@ -75,6 +80,10 @@
         },
         "mediaId": {
             "selector": "$.media_id",
+            "type": "jsonpath"
+        },
+        "tagIds": {
+            "selector": "$.tag_ids[*]",
             "type": "jsonpath"
         },
         "pageCount": {

@@ -900,7 +900,7 @@ class GenericRestAdapter implements GenericAdapter {
       characters: const [],
       parodies: const [],
       groups: const [],
-      language: _extractLanguage(item, selectors),
+      language: _extractLanguage(item, selectors, rawConfig: rawConfig),
       pageCount:
           int.tryParse(_extract(item, selectors, 'pageCount') ?? '') ?? 0,
       imageUrls: const [],
@@ -1010,7 +1010,8 @@ class GenericRestAdapter implements GenericAdapter {
       characters: charactersRaw,
       parodies: parodiesRaw,
       groups: groupsRaw,
-      language: splitLanguage ?? _extractLanguage(data, selectors),
+      language:
+          splitLanguage ?? _extractLanguage(data, selectors, rawConfig: rawConfig),
       pageCount: pageCount,
       imageUrls: imageUrls,
       uploadDate: _parseDate(_extract(data, selectors, 'uploadDate')),
@@ -1456,13 +1457,64 @@ class GenericRestAdapter implements GenericAdapter {
   /// nhentai tags often include both the real language (e.g. "chinese") AND "translated",
   /// so the plain JSONPath selector may return "translated" first depending on tag order.
   /// This method uses extractList and picks the first non-"translated" value.
-  String _extractLanguage(dynamic data, Map<String, dynamic> selectors) {
+  String _extractLanguage(
+    dynamic data,
+    Map<String, dynamic> selectors, {
+    Map<String, dynamic>? rawConfig,
+  }) {
     final sel = _selectorOrNull(selectors, 'language');
-    if (sel == null) return 'unknown';
-    final values = _parser.extractList(data, sel);
-    final language =
-        values.firstWhere((v) => v != 'translated', orElse: () => '');
-    return language.isNotEmpty ? language : 'unknown';
+    if (sel != null) {
+      final values = _parser.extractList(data, sel);
+      final language =
+          values.firstWhere((v) => v != 'translated', orElse: () => '');
+      if (language.isNotEmpty) return language;
+    }
+
+    final tagIdLanguage =
+        _extractLanguageFromTagIds(data, selectors, rawConfig: rawConfig);
+    if (tagIdLanguage != null && tagIdLanguage.isNotEmpty) {
+      return tagIdLanguage;
+    }
+
+    return 'unknown';
+  }
+
+  String? _extractLanguageFromTagIds(
+    dynamic data,
+    Map<String, dynamic> selectors, {
+    Map<String, dynamic>? rawConfig,
+  }) {
+    final tagIdsSelector = _selectorOrNull(selectors, 'tagIds');
+    if (tagIdsSelector == null) return null;
+
+    final rawTagIds = _parser.extractList(data, tagIdsSelector);
+    if (rawTagIds.isEmpty) return null;
+
+    final rawLanguageTagMap =
+        (rawConfig?['languageTagMap'] as Map<String, dynamic>?) ?? const {};
+    if (rawLanguageTagMap.isEmpty) return null;
+
+    final languageTagMap = <String, String>{};
+    rawLanguageTagMap.forEach((key, value) {
+      final normalizedKey = key.toString().trim();
+      final normalizedValue = value.toString().trim();
+      if (normalizedKey.isNotEmpty && normalizedValue.isNotEmpty) {
+        languageTagMap[normalizedKey] = normalizedValue;
+      }
+    });
+    if (languageTagMap.isEmpty) return null;
+
+    for (final tagId in rawTagIds) {
+      final normalizedTagId = tagId.toString().trim();
+      if (normalizedTagId.isEmpty) continue;
+
+      final language = languageTagMap[normalizedTagId] ?? '';
+      if (language.isNotEmpty && language.toLowerCase() != 'translated') {
+        return language;
+      }
+    }
+
+    return null;
   }
 
   FieldSelector? _selectorOrNull(Map<String, dynamic> selectors, String key) {
