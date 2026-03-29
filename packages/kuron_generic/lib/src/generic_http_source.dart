@@ -296,6 +296,12 @@ class GenericHttpSource implements ContentSource {
       headers['Cookie'] =
           cookies.entries.map((e) => '${e.key}=${e.value}').join('; ');
     }
+
+    if (_id == 'hitomi') {
+      _logger.i(
+        'hitomi download headers: imageUrl=$imageUrl, referer=${headers['Referer']}, headerKeys=${headers.keys.join(", ")}',
+      );
+    }
     return headers;
   }
 

@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:extended_image/extended_image.dart';
+import 'package:logger/logger.dart';
 // import '../../core/utils/webtoon_detector.dart';
 import '../../data/models/reader_settings_model.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -50,6 +51,7 @@ class ExtendedImageReaderWidget extends StatefulWidget {
 
 class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+  static final Logger _logger = Logger();
   static final Dio _ehentaiResolverDio = Dio(
     BaseOptions(
       responseType: ResponseType.plain,
@@ -428,6 +430,11 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             return _buildLoadingIndicator(context, state: state);
           case LoadState.failed:
             _stopSyntheticProgress(reset: true);
+            if ((widget.sourceId ?? '').toLowerCase() == 'hitomi') {
+              _logger.w(
+                'Hitomi reader image failed: page=${widget.pageNumber}, url=$url, retries=$_imageLoadRetries, fallback=${_hitomiFallbackImageUrl ?? ''}',
+              );
+            }
             if (_tryHitomiAvifFallback(url)) {
               return _buildLoadingIndicator(context);
             }
@@ -441,6 +448,12 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             _stopSyntheticProgress(reset: true);
             _syntheticProgressByImageKey[_imageProgressKey] = 1.0;
             _imageLoadRetries = 0; // Reset retries on success
+            if ((widget.sourceId ?? '').toLowerCase() == 'hitomi' &&
+                _hitomiFallbackImageUrl != null) {
+              _logger.i(
+                'Hitomi reader image loaded via fallback: page=${widget.pageNumber}, url=$url',
+              );
+            }
             if (widget.onImageLoaded != null &&
                 state.extendedImageInfo?.image != null) {
               final image = state.extendedImageInfo!.image;
@@ -513,6 +526,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     if (webpUrl == failedUrl) {
       return false;
     }
+
+    _logger.w(
+      'Hitomi reader AVIF fallback: page=${widget.pageNumber}, from=$failedUrl, to=$webpUrl',
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {

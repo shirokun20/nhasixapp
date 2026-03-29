@@ -36,9 +36,15 @@ class HitomiAdapter implements GenericAdapter {
     // DynamicFormSearchUI passes query as "raw:q=value1&..." for multi-field forms
     // Hitomi nozomi protocol only understands plain tag queries like "female:anal"
     final normalizedQuery = _normalizeQuery(filter.query);
+    _logger.i(
+      'Hitomi search start: page=${filter.page}, rawQuery="${filter.query}", normalizedQuery="$normalizedQuery"',
+    );
 
     final allIds = await _loadIds(normalizedQuery, rawConfig);
     if (allIds.isEmpty) {
+      _logger.w(
+        'Hitomi search returned no ids for normalizedQuery="$normalizedQuery"',
+      );
       return const AdapterSearchResult(
         items: <Content>[],
         hasNextPage: false,
@@ -59,12 +65,18 @@ class HitomiAdapter implements GenericAdapter {
     }
 
     final pageIds = allIds.skip(start).take(_pageSize).toList(growable: false);
+    _logger.i(
+      'Hitomi search page ids: totalIds=${allIds.length}, pageIds=${pageIds.length}, page=$page',
+    );
     final items = await Future.wait(
       pageIds.map((id) => _fetchGallery(id.toString(), rawConfig)),
     );
 
     final compactItems = items.whereType<Content>().toList(growable: false);
     final totalPages = (allIds.length / _pageSize).ceil();
+    _logger.i(
+      'Hitomi search done: items=${compactItems.length}, totalPages=$totalPages, totalItems=${allIds.length}',
+    );
     return AdapterSearchResult(
       items: compactItems,
       hasNextPage: page < totalPages,
@@ -78,10 +90,16 @@ class HitomiAdapter implements GenericAdapter {
     String contentId,
     Map<String, dynamic> rawConfig,
   ) async {
+    _logger.i('Hitomi detail start: id=$contentId');
     final content = await _fetchGallery(contentId, rawConfig);
     if (content == null) {
+      _logger.e('Hitomi detail failed: id=$contentId');
       throw const FormatException('Failed to load Hitomi gallery detail');
     }
+
+    _logger.i(
+      'Hitomi detail done: id=$contentId, pages=${content.imageUrls.length}, coverHost=${_shortUrl(content.coverUrl)}',
+    );
 
     return AdapterDetailResult(
       content: content,
@@ -95,6 +113,7 @@ class HitomiAdapter implements GenericAdapter {
     Map<String, dynamic> rawConfig,
   ) async {
     try {
+      _logger.i('Hitomi related start: id=$contentId');
       final gallery = await _fetchGalleryJson(contentId, rawConfig);
       final related =
           (gallery['related'] as List?)?.cast<dynamic>() ?? const [];
@@ -103,8 +122,16 @@ class HitomiAdapter implements GenericAdapter {
       final ids = related.map((e) => e.toString()).toList(growable: false);
       final items =
           await Future.wait(ids.map((id) => _fetchGallery(id, rawConfig)));
+      _logger.i(
+        'Hitomi related done: id=$contentId, relatedIds=${ids.length}',
+      );
       return items.whereType<Content>().toList(growable: false);
-    } catch (_) {
+    } catch (e, stackTrace) {
+      _logger.e(
+        'Hitomi related failed: id=$contentId',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return const <Content>[];
     }
   }
@@ -158,6 +185,7 @@ class HitomiAdapter implements GenericAdapter {
     }
 
     if (queryTrim.isEmpty) {
+      _logger.i('Hitomi ids load: using home index nozomi');
       return fetchNozomiIds(indexEndpoint);
     }
 
@@ -198,6 +226,10 @@ class HitomiAdapter implements GenericAdapter {
                   )
                 : 'https://ltn.gold-usergeneratedcontent.net/$area/$tag-$lang.nozomi';
 
+        _logger.i(
+          'Hitomi ids token lookup: token="$token", url=${_shortUrl(nozomiUrl)}',
+        );
+
         return fetchNozomiIds(nozomiUrl).then((ids) => ids.toSet());
       }
 
@@ -208,6 +240,10 @@ class HitomiAdapter implements GenericAdapter {
         _logger.w('Hitomi galleriesindex version is empty for token "$token"');
         return <int>{};
       }
+
+      _logger.i(
+        'Hitomi ids plain token lookup: token="$token", version=$version',
+      );
 
       final indexUrl = galleriesIndexIndexEndpointTemplate.replaceAll(
         '{version}',
@@ -294,6 +330,10 @@ class HitomiAdapter implements GenericAdapter {
       headers['Range'] = 'bytes=${range.start}-${range.end}';
     }
 
+    _logger.i(
+      'Hitomi bytes request: url=${_shortUrl(url)}, range=${range == null ? 'full' : '${range.start}-${range.end}'}',
+    );
+
     final response = await _dio.get<List<int>>(
       url,
       options: Options(
@@ -303,8 +343,13 @@ class HitomiAdapter implements GenericAdapter {
     );
     final data = response.data;
     if (data == null || data.isEmpty) {
+      _logger.w('Hitomi bytes empty: url=${_shortUrl(url)}');
       return Uint8List(0);
     }
+
+    _logger.i(
+      'Hitomi bytes response: url=${_shortUrl(url)}, status=${response.statusCode}, bytes=${data.length}',
+    );
 
     return Uint8List.fromList(data);
   }
@@ -476,8 +521,12 @@ class HitomiAdapter implements GenericAdapter {
     try {
       final gallery = await _fetchGalleryJson(id, rawConfig);
       return _toContent(gallery, rawConfig);
-    } catch (e) {
-      _logger.w('Hitomi gallery fetch failed for id=$id: $e');
+    } catch (e, stackTrace) {
+      _logger.e(
+        'Hitomi gallery fetch failed: id=$id',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return null;
     }
   }
@@ -491,14 +540,22 @@ class HitomiAdapter implements GenericAdapter {
         'https://ltn.gold-usergeneratedcontent.net/galleries/{id}.js';
     final endpoint = endpointTemplate.replaceAll('{id}', id);
 
+    _logger.i('Hitomi gallery json request: id=$id, url=${_shortUrl(endpoint)}');
+
     await _throttle(rawConfig);
     final response = await _dio.get<String>(
       endpoint,
       options: Options(responseType: ResponseType.plain),
     );
     final script = response.data ?? '';
+    _logger.i(
+      'Hitomi gallery json response: id=$id, status=${response.statusCode}, scriptLength=${script.length}',
+    );
 
     final jsonText = _extractGalleryJsonText(script);
+    _logger.i(
+      'Hitomi gallery json extracted: id=$id, jsonLength=${jsonText.length}',
+    );
 
     final decoded = _decodeGalleryJson(jsonText);
     if (decoded is! Map<String, dynamic>) {
@@ -607,6 +664,10 @@ class HitomiAdapter implements GenericAdapter {
         ? imageUrls.first
         : _buildFallbackCover(files.isNotEmpty ? files.first as Map? : null);
 
+    _logger.i(
+      'Hitomi gallery mapped: id=$id, language=${gallery['language']}, files=${files.length}, images=${imageUrls.length}, cover=${_shortUrl(coverUrl)}',
+    );
+
     final tags =
         _parseTags((gallery['tags'] as List?)?.cast<dynamic>() ?? const []);
 
@@ -670,6 +731,9 @@ class HitomiAdapter implements GenericAdapter {
     _commonImageId = commonIdMatch?.group(1) ?? '';
 
     _ggFetchedAt = now;
+    _logger.i(
+      'Hitomi gg refreshed: url=${_shortUrl(ggEndpoint)}, defaultOffset=$_defaultOffset, offsetEntries=${_offsetMap.length}, commonImageId=$_commonImageId',
+    );
   }
 
   String _buildImageUrl({
@@ -812,6 +876,17 @@ class HitomiAdapter implements GenericAdapter {
 
     // Not raw-encoded, return as-is (already a plain query)
     return input.trim();
+  }
+
+  String _shortUrl(String value) {
+    if (value.isEmpty) return '';
+    try {
+      final uri = Uri.parse(value);
+      final query = uri.hasQuery ? '?${uri.query}' : '';
+      return '${uri.host}${uri.path}$query';
+    } catch (_) {
+      return value;
+    }
   }
 
   Future<void> _throttle(Map<String, dynamic> rawConfig) async {
