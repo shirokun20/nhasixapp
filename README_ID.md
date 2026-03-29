@@ -5,6 +5,7 @@
 [![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com)
 [![18+](https://img.shields.io/badge/Batasan_Usia-18%2B-red?style=for-the-badge&logo=warning&logoColor=white)](#)
 [![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.14-green?style=for-the-badge&logo=android&logoColor=white)](#)
+[![Downloads](https://img.shields.io/github/downloads/shirokun20/nhasixapp/total?style=for-the-badge&logo=github&logoColor=white&color=007ec6)](https://github.com/shirokun20/nhasixapp/releases)
 
 > [!TIP]
 > **[🇺🇸 Read in English](README.md)**
