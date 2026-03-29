@@ -154,7 +154,12 @@ class GenericRestAdapter implements GenericAdapter {
     final adjustedFilter = effectiveQuery != filter.query.trim()
         ? filter.copyWith(query: effectiveQuery)
         : filter;
-    final url = _urlBuilder.buildSearchUrl(searchTemplate, adjustedFilter);
+    final sortValue = _resolveSearchSortValue(adjustedFilter, rawConfig);
+    final url = _urlBuilder.buildSearchUrl(
+      searchTemplate,
+      adjustedFilter,
+      sortValue: sortValue,
+    );
     _logger.d('$_sourceId REST search: Built URL: $url');
 
     try {
@@ -493,9 +498,14 @@ class GenericRestAdapter implements GenericAdapter {
     }
 
     final rawParams = _extractRawSearchParams(filter.query);
+    final sortValue = _resolveSearchSortValue(filter, rawConfig);
     String url = rawParams != null
         ? _buildRawSearchUrl(template, rawParams, filter)
-        : _urlBuilder.buildSearchUrl(template, filter);
+        : _urlBuilder.buildSearchUrl(
+            template,
+            filter,
+            sortValue: sortValue,
+          );
     final paginationCfg =
         (apiList['pagination'] as Map<String, dynamic>?) ?? {};
     if (paginationCfg['offsetMode'] == true) {
@@ -1913,6 +1923,69 @@ class GenericRestAdapter implements GenericAdapter {
         .replaceAll(RegExp(r'([?&])[^=&]*=\{language\}(?=&|$)'), '')
         .replaceAll('?&', '?')
         .replaceAll(RegExp(r'[?&]$'), '');
+  }
+
+  String _resolveSearchSortValue(
+    SearchFilter filter,
+    Map<String, dynamic> rawConfig,
+  ) {
+    final searchConfig =
+        (rawConfig['searchConfig'] as Map<String, dynamic>?) ?? const {};
+
+    final sortingConfig =
+        (searchConfig['sortingConfig'] as Map<String, dynamic>?) ?? const {};
+    final options =
+        (sortingConfig['options'] as List<dynamic>?) ?? const <dynamic>[];
+
+    final candidates = <String>{
+      filter.sort.name,
+      filter.sort.apiValue,
+      _toKebabCase(filter.sort.name),
+    }..removeWhere((value) => value.trim().isEmpty);
+
+    for (final option in options) {
+      if (option is! Map<String, dynamic>) continue;
+
+      final value = option['value']?.toString().trim() ?? '';
+      final apiValue = option['apiValue']?.toString().trim() ?? '';
+
+      if (candidates.contains(value) || candidates.contains(apiValue)) {
+        return apiValue;
+      }
+    }
+
+    if (_isNhentaiV2Search(rawConfig)) {
+      switch (filter.sort) {
+        case SortOption.newest:
+          return 'date';
+        case SortOption.popular:
+        case SortOption.popularToday:
+        case SortOption.popularWeek:
+        case SortOption.popularMonth:
+          return filter.sort.apiValue;
+      }
+    }
+
+    return '';
+  }
+
+  bool _isNhentaiV2Search(Map<String, dynamic> rawConfig) {
+    final api = rawConfig['api'] as Map<String, dynamic>?;
+    final apiBase = api?['apiBase']?.toString() ?? '';
+    final endpoints = (api?['endpoints'] as Map<String, dynamic>?) ?? const {};
+    final searchEndpoint = endpoints['search']?.toString() ?? '';
+
+    return _sourceId == 'nhentai' &&
+        (apiBase.contains('/api/v2') || searchEndpoint.contains('/api/v2/'));
+  }
+
+  String _toKebabCase(String value) {
+    return value
+        .replaceAllMapped(
+          RegExp(r'([a-z0-9])([A-Z])'),
+          (match) => '${match.group(1)}-${match.group(2)}',
+        )
+        .toLowerCase();
   }
 
   String _removeQueryParam(String url, String paramName) {
