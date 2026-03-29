@@ -1,20 +1,21 @@
 {
     "source": "nhentai",
-    "version": "1.0.3",
-    "lastUpdated": "2026-03-01T00:00:00+07:00",
+    "version": "1.0.5",
+    "lastUpdated": "2026-03-29T00:00:00+07:00",
     "configUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/assets/configs/nhentai-config.json",
     "baseUrl": "https://nhentai.net",
     "avatarBaseUrl": "https://i3.nhentai.net",
     "api": {
         "enabled": true,
+        "apiBase": "https://nhentai.net/api/v2",
         "timeout": 30000,
         "endpoints": {
-            "galleryDetail": "/api/gallery/{id}",
-            "allGalleries": "/api/galleries/all?page={page}",
-            "search": "/api/galleries/search?query={query}&page={page}&sort={sort}",
-            "tagSearch": "/api/galleries/tagged?tag_id={tagId}&page={page}",
-            "related": "/api/gallery/{id}/related",
-            "comments": "/api/gallery/{id}/comments",
+            "galleryDetail": "/api/v2/galleries/{id}?include=comments",
+            "allGalleries": "/api/v2/galleries?page={page}",
+            "search": "/api/v2/search?query={query}&sort={sort}&page={page}",
+            "tagSearch": "/api/v2/galleries/tagged?tag_id={tagId}&page={page}",
+            "related": "/api/v2/galleries/{id}/related",
+            "comments": "/api/v2/galleries/{id}?include=comments",
             "contentUrl": "/g/{id}/"
         },
         "images": {
@@ -128,7 +129,7 @@
             }
         },
         "comments": {
-            "selector": "$[*]",
+            "selector": "$.comments[*]",
             "type": "jsonpath"
         },
         "commentId": {
