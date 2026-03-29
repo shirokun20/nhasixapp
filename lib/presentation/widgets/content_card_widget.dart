@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
@@ -817,6 +816,7 @@ class ContentCard extends StatelessWidget {
     double? height,
     int? memCacheWidth,
     int? memCacheHeight,
+    Map<String, String>? httpHeaders,
     required BuildContext context,
   }) {
     if (imageUrl.isEmpty) {
@@ -845,14 +845,15 @@ class ContentCard extends StatelessWidget {
       );
     }
 
-    return CachedNetworkImage(
-      imageUrl: imageUrl,
+    return ProgressiveImageWidget(
+      networkUrl: imageUrl,
       width: width,
       height: height,
       fit: fit,
       memCacheWidth: memCacheWidth ?? 400,
       memCacheHeight: memCacheHeight ?? 600,
-      placeholder: (context, url) => Shimmer.fromColors(
+      httpHeaders: httpHeaders,
+      placeholder: Shimmer.fromColors(
         baseColor: Theme.of(context).colorScheme.surfaceContainerHighest,
         highlightColor: Theme.of(context).colorScheme.surfaceContainer,
         child: Container(
@@ -861,7 +862,7 @@ class ContentCard extends StatelessWidget {
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
         ),
       ),
-      errorWidget: (context, url, error) => Container(
+      errorWidget: Container(
         width: width,
         height: height,
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -884,8 +885,6 @@ class ContentCard extends StatelessWidget {
           ],
         ),
       ),
-      fadeInDuration: const Duration(milliseconds: 300),
-      fadeOutDuration: const Duration(milliseconds: 100),
     );
   }
 }

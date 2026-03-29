@@ -722,6 +722,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       [String? searchQuery]) {
     final contentId = favorite['id'].toString();
     final coverUrl = favorite['cover_url']?.toString() ?? '';
+    final sourceId = favorite['source_id']?.toString();
+    final imageHeaders = sourceId == null
+        ? null
+        : getIt<ContentSourceRegistry>()
+            .getSource(sourceId)
+            ?.getImageDownloadHeaders(imageUrl: coverUrl);
 
     return GestureDetector(
       onTap: () {
@@ -729,7 +735,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           _toggleItemSelection(contentId);
         } else {
           // Navigate to content detail
-          final sourceId = favorite['source_id']?.toString();
           AppRouter.goToContentDetail(context, contentId, sourceId: sourceId);
         }
       },
@@ -761,6 +766,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     child: ContentCard.buildImage(
                       imageUrl: coverUrl,
                       fit: BoxFit.cover,
+                      httpHeaders: imageHeaders,
                       context: context,
                     ),
                   ),
