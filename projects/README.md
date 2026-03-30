@@ -25,6 +25,7 @@
 | **komiktap_migration** | `..........` | 0% | Pending |
 | **komiktap_navigation_lists** | `..........` | 0% | Pending |
 | **premium_enhancements** | `..........` | 0% | Pending |
+| **qol_enhancements** | `..........` | 0% | Pending |
 | **reader-ads** | `..........` | 0% | Pending |
 
 ## 🚧 On Progress

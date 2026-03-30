@@ -89,17 +89,19 @@ lib/
 ### 🚧 In Progress (0)
 - *(None)*
 
-### 📋 Analysis Phase (5)
+### 📋 Analysis Phase (6)
 - app_audit_hardcode_ui_desktop
 - download_metadata_revamp
 - flutter-desktop-migration
 - komiktap_navigation_lists
+- qol_enhancements ✨ **NEW** (Issue #32: Login, Gesture, Global Sort)
 - reader-ads
 
 ### 🔮 Future/Backlog (1)
 - nhentai_search_revamp
 
-### 🐛 Open Issues (2)
+### 🐛 Open Issues (3)
+- qol_enhancements — Issue #32: Login/Gesture/Sort (2026-03-30) → `analysis-plan/qol_enhancements/`
 - download range ignores page bounds (2026-02-17)
 - download metadata chapter parentid (2026-02-15)
 
@@ -265,7 +267,29 @@ dart scripts/project_status.dart           # Update dashboards
 
 ---
 
-## Latest Session — 2026-03-29
+## 🆕 Latest Session — 2026-03-30
+
+### QoL Enhancements Analysis (Issue #32) — API v2 Verified
+
+- Terhubung ke GitHub repo via `rtk gh issue list/view`, membaca Issue #32 (@viaans)
+- Membaca **live nhentai API v2 docs** (`https://nhentai.net/api/v2/docs`) — hasil jauh lebih kaya dari asumsi awal
+- Membuat & memperbarui `projects/analysis-plan/qol_enhancements/qol_enhancements_2026-03-30.md`
+
+**Key API v2 findings & Final QoL Plan (Issue #32):**
+- **P0 (Config)**: Update `nhentai-config.json` (Tambah flags: auth, blacklist, random, comments).
+- **P1 (Login & Sync)**: REST Auth (Token-based) + PoW/Captcha bypass via Mini WebView + **Favorit Sync (Online ↔ Local)**.
+- **P2 (Gesture)**: UI-only fix, `drawerEdgeDragWidth` 25% + HapticFeedback.
+- **P3 (Settings)**: Hub Settings Terpusat + UI Input **Local Blacklist**.
+- **P4 (History/Search)**: Native Tag Explorer (Live API v2) menggantikan JSON lokal statis.
+- **P5 (Blacklist)**: NSFW Blur/Censor kover galeri (Hybrid: Local + Online API).
+- **P6 (Interactive)**: Tombol **Random Gallery (Gacha)** + Fitur **Submit Comments**.
+
+Status: **Analysis Phase (CLEAN & COMPLETE)** — Dokumen: `projects/analysis-plan/qol_enhancements/qol_enhancements_2026-03-30.md`.
+Siap dieksekusi ke `onprogress-plan/` pada sesi berikutnya.
+
+---
+
+## Previous Session — 2026-03-29
 
 ### Hitomi Release Diagnostics + Native Download Extension Fix
 
