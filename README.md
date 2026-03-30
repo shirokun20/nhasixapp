@@ -1,0 +1,163 @@
+# 📱 NhasixApp - Enhanced Mobile Reading Experience
+
+[![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
+[![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com)
+[![18+](https://img.shields.io/badge/Age_Restriction-18%2B-red?style=for-the-badge&logo=warning&logoColor=white)](#)
+[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.14-green?style=for-the-badge&logo=android&logoColor=white)](#)
+[![Downloads](https://img.shields.io/github/downloads/shirokun20/nhasixapp/total?style=for-the-badge&logo=github&logoColor=white&color=007ec6)](https://github.com/shirokun20/nhasixapp/releases)
+[![Hits](https://komarev.com/ghpvc/?username=shirokun20&repo=nhasixapp&style=for-the-badge&color=007ec6)](https://github.com/shirokun20/nhasixapp)
+
+> [!TIP]  
+> **[🇮🇩 Baca dalam Bahasa Indonesia](README_ID.md)**
+
+**Kuron** (formerly NhasixApp) provides a **70% faster** mobile reading experience with privacy at its core. Built with **Clean Architecture** and optimized for performance, it features smart offline reading, App Disguise mode, a modern Material 3 design, and support for **multiple content providers** including E-Hentai, HentaiNexus, and Hitomi.
+
+---
+
+## 📥 **Download Latest Release**
+
+[📦 **Get v0.9.14+22**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.14)
+
+| Variant | Size | Best For | Status |
+|:-------|:----:|:---------|:------:|
+| **ARM64** | 24MB | Modern Devices (2019+) | ✅ Available |
+| **ARM32** | 22MB | Older Devices (2015-2018) | ✅ Available |
+
+---
+
+## ✨ **Key Features**
+
+### 💬 **Multi-Provider Support (NEW in v0.9.14!)**
+- **E-Hentai Gallery**: Full support with session adapter and per-page reader.
+- **HentaiNexus**: XOR decryption adapter with image URL transformation.
+- **Hitomi Support**: Fallback-safe registration for enhanced content breadth.
+- **Smart Pagination**: Token-based & indexed pagination across all providers.
+
+### 💬 **Community Interaction**
+- **View Comments**: Read discussions directly on detail pages.
+- **Modern UI**: Clean, card-based layout optimized for both Light & Dark modes.
+- **Realtime Data**: Uses official API for reliable and fast comment loading.
+
+### 🎯 **Reading & Discovery**
+- **Immersive Reader**: Full-screen mode, smooth page transitions, and high-quality rendering.
+- **Smart Search**: Advanced filtering by tags, popularity, and date.
+- **Auto-Bookmark**: Never lose your place; progress tracks automatically.
+
+### 🛡️ **Privacy & Offline**
+- **App Disguise**: Mask the app as a Calculator, Notes, or Weather app.
+- **Private Downloads**: Content is hidden from the system gallery (`.nomedia`).
+- **Offline First**: Full offline capability with background downloading and bulk management.
+- **Export Library**: Backup your entire library with database and files to share or restore.
+- **Blur Thumbnails**: Privacy-focused blur on thumbnails, enabled by default.
+
+### 🎨 **Performance & UX**
+- **Fast Loading**: Smart image preloading makes reading 70% faster.
+- **Adaptive UI**: Responsive design with Dark/Light modes and Material 3 aesthetics.
+- **Battery Friendly**: Optimized resource usage with Wakelock and efficient caching.
+
+---
+
+## 📱 **Screenshots**
+
+<details>
+<summary>🖼️ Click to view screenshots (18+ content warning)</summary>
+
+<table>
+  <tr>
+    <td align="center"><b>Home & Feed</b></td>
+    <td align="center"><b>Detail & Content</b></td>
+    <td align="center"><b>Immersive Reader</b></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/flutter_02.png" width="250" alt="Home Screen"/></td>
+    <td><img src="screenshots/flutter_13.png" width="250" alt="Detail Screen"/></td>
+    <td><img src="screenshots/flutter_12.png" width="250" alt="Reader Mode"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Search & Filters</b></td>
+    <td align="center"><b>Settings & Privacy</b></td>
+    <td align="center"><b>Offline & Downloads</b></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/flutter_04.png" width="250" alt="Search Filters"/></td>
+    <td><img src="screenshots/flutter_06.png" width="250" alt="Settings"/></td>
+    <td><img src="screenshots/flutter_11.png" width="250" alt="Downloads"/></td>
+  </tr>
+</table>
+
+</details>
+
+---
+
+## 🛠️ **Tech Stack**
+
+| Layer | Technologies |
+|:------|:-------------|
+| **Core** | Flutter 3.24+, Dart 3.5+ |
+| **Arch** | Clean Architecture, BLoC Pattern, GetIt (DI) |
+| **Data** | SQLite (Offline), SharedPreferences, Dio (Network) |
+| **UI/UX** | CachedNetworkImage, PhotoView, Shimmer, Lottie |
+| **System** | Local Notifications, Wakelock Plus, Permission Handler |
+
+---
+
+## 🚀 **Quick Start**
+
+### **Installation**
+1. **Download APK** from [Releases](https://github.com/shirokun20/nhasixapp/releases).
+2. **Enable Unknown Sources** in Settings > Security.
+3. **Install** and enjoy!
+
+### **Build from Source**
+```bash
+git clone https://github.com/shirokun20/nhasixapp.git
+cd nhasixapp
+flutter pub get
+flutter run
+```
+
+---
+
+## 🆘 **Support**
+
+**FAQ**
+- **Can't Install?** Enable "Unknown Sources" and check your architecture (ARM64 vs ARM32).
+- **Missing Images?** Check your internet or clear cache.
+- **Hidden Downloads?** They are private by design. View them inside the app.
+
+---
+
+## ☕ **Support Developer**
+
+If you love **Kuron** and want to support its development, you can buy me a coffee! ☕  
+Scan the QRIS below to donate:
+
+<p align="center">
+  <img src="assets/images/donation_qris.jpeg" width="300" alt="QRIS Donation" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
+</p>
+
+> **Note:** Your support helps keep the servers running and the updates coming! 🚀
+
+---
+
+## 📈 **Star History**
+
+<div align="center">
+  <a href="https://www.star-history.com/#shirokun20/nhasixapp&type=date&legend=top-left">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=shirokun20/nhasixapp&type=date&theme=dark&legend=top-left" />
+      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=shirokun20/nhasixapp&type=date&legend=top-left" />
+      <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=shirokun20/nhasixapp&type=date&legend=top-left" width="600"/>
+    </picture>
+  </a>
+</div>
+
+---
+
+## 📜 **License & Legal**
+
+**⚠️ 18+ Content Warning** • **Educational Use Only** • **MIT License**
+
+Licensed under the MIT License. See [LICENSE](LICENSE) for details.
+We strongly support content creators; please support official releases whenever possible.

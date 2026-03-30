@@ -1,0 +1,14 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  package="id.nhasix.kuron_native.kuron_native">
+  <application>
+      <activity
+          android:name=".WebViewActivity"
+          android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+          android:windowSoftInputMode="adjustResize"/>
+      <activity
+          android:name=".pdf.PdfReaderActivity"
+          android:theme="@style/Theme.AppCompat.NoActionBar"
+          android:screenOrientation="portrait"
+          android:configChanges="orientation|keyboardHidden|screenSize"/>
+  </application>
+</manifest>

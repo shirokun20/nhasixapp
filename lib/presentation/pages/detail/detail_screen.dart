@@ -1,0 +1,2924 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:logger/web.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:nhasixapp/core/constants/text_style_const.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
+import 'package:nhasixapp/core/routing/app_router.dart';
+import 'package:nhasixapp/domain/entities/entities.dart';
+import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
+import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
+import 'package:nhasixapp/core/utils/app_state_manager.dart';
+import 'package:nhasixapp/core/utils/source_url_resolver.dart';
+import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/services/language_service.dart';
+import 'package:kuron_core/kuron_core.dart';
+import '../../../../core/utils/error_message_utils.dart';
+import '../../widgets/download_button_widget.dart';
+import '../../widgets/progressive_image_widget.dart';
+import '../../widgets/shimmer_loading_widgets.dart';
+import '../../widgets/permission_request_sheet.dart';
+import 'widgets/chapter_list_bottom_sheet.dart';
+import 'widgets/comments_section_widget.dart';
+
+class DetailScreen extends StatefulWidget {
+  final String contentId;
+  final String? sourceId;
+  final String? chapterId; // Chapter ID from history for read indicator
+
+  const DetailScreen({
+    super.key,
+    required this.contentId,
+    this.sourceId,
+    this.chapterId,
+  });
+
+  @override
+  State<DetailScreen> createState() => _DetailScreenState();
+}
+
+class _DetailScreenState extends State<DetailScreen> {
+  late final DetailCubit _detailCubit;
+  final ScrollController _scrollController = ScrollController();
+  bool _isNavigating =
+      false; // Add navigation lock to prevent multiple simultaneous navigation
+
+  String? _resolveTagIdFromLoadedContent(
+    String tagName,
+    List<String> candidateTypes,
+  ) {
+    final detailState = context.read<DetailCubit>().state;
+    if (detailState is! DetailLoaded) return null;
+
+    final normalizedCandidates = candidateTypes
+        .map((e) => e.toLowerCase().trim())
+        .where((e) => e.isNotEmpty)
+        .toSet();
+    final matchAllTypes = normalizedCandidates.isEmpty;
+
+    for (final tag in detailState.content.tags) {
+      final candidateType = tag.type.toLowerCase().trim();
+      if (!matchAllTypes && !normalizedCandidates.contains(candidateType)) {
+        continue;
+      }
+      if (tag.name.toLowerCase().trim() != tagName.toLowerCase().trim()) {
+        continue;
+      }
+
+      final slug = tag.slug?.trim();
+      if (slug == null || slug.isEmpty) continue;
+      if (int.tryParse(slug) != null) continue;
+      return slug;
+    }
+
+    return null;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _detailCubit = getIt<DetailCubit>();
+
+    // Check if we need to switch source first
+    if (widget.sourceId != null) {
+      final sourceCubit = context.read<SourceCubit>();
+      final currentSourceId = sourceCubit.state.activeSource?.id;
+
+      if (currentSourceId != null &&
+          currentSourceId != widget.sourceId &&
+          // Don't switch if IDs are same (redundant check but safe)
+          currentSourceId != widget.sourceId) {
+        Logger().i(
+            'DetailScreen: Switching source from $currentSourceId to ${widget.sourceId}');
+        sourceCubit.switchSource(widget.sourceId!);
+      }
+    }
+
+    // Load content detail first, then load related content separately
+    _loadContentAndRelated();
+
+    // Initialize download manager if not already initialized
+    final downloadBloc = context.read<DownloadBloc>();
+    if (downloadBloc.state is DownloadInitial) {
+      downloadBloc.add(const DownloadInitializeEvent());
+    }
+
+    // Auto-scroll to chapter after content is loaded
+    if (widget.chapterId != null && widget.chapterId!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToChapter(widget.chapterId!);
+      });
+    }
+  }
+
+  /// Auto-scroll to specific chapter in the list
+  void _scrollToChapter(String chapterId) {
+    final state = _detailCubit.state;
+    if (state is! DetailLoaded) return;
+    if (state.content.chapters == null || state.content.chapters!.isEmpty) {
+      return;
+    }
+
+    // Find chapter index
+    final chapters = state.content.chapters!;
+    final chapterIndex = chapters.indexWhere((c) => c.id == chapterId);
+
+    if (chapterIndex == -1) return;
+
+    // Calculate scroll position (approximate)
+    // Chapter list starts after metadata sections
+    final approximateOffset = 600 + (chapterIndex * 100);
+
+    _scrollController.animateTo(
+      approximateOffset.toDouble(),
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+
+    Logger().i('Auto-scrolled to chapter ${chapterIndex + 1}');
+  }
+
+  /// Load content detail and related content as separate API calls
+  Future<void> _loadContentAndRelated() async {
+    // First call: Load main content detail
+    await _detailCubit.loadContentDetail(widget.contentId);
+
+    // Second call: Load related content independently
+    if (mounted && _detailCubit.state is DetailLoaded) {
+      await _detailCubit.loadRelatedContent();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _detailCubit.close();
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh chapter history when returning from reader (screen regains focus)
+    final route = ModalRoute.of(context);
+    if (route?.isCurrent == true) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _detailCubit.refreshChapterHistory();
+      });
+    }
+  }
+
+  /// Navigate to tag browsing mode (SIMPLIFIED routing)
+  /// Navigate to tag browsing mode (SIMPLIFIED routing)
+  void _searchByTag(String tagName,
+      {String? tagId, String? tagType, String? sourceId}) async {
+    // Prevent multiple simultaneous navigation attempts
+    if (_isNavigating) {
+      Logger()
+          .w('Navigation already in progress, ignoring tag search: $tagName');
+      return;
+    }
+
+    try {
+      _isNavigating = true;
+
+      String query = tagName;
+      final actualSourceId = sourceId ??
+          ((context.read<DetailCubit>().state is DetailLoaded)
+              ? (context.read<DetailCubit>().state as DetailLoaded)
+                  .content
+                  .sourceId
+              : 'nhentai');
+      final rawConfig =
+          getIt<RemoteConfigService>().getRawConfig(actualSourceId);
+      final navigation = rawConfig?['navigation'];
+      final tagQueryMapping = navigation is Map<String, dynamic>
+          ? navigation['tagQueryMapping'] as Map<String, dynamic>?
+          : null;
+
+      var hasExplicitTagMapping = false;
+
+      String? resolveByTagMapping() {
+        if (tagQueryMapping == null) return null;
+
+        final normalizedType = (tagType ?? '').toLowerCase().trim();
+        final mapping = tagQueryMapping[normalizedType] ??
+            tagQueryMapping['default'] as Map<String, dynamic>?;
+        if (mapping is! Map<String, dynamic>) return null;
+        hasExplicitTagMapping = true;
+
+        final mode = (mapping['mode'] as String? ?? 'rawParam').trim();
+        if (mode == 'name') {
+          return tagName;
+        }
+
+        final valueSource =
+            (mapping['valueSource'] as String? ?? 'tagIdOrName').trim();
+        final sameAsTypes =
+            (mapping['sameAsTypes'] as List<dynamic>? ?? const [])
+                .map((e) => e.toString().toLowerCase().trim())
+                .where((e) => e.isNotEmpty)
+                .toList();
+        final candidateTypes = <String>[normalizedType, ...sameAsTypes]
+            .where((e) => e.isNotEmpty)
+            .toList();
+        var resolvedTagId = tagId?.trim();
+        if (resolvedTagId == null ||
+            resolvedTagId.isEmpty ||
+            int.tryParse(resolvedTagId) != null) {
+          resolvedTagId =
+              _resolveTagIdFromLoadedContent(tagName, candidateTypes);
+        }
+
+        String value;
+        if (valueSource == 'tagName') {
+          value = tagName.trim();
+        } else if (valueSource == 'tagId') {
+          value = (resolvedTagId ?? '').trim();
+        } else {
+          value = (resolvedTagId != null && resolvedTagId.isNotEmpty)
+              ? resolvedTagId
+              : tagName.trim();
+        }
+
+        if (value.isEmpty) return '';
+
+        final param = (mapping['param'] as String? ?? '').trim();
+        final requiredPattern =
+            (mapping['requiredPattern'] as String? ?? '').trim();
+        if (requiredPattern.isNotEmpty &&
+            !RegExp(requiredPattern).hasMatch(value)) {
+          return '';
+        }
+
+        final transform = (mapping['transform'] as String? ?? '').trim();
+        if (transform == 'lowercase') {
+          value = value.toLowerCase();
+        } else if (transform == 'spaceToPlus') {
+          value = value.replaceAll(' ', '+');
+        }
+
+        final valuePrefix = (mapping['valuePrefix'] as String? ?? '').trim();
+        if (valuePrefix.isNotEmpty) {
+          value = '$valuePrefix$value';
+        }
+        final valueSuffix = (mapping['valueSuffix'] as String? ?? '').trim();
+        if (valueSuffix.isNotEmpty) {
+          value = '$value$valueSuffix';
+        }
+
+        // Raw search pipeline will encode query values later in the adapter.
+        // For HentaiNexus q-param mapping, keep semantic value as plain text
+        // to avoid ending up with a literal plus (%2B) in final URL.
+        if (actualSourceId == 'hentainexus' && param == 'q') {
+          value = Uri.decodeComponent(value).replaceAll('+', ' ');
+        }
+
+        if (param.isEmpty) return null;
+
+        return 'raw:$param=$value';
+      }
+
+      final mappedQuery = resolveByTagMapping();
+      if (hasExplicitTagMapping &&
+          (mappedQuery == null || mappedQuery.isEmpty)) {
+        Logger().w(
+          'Tag mapping failed for $tagType:$tagName (tagId=$tagId), navigation cancelled to avoid invalid query',
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.errorBrowsingTag),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (mappedQuery != null && mappedQuery.isNotEmpty) {
+        query = mappedQuery;
+      } else if (actualSourceId == 'nhentai') {
+        // SPECIAL HANDLING FOR NHENTAI
+        // User requested strict slug format: lowercase + hyphens
+        // e.g. "Big Breasts" -> "big-breasts", "Lucy Heartfilia" -> "lucy-heartfilia"
+
+        // Prioritize explicit slug/tagId if it's text (not numeric ID)
+        String value = tagName.toLowerCase().replaceAll(' ', '-');
+        if (tagId != null && int.tryParse(tagId) == null) {
+          value = tagId;
+        }
+
+        if (tagType != null &&
+            !['tag', 'category'].contains(tagType.toLowerCase())) {
+          // type:slug syntax (e.g. artist:shidou, character:lucy-heartfilia)
+          query = '${tagType.toLowerCase()}:$value';
+        } else {
+          // General tags: just the slug (e.g. big-breasts)
+          // This will map to "q=big-breasts" in search
+          query = value;
+        }
+      } else {
+        // Config-driven genre route support for generic scraper sources
+        // (e.g. crotpedia, komiktap): if source defines `genreSearch` pattern,
+        // clicking a genre tag should route to that pattern via prefix query.
+        final scraper = rawConfig?['scraper'];
+        final urlPatterns = scraper is Map<String, dynamic>
+            ? scraper['urlPatterns'] as Map<String, dynamic>?
+            : null;
+        final hasGenreSearch = urlPatterns?.containsKey('genreSearch') ?? false;
+
+        final navigation = rawConfig?['navigation'];
+        final genrePrefix = navigation is Map<String, dynamic>
+            ? (navigation['genreQueryPrefix'] as String? ?? 'genre:')
+            : 'genre:';
+        final genreTagType = navigation is Map<String, dynamic>
+            ? (navigation['genreTagType'] as String? ?? 'genre')
+            : 'genre';
+
+        final normalizedTagType = (tagType ?? '').toLowerCase().trim();
+        final isGenreLikeTag = normalizedTagType.isEmpty ||
+            normalizedTagType == 'tag' ||
+            normalizedTagType == genreTagType;
+
+        if (hasGenreSearch && isGenreLikeTag) {
+          var slug = tagName.toLowerCase().trim();
+          if (tagId != null && int.tryParse(tagId) == null) {
+            slug = tagId.toLowerCase().trim();
+          }
+          slug = slug
+              .replaceAll(RegExp(r'\s+'), '-')
+              .replaceAll(RegExp(r'-+'), '-')
+              .replaceAll(RegExp(r'^-|-$'), '');
+          query = '$genrePrefix$slug';
+        }
+      }
+
+      // Navigate to ContentByTagScreen
+      if (mounted) {
+        AppRouter.goToContentByTag(
+          context,
+          query,
+          displayLabel: tagName,
+        );
+      } else {
+        Logger().w('Widget unmounted before navigation for tag: $tagName');
+      }
+    } catch (e, stackTrace) {
+      Logger().e('Error navigating to tag: $tagName',
+          error: e, stackTrace: stackTrace);
+
+      // Handle error gracefully
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.errorBrowsingTag),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      _isNavigating = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider.value(
+      value: _detailCubit,
+      child: PopScope(
+        canPop: true,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) {
+            // Handle custom pop logic if needed
+            context.pop();
+          }
+        },
+        child: Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          body: StreamBuilder<bool>(
+            // Listen to offline mode changes
+            stream: AppStateManager().offlineModeStream,
+            initialData: AppStateManager().isOfflineMode,
+            builder: (context, offlineSnapshot) {
+              final isOfflineMode = offlineSnapshot.data ?? false;
+
+              return BlocListener<DetailCubit, DetailState>(
+                listener: (context, state) {
+                  if (state is DetailReaderReady) {
+                    _readContent(
+                      state.chapterContent,
+                      forceStartFromBeginning: true,
+                      parentContent: state.content, // Parent series
+                      chapterData: state.chapterData, // Navigation data
+                      currentChapter: state.currentChapter, // Current chapter
+                    );
+                    context.read<DetailCubit>().resetToLoaded();
+                  } else if (state is DetailActionFailure) {
+                    if (state.needsLogin) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(AppLocalizations.of(context)!
+                              .loginRequiredForAction),
+                          behavior: SnackBarBehavior.floating,
+                          action: SnackBarAction(
+                            label: AppLocalizations.of(context)!.login,
+                            onPressed: () {
+                              context.push('/crotpedia-login');
+                            },
+                          ),
+                        ),
+                      );
+                    } else {
+                      final message = ErrorMessageUtils.getFriendlyErrorMessage(
+                          state.error, AppLocalizations.of(context));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(message),
+                          backgroundColor: Theme.of(context).colorScheme.error,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                    context.read<DetailCubit>().resetToLoaded();
+                  } else if (state is DetailNeedsLogin) {
+                    // Legacy support or fallback
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Login required for this action'),
+                        action: SnackBarAction(
+                          label: 'Login',
+                          onPressed: () {
+                            context.push('/crotpedia-login');
+                          },
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (state is DetailLoaded &&
+                      state.content.sourceId == SourceType.crotpedia.id &&
+                      state.isFavorited &&
+                      !state.isTogglingFavorite) {
+                    // This is where we might check if user was prompted to login
+                    // and came back? Not strictly needed if Cubit handles it.
+                  }
+                },
+                child: BlocBuilder<DetailCubit, DetailState>(
+                  builder: (context, state) {
+                    if (state is DetailLoading) {
+                      return _buildLoadingState(context);
+                    } else if (state is DetailLoaded) {
+                      return Stack(
+                        children: [
+                          _buildDetailContent(state, isOfflineMode),
+                          if (state is DetailOpeningChapter)
+                            Container(
+                              color: Colors.black.withValues(alpha: 0.5),
+                              child: const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                        ],
+                      );
+                    } else if (state is DetailError) {
+                      return _buildErrorState(state);
+                    }
+
+                    return const SizedBox.shrink();
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back,
+              color: Theme.of(context).colorScheme.onSurfaceVariant),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          AppLocalizations.of(context)!.loadingContentTitle,
+          style: TextStyleConst.headingMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+      body: const DetailScreenShimmer(),
+    );
+  }
+
+  Widget _buildDetailContent(DetailLoaded state, bool isOfflineMode) {
+    final content = state.content;
+
+    return Column(children: [
+      // Offline banner
+      if (isOfflineMode)
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          color: Theme.of(context).colorScheme.secondaryContainer,
+          child: Row(
+            children: [
+              Icon(
+                Icons.wifi_off,
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context)!.youAreOffline,
+                  style: TextStyleConst.bodySmall.copyWith(
+                    color: Theme.of(context).colorScheme.onSecondaryContainer,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () => _showGoOnlineDialog(context),
+                child: Text(
+                  AppLocalizations.of(context)!.goOnline,
+                  style: TextStyleConst.labelMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSecondaryContainer,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      // Main content
+      Expanded(
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            // App bar with cover image
+            SliverAppBar(
+              expandedHeight: 300,
+              pinned: true,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              leading: IconButton(
+                icon: Icon(Icons.arrow_back,
+                    color: Theme.of(context).colorScheme.onSurface),
+                onPressed: () => context.pop(),
+              ),
+              actions: [
+                // Offline indicator badge
+                if (isOfflineMode)
+                  Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.wifi_off,
+                        color: Theme.of(context).colorScheme.error,
+                        size: 20,
+                      ),
+                      onPressed: () => _showGoOnlineDialog(context),
+                      tooltip: AppLocalizations.of(context)!
+                          .youAreOfflineTapToGoOnline,
+                    ),
+                  ),
+                // Favorite button with feature flag check
+                BlocBuilder<DetailCubit, DetailState>(
+                  builder: (context, detailState) {
+                    if (detailState is! DetailLoaded) {
+                      return const SizedBox.shrink();
+                    }
+
+                    final remoteConfig = getIt<RemoteConfigService>();
+                    final favoriteEnabled = remoteConfig.isFeatureEnabled(
+                      detailState.content.sourceId,
+                      (f) => f.favorite,
+                    );
+
+                    return IconButton(
+                      icon: Icon(
+                        detailState.isFavorited
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color: detailState.isFavorited
+                            ? Theme.of(context).colorScheme.error
+                            : (favoriteEnabled
+                                ? Theme.of(context).colorScheme.onSurface
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.3)),
+                      ),
+                      onPressed:
+                          (detailState.isTogglingFavorite || !favoriteEnabled)
+                              ? null
+                              : () {
+                                  if (!favoriteEnabled) {
+                                    _showFeatureDisabledDialog('favorite');
+                                    return;
+                                  }
+                                  _detailCubit.toggleFavorite();
+                                },
+                    );
+                  },
+                ),
+                // Share button
+                IconButton(
+                  icon: Icon(Icons.share,
+                      color: Theme.of(context).colorScheme.onSurface),
+                  onPressed: () => _shareContent(content),
+                ),
+                // More options
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert,
+                      color: Theme.of(context).colorScheme.onSurface),
+                  color: Theme.of(context).colorScheme.surfaceContainer,
+                  onSelected: (value) => _handleMenuAction(value, content),
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'copy_link',
+                      child: Row(
+                        children: [
+                          Icon(Icons.link,
+                              color: Theme.of(context).colorScheme.onSurface),
+                          const SizedBox(width: 12),
+                          Text(
+                            AppLocalizations.of(context)!.copyLink,
+                            style: TextStyleConst.bodyMedium.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              flexibleSpace: FlexibleSpaceBar(
+                background: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Cover image with progressive loading
+                    ProgressiveImageWidget(
+                      networkUrl: content.imageUrls.isNotEmpty
+                          ? content.imageUrls.first
+                          : content.coverUrl,
+                      contentId: content.id,
+                      pageNumber: content.imageUrls.isNotEmpty ? 1 : null,
+                      isThumbnail: false,
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
+                      memCacheWidth: 800,
+                      memCacheHeight: 1200,
+                      httpHeaders: getIt<ContentSourceRegistry>()
+                          .getSource(content.sourceId)
+                          ?.getImageDownloadHeaders(imageUrl: content.coverUrl),
+                      placeholder: Container(
+                        color: Theme.of(context).colorScheme.surfaceContainer,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                      errorWidget: Container(
+                        color: Theme.of(context).colorScheme.surfaceContainer,
+                        child: Center(
+                          child: Icon(
+                            Icons.broken_image,
+                            size: 64,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Gradient overlay
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.transparent,
+                            Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.5),
+                            Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.8),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Content details
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title section
+                    _buildTitleSection(content),
+                    const SizedBox(height: 24),
+
+                    // Metadata section
+                    _buildMetadataSection(content),
+                    const SizedBox(height: 24),
+
+                    // Tags section
+                    _buildTagsSection(content),
+                    const SizedBox(height: 24),
+
+                    // Action buttons
+                    _buildActionButtons(content),
+                    const SizedBox(height: 24),
+
+                    // Related content section
+                    if (state.relatedContent != null &&
+                        state.relatedContent!.isNotEmpty) ...[
+                      _buildRelatedContentSection(state),
+                      const SizedBox(height: 20),
+                    ],
+
+                    // Comments section — gated by feature flag + maintenance check
+                    _buildCommentsGate(
+                      content,
+                      preloadedComments: state.comments ?? const [],
+                    ),
+                    const SizedBox(height: 32),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ]);
+  }
+
+  Widget _buildTitleSection(Content content) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          content.title,
+          style: TextStyleConst.headingLarge.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+            height: 1.3,
+          ),
+        ),
+        if (content.englishTitle != null &&
+            content.englishTitle != content.title) ...[
+          const SizedBox(height: 8),
+          Text(
+            content.englishTitle!,
+            style: TextStyleConst.bodyLarge.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+        if (content.japaneseTitle != null &&
+            content.japaneseTitle != content.title) ...[
+          const SizedBox(height: 4),
+          Text(
+            content.japaneseTitle!,
+            style: TextStyleConst.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildMetadataSection(Content content) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section header
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: Theme.of(context).colorScheme.primary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                AppLocalizations.of(context)!.contentInformation,
+                style: TextStyleConst.headingMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Metadata rows with enhanced styling
+          _buildMetadataRow('Source', content.source, Icons.dns_rounded),
+          _buildMetadataRow(
+              AppLocalizations.of(context)!.idLabel, content.id, Icons.tag),
+          if (content.chapters != null && content.chapters!.isNotEmpty)
+            _buildMetadataRow(AppLocalizations.of(context)!.chaptersTitle,
+                '${content.chapters!.length}', Icons.menu_book)
+          else if (content.pageCount > 0)
+            _buildMetadataRow(AppLocalizations.of(context)!.pagesLabel,
+                '${content.pageCount}', Icons.menu_book),
+          _buildMetadataRow(AppLocalizations.of(context)!.languageLabel,
+              _resolveDisplayLanguage(content), Icons.language),
+          if (content.artists.isNotEmpty)
+            _buildMetadataRow(AppLocalizations.of(context)!.artistLabel,
+                content.artists.join(', '), Icons.person),
+          if (content.characters.isNotEmpty)
+            _buildMetadataRow(AppLocalizations.of(context)!.charactersLabel,
+                content.characters.join(', '), Icons.people),
+          if (content.parodies.isNotEmpty)
+            _buildMetadataRow(AppLocalizations.of(context)!.parodiesLabel,
+                content.parodies.join(', '), Icons.movie),
+          if (content.groups.isNotEmpty)
+            _buildMetadataRow(AppLocalizations.of(context)!.groupsLabel,
+                content.groups.join(', '), Icons.group),
+          if (_formatDate(content.uploadDate) !=
+              AppLocalizations.of(context)!.unknown)
+            _buildMetadataRow(AppLocalizations.of(context)!.uploadedLabel,
+                _formatDate(content.uploadDate), Icons.schedule),
+          _buildMetadataRow(AppLocalizations.of(context)!.favoritesLabel,
+              _formatNumber(content.favorites), Icons.favorite),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetadataRow(String label, String value, [IconData? icon]) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+            color:
+                Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (icon != null) ...[
+            Icon(
+              icon,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              size: 18,
+            ),
+            const SizedBox(width: 12),
+          ],
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: TextStyleConst.labelMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyleConst.bodyLarge.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTagsSection(Content content) {
+    // Build a unified tag list. New API data has all types in content.tags;
+    // old cached data may only have type='tag' there, with artist/language
+    // stored in separate string fields. Always merge and deduplicate.
+    final seen = <String>{};
+    final allTags = <Tag>[];
+
+    void addTag(Tag tag) {
+      final key = '${tag.type}:${tag.name.toLowerCase()}';
+      if (seen.add(key)) allTags.add(tag);
+    }
+
+    for (final tag in content.tags) {
+      addTag(tag);
+    }
+
+    // Supplement from typed string fields (no-op if already present from tags)
+    if (content.language.isNotEmpty && content.language != 'unknown') {
+      addTag(Tag(id: 0, name: content.language, type: 'language', count: 0));
+    }
+    for (final a in content.artists) {
+      addTag(Tag(id: 0, name: a, type: 'artist', count: 0));
+    }
+    for (final c in content.characters) {
+      addTag(Tag(id: 0, name: c, type: 'character', count: 0));
+    }
+    for (final p in content.parodies) {
+      addTag(Tag(id: 0, name: p, type: 'parody', count: 0));
+    }
+    for (final g in content.groups) {
+      addTag(Tag(id: 0, name: g, type: 'group', count: 0));
+    }
+
+    if (allTags.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          AppLocalizations.of(context)!.tagsLabel,
+          style: TextStyleConst.headingSmall.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: allTags.map((tag) {
+            return GestureDetector(
+              onTap: () => _searchByTag(
+                tag.name,
+                tagId: tag.slug ?? tag.id.toString(),
+                tagType: tag.type,
+                sourceId: content.sourceId,
+              ),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _getTagColor(context, tag.type).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color:
+                        _getTagColor(context, tag.type).withValues(alpha: 0.5),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      tag.name,
+                      style: TextStyleConst.bodyMedium.copyWith(
+                        color: _getTagColor(context, tag.type),
+                      ),
+                    ),
+                    if (tag.count > 0) ...[
+                      const SizedBox(width: 4),
+                      Text(
+                        _formatNumber(tag.count),
+                        style: TextStyleConst.overline.copyWith(
+                          color: _getTagColor(context, tag.type)
+                              .withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons(Content content) {
+    // Check if chapters feature is enabled for this source
+    final remoteConfig = getIt<RemoteConfigService>();
+    final hasChaptersFeature =
+        remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.chapters);
+    final hasChapters = content.chapters?.isNotEmpty == true;
+
+    Logger().i('content.sourceId: ${content.sourceId}');
+    Logger().i('hasChaptersFeature: $hasChaptersFeature');
+    Logger().i('content.chapters: ${content.chapters}');
+    Logger().i('content.chapters.isNotEmpty: ${content.chapters?.isNotEmpty}');
+
+    // Chapter-based sources should either show chapter list or an explicit
+    // no-chapters message (without Read Now button).
+    if (hasChaptersFeature) {
+      if (hasChapters) {
+        return _buildChapterList(content);
+      }
+      return _buildNoChaptersNotice();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Read button - primary action
+          Expanded(
+            flex: 2,
+            child: SizedBox(
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: () =>
+                    _readContent(content, forceStartFromBeginning: true),
+                icon: const Icon(Icons.menu_book, size: 24),
+                label: Text(
+                  AppLocalizations.of(context)!.readNow,
+                  style: TextStyleConst.headingSmall.copyWith(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  elevation: 4,
+                  shadowColor: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.3),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Download button - conditional
+          if (getIt<RemoteConfigService>()
+              .isFeatureEnabled(content.sourceId, (f) => f.download)) ...[
+            const SizedBox(width: 8),
+            Expanded(
+              child: SizedBox(
+                height: 48,
+                child: DownloadButtonWidget(
+                  content: content,
+                  size: DownloadButtonSize.large,
+                  showText: true,
+                  showProgress: true,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoChaptersNotice() {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              l10n.noChaptersFound,
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChapterList(Content content) {
+    final chapters = content.chapters!;
+    final l10n = AppLocalizations.of(context)!;
+    final groupedChapters = _groupChaptersByLanguage(chapters);
+    final previewEntries = _buildChapterPreviewEntries(groupedChapters);
+    // Get chapter history from current state
+    final currentState = _detailCubit.state;
+    final chapterHistory = currentState is DetailLoaded
+        ? (currentState.chapterHistory ?? {})
+        : <String, History>{};
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context)
+                .colorScheme
+                .primaryContainer
+                .withValues(alpha: 0.15),
+            Theme.of(context).colorScheme.surfaceContainer,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color:
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Modern header with gradient background
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+                ],
+              ),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(18)),
+            ),
+            child: Row(
+              children: [
+                // Icon with gradient container
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context).colorScheme.primary,
+                        Theme.of(context).colorScheme.secondary,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.menu_book,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Title and count
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.chaptersTitle,
+                      style: TextStyleConst.headingMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      l10n.chapterCount(chapters.length),
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Modern interactive chapter cards
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(12),
+            // Show max 5 chapter rows initially (+ language headers)
+            itemCount: previewEntries.length,
+            itemBuilder: (context, index) {
+              final entry = previewEntries[index];
+              if (entry.isHeader) {
+                return Container(
+                  margin: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .secondaryContainer
+                        .withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .secondary
+                          .withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.translate,
+                        size: 14,
+                        color:
+                            Theme.of(context).colorScheme.onSecondaryContainer,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        entry.languageLabel ??
+                            AppLocalizations.of(context)!.languageLabel,
+                        style: TextStyleConst.labelMedium.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSecondaryContainer,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              final chapter = entry.chapter!;
+              final displayIndex = entry.chapterIndex ?? (index + 1);
+
+              // Create Content object for download widget
+              final chapterContent = Content(
+                id: chapter.id,
+                title: '${content.title} - ${chapter.title}',
+                coverUrl: content.coverUrl,
+                uploadDate: chapter.uploadDate ?? DateTime.now(),
+                language: content.language,
+                pageCount: 0,
+                imageUrls: const [],
+                sourceId: content.sourceId,
+                relatedContent: const [],
+                tags: content.tags,
+                artists: content.artists,
+                groups: content.groups,
+                characters: content.characters,
+                parodies: content.parodies,
+                favorites: 0,
+              );
+
+              // Check reading status for creative indicators
+              final isRead = chapterHistory.containsKey(chapter.id);
+              final isCompleted =
+                  isRead && chapterHistory[chapter.id]!.isCompleted;
+              final progress = isRead
+                  ? chapterHistory[chapter.id]!.lastPage /
+                      chapterHistory[chapter.id]!.totalPages
+                  : 0.0;
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isCompleted
+                        ? Theme.of(context)
+                            .colorScheme
+                            .tertiary
+                            .withValues(alpha: 0.5)
+                        : isRead
+                            ? Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.3)
+                            : Theme.of(context)
+                                .colorScheme
+                                .outline
+                                .withValues(alpha: 0.2),
+                    width: isRead ? 2 : 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: isCompleted
+                          ? Theme.of(context)
+                              .colorScheme
+                              .tertiary
+                              .withValues(alpha: 0.15)
+                          : isRead
+                              ? Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withValues(alpha: 0.1)
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .shadow
+                                  .withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _detailCubit.openChapter(chapter),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          // Chapter number badge with status-based styling
+                          Stack(
+                            children: [
+                              Container(
+                                width: 52,
+                                height: 52,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: isCompleted
+                                        ? [
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .tertiary,
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .tertiaryContainer,
+                                          ]
+                                        : isRead
+                                            ? [
+                                                Theme.of(context)
+                                                    .colorScheme
+                                                    .primary,
+                                                Theme.of(context)
+                                                    .colorScheme
+                                                    .secondary,
+                                              ]
+                                            : [
+                                                Theme.of(context)
+                                                    .colorScheme
+                                                    .primary,
+                                                Theme.of(context)
+                                                    .colorScheme
+                                                    .secondary,
+                                              ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: isCompleted
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .tertiary
+                                              .withValues(alpha: 0.4)
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withValues(alpha: 0.25),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: isCompleted
+                                      ? Icon(
+                                          Icons.check,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onTertiary,
+                                          size: 28,
+                                        )
+                                      : isRead
+                                          ? Stack(
+                                              alignment: Alignment.center,
+                                              children: [
+                                                Text(
+                                                  '$displayIndex',
+                                                  style: TextStyleConst
+                                                      .headingSmall
+                                                      .copyWith(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .onPrimary,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                                // Progress ring for in-progress
+                                                SizedBox(
+                                                  width: 40,
+                                                  height: 40,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    value: progress,
+                                                    strokeWidth: 3,
+                                                    backgroundColor: Colors
+                                                        .white
+                                                        .withValues(alpha: 0.3),
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                            Color>(
+                                                      Colors.white.withValues(
+                                                          alpha: 0.9),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                          : Text(
+                                              '$displayIndex',
+                                              style: TextStyleConst.headingSmall
+                                                  .copyWith(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 18,
+                                              ),
+                                            ),
+                                ),
+                              ),
+                              // Status dot indicator
+                              if (isRead)
+                                Positioned(
+                                  right: 0,
+                                  top: 0,
+                                  child: Container(
+                                    width: 14,
+                                    height: 14,
+                                    decoration: BoxDecoration(
+                                      color: isCompleted
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .tertiary
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .surface,
+                                        width: 2,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: (isCompleted
+                                                  ? Theme.of(context)
+                                                      .colorScheme
+                                                      .tertiary
+                                                  : Theme.of(context)
+                                                      .colorScheme
+                                                      .primary)
+                                              .withValues(alpha: 0.5),
+                                          blurRadius: 4,
+                                        ),
+                                      ],
+                                    ),
+                                    child: Icon(
+                                      isCompleted
+                                          ? Icons.done
+                                          : Icons.play_arrow,
+                                      size: 8,
+                                      color: isCompleted
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .onTertiary
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(width: 16),
+
+                          // Chapter info
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        chapter.title,
+                                        style:
+                                            TextStyleConst.bodyLarge.copyWith(
+                                          fontWeight: isRead
+                                              ? FontWeight.w700
+                                              : FontWeight.w600,
+                                          color: isCompleted
+                                              ? Theme.of(context)
+                                                  .colorScheme
+                                                  .tertiary
+                                              : isRead
+                                                  ? Theme.of(context)
+                                                      .colorScheme
+                                                      .primary
+                                                  : Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                // Subtitle row with reading info or upload date
+                                Row(
+                                  children: [
+                                    if (isRead) ...[
+                                      Icon(
+                                        isCompleted
+                                            ? Icons.check_circle
+                                            : Icons.auto_stories,
+                                        size: 12,
+                                        color: isCompleted
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .tertiary
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Flexible(
+                                        child: Text(
+                                          isCompleted
+                                              ? 'Chapter completed'
+                                              : 'Continue from page ${chapterHistory[chapter.id]!.lastPage}',
+                                          style:
+                                              TextStyleConst.bodySmall.copyWith(
+                                            color: isCompleted
+                                                ? Theme.of(context)
+                                                    .colorScheme
+                                                    .tertiary
+                                                : Theme.of(context)
+                                                    .colorScheme
+                                                    .primary,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ] else if (chapter.uploadDate != null) ...[
+                                      Icon(
+                                        Icons.schedule,
+                                        size: 12,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Flexible(
+                                        child: Text(
+                                          _formatDate(chapter.uploadDate!),
+                                          style:
+                                              TextStyleConst.bodySmall.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Action buttons
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Download button (if feature enabled)
+                              if (getIt<RemoteConfigService>().isFeatureEnabled(
+                                  content.sourceId, (f) => f.download)) ...[
+                                SizedBox(
+                                  width: 40,
+                                  height: 40,
+                                  child: DownloadButtonWidget(
+                                    content: chapterContent,
+                                    size: DownloadButtonSize.small,
+                                    showText: false,
+                                    showProgress: true,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+
+                              // Read button with status-based styling
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: isCompleted
+                                        ? [
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .tertiary,
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .tertiary
+                                                .withValues(alpha: 0.8),
+                                          ]
+                                        : [
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                                .withValues(alpha: 0.8),
+                                          ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: isCompleted
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .tertiary
+                                              .withValues(alpha: 0.3)
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withValues(alpha: 0.3),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Status icon based on reading progress
+                                    if (isCompleted)
+                                      Icon(
+                                        Icons.emoji_events,
+                                        size: 16,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onTertiary,
+                                      )
+                                    else if (isRead)
+                                      SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          value: progress,
+                                          strokeWidth: 2,
+                                          backgroundColor: Colors.white
+                                              .withValues(alpha: 0.3),
+                                          valueColor:
+                                              const AlwaysStoppedAnimation<
+                                                  Color>(
+                                            Colors.white,
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      Icon(
+                                        Icons.menu_book,
+                                        size: 16,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onPrimary,
+                                      ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      isCompleted
+                                          ? 'Read Again'
+                                          : isRead
+                                              ? 'Continue'
+                                              : l10n.readChapter,
+                                      style:
+                                          TextStyleConst.labelMedium.copyWith(
+                                        color: isCompleted
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .onTertiary
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .onPrimary,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      Icons.arrow_forward,
+                                      size: 16,
+                                      color: isCompleted
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .onTertiary
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+
+          if (chapters.length > 5)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => ChapterListBottomSheet(
+                        content: content,
+                        detailCubit: _detailCubit,
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.list),
+                  label: Text(l10n.viewAllChapters),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Map<String, List<Chapter>> _groupChaptersByLanguage(List<Chapter> chapters) {
+    final grouped = <String, List<Chapter>>{};
+    for (final chapter in chapters) {
+      final key = (chapter.language ?? '').trim().toLowerCase();
+      final normalized = key.isEmpty ? 'unknown' : key;
+      grouped.putIfAbsent(normalized, () => <Chapter>[]).add(chapter);
+    }
+
+    final sortedKeys = grouped.keys.toList()
+      ..sort((a, b) {
+        if (a == 'unknown') return 1;
+        if (b == 'unknown') return -1;
+        return a.compareTo(b);
+      });
+
+    return {for (final key in sortedKeys) key: grouped[key]!};
+  }
+
+  List<_ChapterListEntry> _buildChapterPreviewEntries(
+    Map<String, List<Chapter>> grouped,
+  ) {
+    final entries = <_ChapterListEntry>[];
+    var displayIndex = 1;
+    var chapterCount = 0;
+
+    for (final language in grouped.keys) {
+      final chapters = grouped[language]!;
+      final label = _formatChapterLanguageLabel(language);
+      entries.add(_ChapterListEntry.header(label));
+
+      for (final chapter in chapters) {
+        if (chapterCount >= 5) {
+          return entries;
+        }
+        entries.add(_ChapterListEntry.chapter(chapter, displayIndex));
+        displayIndex += 1;
+        chapterCount += 1;
+      }
+    }
+
+    return entries;
+  }
+
+  String _formatChapterLanguageLabel(String languageCode) {
+    final normalized = languageCode.trim().toLowerCase();
+    if (normalized.isEmpty || normalized == 'unknown') {
+      return AppLocalizations.of(context)!.languageLabel;
+    }
+    final langService = getIt<LanguageService>();
+    final name = langService.displayName(normalized);
+    final upper = normalized.toUpperCase();
+    return '$name ($upper)';
+  }
+
+  Widget _buildRelatedContentSection(DetailLoaded state) {
+    final content = state.content;
+    final relatedContent = state.relatedContent ?? [];
+
+    // Check if related content feature is enabled for this source
+    final remoteConfig = getIt<RemoteConfigService>();
+    final hasRelatedFeature =
+        remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.related);
+
+    if (!hasRelatedFeature || relatedContent.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          AppLocalizations.of(context)!.moreLikeThis,
+          style: TextStyleConst.headingSmall.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 280,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: relatedContent.length,
+            itemBuilder: (context, index) {
+              final relatedItem = relatedContent[index];
+              return _buildRelatedContentCard(relatedItem);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Gate widget for the comments section.
+  ///
+  /// Behaviour:
+  /// - Feature disabled in config → hidden (`SizedBox.shrink`)
+  /// - Feature enabled but under maintenance → shows maintenance banner
+  /// - Feature enabled and available → shows [CommentsSectionWidget]
+  Widget _buildCommentsGate(
+    Content content, {
+    List<Comment>? preloadedComments,
+  }) {
+    final remoteConfig = getIt<RemoteConfigService>();
+    final sourceId = content.sourceId;
+
+    // 1) Feature disabled entirely — hide
+    if (!remoteConfig.isFeatureEnabled(sourceId, (f) => f.comments)) {
+      return const SizedBox.shrink();
+    }
+
+    // 2) Feature enabled but under maintenance — show banner
+    final maintenance =
+        remoteConfig.getFeatureMaintenance(sourceId, 'comments');
+    if (maintenance != null) {
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color:
+                Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.construction_rounded,
+              color: Theme.of(context).colorScheme.onSecondaryContainer,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppLocalizations.of(context)!.commentsMaintenance,
+                    style: TextStyleConst.labelMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (maintenance.reason != null &&
+                      maintenance.reason!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      maintenance.reason!,
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSecondaryContainer
+                            .withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ],
+                  if (maintenance.estimatedRecovery != null &&
+                      maintenance.estimatedRecovery!.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '${AppLocalizations.of(context)!.estimatedRecovery}: ${maintenance.estimatedRecovery}',
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSecondaryContainer
+                            .withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 3) Feature enabled and available — show normally
+    return CommentsSectionWidget(
+      contentId: content.id,
+      preloadedComments: preloadedComments,
+    );
+  }
+
+  Widget _buildRelatedContentCard(Content relatedContent) {
+    return Container(
+      width: 160,
+      margin: const EdgeInsets.only(right: 12),
+      child: GestureDetector(
+        onTap: () => _navigateToRelatedContent(relatedContent),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Cover image
+            Container(
+              height: 200,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: Theme.of(context).colorScheme.surfaceContainer,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: ProgressiveImageWidget(
+                  networkUrl: relatedContent.coverUrl,
+                  contentId: relatedContent.id,
+                  isThumbnail: true,
+                  width: double.infinity,
+                  height: 200,
+                  fit: BoxFit.cover,
+                  memCacheWidth: 320,
+                  memCacheHeight: 400,
+                  httpHeaders: getIt<ContentSourceRegistry>()
+                      .getSource(relatedContent.sourceId)
+                      ?.getImageDownloadHeaders(
+                          imageUrl: relatedContent.coverUrl),
+                  placeholder: Container(
+                    color: Theme.of(context).colorScheme.surfaceContainer,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: Theme.of(context).colorScheme.primary,
+                        strokeWidth: 2,
+                      ),
+                    ),
+                  ),
+                  errorWidget: Container(
+                    color: Theme.of(context).colorScheme.surfaceContainer,
+                    child: Center(
+                      child: Icon(
+                        Icons.broken_image,
+                        size: 32,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // Title
+            Text(
+              relatedContent.title,
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+
+            // Metadata
+            if (relatedContent.artists.isNotEmpty)
+              Text(
+                relatedContent.artists.first,
+                style: TextStyleConst.overline.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(DetailError state) {
+    // Check if it's a login required error
+    final isLoginError = state.errorType == 'login_required';
+    final l10n = AppLocalizations.of(context)!;
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back,
+              color: Theme.of(context).colorScheme.onSurfaceVariant),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          isLoginError ? 'Authentication Required' : l10n.error,
+          style: TextStyleConst.headingMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+      body: Container(
+        color: Theme.of(context).colorScheme.surface,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Error icon with enhanced styling
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: isLoginError
+                        ? Theme.of(context).colorScheme.primaryContainer
+                        : Theme.of(context).colorScheme.errorContainer,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isLoginError
+                          ? Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withValues(alpha: 0.5)
+                          : Theme.of(context)
+                              .colorScheme
+                              .error
+                              .withValues(alpha: 0.5),
+                      width: 2,
+                    ),
+                  ),
+                  child: Icon(
+                    isLoginError ? Icons.lock_person : Icons.error_outline,
+                    size: 64,
+                    color: isLoginError
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.error,
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Error title
+                Text(
+                  isLoginError ? 'Login Required' : l10n.failedToLoadContent,
+                  style: TextStyleConst.headingLarge.copyWith(
+                    color: isLoginError
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.error,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+
+                // Error message in a container
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outline,
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    isLoginError
+                        ? 'You need to log in to Crotpedia to view this content.'
+                        : ErrorMessageUtils.getFriendlyErrorMessage(
+                            state.error, l10n),
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Action buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (isLoginError) ...[
+                      ElevatedButton.icon(
+                        onPressed: () => context.push('/crotpedia-login'),
+                        icon: const Icon(Icons.login),
+                        label: Text(l10n.login),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
+                          foregroundColor:
+                              Theme.of(context).colorScheme.onPrimary,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                    ] else if (state.canRetry) ...[
+                      ElevatedButton.icon(
+                        onPressed: () => _detailCubit.retryLoading(),
+                        icon: const Icon(Icons.refresh),
+                        label: Text(l10n.retry),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
+                          foregroundColor:
+                              Theme.of(context).colorScheme.onPrimary,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                    ],
+                    OutlinedButton.icon(
+                      onPressed: () => context.pop(),
+                      icon: const Icon(Icons.arrow_back),
+                      label: Text(l10n.goBack),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onSurfaceVariant,
+                        side: BorderSide(
+                            color: Theme.of(context).colorScheme.outline),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _resolveDisplayLanguage(Content content) {
+    final langService = getIt<LanguageService>();
+    final lang = content.language.toLowerCase();
+    if (lang.isNotEmpty && lang != 'unknown') {
+      return langService.displayName(lang);
+    }
+    // Fallback: check source config for a defaultLanguage field
+    final remoteConfig = getIt<RemoteConfigService>();
+    final rawConfig = remoteConfig.getRawConfig(content.sourceId);
+    final defaultLang =
+        (rawConfig?['defaultLanguage'] as String?)?.toLowerCase();
+    if (defaultLang != null && defaultLang.isNotEmpty) {
+      return langService.displayName(defaultLang);
+    }
+    return lang;
+  }
+
+  String _formatDate(DateTime date) {
+    final l10n = AppLocalizations.of(context)!;
+    final now = DateTime.now();
+
+    // Some sources use Unix epoch as a placeholder when upload date is unknown.
+    // Avoid showing misleading strings like "56 years ago" in the UI.
+    if (date.year <= 1971 || date.isAfter(now.add(const Duration(days: 1)))) {
+      return l10n.unknown;
+    }
+
+    final difference = now.difference(date);
+
+    if (difference.inDays > 365) {
+      final years = (difference.inDays / 365).floor();
+      return l10n.yearAgo(years, years > 1 ? 's' : '');
+    } else if (difference.inDays > 30) {
+      final months = (difference.inDays / 30).floor();
+      return l10n.monthAgo(months, months > 1 ? 's' : '');
+    } else if (difference.inDays > 0) {
+      return l10n.dayAgo(difference.inDays, difference.inDays > 1 ? 's' : '');
+    } else if (difference.inHours > 0) {
+      return l10n.hourAgo(
+          difference.inHours, difference.inHours > 1 ? 's' : '');
+    } else {
+      return l10n.justNow;
+    }
+  }
+
+  String _formatNumber(int number) {
+    if (number >= 1000000) {
+      return '${(number / 1000000).toStringAsFixed(1)}M';
+    } else if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(1)}K';
+    } else {
+      return number.toString();
+    }
+  }
+
+  /// Get theme-aware tag color based on tag type
+  Color _getTagColor(BuildContext context, String tagType) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    switch (tagType.toLowerCase()) {
+      case 'artist':
+        return colorScheme.primary;
+      case 'character':
+        return colorScheme.secondary;
+      case 'parody':
+        return colorScheme.tertiary;
+      case 'group':
+        return colorScheme.error;
+      case 'language':
+        // Use primary for language in light mode since onSurfaceVariant is too light
+        return isDarkMode ? colorScheme.onSurfaceVariant : colorScheme.primary;
+      case 'tag':
+      default:
+        // Use onSurface for default tags in light mode for better visibility
+        // In dark mode, outline works fine
+        return isDarkMode
+            ? colorScheme.outline
+            : colorScheme.onSurface.withValues(alpha: 0.8);
+    }
+  }
+
+  void _readContent(
+    Content content, {
+    bool forceStartFromBeginning = false,
+    Content? parentContent, // Parent series for chapter mode
+    ChapterData? chapterData, // Navigation data
+    Chapter? currentChapter, // Current chapter
+  }) {
+    // Get metadata from current state if available
+    final currentState = _detailCubit.state;
+    final imageMetadata =
+        currentState is DetailLoaded ? currentState.imageMetadata : null;
+
+    // Validate content before passing to reader
+    // If content has no images, pass null to force reader to fetch fresh content
+    final contentToPass = content.imageUrls.isNotEmpty ? content : null;
+    Logger().w('Content to pass: $contentToPass');
+
+    if (contentToPass == null) {
+      Logger().w(
+          '⚠️ Content passed from DetailScreen has no images, forcing reader to fetch fresh data: ${content.id}');
+    }
+
+    // Extract allChapters from parentContent
+    final allChapters = parentContent?.chapters;
+
+    // 🔍 DEBUG LOGGING - Chapter Data Flow
+    Logger().i('📤 DetailScreen._readContent - Sending to Reader:');
+    Logger().i('  contentId: ${content.id}');
+    Logger().i('  content.title: ${content.title}');
+    Logger().i('  parentContent: ${parentContent?.title ?? "NULL"}');
+    Logger().i('  parentContent.id: ${parentContent?.id ?? "NULL"}');
+    Logger().i('  allChapters count: ${allChapters?.length ?? 0}');
+    if (allChapters != null && allChapters.isNotEmpty) {
+      Logger().i('  allChapters[0]: ${allChapters.first.title}');
+      Logger().i('  allChapters[last]: ${allChapters.last.title}');
+    }
+    Logger().i('  currentChapter: ${currentChapter?.title ?? "NULL"}');
+    Logger().i('  currentChapter.id: ${currentChapter?.id ?? "NULL"}');
+    Logger().i('  chapterData.prevId: ${chapterData?.prevChapterId ?? "NULL"}');
+    Logger().i('  chapterData.nextId: ${chapterData?.nextChapterId ?? "NULL"}');
+
+    AppRouter.goToReader(
+      context,
+      content.id,
+      forceStartFromBeginning: forceStartFromBeginning,
+      content: contentToPass,
+      imageMetadata: imageMetadata, // Pass metadata to reader
+      chapterData: chapterData, // Pass navigation data
+      parentContent: parentContent, // Pass parent series
+      allChapters: allChapters, // Pass all chapters
+      currentChapter: currentChapter, // Pass current chapter
+    );
+  }
+
+  /// Get base URL for active source
+  String _getSourceBaseUrl() {
+    final sourceState = context.read<SourceCubit>().state;
+    return sourceState.activeSource?.baseUrl ?? 'https://nhentai.net';
+  }
+
+  /// Build source-aware content URL
+  String _buildContentUrl(Content content) {
+    // Prefer config-driven canonical web URL for sharing when available.
+    // This prevents sharing API detail endpoints for sources like MangaDex.
+    final configDrivenUrl = SourceUrlResolver.buildContentUrl(
+      remoteConfigService: getIt<RemoteConfigService>(),
+      sourceId: content.sourceId,
+      contentId: content.id,
+    );
+    if (configDrivenUrl.isNotEmpty) {
+      return configDrivenUrl;
+    }
+
+    if (content.sourceUrl != null && content.sourceUrl?.isNotEmpty == true) {
+      return content.sourceUrl!;
+    }
+
+    if (content.url != null && content.url?.isNotEmpty == true) {
+      return '${content.url}';
+    }
+
+    // Generic legacy fallback when no config/content URL is available.
+    final baseUrl = _getSourceBaseUrl();
+
+    // Keeps backward compatibility for nhentai-style routes.
+    return '$baseUrl/g/${content.id}/';
+  }
+
+  void _shareContent(Content content) async {
+    try {
+      // Create shareable link and message (source-aware)
+      final contentUrl = _buildContentUrl(content);
+      final shareText = _buildShareMessage(content, contentUrl);
+
+      // Share using share_plus package
+      await SharePlus.instance.share(
+        ShareParams(
+          text: shareText,
+          subject: content.title,
+        ),
+      );
+
+      // Show success feedback
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  Icons.check_circle,
+                  color: Theme.of(context).colorScheme.onSecondary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    AppLocalizations.of(context)!.sharePanelOpened,
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Theme.of(context).colorScheme.secondary,
+          ),
+        );
+      }
+    } catch (e) {
+      Logger().e('Error sharing content: $e');
+
+      // Fallback: copy to clipboard if sharing fails
+      final contentUrl = _buildContentUrl(content);
+      await Clipboard.setData(ClipboardData(text: contentUrl));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  Icons.content_copy,
+                  color: Theme.of(context).colorScheme.onError,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    AppLocalizations.of(context)!.shareFailed,
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onError,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Build share message with content details
+  String _buildShareMessage(Content content, String url) {
+    final List<String> messageParts = [];
+
+    // Add title
+    messageParts.add(content.title);
+
+    // Add metadata if available
+    final List<String> metadata = [];
+
+    if (content.artists.isNotEmpty) {
+      metadata.add('Artist: ${content.artists.first}');
+    }
+
+    if (content.pageCount > 0) {
+      metadata.add('${content.pageCount} pages');
+    }
+
+    if (content.language.isNotEmpty) {
+      metadata.add('Language: ${content.language.toUpperCase()}');
+    }
+
+    if (metadata.isNotEmpty) {
+      messageParts.add(metadata.join(' • '));
+    }
+
+    // Add URL
+    messageParts.add('Check it out: $url');
+
+    return messageParts.join('\n\n');
+  }
+
+  void _handleMenuAction(String action, Content content) {
+    final remoteConfig = getIt<RemoteConfigService>();
+
+    switch (action) {
+      case 'download':
+        // Check feature flag before downloading
+        if (!remoteConfig.isFeatureEnabled(
+            content.sourceId, (f) => f.download)) {
+          _showFeatureDisabledDialog('download');
+          return;
+        }
+        _startDownload(content);
+        break;
+      case 'copy_link':
+        _copyContentLink(content);
+        break;
+    }
+  }
+
+  /// Start download for the content
+  Future<void> _startDownload(Content content) async {
+    // Check if download feature is enabled
+    final remoteConfig = getIt<RemoteConfigService>();
+    if (!remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.download)) {
+      _showFeatureDisabledDialog('download');
+      return;
+    }
+
+    // Check permissions before starting download
+    if (!mounted) return;
+
+    final hasPermissions = await showPermissionRequestSheet(
+      context,
+      requireStorage: true,
+      requireNotification: true,
+    );
+
+    if (!mounted || !hasPermissions) {
+      if (mounted && !hasPermissions) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  Icons.error,
+                  color: Theme.of(context).colorScheme.onError,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    AppLocalizations.of(context)!.permissionDenied,
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onError,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      // Get download bloc and add download queue event
+      final downloadBloc = context.read<DownloadBloc>();
+      downloadBloc.add(DownloadQueueEvent(content: content));
+
+      // Show success feedback
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                Icons.download,
+                color: Theme.of(context).colorScheme.onSecondary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context)!
+                      .downloadStartedFor(content.title),
+                  style: TextStyleConst.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Theme.of(context).colorScheme.secondary,
+          action: SnackBarAction(
+            label: AppLocalizations.of(context)!.viewDownloadsAction,
+            textColor: Theme.of(context).colorScheme.onSecondary,
+            onPressed: () {
+              context.go('/downloads');
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      Logger().e('Error starting download: $e');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                Icons.error,
+                color: Theme.of(context).colorScheme.onError,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context)!
+                      .failedToStartDownload('Unknown error'),
+                  style: TextStyleConst.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onError,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  void _showFeatureDisabledDialog(String feature) {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.featureDisabledTitle),
+        content: Text(
+          feature == 'download'
+              ? l10n.downloadFeatureDisabled
+              : l10n.favoriteFeatureDisabled,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Copy content link to clipboard
+  void _copyContentLink(Content content) {
+    try {
+      // Generate shareable link - source-aware URL
+      final contentLink = _buildContentUrl(content);
+
+      // Copy to clipboard
+      Clipboard.setData(ClipboardData(text: contentLink));
+
+      // Show success feedback
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                Icons.check_circle,
+                color: Theme.of(context).colorScheme.onSecondary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context)!.linkCopiedToClipboard,
+                  style: TextStyleConst.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Theme.of(context).colorScheme.secondary,
+          action: SnackBarAction(
+            label: AppLocalizations.of(context)!.viewDownloadsAction,
+            textColor: Theme.of(context).colorScheme.onSecondary,
+            onPressed: () {
+              // Show copied link in a dialog for verification
+              if (mounted) {
+                _showCopiedLinkDialog(contentLink);
+              }
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      Logger().e('Error copying link: $e');
+
+      // Show error feedback
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                Icons.error,
+                color: Theme.of(context).colorScheme.onError,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context)!.failedToCopyLink,
+                  style: TextStyleConst.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onError,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  /// Show dialog with copied link for verification
+  void _showCopiedLinkDialog(String link) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+        title: Text(
+          AppLocalizations.of(context)!.copiedLink,
+          style: TextStyleConst.headingSmall.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              AppLocalizations.of(context)!.linkCopiedToClipboardDescription,
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+              ),
+              child: SelectableText(
+                link,
+                style: TextStyleConst.bodySmall.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              AppLocalizations.of(context)!.closeDialog,
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToRelatedContent(Content relatedContent) {
+    // Option 1: Replace current detail instead of push to avoid nested navigation
+    if (mounted) {
+      final encodedContentId = Uri.encodeComponent(relatedContent.id);
+      context.pushReplacement('/content/$encodedContentId');
+    }
+  }
+
+  void _showGoOnlineDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+        title: Text(
+          AppLocalizations.of(context)!.goOnlineDialogTitle,
+          style: TextStyleConst.headingSmall.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        content: Text(
+          AppLocalizations.of(context)!.goOnlineDialogContent,
+          style: TextStyleConst.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              AppLocalizations.of(context)!.cancel,
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              AppStateManager().setOfflineMode(false);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    AppLocalizations.of(context)!.goingOnline,
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSecondary,
+                    ),
+                  ),
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+            ),
+            child: Text(
+              AppLocalizations.of(context)!.goOnline,
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChapterListEntry {
+  const _ChapterListEntry._({
+    required this.isHeader,
+    this.languageLabel,
+    this.chapter,
+    this.chapterIndex,
+  });
+
+  factory _ChapterListEntry.header(String label) =>
+      _ChapterListEntry._(isHeader: true, languageLabel: label);
+
+  factory _ChapterListEntry.chapter(Chapter chapter, int chapterIndex) =>
+      _ChapterListEntry._(
+        isHeader: false,
+        chapter: chapter,
+        chapterIndex: chapterIndex,
+      );
+
+  final bool isHeader;
+  final String? languageLabel;
+  final Chapter? chapter;
+  final int? chapterIndex;
+}

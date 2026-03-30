@@ -1,0 +1,2703 @@
+{
+  "@@locale": "zh",
+
+  "errorNetwork": "网络连接错误，请检查您的网络设置。",
+  "errorServer": "服务器暂时无法响应，请稍后再试。",
+  "errorCloudflare": "检测到 Cloudflare 验证，请稍后重试。",
+  "errorParsing": "数据解析失败，内容可能已失效。",
+  "errorUnknown": "发生未知错误，请重试。",
+  "errorConnectionTimeout": "连接请求超时，请重试。",
+  "errorConnectionRefused": "连接被拒绝，服务器可能已停止服务。",
+  "appTitle": "Kuron",
+  "appSubtitle": "Enhanced Reading Experience",
+  "home": "首页",
+  "search": "搜索",
+  "favorites": "收藏",
+  "downloads": "下载",
+  "history": "阅读历史",
+  "randomGallery": "随机画廊",
+  "offlineContent": "离线内容",
+  "settings": "设置",
+  "appDisguise": "应用伪装",
+  "disguiseMode": "伪装模式",
+  "offline": "离线",
+  "about": "关于",
+  "supportDeveloper": "支持开发者",
+  "supportDeveloperSubtitle": "请我喝杯咖啡",
+  "donateMessage": "如果您觉得此应用有帮助，可以通过 QRIS 捐赠来支持开发。谢谢！☕",
+  "thankYouMessage": "感谢您的支持！",
+
+  "facebookPage": "Doujin Stash 3",
+  "facebookPageSubtitle": "点赞关注以支持我们",
+  "searchHint": "搜索内容...",
+  "searchPlaceholder": "输入搜索关键词",
+  "noResults": "未找到结果",
+  "searchSuggestions": "搜索建议",
+  "suggestions": "建议：",
+  "tapToLoadContent": "点击加载内容",
+  "checkInternetConnection": "请检查您的网络连接",
+  "trySwitchingNetwork": "尝试切换 WiFi 或移动数据",
+  "restartRouter": "如果使用 WiFi，请尝试重启路由器",
+  "checkWebsiteStatus": "检查目标网站是否正常运行",
+  "cloudflareBypassMessage": "网站受 Cloudflare 保护，正在尝试绕过验证。",
+  "forceBypass": "强制绕过",
+  "unableToProcessData": "无法处理返回数据，网站结构可能已变更。",
+  "reportIssue": "反馈问题",
+  "serverReturnedError": "服务器返回错误代码 {statusCode}，服务暂时不可用。",
+  "@serverReturnedError": {
+    "placeholders": {
+      "statusCode": {
+        "type": "int"
+      }
+    }
+  },
+  "searchResults": "搜索结果",
+  "failedToOpenBrowser": "无法打开浏览器",
+  "viewDownloads": "查看下载",
+  "clearSearch": "清除搜索",
+  "clearFilters": "清除筛选",
+  "anyLanguage": "任何语言",
+  "anyCategory": "任何类别",
+  "errorOpeningFilter": "打开筛选器选择时出错",
+  "errorBrowsingTag": "浏览标签时出错",
+  "shuffleToNextGallery": "随机切换到下一个画廊",
+  "contentHidden": "内容已隐藏",
+  "tapToViewAnyway": "点击仍然查看",
+  "checkOutThisGallery": "查看这个画廊！",
+  "galleriesPreloaded": "已预加载 {count} 个画廊",
+  "@galleriesPreloaded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "oopsSomethingWentWrong": "哎呀！出了点问题",
+  "cleanupInfo": "清理信息",
+  "loadingHistory": "加载中历史",
+  "clearingHistory": "清除历史记录...",
+  "areYouSureClearHistory": "您确定要清除所有阅读历史记录吗？此操作无法撤销。",
+  "justNow": "刚刚",
+  "artistCg": "画师 cg",
+  "gameCg": "游戏CG",
+  "manga": "漫画",
+  "doujinshi": "同人志",
+  "imageSet": "图集",
+  "cosplay": "Cosplay",
+  "artistcg": "画师CG",
+  "gamecg": "游戏CG",
+  "bigBreasts": "巨乳",
+  "soleFemale": "单女主",
+  "soleMale": "单男主",
+  "fullColor": "全彩",
+  "pleaseSetStorageLocation": "请先在设置中设置下载存储位置。",
+  "@pleaseSetStorageLocation": {
+    "description": "下载存储位置未设置时的错误消息"
+  },
+  "schoolgirlUniform": "女学生制服",
+  "tryADifferentSearchTerm": "尝试不同的搜索词",
+  "unknownError": "未知错误",
+  "loadingOfflineContent": "加载离线内容...",
+  "excludeTags": "排除标签",
+  "excludeGroups": "排除团体",
+  "excludeCharacters": "排除角色",
+  "excludeParodies": "排除原作",
+  "excludeArtists": "排除画师",
+  "noResultsFound": "未找到结果",
+  "tryAdjustingFilters": "尝试调整筛选条件或使用其他关键词。",
+  "tryDifferentKeywords": "尝试使用不同的关键词。",
+  "networkError": "网络连接错误，请检查网络设置。",
+  "serverError": "服务器错误",
+  "accessBlocked": "访问被阻止。正在尝试绕过保护...",
+  "tooManyRequests": "请求过多。请稍等片刻后重试。",
+  "errorProcessingResults": "处理搜索结果时出错。请重试。",
+  "invalidSearchParameters": "无效的搜索参数。请检查您的输入。",
+  "unexpectedError": "发生意外错误。请重试。",
+  "retryBypass": "重试 Bypass",
+  "retryConnection": "Retry 连接",
+  "retrySearch": "重试 搜索",
+  "networkErrorTitle": "网络 错误",
+  "serverErrorTitle": "服务器错误",
+  "unknownErrorTitle": "未知 错误",
+  "loadingContent": "加载中内容...",
+  "refreshingContent": "Refreshing 内容...",
+  "loadingMoreContent": "加载中 more 内容...",
+  "latestContent": "Latest 内容",
+  "noInternetConnection": "无网络连接",
+  "serverTemporarilyUnavailable": "服务器 is temporarily不可用. Please try again later.",
+  "failedToLoadContent": "无法load 内容",
+  "cloudflareProtectionDetected": "Cloudflare protection detected. Please wait and try again.",
+  "tooManyRequestsWait": "Too many requests. Please wait a moment before trying again.",
+  "noContentFoundMatching": "未找到content matching your 搜索criteria. Try adjusting your filters.",
+  "noContentFoundForTag": "未找到content for 标签 \"{tagName}\".",
+  "@noContentFoundForTag": {
+    "placeholders": {
+      "tagName": {
+        "type": "String"
+      }
+    }
+  },
+  "removeSomeFilters": "移除some filters",
+  "checkSpelling": "Check spelling",
+  "useGeneralTerms": "Use more general 搜索terms",
+  "browsePopularContent": "Browse 热门内容",
+  "tryBrowsingOtherTags": "Try browsing other tags",
+  "checkPopularContent": "Check 热门内容",
+  "useSearchFunction": "Use the 搜索function",
+  "checkInternetConnectionSuggestion": "检查您的网络连接",
+  "tryRefreshingPage": "尝试刷新页面",
+  "browsePopularContentSuggestion": "浏览热门内容",
+  "failedToInitializeSearch": "搜索初始化失败",
+  "noResultsFoundFor": "未找到 \"{query}\" 的相关结果",
+  "@noResultsFoundFor": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "searchingWithFilters": "正在根据筛选条件搜索...",
+  "noResultsFoundWithCurrentFilters": "当前筛选条件下未找到结果",
+  "invalidFilter": "无效的筛选器：{errors}",
+  "@invalidFilter": {
+    "placeholders": {
+      "errors": {
+        "type": "String"
+      }
+    }
+  },
+  "invalidSearchFilter": "无效的搜索筛选：{errors}",
+  "@invalidSearchFilter": {
+    "placeholders": {
+      "errors": {
+        "type": "String"
+      }
+    }
+  },
+  "pages": "页数",
+  "tags": "标签",
+  "language": "语言",
+  "uploadedOn": "上传于",
+  "readNow": "立即阅读",
+  "featured": "精选",
+  "confirmDownload": "确认下载",
+  "downloadConfirmation": "确定要下载吗？",
+  "confirmButton": "确认",
+  "download": "下载",
+  "downloading": "下载中",
+  "downloadCompleted": "下载完成",
+  "downloadFailed": "下载失败",
+  "initializing": "初始化中...",
+  "noContentToBrowse": "没有可加载到浏览器的内容",
+  "addToFavorites": "加入收藏",
+  "removeFromFavorites": "取消收藏",
+  "content": "内容",
+  "view": "查看",
+  "clearAll": "清空全部",
+  "exportList": "导出列表",
+  "unableToCheck": "无法检查连接状况",
+  "noContentAvailable": "暂无内容",
+  "noContentToDownload": "无可下载内容",
+  "noGalleriesFound": "此页面未找到画廊",
+  "noContentLoadedToBrowse": "没有可加载到浏览器的内容",
+  "showCachedContent": "显示缓存内容",
+  "openedInBrowser": "已在浏览器中打开",
+  "foundGalleries": "发现画廊",
+  "checkingDownloadStatus": "正在检查下载状态...",
+  "allGalleriesDownloaded": "所有画廊已下载",
+  "downloadStarted": "下载已开始",
+  "@downloadStarted": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadNewGalleries": "下载新画廊",
+  "downloadProgress": "下载进度",
+  "downloadComplete": "下载完成",
+  "downloadError": "下载错误",
+  "verifyingFiles": "校验文件",
+  "verifyingFilesWithTitle": "正在校验 {title}...",
+  "@verifyingFilesWithTitle": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "verifyingProgress": "校验中 ({progress}%)",
+  "@verifyingProgress": {
+    "placeholders": {
+      "progress": {"type": "int"}
+    }
+  },
+  "initializingDownloads": "正在初始化下载...",
+  "loadingDownloads": "正在加载下载...",
+  "pauseAll": "全部暂停",
+  "resumeAll": "全部继续",
+  "cancelAll": "全部取消",
+  "clearCompleted": "清除已完成",
+  "cleanupStorage": "清理存储",
+  "all": "全部",
+  "active": "进行中",
+  "completed": "已完成",
+  "noDownloadsYet": "暂无下载记录",
+  "noActiveDownloads": "没有进行中的下载",
+  "noQueuedDownloads": "没有排队中的下载",
+  "noCompletedDownloads": "没有已完成的下载",
+  "noFailedDownloads": "没有失败的下载",
+  "pdfConversionStarted": "已开始转换 PDF: {contentId}",
+  "@pdfConversionStarted": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelAllDownloads": "取消所有下载",
+  "cancelAllConfirmation": "确定要取消所有进行中的下载吗？此操作无法撤销。",
+  "cancelDownload": "取消下载",
+  "cancelDownloadConfirmation": "确定要取消此下载任务吗？当前进度将丢失。",
+  "removeDownload": "移除下载",
+  "removeDownloadConfirmation": "确定要从列表移除此下载吗？已下载的文件也将被删除。",
+  "cleanupConfirmation": "此操作将清理无用的文件和失败的下载记录，是否继续？",
+  "downloadDetails": "下载详情",
+  "status": "状态",
+  "progress": "进度",
+  "progressPercent": "进度 %",
+  "speed": "速度",
+  "size": "大小",
+  "started": "开始时间",
+  "ended": "结束时间",
+  "duration": "耗时",
+  "eta": "预计剩余时间",
+  "queued": "排队中",
+  "downloaded": "已下载",
+  "resume": "继续",
+  "failed": "失败",
+  "downloadListExported": "下载列表已导出",
+  "downloadAll": "全部下载",
+  "downloadRange": "范围下载",
+  "selectDownloadRange": "选择下载范围",
+  "totalPages": "总页数",
+  "useSliderToSelectRange": "使用滑块选择范围：",
+  "orEnterManually": "或手动输入：",
+  "startPage": "起始页",
+  "endPage": "结束页",
+  "quickSelections": "快速选择：",
+  "allPages": "所有页面",
+  "firstHalf": "前半部分",
+  "secondHalf": "后半部分",
+  "first10": "前 10 页",
+  "last10": "后 10 页",
+  "countAlreadyDownloaded": "已跳过 {count} 个已下载项",
+  "@countAlreadyDownloaded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newGalleriesToDownload": "• {count} 个新画廊待下载",
+  "@newGalleriesToDownload": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "alreadyDownloaded": "• {count} 个已存在 (将被跳过)",
+  "@alreadyDownloaded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadNew": "下载 {count} 个新项目",
+  "@downloadNew": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "queuedDownloads": "已添加 {count} 个新下载到队列",
+  "@queuedDownloads": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadInfo": "确定下载 {count} 个新画廊吗？\n\n这可能需要较长时间并占用大量存储空间。",
+  "@downloadInfo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "failedToDownload": "下载画廊失败",
+  "selectedPagesTo": "已选：第 {start} 页 至 第 {end} 页",
+  "@selectedPagesTo": {
+    "placeholders": {
+      "start": {
+        "type": "int"
+      },
+      "end": {
+        "type": "int"
+      }
+    }
+  },
+  "pagesPercentage": "{count} 页 ({percentage}%)",
+  "@pagesPercentage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "percentage": {
+        "type": "String"
+      }
+    }
+  },
+  "rangeDownloadStarted": "范围下载已开始：{title} ({pageText})",
+  "@rangeDownloadStarted": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "pageText": {
+        "type": "String"
+      }
+    }
+  },
+  "opening": "正在打开：{title}",
+  "@opening": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "lastUpdatedLabel": "更新于:",
+  "rangeLabel": "范围:",
+  "ofWord": "/",
+  "waitAndTry": "请等待 {minutes} 分钟后再试",
+  "@waitAndTry": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "serviceUnderMaintenance": "服务可能正在维护中",
+  "waitForBypass": "等待自动绕过完成",
+  "tryUsingVpn": "尝试使用 VPN",
+  "checkBackLater": "请过几分钟再来看看",
+  "tryRefreshingContent": "尝试刷新内容",
+  "checkForAppUpdate": "检查应用更新",
+  "reportIfPersists": "如果问题持续存在，请反馈",
+  "maintenanceTakesHours": "维护通常需要几个小时",
+  "checkSocialMedia": "查看社交媒体获取最新消息",
+  "tryAgainLater": "请稍后重试",
+  "serverUnavailable": "服务器当前不可用，请稍后再试。",
+  "useBroaderSearchTerms": "使用更宽泛的搜索词",
+  
+  "welcomeTitle": "欢迎使用 Kuron！",
+  "welcomeMessage": "感谢您安装我们的应用。在开始之前，请注意：",
+  "ispBlockingInfo": "🚨 ISP 封锁通知",
+  "ispBlockingMessage": "如果此应用被您的 ISP（互联网服务提供商）封锁，请使用 VPN（如 Cloudflare WARP 1.1.1.1）来访问内容。",
+  "downloadWarp": "下载 1.1.1.1 VPN",
+  "permissionsRequired": "所需权限",
+  "storagePermissionInfo": "📁 存储：下载和离线保存内容所需",
+  "notificationPermissionInfo": "🔔 通知：显示下载进度和完成通知所需",
+  "grantStoragePermission": "授予存储权限",
+  "grantNotificationPermission": "授予通知权限",
+  "storageGranted": "✅ 存储权限已授予",
+  "notificationGranted": "✅ 通知权限已授予",
+  "getStarted": "开始使用",
+  "pleaseGrantAllPermissions": "请授予所有必需的权限以继续",
+  "permissionDenied": "权限被拒绝。某些功能可能无法正常工作。",
+  
+  "loadingFavorites": "正在加载收藏...",
+  "errorLoadingFavorites": "加载收藏失败",
+  "removeFavorite": "取消收藏",
+  "removeFavoriteConfirmation": "确定要将此内容移出收藏夹吗？",
+  "removeAction": "移除",
+  "deleteFavorites": "删除收藏",
+  "deleteFavoritesConfirmation": "确定要删除 {count} 个收藏项吗？",
+  "@deleteFavoritesConfirmation": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "s": {
+        "type": "String"
+      }
+    }
+  },
+  "exportFavorites": "导出收藏",
+  "noFavoritesYet": "暂无收藏。快去添加一些喜欢的内容吧！",
+  "@noFavoritesYet": {
+    "description": "Message shown when user has no favorites"
+  },
+  "exportingFavorites": "正在导出收藏...",
+  "exportComplete": "导出完成",
+  "exportedFavoritesCount": "成功导出 {count} 个收藏项。",
+  "@exportedFavoritesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "exportFailed": "导出失败: {error}",
+  "@exportFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "selectedCount": "已选择 {count} 项",
+  "@selectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selectFavorites": "选择收藏",
+  "exportAction": "导出",
+  "refreshAction": "刷新",
+  "deleteSelected": "删除所选",
+  "searchFavorites": "搜索收藏...",
+  "selectAll": "全选",
+  "clearSelection": "清除",
+  "removingFromFavorites": "正在移除收藏...",
+  "removedFromFavorites": "已移除收藏",
+  "failedToRemoveFavorite": "移除收藏失败: {error}",
+  "@failedToRemoveFavorite": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "removedFavoritesCount": "已移除 {count} 个收藏",
+  "@removedFavoritesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "failedToRemoveFavorites": "批量移除失败: {error}",
+  "@failedToRemoveFavorites": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "appearance": "外观",
+  "theme": "主题",
+  "imageQuality": "图片质量",
+  "blurThumbnails": "模糊缩略图",
+  "blurThumbnailsDescription": "对卡片图片应用模糊效果以保护隐私",
+  "gridColumns": "网格列数 (竖屏)",
+  "reader": "阅读器",
+  "showSystemUIInReader": "阅读时显示系统界面",
+  "historyCleanup": "历史清理",
+  "autoCleanupHistory": "自动清理历史",
+  "automaticallyCleanOldReadingHistory": "自动清理旧的阅读历史记录",
+  "cleanupInterval": "清理间隔",
+  "howOftenToCleanupHistory": "执行清理的频率",
+  "maxHistoryDays": "保留历史天数",
+  "maximumDaysToKeepHistory": "保留历史记录的最大天数 (0 = 无限)",
+  "cleanupOnInactivity": "闲置清理",
+  "cleanHistoryWhenAppUnused": "应用未使用多天后自动清理",
+  "inactivityThreshold": "闲置阈值",
+  "daysOfInactivityBeforeCleanup": "触发清理的闲置天数",
+  "resetToDefault": "恢复默认",
+  "resetToDefaults": "恢复默认设置",
+  "generalSettings": "通用设置",
+  "displaySettings": "显示设置",
+  "darkMode": "深色模式",
+  "lightMode": "浅色模式",
+  "systemMode": "跟随系统",
+  "appLanguage": "应用语言",
+  "allowAnalytics": "允许分析统计",
+  "privacyAnalytics": "隐私分析",
+  "termsAndConditions": "条款与条件",
+  "termsAndConditionsSubtitle": "用户协议和免责声明",
+  "privacyPolicy": "隐私政策",
+  "privacyPolicySubtitle": "数据处理方式说明",
+  "faq": "常见问题",
+  "faqSubtitle": "常见问题解答",
+  "resetSettings": "重置设置",
+  "resetReaderSettings": "重置阅读器设置",
+  "resetReaderSettingsConfirmation": "这将重置阅读器的所有设置到默认值：\n\n",
+  "readingModeLabel": "阅读模式：水平翻页",
+  "keepScreenOnLabel": "保持屏幕常亮：关",
+  "showUILabel": "显示界面：开",
+  "areYouSure": "确定要继续吗？",
+  "readerSettingsResetSuccess": "阅读器设置已恢复默认。",
+  "failedToResetSettings": "重置设置失败：{error}",
+  "readingHistory": "阅读历史",
+  "clearAllHistory": "清空历史",
+  "manualCleanup": "手动清理",
+  "cleanupSettings": "清理设置",
+  "removeFromHistory": "从历史中移除",
+  "removeFromHistoryQuestion": "确定移除此历史记录？",
+  "cleanup": "清理",
+  "failedToLoadCleanupStatus": "无法加载清理状态",
+  "manualCleanupConfirmation": "将根据当前设置执行清理，是否继续？",
+  "noReadingHistory": "暂无阅读历史",
+  "errorLoadingHistory": "加载历史记录出错",
+  "nextPage": "下一页",
+  "previousPage": "上一页",
+  "pageOf": " / ",
+  "fullscreen": "全屏",
+  "exitFullscreen": "退出全屏",
+  "checkingConnection": "正在检查连接...",
+  "backOnline": "网络已恢复！所有功能可用。",
+  "stillNoInternet": "网络连接仍不可用。",
+  "unableToCheckConnection": "无法检查连接。",
+  "connectionError": "连接错误",
+  "low": "低",
+  "medium": "中",
+  "high": "高",
+  "original": "原图",
+  "lowFaster": "低 (较快)",
+  "highBetterQuality": "高 (较清晰)",
+  "originalLargest": "原图 (最大)",
+  "lowQuality": "低 (较快)",
+  "mediumQuality": "中",
+  "highQuality": "高 (较清晰)",
+  "originalQuality": "原图 (最大)",
+  "dark": "深色",
+  "light": "浅色",
+  "amoled": "AMOLED",
+  "english": "英语",
+  "japanese": "日语",
+  "indonesian": "印尼语",
+  "chinese": "简体中文",
+  "comfortReading": "舒适阅读",
+  "sortBy": "排序",
+  "filterBy": "筛选",
+  "recent": "最近",
+  "popular": "热门",
+  "oldest": "最早",
+  "ok": "确定",
+  "cancel": "取消",
+  "exitApp": "退出应用",
+  "areYouSureExit": "Are you sure you want to 退出 the 应用?",
+  "exit": "退出",
+  "delete": "删除",
+  "confirm": "确认",
+  "loading": "加载中...",
+  "error": "错误",
+  "retry": "重试",
+  "tryAgain": "重试",
+  "save": "保存",
+  "edit": "编辑",
+  "close": "关闭",
+  "clear": "清除",
+  "remove": "移除",
+  "share": "分享",
+  "goBack": "返回",
+  "yes": "是",
+  "no": "否",
+  "previous": "上一页",
+  "next": "下一页",
+  "goToDownloads": "转到下载",
+  "retryAction": "重试",
+  "hours": "{count} 小时",
+  "@hours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "days": "{count} 天",
+  "@days": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "unknown": "未知",
+  "daysAgo": "{count}{suffix}前",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
+  "hoursAgo": "{count}{suffix}前",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
+  "minutesAgo": "{count}{suffix}前",
+  "@minutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
+  "noData": "无数据",
+  "unknownTitle": "未知标题",
+  "offlineContentError": "离线内容错误",
+  "other": "其他",
+  "confirmResetSettings": "确定要恢复所有默认设置吗？",
+  "reset": "重置",
+  "manageAutoCleanupDescription": "管理阅读历史的自动清理策略以节省空间。",
+  "nextCleanup": "下次清理",
+  "historyStatistics": "历史记录统计",
+  "totalItems": "总数",
+  "lastCleanup": "上次清理",
+  "lastAppAccess": "上次使用",
+  "oneDay": "1 天",
+  "twoDays": "2 天",
+  "oneWeek": "1 周",
+  "privacyInfoText": "• 数据仅存储在本地设备\n• 不会上传至任何外部服务器\n• 仅用于优化应用性能\n• 可随时关闭",
+  "unlimited": "无限制",
+  "daysValue": "{days} 天",
+  "@daysValue": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "analyticsSubtitle": "利用本地数据辅助开发优 (不共享)",
+  "loadingError": "加载错误",
+  "jumpToPage": "跳转到页",
+  "pageInputLabel": "页码 (1-{maxPages})",
+  "@pageInputLabel": {
+    "placeholders": {
+      "maxPages": {
+        "type": "int"
+      }
+    }
+  },
+  "pageOfPages": "第 {current} 页，共 {total} 页",
+  "@pageOfPages": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "jump": "跳转",
+  "readerSettings": "阅读器设置",
+  "readingMode": "阅读模式",
+  "horizontalPages": "水平翻页",
+  "verticalPages": "垂直翻页",
+  "continuousScroll": "连续卷轴",
+  "keepScreenOn": "保持屏幕常亮",
+  "keepScreenOnDescription": "阅读时防止屏幕自动关闭",
+  "platformNotSupported": "平台不支持",
+  "platformNotSupportedBody": "Kuron 专为 Android 设备设计。",
+  "platformNotSupportedInstall": "请在 Android 设备上安装并运行此应用。",
+  "storagePermissionRequired": "下载功能需要存储权限，请在设置中授予权限。",
+  "storagePermissionExplanation": "应用需要存储权限才能将文件下载到您的设备（Downloads/nhasix 文件夹）。",
+  "grantPermission": "授予权限",
+  "permissionRequired": "权限受限",
+  "storagePermissionSettingsPrompt": "文件下载需要存储权限。请在应用设置中开启存储权限。",
+  "openSettings": "打开设置",
+  "readingHistoryMessage": "您的阅读历史将在这里显示。",
+  "startReading": "开始阅读",
+  "searchSomethingInteresting": "搜索些有趣的内容吧",
+  "checkOutFeaturedItems": "查看精选内容",
+  "appSubtitleDescription": "非官方 Nhentai 客户端",
+  "downloadedGalleries": "已下载图集",
+  "favoriteGalleries": "收藏图集",
+  "viewHistory": "查看历史",
+  "openInBrowser": "在浏览器中打开",
+  "downloadAllGalleries": "下载此页面中的所有画廊",
+  "featureDisabledTitle": "功能不可用",
+  "downloadFeatureDisabled": "此来源不支持下载功能",
+  "favoriteFeatureDisabled": "此来源不支持收藏功能",
+  "featureNotAvailable": "此功能当前不可用",
+  "chaptersTitle": "章节",
+  "chapterCount": "{count} 个章节",
+  "@chapterCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "readChapter": "阅读",
+  "downloadChapter": "下载章节",
+  "enterPageNumber": "输入页码 (1 - {totalPages})",
+  "@enterPageNumber": {
+    "placeholders": {
+      "totalPages": {
+        "type": "int"
+      }
+    }
+  },
+  "pageNumber": "页码",
+  "go": "前往",
+  "validPageNumberError": "请输入有效的页码 (1 - {totalPages})",
+  "@validPageNumberError": {
+    "placeholders": {
+      "totalPages": {
+        "type": "int"
+      }
+    }
+  },
+  "tapToJump": "点击跳转",
+  "goToPage": "跳转到页",
+  "previousPageTooltip": "上一页",
+  "nextPageTooltip": "下一页",
+  "tapToJumpToPage": "点击跳转到其他页",
+  "loadingContentTitle": "加载内容中",
+  "loadingContentDetails": "加载内容详情中",
+  "fetchingMetadata": "正在获取元数据和图片...",
+  "thisMayTakeMoments": "这可能需要一点时间",
+  "youAreOffline": "当前处于离线状态，部分功能受限。",
+  "goOnline": "切换至在线",
+  "youAreOfflineTapToGoOnline": "当前离线，点击切换至在线模式。",
+  "contentInformation": "内容信息",
+  "copyLink": "复制链接",
+  "moreOptions": "更多选项",
+  "moreLikeThis": "类似推荐",
+  "statistics": "统计信息",
+  "shareContent": "分享内容",
+  "sharePanelOpened": "分享面板已打开！",
+  "shareFailed": "分享失败，链接已复制到剪贴板",
+  "downloadStartedFor": "已开始下载 \"{title}\"",
+  "@downloadStartedFor": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "viewDownloadsAction": "查看",
+  "failedToStartDownload": "无法开始下载: {error}",
+  "linkCopiedToClipboard": "链接已复制",
+  "failedToCopyLink": "复制链接失败，请重试。",
+  "copiedLink": "已复制链接",
+  "linkCopiedToClipboardDescription": "以下链接已复制到您的剪贴板：",
+  "closeDialog": "关闭",
+  "goOnlineDialogTitle": "切换至在线",
+  "goOnlineDialogContent": "您当前处于离线模式。是否切换到在线模式以获取最新内容？",
+  "goingOnline": "正在上线...",
+  "viewAllChapters": "查看所有章节",
+  "searchChapters": "搜索章节...",
+  "noChaptersFound": "未找到章节",
+  "idLabel": "ID",
+  "pagesLabel": "页数",
+  "languageLabel": "语言",
+  "artistLabel": "画师",
+  "charactersLabel": "角色",
+  "parodiesLabel": "原作",
+  "groupsLabel": "社团",
+  "uploadedLabel": "Uploaded",
+  "favoritesLabel": "收藏",
+  "tagsLabel": "标签",
+  "artistsLabel": "画师",
+  "relatedLabel": "相关",
+  "yearAgo": "{count} 年前",
+  "@yearAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "monthAgo": "{count} 个月前",
+  "@monthAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "dayAgo": "{count} 天前",
+  "@dayAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "hourAgo": "{count} 小时前",
+  "@hourAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "selectFavoritesTooltip": "选择收藏",
+  "deleteSelectedTooltip": "已选择删除项",
+  "selectAllAction": "全选",
+  "clearAction": "清除",
+  "selectedCountFormat": "{selected} / {total}",
+  "@selectedCountFormat": {
+    "placeholders": {
+      "selected": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "loadingFavoritesMessage": "正在加载收藏...",
+  "deletingFavoritesMessage": "正在删除收藏...",
+  "removingFromFavoritesMessage": "正在从收藏中移除...",
+  "favoritesDeletedMessage": "收藏删除成功",
+  "failedToDeleteFavoritesMessage": "删除收藏失败",
+  "confirmDeleteFavoritesTitle": "删除收藏",
+  "confirmDeleteFavoritesMessage": "确定要删除 {count} 个收藏吗？",
+  "@confirmDeleteFavoritesMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "exportFavoritesTitle": "导出收藏",
+  "exportingFavoritesMessage": "正在导出收藏...",
+  "favoritesExportedMessage": "收藏导出成功",
+  "failedToExportFavoritesMessage": "导出收藏失败",
+  "searchFavoritesHint": "搜索收藏...",
+  "searchOfflineContentHint": "搜索离线内容...",
+  "failedToLoadPage": "无法加载第 {pageNumber} 页",
+  "@failedToLoadPage": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "failedToLoad": "加载失败",
+  "loginRequiredForAction": "此操作需要登录",
+  "login": "登录",
+  "offlineContentTitle": "离线内容",
+  "favorited": "已收藏",
+  "favorite": "收藏",
+  "errorLoadingFavoritesTitle": "加载收藏出错",
+  "filterDataTitle": "筛选数据",
+  "clearAllAction": "清除全部",
+  "searchFilterHint": "搜索 {filterType}...",
+  "@searchFilterHint": {
+    "placeholders": {
+      "filterType": {
+        "type": "String"
+      }
+    }
+  },
+  "selectedCountFormat2": "已选 ({count})",
+  "@selectedCountFormat2": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "errorLoadingFilterDataTitle": "加载筛选数据出错",
+  "noFilterTypeAvailable": "无可用 {filterType}",
+  "@noFilterTypeAvailable": {
+    "placeholders": {
+      "filterType": {
+        "type": "String"
+      }
+    }
+  },
+  "noResultsFoundForQuery": "未找到 \"{query}\" 的结果",
+  "@noResultsFoundForQuery": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "contentNotFoundTitle": "内容未找到",
+  "contentNotFoundMessage": "未找到 ID 为 \"{contentId}\" 的内容。",
+  "@contentNotFoundMessage": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "filterCategoriesTitle": "筛选分类",
+  "searchTitle": "搜索",
+  "advancedSearchTitle": "高级搜索",
+  "enterSearchQueryHint": "输入搜索关键词 (例如 \"big breasts english\")",
+  "popularSearchesTitle": "热门搜索",
+  "recentSearchesTitle": "最近搜索",
+  "pressSearchButtonMessage": "点击搜索按钮以应用当前筛选条件",
+  "searchingMessage": "搜索中...",
+  "resultsCountFormat": "{count} 个结果",
+  "@resultsCountFormat": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "viewInMainAction": "在主页查看",
+  "searchErrorTitle": "搜索错误",
+  "noResultsFoundTitle": "未找到结果",
+  "pageText": "第 {pageNumber} 页",
+  "@pageText": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "pagesText": "页数 {startPage}-{endPage}",
+  "@pagesText": {
+    "placeholders": {
+      "startPage": {
+        "type": "int"
+      },
+      "endPage": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineStatus": "离线",
+  "onlineStatus": "在线",
+  "errorOccurred": "发生错误",
+  "tapToRetry": "点击重试",
+  "helpTitle": "帮助",
+  "helpNoResults": "未找到相关搜索结果",
+  "helpTryDifferent": "尝试使用不同的关键词或检查拼写",
+  "helpUseFilters": "使用筛选器缩小搜索范围",
+  "helpCheckConnection": "检查您的网络连接",
+  "sendReportText": "发送报告",
+  "technicalDetailsTitle": "技术详情",
+  "reportSentText": "报告已发送！",
+  "suggestionCheckConnection": "检查网络连接",
+  "suggestionTryWifiMobile": "尝试切换 WiFi 或移动数据",
+  "suggestionRestartRouter": "如果使用 WiFi，请尝试重启路由器",
+  "suggestionCheckWebsite": "检查网站是否宕机",
+  "noContentFoundWithQuery": "未找到 \"{query}\" 的内容。尝试调整关键词或筛选器。",
+  "@noContentFoundWithQuery": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "noContentFound": "未找到内容。尝试调整关键词或筛选器。",
+  "suggestionTryDifferentKeywords": "尝试不同的关键词",
+  "suggestionRemoveFilters": "移除部分筛选器",
+  "suggestionCheckSpelling": "检查拼写",
+  "suggestionUseBroaderTerms": "使用更宽泛的搜索词",
+  "underMaintenanceTitle": "维护中",
+  "underMaintenanceMessage": "服务正在维护中，请稍后再试。",
+  "suggestionMaintenanceHours": "维护通常需要几个小时",
+  "suggestionCheckSocial": "查看社交媒体获取更新",
+  "suggestionTryLater": "请稍后重试",
+  "includeFilter": "包含",
+  "excludeFilter": "排除",
+  "overallProgress": "总进度",
+  "total": "总计",
+  "done": "完成",
+  "downloadsFailed": "{count} 个下载失败",
+  "@downloadsFailed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "processing": "处理中...",
+  "readingCompleted": "已完成",
+  "readAgain": "再次阅读",
+  "continueReading": "继续阅读",
+  "lessThanOneMinute": "少于 1 分钟",
+  "readingTime": "阅读时长",
+  "downloadActions": "下载操作",
+  "pause": "暂停",
+  "convertToPdf": "转换为 PDF",
+  "details": "详情",
+  "downloadActionPause": "暂停",
+  "downloadActionResume": "继续",
+  "downloadActionCancel": "取消",
+  "downloadActionRetry": "重试",
+  "downloadActionConvertToPdf": "转换为 PDF",
+  "downloadActionDetails": "详情",
+  "downloadActionRemove": "移除",
+  "downloadPagesRangeFormat": "{downloaded}/{total} (第 {start}-{end} 页，共 {totalPages} 页)",
+  "@downloadPagesRangeFormat": {
+    "placeholders": {
+      "downloaded": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "start": {
+        "type": "int"
+      },
+      "end": {
+        "type": "int"
+      },
+      "totalPages": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadPagesFormat": "{downloaded}/{total}",
+  "@downloadPagesFormat": {
+    "placeholders": {
+      "downloaded": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadContentTitle": "内容 {contentId}",
+  "@downloadContentTitle": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadEtaLabel": "预计剩余: {duration}",
+  "@downloadEtaLabel": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadSettingsTitle": "下载设置",
+  "performanceSection": "性能",
+  "maxConcurrentDownloads": "最大并发下载数",
+  "concurrentDownloadsWarning": "较高的值可能会消耗更多带宽和设备资源",
+  "imageQualityLabel": "图片质量",
+  "autoRetrySection": "自动重试",
+  "autoRetryFailedDownloads": "自动重试失败的下载",
+  "autoRetryDescription": "自动重试失败的下载任务",
+  "maxRetryAttempts": "最大重试次数",
+  "networkSection": "网络",
+  "wifiOnlyLabel": "仅 WiFi",
+  "wifiOnlyDescription": "仅在连接 WiFi 时下载",
+  "downloadTimeoutLabel": "下载超时",
+  "notificationsSection": "通知",
+  "enableNotificationsLabel": "启用通知",
+  "enableNotificationsDescription": "显示下载进度通知",
+  "minutesUnit": "分钟",
+  "searchContentHint": "搜索内容...",
+  "hideFiltersTooltip": "隐藏筛选",
+  "showMoreFiltersTooltip": "显示更多筛选",
+  "advancedFiltersTitle": "高级筛选",
+  "sortByLabel": "排序方式",
+  "categoryLabel": "分类",
+  "includeTagsLabel": "包含标签 (逗号分隔)",
+  "includeTagsHint": "例如: romance, comedy, school",
+  "excludeTagsLabel": "排除标签",
+  "excludeTagsHint": "例如: horror, violence",
+  "artistsHint": "例如: artist1, artist2",
+  "pageCountRangeTitle": "页数范围",
+  "minPagesLabel": "最少页数",
+  "maxPagesLabel": "最多页数",
+  "rangeToSeparator": "至",
+  "popularTagsTitle": "热门标签",
+  "filtersActiveLabel": "生效中",
+  "clearAllFilters": "清除全部",
+  "initializingApp": "正在初始化应用...",
+  "settingUpComponents": "正在设置组件并检查连接...",
+  "bypassingProtection": "正在绕过防护并建立连接...",
+  "connectionFailed": "连接失败",
+  "readyToGo": "准备就绪！",
+  "launchingApp": "正在启动主应用...",
+  "imageNotAvailable": "图片不可用",
+  "loadingPage": "正在加载第 {pageNumber} 页...",
+  "@loadingPage": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "selectedItemsCount": "已选择 {count} 项",
+  "@selectedItemsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noImage": "无图",
+  "youAreOfflineShort": "当前处于离线状态",
+  "someFeaturesLimited": "部分功能受限。请连接网络以获取完整体验。",
+  "wifi": "WIFI",
+  "ethernet": "以太网",
+  "mobile": "移动网络",
+  "online": "在线",
+  "offlineMode": "离线模式",
+  "applySearch": "应用搜索",
+  "addFiltersToSearch": "添加上方筛选器以启用搜索",
+  "startSearching": "开始搜索",
+  "enterKeywordsAdvancedHint": "输入关键词、标签或使用高级筛选来查找内容",
+  "filtersReady": "筛选器已就绪",
+  "clearAllFiltersTooltip": "清除所有筛选",
+  "offlineSomeFeaturesUnavailable": "当前处于离线状态，部分功能可能不可用。",
+  "usingDownloadedContentOnly": "仅显示已下载内容",
+  "onlineModeWithNetworkAccess": "在线模式 (已联网)",
+  "tagsScreenPlaceholder": "标签页面 - 待实现",
+  "artistsScreenPlaceholder": "画师页面 - 待实现",
+  "statusScreenPlaceholder": "状态页面 - 待实现",
+  "pageNotFound": "页面未找到",
+  "pageNotFoundWithUri": "页面未找到: {uri}",
+  "@pageNotFoundWithUri": {
+    "placeholders": {
+      "uri": {
+        "type": "String"
+      }
+    }
+  },
+  "goHome": "前往首页",
+  "debugThemeInfo": "DEBUG: 主题信息",
+  "lightTheme": "浅色",
+  "darkTheme": "深色",
+  "amoledTheme": "AMOLED",
+  "systemMessages": "系统消息与后台服务",
+  "notificationMessages": "通知消息",
+  "convertingToPdf": "正在转换为 PDF...",
+  "convertingToPdfWithTitle": "正在将 {title} 转换为 PDF...",
+  "@convertingToPdfWithTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "convertingToPdfProgress": "转换 PDF 中 ({progress}%)",
+  "convertingToPdfProgressWithTitle": "正在转换 {title} 为 PDF ({progress}%)",
+  "@convertingToPdfProgressWithTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "progress": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfCreatedSuccessfully": "PDF 创建成功",
+  "pdfCreatedWithParts": "{title} 已转换为 {partsCount} 个 PDF 文件",
+  "@pdfCreatedWithParts": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "partsCount": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfConversionFailed": "{contentId} PDF 转换失败: {error}",
+  "pdfConversionFailedWithError": "{title} PDF 转换失败: {error}",
+  "@pdfConversionFailedWithError": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadingWithTitle": "正在下载: {title}",
+  "@downloadingWithTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadingProgress": "下载中 ({progress}%)",
+  "downloadedWithTitle": "已下载: {title}",
+  "@downloadedWithTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadFailedWithTitle": "失败: {title}",
+  "@downloadFailedWithTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadPaused": "已暂停",
+  "downloadResumed": "已继续",
+  "downloadCancelled": "已取消",
+  "downloadRetry": "重试",
+  "downloadOpen": "打开",
+  "pdfOpen": "打开 PDF",
+  "pdfShare": "分享",
+  "pdfRetry": "重试 PDF",
+  "downloadServiceMessages": "下载服务消息",
+  "downloadRangeInfo": " (第 {startPage}-{endPage} 页)",
+  "@downloadRangeInfo": {
+    "placeholders": {
+      "startPage": {
+        "type": "int"
+      },
+      "endPage": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadRangeComplete": " (第 {startPage}-{endPage} 页)",
+  "@downloadRangeComplete": {
+    "placeholders": {
+      "startPage": {
+        "type": "int"
+      },
+      "endPage": {
+        "type": "int"
+      }
+    }
+  },
+  "invalidPageRange": "无效的页码范围: {start}-{end} (共 {total} 页)",
+  "@invalidPageRange": {
+    "placeholders": {
+      "start": {
+        "type": "int"
+      },
+      "end": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "noDataReceived": "未接收到图片数据: {url}",
+  "@noDataReceived": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "createdNoMediaFile": "为保护隐私已创建 .nomedia 文件: {path}",
+  "@createdNoMediaFile": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "privacyProtectionEnsured": "已确保存有下载内容的隐私保护",
+  "pdfConversionMessages": "PDF 转换服务消息",
+  "pdfConversionCompleted": "{contentId} PDF 转换成功",
+  "@pdfConversionCompleted": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "@pdfConversionFailed": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pdfPartProcessing": "正在处理第 {part} 部分 (Isolate)...",
+  "@pdfPartProcessing": {
+    "placeholders": {
+      "part": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfSingleProcessing": "正在处理单体 PDF (Isolate)...",
+  "pdfSplitRequired": "正在分割为 {totalParts} 个部分 (共 {totalPages} 页)",
+  "@pdfSplitRequired": {
+    "placeholders": {
+      "totalParts": {
+        "type": "int"
+      },
+      "totalPages": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfCreatedFiles": "已创建 {partsCount} 个 PDF 文件，共 {pageCount} 页",
+  "@pdfCreatedFiles": {
+    "placeholders": {
+      "partsCount": {
+        "type": "int"
+      },
+      "pageCount": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfNoImagesProvided": "未提供用于 PDF 转换的图片",
+  "pdfFailedToCreatePart": "无法创建 PDF 第 {part} 部分: {error}",
+  "@pdfFailedToCreatePart": {
+    "placeholders": {
+      "part": {
+        "type": "int"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pdfFailedToCreate": "无法创建 PDF: {error}",
+  "@pdfFailedToCreate": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pdfOutputDirectoryCreated": "已创建 PDF 输出目录: {path}",
+  "@pdfOutputDirectoryCreated": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "pdfUsingFallbackDirectory": "使用备用目录: {path}",
+  "@pdfUsingFallbackDirectory": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "pdfInfoSaved": "{contentId} PDF 信息已保存 ({partsCount} 部分, {pageCount} 页)",
+  "@pdfInfoSaved": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "partsCount": {
+        "type": "int"
+      },
+      "pageCount": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfExistsForContent": "{contentId} PDF 是否存在: {exists}",
+  "@pdfExistsForContent": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "exists": {
+        "type": "String"
+      }
+    }
+  },
+  "pdfFoundFiles": "找到 {contentId} 的 {count} 个 PDF 文件",
+  "@pdfFoundFiles": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfDeletedFiles": "成功删除 {contentId} 的 {count} 个 PDF 文件",
+  "@pdfDeletedFiles": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfTotalSize": "{contentId} PDF 总大小: {sizeBytes} 字节",
+  "@pdfTotalSize": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "sizeBytes": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfCleanupStarted": "开始 PDF 清理，删除 {maxAge} 天前的文件",
+  "@pdfCleanupStarted": {
+    "placeholders": {
+      "maxAge": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfCleanupCompleted": "清理完成，已删除 {deletedCount} 个旧 PDF 文件",
+  "@pdfCleanupCompleted": {
+    "placeholders": {
+      "deletedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfStatistics": "PDF 统计 - {totalFiles} 文件, 总大小 {totalSizeFormatted}, {uniqueContents} 个内容, 平均每个内容 {averageFilesPerContent} 个文件",
+  "historyCleanupMessages": "历史清理服务消息",
+  "historyCleanupServiceInitialized": "历史清理服务已初始化",
+  "historyCleanupServiceDisposed": "历史清理服务已销毁",
+  "autoCleanupDisabled": "自动清理历史已禁用",
+  "cleanupServiceStarted": "清理服务已启动，间隔 {intervalHours} 小时",
+  "@cleanupServiceStarted": {
+    "placeholders": {
+      "intervalHours": {
+        "type": "int"
+      }
+    }
+  },
+  "performingHistoryCleanup": "正在执行历史清理: {reason}",
+  "@performingHistoryCleanup": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "historyCleanupCompleted": "历史清理完成: 清除了 {clearedCount} 条记录 ({reason})",
+  "@historyCleanupCompleted": {
+    "placeholders": {
+      "clearedCount": {
+        "type": "int"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "manualHistoryCleanup": "正在执行手动历史清理",
+  "updatedLastAppAccess": "已更新上次应用访问时间",
+  "updatedLastCleanupTime": "已更新上次清理时间",
+  "intervalCleanup": "定时清理 ({intervalHours}h)",
+  "@intervalCleanup": {
+    "placeholders": {
+      "intervalHours": {
+        "type": "int"
+      }
+    }
+  },
+  "inactivityCleanup": "闲置清理 ({inactivityDays} 天)",
+  "@inactivityCleanup": {
+    "placeholders": {
+      "inactivityDays": {
+        "type": "int"
+      }
+    }
+  },
+  "maxAgeCleanup": "过期清理 ({maxDays} 天)",
+  "@maxAgeCleanup": {
+    "placeholders": {
+      "maxDays": {
+        "type": "int"
+      }
+    }
+  },
+  "initialCleanupSetup": "初始清理设置",
+  "shouldCleanupOldHistory": "是否应清理旧历史: {shouldCleanup}",
+  "@shouldCleanupOldHistory": {
+    "placeholders": {
+      "shouldCleanup": {
+        "type": "String"
+      }
+    }
+  },
+  "analyticsMessages": "统计服务消息",
+  "analyticsServiceInitialized": "统计服务已初始化 - 追踪 {enabled}",
+  "@analyticsServiceInitialized": {
+    "placeholders": {
+      "enabled": {
+        "type": "String"
+      }
+    }
+  },
+  "analyticsTrackingEnabled": "用户已启用统计追踪",
+  "analyticsTrackingDisabled": "用户已禁用统计追踪 - 数据已清除",
+  "analyticsDataCleared": "应用户请求已清除统计数据",
+  "analyticsServiceDisposed": "统计服务已销毁",
+  "analyticsEventTracked": "📊 统计: {eventType} - {eventName}",
+  "@analyticsEventTracked": {
+    "placeholders": {
+      "eventType": {
+        "type": "String"
+      },
+      "eventName": {
+        "type": "String"
+      }
+    }
+  },
+  "appStartedEvent": "应用启动事件已追踪",
+  "sessionEndEvent": "会话结束事件已追踪 ({minutes} 分钟)",
+  "@sessionEndEvent": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "analyticsEnabledEvent": "统计启用事件已追踪",
+  "analyticsDisabledEvent": "统计禁用事件已追踪",
+  "screenViewEvent": "屏幕浏览已追踪: {screenName}",
+  "@screenViewEvent": {
+    "placeholders": {
+      "screenName": {
+        "type": "String"
+      }
+    }
+  },
+  "userActionEvent": "用户操作已追踪: {action}",
+  "@userActionEvent": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "performanceEvent": "性能已追踪: {operation} ({durationMs}ms)",
+  "@performanceEvent": {
+    "placeholders": {
+      "operation": {
+        "type": "String"
+      },
+      "durationMs": {
+        "type": "int"
+      }
+    }
+  },
+  "errorEvent": "错误已追踪: {errorType} - {errorMessage}",
+  "@errorEvent": {
+    "placeholders": {
+      "errorType": {
+        "type": "String"
+      },
+      "errorMessage": {
+        "type": "String"
+      }
+    }
+  },
+  "featureUsageEvent": "功能使用已追踪: {feature}",
+  "@featureUsageEvent": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "readingSessionEvent": "阅读会话已追踪: {contentId} ({minutes}分, {pages} 页)",
+  "@readingSessionEvent": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      },
+      "pages": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineManagerMessages": "离线内容管理器消息",
+  "offlineContentAvailable": "内容 {contentId} 可离线访问: {available}",
+  "@offlineContentAvailable": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "available": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineContentPath": "{contentId} 离线内容路径: {path}",
+  "@offlineContentPath": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "foundExistingFiles": "发现 {count} 个已下载文件",
+  "@foundExistingFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineImageUrlsFound": "发现 {contentId} 的 {count} 个离线图片链接",
+  "@offlineImageUrlsFound": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineContentIdsFound": "发现 {count} 个离线内容 ID",
+  "@offlineContentIdsFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchingOfflineContent": "正在搜索离线内容: {query}",
+  "@searchingOfflineContent": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineContentMetadata": "{contentId} 离线内容元数据: {source}",
+  "@offlineContentMetadata": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineContentCreated": "已为 {contentId} 创建离线内容",
+  "@offlineContentCreated": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineStorageUsage": "离线存储使用量: {sizeBytes} 字节",
+  "@offlineStorageUsage": {
+    "placeholders": {
+      "sizeBytes": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanupOrphanedFilesStarted": "开始清理孤立离线文件",
+  "cleanupOrphanedFilesCompleted": "孤立离线文件清理完成",
+  "removedOrphanedDirectory": "已移除孤立目录: {path}",
+  "@removedOrphanedDirectory": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "queryLabel": "查询",
+  "excludeGroupsLabel": "排除社团",
+  "excludeCharactersLabel": "排除角色",
+  "excludeParodiesLabel": "排除原作",
+  "excludeArtistsLabel": "排除画师",
+  "minutes": "{count}分",
+  "@minutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "seconds": "{count}秒",
+  "@seconds": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "loadingUserPreferences": "正在加载用户偏好设置",
+  "successfullyLoadedUserPreferences": "成功加载用户偏好设置",
+  "invalidColumnsPortraitValue": "无效的竖屏列数: {value}",
+  "@invalidColumnsPortraitValue": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "invalidColumnsLandscapeValue": "无效的横屏列数: {value}",
+  "@invalidColumnsLandscapeValue": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "updatingSettingsViaPreferencesService": "通过 PreferencesService 更新设置",
+  "successfullyUpdatedSettings": "设置更新成功",
+  "failedToUpdateSetting": "设置更新失败: {error}",
+  "@failedToUpdateSetting": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "resettingAllSettingsToDefaults": "正在恢复所有默认设置",
+  "successfullyResetAllSettingsToDefaults": "已恢复所有默认设置",
+  "@failedToResetSettings": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsNotLoaded": "设置未加载",
+  "exportingSettings": "正在导出设置",
+  "successfullyExportedSettings": "设置导出成功",
+  "failedToExportSettings": "设置导出失败: {error}",
+  "@failedToExportSettings": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "importingSettings": "正在导入设置",
+  "successfullyImportedSettings": "设置导入成功",
+  "failedToImportSettings": "设置导入失败: {error}",
+  "@failedToImportSettings": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "unableToSyncSettings": "无法同步设置，更改仅保存在本地。",
+  "@unableToSyncSettings": {
+    "description": "Error message when settings cannot be synced"
+  },
+  "unableToSaveSettings": "无法保存设置，请检查设备存储。",
+  "@unableToSaveSettings": {
+    "description": "Error message when settings cannot be saved due to storage issues"
+  },
+  "failedToUpdateSettings": "设置更新失败，请重试。",
+  "@failedToUpdateSettings": {
+    "description": "Generic error message when settings update fails"
+  },
+  "noHistoryFound": "未找到历史记录",
+  "loadedHistoryEntries": "已加载 {count} 条历史记录",
+  "@loadedHistoryEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "failedToLoadHistory": "历史记录加载失败: {error}",
+  "@failedToLoadHistory": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "loadingMoreHistory": "正在加载更多历史 (第 {page} 页)",
+  "@loadingMoreHistory": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "loadedMoreHistoryEntries": "已加载另外 {count} 条，共 {total} 条",
+  "@loadedMoreHistoryEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "refreshingHistory": "正在刷新历史",
+  "refreshedHistoryWithEntries": "历史已刷新，共 {count} 条",
+  "@refreshedHistoryWithEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "failedToRefreshHistory": "历史刷新失败: {error}",
+  "@failedToRefreshHistory": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "clearingAllHistory": "正在清空所有历史",
+  "allHistoryCleared": "所有历史已清空",
+  "failedToClearHistory": "清空历史失败: {error}",
+  "@failedToClearHistory": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "removingHistoryItem": "正在移除历史项: {contentId}",
+  "@removingHistoryItem": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "removedHistoryItem": "已移除历史项: {contentId}",
+  "@removedHistoryItem": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToRemoveHistoryItem": "移除历史项失败: {error}",
+  "@failedToRemoveHistoryItem": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "performingManualHistoryCleanup": "正在执行手动历史清理",
+  "manualCleanupCompleted": "手动清理完成",
+  "failedToPerformCleanup": "执行清理失败: {error}",
+  "@failedToPerformCleanup": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "updatingCleanupSettings": "正在更新清理设置",
+  "cleanupSettingsUpdated": "清理设置已更新",
+  "addingContentToFavorites": "正在添加到收藏: {title}",
+  "@addingContentToFavorites": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "successfullyAddedToFavorites": "已成功添加到收藏: {title}",
+  "@successfullyAddedToFavorites": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "contentNotInFavorites": "内容 {contentId} 不在收藏中，跳过移除",
+  "@contentNotInFavorites": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "callingRemoveFromFavoritesUseCase": "调用 removeFromFavoritesUseCase，参数: {params}",
+  "@callingRemoveFromFavoritesUseCase": {
+    "placeholders": {
+      "params": {
+        "type": "String"
+      }
+    }
+  },
+  "successfullyCalledRemoveFromFavoritesUseCase": "成功调用 removeFromFavoritesUseCase",
+  "updatingFavoritesListInState": "更新状态中的收藏列表，移除内容 ID: {contentId}",
+  "@updatingFavoritesListInState": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "favoritesCountBeforeAfter": "收藏数量: 之前={before}, 之后={after}",
+  "@favoritesCountBeforeAfter": {
+    "placeholders": {
+      "before": {
+        "type": "int"
+      },
+      "after": {
+        "type": "int"
+      }
+    }
+  },
+  "stateUpdatedSuccessfully": "状态更新成功",
+  "successfullyRemovedFromFavorites": "成功从收藏移除: {contentId}",
+  "@successfullyRemovedFromFavorites": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "errorRemovingContentFromFavorites": "从收藏中移除内容 {contentId} 失败: {error}",
+  "@errorRemovingContentFromFavorites": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "removingFavoritesInBatch": "批量移除 {count} 个收藏",
+  "@removingFavoritesInBatch": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "successfullyRemovedFavoritesInBatch": "成功批量移除 {count} 个收藏",
+  "@successfullyRemovedFavoritesInBatch": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchingFavoritesWithQuery": "正在搜索收藏: {query}",
+  "@searchingFavoritesWithQuery": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "foundFavoritesMatchingQuery": "找到 {count} 个匹配的收藏",
+  "@foundFavoritesMatchingQuery": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "clearingFavoritesSearch": "正在清除收藏搜索",
+  "exportingFavoritesData": "正在导出收藏数据",
+  "successfullyExportedFavorites": "成功导出 {count} 个收藏",
+  "@successfullyExportedFavorites": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importingFavoritesData": "正在导入收藏数据",
+  "successfullyImportedFavorites": "成功导入 {count} 个收藏",
+  "@successfullyImportedFavorites": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "failedToImportFavorite": "导入收藏失败: {error}",
+  "@failedToImportFavorite": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "retryingFavoritesLoading": "Retrying 收藏加载中",
+  "refreshingFavorites": "Refreshing 收藏",
+  "failedToLoadFavorites": "无法load favorites: {error}",
+  "@failedToLoadFavorites": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToInitializeDownloadManager": "无法initialize 下载 manager: {error}",
+  "@failedToInitializeDownloadManager": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "waitingForWifiConnection": "Waiting for WiFi 连接",
+  "failedToQueueDownload": "无法queue download: {error}",
+  "@failedToQueueDownload": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "retryingDownload": "重试ing... ({current}/{total})",
+  "@retryingDownload": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "@failedToStartDownload": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadCancelledByUser": "下载 cancelled by 用户",
+  "failedToPauseDownload": "无法pause download: {error}",
+  "@failedToPauseDownload": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToCancelDownload": "无法cancel download: {error}",
+  "@failedToCancelDownload": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToRetryDownload": "无法retry download: {error}",
+  "@failedToRetryDownload": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToResumeDownload": "无法resume download: {error}",
+  "@failedToResumeDownload": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToRemoveDownload": "无法移除download: {error}",
+  "@failedToRemoveDownload": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToRefreshDownloads": "无法refresh downloads: {error}",
+  "@failedToRefreshDownloads": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToUpdateDownloadSettings": "无法update download设置: {error}",
+  "@failedToUpdateDownloadSettings": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pausingAllDownloads": "Pausing 全部 downloads",
+  "resumingAllDownloads": "Resuming 全部 downloads",
+  "cancellingAllDownloads": "Cancelling 全部 downloads",
+  "clearingCompletedDownloads": "清除ing completed downloads",
+  "failedToPauseAllDownloads": "无法pause 全部 downloads: {error}",
+  "@failedToPauseAllDownloads": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToResumeAllDownloads": "无法resume 全部 downloads: {error}",
+  "@failedToResumeAllDownloads": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToCancelAllDownloads": "无法cancel 全部 downloads: {error}",
+  "@failedToCancelAllDownloads": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToQueueRangeDownload": "无法queue range download: {error}",
+  "@failedToQueueRangeDownload": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToClearCompletedDownloads": "无法清除completed downloads: {error}",
+  "@failedToClearCompletedDownloads": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadNotCompletedYet": "下载 is not completed yet",
+  "noImagesFoundForConversion": "未找到images for conversion",
+  "storageCleanupCompleted": "存储 cleanup completed. Cleaned {cleanedFiles} directories, freed {freedSpace} MB",
+  "@storageCleanupCompleted": {
+    "placeholders": {
+      "cleanedFiles": {
+        "type": "int"
+      },
+      "freedSpace": {
+        "type": "String"
+      }
+    }
+  },
+  "storageCleanupComplete": "存储 Cleanup Complete: Cleaned {cleanedFiles} items, freed {freedSpace} MB",
+  "@storageCleanupComplete": {
+    "placeholders": {
+      "cleanedFiles": {
+        "type": "int"
+      },
+      "freedSpace": {
+        "type": "String"
+      }
+    }
+  },
+  "storageCleanupFailed": "存储 Cleanup失败: {error}",
+  "@storageCleanupFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "exportDownloadsComplete": "导出 Complete: 下载 exported to {fileName}",
+  "@exportDownloadsComplete": {
+    "placeholders": {
+      "fileName": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToDeleteDirectory": "无法删除directory: {path}, error: {error}",
+  "@failedToDeleteDirectory": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToDeleteTempFile": "无法删除temp file: {path}, error: {error}",
+  "@failedToDeleteTempFile": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadDirectoryNotFound": "下载 directory not found: {path}",
+  "@downloadDirectoryNotFound": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "cannotOpenIncompleteDownload": "Cannot 打开 - 下载 not completed or path missing for {contentId}",
+  "@cannotOpenIncompleteDownload": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "errorOpeningDownloadedContent": "opening downloaded content: {error}错误",
+  "@errorOpeningDownloadedContent": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "allStrategiesFailedToOpenDownload": "全部 strategies 无法open downloaded 内容 for {contentId}",
+  "@allStrategiesFailedToOpenDownload": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToSaveProgressToDatabase": "无法save 进度 to database: {error}",
+  "@failedToSaveProgressToDatabase": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToUpdatePauseNotification": "无法update pause notification: {error}",
+  "@failedToUpdatePauseNotification": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToUpdateResumeNotification": "无法update resume notification: {error}",
+  "@failedToUpdateResumeNotification": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToUpdateNotificationProgress": "无法update 通知 progress: {error}",
+  "@failedToUpdateNotificationProgress": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorCalculatingDirectorySize": "calculating directory size: {error}错误",
+  "@errorCalculatingDirectorySize": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorCleaningTempFiles": "cleaning temp files in: {path}, error: {error}错误",
+  "@errorCleaningTempFiles": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorDetectingDownloadsDirectory": "detecting Downloads directory: {error}错误",
+  "@errorDetectingDownloadsDirectory": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "usingEmergencyFallbackDirectory": "Using emergency fallback directory: {path}",
+  "@usingEmergencyFallbackDirectory": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "errorDuringStorageCleanup": "during 存储 cleanup错误",
+  "errorDuringExport": "during export错误",
+  "errorDuringPdfConversion": "during PDF conversion for {contentId}错误",
+  "@errorDuringPdfConversion": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "errorRetryingPdfConversion": "retrying PDF conversion: {error}错误",
+  "@errorRetryingPdfConversion": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "importBackupFolder": "导入 返回up Folder",
+  "importBackupFolderDescription": "输入the path to your backup folder containing nhasix 内容 folders:",
+  "scanningBackupFolder": "Scanning backup folder...",
+  "backupContentFound": "Found {count} backup items",
+  "@backupContentFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noBackupContentFound": "未找到valid 内容 in backup folder",
+  "errorScanningBackup": "scanning backup: {error}错误",
+  "@errorScanningBackup": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "themeDescription": "选择 your preferred 颜色主题 for the 应用 interface.",
+  "imageQualityDescription": "选择图片质量 for downloads. Higher 质量 uses more 存储 and data.",
+  "gridColumnsDescription": "选择 how many columns to 显示内容 in portrait模式. More columns 显示more 内容 but smaller items.",
+  "gridPreview": "网格预览",
+  "autoCleanupDescription": "Manage automatic cleanup of reading 历史 to free up 存储 space.",
+  "testCacheClearing": "Test 应用更新 Cache Clearing",
+  "testCacheClearingDescription": "Simulate 应用更新 and test cache clearing behavior.",
+  "forceClearCache": "Force 清除All Caches",
+  "forceClearCacheDescription": "Manually 清除all 图片 caches.",
+  "runTest": "Run Test",
+  "clearCacheButton": "清除缓存",
+  "disguiseModeDescription": "选择 how the 应用 appears in your launcher for privacy.",
+  "applyingDisguiseMode": "Applying disguise模式 changes...",
+  "disguiseDefault": "默认",
+  "disguiseCalculator": "Calculator",
+  "disguiseNotes": "否tes",
+  "disguiseWeather": "Weather",
+  "storagePermissionScan": "需要Storage 权限 to scan backup folders",
+  "syncResult": "Sync Result: {synced} imported, {updated}已更新",
+  "@syncResult": {
+    "placeholders": {
+      "synced": {
+        "type": "int"
+      },
+      "updated": {
+        "type": "int"
+      }
+    }
+  },
+  "exportingLibrary": "Exporting 书库",
+  "libraryExportSuccess": "书库 exported成功ly!",
+  "browseDownloads": "Browse 下载",
+  "deletingContent": "Deleting {title}...",
+  "@deletingContent": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "contentDeletedFreed": "{title}已删除. Freed {size} MB",
+  "@contentDeletedFreed": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToDeleteContent": "无法删除{title}",
+  "@failedToDeleteContent": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "errorGeneric": "Error: {error}",
+  "@errorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "contentDeleted": "Content已删除",
+  "cacheManagementDebug": "🚀 Cache Management (Debug)",
+  "syncStarted": "Syncing 返回up...",
+  "syncStartedMessage": "Scanning and importing offline 内容",
+  "syncInProgress": "Syncing 返回up ({percent}%)",
+  "@syncInProgress": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "syncProgressMessage": "Processed {processed} of {total} items",
+  "@syncProgressMessage": {
+    "placeholders": {
+      "processed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "syncCompleted": "Sync 已完成",
+  "syncCompletedMessage": "Imported: {synced},已更新: {updated}",
+  "@syncCompletedMessage": {
+    "placeholders": {
+      "synced": {
+        "type": "int"
+      },
+      "updated": {
+        "type": "int"
+      }
+    }
+  },
+  "storageSection": "存储位置",
+  "storageLocation": "自定义下载文件夹",
+  "defaultStorage": "默认（内部存储）",
+  "storageDescription": "选择保存下载的文件夹",
+  "backupNotFound": "未找到备份",
+  "backupNotFoundMessage": "在默认位置未找到'nhasix'备份文件夹。您想选择包含备份的自定义文件夹吗？",
+  "selectFolder": "选择文件夹",
+  "premiumFeature": "Premium Feature",
+  "commentsMaintenance": "评论正在维护中",
+  "estimatedRecovery": "预计恢复时间",
+  "downloadBlocInitializedWithDownloads": "DownloadBloc：已初始化，共 {count} 个下载",
+  "@downloadBlocInitializedWithDownloads": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadBlocProgressStreamSubscriptionInitialized": "DownloadBloc：进度流订阅已初始化",
+  "downloadBlocNotificationCallbacksConfigured": "DownloadBloc：通知回调已配置",
+  "downloadBlocReceivedProgressUpdate": "DownloadBloc：收到进度更新：{update}",
+  "@downloadBlocReceivedProgressUpdate": {
+    "placeholders": {
+      "update": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadBlocReceivedCompletionEvent": "DownloadBloc：收到 {contentId} 的完成事件",
+  "@downloadBlocReceivedCompletionEvent": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadBlocProgressStreamError": "DownloadBloc：进度流错误：{error}",
+  "@downloadBlocProgressStreamError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionPauseRequested": "NotificationAction：请求暂停 {contentId}",
+  "@notificationActionPauseRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionResumeRequested": "NotificationAction：请求继续 {contentId}",
+  "@notificationActionResumeRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionCancelRequested": "NotificationAction：请求取消 {contentId}",
+  "@notificationActionCancelRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionRetryRequested": "NotificationAction：请求重试 {contentId}",
+  "@notificationActionRetryRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionPdfRetryRequested": "NotificationAction：请求重试 PDF {contentId}",
+  "@notificationActionPdfRetryRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionOpenDownloadRequested": "NotificationAction：请求打开下载 {contentId}",
+  "@notificationActionOpenDownloadRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionNavigateToDownloadsRequested": "NotificationAction：请求跳转到下载页面 {contentId}",
+  "@notificationActionNavigateToDownloadsRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadBlocErrorInitializing": "DownloadBloc：初始化时发生错误",
+  "downloadBlocFailedToReadDownloadBlocState": "读取 DownloadBloc 状态失败，回退到文件系统检查：{error}",
+  "@downloadBlocFailedToReadDownloadBlocState": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceSelectorSelectSource": "选择来源",
+  "sourceSelectorDescription": "切换提供方以更改首页、详情、搜索和阅读数据来源。",
+  "sourceSelectorNoSourceSelected": "未选择来源",
+  "sourceSelectorActiveSource": "当前来源",
+  "sourceSelectorUnderMaintenance": "维护中",
+  "sourceSelectorCurrentlySelected": "当前已选择",
+  "sourceSelectorTapToSwitch": "点击切换",
+  "sourceSelectorSearchHint": "搜索来源",
+  "sourceSelectorNoResults": "没有匹配的来源",
+  "settingsCustomSourceTitle": "添加自定义来源",
+  "settingsCustomSourceSubtitle": "通过已签名清单 URL 或 ZIP 包安装来源。",
+  "settingsAddViaLink": "通过链接添加",
+  "settingsImportZip": "导入 ZIP",
+  "sourceImportLinkDialogTitle": "通过链接安装来源",
+  "sourceImportConfigUrlLabel": "清单 URL",
+  "sourceImportConfigUrlHint": "https://example.com/source-manifest.json",
+  "sourceImportInstallingFromLink": "正在从链接安装来源...",
+  "sourceImportInstallingFromZip": "正在从 ZIP 导入来源...",
+  "sourceImportPreviewTitle": "来源安装预览",
+  "sourceImportPreviewSourceId": "来源 ID",
+  "sourceImportPreviewVersion": "版本",
+  "sourceImportPreviewDisplayName": "显示名称",
+  "sourceImportPreviewVerified": "完整性",
+  "sourceImportPreviewVerifiedYes": "已验证",
+  "sourceImportPreviewVerifiedNo": "未验证",
+  "sourceImportConfirmInstall": "安装",
+  "sourceImportManifestInvalid": "来源清单格式无效。",
+  "sourceImportConfigEmpty": "下载的来源配置为空。",
+  "sourceImportZipManifestRequired": "ZIP 必须包含 manifest.json。",
+  "sourceImportChecksumMismatch": "来源校验和验证失败。",
+  "sourceImportSourceMismatch": "清单与配置中的来源 ID 不匹配。",
+  "sourceImportInstalledFromLink": "已通过链接安装 {sourceId}",
+  "@sourceImportInstalledFromLink": {
+    "placeholders": {
+      "sourceId": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceImportInstalledFromZip": "已通过 ZIP 安装 {sourceId}",
+  "@sourceImportInstalledFromZip": {
+    "placeholders": {
+      "sourceId": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceImportFailedFromLink": "通过链接安装来源失败：{error}",
+  "@sourceImportFailedFromLink": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceImportFailedFromZip": "导入 ZIP 来源失败：{error}",
+  "@sourceImportFailedFromZip": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
+}

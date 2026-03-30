@@ -1,0 +1,15 @@
+{
+  "id": "your_source_id",
+  "version": "1.0.0",
+  "url": "config/your-source-config.json",
+  "meta": {
+    "displayName": "Your Source",
+    "description": "Short source description",
+    "iconUrl": "images/your-source.png",
+    "contentType": "manga",
+    "language": "en",
+    "requiresAuth": false,
+    "requiresSpecialAdapter": false,
+    "sizeKb": 5
+  }
+}

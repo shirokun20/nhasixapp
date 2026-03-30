@@ -1,0 +1,90 @@
+{
+    "version": "1.0.0",
+    "lastUpdated": "2026-01-13T13:16:00+07:00",
+    "limits": {
+        "defaultPageSize": 20,
+        "maxBatchSize": 1000,
+        "maxConcurrentDownloads": 3,
+        "searchHistoryLimit": 50,
+        "imagePreloadBuffer": 5
+    },
+    "durations": {
+        "splashDelayMs": 1000,
+        "snackbarShortMs": 2000,
+        "snackbarLongMs": 4000,
+        "pageTransitionMs": 300,
+        "searchDebounceMs": 300,
+        "networkTimeoutMs": 30000,
+        "cacheExpirationMs": 86400000,
+        "readerAutoHideDelayMs": 3000,
+        "progressUpdateIntervalMs": 100
+    },
+    "ui": {
+        "grid": {
+            "portrait": {
+                "columns": 2,
+                "minCardWidth": 150.0
+            },
+            "landscape": {
+                "columns": 3,
+                "minCardWidth": 180.0
+            }
+        },
+        "card": {
+            "aspectRatio": 0.65,
+            "borderRadius": 12.0
+        },
+        "layout": {
+            "defaultPadding": 16.0
+        },
+        "text": {
+            "titleMaxLength": 40,
+            "errorMaxLength": 100
+        }
+    },
+    "storage": {
+        "folders": {
+            "backup": "nhasix",
+            "images": "images",
+            "pdf": "pdf"
+        },
+        "files": {
+            "metadata": "metadata.json",
+            "config": "config.json"
+        },
+        "limits": {
+            "maxImageSizeKb": 200,
+            "pdfPartsSizePages": 100,
+            "maxCacheSizeMb": 500
+        },
+        "compression": {
+            "enabled": true,
+            "quality": 85,
+            "autoCompressThresholdKb": 200
+        }
+    },
+    "download": {
+        "wifiOnly": false,
+        "maxRetries": 5,
+        "showNotifications": true,
+        "pauseOnBatteryLow": true
+    },
+    "reader": {
+        "defaultMode": "vertical",
+        "autoHideUI": true,
+        "preloadPages": 5,
+        "fitMode": "fit-width"
+    },
+    "privacy": {
+        "analytics": {
+            "enabled": false,
+            "anonymizeData": true
+        },
+        "history": {
+            "enabled": true,
+            "maxItems": 100,
+            "autoClean": true,
+            "cleanAfterDays": 30
+        }
+    }
+}

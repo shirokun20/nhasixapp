@@ -1,0 +1,97 @@
+{
+  "source": "your_source_id",
+  "version": "1.0.0",
+  "enabled": true,
+  "defaultLanguage": "english",
+  "baseUrl": "https://api.example.com",
+  "configUrl": "https://raw.githubusercontent.com/<owner>/<repo>/refs/heads/<branch>/app/config/your-source-config.json",
+  "ui": {
+    "displayName": "Your REST Source",
+    "iconPath": "https://raw.githubusercontent.com/<owner>/<repo>/refs/heads/<branch>/app/images/your-source.png",
+    "brandColor": "#4CAF50"
+  },
+  "network": {
+    "requiresBypass": false,
+    "headers": {
+      "User-Agent": "Kuron/2.0 (Mobile, Dart)"
+    }
+  },
+  "api": {
+    "endpoints": {
+      "allGalleries": "/manga?limit=30&offset={offset}",
+      "search": "/manga?title={query}&limit=30&offset={offset}",
+      "detail": "/manga/{id}"
+    },
+    "list": {
+      "items": "$.data[*]",
+      "pagination": {
+        "offsetMode": true,
+        "total": { "path": "$.total" },
+        "limit": { "path": "$.limit" },
+        "offset": { "path": "$.offset" },
+        "pageSize": 30
+      },
+      "fields": {
+        "id": { "selector": "$.id" },
+        "title": { "selector": "$.attributes.title" },
+        "description": { "selector": "$.attributes.description" },
+        "coverUrl": { "selector": "$.attributes.coverUrl" },
+        "tags": { "selector": "$.attributes.tags[*].name", "multi": true },
+        "artists": { "selector": "$.attributes.artists[*].name", "multi": true },
+        "status": { "selector": "$.attributes.status" },
+        "language": { "selector": "$.attributes.originalLanguage" },
+        "pageCount": { "selector": "$.attributes.lastChapter" }
+      }
+    },
+    "detail": {
+      "fields": {
+        "id": { "selector": "$.data.id" },
+        "title": { "selector": "$.data.attributes.title" },
+        "description": { "selector": "$.data.attributes.description" },
+        "coverUrl": { "selector": "$.data.attributes.coverUrl" },
+        "status": { "selector": "$.data.attributes.status" },
+        "language": { "selector": "$.data.attributes.originalLanguage" },
+        "pageCount": { "selector": "$.data.attributes.lastChapter" },
+        "uploadDate": { "selector": "$.data.attributes.createdAt" }
+      },
+      "chapters": {
+        "endpoint": "/chapter?manga={id}&limit=100&order[chapter]=desc",
+        "items": "$.data[*]",
+        "fields": {
+          "id": { "selector": "$.id" },
+          "chapterNum": { "selector": "$.attributes.chapter" },
+          "volume": { "selector": "$.attributes.volume" },
+          "language": { "selector": "$.attributes.translatedLanguage" },
+          "url": { "selector": "$.id" },
+          "date": { "selector": "$.attributes.readableAt" }
+        }
+      }
+    },
+    "images": {
+      "mode": "atHome",
+      "atHomeEndpoint": "/at-home/server/{chapterId}"
+    }
+  },
+  "searchForm": {
+    "urlPattern": "search",
+    "params": {
+      "query": {
+        "queryParam": "title",
+        "type": "text",
+        "placeholder": "Search title..."
+      },
+      "orderBy": {
+        "queryParam": "order[latestUploadedChapter]",
+        "type": "select",
+        "options": ["desc", "asc"]
+      }
+    }
+  },
+  "features": {
+    "comments": false,
+    "related": false,
+    "download": false,
+    "favorite": true,
+    "chapters": true
+  }
+}
