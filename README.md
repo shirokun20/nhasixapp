@@ -7,6 +7,7 @@
 [![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.14-green?style=for-the-badge&logo=android&logoColor=white)](#)
 [![Downloads](https://img.shields.io/github/downloads/shirokun20/nhasixapp/total?style=for-the-badge&logo=github&logoColor=white&color=007ec6)](https://github.com/shirokun20/nhasixapp/releases)
 [![Hits](https://komarev.com/ghpvc/?username=shirokun20&repo=nhasixapp&style=for-the-badge&color=007ec6)](https://github.com/shirokun20/nhasixapp)
+<a href="https://trakteer.id/shirokun20" target="_blank"><img src="https://img.shields.io/badge/Support_Me-Trakteer-be1e2d?style=for-the-badge&logo=ko-fi&logoColor=white" height="30"/></a>
 
 > [!TIP]  
 > **[🇮🇩 Baca dalam Bahasa Indonesia](README_ID.md)**
