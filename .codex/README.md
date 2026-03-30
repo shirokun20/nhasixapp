@@ -52,3 +52,4 @@ Use explicit sub-agent delegation only when the user asks for delegation or para
 - Update `project_memory.md` after each session.
 - Never edit generated Dart files directly: `*.g.dart`, `*.freezed.dart`.
 - Use `rg`, `ugrep`, and `semgrep` instead of basic `grep`.
+- **🚀 RTK (Token Killer)**: Always use `rtk` prefix for terminal commands with large output.

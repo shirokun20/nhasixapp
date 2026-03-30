@@ -9,6 +9,14 @@
 
 ## 🤖 AI Tool Compatibility
 
+### 🚀 RTK - Rust Token Killer (Core Rule)
+
+**Goal**: Maximize token efficiency (60-90% savings) by filtering terminal noise.
+
+1. **Always use `rtk` prefix**: For all terminal commands that generate significant output (git, flutter, npm, ls, etc).
+2. **Meta Commands**: Use `rtk gain` to check savings, `rtk proxy <cmd>` for raw output.
+3. **Integration**: Follows `~/.gemini/GEMINI.md` global rules.
+
 ### Claude Code
 - **Primary instruction file**: `CLAUDE.md` (auto-loaded by Claude Code).
 - **Slash commands**: `.claude/commands/*.md` — invoked via `/command-name`.
@@ -202,6 +210,7 @@ Use these specialized tools to maintain velocity and quality.
 | **Native Integration** | Platform Channels + Kotlin | `/native` | `native-integration` |
 | **Git Workflow** | Branching + Conventional Commits | `/git` | `git-workflow` |
 | **Search Tools** | rg, ugrep, semgrep guide | `/search` | `search-tools` |
+| **RTK** | Token-optimized CLI proxy | | `rtk` |
 
 ### Skill Source of Truth (priority order)
 1. **Claude Code**: `.claude/commands/*.md` (consolidated, authoritative)

@@ -119,6 +119,20 @@ Project ini menggunakan search tools modern sebagai pengganti `grep`:
 
 ---
 
+## 🚀 RTK - Rust Token Killer
+
+Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 60-90%):
+
+| Aturan | Deskripsi |
+|---|---|
+| **Awalan `rtk`** | Selalu tambahkan `rtk` di depan perintah terminal (git, flutter, ls, dll). |
+| **Penyaringan** | RTK membuang boilerplate/noise agar AI fokus pada data relevan. |
+| **Statistik** | Gunakan `rtk gain` untuk melihat total penghematan token. |
+
+> Konfigurasi global tersedia di `~/.gemini/GEMINI.md` dan `AGENTS.md`.
+
+---
+
 ## ⚙️ Tool-Specific Context
 
 ### OpenCode
