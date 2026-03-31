@@ -803,6 +803,21 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         }
       }
 
+      // FIX: Restore the correct title from updatedDownload since getDetail might fail or return junk for chapters
+      final hasValidStoredTitle = updatedDownload.title != null && updatedDownload.title!.isNotEmpty;
+      final isFetchedTitleInvalid = content.title.isEmpty || content.title == event.contentId || content.title != updatedDownload.title;
+
+      if (hasValidStoredTitle && isFetchedTitleInvalid) {
+        content = content.copyWith(
+          title: updatedDownload.title!,
+          // Also restore cover if it was lost during fallback
+          coverUrl: updatedDownload.coverUrl != null && updatedDownload.coverUrl!.isNotEmpty
+              ? updatedDownload.coverUrl!
+              : content.coverUrl,
+        );
+        _logger.d('DownloadBloc: Restored correct title from pending download status: ${content.title}');
+      }
+
       // Create download task
       final task = DownloadTask(
         contentId: event.contentId,
