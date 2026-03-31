@@ -46,6 +46,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen>
               offlineStats: _offlineSearchCubit.getOfflineStats(),
               onRefresh: () => _offlineSearchCubit.forceRefresh(),
               onImport: () => importFromBackup(context),
+              onImportZip: () => importFromZip(context),
               onExport: () => exportLibrary(context),
               title: AppLocalizations.of(context)!.offlineContent,
             ),

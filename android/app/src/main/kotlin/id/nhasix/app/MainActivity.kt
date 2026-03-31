@@ -91,11 +91,6 @@ class MainActivity: FlutterActivity() {
         super.onDestroy()
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        // No longer needed - backup moved to kuron_native
-    }
-
     private fun setAppDisguise(mode: String) {
         try {
             Log.d("AppDisguise", "setAppDisguise called with mode: $mode")

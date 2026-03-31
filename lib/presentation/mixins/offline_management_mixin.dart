@@ -5,6 +5,7 @@ import 'package:nhasixapp/core/utils/directory_utils.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/core/utils/permission_helper.dart';
 import 'package:nhasixapp/core/utils/storage_settings.dart'; // NEW
+import 'package:nhasixapp/domain/usecases/imports/import_zip_usecase.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart'; // NEW: For download screen refresh
@@ -255,6 +256,95 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       if (context.mounted) {
         await context.read<OfflineSearchCubit>().forceRefresh();
       }
+    }
+  }
+
+  /// Import content from a ZIP file to the local folder
+  Future<void> importFromZip(BuildContext context) async {
+    // Check permission first
+    final hasPermission = await PermissionHelper.hasStoragePermission();
+    if (!hasPermission) {
+      if (context.mounted) {
+        final granted =
+            await PermissionHelper.requestStoragePermission(context);
+        if (!granted) {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(
+                    AppLocalizations.of(context)!.storagePermissionRequired)),
+          );
+          return;
+        }
+      }
+    }
+
+    if (!context.mounted) return;
+
+    // Show loading state
+    context.read<OfflineSearchCubit>().setLoadingState();
+
+    try {
+      final importZipUseCase = getIt<ImportZipUseCase>();
+
+      // Execute ZIP import
+      final result = await importZipUseCase(const ImportZipParams());
+
+      if (!context.mounted) return;
+
+      if (result['success'] == true) {
+        final contentId = result['contentId'] as String;
+        final imageCount = result['imageCount'] as int;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Imported "$contentId" with $imageCount images to local folder',
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+
+        // Refresh offline content list
+        await context.read<OfflineSearchCubit>().forceRefresh();
+
+        // Refresh download bloc if available
+        if (context.mounted) {
+          try {
+            context.read<DownloadBloc>().add(const DownloadRefreshEvent());
+          } catch (e) {
+            // DownloadBloc not available in this context
+            debugPrint('Could not refresh DownloadBloc: $e');
+          }
+        }
+      } else {
+        final error = result['error'] as String? ?? 'Unknown error';
+
+        if (error != 'Cancelled') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Import failed: $error'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+
+        // Clear loading state even on error
+        await context.read<OfflineSearchCubit>().forceRefresh();
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error importing ZIP: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+
+      // Clear loading state on exception
+      await context.read<OfflineSearchCubit>().forceRefresh();
     }
   }
 }

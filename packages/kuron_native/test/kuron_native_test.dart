@@ -27,6 +27,12 @@ class MockKuronNativePlatform
       Future.value(Uint8List.fromList([1, 2, 3]));
 
   @override
+  Future<String?> pickZipFile() => Future.value(null);
+
+  @override
+  Future<Uint8List?> readZipBytes(String contentUri) => Future.value(null);
+
+  @override
   Future<String?> startDownload({
     required String url,
     required String fileName,

@@ -45,7 +45,8 @@ class KuronNativePlugin :
     private var pendingPickFileMimeType: String? = null
     private var pendingPickFileMode: String? = null
     private lateinit var downloadHandler: id.nhasix.kuron_native.kuron_native.download.DownloadHandler
-    
+    private var zipImportHandler: ZipImportHandler? = null
+
     private val WEBVIEW_REQUEST_CODE = 1001
     private val PICK_DIRECTORY_REQUEST_CODE = 1002
     private val PICK_FILE_REQUEST_CODE = 1003
@@ -109,6 +110,12 @@ class KuronNativePlugin :
             }
             "pickBinaryFile" -> {
                 handlePickBinaryFile(call, result)
+            }
+            "pickZipFile" -> {
+                handlePickZipFile(result)
+            }
+            "readZipBytes" -> {
+                handleReadZipBytes(call, result)
             }
             // Delegate native download methods to handler
             "kuronNativeStartDownload", 
@@ -519,6 +526,11 @@ class KuronNativePlugin :
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
+        // Handle ZIP import first
+        if (zipImportHandler?.onActivityResult(requestCode, resultCode, data) == true) {
+            return true
+        }
+
         if (requestCode == WEBVIEW_REQUEST_CODE) {
             if (pendingResult != null) {
                 if (resultCode == Activity.RESULT_OK && data != null) {
@@ -750,5 +762,39 @@ class KuronNativePlugin :
             pendingResult = null
             result.error("LAUNCH_FAILED", e.message, null)
         }
+    }
+
+    private fun handlePickZipFile(result: Result) {
+        val activity = activityBinding?.activity
+        if (activity == null) {
+            result.error("NO_ACTIVITY", "Activity is not available", null)
+            return
+        }
+
+        if (zipImportHandler == null) {
+            zipImportHandler = ZipImportHandler(activity)
+        }
+
+        zipImportHandler?.pickZipFile(result)
+    }
+
+    private fun handleReadZipBytes(call: MethodCall, result: Result) {
+        val activity = activityBinding?.activity
+        if (activity == null) {
+            result.error("NO_ACTIVITY", "Activity is not available", null)
+            return
+        }
+
+        val contentUri = call.argument<String>("contentUri")
+        if (contentUri == null) {
+            result.error("INVALID_ARGUMENT", "contentUri is required", null)
+            return
+        }
+
+        if (zipImportHandler == null) {
+            zipImportHandler = ZipImportHandler(activity)
+        }
+
+        zipImportHandler?.readZipBytes(contentUri, result)
     }
 }

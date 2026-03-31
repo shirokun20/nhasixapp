@@ -1,0 +1,240 @@
+import 'dart:io';
+import 'package:archive/archive.dart';
+import 'package:logger/logger.dart';
+import 'package:path/path.dart' as path;
+
+import '../../../core/constants/app_constants.dart';
+import '../../../core/utils/download_storage_utils.dart';
+import '../../../services/native_zip_import_service.dart';
+import '../../../domain/repositories/user_data_repository.dart';
+import '../../../domain/entities/download_status.dart';
+
+/// Parameters for importing a ZIP file
+class ImportZipParams {
+  const ImportZipParams();
+}
+
+/// UseCase for importing ZIP files containing doujin/manga content
+///
+/// This handles:
+/// 1. Picking a ZIP file using native file picker
+/// 2. Extracting the ZIP to /nhasix/local/[zip-name]/
+/// 3. Auto-generating metadata.json
+/// 4. Registering the content in the database
+class ImportZipUseCase {
+  final NativeZipImportService _zipImportService;
+  final UserDataRepository _userDataRepository;
+  final Logger _logger = Logger();
+
+  ImportZipUseCase({
+    required NativeZipImportService zipImportService,
+    required UserDataRepository userDataRepository,
+  })  : _zipImportService = zipImportService,
+        _userDataRepository = userDataRepository;
+
+  /// Executes the ZIP import flow
+  ///
+  /// Returns a map with:
+  /// - 'success': bool
+  /// - 'contentId': String (if successful)
+  /// - 'error': String (if failed)
+  Future<Map<String, dynamic>> call(ImportZipParams params) async {
+    try {
+      _logger.i('Starting ZIP import flow');
+
+      // Step 1: Pick ZIP file
+      final zipUri = await _zipImportService.pickZipFile();
+      if (zipUri == null) {
+        _logger.i('User cancelled ZIP file selection');
+        return {'success': false, 'error': 'Cancelled'};
+      }
+
+      _logger.i('ZIP file selected: $zipUri');
+
+      // Step 2: Read ZIP bytes
+      final zipBytes = await _zipImportService.readZipBytes(zipUri);
+      if (zipBytes == null || zipBytes.isEmpty) {
+        _logger.e('Failed to read ZIP file bytes');
+        return {'success': false, 'error': 'Failed to read ZIP file'};
+      }
+
+      _logger.i('ZIP file read successfully (${zipBytes.length} bytes)');
+
+      // Step 3: Extract ZIP file name for content ID
+      final zipFileName = _extractFileNameFromUri(zipUri);
+      final contentId = _sanitizeContentId(zipFileName);
+
+      _logger.i('Content ID: $contentId');
+
+      // Step 4: Decode ZIP archive
+      final archive = ZipDecoder().decodeBytes(zipBytes);
+      _logger.i('ZIP decoded: ${archive.files.length} files found');
+
+      // Step 5: Get destination directory
+      final destDir = await DownloadStorageUtils.getNewContentDirectory(
+        contentId,
+        sourceId: 'local',
+      );
+
+      _logger.i('Destination directory: $destDir');
+
+      // Step 6: Extract images
+      final imagesDir = Directory(path.join(destDir, AppStorage.imagesSubfolder));
+      if (!await imagesDir.exists()) {
+        await imagesDir.create(recursive: true);
+      }
+
+      int imageCount = 0;
+      final imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.bmp'];
+
+      for (final file in archive.files) {
+        if (file.isFile) {
+          final fileName = path.basename(file.name);
+          final extension = path.extension(fileName).toLowerCase();
+
+          // Only extract image files
+          if (imageExtensions.contains(extension)) {
+            final destFile = File(path.join(imagesDir.path, fileName));
+            await destFile.writeAsBytes(file.content as List<int>);
+            imageCount++;
+            _logger.d('Extracted: $fileName');
+          }
+        }
+      }
+
+      if (imageCount == 0) {
+        _logger.e('No images found in ZIP file');
+        // Clean up empty directory
+        if (await Directory(destDir).exists()) {
+          await Directory(destDir).delete(recursive: true);
+        }
+        return {'success': false, 'error': 'No images found in ZIP file'};
+      }
+
+      _logger.i('Extracted $imageCount images');
+
+      // Step 7: Get first image for cover
+      final imageFiles = await imagesDir.list().toList();
+      final sortedImages = imageFiles
+          .whereType<File>()
+          .where((f) => imageExtensions.contains(path.extension(f.path).toLowerCase()))
+          .toList()
+        ..sort((a, b) => path.basename(a.path).compareTo(path.basename(b.path)));
+
+      final coverUrl = sortedImages.isNotEmpty ? sortedImages.first.path : '';
+
+      // Step 7.5: Calculate total file size
+      int totalFileSize = 0;
+      for (final file in sortedImages) {
+        if (await file.exists()) {
+          totalFileSize += await file.length();
+        }
+      }
+      _logger.i('Total file size: ${_formatBytes(totalFileSize)}');
+
+      // Step 8: Generate metadata.json
+      await DownloadStorageUtils.saveLocalMetadata(
+        contentId: contentId,
+        sourceId: 'local',
+        title: _formatTitle(contentId),
+        savePath: destDir,
+        coverUrl: coverUrl,
+        totalImages: imageCount,
+        extraData: {
+          'autoGenerated': true,
+          'importedAt': DateTime.now().toIso8601String(),
+          'importedFrom': 'zip',
+          'originalFileName': zipFileName,
+        },
+      );
+
+      _logger.i('Metadata.json generated');
+
+      // Step 9: Register in database
+      final downloadStatus = DownloadStatus(
+        contentId: contentId,
+        state: DownloadState.completed,
+        totalPages: imageCount,
+        downloadPath: destDir,
+        title: _formatTitle(contentId),
+        sourceId: 'local',
+        coverUrl: coverUrl,
+        downloadedPages: imageCount,
+        fileSize: totalFileSize,
+      );
+
+      await _userDataRepository.saveDownloadStatus(downloadStatus);
+
+      _logger.i('Content registered in database');
+
+      return {
+        'success': true,
+        'contentId': contentId,
+        'imageCount': imageCount,
+      };
+    } catch (e, stackTrace) {
+      _logger.e('Error importing ZIP file', error: e, stackTrace: stackTrace);
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// Extracts file name from URI
+  String _extractFileNameFromUri(String uri) {
+    // Handle content:// URIs
+    if (uri.contains('/')) {
+      final segments = uri.split('/');
+      for (int i = segments.length - 1; i >= 0; i--) {
+        if (segments[i].isNotEmpty && !segments[i].contains(':')) {
+          return segments[i];
+        }
+      }
+    }
+    return uri;
+  }
+
+  /// Sanitizes content ID (removes .zip extension, special chars)
+  String _sanitizeContentId(String fileName) {
+    var cleaned = fileName;
+
+    // Remove .zip extension
+    if (cleaned.toLowerCase().endsWith('.zip')) {
+      cleaned = cleaned.substring(0, cleaned.length - 4);
+    }
+
+    // Replace spaces and special characters with hyphens
+    cleaned = cleaned
+        .replaceAll(RegExp(r'[^\w\s-]'), '')
+        .replaceAll(RegExp(r'\s+'), '-')
+        .toLowerCase();
+
+    return cleaned.isNotEmpty ? cleaned : 'imported-${DateTime.now().millisecondsSinceEpoch}';
+  }
+
+  /// Formats content ID into a readable title
+  String _formatTitle(String contentId) {
+    return contentId
+        .split('-')
+        .map((word) {
+          if (word.isEmpty) return '';
+          return word[0].toUpperCase() + word.substring(1);
+        })
+        .join(' ')
+        .trim();
+  }
+
+  /// Formats bytes into human-readable string
+  String _formatBytes(int bytes) {
+    if (bytes == 0) return '0 B';
+
+    const suffixes = ['B', 'KB', 'MB', 'GB'];
+    var size = bytes.toDouble();
+    var suffixIndex = 0;
+
+    while (size >= 1024 && suffixIndex < suffixes.length - 1) {
+      size /= 1024;
+      suffixIndex++;
+    }
+
+    return '${size.toStringAsFixed(1)} ${suffixes[suffixIndex]}';
+  }
+}

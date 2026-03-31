@@ -11,6 +11,7 @@ class AppMainHeaderWidget extends StatelessWidget
   final bool isOffline;
   final VoidCallback? onRefresh;
   final VoidCallback? onImport;
+  final VoidCallback? onImportZip;
   final VoidCallback? onExport;
   final Future<Map<String, dynamic>>? offlineStats;
   final String? title;
@@ -25,6 +26,7 @@ class AppMainHeaderWidget extends StatelessWidget
     this.isOffline = false,
     this.onRefresh,
     this.onImport,
+    this.onImportZip,
     this.onExport,
     this.offlineStats,
     this.title,
@@ -113,6 +115,16 @@ class AppMainHeaderWidget extends StatelessWidget
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                   tooltip: 'Import from Backup',
+                ),
+              // Import ZIP Button
+              if (onImportZip != null)
+                IconButton(
+                  onPressed: onImportZip,
+                  icon: Icon(
+                    Icons.folder_zip,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  tooltip: 'Import ZIP File',
                 ),
               // Export Button
               if (onExport != null)

@@ -24,6 +24,12 @@ class MockKuronNativePlatform
       Uint8List.fromList(<int>[]);
 
   @override
+  Future<String?> pickZipFile() async => null;
+
+  @override
+  Future<Uint8List?> readZipBytes(String contentUri) async => null;
+
+  @override
   Future<String?> getPlatformVersion() => Future.value('1.0.0');
 
   @override
