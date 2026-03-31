@@ -79,13 +79,22 @@ class ImportZipUseCase {
       _logger.i('Destination directory: $destDir');
 
       // Step 6: Extract images
-      final imagesDir = Directory(path.join(destDir, AppStorage.imagesSubfolder));
+      final imagesDir =
+          Directory(path.join(destDir, AppStorage.imagesSubfolder));
       if (!await imagesDir.exists()) {
         await imagesDir.create(recursive: true);
       }
 
       int imageCount = 0;
-      final imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.bmp'];
+      final imageExtensions = [
+        '.jpg',
+        '.jpeg',
+        '.png',
+        '.gif',
+        '.webp',
+        '.avif',
+        '.bmp'
+      ];
 
       for (final file in archive.files) {
         if (file.isFile) {
@@ -117,9 +126,11 @@ class ImportZipUseCase {
       final imageFiles = await imagesDir.list().toList();
       final sortedImages = imageFiles
           .whereType<File>()
-          .where((f) => imageExtensions.contains(path.extension(f.path).toLowerCase()))
+          .where((f) =>
+              imageExtensions.contains(path.extension(f.path).toLowerCase()))
           .toList()
-        ..sort((a, b) => path.basename(a.path).compareTo(path.basename(b.path)));
+        ..sort(
+            (a, b) => path.basename(a.path).compareTo(path.basename(b.path)));
 
       final coverUrl = sortedImages.isNotEmpty ? sortedImages.first.path : '';
 
@@ -178,18 +189,21 @@ class ImportZipUseCase {
     }
   }
 
-  /// Extracts file name from URI
+  /// Extracts file name from URI and decodes URL encoding
   String _extractFileNameFromUri(String uri) {
+    // First decode URL encoding (e.g., %3A -> :, %2F -> /)
+    final String decoded = Uri.decodeComponent(uri);
+
     // Handle content:// URIs
-    if (uri.contains('/')) {
-      final segments = uri.split('/');
+    if (decoded.contains('/')) {
+      final segments = decoded.split('/');
       for (int i = segments.length - 1; i >= 0; i--) {
         if (segments[i].isNotEmpty && !segments[i].contains(':')) {
           return segments[i];
         }
       }
     }
-    return uri;
+    return decoded;
   }
 
   /// Sanitizes content ID (removes .zip extension, special chars)
@@ -207,7 +221,9 @@ class ImportZipUseCase {
         .replaceAll(RegExp(r'\s+'), '-')
         .toLowerCase();
 
-    return cleaned.isNotEmpty ? cleaned : 'imported-${DateTime.now().millisecondsSinceEpoch}';
+    return cleaned.isNotEmpty
+        ? cleaned
+        : 'imported-${DateTime.now().millisecondsSinceEpoch}';
   }
 
   /// Formats content ID into a readable title
