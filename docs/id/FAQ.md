@@ -114,8 +114,8 @@ Anda bisa:
 
 Pergi ke **Tentang → Periksa Pembaruan**. Anda akan diberi tahu ketika versi baru tersedia di GitHub.
 
-Rilis terbaru saat ini: **v0.9.13+21**
-https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.13%2B21
+Rilis terbaru saat ini: **v0.9.14+23**
+https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.14%2B23
 
 ---
 

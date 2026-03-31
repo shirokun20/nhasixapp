@@ -19,7 +19,7 @@
 
 ## 📥 **Download Latest Release**
 
-[📦 **Get v0.9.14+22**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.14)
+[📦 **Get v0.9.14+23**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.14%2B23)
 
 | Variant | Size | Best For | Status |
 |:-------|:----:|:---------|:------:|

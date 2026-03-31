@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.14+23] - 2026-03-31
+
+### 🔧 Build Update (Build #23)
+
+#### ✨ Enhancement
+- **Reader Experience**: Image height caching for instant page render without relayout; floating page indicator for quick navigation awareness.
+
+#### 🐛 Bug Fixes
+- **Offline Page**: Prevent duplicate items for externally imported content.
+- **ZIP Import**: Calculate and persist `fileSize` when importing ZIP archives.
+- **Offline Metadata**: Auto-generate `metadata.json` for manually imported offline content; fixes rendering errors on doujin import.
+- **Lint**: Resolve lint errors introduced after ZIP import migration.
+
+#### ♻️ Refactor
+- **ZIP Import Handler**: Migrated from `MainActivity` to `kuron_native` plugin for cleaner native boundary separation.
+- **ImportZipUseCase**: Improved code readability and formatting.
+
+#### 📝 Docs
+- Added comprehensive ZIP Import feature guide (`ZIP_IMPORT_GUIDE.md`).
+
+---
+
 ## [0.9.14] - 2026-03-28
 
 ### 🎉 Phase 6 Complete: Multi-Provider Special Adapters
