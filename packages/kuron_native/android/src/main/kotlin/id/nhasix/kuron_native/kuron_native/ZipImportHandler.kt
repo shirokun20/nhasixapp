@@ -1,9 +1,8 @@
-package id.nhasix.app
+package id.nhasix.kuron_native.kuron_native
 
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
-import androidx.activity.result.contract.ActivityResultContracts
 import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
 
@@ -15,42 +14,15 @@ import java.io.ByteArrayOutputStream
  */
 class ZipImportHandler(private val activity: Activity) {
     companion object {
-        const val CHANNEL_NAME = "id.nhasix.app/zip_import"
-        const val METHOD_PICK_ZIP = "pickZipFile"
-        const val METHOD_READ_ZIP = "readZipBytes"
+        const val REQUEST_CODE_PICK_ZIP = 2003
     }
 
     private var pendingResult: MethodChannel.Result? = null
 
     /**
-     * Sets up the MethodChannel and handles method calls
-     */
-    fun setupChannel(channel: MethodChannel) {
-        channel.setMethodCallHandler { call, result ->
-            when (call.method) {
-                METHOD_PICK_ZIP -> {
-                    pendingResult = result
-                    pickZipFile()
-                }
-                METHOD_READ_ZIP -> {
-                    val contentUri = call.argument<String>("contentUri")
-                    if (contentUri != null) {
-                        readZipBytes(contentUri, result)
-                    } else {
-                        result.error("INVALID_ARGUMENT", "contentUri is required", null)
-                    }
-                }
-                else -> {
-                    result.notImplemented()
-                }
-            }
-        }
-    }
-
-    /**
      * Launches the native file picker for ZIP files
      */
-    private fun pickZipFile() {
+    fun pickZipFile(result: MethodChannel.Result) {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = "application/zip"
@@ -60,20 +32,22 @@ class ZipImportHandler(private val activity: Activity) {
                 "application/x-zip",
                 "application/x-zip-compressed"
             ))
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
         }
 
         try {
+            pendingResult = result
             activity.startActivityForResult(intent, REQUEST_CODE_PICK_ZIP)
         } catch (e: Exception) {
-            pendingResult?.error("PICK_FAILED", "Failed to open file picker: ${e.message}", null)
             pendingResult = null
+            result.error("PICK_FAILED", "Failed to open file picker: ${e.message}", null)
         }
     }
 
     /**
      * Reads ZIP file bytes from content URI
      */
-    private fun readZipBytes(contentUri: String, result: MethodChannel.Result) {
+    fun readZipBytes(contentUri: String, result: MethodChannel.Result) {
         try {
             val uri = Uri.parse(contentUri)
             val inputStream = activity.contentResolver.openInputStream(uri)
@@ -109,10 +83,8 @@ class ZipImportHandler(private val activity: Activity) {
                 if (uri != null) {
                     // Grant persistent read permission
                     try {
-                        activity.contentResolver.takePersistableUriPermission(
-                            uri,
-                            Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        )
+                        val takeFlags: Int = data.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+                        activity.contentResolver.takePersistableUriPermission(uri, takeFlags)
                     } catch (e: Exception) {
                         // Permission might not be persistable, that's okay
                     }
@@ -128,9 +100,5 @@ class ZipImportHandler(private val activity: Activity) {
             return true
         }
         return false
-    }
-
-    companion object {
-        const val REQUEST_CODE_PICK_ZIP = 2003
     }
 }

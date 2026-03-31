@@ -33,6 +33,18 @@ class KuronNative {
     return KuronNativePlatform.instance.pickBinaryFile(mimeType: mimeType);
   }
 
+  /// Pick a ZIP file using native file picker and return content URI.
+  /// Returns the content URI of the selected ZIP file, or null if cancelled.
+  Future<String?> pickZipFile() {
+    return KuronNativePlatform.instance.pickZipFile();
+  }
+
+  /// Read ZIP file bytes from content URI.
+  /// Returns the bytes of the ZIP file.
+  Future<Uint8List?> readZipBytes(String contentUri) {
+    return KuronNativePlatform.instance.readZipBytes(contentUri);
+  }
+
   Future<String?> startDownload({
     required String url,
     required String fileName,

@@ -74,6 +74,21 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }
 
   @override
+  Future<String?> pickZipFile() async {
+    final uri = await methodChannel.invokeMethod<String>('pickZipFile');
+    return uri;
+  }
+
+  @override
+  Future<Uint8List?> readZipBytes(String contentUri) async {
+    final bytes = await methodChannel.invokeMethod<Uint8List>(
+      'readZipBytes',
+      {'contentUri': contentUri},
+    );
+    return bytes;
+  }
+
+  @override
   Future<String?> startDownload({
     required String url,
     required String fileName,

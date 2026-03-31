@@ -68,7 +68,7 @@ class ImportZipUseCase {
       _logger.i('Content ID: $contentId');
 
       // Step 4: Decode ZIP archive
-      final archive = ZipDecoder().decodeBytes(Uint8List.fromList(zipBytes));
+      final archive = ZipDecoder().decodeBytes(zipBytes);
       _logger.i('ZIP decoded: ${archive.files.length} files found');
 
       // Step 5: Get destination directory

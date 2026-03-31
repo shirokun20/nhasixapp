@@ -50,6 +50,16 @@ abstract class KuronNativePlatform extends PlatformInterface {
     throw UnimplementedError('pickBinaryFile() has not been implemented.');
   }
 
+  /// Pick a ZIP file using native file picker and return content URI.
+  Future<String?> pickZipFile() {
+    throw UnimplementedError('pickZipFile() has not been implemented.');
+  }
+
+  /// Read ZIP file bytes from content URI.
+  Future<Uint8List?> readZipBytes(String contentUri) {
+    throw UnimplementedError('readZipBytes() has not been implemented.');
+  }
+
   /// Start a system download
   Future<String?> startDownload({
     required String url,
