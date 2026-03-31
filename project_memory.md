@@ -13,7 +13,7 @@
 | **Repo** | `shirokun20/nhasixapp` |
 | **Platform** | Android (Flutter) |
 | **Flutter SDK** | Stable (3.24+, Dart 3.5+ via FVM) |
-| **Version** | 0.9.14+22 |
+| **Version** | 0.9.14+23 |
 | **Architecture** | Clean Architecture (Domain → Data → Presentation) |
 | **State Management** | `flutter_bloc` / `Cubit` (extending `BaseCubit`) |
 | **DI** | `GetIt` (`core/di/`) |
@@ -180,6 +180,7 @@ Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 6
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-03-31 | Antigravity | Build Bump +23: Release prep & docs sync | ✅ Done | Build number bumped from +22 → +23 across all release files. Updated: `pubspec.yaml`, `CHANGELOG.md` (new section with 8 recent commits), `README.md`, `README_ID.md`, `docs/en/FAQ.md`, `docs/id/FAQ.md` all synced to `v0.9.14+23`. Created annotated Git tag `v0.9.14+23` with full commit history and pushed to remote (`78b4294`). No breaking changes — pure build increment with reader enhancements (height caching, floating page indicator) + offline metadata fixes (duplicate prevention, ZIP fileSize, auto-generated manifest.json) + ZIP handler migration to `kuron_native`. |
 | 2026-03-31 | Antigravity | KomikTap & Crotpedia Metadata Bug Fix | ✅ Done | Diagnosed and fixed empty/ciphertext `title` generation inside `metadata.json` when downloading chapters. Implemented a fallback in `DownloadBloc._onStart()` to restore `updatedDownload.title` if the scraper returns corrupted detail titles. Added `DownloadStorageUtils.getSafeTitleFromMetadata` on-the-fly formatter using the original slug `id` to fix retroactively broken offline files so they display cleanly instead of showing `Elegant ID` hashes. Unit tested via `download_storage_utils_test.dart` (all passed). Feature request for ZIP import remains open for Claude. |
 | 2026-03-29 | Codex | Hitomi favorite cover fix | ✅ Done | Verified directly against `favorites.json` and `curl`: the saved Hitomi cover URL for `1852370` returned `404` both with and without headers because the persisted path was stale (`.../1774742402/...`). Then confirmed the current resolver path from live `galleries/1852370.js` + `gg.js` worked only with Hitomi headers: without `Referer/User-Agent` it returned `404`, with headers it returned `200 image/webp`. Implemented two-part fix in Favorites: `FavoritesScreen` now passes per-source image headers into `ContentCard.buildImage()`, and Hitomi favorite cards now refresh stale persisted cover URLs by resolving the latest cover from the source and caching it per content id. Verified with `fvm dart analyze` on touched files. |
 | 2026-03-29 | Codex | Codex CLI chat reset guidance | ✅ Done | Verified local environment uses `codex-cli 0.118.0-alpha.2`. Checked local CLI help and official OpenAI Codex Help Center docs. Result: no explicit `clear chat` command surfaced in current CLI help; recommended workflow is to start a new session for a true context reset, while `clear`/`Ctrl+L` only clears terminal output. |
@@ -239,9 +240,39 @@ All 3 providers fully wired, registered, and smoke tested:
 - **Hitomi**: Fallback support → Search→Detail→Reader validated ✅
 - **Test Coverage**: 8 EHentai + 2 HentaiNexus tests passing ✅
 
-**Project Status**: Version 0.9.14+22 | Moved to `success-plan/` | Production-Ready
+**Project Status**: Version 0.9.14+23 | Moved to `success-plan/` | Production-Ready
 
 ---
+
+## 🆕 Latest Session — 2026-03-31
+
+### Build Bump +23: Release Prep & Docs Sync ✅
+
+**Version**: `0.9.14+22` → `0.9.14+23`
+
+**Files Updated** (6 total):
+1. `pubspec.yaml` → version bumped
+2. `CHANGELOG.md` → new `[0.9.14+23] - 2026-03-31` section added with 8 commits (reader enhancements, offline fixes, ZIP handler migration)
+3. `README.md` → download link updated to `v0.9.14+23` with `%2B` encoding
+4. `README_ID.md` → download link updated to `v0.9.14+23` with `%2B` encoding
+5. `docs/en/FAQ.md` → latest release updated from `v0.9.13+21` to `v0.9.14+23`
+6. `docs/id/FAQ.md` → "Rilis terbaru" updated from `v0.9.13+21` to `v0.9.14+23`
+
+**Git Release**:
+- Annotated tag: `v0.9.14+23`
+- Remote commit hash: `78b4294`
+- Pushed & verified on origin ✅
+
+**Included Changes**:
+- ✨ Reader: Image height caching, floating page indicator
+- 🐛 Offline: Prevent duplicate externally-imported items
+- 🐛 ZIP: Calculate & persist `fileSize` on import
+- 🐛 Metadata: Auto-generate `metadata.json` for manual offline imports
+- ♻️ Migration: ZIP handler moved from `MainActivity` to `kuron_native` plugin
+- ♻️ Refactor: `ImportZipUseCase` readability improvements
+- 📝 Docs: Comprehensive ZIP Import feature guide added
+
+**Production Ready** ✅
 
 ## �📦 Key Commands
 
