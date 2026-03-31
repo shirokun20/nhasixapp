@@ -309,11 +309,13 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
         await context.read<OfflineSearchCubit>().forceRefresh();
 
         // Refresh download bloc if available
-        try {
-          context.read<DownloadBloc>().add(const DownloadRefreshEvent());
-        } catch (e) {
-          // DownloadBloc not available in this context
-          debugPrint('Could not refresh DownloadBloc: $e');
+        if (context.mounted) {
+          try {
+            context.read<DownloadBloc>().add(const DownloadRefreshEvent());
+          } catch (e) {
+            // DownloadBloc not available in this context
+            debugPrint('Could not refresh DownloadBloc: $e');
+          }
         }
       } else {
         final error = result['error'] as String? ?? 'Unknown error';
