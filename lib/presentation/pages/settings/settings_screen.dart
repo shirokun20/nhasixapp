@@ -22,6 +22,7 @@ import '../../cubits/settings/settings_cubit.dart';
 import '../../cubits/source/source_cubit.dart';
 import '../../cubits/source/source_state.dart';
 import '../../../core/utils/app_update_test.dart';
+import '../../../core/utils/storage_settings.dart';
 import '../../widgets/app_main_drawer_widget.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -155,6 +156,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
               theme: theme,
             ),
           ], theme),
+
+          const SizedBox(height: 24),
+
+          // Storage Settings Card
+          _buildSectionHeader(Icons.folder_outlined, 'STORAGE', theme),
+          const SizedBox(height: 12),
+          _buildInfoBanner(
+            l10n.storageDescription ??
+                'Configure download directory and storage preferences',
+            Icons.info_outline,
+            theme,
+          ),
+          const SizedBox(height: 12),
+          _buildStorageSection(context, theme, l10n),
 
           const SizedBox(height: 24),
 
@@ -599,6 +614,142 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
         );
+      },
+    );
+  }
+
+  Widget _buildStorageSection(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations l10n,
+  ) {
+    return FutureBuilder<String?>(
+      future: StorageSettings.getCustomRootPath(),
+      builder: (context, snapshot) {
+        final customPath = snapshot.data;
+        final hasCustomPath = customPath != null && customPath.isNotEmpty;
+
+        return _buildSettingsCard([
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 4,
+            ),
+            leading: Icon(
+              Icons.folder_open,
+              color: theme.colorScheme.primary,
+            ),
+            title: Text(
+              l10n.downloadDirectory ?? 'Download Directory',
+              style: TextStyleConst.bodyLarge.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            subtitle: Text(
+              hasCustomPath
+                  ? customPath
+                  : l10n.defaultInternalStorage ?? 'Default (Internal)',
+              style: TextStyleConst.bodySmall.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: IconButton(
+              icon: Icon(
+                Icons.edit_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              tooltip: l10n.changeDirectory ?? 'Change Directory',
+              onPressed: () async {
+                final newPath = await StorageSettings.pickAndSaveCustomRoot(
+                  context,
+                );
+                if (newPath != null && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        l10n.downloadDirectoryUpdated ??
+                            'Download directory updated',
+                      ),
+                      backgroundColor: Colors.green.shade700,
+                    ),
+                  );
+                  setState(() {}); // Refresh UI
+                }
+              },
+            ),
+          ),
+          if (hasCustomPath) ...[
+            _buildDivider(theme),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 4,
+              ),
+              leading: Icon(
+                Icons.refresh,
+                color: theme.colorScheme.error,
+              ),
+              title: Text(
+                l10n.resetToDefault ?? 'Reset to Default',
+                style: TextStyleConst.bodyLarge.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.error,
+                ),
+              ),
+              subtitle: Text(
+                l10n.useDefaultInternalStorage ??
+                    'Use default internal storage location',
+                style: TextStyleConst.bodySmall.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              onTap: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text(l10n.resetToDefault ?? 'Reset to Default'),
+                    content: Text(
+                      l10n.confirmResetStorageDirectory ??
+                          'Reset download directory to default internal storage?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: Text(l10n.cancel),
+                      ),
+                      FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: theme.colorScheme.error,
+                          foregroundColor: theme.colorScheme.onError,
+                        ),
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: Text(l10n.reset),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirmed == true) {
+                  await StorageSettings.clearCustomRoot();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          l10n.downloadDirectoryReset ??
+                              'Download directory reset to default',
+                        ),
+                      ),
+                    );
+                    setState(() {}); // Refresh UI
+                  }
+                }
+              },
+            ),
+          ],
+        ], theme);
       },
     );
   }
