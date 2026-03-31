@@ -123,6 +123,15 @@ class ImportZipUseCase {
 
       final coverUrl = sortedImages.isNotEmpty ? sortedImages.first.path : '';
 
+      // Step 7.5: Calculate total file size
+      int totalFileSize = 0;
+      for (final file in sortedImages) {
+        if (await file.exists()) {
+          totalFileSize += await file.length();
+        }
+      }
+      _logger.i('Total file size: ${_formatBytes(totalFileSize)}');
+
       // Step 8: Generate metadata.json
       await DownloadStorageUtils.saveLocalMetadata(
         contentId: contentId,
@@ -151,6 +160,7 @@ class ImportZipUseCase {
         sourceId: 'local',
         coverUrl: coverUrl,
         downloadedPages: imageCount,
+        fileSize: totalFileSize,
       );
 
       await _userDataRepository.saveDownloadStatus(downloadStatus);
@@ -210,5 +220,21 @@ class ImportZipUseCase {
         })
         .join(' ')
         .trim();
+  }
+
+  /// Formats bytes into human-readable string
+  String _formatBytes(int bytes) {
+    if (bytes == 0) return '0 B';
+
+    const suffixes = ['B', 'KB', 'MB', 'GB'];
+    var size = bytes.toDouble();
+    var suffixIndex = 0;
+
+    while (size >= 1024 && suffixIndex < suffixes.length - 1) {
+      size /= 1024;
+      suffixIndex++;
+    }
+
+    return '${size.toStringAsFixed(1)} ${suffixes[suffixIndex]}';
   }
 }
