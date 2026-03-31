@@ -79,11 +79,13 @@ import 'package:nhasixapp/domain/usecases/settings/save_user_preferences_usecase
 import 'package:nhasixapp/domain/usecases/crotpedia/get_genre_list_usecase.dart';
 import 'package:nhasixapp/domain/usecases/crotpedia/get_doujin_list_usecase.dart';
 import 'package:nhasixapp/domain/usecases/crotpedia/get_request_list_usecase.dart';
+import 'package:nhasixapp/domain/usecases/imports/import_zip_usecase.dart';
 
 // Services
 import 'package:nhasixapp/services/native_download_service.dart';
 import 'package:nhasixapp/services/native_pdf_service.dart';
 import 'package:nhasixapp/services/native_backup_service.dart';
+import 'package:nhasixapp/services/native_zip_import_service.dart';
 import 'package:nhasixapp/services/native_pdf_reader_service.dart';
 import 'package:nhasixapp/services/download_service.dart';
 
@@ -215,6 +217,7 @@ void _setupServices() {
 
   // Native Services
   getIt.registerLazySingleton<NativeBackupService>(() => NativeBackupService());
+  getIt.registerLazySingleton<NativeZipImportService>(() => NativeZipImportService());
   getIt.registerLazySingleton<NativePdfReaderService>(
     () => NativePdfReaderService(),
   );
@@ -576,6 +579,14 @@ void _setupUseCases() {
       () => GetDoujinListUseCase(getIt<CrotpediaFeatureRepository>()));
   getIt.registerLazySingleton<GetRequestListUseCase>(
       () => GetRequestListUseCase(getIt<CrotpediaFeatureRepository>()));
+
+  // Import Use Cases
+  getIt.registerLazySingleton<ImportZipUseCase>(
+    () => ImportZipUseCase(
+      zipImportService: getIt<NativeZipImportService>(),
+      userDataRepository: getIt<UserDataRepository>(),
+    ),
+  );
 
   // Content Use Cases
   getIt.registerLazySingleton<GetContentListUseCase>(
