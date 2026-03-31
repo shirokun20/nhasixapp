@@ -14,6 +14,8 @@ class MainActivity: FlutterActivity() {
     private val CHANNEL = "app_disguise"
     private val NAVIGATION_CHANNEL = "app.navigation"
 
+    private var zipImportHandler: ZipImportHandler? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // FIX: Plant Timber for logging
@@ -43,6 +45,15 @@ class MainActivity: FlutterActivity() {
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         Log.d("AppDisguise", "configureFlutterEngine called")
+
+        // Setup ZIP Import Handler
+        zipImportHandler = ZipImportHandler(this)
+        val zipChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            ZipImportHandler.CHANNEL_NAME
+        )
+        zipImportHandler?.setupChannel(zipChannel)
+        Log.d("ZipImport", "ZIP Import handler setup completed")
 
         // Setup App Disguise Channel
         try {
@@ -93,6 +104,12 @@ class MainActivity: FlutterActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+
+        // Handle ZIP import result
+        if (zipImportHandler?.onActivityResult(requestCode, resultCode, data) == true) {
+            return
+        }
+
         // No longer needed - backup moved to kuron_native
     }
 
