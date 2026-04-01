@@ -30,6 +30,13 @@ class MockKuronNativePlatform
   Future<Uint8List?> readZipBytes(String contentUri) async => null;
 
   @override
+  Future<Map<String, dynamic>?> extractZipFile({
+    required String contentUri,
+    required String destinationPath,
+    Function(int processed, int total, int imageCount, String currentFile)? onProgress,
+  }) async => {'success': true, 'imageCount': 0, 'destinationPath': destinationPath};
+
+  @override
   Future<String?> getPlatformVersion() => Future.value('1.0.0');
 
   @override
