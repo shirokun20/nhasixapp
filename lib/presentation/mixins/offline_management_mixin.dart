@@ -298,7 +298,8 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
         ImportZipParams(
           onProgress: (processed, total, imgCount, currentFile) {
             // Calculate progress percentage
-            final percentage = total > 0 ? ((processed / total) * 100).toInt() : 0;
+            final percentage =
+                total > 0 ? ((processed / total) * 100).toInt() : 0;
 
             // Update notification with progress
             notificationService.updateZipExtractionProgress(
@@ -320,6 +321,8 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
         await notificationService.showZipExtractionCompleted(
           imageCount: imageCount,
         );
+
+        if (!context.mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -349,6 +352,8 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
           // Show error notification
           await notificationService.showZipExtractionError(error: error);
 
+          if (!context.mounted) return;
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Import failed: $error'),
@@ -362,10 +367,10 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
         await context.read<OfflineSearchCubit>().forceRefresh();
       }
     } catch (e) {
-      if (!context.mounted) return;
-
       // Show error notification
       await notificationService.showZipExtractionError(error: e.toString());
+
+      if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
