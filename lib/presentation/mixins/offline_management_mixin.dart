@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:path/path.dart' as path;
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/utils/directory_utils.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
@@ -285,45 +284,11 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
     // Show loading state
     context.read<OfflineSearchCubit>().setLoadingState();
 
-    // Progress dialog state
-    String progressMessage = 'Preparing extraction...';
-    int processedFiles = 0;
-    int totalFiles = 0;
-    int imageCount = 0;
+    // Get notification service
+    final notificationService = getIt<NotificationService>();
 
-    // Use a reference to the dialog state setter to update progress
-    StateSetter? dialogSetState;
-
-    // Show progress dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          dialogSetState = setDialogState;
-          return AlertDialog(
-            title: const Text('Importing ZIP'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                LinearProgressIndicator(
-                  value: totalFiles > 0 ? processedFiles / totalFiles : null,
-                ),
-                const SizedBox(height: 16),
-                Text(progressMessage),
-                if (totalFiles > 0) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    'Extracting: $processedFiles/$totalFiles images',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ],
-            ),
-          );
-        },
-      ),
-    );
+    // Show ZIP extraction started notification
+    await notificationService.showZipExtractionStarted();
 
     try {
       final importZipUseCase = getIt<ImportZipUseCase>();
@@ -332,25 +297,29 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       final result = await importZipUseCase(
         ImportZipParams(
           onProgress: (processed, total, imgCount, currentFile) {
-            processedFiles = processed;
-            totalFiles = total;
-            imageCount = imgCount;
-            progressMessage = 'Extracting: ${path.basename(currentFile)}';
+            // Calculate progress percentage
+            final percentage = total > 0 ? ((processed / total) * 100).toInt() : 0;
 
-            // Update dialog if visible
-            if (dialogSetState != null && context.mounted) {
-              dialogSetState!(() {});
-            }
+            // Update notification with progress
+            notificationService.updateZipExtractionProgress(
+              progress: percentage,
+              message: AppLocalizations.of(context)!
+                  .syncProgressMessage(processed, total),
+            );
           },
         ),
       );
 
       if (!context.mounted) return;
-      Navigator.of(context).pop(); // Close progress dialog
 
       if (result['success'] == true) {
         final contentId = result['contentId'] as String;
         final imageCount = result['imageCount'] as int;
+
+        // Show completion notification
+        await notificationService.showZipExtractionCompleted(
+          imageCount: imageCount,
+        );
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -377,6 +346,9 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
         final error = result['error'] as String? ?? 'Unknown error';
 
         if (error != 'Cancelled') {
+          // Show error notification
+          await notificationService.showZipExtractionError(error: error);
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Import failed: $error'),
@@ -391,7 +363,9 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       }
     } catch (e) {
       if (!context.mounted) return;
-      Navigator.of(context).pop(); // Close progress dialog on error
+
+      // Show error notification
+      await notificationService.showZipExtractionError(error: e.toString());
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
