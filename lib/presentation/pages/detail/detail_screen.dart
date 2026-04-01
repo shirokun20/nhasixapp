@@ -229,7 +229,7 @@ class _DetailScreenState extends State<DetailScreen> {
         var resolvedTagId = tagId?.trim();
         if (resolvedTagId == null ||
             resolvedTagId.isEmpty ||
-            int.tryParse(resolvedTagId) != null) {
+            int.tryParse(resolvedTagId) == null) {
           resolvedTagId =
               _resolveTagIdFromLoadedContent(tagName, candidateTypes);
         }
@@ -303,24 +303,30 @@ class _DetailScreenState extends State<DetailScreen> {
       if (mappedQuery != null && mappedQuery.isNotEmpty) {
         query = mappedQuery;
       } else if (actualSourceId == 'nhentai') {
-        // SPECIAL HANDLING FOR NHENTAI
-        // User requested strict slug format: lowercase + hyphens
-        // e.g. "Big Breasts" -> "big-breasts", "Lucy Heartfilia" -> "lucy-heartfilia"
-
-        // Prioritize explicit slug/tagId if it's text (not numeric ID)
-        String value = tagName.toLowerCase().replaceAll(' ', '-');
-        if (tagId != null && int.tryParse(tagId) == null) {
-          value = tagId;
-        }
-
-        if (tagType != null &&
-            !['tag', 'category'].contains(tagType.toLowerCase())) {
-          // type:slug syntax (e.g. artist:shidou, character:lucy-heartfilia)
-          query = '${tagType.toLowerCase()}:$value';
+        // Prefer API v2 tagged endpoint when a numeric tag ID is available.
+        final numericTagId = (tagId ?? '').trim();
+        if (numericTagId.isNotEmpty && int.tryParse(numericTagId) != null) {
+          query = 'raw:tag_id=$numericTagId';
         } else {
-          // General tags: just the slug (e.g. big-breasts)
-          // This will map to "q=big-breasts" in search
-          query = value;
+          // SPECIAL HANDLING FOR NHENTAI
+          // User requested strict slug format: lowercase + hyphens
+          // e.g. "Big Breasts" -> "big-breasts", "Lucy Heartfilia" -> "lucy-heartfilia"
+
+          // Prioritize explicit slug/tagId if it's text (not numeric ID)
+          String value = tagName.toLowerCase().replaceAll(' ', '-');
+          if (tagId != null && int.tryParse(tagId) == null) {
+            value = tagId;
+          }
+
+          if (tagType != null &&
+              !['tag', 'category'].contains(tagType.toLowerCase())) {
+            // type:slug syntax (e.g. artist:shidou, character:lucy-heartfilia)
+            query = '${tagType.toLowerCase()}:$value';
+          } else {
+            // General tags: just the slug (e.g. big-breasts)
+            // This will map to "q=big-breasts" in search
+            query = value;
+          }
         }
       } else {
         // Config-driven genre route support for generic scraper sources

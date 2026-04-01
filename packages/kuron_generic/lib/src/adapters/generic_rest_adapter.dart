@@ -150,16 +150,53 @@ class GenericRestAdapter implements GenericAdapter {
       return const AdapterSearchResult(items: [], hasNextPage: false);
     }
 
-    // Build URL using the effective query (with embedded filter tokens)
+    // Build URL using the effective query (with embedded filter tokens).
+    // For raw tag_id searches (e.g. from detail tag tap), prefer dedicated
+    // tagSearch endpoint when configured.
     final adjustedFilter = effectiveQuery != filter.query.trim()
         ? filter.copyWith(query: effectiveQuery)
         : filter;
     final sortValue = _resolveSearchSortValue(adjustedFilter, rawConfig);
-    final url = _urlBuilder.buildSearchUrl(
-      searchTemplate,
-      adjustedFilter,
-      sortValue: sortValue,
-    );
+    final rawParams = _extractRawSearchParams(adjustedFilter.query);
+    String url;
+
+    if (rawParams != null && rawParams.isNotEmpty) {
+      final rawMap = _parseRawQueryParams(rawParams);
+      final tagIdValues = rawMap['tag_id'] ?? const <String>[];
+      final tagId = tagIdValues.isNotEmpty ? tagIdValues.first.trim() : '';
+      final tagSearchTemplate = endpoints['tagSearch'] ?? '';
+
+      if (tagId.isNotEmpty && tagSearchTemplate.isNotEmpty) {
+        final page = adjustedFilter.page > 0 ? adjustedFilter.page : 1;
+        final baseTaggedUrl = _urlBuilder.resolve(tagSearchTemplate, {
+          'tagId': tagId,
+          'page': page.toString(),
+          'sort': sortValue,
+          'query': '',
+        });
+
+        final mergedParams = _parseUrlQueryParams(baseTaggedUrl);
+        for (final entry in rawMap.entries) {
+          mergedParams[entry.key] = entry.value;
+        }
+
+        if (sortValue.isNotEmpty &&
+            !(mergedParams['sort']?.any((v) => v.trim().isNotEmpty) ?? false)) {
+          mergedParams['sort'] = [sortValue];
+        }
+
+        url = _rebuildUrlWithQueryParams(baseTaggedUrl, mergedParams);
+      } else {
+        url = _buildRawSearchUrl(searchTemplate, rawParams, adjustedFilter);
+      }
+    } else {
+      url = _urlBuilder.buildSearchUrl(
+        searchTemplate,
+        adjustedFilter,
+        sortValue: sortValue,
+      );
+    }
+
     _logger.d('$_sourceId REST search: Built URL: $url');
 
     try {
