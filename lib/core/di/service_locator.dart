@@ -18,6 +18,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart'
 import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_generic/kuron_generic.dart';
 import 'package:kuron_special/kuron_special.dart';
+import 'package:kuron_native/kuron_native.dart';
 
 // Core Network
 import 'package:nhasixapp/core/network/http_client_manager.dart';
@@ -583,7 +584,7 @@ void _setupUseCases() {
   // Import Use Cases
   getIt.registerLazySingleton<ImportZipUseCase>(
     () => ImportZipUseCase(
-      zipImportService: getIt<NativeZipImportService>(),
+      kuronNative: KuronNative.instance,
       userDataRepository: getIt<UserDataRepository>(),
     ),
   );

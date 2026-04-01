@@ -1,12 +1,10 @@
 import 'dart:io';
-import 'dart:isolate';
-import 'package:archive/archive.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
+import 'package:kuron_native/kuron_native.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/download_storage_utils.dart';
-import '../../../services/native_zip_import_service.dart';
 import '../../../domain/repositories/user_data_repository.dart';
 import '../../../domain/entities/download_status.dart';
 
@@ -19,21 +17,21 @@ class ImportZipParams {
 ///
 /// This handles:
 /// 1. Picking a ZIP file using native file picker
-/// 2. Extracting the ZIP to /nhasix/local/[zip-name]/
+/// 2. Extracting the ZIP natively with progress notifications
 /// 3. Auto-generating metadata.json
 /// 4. Registering the content in the database
 class ImportZipUseCase {
-  final NativeZipImportService _zipImportService;
+  final KuronNative _kuronNative;
   final UserDataRepository _userDataRepository;
   final Logger _logger = Logger();
 
   ImportZipUseCase({
-    required NativeZipImportService zipImportService,
+    required KuronNative kuronNative,
     required UserDataRepository userDataRepository,
-  })  : _zipImportService = zipImportService,
+  })  : _kuronNative = kuronNative,
         _userDataRepository = userDataRepository;
 
-  /// Executes the ZIP import flow with streaming and memory management
+  /// Executes the ZIP import flow using native extraction with progress notifications
   ///
   /// Returns a map with:
   /// - 'success': bool
@@ -41,10 +39,10 @@ class ImportZipUseCase {
   /// - 'error': String (if failed)
   Future<Map<String, dynamic>> call(ImportZipParams params) async {
     try {
-      _logger.i('Starting ZIP import flow with streaming extraction');
+      _logger.i('Starting native ZIP import flow');
 
       // Step 1: Pick ZIP file
-      final zipUri = await _zipImportService.pickZipFile();
+      final zipUri = await _kuronNative.pickZipFile();
       if (zipUri == null) {
         _logger.i('User cancelled ZIP file selection');
         return {'success': false, 'error': 'Cancelled'};
@@ -52,22 +50,13 @@ class ImportZipUseCase {
 
       _logger.i('ZIP file selected: $zipUri');
 
-      // Step 2: Read ZIP bytes (unavoidable for now, but we'll process in isolate)
-      final zipBytes = await _zipImportService.readZipBytes(zipUri);
-      if (zipBytes == null || zipBytes.isEmpty) {
-        _logger.e('Failed to read ZIP file bytes');
-        return {'success': false, 'error': 'Failed to read ZIP file'};
-      }
-
-      _logger.i('ZIP file read successfully (${zipBytes.length} bytes)');
-
-      // Step 3: Extract ZIP file name for content ID
+      // Step 2: Extract ZIP file name for content ID
       final zipFileName = _extractFileNameFromUri(zipUri);
       final contentId = _sanitizeContentId(zipFileName);
 
       _logger.i('Content ID: $contentId');
 
-      // Step 4: Get destination directory BEFORE heavy processing
+      // Step 3: Get destination directory BEFORE extraction
       final destDir = await DownloadStorageUtils.getNewContentDirectory(
         contentId,
         sourceId: 'local',
@@ -75,37 +64,41 @@ class ImportZipUseCase {
 
       _logger.i('Destination directory: $destDir');
 
-      // Step 5: Create images directory
+      // Step 4: Create images directory
       final imagesDir =
           Directory(path.join(destDir, AppStorage.imagesSubfolder));
       if (!await imagesDir.exists()) {
         await imagesDir.create(recursive: true);
       }
 
-      // Step 6: Extract images in background isolate to avoid blocking UI
-      _logger.i('Starting background extraction (isolate)');
+      // Step 5: Extract using native implementation with progress
+      _logger.i('Starting native ZIP extraction with progress notifications');
 
-      final extractionResult = await _extractZipInIsolate(
-        zipBytes,
-        imagesDir.path,
+      final extractionResult = await _kuronNative.extractZipFile(
+        contentUri: zipUri,
+        destinationPath: imagesDir.path,
+        onProgress: (processed, total, imageCount, currentFile) {
+          _logger.d(
+              'Extraction progress: $processed/$total, images: $imageCount, current: $currentFile');
+        },
       );
 
-      if (!extractionResult['success']) {
-        _logger.e('Extraction failed: ${extractionResult['error']}');
+      if (extractionResult == null || extractionResult['success'] != true) {
+        _logger.e('Extraction failed: ${extractionResult?['error']}');
         // Clean up empty directory
         if (await Directory(destDir).exists()) {
           await Directory(destDir).delete(recursive: true);
         }
         return {
           'success': false,
-          'error': extractionResult['error'] ?? 'Extraction failed'
+          'error': extractionResult?['error'] ?? 'Extraction failed'
         };
       }
 
       final imageCount = extractionResult['imageCount'] as int;
-      _logger.i('Extracted $imageCount images in background');
+      _logger.i('Extracted $imageCount images natively');
 
-      // Step 7: Get first image for cover
+      // Step 6: Get first image for cover
       final imageFiles = await imagesDir.list().toList();
       final imageExtensions = [
         '.jpg',
@@ -127,7 +120,7 @@ class ImportZipUseCase {
 
       final coverUrl = sortedImages.isNotEmpty ? sortedImages.first.path : '';
 
-      // Step 8: Calculate total file size
+      // Step 7: Calculate total file size
       int totalFileSize = 0;
       for (final file in sortedImages) {
         if (await file.exists()) {
@@ -136,7 +129,7 @@ class ImportZipUseCase {
       }
       _logger.i('Total file size: ${_formatBytes(totalFileSize)}');
 
-      // Step 9: Generate metadata.json
+      // Step 8: Generate metadata.json
       await DownloadStorageUtils.saveLocalMetadata(
         contentId: contentId,
         sourceId: 'local',
@@ -149,12 +142,13 @@ class ImportZipUseCase {
           'importedAt': DateTime.now().toIso8601String(),
           'importedFrom': 'zip',
           'originalFileName': zipFileName,
+          'extractedNatively': true,
         },
       );
 
       _logger.i('Metadata.json generated');
 
-      // Step 10: Register in database
+      // Step 9: Register in database
       final downloadStatus = DownloadStatus(
         contentId: contentId,
         state: DownloadState.completed,
@@ -179,103 +173,6 @@ class ImportZipUseCase {
     } catch (e, stackTrace) {
       _logger.e('Error importing ZIP file', error: e, stackTrace: stackTrace);
       return {'success': false, 'error': e.toString()};
-    }
-  }
-
-  /// Extract ZIP in background isolate with chunked I/O for large files
-  /// This prevents UI blocking and OOM crashes with large images (14MB+)
-  Future<Map<String, dynamic>> _extractZipInIsolate(
-    List<int> zipBytes,
-    String destinationPath,
-  ) async {
-    final receivePort = ReceivePort();
-
-    try {
-      await Isolate.spawn(
-        _extractZipWorker,
-        _ZipExtractionData(
-          zipBytes: zipBytes,
-          destinationPath: destinationPath,
-          sendPort: receivePort.sendPort,
-        ),
-      );
-
-      final result = await receivePort.first as Map<String, dynamic>;
-      return result;
-    } catch (e) {
-      _logger.e('Isolate spawn failed: $e');
-      return {'success': false, 'error': 'Failed to start background extraction'};
-    } finally {
-      receivePort.close();
-    }
-  }
-
-  /// Worker function that runs in isolate for ZIP extraction
-  static void _extractZipWorker(_ZipExtractionData data) async {
-    try {
-      // Decode ZIP archive
-      final archive = ZipDecoder().decodeBytes(data.zipBytes);
-
-      int imageCount = 0;
-      final imageExtensions = [
-        '.jpg',
-        '.jpeg',
-        '.png',
-        '.gif',
-        '.webp',
-        '.avif',
-        '.bmp'
-      ];
-
-      // Extract images with chunked writing for large files
-      for (final file in archive.files) {
-        if (file.isFile) {
-          final fileName = path.basename(file.name);
-          final extension = path.extension(fileName).toLowerCase();
-
-          // Only extract image files
-          if (imageExtensions.contains(extension)) {
-            final destFile = File(path.join(data.destinationPath, fileName));
-
-            // Use chunked writing for large files to avoid memory spikes
-            final content = file.content as List<int>;
-            final fileHandle = await destFile.open(mode: FileMode.write);
-
-            try {
-              // Write in 1MB chunks to manage memory
-              const chunkSize = 1024 * 1024; // 1MB
-              for (int offset = 0; offset < content.length; offset += chunkSize) {
-                final end = (offset + chunkSize < content.length)
-                    ? offset + chunkSize
-                    : content.length;
-                final chunk = content.sublist(offset, end);
-                await fileHandle.writeFrom(chunk);
-              }
-            } finally {
-              await fileHandle.close();
-            }
-
-            imageCount++;
-          }
-        }
-      }
-
-      if (imageCount == 0) {
-        data.sendPort.send({
-          'success': false,
-          'error': 'No images found in ZIP file'
-        });
-      } else {
-        data.sendPort.send({
-          'success': true,
-          'imageCount': imageCount,
-        });
-      }
-    } catch (e) {
-      data.sendPort.send({
-        'success': false,
-        'error': e.toString(),
-      });
     }
   }
 
@@ -343,17 +240,4 @@ class ImportZipUseCase {
 
     return '${size.toStringAsFixed(1)} ${suffixes[suffixIndex]}';
   }
-}
-
-/// Data class for passing parameters to isolate worker
-class _ZipExtractionData {
-  final List<int> zipBytes;
-  final String destinationPath;
-  final SendPort sendPort;
-
-  _ZipExtractionData({
-    required this.zipBytes,
-    required this.destinationPath,
-    required this.sendPort,
-  });
 }

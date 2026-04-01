@@ -60,6 +60,16 @@ abstract class KuronNativePlatform extends PlatformInterface {
     throw UnimplementedError('readZipBytes() has not been implemented.');
   }
 
+  /// Extract ZIP file natively to destination directory with progress notifications.
+  /// Returns a map with 'success', 'imageCount', and 'destinationPath'.
+  Future<Map<String, dynamic>?> extractZipFile({
+    required String contentUri,
+    required String destinationPath,
+    Function(int processed, int total, int imageCount, String currentFile)? onProgress,
+  }) {
+    throw UnimplementedError('extractZipFile() has not been implemented.');
+  }
+
   /// Start a system download
   Future<String?> startDownload({
     required String url,
