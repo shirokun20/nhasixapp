@@ -57,6 +57,16 @@ abstract class ContentRepository {
     int limit = 10,
   });
 
+  /// Get random content galleries
+  ///
+  /// [sourceId] - Source ID to fetch from (default: active source)
+  /// [count] - Number of random galleries to fetch (default: 1)
+  /// Returns list of random content
+  Future<List<Content>> getRandomGalleries({
+    String? sourceId,
+    int count = 1,
+  });
+
   /// Get all available tags with counts
   ///
   /// [type] - Filter by tag type (optional)

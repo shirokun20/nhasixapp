@@ -25,7 +25,8 @@
             "tagSearch": "/api/v2/galleries/tagged?tag_id={tagId}&page={page}",
             "related": "/api/v2/galleries/{id}/related",
             "comments": "/api/v2/galleries/{id}?include=comments",
-            "contentUrl": "/g/{id}/"
+            "contentUrl": "/g/{id}/",
+            "random": "/api/v2/galleries/random"
         },
         "mirrors": [
             "https://nhentai.xxx",

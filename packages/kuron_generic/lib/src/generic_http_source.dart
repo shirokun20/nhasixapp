@@ -24,6 +24,7 @@ import 'url_builder/generic_url_builder.dart';
 /// (REST/JSON) or a `scraper` block (HTML scraping).
 class GenericHttpSource implements ContentSource {
   final Map<String, dynamic> _rawConfig;
+  final Dio _dio;
   final GenericAdapter _adapter;
   // ignore: unused_field — will be used in Phase 2 when filter UI is wired up
   final GenericFilterTransformer _filterTransformer;
@@ -46,6 +47,7 @@ class GenericHttpSource implements ContentSource {
     DelayApplier? delayApplier,
     GenericAdapter? adapterOverride,
   })  : _rawConfig = rawConfig,
+        _dio = dio,
         _logger = logger,
         _filterTransformer = const GenericFilterTransformer(),
         _id = rawConfig['source'] as String? ?? 'unknown',
@@ -154,9 +156,103 @@ class GenericHttpSource implements ContentSource {
 
   @override
   Future<List<Content>> getRandom({int count = 1}) async {
-    // Generic sources don't expose a random endpoint by default.
-    _logger.d('$_id: getRandom not supported — returning empty');
-    return const [];
+    try {
+      final api = _rawConfig['api'] as Map<String, dynamic>?;
+      final endpoints =
+          (api?['endpoints'] as Map<String, dynamic>?) ?? const {};
+      final randomEndpoint = endpoints['random']?.toString() ?? '';
+      final apiBase = api?['apiBase']?.toString() ?? _baseUrl;
+
+      if (randomEndpoint.isEmpty) {
+        _logger
+            .d('$_id: getRandom not supported — no random endpoint configured');
+        return const [];
+      }
+
+      _logger.i('$_id: Fetching random galleries (count: $count)');
+      final results = <Content>[];
+
+      for (var index = 0; index < count; index++) {
+        try {
+          final url = Uri.parse(apiBase).resolve(randomEndpoint).toString();
+          _logger.d('$_id: Random request #${index + 1}: GET $url');
+
+          final response = await _dio.get<dynamic>(
+            url,
+            options: Options(headers: _defaultHeaders),
+          );
+
+          final contentId = _extractRandomContentId(response.data, response);
+          if (contentId == null || contentId.isEmpty) {
+            _logger
+                .w('$_id: Failed to extract content ID from random response');
+            continue;
+          }
+
+          _logger.d('$_id: Extracted content ID: $contentId from random');
+          final detail = await getDetail(contentId);
+          results.add(detail);
+        } catch (e) {
+          _logger.w('$_id: Failed to fetch random gallery ${index + 1}: $e');
+        }
+      }
+
+      _logger.i(
+          '$_id: Successfully fetched ${results.length}/$count random galleries');
+      return results;
+    } catch (e, stackTrace) {
+      _logger.e('$_id: Failed to get random galleries',
+          error: e, stackTrace: stackTrace);
+      return const [];
+    }
+  }
+
+  /// Extract content ID from a random API response.
+  String? _extractRandomContentId(dynamic data, Response<dynamic> response) {
+    try {
+      if (data is Map<String, dynamic>) {
+        final id = data['id'];
+        if (id != null) {
+          return id.toString();
+        }
+
+        final result = data['result'];
+        if (result is Map<String, dynamic> && result['id'] != null) {
+          return result['id'].toString();
+        }
+
+        if (result is List && result.isNotEmpty) {
+          final first = result.first;
+          if (first is Map<String, dynamic> && first['id'] != null) {
+            return first['id'].toString();
+          }
+        }
+      }
+
+      if (data is List && data.isNotEmpty) {
+        final first = data.first;
+        if (first is Map<String, dynamic> && first['id'] != null) {
+          return first['id'].toString();
+        }
+      }
+
+      if (data is String) {
+        final idMatch = RegExp(r'"id"\s*:\s*(\d+)').firstMatch(data);
+        if (idMatch != null) {
+          return idMatch.group(1);
+        }
+      }
+
+      final pathMatch = RegExp(r'/g/(\d+)/').firstMatch(response.realUri.path);
+      if (pathMatch != null) {
+        return pathMatch.group(1);
+      }
+
+      return null;
+    } catch (e) {
+      _logger.w('$_id: Failed to extract content ID from random response: $e');
+      return null;
+    }
   }
 
   @override

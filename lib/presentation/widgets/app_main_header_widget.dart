@@ -5,6 +5,7 @@ import '../../core/constants/text_style_const.dart';
 import '../../core/config/remote_config_service.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/routing/app_router.dart';
+import 'random_gallery_button.dart';
 
 class AppMainHeaderWidget extends StatelessWidget
     implements PreferredSizeWidget {
@@ -150,6 +151,7 @@ class AppMainHeaderWidget extends StatelessWidget
                 ),
                 tooltip: l10n.search,
               ),
+              const RandomGalleryButton(),
               PopupMenuButton<String>(
                 color: Theme.of(context).colorScheme.surfaceContainer,
                 icon: Icon(Icons.more_vert,
