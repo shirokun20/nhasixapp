@@ -646,9 +646,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             subtitle: Text(
-              hasCustomPath
-                  ? customPath
-                  : l10n.defaultStorage,
+              hasCustomPath ? customPath : l10n.defaultStorage,
               style: TextStyleConst.bodySmall.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -668,7 +666,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (newPath != null && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(
+                      content: const Text(
                         'Download directory updated',
                       ),
                       backgroundColor: Colors.green.shade700,
@@ -708,7 +706,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   context: context,
                   builder: (ctx) => AlertDialog(
                     title: Text(l10n.resetToDefault),
-                    content: Text(
+                    content: const Text(
                       'Reset download directory to default internal storage?',
                     ),
                     actions: [
@@ -732,7 +730,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   await StorageSettings.clearCustomRoot();
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
+                      const SnackBar(
                         content: Text(
                           'Download directory reset to default',
                         ),
