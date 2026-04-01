@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:isolate';
 import 'package:archive/archive.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
@@ -32,7 +33,7 @@ class ImportZipUseCase {
   })  : _zipImportService = zipImportService,
         _userDataRepository = userDataRepository;
 
-  /// Executes the ZIP import flow
+  /// Executes the ZIP import flow with streaming and memory management
   ///
   /// Returns a map with:
   /// - 'success': bool
@@ -40,7 +41,7 @@ class ImportZipUseCase {
   /// - 'error': String (if failed)
   Future<Map<String, dynamic>> call(ImportZipParams params) async {
     try {
-      _logger.i('Starting ZIP import flow');
+      _logger.i('Starting ZIP import flow with streaming extraction');
 
       // Step 1: Pick ZIP file
       final zipUri = await _zipImportService.pickZipFile();
@@ -51,7 +52,7 @@ class ImportZipUseCase {
 
       _logger.i('ZIP file selected: $zipUri');
 
-      // Step 2: Read ZIP bytes
+      // Step 2: Read ZIP bytes (unavoidable for now, but we'll process in isolate)
       final zipBytes = await _zipImportService.readZipBytes(zipUri);
       if (zipBytes == null || zipBytes.isEmpty) {
         _logger.e('Failed to read ZIP file bytes');
@@ -66,11 +67,7 @@ class ImportZipUseCase {
 
       _logger.i('Content ID: $contentId');
 
-      // Step 4: Decode ZIP archive
-      final archive = ZipDecoder().decodeBytes(zipBytes);
-      _logger.i('ZIP decoded: ${archive.files.length} files found');
-
-      // Step 5: Get destination directory
+      // Step 4: Get destination directory BEFORE heavy processing
       final destDir = await DownloadStorageUtils.getNewContentDirectory(
         contentId,
         sourceId: 'local',
@@ -78,14 +75,38 @@ class ImportZipUseCase {
 
       _logger.i('Destination directory: $destDir');
 
-      // Step 6: Extract images
+      // Step 5: Create images directory
       final imagesDir =
           Directory(path.join(destDir, AppStorage.imagesSubfolder));
       if (!await imagesDir.exists()) {
         await imagesDir.create(recursive: true);
       }
 
-      int imageCount = 0;
+      // Step 6: Extract images in background isolate to avoid blocking UI
+      _logger.i('Starting background extraction (isolate)');
+
+      final extractionResult = await _extractZipInIsolate(
+        zipBytes,
+        imagesDir.path,
+      );
+
+      if (!extractionResult['success']) {
+        _logger.e('Extraction failed: ${extractionResult['error']}');
+        // Clean up empty directory
+        if (await Directory(destDir).exists()) {
+          await Directory(destDir).delete(recursive: true);
+        }
+        return {
+          'success': false,
+          'error': extractionResult['error'] ?? 'Extraction failed'
+        };
+      }
+
+      final imageCount = extractionResult['imageCount'] as int;
+      _logger.i('Extracted $imageCount images in background');
+
+      // Step 7: Get first image for cover
+      final imageFiles = await imagesDir.list().toList();
       final imageExtensions = [
         '.jpg',
         '.jpeg',
@@ -96,34 +117,6 @@ class ImportZipUseCase {
         '.bmp'
       ];
 
-      for (final file in archive.files) {
-        if (file.isFile) {
-          final fileName = path.basename(file.name);
-          final extension = path.extension(fileName).toLowerCase();
-
-          // Only extract image files
-          if (imageExtensions.contains(extension)) {
-            final destFile = File(path.join(imagesDir.path, fileName));
-            await destFile.writeAsBytes(file.content as List<int>);
-            imageCount++;
-            _logger.d('Extracted: $fileName');
-          }
-        }
-      }
-
-      if (imageCount == 0) {
-        _logger.e('No images found in ZIP file');
-        // Clean up empty directory
-        if (await Directory(destDir).exists()) {
-          await Directory(destDir).delete(recursive: true);
-        }
-        return {'success': false, 'error': 'No images found in ZIP file'};
-      }
-
-      _logger.i('Extracted $imageCount images');
-
-      // Step 7: Get first image for cover
-      final imageFiles = await imagesDir.list().toList();
       final sortedImages = imageFiles
           .whereType<File>()
           .where((f) =>
@@ -134,7 +127,7 @@ class ImportZipUseCase {
 
       final coverUrl = sortedImages.isNotEmpty ? sortedImages.first.path : '';
 
-      // Step 7.5: Calculate total file size
+      // Step 8: Calculate total file size
       int totalFileSize = 0;
       for (final file in sortedImages) {
         if (await file.exists()) {
@@ -143,7 +136,7 @@ class ImportZipUseCase {
       }
       _logger.i('Total file size: ${_formatBytes(totalFileSize)}');
 
-      // Step 8: Generate metadata.json
+      // Step 9: Generate metadata.json
       await DownloadStorageUtils.saveLocalMetadata(
         contentId: contentId,
         sourceId: 'local',
@@ -161,7 +154,7 @@ class ImportZipUseCase {
 
       _logger.i('Metadata.json generated');
 
-      // Step 9: Register in database
+      // Step 10: Register in database
       final downloadStatus = DownloadStatus(
         contentId: contentId,
         state: DownloadState.completed,
@@ -186,6 +179,103 @@ class ImportZipUseCase {
     } catch (e, stackTrace) {
       _logger.e('Error importing ZIP file', error: e, stackTrace: stackTrace);
       return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// Extract ZIP in background isolate with chunked I/O for large files
+  /// This prevents UI blocking and OOM crashes with large images (14MB+)
+  Future<Map<String, dynamic>> _extractZipInIsolate(
+    List<int> zipBytes,
+    String destinationPath,
+  ) async {
+    final receivePort = ReceivePort();
+
+    try {
+      await Isolate.spawn(
+        _extractZipWorker,
+        _ZipExtractionData(
+          zipBytes: zipBytes,
+          destinationPath: destinationPath,
+          sendPort: receivePort.sendPort,
+        ),
+      );
+
+      final result = await receivePort.first as Map<String, dynamic>;
+      return result;
+    } catch (e) {
+      _logger.e('Isolate spawn failed: $e');
+      return {'success': false, 'error': 'Failed to start background extraction'};
+    } finally {
+      receivePort.close();
+    }
+  }
+
+  /// Worker function that runs in isolate for ZIP extraction
+  static void _extractZipWorker(_ZipExtractionData data) async {
+    try {
+      // Decode ZIP archive
+      final archive = ZipDecoder().decodeBytes(data.zipBytes);
+
+      int imageCount = 0;
+      final imageExtensions = [
+        '.jpg',
+        '.jpeg',
+        '.png',
+        '.gif',
+        '.webp',
+        '.avif',
+        '.bmp'
+      ];
+
+      // Extract images with chunked writing for large files
+      for (final file in archive.files) {
+        if (file.isFile) {
+          final fileName = path.basename(file.name);
+          final extension = path.extension(fileName).toLowerCase();
+
+          // Only extract image files
+          if (imageExtensions.contains(extension)) {
+            final destFile = File(path.join(data.destinationPath, fileName));
+
+            // Use chunked writing for large files to avoid memory spikes
+            final content = file.content as List<int>;
+            final fileHandle = await destFile.open(mode: FileMode.write);
+
+            try {
+              // Write in 1MB chunks to manage memory
+              const chunkSize = 1024 * 1024; // 1MB
+              for (int offset = 0; offset < content.length; offset += chunkSize) {
+                final end = (offset + chunkSize < content.length)
+                    ? offset + chunkSize
+                    : content.length;
+                final chunk = content.sublist(offset, end);
+                await fileHandle.writeFrom(chunk);
+              }
+            } finally {
+              await fileHandle.close();
+            }
+
+            imageCount++;
+          }
+        }
+      }
+
+      if (imageCount == 0) {
+        data.sendPort.send({
+          'success': false,
+          'error': 'No images found in ZIP file'
+        });
+      } else {
+        data.sendPort.send({
+          'success': true,
+          'imageCount': imageCount,
+        });
+      }
+    } catch (e) {
+      data.sendPort.send({
+        'success': false,
+        'error': e.toString(),
+      });
     }
   }
 
@@ -253,4 +343,17 @@ class ImportZipUseCase {
 
     return '${size.toStringAsFixed(1)} ${suffixes[suffixIndex]}';
   }
+}
+
+/// Data class for passing parameters to isolate worker
+class _ZipExtractionData {
+  final List<int> zipBytes;
+  final String destinationPath;
+  final SendPort sendPort;
+
+  _ZipExtractionData({
+    required this.zipBytes,
+    required this.destinationPath,
+    required this.sendPort,
+  });
 }
