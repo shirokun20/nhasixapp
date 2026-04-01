@@ -167,6 +167,16 @@
             "type": "jsonpath"
         }
     },
+    "navigation": {
+        "tagQueryMapping": {
+            "default": {
+                "mode": "rawParam",
+                "param": "tag_id",
+                "valueSource": "tagId",
+                "requiredPattern": "^\\d+$"
+            }
+        }
+    },
     "searchConfig": {
         "searchMode": "query-string",
         "endpoint": "/search/",
