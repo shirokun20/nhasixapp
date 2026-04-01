@@ -2,7 +2,6 @@
     "source": "nhentai",
     "version": "1.0.9",
     "lastUpdated": "2026-04-02T00:15:00+07:00",
-    "configUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/assets/configs/nhentai-config.json",
     "baseUrl": "https://nhentai.net",
     "avatarBaseUrl": "https://i3.nhentai.net",
     "assetHosts": {
