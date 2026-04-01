@@ -162,17 +162,33 @@ class GenericHttpSource implements ContentSource {
   Future<List<Content>> getRandom({int count = 1}) async {
     try {
       final api = _rawConfig['api'] as Map<String, dynamic>?;
+      final scraper = _rawConfig['scraper'] as Map<String, dynamic>?;
       final endpoints =
           (api?['endpoints'] as Map<String, dynamic>?) ?? const {};
-      final configuredRandomEndpoint = endpoints['random']?.toString() ?? '';
-      final randomEndpoint = configuredRandomEndpoint.isNotEmpty
-          ? configuredRandomEndpoint
-          : (_id == 'nhentai' ? '/api/v2/galleries/random' : '');
+      final configuredRandomEndpoint =
+          endpoints['random']?.toString().trim() ?? '';
+      final scraperRandomEndpoint =
+          ((scraper?['endpoints'] as Map<String, dynamic>?)?['random']
+                  ?.toString()
+                  .trim() ??
+              scraper?['randomUrl']?.toString().trim() ??
+              '');
+
+      final randomEndpoint = configuredRandomEndpoint;
       final apiBase = api?['apiBase']?.toString() ?? _baseUrl;
 
       if (randomEndpoint.isEmpty) {
-        _logger
-            .d('$_id: getRandom not supported — no random endpoint configured');
+        if (api != null) {
+          _logger.d(
+            '$_id: getRandom not supported — missing api.endpoints.random in config',
+          );
+        } else if (scraper != null) {
+          _logger.d(
+            '$_id: getRandom not supported for scraper source — random scraping endpoint not implemented (config value: "$scraperRandomEndpoint")',
+          );
+        } else {
+          _logger.d('$_id: getRandom not supported — no api/scraper block');
+        }
         return const [];
       }
 

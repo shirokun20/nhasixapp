@@ -1,13 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/domain/repositories/content_repository.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
-import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'animated_dice_widget.dart';
 
 /// Random Gallery Button — Rolls a dice to get random content
@@ -19,10 +18,34 @@ class RandomGalleryButton extends StatefulWidget {
 }
 
 class _RandomGalleryButtonState extends State<RandomGalleryButton> {
+  static const String _configSourceKey = 'nhentai';
+
   bool _isLoading = false;
   bool _isDialogOpen = false;
   final Logger _logger = Logger();
   final ValueNotifier<bool> _foundState = ValueNotifier<bool>(false);
+
+  String _resolveRandomSourceId() {
+    final rawConfig =
+        getIt<RemoteConfigService>().getRawConfig(_configSourceKey);
+    final sourceId = rawConfig?['source'] as String?;
+    if (sourceId != null && sourceId.isNotEmpty) {
+      return sourceId;
+    }
+    return _configSourceKey;
+  }
+
+  bool _isRandomFeatureEnabled() {
+    final rawConfig =
+        getIt<RemoteConfigService>().getRawConfig(_configSourceKey);
+    final features = rawConfig?['features'] as Map<String, dynamic>?;
+    final enabled = features?['randomGallery'];
+    if (enabled is bool) {
+      return enabled;
+    }
+    // Backward compatibility for old cached configs.
+    return true;
+  }
 
   Future<void> _showLoadingDialog() async {
     if (!mounted || _isDialogOpen) return;
@@ -93,8 +116,7 @@ class _RandomGalleryButtonState extends State<RandomGalleryButton> {
     unawaited(_showLoadingDialog());
 
     try {
-      final sourceId =
-          context.read<SourceCubit>().state.activeSource?.id ?? 'nhentai';
+      final sourceId = _resolveRandomSourceId();
       final repo = getIt<ContentRepository>();
 
       // Fetch random gallery(ies)
@@ -149,11 +171,13 @@ class _RandomGalleryButtonState extends State<RandomGalleryButton> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
+    final randomFeatureEnabled = _isRandomFeatureEnabled();
 
     return Tooltip(
       message: l10n.randomGallery,
       child: IconButton(
-        onPressed: _isLoading ? null : _handleRandomGallery,
+        onPressed:
+            (_isLoading || !randomFeatureEnabled) ? null : _handleRandomGallery,
         icon: const AnimatedDiceWidget(isSpinning: false),
         tooltip: l10n.randomGallery,
         splashRadius: 24,
