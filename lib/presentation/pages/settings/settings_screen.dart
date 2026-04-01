@@ -21,6 +21,7 @@ import '../../../domain/entities/user_preferences.dart';
 import '../../cubits/settings/settings_cubit.dart';
 import '../../cubits/source/source_cubit.dart';
 import '../../cubits/source/source_state.dart';
+import '../../blocs/download/download_bloc.dart';
 import '../../../core/utils/app_update_test.dart';
 import '../../../core/utils/storage_settings.dart';
 import '../../widgets/app_main_drawer_widget.dart';
@@ -169,6 +170,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 12),
           _buildStorageSection(context, theme, l10n),
+
+          const SizedBox(height: 24),
+
+          // Download Settings Card
+          _buildSectionHeader(Icons.download_outlined, 'DOWNLOAD', theme),
+          const SizedBox(height: 12),
+          _buildInfoBanner(
+            l10n.imageQualityDescription,
+            Icons.info_outline,
+            theme,
+          ),
+          const SizedBox(height: 12),
+          _buildDownloadSection(context, theme, l10n),
 
           const SizedBox(height: 24),
 
@@ -742,6 +756,301 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
           ],
+        ], theme);
+      },
+    );
+  }
+
+  Widget _buildDownloadSection(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations l10n,
+  ) {
+    return BlocBuilder<DownloadBloc, DownloadBlocState>(
+      builder: (context, state) {
+        if (state is! DownloadLoaded) {
+          return _buildSettingsCard([
+            ListTile(
+              title: Text(
+                l10n.loadingDownloads,
+                style: TextStyleConst.bodyMedium.copyWith(
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ], theme);
+        }
+
+        final settings = state.settings;
+
+        return _buildSettingsCard([
+          // Max Concurrent Downloads
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 4,
+            ),
+            title: Text(
+              l10n.maxConcurrentDownloads,
+              style: TextStyleConst.bodyLarge.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 8),
+                Slider(
+                  value: settings.maxConcurrentDownloads.toDouble(),
+                  min: 1,
+                  max: 10,
+                  divisions: 9,
+                  label: '${settings.maxConcurrentDownloads}',
+                  onChanged: (value) {
+                    context.read<DownloadBloc>().add(
+                          DownloadSettingsUpdateEvent(
+                            maxConcurrentDownloads: value.toInt(),
+                            imageQuality: settings.imageQuality,
+                            autoRetry: settings.autoRetry,
+                            retryAttempts: settings.retryAttempts,
+                            retryDelay: settings.retryDelay,
+                            timeoutDuration: settings.timeoutDuration,
+                            enableNotifications: settings.enableNotifications,
+                            wifiOnly: settings.wifiOnly,
+                            customStorageRoot: settings.customStorageRoot,
+                          ),
+                        );
+                  },
+                ),
+                Text(
+                  l10n.concurrentDownloadsWarning,
+                  style: TextStyleConst.bodySmall.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _buildDivider(theme),
+
+          // Image Quality
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 4,
+            ),
+            title: Text(
+              l10n.imageQualityLabel,
+              style: TextStyleConst.bodyLarge.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            subtitle: DropdownButton<String>(
+              value: settings.imageQuality,
+              isExpanded: true,
+              items: [
+                DropdownMenuItem(
+                  value: 'low',
+                  child: Text(l10n.lowQuality),
+                ),
+                DropdownMenuItem(
+                  value: 'medium',
+                  child: Text(l10n.mediumQuality),
+                ),
+                DropdownMenuItem(
+                  value: 'high',
+                  child: Text(l10n.highQuality),
+                ),
+                DropdownMenuItem(
+                  value: 'original',
+                  child: Text(l10n.originalQuality),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  context.read<DownloadBloc>().add(
+                        DownloadSettingsUpdateEvent(
+                          maxConcurrentDownloads:
+                              settings.maxConcurrentDownloads,
+                          imageQuality: value,
+                          autoRetry: settings.autoRetry,
+                          retryAttempts: settings.retryAttempts,
+                          retryDelay: settings.retryDelay,
+                          timeoutDuration: settings.timeoutDuration,
+                          enableNotifications: settings.enableNotifications,
+                          wifiOnly: settings.wifiOnly,
+                          customStorageRoot: settings.customStorageRoot,
+                        ),
+                      );
+                }
+              },
+            ),
+          ),
+          _buildDivider(theme),
+
+          // Auto Retry
+          _buildSwitchTile(
+            title: l10n.autoRetryFailedDownloads,
+            subtitle: l10n.autoRetryDescription,
+            value: settings.autoRetry,
+            onChanged: (value) {
+              context.read<DownloadBloc>().add(
+                    DownloadSettingsUpdateEvent(
+                      maxConcurrentDownloads: settings.maxConcurrentDownloads,
+                      imageQuality: settings.imageQuality,
+                      autoRetry: value,
+                      retryAttempts: settings.retryAttempts,
+                      retryDelay: settings.retryDelay,
+                      timeoutDuration: settings.timeoutDuration,
+                      enableNotifications: settings.enableNotifications,
+                      wifiOnly: settings.wifiOnly,
+                      customStorageRoot: settings.customStorageRoot,
+                    ),
+                  );
+            },
+            theme: theme,
+          ),
+
+          if (settings.autoRetry) ...[
+            _buildDivider(theme),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 4,
+              ),
+              title: Text(
+                l10n.maxRetryAttempts,
+                style: TextStyleConst.bodyLarge.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              subtitle: Slider(
+                value: settings.retryAttempts.toDouble(),
+                min: 1,
+                max: 10,
+                divisions: 9,
+                label: '${settings.retryAttempts}',
+                onChanged: (value) {
+                  context.read<DownloadBloc>().add(
+                        DownloadSettingsUpdateEvent(
+                          maxConcurrentDownloads:
+                              settings.maxConcurrentDownloads,
+                          imageQuality: settings.imageQuality,
+                          autoRetry: settings.autoRetry,
+                          retryAttempts: value.toInt(),
+                          retryDelay: settings.retryDelay,
+                          timeoutDuration: settings.timeoutDuration,
+                          enableNotifications: settings.enableNotifications,
+                          wifiOnly: settings.wifiOnly,
+                          customStorageRoot: settings.customStorageRoot,
+                        ),
+                      );
+                },
+              ),
+            ),
+          ],
+          _buildDivider(theme),
+
+          // WiFi Only
+          _buildSwitchTile(
+            title: l10n.wifiOnlyLabel,
+            subtitle: l10n.wifiOnlyDescription,
+            value: settings.wifiOnly,
+            onChanged: (value) {
+              context.read<DownloadBloc>().add(
+                    DownloadSettingsUpdateEvent(
+                      maxConcurrentDownloads: settings.maxConcurrentDownloads,
+                      imageQuality: settings.imageQuality,
+                      autoRetry: settings.autoRetry,
+                      retryAttempts: settings.retryAttempts,
+                      retryDelay: settings.retryDelay,
+                      timeoutDuration: settings.timeoutDuration,
+                      enableNotifications: settings.enableNotifications,
+                      wifiOnly: value,
+                      customStorageRoot: settings.customStorageRoot,
+                    ),
+                  );
+            },
+            theme: theme,
+          ),
+          _buildDivider(theme),
+
+          // Download Timeout
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 4,
+            ),
+            title: Text(
+              l10n.downloadTimeoutLabel,
+              style: TextStyleConst.bodyLarge.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 8),
+                Text(
+                  '${settings.timeoutDuration.inMinutes} ${l10n.minutesUnit}',
+                  style: TextStyleConst.bodyMedium.copyWith(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                Slider(
+                  value: settings.timeoutDuration.inMinutes.toDouble(),
+                  min: 1,
+                  max: 30,
+                  divisions: 29,
+                  label: '${settings.timeoutDuration.inMinutes} min',
+                  onChanged: (value) {
+                    context.read<DownloadBloc>().add(
+                          DownloadSettingsUpdateEvent(
+                            maxConcurrentDownloads:
+                                settings.maxConcurrentDownloads,
+                            imageQuality: settings.imageQuality,
+                            autoRetry: settings.autoRetry,
+                            retryAttempts: settings.retryAttempts,
+                            retryDelay: settings.retryDelay,
+                            timeoutDuration: Duration(minutes: value.toInt()),
+                            enableNotifications: settings.enableNotifications,
+                            wifiOnly: settings.wifiOnly,
+                            customStorageRoot: settings.customStorageRoot,
+                          ),
+                        );
+                  },
+                ),
+              ],
+            ),
+          ),
+          _buildDivider(theme),
+
+          // Enable Notifications
+          _buildSwitchTile(
+            title: l10n.enableNotificationsLabel,
+            subtitle: l10n.enableNotificationsDescription,
+            value: settings.enableNotifications,
+            onChanged: (value) {
+              context.read<DownloadBloc>().add(
+                    DownloadSettingsUpdateEvent(
+                      maxConcurrentDownloads: settings.maxConcurrentDownloads,
+                      imageQuality: settings.imageQuality,
+                      autoRetry: settings.autoRetry,
+                      retryAttempts: settings.retryAttempts,
+                      retryDelay: settings.retryDelay,
+                      timeoutDuration: settings.timeoutDuration,
+                      enableNotifications: value,
+                      wifiOnly: settings.wifiOnly,
+                      customStorageRoot: settings.customStorageRoot,
+                    ),
+                  );
+            },
+            theme: theme,
+          ),
         ], theme);
       },
     );
