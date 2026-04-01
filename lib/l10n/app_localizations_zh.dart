@@ -3250,6 +3250,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get storageDescription => '选择保存下载的文件夹';
 
   @override
+  String get downloadDirectory => '下载目录';
+
+  @override
+  String get changeDirectory => '更改目录';
+
+  @override
+  String get downloadDirectoryUpdated => '下载目录已更新';
+
+  @override
+  String get useDefaultInternalStorage => '使用默认内部存储位置';
+
+  @override
+  String get confirmResetStorageDirectory => '将下载目录重置为默认内部存储？';
+
+  @override
+  String get downloadDirectoryReset => '下载目录已重置为默认';
+
+  @override
   String get backupNotFound => '未找到备份';
 
   @override

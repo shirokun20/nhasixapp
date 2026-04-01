@@ -3333,6 +3333,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storageDescription => 'Choose a folder to save downloads';
 
   @override
+  String get downloadDirectory => 'Download Directory';
+
+  @override
+  String get changeDirectory => 'Change Directory';
+
+  @override
+  String get downloadDirectoryUpdated => 'Download directory updated';
+
+  @override
+  String get useDefaultInternalStorage =>
+      'Use default internal storage location';
+
+  @override
+  String get confirmResetStorageDirectory =>
+      'Reset download directory to default internal storage?';
+
+  @override
+  String get downloadDirectoryReset => 'Download directory reset to default';
+
+  @override
   String get backupNotFound => 'Backup Not Found';
 
   @override

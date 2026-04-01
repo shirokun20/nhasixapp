@@ -3347,6 +3347,26 @@ class AppLocalizationsId extends AppLocalizations {
   String get storageDescription => 'Pilih folder untuk menyimpan unduhan';
 
   @override
+  String get downloadDirectory => 'Direktori Unduhan';
+
+  @override
+  String get changeDirectory => 'Ubah Direktori';
+
+  @override
+  String get downloadDirectoryUpdated => 'Direktori unduhan diperbarui';
+
+  @override
+  String get useDefaultInternalStorage =>
+      'Gunakan lokasi penyimpanan internal default';
+
+  @override
+  String get confirmResetStorageDirectory =>
+      'Reset direktori unduhan ke penyimpanan internal default?';
+
+  @override
+  String get downloadDirectoryReset => 'Direktori unduhan direset ke default';
+
+  @override
   String get backupNotFound => 'Cadangan Tidak Ditemukan';
 
   @override

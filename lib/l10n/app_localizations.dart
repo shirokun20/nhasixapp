@@ -5742,6 +5742,42 @@ abstract class AppLocalizations {
   /// **'Choose a folder to save downloads'**
   String get storageDescription;
 
+  /// No description provided for @downloadDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Directory'**
+  String get downloadDirectory;
+
+  /// No description provided for @changeDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Directory'**
+  String get changeDirectory;
+
+  /// No description provided for @downloadDirectoryUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Download directory updated'**
+  String get downloadDirectoryUpdated;
+
+  /// No description provided for @useDefaultInternalStorage.
+  ///
+  /// In en, this message translates to:
+  /// **'Use default internal storage location'**
+  String get useDefaultInternalStorage;
+
+  /// No description provided for @confirmResetStorageDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset download directory to default internal storage?'**
+  String get confirmResetStorageDirectory;
+
+  /// No description provided for @downloadDirectoryReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Download directory reset to default'**
+  String get downloadDirectoryReset;
+
   /// No description provided for @backupNotFound.
   ///
   /// In en, this message translates to:
