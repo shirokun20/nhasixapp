@@ -148,6 +148,42 @@ abstract class AppLocalizations {
   /// **'Random Gallery'**
   String get randomGallery;
 
+  /// No description provided for @randomGalleryLoadingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Random Gallery'**
+  String get randomGalleryLoadingTitle;
+
+  /// No description provided for @randomGalleryLoadingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetching a random gallery...'**
+  String get randomGalleryLoadingMessage;
+
+  /// No description provided for @randomGalleryFoundTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Found'**
+  String get randomGalleryFoundTitle;
+
+  /// No description provided for @randomGalleryFoundMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening gallery details...'**
+  String get randomGalleryFoundMessage;
+
+  /// No description provided for @randomGalleryNoResult.
+  ///
+  /// In en, this message translates to:
+  /// **'No random gallery found. Try again.'**
+  String get randomGalleryNoResult;
+
+  /// No description provided for @randomGalleryError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading random gallery. Please try again.'**
+  String get randomGalleryError;
+
   /// No description provided for @offlineContent.
   ///
   /// In en, this message translates to:

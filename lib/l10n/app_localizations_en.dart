@@ -33,6 +33,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get randomGallery => 'Random Gallery';
 
   @override
+  String get randomGalleryLoadingTitle => 'Random Gallery';
+
+  @override
+  String get randomGalleryLoadingMessage => 'Fetching a random gallery...';
+
+  @override
+  String get randomGalleryFoundTitle => 'Found';
+
+  @override
+  String get randomGalleryFoundMessage => 'Opening gallery details...';
+
+  @override
+  String get randomGalleryNoResult => 'No random gallery found. Try again.';
+
+  @override
+  String get randomGalleryError =>
+      'Error loading random gallery. Please try again.';
+
+  @override
   String get offlineContent => 'Offline Content';
 
   @override

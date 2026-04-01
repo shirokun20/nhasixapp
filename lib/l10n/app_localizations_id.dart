@@ -33,6 +33,26 @@ class AppLocalizationsId extends AppLocalizations {
   String get randomGallery => 'Galeri Acak';
 
   @override
+  String get randomGalleryLoadingTitle => 'Galeri Acak';
+
+  @override
+  String get randomGalleryLoadingMessage => 'Mengambil galeri acak...';
+
+  @override
+  String get randomGalleryFoundTitle => 'Ditemukan';
+
+  @override
+  String get randomGalleryFoundMessage => 'Membuka detail galeri...';
+
+  @override
+  String get randomGalleryNoResult =>
+      'Tidak ada galeri acak ditemukan. Coba lagi.';
+
+  @override
+  String get randomGalleryError =>
+      'Gagal memuat galeri acak. Silakan coba lagi.';
+
+  @override
   String get offlineContent => 'Konten Offline';
 
   @override

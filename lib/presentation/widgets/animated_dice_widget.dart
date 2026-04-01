@@ -28,15 +28,24 @@ class _AnimatedDiceWidgetState extends State<AnimatedDiceWidget>
       vsync: this,
       duration: widget.duration,
     );
+
+    if (widget.isSpinning) {
+      _controller.repeat();
+    }
   }
 
   @override
   void didUpdateWidget(AnimatedDiceWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isSpinning && !_controller.isAnimating) {
-      _controller.forward().then((_) {
-        widget.onSpinComplete?.call();
-      });
+    if (widget.isSpinning && !oldWidget.isSpinning) {
+      _controller
+        ..reset()
+        ..repeat();
+    } else if (!widget.isSpinning && oldWidget.isSpinning) {
+      _controller
+        ..stop()
+        ..reset();
+      widget.onSpinComplete?.call();
     }
   }
 

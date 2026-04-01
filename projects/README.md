@@ -25,13 +25,13 @@
 | **komiktap_migration** | `..........` | 0% | Pending |
 | **komiktap_navigation_lists** | `..........` | 0% | Pending |
 | **premium_enhancements** | `..........` | 0% | Pending |
-| **qol_enhancements** | `..........` | 0% | Pending |
 | **reader-ads** | `..........` | 0% | Pending |
 
 ## 🚧 On Progress
 | Project Name | Progress | % | Status |
 |---|---|---|---|
 | **premium_enhancements** | `..........` | 0% | Pending |
+| **qol_enhancements** | `██████░░░░` | 57% | 🔥 Hot |
 
 ## ✅ Success
 | Project Name | Progress | % | Status |
@@ -53,6 +53,7 @@
 | Issue | Date | Status |
 |---|---|---|
 | download range ignores page bounds | 2026-02-17 | 🔴 Open |
+| import-zip-and-metadata-bug | 2026-03-31 | 🔴 Open |
 | mangadex personal feed | 2026-03-14 | 🔴 Open |
 | source-switch-shimmer-bug-analysis | Unknown | 🔴 Open |
 | fix-implementation-summary | Unknown | 🔴 Open |
