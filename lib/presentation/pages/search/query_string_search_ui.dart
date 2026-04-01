@@ -6,6 +6,7 @@ import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/config/config_models.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/utils/tag_data_manager.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
@@ -374,6 +375,12 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
           // 2. Advanced Filters Toggle
           _buildAdvancedToggle(colorScheme),
 
+          const SizedBox(height: 12),
+
+          // 2.5. Native Explorer Button (nhentai only)
+          if (widget.sourceId == 'nhentai')
+            _buildNativeExplorerButton(colorScheme),
+
           // 3. Advanced Filters Section (Collapsible)
           if (_showAdvancedFilters) ...[
             const SizedBox(height: 16),
@@ -498,6 +505,86 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNativeExplorerButton(ColorScheme colorScheme) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            colorScheme.primaryContainer,
+            colorScheme.secondaryContainer,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.primary.withOpacity(0.3),
+          width: 1.5,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            context.push(
+              '${AppRoute.advancedSearch}?sourceId=${widget.sourceId}',
+            );
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.explore,
+                    color: colorScheme.primary,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Native Explorer',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Browse tags dynamically from API • Live autocomplete',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: colorScheme.onPrimaryContainer.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: colorScheme.primary,
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

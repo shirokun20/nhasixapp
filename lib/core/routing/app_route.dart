@@ -20,6 +20,8 @@ class AppRoute {
   static const String tags = '/tags';
   static const String artists = '/artists';
   static const String filterData = '/filter-data';
+  static const String advancedSearch = '/advanced-search';
+  static const String tagDetail = '/tag-detail';
 
   // Utility routes
   static const String status = '/status';
@@ -52,6 +54,8 @@ class AppRoute {
   static const String tagsName = 'tags';
   static const String artistsName = 'artists';
   static const String filterDataName = 'filter-data';
+  static const String advancedSearchName = 'advanced-search';
+  static const String tagDetailName = 'tag-detail';
   static const String statusName = 'status';
   static const String aboutName = 'about';
   static const String mainName = 'main';
