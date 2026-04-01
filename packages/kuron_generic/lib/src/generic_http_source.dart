@@ -25,6 +25,8 @@ import 'url_builder/generic_url_builder.dart';
 class GenericHttpSource implements ContentSource {
   final Map<String, dynamic> _rawConfig;
   final Dio _dio;
+  final HeadersGenerator? _headersGenerator;
+  final DelayApplier? _delayApplier;
   final GenericAdapter _adapter;
   // ignore: unused_field — will be used in Phase 2 when filter UI is wired up
   final GenericFilterTransformer _filterTransformer;
@@ -48,6 +50,8 @@ class GenericHttpSource implements ContentSource {
     GenericAdapter? adapterOverride,
   })  : _rawConfig = rawConfig,
         _dio = dio,
+        _headersGenerator = headersGenerator,
+        _delayApplier = delayApplier,
         _logger = logger,
         _filterTransformer = const GenericFilterTransformer(),
         _id = rawConfig['source'] as String? ?? 'unknown',
@@ -160,7 +164,10 @@ class GenericHttpSource implements ContentSource {
       final api = _rawConfig['api'] as Map<String, dynamic>?;
       final endpoints =
           (api?['endpoints'] as Map<String, dynamic>?) ?? const {};
-      final randomEndpoint = endpoints['random']?.toString() ?? '';
+      final configuredRandomEndpoint = endpoints['random']?.toString() ?? '';
+      final randomEndpoint = configuredRandomEndpoint.isNotEmpty
+          ? configuredRandomEndpoint
+          : (_id == 'nhentai' ? '/api/v2/galleries/random' : '');
       final apiBase = api?['apiBase']?.toString() ?? _baseUrl;
 
       if (randomEndpoint.isEmpty) {
@@ -177,9 +184,17 @@ class GenericHttpSource implements ContentSource {
           final url = Uri.parse(apiBase).resolve(randomEndpoint).toString();
           _logger.d('$_id: Random request #${index + 1}: GET $url');
 
+          await _prepareRandomRequest(referer: _baseUrl);
           final response = await _dio.get<dynamic>(
             url,
-            options: Options(headers: _defaultHeaders),
+            options: Options(
+              headers: _mergeHeaders(_dio.options.headers, {
+                if (!_defaultHeaders.containsKey('Accept'))
+                  'Accept': 'application/json',
+                if (!_defaultHeaders.containsKey('Referer'))
+                  'Referer': refererHeader,
+              }),
+            ),
           );
 
           final contentId = _extractRandomContentId(response.data, response);
@@ -205,6 +220,35 @@ class GenericHttpSource implements ContentSource {
           error: e, stackTrace: stackTrace);
       return const [];
     }
+  }
+
+  Future<void> _prepareRandomRequest({String? referer}) async {
+    if (_delayApplier != null) {
+      await _delayApplier();
+    }
+
+    if (_headersGenerator != null) {
+      final generatedHeaders = _headersGenerator(referer: referer);
+      _dio.options.headers =
+          _mergeHeaders(_dio.options.headers, generatedHeaders);
+      return;
+    }
+
+    if (_defaultHeaders.isNotEmpty) {
+      _dio.options.headers =
+          _mergeHeaders(_dio.options.headers, _defaultHeaders);
+    }
+  }
+
+  Map<String, dynamic> _mergeHeaders(
+    Map<String, dynamic>? base,
+    Map<String, dynamic> extra,
+  ) {
+    final merged = <String, dynamic>{
+      if (base != null) ...base,
+      ...extra,
+    };
+    return merged;
   }
 
   /// Extract content ID from a random API response.
