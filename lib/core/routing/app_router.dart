@@ -24,7 +24,6 @@ import 'package:nhasixapp/core/utils/app_animations.dart';
 import 'package:nhasixapp/presentation/pages/crotpedia/genre_list_screen.dart'; // NEW
 import 'package:nhasixapp/presentation/pages/crotpedia/doujin_list_screen.dart'; // NEW
 import 'package:nhasixapp/presentation/pages/crotpedia/request_list_screen.dart'; // NEW
-import 'package:nhasixapp/presentation/pages/search/advanced_search_screen.dart';
 import 'package:nhasixapp/presentation/pages/tag_detail/tag_detail_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -287,21 +286,6 @@ class AppRouter {
               child:
                   Text(AppLocalizations.of(context)!.artistsScreenPlaceholder)),
         ),
-      ),
-
-      // Advanced Search Screen
-      GoRoute(
-        path: AppRoute.advancedSearch,
-        name: AppRoute.advancedSearchName,
-        pageBuilder: (context, state) {
-          final sourceId = state.uri.queryParameters['sourceId'] ?? 'nhentai';
-          return AppAnimations.animatedPageBuilder(
-            context,
-            state,
-            AdvancedSearchScreen(sourceId: sourceId),
-            type: RouteTransitionType.slideLeft,
-          );
-        },
       ),
 
       // Tag Detail Screen
