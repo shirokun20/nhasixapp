@@ -607,7 +607,7 @@ void _setupUseCases() {
   getIt.registerLazySingleton<RemoveFromFavoritesUseCase>(
       () => RemoveFromFavoritesUseCase(getIt()));
   getIt.registerLazySingleton<GetFavoritesUseCase>(
-      () => GetFavoritesUseCase(getIt()));
+      () => GetFavoritesUseCase(getIt(), getIt()));
 
   // Download Use Cases
   getIt.registerLazySingleton<DownloadContentUseCase>(
