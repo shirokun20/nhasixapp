@@ -90,6 +90,10 @@
             "selector": "$.num_pages",
             "type": "jsonpath"
         },
+        "favorites": {
+            "selector": "$.num_favorites",
+            "type": "jsonpath"
+        },
         "uploadDate": {
             "selector": "$.upload_date",
             "type": "jsonpath"
