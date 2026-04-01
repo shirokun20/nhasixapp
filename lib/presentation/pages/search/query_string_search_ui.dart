@@ -411,6 +411,49 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    final advancedFiltersPanel = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 20),
+
+        // Filter Categories
+        if (_multiSelectFilters2.isNotEmpty) ...[
+          _buildSectionTitle('FILTER CATEGORIES'),
+          const SizedBox(height: 10),
+          _buildFilterCategoryList(colorScheme),
+          const SizedBox(height: 20),
+        ],
+
+        // Language
+        if (_singleSelectFilters.contains('language')) ...[
+          _buildSectionTitle('LANGUAGE'),
+          const SizedBox(height: 10),
+          _buildTagChipSelector('language', colorScheme),
+          const SizedBox(height: 20),
+        ],
+
+        // Category
+        if (_singleSelectFilters.contains('category')) ...[
+          _buildSectionTitle('CATEGORY'),
+          const SizedBox(height: 10),
+          _buildTagChipSelector('category', colorScheme),
+          const SizedBox(height: 20),
+        ],
+
+        // Date Filter
+        _buildSectionTitle('DATE UPLOADED'),
+        const SizedBox(height: 10),
+        _buildDateFilter(colorScheme),
+        const SizedBox(height: 20),
+
+        // Numeric Filters
+        _buildSectionTitle('NUMERIC FILTERS'),
+        const SizedBox(height: 10),
+        _buildNumericFilters(colorScheme),
+        const SizedBox(height: 8),
+      ],
+    );
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
@@ -419,45 +462,30 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
           _buildSearchBox(colorScheme),
           const SizedBox(height: 16),
           _buildAdvancedToggle(colorScheme),
-          if (_showAdvancedFilters) ...[
-            const SizedBox(height: 20),
-
-            // Filter Categories
-            if (_multiSelectFilters2.isNotEmpty) ...[
-              _buildSectionTitle('FILTER CATEGORIES'),
-              const SizedBox(height: 10),
-              _buildFilterCategoryList(colorScheme),
-              const SizedBox(height: 20),
-            ],
-
-            // Language
-            if (_singleSelectFilters.contains('language')) ...[
-              _buildSectionTitle('LANGUAGE'),
-              const SizedBox(height: 10),
-              _buildTagChipSelector('language', colorScheme),
-              const SizedBox(height: 20),
-            ],
-
-            // Category
-            if (_singleSelectFilters.contains('category')) ...[
-              _buildSectionTitle('CATEGORY'),
-              const SizedBox(height: 10),
-              _buildTagChipSelector('category', colorScheme),
-              const SizedBox(height: 20),
-            ],
-
-            // Date Filter
-            _buildSectionTitle('DATE UPLOADED'),
-            const SizedBox(height: 10),
-            _buildDateFilter(colorScheme),
-            const SizedBox(height: 20),
-
-            // Numeric Filters
-            _buildSectionTitle('NUMERIC FILTERS'),
-            const SizedBox(height: 10),
-            _buildNumericFilters(colorScheme),
-            const SizedBox(height: 8),
-          ],
+          AnimatedSize(
+            duration: const Duration(milliseconds: 280),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: child,
+                );
+              },
+              child: _showAdvancedFilters
+                  ? KeyedSubtree(
+                      key: const ValueKey('advanced_filters_open'),
+                      child: advancedFiltersPanel,
+                    )
+                  : const SizedBox.shrink(
+                      key: ValueKey('advanced_filters_closed'),
+                    ),
+            ),
+          ),
           const SizedBox(height: 20),
           _buildSearchButton(colorScheme),
         ],
@@ -527,7 +555,9 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
     return InkWell(
       onTap: () => setState(() => _showAdvancedFilters = !_showAdvancedFilters),
       borderRadius: BorderRadius.circular(10),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: _showAdvancedFilters
@@ -542,10 +572,15 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
         ),
         child: Row(
           children: [
-            Icon(
-              Icons.tune_rounded,
-              color: _showAdvancedFilters ? cs.primary : cs.onSurfaceVariant,
-              size: 20,
+            AnimatedScale(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutBack,
+              scale: _showAdvancedFilters ? 1.08 : 1.0,
+              child: Icon(
+                Icons.tune_rounded,
+                color: _showAdvancedFilters ? cs.primary : cs.onSurfaceVariant,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 8),
             Text(
@@ -558,26 +593,42 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
             ),
             if (activeCount > 0) ...[
               const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: cs.primary,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '$activeCount',
-                  style: TextStyle(
-                    color: cs.onPrimary,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                transitionBuilder: (child, animation) {
+                  return ScaleTransition(
+                    scale: animation,
+                    child: FadeTransition(opacity: animation, child: child),
+                  );
+                },
+                child: Container(
+                  key: ValueKey(activeCount),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: cs.primary,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '$activeCount',
+                    style: TextStyle(
+                      color: cs.onPrimary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
             ],
             const Spacer(),
-            Icon(
-              _showAdvancedFilters ? Icons.expand_less : Icons.expand_more,
-              color: cs.onSurfaceVariant,
+            AnimatedRotation(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              turns: _showAdvancedFilters ? 0.5 : 0,
+              child: Icon(
+                Icons.expand_more,
+                color: cs.onSurfaceVariant,
+              ),
             ),
           ],
         ),
