@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:path/path.dart' as path;
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/utils/directory_utils.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
@@ -284,13 +285,68 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
     // Show loading state
     context.read<OfflineSearchCubit>().setLoadingState();
 
+    // Progress dialog state
+    String progressMessage = 'Preparing extraction...';
+    int processedFiles = 0;
+    int totalFiles = 0;
+    int imageCount = 0;
+
+    // Use a reference to the dialog state setter to update progress
+    StateSetter? dialogSetState;
+
+    // Show progress dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          dialogSetState = setDialogState;
+          return AlertDialog(
+            title: const Text('Importing ZIP'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LinearProgressIndicator(
+                  value: totalFiles > 0 ? processedFiles / totalFiles : null,
+                ),
+                const SizedBox(height: 16),
+                Text(progressMessage),
+                if (totalFiles > 0) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Extracting: $processedFiles/$totalFiles images',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
     try {
       final importZipUseCase = getIt<ImportZipUseCase>();
 
-      // Execute ZIP import
-      final result = await importZipUseCase(const ImportZipParams());
+      // Execute ZIP import with progress callback
+      final result = await importZipUseCase(
+        ImportZipParams(
+          onProgress: (processed, total, imgCount, currentFile) {
+            processedFiles = processed;
+            totalFiles = total;
+            imageCount = imgCount;
+            progressMessage = 'Extracting: ${path.basename(currentFile)}';
+
+            // Update dialog if visible
+            if (dialogSetState != null && context.mounted) {
+              dialogSetState!(() {});
+            }
+          },
+        ),
+      );
 
       if (!context.mounted) return;
+      Navigator.of(context).pop(); // Close progress dialog
 
       if (result['success'] == true) {
         final contentId = result['contentId'] as String;
@@ -335,6 +391,7 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       }
     } catch (e) {
       if (!context.mounted) return;
+      Navigator.of(context).pop(); // Close progress dialog on error
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

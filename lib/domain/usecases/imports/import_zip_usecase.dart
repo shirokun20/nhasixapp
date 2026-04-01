@@ -10,7 +10,10 @@ import '../../../domain/entities/download_status.dart';
 
 /// Parameters for importing a ZIP file
 class ImportZipParams {
-  const ImportZipParams();
+  /// Optional progress callback: (processed, total, imageCount, currentFile)
+  final Function(int processed, int total, int imageCount, String currentFile)? onProgress;
+
+  const ImportZipParams({this.onProgress});
 }
 
 /// UseCase for importing ZIP files containing doujin/manga content
@@ -72,7 +75,7 @@ class ImportZipUseCase {
       }
 
       // Step 5: Extract using native implementation with progress
-      _logger.i('Starting native ZIP extraction with progress notifications');
+      _logger.i('Starting native ZIP extraction with progress callbacks');
 
       final extractionResult = await _kuronNative.extractZipFile(
         contentUri: zipUri,
@@ -80,6 +83,8 @@ class ImportZipUseCase {
         onProgress: (processed, total, imageCount, currentFile) {
           _logger.d(
               'Extraction progress: $processed/$total, images: $imageCount, current: $currentFile');
+          // Forward progress to UI callback if provided
+          params.onProgress?.call(processed, total, imageCount, currentFile);
         },
       );
 
