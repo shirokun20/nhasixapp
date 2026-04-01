@@ -35,6 +35,7 @@ import 'package:nhasixapp/core/network/dns_resolver.dart'; // NEW
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/anti_detection.dart';
 import 'package:nhasixapp/data/datasources/remote/nhentai_scraper.dart';
+import 'package:nhasixapp/data/datasources/remote/tags/tags_remote_data_source.dart';
 import 'package:nhasixapp/data/datasources/local/tag_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/request_rate_manager.dart';
 import 'package:nhasixapp/data/datasources/local/doujin_list_dao.dart';
@@ -57,12 +58,14 @@ import 'package:nhasixapp/presentation/cubits/comments/comments_cubit.dart';
 // Repositories
 import 'package:nhasixapp/domain/repositories/repositories.dart';
 import 'package:nhasixapp/domain/repositories/crotpedia/crotpedia_feature_repository.dart';
+import 'package:nhasixapp/domain/repositories/tag_repository.dart';
 import 'package:nhasixapp/data/repositories/content_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/user_data_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/settings_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/reader_settings_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/reader_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/crotpedia/crotpedia_feature_repository_impl.dart';
+import 'package:nhasixapp/data/repositories/tag_repository_impl.dart';
 
 // Use Cases
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
@@ -81,6 +84,9 @@ import 'package:nhasixapp/domain/usecases/crotpedia/get_genre_list_usecase.dart'
 import 'package:nhasixapp/domain/usecases/crotpedia/get_doujin_list_usecase.dart';
 import 'package:nhasixapp/domain/usecases/crotpedia/get_request_list_usecase.dart';
 import 'package:nhasixapp/domain/usecases/imports/import_zip_usecase.dart';
+import 'package:nhasixapp/domain/usecases/tags/get_tags_by_type_usecase.dart';
+import 'package:nhasixapp/domain/usecases/tags/get_tag_autocomplete_usecase.dart';
+import 'package:nhasixapp/domain/usecases/tags/get_tag_detail_usecase.dart';
 
 // Services
 import 'package:nhasixapp/services/native_download_service.dart';
@@ -563,6 +569,19 @@ void _setupRepositories() {
             sharedPreferences: getIt<SharedPreferences>(),
             logger: getIt<Logger>(),
           ));
+
+  // Tags Remote Data Source
+  getIt.registerLazySingleton<TagsRemoteDataSource>(() => TagsRemoteDataSource(
+        dio: getIt<Dio>(),
+        logger: getIt<Logger>(),
+        configService: getIt<RemoteConfigService>(),
+      ));
+
+  // Tag Repository
+  getIt.registerLazySingleton<TagRepository>(() => TagRepositoryImpl(
+        remoteDataSource: getIt<TagsRemoteDataSource>(),
+        logger: getIt<Logger>(),
+      ));
 }
 
 /// Setup use cases
@@ -588,6 +607,14 @@ void _setupUseCases() {
       userDataRepository: getIt<UserDataRepository>(),
     ),
   );
+
+  // Tag Use Cases
+  getIt.registerLazySingleton<GetTagsByTypeUseCase>(
+      () => GetTagsByTypeUseCase(getIt<TagRepository>()));
+  getIt.registerLazySingleton<GetTagAutocompleteUseCase>(
+      () => GetTagAutocompleteUseCase(getIt<TagRepository>()));
+  getIt.registerLazySingleton<GetTagDetailUseCase>(
+      () => GetTagDetailUseCase(getIt<TagRepository>()));
 
   // Content Use Cases
   getIt.registerLazySingleton<GetContentListUseCase>(
