@@ -224,7 +224,8 @@ void _setupServices() {
 
   // Native Services
   getIt.registerLazySingleton<NativeBackupService>(() => NativeBackupService());
-  getIt.registerLazySingleton<NativeZipImportService>(() => NativeZipImportService());
+  getIt.registerLazySingleton<NativeZipImportService>(
+      () => NativeZipImportService());
   getIt.registerLazySingleton<NativePdfReaderService>(
     () => NativePdfReaderService(),
   );
@@ -773,6 +774,8 @@ void _setupCubits() {
   // FilterDataCubit - Filter data screen management
   getIt.registerFactory<FilterDataCubit>(() => FilterDataCubit(
         tagDataManager: getIt<TagDataManager>(),
+        getTagsByTypeUseCase: getIt<GetTagsByTypeUseCase>(),
+        getTagAutocompleteUseCase: getIt<GetTagAutocompleteUseCase>(),
         logger: getIt<Logger>(),
       ));
 

@@ -398,6 +398,12 @@ class ContentRepositoryImpl implements ContentRepository {
     String? requestedSourceId,
   }) {
     final source = (requestedSourceId ?? content.sourceId).toLowerCase();
+    // Backward-compat cache healing: older nhentai detail cache entries were
+    // saved before favorites mapping was fixed, so force refresh when zero.
+    if (source == 'nhentai' && content.favorites == 0) {
+      return true;
+    }
+
     if (source == 'hitomi') {
       return true;
     }

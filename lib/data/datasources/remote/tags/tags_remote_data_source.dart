@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
@@ -19,6 +21,12 @@ class TagsRemoteDataSource {
         _logger = logger,
         _configService = configService;
 
+  Map<String, String>? _getNetworkHeaders(String sourceId) {
+    final rawConfig = _configService.getRawConfig(sourceId);
+    return (rawConfig?['network']?['headers'] as Map<String, dynamic>?)
+        ?.map((k, v) => MapEntry(k, v.toString()));
+  }
+
   /// Get tags by type from API v2
   /// Endpoint: GET /api/v2/tags/{tag_type}
   Future<List<TagModel>> getTagsByType({
@@ -38,35 +46,74 @@ class TagsRemoteDataSource {
 
       _logger.d('Fetching tags: $url (page: $page, perPage: $perPage)');
 
-      final response = await _dio.get(
-        url,
-        queryParameters: {
-          'page': page,
-          'per_page': perPage,
-        },
-        options: Options(
-          headers: config.network?.headers,
-          receiveTimeout: Duration(
-            milliseconds: config.api?.timeout ?? 30000,
-          ),
-        ),
-      );
+      Response<dynamic>? response;
+      DioException? lastConnectionError;
+
+      for (var attempt = 0; attempt < 3; attempt++) {
+        try {
+          response = await _dio.get(
+            url,
+            queryParameters: {
+              'page': page,
+              'per_page': perPage,
+            },
+            options: Options(
+              headers: _getNetworkHeaders(sourceId),
+              receiveTimeout: Duration(
+                milliseconds: config.api?.timeout ?? 30000,
+              ),
+            ),
+          );
+          break;
+        } on DioException catch (e) {
+          if (e.type == DioExceptionType.connectionError && attempt < 2) {
+            lastConnectionError = e;
+            final backoffMs = 400 * (attempt + 1);
+            _logger.w(
+              'Transient connection error while fetching tags. Retrying in ${backoffMs}ms...',
+              error: e,
+            );
+            await Future<void>.delayed(Duration(milliseconds: backoffMs));
+            continue;
+          }
+          rethrow;
+        }
+      }
+
+      if (response == null) {
+        throw Exception(
+          'Network error: ${lastConnectionError?.message ?? 'failed to fetch tags'}',
+        );
+      }
 
       if (response.statusCode == 200 && response.data != null) {
-        final data = response.data;
+        dynamic data = response.data;
+
+        if (data is String) {
+          try {
+            data = jsonDecode(data);
+          } catch (_) {
+            throw Exception('Unexpected response format for tags');
+          }
+        }
 
         // Handle different response formats
         List<dynamic> results;
-        if (data is Map<String, dynamic>) {
-          results = data['results'] as List<dynamic>? ?? [];
+        if (data is Map) {
+          // nhentai returns {"result": [...], "num_pages": ..., "per_page": ...}
+          results = (data['result'] ?? data['results']) as List<dynamic>? ?? [];
         } else if (data is List) {
           results = data;
+        } else if (data is String) {
+          // Fallback: try to parse as JSON string
+          throw Exception('Unexpected response format for tags');
         } else {
           throw Exception('Unexpected response format for tags');
         }
 
         return results
-            .map((json) => TagModel.fromJson(json as Map<String, dynamic>))
+            .map((json) =>
+                TagModel.fromJson((json as Map).cast<String, dynamic>()))
             .toList();
       }
 
@@ -109,7 +156,7 @@ class TagsRemoteDataSource {
         url,
         data: requestData,
         options: Options(
-          headers: config.network?.headers,
+          headers: _getNetworkHeaders(sourceId),
           receiveTimeout: Duration(
             milliseconds: config.api?.timeout ?? 30000,
           ),
@@ -117,9 +164,16 @@ class TagsRemoteDataSource {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        return TagAutocompleteResultModel.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+        dynamic data = response.data;
+        if (data is String) {
+          try {
+            data = jsonDecode(data);
+          } catch (_) {
+            throw Exception('Unexpected response format for autocomplete');
+          }
+        }
+        // nhentai returns a bare List, not a Map
+        return TagAutocompleteResultModel.fromJson(data, query: query);
       }
 
       throw Exception('Failed to fetch autocomplete: ${response.statusCode}');
@@ -153,7 +207,7 @@ class TagsRemoteDataSource {
       final response = await _dio.get(
         url,
         options: Options(
-          headers: config.network?.headers,
+          headers: _getNetworkHeaders(sourceId),
           receiveTimeout: Duration(
             milliseconds: config.api?.timeout ?? 30000,
           ),

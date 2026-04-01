@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/domain/entities/tags/tag_entity.dart';
 import 'package:nhasixapp/domain/usecases/tags/get_tag_autocomplete_usecase.dart';
@@ -49,7 +48,7 @@ class TagAutocompleteBloc
       emit(const TagAutocompleteLoading());
 
       try {
-        final result = await _getAutocompleteUseCase(
+        final data = await _getAutocompleteUseCase(
           GetTagAutocompleteParams(
             query: event.query.trim(),
             sourceId: sourceId,
@@ -58,19 +57,11 @@ class TagAutocompleteBloc
           ),
         );
 
-        if (result is DataSuccess) {
-          final data = result.data!;
-          emit(TagAutocompleteLoaded(
-            suggestions: data.suggestions,
-            query: data.query,
-            totalResults: data.totalResults,
-          ));
-        } else if (result is DataFailed) {
-          _logger.e('Autocomplete search failed', error: result.exception);
-          emit(TagAutocompleteError(
-            message: result.exception?.message ?? 'Failed to fetch suggestions',
-          ));
-        }
+        emit(TagAutocompleteLoaded(
+          suggestions: data.suggestions,
+          query: data.query,
+          totalResults: data.totalResults,
+        ));
       } catch (e, stackTrace) {
         _logger.e(
           'Error in autocomplete search',

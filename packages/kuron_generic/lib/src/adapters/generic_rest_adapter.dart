@@ -1009,6 +1009,12 @@ class GenericRestAdapter implements GenericAdapter {
 
     final pageCountStr = _extract(data, selectors, 'pageCount');
     final pageCount = int.tryParse(pageCountStr ?? '') ?? imageUrls.length;
+    final favoritesFromSelector =
+        int.tryParse(_extract(data, selectors, 'favorites') ?? '');
+    final favoritesFromNhentai = (data is Map)
+        ? int.tryParse(data['num_favorites']?.toString() ?? '')
+        : null;
+    final favorites = favoritesFromSelector ?? favoritesFromNhentai ?? 0;
 
     return Content(
       id: id,
@@ -1020,11 +1026,12 @@ class GenericRestAdapter implements GenericAdapter {
       characters: charactersRaw,
       parodies: parodiesRaw,
       groups: groupsRaw,
-      language:
-          splitLanguage ?? _extractLanguage(data, selectors, rawConfig: rawConfig),
+      language: splitLanguage ??
+          _extractLanguage(data, selectors, rawConfig: rawConfig),
       pageCount: pageCount,
       imageUrls: imageUrls,
       uploadDate: _parseDate(_extract(data, selectors, 'uploadDate')),
+      favorites: favorites,
       englishTitle: _extract(data, selectors, 'detailEnglishTitle') ??
           _extract(data, selectors, 'englishTitle') ??
           _extractNhentaiV2Field(data, 'english'),

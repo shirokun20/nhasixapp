@@ -1,17 +1,16 @@
 import 'package:equatable/equatable.dart';
-import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/domain/entities/tags/tag_detail_entity.dart';
 import 'package:nhasixapp/domain/repositories/tag_repository.dart';
+import 'package:nhasixapp/domain/usecases/base_usecase.dart';
 
 /// UseCase for getting detailed tag information from API v2
-class GetTagDetailUseCase
-    extends UseCase<TagDetailEntity, GetTagDetailParams> {
+class GetTagDetailUseCase extends UseCase<TagDetailEntity, GetTagDetailParams> {
   final TagRepository _tagRepository;
 
   GetTagDetailUseCase(this._tagRepository);
 
   @override
-  Future<DataState<TagDetailEntity>> call(GetTagDetailParams params) async {
+  Future<TagDetailEntity> call(GetTagDetailParams params) async {
     return await _tagRepository.getTagDetail(
       tagType: params.tagType,
       slug: params.slug,

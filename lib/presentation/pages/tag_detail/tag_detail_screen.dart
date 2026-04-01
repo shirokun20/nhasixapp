@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/domain/entities/tags/tag_detail_entity.dart';
 import 'package:nhasixapp/domain/usecases/tags/get_tag_detail_usecase.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
 
-/// Screen to display detailed information about a specific tag
+/// API-v2 oriented tag detail screen.
+///
+/// This screen focuses on actionable tag exploration:
+/// - Shows core API fields (id, slug, type, count)
+/// - Uses query token template from source config for search navigation
 class TagDetailScreen extends StatefulWidget {
   final String tagType;
   final String slug;
@@ -46,39 +50,37 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
 
     try {
       final useCase = getIt<GetTagDetailUseCase>();
-      final result = await useCase(GetTagDetailParams(
+      final tagDetail = await useCase(GetTagDetailParams(
         tagType: widget.tagType,
         slug: widget.slug,
         sourceId: widget.sourceId,
       ));
 
-      if (result is DataSuccess && mounted) {
-        setState(() {
-          _tagDetail = result.data;
-          _isLoading = false;
-        });
-      } else if (result is DataFailed && mounted) {
-        setState(() {
-          _errorMessage = result.exception?.message ?? 'Failed to load tag details';
-          _isLoading = false;
-        });
+      if (!mounted) {
+        return;
       }
+
+      setState(() {
+        _tagDetail = tagDetail;
+        _isLoading = false;
+      });
     } catch (e, stackTrace) {
       _logger.e('Error loading tag detail', error: e, stackTrace: stackTrace);
-      if (mounted) {
-        setState(() {
-          _errorMessage = e.toString();
-          _isLoading = false;
-        });
+      if (!mounted) {
+        return;
       }
+
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return AppScaffoldWithOffline(
       title: _tagDetail?.name ?? widget.slug,
@@ -93,15 +95,11 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
   Widget _buildErrorState(ColorScheme colorScheme, AppLocalizations? l10n) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: colorScheme.error,
-            ),
+            Icon(Icons.error_outline, size: 64, color: colorScheme.error),
             const SizedBox(height: 16),
             Text(
               l10n?.errorOccurred ?? 'Error Occurred',
@@ -128,109 +126,109 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
   }
 
   Widget _buildContent(ColorScheme colorScheme, AppLocalizations? l10n) {
-    if (_tagDetail == null) {
+    final tag = _tagDetail;
+    if (tag == null) {
       return const SizedBox.shrink();
     }
 
-    final tag = _tagDetail!;
+    final theme = Theme.of(context);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header Card
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Tag name
-                  Text(
-                    tag.name,
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  
-                  // Tag metadata
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 8,
-                    children: [
-                      _buildInfoChip(
-                        Icons.label,
-                        _formatTagType(tag.type),
-                        colorScheme,
-                      ),
-                      _buildInfoChip(
-                        Icons.numbers,
-                        '${tag.count} galleries',
-                        colorScheme,
-                      ),
-                    ],
-                  ),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  colorScheme.primaryContainer,
+                  colorScheme.secondaryContainer,
                 ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              borderRadius: BorderRadius.circular(16),
             ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Description (if available)
-          if (tag.description != null && tag.description!.isNotEmpty) ...[
-            _buildSectionTitle('Description', colorScheme),
-            const SizedBox(height: 8),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  tag.description!,
-                  style: theme.textTheme.bodyLarge,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tag.name,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-
-          // Aliases (if available)
-          if (tag.aliases != null && tag.aliases!.isNotEmpty) ...[
-            _buildSectionTitle('Aliases', colorScheme),
-            const SizedBox(height: 8),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Wrap(
+                const SizedBox(height: 8),
+                Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: tag.aliases!
-                      .map((alias) => Chip(
-                            label: Text(alias),
-                            backgroundColor:
-                                colorScheme.secondaryContainer,
-                            labelStyle: TextStyle(
-                              color: colorScheme.onSecondaryContainer,
-                            ),
-                          ))
-                      .toList(),
+                  children: [
+                    _buildBadge(
+                      icon: Icons.label,
+                      label: _formatTagType(tag.type),
+                      colorScheme: colorScheme,
+                    ),
+                    _buildBadge(
+                      icon: Icons.numbers,
+                      label: '${tag.count} galleries',
+                      colorScheme: colorScheme,
+                    ),
+                  ],
                 ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          _buildMetaCard(tag, colorScheme),
+          if (tag.description != null &&
+              tag.description!.trim().isNotEmpty) ...[
+            const SizedBox(height: 14),
+            _buildSectionCard(
+              title: 'Description',
+              child: Text(
+                tag.description!.trim(),
+                style: theme.textTheme.bodyLarge,
               ),
             ),
-            const SizedBox(height: 16),
           ],
-
-          // Action buttons
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: () => _searchWithTag(tag),
-              icon: const Icon(Icons.search),
-              label: const Text('Search with this tag'),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+          if (tag.aliases != null && tag.aliases!.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            _buildSectionCard(
+              title: 'Aliases',
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: tag.aliases!
+                    .where((alias) => alias.trim().isNotEmpty)
+                    .map(
+                      (alias) => Chip(
+                        label: Text(alias),
+                        backgroundColor: colorScheme.surfaceContainerHighest,
+                      ),
+                    )
+                    .toList(),
               ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: () => _searchWithTag(tag),
+            icon: const Icon(Icons.search),
+            label: const Text('Search Content With This Tag'),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () => context.pop(),
+            icon: const Icon(Icons.arrow_back),
+            label: const Text('Back to Filters'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12),
             ),
           ),
         ],
@@ -238,40 +236,120 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title, ColorScheme colorScheme) {
-    return Text(
-      title.toUpperCase(),
-      style: TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 1.2,
-        color: colorScheme.primary,
+  Widget _buildMetaCard(TagDetailEntity tag, ColorScheme colorScheme) {
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          children: [
+            _buildMetaRow('Tag ID', tag.id.toString(), colorScheme),
+            const Divider(height: 18),
+            _buildMetaRow('Slug', tag.slug, colorScheme),
+            if (tag.url != null && tag.url!.trim().isNotEmpty) ...[
+              const Divider(height: 18),
+              _buildMetaRow('Path', tag.url!, colorScheme),
+            ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildInfoChip(IconData icon, String label, ColorScheme colorScheme) {
-    return Chip(
-      avatar: Icon(icon, size: 18),
-      label: Text(label),
-      backgroundColor: colorScheme.surfaceContainerHighest,
-      labelStyle: TextStyle(
-        color: colorScheme.onSurface,
-        fontSize: 13,
+  Widget _buildMetaRow(String label, String value, ColorScheme colorScheme) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 72,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(color: colorScheme.onSurface),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionCard({required String title, required Widget child}) {
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBadge({
+    required IconData icon,
+    required String label,
+    required ColorScheme colorScheme,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: colorScheme.surface.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16),
+          const SizedBox(width: 6),
+          Text(label),
+        ],
       ),
     );
   }
 
   String _formatTagType(String type) {
-    return type[0].toUpperCase() + type.substring(1);
+    if (type.isEmpty) {
+      return 'Tag';
+    }
+    return '${type[0].toUpperCase()}${type.substring(1)}';
   }
 
   void _searchWithTag(TagDetailEntity tag) {
-    // TODO: Implement search with tag
-    // This will navigate back to search screen with the tag filter applied
-    _logger.i('Search with tag: ${tag.name} (type: ${tag.type})');
-    
-    // For now, just go back
-    context.pop();
+    final rawConfig =
+        getIt<RemoteConfigService>().getRawConfig(widget.sourceId);
+    final searchConfig = rawConfig?['searchConfig'] as Map?;
+    final tokenTemplates = searchConfig?['queryTokenTemplates'] as Map?;
+    final includeTemplate =
+        (tokenTemplates?['include'] as String?) ?? '{type}:"{name}"';
+
+    final token = includeTemplate
+        .replaceAll('{type}', tag.type)
+        .replaceAll('{name}', tag.name);
+
+    _logger.i('Search with tag token: $token');
+
+    AppRouter.goToContentByTag(
+      context,
+      token,
+      displayLabel: '${_formatTagType(tag.type)}: ${tag.name}',
+    );
   }
 }

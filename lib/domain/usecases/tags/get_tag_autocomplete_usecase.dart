@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
-import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/domain/entities/tags/tag_autocomplete_result.dart';
 import 'package:nhasixapp/domain/repositories/tag_repository.dart';
+import 'package:nhasixapp/domain/usecases/base_usecase.dart';
 
 /// UseCase for getting autocomplete suggestions from API v2
 class GetTagAutocompleteUseCase
@@ -11,7 +11,7 @@ class GetTagAutocompleteUseCase
   GetTagAutocompleteUseCase(this._tagRepository);
 
   @override
-  Future<DataState<TagAutocompleteResult>> call(
+  Future<TagAutocompleteResult> call(
     GetTagAutocompleteParams params,
   ) async {
     return await _tagRepository.getAutocomplete(

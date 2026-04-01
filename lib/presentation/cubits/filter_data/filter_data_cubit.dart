@@ -3,6 +3,9 @@ import 'package:equatable/equatable.dart';
 import 'package:logger/logger.dart';
 
 import '../../../domain/entities/entities.dart';
+import '../../../domain/entities/tags/tag_entity.dart';
+import '../../../domain/usecases/tags/get_tag_autocomplete_usecase.dart';
+import '../../../domain/usecases/tags/get_tags_by_type_usecase.dart';
 import '../../../core/utils/tag_data_manager.dart';
 
 part 'filter_data_state.dart';
@@ -11,13 +14,35 @@ part 'filter_data_state.dart';
 class FilterDataCubit extends Cubit<FilterDataState> {
   FilterDataCubit({
     required TagDataManager tagDataManager,
+    required GetTagsByTypeUseCase getTagsByTypeUseCase,
+    required GetTagAutocompleteUseCase getTagAutocompleteUseCase,
     required Logger logger,
   })  : _tagDataManager = tagDataManager,
+        _getTagsByTypeUseCase = getTagsByTypeUseCase,
+        _getTagAutocompleteUseCase = getTagAutocompleteUseCase,
         _logger = logger,
         super(const FilterDataInitial());
 
   final TagDataManager _tagDataManager;
+  final GetTagsByTypeUseCase _getTagsByTypeUseCase;
+  final GetTagAutocompleteUseCase _getTagAutocompleteUseCase;
   final Logger _logger;
+
+  /// Whether this source should fetch tags from API v2 instead of local JSON
+  bool _shouldUseApi(String sourceId) {
+    const apiSources = {'nhentai'};
+    return apiSources.contains(sourceId);
+  }
+
+  /// Convert API TagEntity to kuron_core Tag for compatibility
+  Tag _tagEntityToTag(TagEntity entity) => Tag(
+        id: entity.id,
+        name: entity.name,
+        type: entity.type,
+        count: entity.count,
+        url: entity.url ?? '',
+        slug: entity.slug,
+      );
 
   // Internal state
   String _currentFilterType = 'tag';
@@ -40,13 +65,30 @@ class FilterDataCubit extends Cubit<FilterDataState> {
       _currentSourceId = sourceId;
       _selectedFilters = List<FilterItem>.from(selectedFilters);
       emit(FilterDataLoading(state));
-      if (!_tagDataManager.hasTags(_currentSourceId)) {
-        await _tagDataManager.initialize(source: _currentSourceId);
+
+      if (_shouldUseApi(_currentSourceId)) {
+        // Use API v2 for sources with live tag endpoints
+        final entities = await _getTagsByTypeUseCase(
+          GetTagsByTypeParams(
+            tagType: filterType,
+            sourceId: _currentSourceId,
+            page: 1,
+            perPage: 50,
+          ),
+        );
+        _filteredTags = entities.map(_tagEntityToTag).toList();
+      } else {
+        // Use local JSON via TagDataManager for offline-capable sources
+        if (!_tagDataManager.hasTags(_currentSourceId)) {
+          await _tagDataManager.initialize(source: _currentSourceId);
+        }
+        _filteredTags = await _tagDataManager.getTagsByType(
+          filterType,
+          limit: 100,
+          source: _currentSourceId,
+        );
       }
 
-      // Get tags by type
-      _filteredTags = await _tagDataManager.getTagsByType(filterType,
-          limit: 100, source: _currentSourceId);
       emit(
         state.copyWith(
           filterType: _currentFilterType,
@@ -80,20 +122,44 @@ class FilterDataCubit extends Cubit<FilterDataState> {
       _searchQuery = query.trim();
 
       if (_searchQuery.isEmpty) {
-        // Show all tags for current type
-        _filteredTags = await _tagDataManager.getTagsByType(
-          _currentFilterType,
-          limit: 100,
-          source: _currentSourceId,
-        );
+        // No query — fetch default page from API or local cache
+        if (_shouldUseApi(_currentSourceId)) {
+          final entities = await _getTagsByTypeUseCase(
+            GetTagsByTypeParams(
+              tagType: _currentFilterType,
+              sourceId: _currentSourceId,
+              page: 1,
+              perPage: 50,
+            ),
+          );
+          _filteredTags = entities.map(_tagEntityToTag).toList();
+        } else {
+          _filteredTags = await _tagDataManager.getTagsByType(
+            _currentFilterType,
+            limit: 100,
+            source: _currentSourceId,
+          );
+        }
       } else {
-        // Search tags by query and filter by type
-        _filteredTags = await _tagDataManager.searchTags(
-          _searchQuery,
-          type: _currentFilterType,
-          limit: 50,
-          source: _currentSourceId,
-        );
+        // Query — use autocomplete API or local search
+        if (_shouldUseApi(_currentSourceId)) {
+          final result = await _getTagAutocompleteUseCase(
+            GetTagAutocompleteParams(
+              query: _searchQuery,
+              sourceId: _currentSourceId,
+              tagType: _currentFilterType,
+              limit: 30,
+            ),
+          );
+          _filteredTags = result.suggestions.map(_tagEntityToTag).toList();
+        } else {
+          _filteredTags = await _tagDataManager.searchTags(
+            _searchQuery,
+            type: _currentFilterType,
+            limit: 50,
+            source: _currentSourceId,
+          );
+        }
       }
 
       emit(state.copyWith(
@@ -125,12 +191,23 @@ class FilterDataCubit extends Cubit<FilterDataState> {
 
       emit(FilterDataLoading(state));
 
-      // Get tags by new type
-      _filteredTags = await _tagDataManager.getTagsByType(
-        filterType,
-        limit: 100,
-        source: _currentSourceId,
-      );
+      if (_shouldUseApi(_currentSourceId)) {
+        final entities = await _getTagsByTypeUseCase(
+          GetTagsByTypeParams(
+            tagType: filterType,
+            sourceId: _currentSourceId,
+            page: 1,
+            perPage: 50,
+          ),
+        );
+        _filteredTags = entities.map(_tagEntityToTag).toList();
+      } else {
+        _filteredTags = await _tagDataManager.getTagsByType(
+          filterType,
+          limit: 100,
+          source: _currentSourceId,
+        );
+      }
 
       emit(state.copyWith(
         filterType: _currentFilterType,

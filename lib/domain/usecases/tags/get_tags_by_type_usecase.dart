@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
-import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/domain/entities/tags/tag_entity.dart';
 import 'package:nhasixapp/domain/repositories/tag_repository.dart';
+import 'package:nhasixapp/domain/usecases/base_usecase.dart';
 
 /// UseCase for getting tags by type from API v2
 class GetTagsByTypeUseCase
@@ -11,7 +11,7 @@ class GetTagsByTypeUseCase
   GetTagsByTypeUseCase(this._tagRepository);
 
   @override
-  Future<DataState<List<TagEntity>>> call(GetTagsByTypeParams params) async {
+  Future<List<TagEntity>> call(GetTagsByTypeParams params) async {
     return await _tagRepository.getTagsByType(
       tagType: params.tagType,
       sourceId: params.sourceId,

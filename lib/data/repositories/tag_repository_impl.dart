@@ -1,7 +1,3 @@
-import 'dart:io';
-
-import 'package:dio/dio.dart';
-import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/data/datasources/remote/tags/tags_remote_data_source.dart';
 import 'package:nhasixapp/domain/entities/tags/tag_autocomplete_result.dart';
@@ -21,7 +17,7 @@ class TagRepositoryImpl implements TagRepository {
         _logger = logger;
 
   @override
-  Future<DataState<List<TagEntity>>> getTagsByType({
+  Future<List<TagEntity>> getTagsByType({
     required String tagType,
     required String sourceId,
     int page = 1,
@@ -34,47 +30,15 @@ class TagRepositoryImpl implements TagRepository {
         page: page,
         perPage: perPage,
       );
-
-      final entities = models.map((model) => model.toEntity()).toList();
-
-      return DataSuccess(entities);
-    } on DioException catch (e) {
-      _logger.e('DioException in getTagsByType', error: e);
-      return DataFailed(
-        DioException(
-          requestOptions: e.requestOptions,
-          error: e.error,
-          response: e.response,
-          type: e.type,
-        ),
-      );
-    } on SocketException catch (e) {
-      _logger.e('SocketException in getTagsByType', error: e);
-      return DataFailed(
-        DioException(
-          requestOptions: RequestOptions(path: ''),
-          error: e,
-          type: DioExceptionType.connectionError,
-        ),
-      );
+      return models.map((model) => model.toEntity()).toList();
     } catch (e, stackTrace) {
-      _logger.e(
-        'Unexpected error in getTagsByType',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      return DataFailed(
-        DioException(
-          requestOptions: RequestOptions(path: ''),
-          error: e,
-          type: DioExceptionType.unknown,
-        ),
-      );
+      _logger.e('Error in getTagsByType', error: e, stackTrace: stackTrace);
+      rethrow;
     }
   }
 
   @override
-  Future<DataState<TagAutocompleteResult>> getAutocomplete({
+  Future<TagAutocompleteResult> getAutocomplete({
     required String query,
     required String sourceId,
     String? tagType,
@@ -87,45 +51,15 @@ class TagRepositoryImpl implements TagRepository {
         tagType: tagType,
         limit: limit,
       );
-
-      return DataSuccess(model.toEntity());
-    } on DioException catch (e) {
-      _logger.e('DioException in getAutocomplete', error: e);
-      return DataFailed(
-        DioException(
-          requestOptions: e.requestOptions,
-          error: e.error,
-          response: e.response,
-          type: e.type,
-        ),
-      );
-    } on SocketException catch (e) {
-      _logger.e('SocketException in getAutocomplete', error: e);
-      return DataFailed(
-        DioException(
-          requestOptions: RequestOptions(path: ''),
-          error: e,
-          type: DioExceptionType.connectionError,
-        ),
-      );
+      return model.toEntity();
     } catch (e, stackTrace) {
-      _logger.e(
-        'Unexpected error in getAutocomplete',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      return DataFailed(
-        DioException(
-          requestOptions: RequestOptions(path: ''),
-          error: e,
-          type: DioExceptionType.unknown,
-        ),
-      );
+      _logger.e('Error in getAutocomplete', error: e, stackTrace: stackTrace);
+      rethrow;
     }
   }
 
   @override
-  Future<DataState<TagDetailEntity>> getTagDetail({
+  Future<TagDetailEntity> getTagDetail({
     required String tagType,
     required String slug,
     required String sourceId,
@@ -136,40 +70,10 @@ class TagRepositoryImpl implements TagRepository {
         slug: slug,
         sourceId: sourceId,
       );
-
-      return DataSuccess(model.toEntity());
-    } on DioException catch (e) {
-      _logger.e('DioException in getTagDetail', error: e);
-      return DataFailed(
-        DioException(
-          requestOptions: e.requestOptions,
-          error: e.error,
-          response: e.response,
-          type: e.type,
-        ),
-      );
-    } on SocketException catch (e) {
-      _logger.e('SocketException in getTagDetail', error: e);
-      return DataFailed(
-        DioException(
-          requestOptions: RequestOptions(path: ''),
-          error: e,
-          type: DioExceptionType.connectionError,
-        ),
-      );
+      return model.toEntity();
     } catch (e, stackTrace) {
-      _logger.e(
-        'Unexpected error in getTagDetail',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      return DataFailed(
-        DioException(
-          requestOptions: RequestOptions(path: ''),
-          error: e,
-          type: DioExceptionType.unknown,
-        ),
-      );
+      _logger.e('Error in getTagDetail', error: e, stackTrace: stackTrace);
+      rethrow;
     }
   }
 }

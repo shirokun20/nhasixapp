@@ -9,16 +9,30 @@ class TagAutocompleteResultModel extends TagAutocompleteResult {
     required super.totalResults,
   });
 
-  factory TagAutocompleteResultModel.fromJson(Map<String, dynamic> json) {
-    final results = (json['results'] as List<dynamic>?)
-            ?.map((e) => TagModel.fromJson(e as Map<String, dynamic>))
-            .toList() ??
-        [];
+  /// nhentai autocomplete returns a bare List OR a Map with a 'results' key
+  factory TagAutocompleteResultModel.fromJson(
+    dynamic json, {
+    String query = '',
+  }) {
+    List<dynamic> items;
+    if (json is List) {
+      items = json;
+    } else if (json is Map) {
+      items = (json['results'] as List<dynamic>?) ?? [];
+      query = (json['query'] as String?) ?? query;
+    } else {
+      items = [];
+    }
+
+    final results = items
+        .map((e) => TagModel.fromJson((e as Map).cast<String, dynamic>()))
+        .toList();
 
     return TagAutocompleteResultModel(
       suggestions: results,
-      query: json['query'] as String? ?? '',
-      totalResults: json['total'] as int? ?? results.length,
+      query: query,
+      totalResults:
+          (json is Map ? json['total'] as int? : null) ?? results.length,
     );
   }
 
@@ -42,9 +56,8 @@ class TagAutocompleteResultModel extends TagAutocompleteResult {
 
   Map<String, dynamic> toJson() {
     return {
-      'results': suggestions
-          .map((e) => TagModel.fromEntity(e).toJson())
-          .toList(),
+      'results':
+          suggestions.map((e) => TagModel.fromEntity(e).toJson()).toList(),
       'query': query,
       'total': totalResults,
     };
