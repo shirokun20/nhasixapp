@@ -163,8 +163,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildSectionHeader(Icons.folder_outlined, 'STORAGE', theme),
           const SizedBox(height: 12),
           _buildInfoBanner(
-            l10n.storageDescription ??
-                'Configure download directory and storage preferences',
+            l10n.storageDescription,
             Icons.info_outline,
             theme,
           ),
@@ -640,7 +639,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: theme.colorScheme.primary,
             ),
             title: Text(
-              l10n.downloadDirectory ?? 'Download Directory',
+              'Download Directory',
               style: TextStyleConst.bodyLarge.copyWith(
                 fontWeight: FontWeight.w600,
                 color: theme.colorScheme.onSurface,
@@ -649,7 +648,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: Text(
               hasCustomPath
                   ? customPath
-                  : l10n.defaultInternalStorage ?? 'Default (Internal)',
+                  : l10n.defaultStorage,
               style: TextStyleConst.bodySmall.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -661,7 +660,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Icons.edit_outlined,
                 color: theme.colorScheme.primary,
               ),
-              tooltip: l10n.changeDirectory ?? 'Change Directory',
+              tooltip: 'Change Directory',
               onPressed: () async {
                 final newPath = await StorageSettings.pickAndSaveCustomRoot(
                   context,
@@ -670,8 +669,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        l10n.downloadDirectoryUpdated ??
-                            'Download directory updated',
+                        'Download directory updated',
                       ),
                       backgroundColor: Colors.green.shade700,
                     ),
@@ -693,15 +691,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: theme.colorScheme.error,
               ),
               title: Text(
-                l10n.resetToDefault ?? 'Reset to Default',
+                l10n.resetToDefault,
                 style: TextStyleConst.bodyLarge.copyWith(
                   fontWeight: FontWeight.w600,
                   color: theme.colorScheme.error,
                 ),
               ),
               subtitle: Text(
-                l10n.useDefaultInternalStorage ??
-                    'Use default internal storage location',
+                'Use default internal storage location',
                 style: TextStyleConst.bodySmall.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -710,10 +707,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 final confirmed = await showDialog<bool>(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    title: Text(l10n.resetToDefault ?? 'Reset to Default'),
+                    title: Text(l10n.resetToDefault),
                     content: Text(
-                      l10n.confirmResetStorageDirectory ??
-                          'Reset download directory to default internal storage?',
+                      'Reset download directory to default internal storage?',
                     ),
                     actions: [
                       TextButton(
@@ -738,8 +734,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          l10n.downloadDirectoryReset ??
-                              'Download directory reset to default',
+                          'Download directory reset to default',
                         ),
                       ),
                     );
