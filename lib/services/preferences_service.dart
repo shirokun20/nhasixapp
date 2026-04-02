@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/entities/user_preferences.dart';
@@ -24,6 +26,7 @@ class PreferencesService {
   static const String _keyShowNsfwContent = 'show_nsfw_content';
   static const String _keyImageQuality = 'image_quality';
   static const String _keyBlurThumbnails = 'blur_thumbnails';
+  static const String _keyBlacklistedTags = 'blacklistedTags';
 
   /// Get all user preferences
   Future<UserPreferences> getUserPreferences() async {
@@ -33,6 +36,7 @@ class PreferencesService {
       showNsfwContent: _prefs.getBool(_keyShowNsfwContent) ?? true,
       imageQuality: _prefs.getString(_keyImageQuality) ?? 'high',
       blurThumbnails: _prefs.getBool(_keyBlurThumbnails) ?? true,
+      blacklistedTags: _readStringCollection(_keyBlacklistedTags),
 
       // History cleanup settings
       autoCleanupHistory: _prefs.getBool(_keyAutoCleanupHistory) ?? false,
@@ -56,6 +60,13 @@ class PreferencesService {
       _prefs.setBool(_keyShowNsfwContent, preferences.showNsfwContent),
       _prefs.setString(_keyImageQuality, preferences.imageQuality),
       _prefs.setBool(_keyBlurThumbnails, preferences.blurThumbnails),
+      if (preferences.blacklistedTags.isEmpty)
+        _prefs.remove(_keyBlacklistedTags)
+      else
+        _prefs.setString(
+          _keyBlacklistedTags,
+          jsonEncode(preferences.blacklistedTags),
+        ),
 
       // History cleanup settings
       _prefs.setBool(_keyAutoCleanupHistory, preferences.autoCleanupHistory),
@@ -153,6 +164,32 @@ class PreferencesService {
     } catch (e) {
       return null;
     }
+  }
+
+  List<String> _readStringCollection(String key) {
+    final stringList = _prefs.getStringList(key);
+    if (stringList != null && stringList.isNotEmpty) {
+      return stringList;
+    }
+
+    final rawString = _prefs.getString(key);
+    if (rawString == null || rawString.isEmpty) {
+      return const [];
+    }
+
+    try {
+      final decoded = jsonDecode(rawString);
+      if (decoded is List) {
+        return decoded
+            .map((entry) => entry.toString().trim())
+            .where((entry) => entry.isNotEmpty)
+            .toList(growable: false);
+      }
+    } catch (_) {
+      return const [];
+    }
+
+    return const [];
   }
 
   /// Clear all preferences

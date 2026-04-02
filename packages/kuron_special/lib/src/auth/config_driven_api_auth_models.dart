@@ -55,6 +55,8 @@ class ApiAuthConfig {
   final String? logoutEndpoint;
   final String? favoritesEndpoint;
   final String? galleryFavoriteEndpoint;
+  final String? blacklistEndpoint;
+  final String? blacklistIdsEndpoint;
   final String? userEndpoint;
   final String usernameField;
   final String passwordField;
@@ -88,6 +90,8 @@ class ApiAuthConfig {
     this.logoutEndpoint,
     this.favoritesEndpoint,
     this.galleryFavoriteEndpoint,
+    this.blacklistEndpoint,
+    this.blacklistIdsEndpoint,
     this.userEndpoint,
   });
 
@@ -123,6 +127,8 @@ class ApiAuthConfig {
       favoritesEndpoint: (endpoints['favorites'] as String?)?.trim(),
       galleryFavoriteEndpoint:
           (endpoints['galleryFavorite'] as String?)?.trim(),
+      blacklistEndpoint: (endpoints['blacklist'] as String?)?.trim(),
+      blacklistIdsEndpoint: (endpoints['blacklistIds'] as String?)?.trim(),
       userEndpoint: (endpoints['user'] as String?)?.trim(),
       usernameField: (fields['username'] as String?)?.trim() ?? 'username',
       passwordField: (fields['password'] as String?)?.trim() ?? 'password',

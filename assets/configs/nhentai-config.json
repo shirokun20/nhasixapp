@@ -46,6 +46,8 @@
             "logout": "/api/v2/auth/logout",
             "favorites": "/api/v2/favorites",
             "galleryFavorite": "/api/v2/galleries/{gallery_id}/favorite",
+            "blacklist": "/api/v2/blacklist",
+            "blacklistIds": "/api/v2/blacklist/ids",
             "user": "/api/v2/user"
         },
         "fields": {
@@ -310,6 +312,7 @@
         "download": true,
         "auth": true,
         "favorite": true,
+        "blacklist": true,
         "chapters": false,
         "bookmark": false,
         "comments": true,

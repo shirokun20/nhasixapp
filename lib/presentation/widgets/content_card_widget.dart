@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -219,42 +221,6 @@ class ContentCard extends StatelessWidget {
       );
     }
 
-    // Apply blur effect if content is excluded
-    if (isBlurred) {
-      return Stack(
-        children: [
-          // Blurred content
-          ColorFiltered(
-            colorFilter: ColorFilter.mode(
-              Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
-              BlendMode.saturation,
-            ),
-            child: Opacity(
-              opacity: 0.5,
-              child: cardWidget,
-            ),
-          ),
-          // Overlay to indicate excluded content
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color:
-                    Theme.of(context).colorScheme.scrim.withValues(alpha: 0.5),
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.visibility_off,
-                  color: Theme.of(context).colorScheme.onSurface,
-                  size: 24,
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
     return cardWidget;
   }
 
@@ -313,23 +279,74 @@ class ContentCard extends StatelessWidget {
     final headers = source?.getImageDownloadHeaders(imageUrl: content.coverUrl);
 
     return Builder(
-      builder: (context) => Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      builder: (context) => Stack(
+        fit: StackFit.expand,
+        children: [
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            ),
+            child: content.coverUrl.isNotEmpty
+                ? ProgressiveThumbnailWidget(
+                    networkUrl: content.coverUrl,
+                    contentId: content.id,
+                    aspectRatio: aspectRatio,
+                    borderRadius: BorderRadius
+                        .zero, // No border radius, handled by parent
+                    showOfflineIndicator:
+                        false, // Disable to prevent duplicate with ContentCard's own indicator
+                    httpHeaders: headers,
+                  )
+                : _buildImageError(),
+          ),
+          if (isBlurred) _buildBlacklistedCoverOverlay(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBlacklistedCoverOverlay(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Positioned.fill(
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            color: Colors.black.withValues(alpha: 0.62),
+            alignment: Alignment.center,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.errorContainer.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: theme.colorScheme.error.withValues(alpha: 0.35),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.visibility_off_rounded,
+                    size: 16,
+                    color: theme.colorScheme.error,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'BLACKLISTED',
+                    style: TextStyleConst.labelSmall.copyWith(
+                      color: theme.colorScheme.onErrorContainer,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
-        child: content.coverUrl.isNotEmpty
-            ? ProgressiveThumbnailWidget(
-                networkUrl: content.coverUrl,
-                contentId: content.id,
-                aspectRatio: aspectRatio,
-                borderRadius:
-                    BorderRadius.zero, // No border radius, handled by parent
-                showOfflineIndicator:
-                    false, // Disable to prevent duplicate with ContentCard's own indicator
-                httpHeaders: headers,
-              )
-            : _buildImageError(),
       ),
     );
   }

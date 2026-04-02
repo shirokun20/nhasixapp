@@ -113,6 +113,7 @@ import 'package:nhasixapp/services/image_metadata_service.dart';
 import 'package:nhasixapp/services/export_service.dart';
 import 'package:nhasixapp/services/legal_content_service.dart';
 import 'package:nhasixapp/services/source_auth_service.dart';
+import 'package:nhasixapp/services/tag_blacklist_service.dart';
 import 'package:nhasixapp/services/cache/cache_manager.dart' as multi_cache;
 
 final getIt = GetIt.instance;
@@ -328,6 +329,11 @@ void _setupServices() {
   getIt.registerLazySingleton<SourceAuthService>(() => SourceAuthService(
         configService: getIt<RemoteConfigService>(),
         dio: getIt<Dio>(),
+        logger: getIt<Logger>(),
+      ));
+
+  getIt.registerLazySingleton<TagBlacklistService>(() => TagBlacklistService(
+        sourceAuthService: getIt<SourceAuthService>(),
         logger: getIt<Logger>(),
       ));
 }

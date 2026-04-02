@@ -15,11 +15,13 @@ class MainGridCard extends StatelessWidget {
     required this.content,
     required this.onTap,
     this.blurThumbnails = false,
+    this.isBlacklisted = false,
   });
 
   final Content content;
   final VoidCallback onTap;
   final bool blurThumbnails;
+  final bool isBlacklisted;
 
   @override
   Widget build(BuildContext context) {
@@ -68,6 +70,7 @@ class MainGridCard extends StatelessWidget {
                         ? content.imageUrls.first
                         : null,
                   ),
+                  if (isBlacklisted) _buildBlacklistedOverlay(context),
 
                   // Gradient overlay
                   Positioned.fill(
@@ -311,6 +314,50 @@ class MainGridCard extends StatelessWidget {
               .colorScheme
               .onSurfaceVariant
               .withValues(alpha: 0.5),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBlacklistedOverlay(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Positioned.fill(
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            color: Colors.black.withValues(alpha: 0.64),
+            alignment: Alignment.center,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.errorContainer.withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: theme.colorScheme.error.withValues(alpha: 0.35),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.visibility_off_rounded,
+                    size: 14,
+                    color: theme.colorScheme.error,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'BLACKLISTED',
+                    style: TextStyleConst.labelSmall.copyWith(
+                      color: theme.colorScheme.onErrorContainer,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

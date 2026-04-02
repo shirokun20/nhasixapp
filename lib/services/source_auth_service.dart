@@ -73,6 +73,37 @@ class SourceAuthService {
     return galleryFavoriteEndpoint.isNotEmpty;
   }
 
+  bool supportsOnlineBlacklistRead(String sourceId) {
+    if (!supportsTokenApiAuth(sourceId)) return false;
+
+    final raw = _configService.getRawConfig(sourceId);
+    if (raw == null) return false;
+
+    final features = raw['features'] as Map<String, dynamic>?;
+    if (features?['blacklist'] != true) return false;
+
+    final endpoints = (raw['auth'] as Map<String, dynamic>?)?['endpoints']
+        as Map<String, dynamic>?;
+    final blacklistIdsEndpoint =
+        endpoints?['blacklistIds']?.toString().trim() ?? '';
+    return blacklistIdsEndpoint.isNotEmpty;
+  }
+
+  bool supportsOnlineBlacklistRulesRead(String sourceId) {
+    if (!supportsTokenApiAuth(sourceId)) return false;
+
+    final raw = _configService.getRawConfig(sourceId);
+    if (raw == null) return false;
+
+    final features = raw['features'] as Map<String, dynamic>?;
+    if (features?['blacklist'] != true) return false;
+
+    final endpoints = (raw['auth'] as Map<String, dynamic>?)?['endpoints']
+        as Map<String, dynamic>?;
+    final blacklistEndpoint = endpoints?['blacklist']?.toString().trim() ?? '';
+    return blacklistEndpoint.isNotEmpty;
+  }
+
   List<String> getSourcesSupportingOnlineFavorites({
     bool requireWrite = false,
   }) {
@@ -84,6 +115,14 @@ class SourceAuthService {
               ? supportsOnlineFavoritesWrite(sourceId)
               : supportsOnlineFavoritesRead(sourceId),
         )
+        .toList(growable: false);
+  }
+
+  List<String> getSourcesSupportingOnlineBlacklist() {
+    return _configService
+        .getAllSourceConfigs()
+        .map((config) => config.source)
+        .where(supportsOnlineBlacklistRead)
         .toList(growable: false);
   }
 
@@ -232,6 +271,18 @@ class SourceAuthService {
     final client = _buildClient(sourceId);
     await client.attachSessionHeaderFromStorage();
     return client.getUserProfile();
+  }
+
+  Future<List<String>> getBlacklistIds(String sourceId) async {
+    final client = _buildClient(sourceId);
+    await client.attachSessionHeaderFromStorage();
+    return client.getBlacklistIds();
+  }
+
+  Future<List<Map<String, dynamic>>> getBlacklistRules(String sourceId) async {
+    final client = _buildClient(sourceId);
+    await client.attachSessionHeaderFromStorage();
+    return client.getBlacklistRules();
   }
 
   ConfigDrivenApiAuthClient _buildClient(String sourceId) {
