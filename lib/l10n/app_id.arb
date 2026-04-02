@@ -23,6 +23,8 @@
   "randomGalleryFoundMessage": "Membuka detail galeri...",
   "randomGalleryNoResult": "Tidak ada galeri acak ditemukan. Coba lagi.",
   "randomGalleryError": "Gagal memuat galeri acak. Silakan coba lagi.",
+  "randomGalleryUnavailableTitle": "Fitur tidak tersedia",
+  "randomGalleryUnavailableMessage": "Galeri Acak belum tersedia untuk source ini.",
   "offlineContent": "Konten Offline",
   "settings": "Pengaturan",
   "appDisguise": "Penyamaran Aplikasi",

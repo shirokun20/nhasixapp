@@ -51,6 +51,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get randomGalleryError => '随机画廊加载失败，请重试。';
 
   @override
+  String get randomGalleryUnavailableTitle => '功能不可用';
+
+  @override
+  String get randomGalleryUnavailableMessage => '当前来源暂不支持随机画廊。';
+
+  @override
   String get offlineContent => '离线内容';
 
   @override

@@ -184,6 +184,18 @@ abstract class AppLocalizations {
   /// **'Error loading random gallery. Please try again.'**
   String get randomGalleryError;
 
+  /// No description provided for @randomGalleryUnavailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature unavailable'**
+  String get randomGalleryUnavailableTitle;
+
+  /// No description provided for @randomGalleryUnavailableMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Random Gallery is not available for this source.'**
+  String get randomGalleryUnavailableMessage;
+
   /// No description provided for @offlineContent.
   ///
   /// In en, this message translates to:

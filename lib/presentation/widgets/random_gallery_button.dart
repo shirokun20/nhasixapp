@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
@@ -18,33 +19,66 @@ class RandomGalleryButton extends StatefulWidget {
 }
 
 class _RandomGalleryButtonState extends State<RandomGalleryButton> {
-  static const String _configSourceKey = 'nhentai';
+  static const String _fallbackSourceId = 'nhentai';
 
   bool _isLoading = false;
   bool _isDialogOpen = false;
   final Logger _logger = Logger();
   final ValueNotifier<bool> _foundState = ValueNotifier<bool>(false);
 
-  String _resolveRandomSourceId() {
-    final rawConfig =
-        getIt<RemoteConfigService>().getRawConfig(_configSourceKey);
-    final sourceId = rawConfig?['source'] as String?;
-    if (sourceId != null && sourceId.isNotEmpty) {
-      return sourceId;
+  String _resolveActiveSourceId() {
+    final currentSourceId = getIt<ContentSourceRegistry>().currentSourceId;
+    if (currentSourceId != null && currentSourceId.isNotEmpty) {
+      return currentSourceId;
     }
-    return _configSourceKey;
+    return _fallbackSourceId;
   }
 
-  bool _isRandomFeatureEnabled() {
-    final rawConfig =
-        getIt<RemoteConfigService>().getRawConfig(_configSourceKey);
-    final features = rawConfig?['features'] as Map<String, dynamic>?;
-    final enabled = features?['randomGallery'];
-    if (enabled is bool) {
-      return enabled;
+  bool _isRandomSupportedForSource(String sourceId) {
+    final rawConfig = getIt<RemoteConfigService>().getRawConfig(sourceId);
+    if (rawConfig == null) {
+      return false;
     }
-    // Backward compatibility for old cached configs.
-    return true;
+
+    final features = rawConfig['features'] as Map<String, dynamic>?;
+    final rawFeatureEnabled = features?['randomGallery'];
+    final featureEnabled =
+        rawFeatureEnabled is bool ? rawFeatureEnabled : false;
+
+    final api = rawConfig['api'] as Map<String, dynamic>?;
+    final apiEndpoints = api?['endpoints'] as Map<String, dynamic>?;
+    final apiRandomPath = apiEndpoints?['random']?.toString().trim() ?? '';
+
+    final scraper = rawConfig['scraper'] as Map<String, dynamic>?;
+    final scraperEndpoints = scraper?['endpoints'] as Map<String, dynamic>?;
+    final scraperRandomPath = scraperEndpoints?['random']?.toString().trim() ??
+        scraper?['randomUrl']?.toString().trim() ??
+        '';
+
+    final hasRandomPath =
+        apiRandomPath.isNotEmpty || scraperRandomPath.isNotEmpty;
+    return featureEnabled && hasRandomPath;
+  }
+
+  Future<void> _showRandomUnavailableDialog() async {
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(l10n.randomGalleryUnavailableTitle),
+          content: Text(l10n.randomGalleryUnavailableMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(l10n.confirmButton),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _showLoadingDialog() async {
@@ -111,12 +145,17 @@ class _RandomGalleryButtonState extends State<RandomGalleryButton> {
   Future<void> _handleRandomGallery() async {
     if (_isLoading) return;
 
+    final sourceId = _resolveActiveSourceId();
+    if (!_isRandomSupportedForSource(sourceId)) {
+      await _showRandomUnavailableDialog();
+      return;
+    }
+
     setState(() => _isLoading = true);
     _foundState.value = false;
     unawaited(_showLoadingDialog());
 
     try {
-      final sourceId = _resolveRandomSourceId();
       final repo = getIt<ContentRepository>();
 
       // Fetch random gallery(ies)
@@ -171,13 +210,11 @@ class _RandomGalleryButtonState extends State<RandomGalleryButton> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
-    final randomFeatureEnabled = _isRandomFeatureEnabled();
 
     return Tooltip(
       message: l10n.randomGallery,
       child: IconButton(
-        onPressed:
-            (_isLoading || !randomFeatureEnabled) ? null : _handleRandomGallery,
+        onPressed: _isLoading ? null : _handleRandomGallery,
         icon: const AnimatedDiceWidget(isSpinning: false),
         tooltip: l10n.randomGallery,
         splashRadius: 24,

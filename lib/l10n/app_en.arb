@@ -15,6 +15,8 @@
   "randomGalleryFoundMessage": "Opening gallery details...",
   "randomGalleryNoResult": "No random gallery found. Try again.",
   "randomGalleryError": "Error loading random gallery. Please try again.",
+  "randomGalleryUnavailableTitle": "Feature unavailable",
+  "randomGalleryUnavailableMessage": "Random Gallery is not available for this source.",
   "offlineContent": "Offline Content",
   "settings": "Settings",
   "appDisguise": "App Disguise",

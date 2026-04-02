@@ -22,6 +22,8 @@
   "randomGalleryFoundMessage": "正在打开画廊详情...",
   "randomGalleryNoResult": "未找到随机画廊，请重试。",
   "randomGalleryError": "随机画廊加载失败，请重试。",
+  "randomGalleryUnavailableTitle": "功能不可用",
+  "randomGalleryUnavailableMessage": "当前来源暂不支持随机画廊。",
   "offlineContent": "离线内容",
   "settings": "设置",
   "appDisguise": "应用伪装",

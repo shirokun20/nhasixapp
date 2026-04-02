@@ -52,6 +52,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Error loading random gallery. Please try again.';
 
   @override
+  String get randomGalleryUnavailableTitle => 'Feature unavailable';
+
+  @override
+  String get randomGalleryUnavailableMessage =>
+      'Random Gallery is not available for this source.';
+
+  @override
   String get offlineContent => 'Offline Content';
 
   @override
