@@ -1,0 +1,279 @@
+import 'package:dio/dio.dart';
+import 'package:logger/logger.dart';
+import 'package:kuron_special/kuron_special.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
+
+class SourceAuthBootstrap {
+  final String sourceId;
+  final String? powChallenge;
+  final int? powDifficulty;
+  final String? captchaProvider;
+  final String? captchaSiteKey;
+  final String? captchaBaseUrl;
+
+  const SourceAuthBootstrap({
+    required this.sourceId,
+    this.powChallenge,
+    this.powDifficulty,
+    this.captchaProvider,
+    this.captchaSiteKey,
+    this.captchaBaseUrl,
+  });
+}
+
+class SourceAuthService {
+  final RemoteConfigService _configService;
+  final Dio _dio;
+  final Logger _logger;
+
+  SourceAuthService({
+    required RemoteConfigService configService,
+    required Dio dio,
+    required Logger logger,
+  })  : _configService = configService,
+        _dio = dio,
+        _logger = logger;
+
+  bool supportsTokenApiAuth(String sourceId) {
+    final raw = _configService.getRawConfig(sourceId);
+    if (raw == null) return false;
+
+    final auth = raw['auth'] as Map<String, dynamic>?;
+    if (auth == null) return false;
+
+    return auth['enabled'] == true &&
+        (auth['mode']?.toString().trim() ?? '') == 'tokenApi';
+  }
+
+  bool supportsOnlineFavoritesRead(String sourceId) {
+    if (!supportsTokenApiAuth(sourceId)) return false;
+
+    final raw = _configService.getRawConfig(sourceId);
+    if (raw == null) return false;
+
+    final features = raw['features'] as Map<String, dynamic>?;
+    if (features?['favorite'] != true) return false;
+
+    final endpoints = (raw['auth'] as Map<String, dynamic>?)?['endpoints']
+        as Map<String, dynamic>?;
+    final favoritesEndpoint = endpoints?['favorites']?.toString().trim() ?? '';
+    return favoritesEndpoint.isNotEmpty;
+  }
+
+  bool supportsOnlineFavoritesWrite(String sourceId) {
+    if (!supportsOnlineFavoritesRead(sourceId)) return false;
+
+    final raw = _configService.getRawConfig(sourceId);
+    if (raw == null) return false;
+
+    final endpoints = (raw['auth'] as Map<String, dynamic>?)?['endpoints']
+        as Map<String, dynamic>?;
+    final galleryFavoriteEndpoint =
+        endpoints?['galleryFavorite']?.toString().trim() ?? '';
+    return galleryFavoriteEndpoint.isNotEmpty;
+  }
+
+  List<String> getSourcesSupportingOnlineFavorites({
+    bool requireWrite = false,
+  }) {
+    return _configService
+        .getAllSourceConfigs()
+        .map((config) => config.source)
+        .where(
+          (sourceId) => requireWrite
+              ? supportsOnlineFavoritesWrite(sourceId)
+              : supportsOnlineFavoritesRead(sourceId),
+        )
+        .toList(growable: false);
+  }
+
+  Future<SourceAuthBootstrap> bootstrap(String sourceId) async {
+    final raw = _configService.getRawConfig(sourceId);
+    if (raw == null) {
+      throw StateError('Missing config for source: $sourceId');
+    }
+
+    final config = ApiAuthConfig.fromSourceConfig(raw);
+    final client = ConfigDrivenApiAuthClient(
+      dio: _dio,
+      config: config,
+      logger: _logger,
+    );
+
+    String? powChallenge;
+    int? powDifficulty;
+    String? captchaProvider;
+    String? captchaSiteKey;
+    final captchaBaseUrl = _resolveCaptchaBaseUrl(
+      rawConfig: raw,
+      apiBase: config.apiBase,
+    );
+
+    try {
+      final pow = await client.getPowChallenge();
+      powChallenge = pow.challenge;
+      powDifficulty = pow.difficulty;
+    } catch (e) {
+      _logger.w('PoW bootstrap unavailable for $sourceId: $e');
+    }
+
+    try {
+      final captcha = await client.getCaptchaConfig();
+      captchaProvider = captcha.provider;
+      captchaSiteKey = captcha.siteKey;
+    } catch (e) {
+      _logger.w('Captcha bootstrap unavailable for $sourceId: $e');
+    }
+
+    return SourceAuthBootstrap(
+      sourceId: sourceId,
+      powChallenge: powChallenge,
+      powDifficulty: powDifficulty,
+      captchaProvider: captchaProvider,
+      captchaSiteKey: captchaSiteKey,
+      captchaBaseUrl: captchaBaseUrl,
+    );
+  }
+
+  Future<void> login({
+    required String sourceId,
+    required String username,
+    required String password,
+    required String captchaResponse,
+  }) async {
+    final normalizedUsername = username.trim();
+    final normalizedCaptchaResponse = captchaResponse.replaceAll(
+      RegExp(r'\s+'),
+      '',
+    );
+
+    final client = _buildClient(sourceId);
+    final powAction = _getPowAction(sourceId);
+    final pow = await client.getPowChallenge();
+    final nonce = await client.solvePowNonceInIsolate(
+      challenge: pow.challenge,
+      difficulty: pow.difficulty,
+      action: powAction,
+    );
+
+    await client.login(
+      username: normalizedUsername,
+      password: password,
+      captchaResponse: normalizedCaptchaResponse,
+      powChallenge: pow.challenge,
+      powNonce: nonce,
+      persist: true,
+    );
+  }
+
+  Future<bool> hasSession(String sourceId) async {
+    final client = _buildClient(sourceId);
+    final session = await client.readSession();
+    return session != null && session.accessToken.isNotEmpty;
+  }
+
+  Future<String?> getSessionDisplayName(String sourceId) async {
+    final client = _buildClient(sourceId);
+    final session = await client.readSession();
+    final username = session?.username?.trim();
+    if (username == null || username.isEmpty) {
+      return null;
+    }
+
+    return username;
+  }
+
+  Future<void> logout(String sourceId) async {
+    final client = _buildClient(sourceId);
+    await client.logout(clearStorage: true);
+  }
+
+  Future<List<Map<String, dynamic>>> getFavorites(
+    String sourceId, {
+    String? query,
+    int page = 1,
+  }) async {
+    final client = _buildClient(sourceId);
+    await client.attachSessionHeaderFromStorage();
+    return client.getFavorites(
+      query: query,
+      page: page,
+    );
+  }
+
+  Future<ApiFavoriteStatus> checkFavorite({
+    required String sourceId,
+    required int galleryId,
+  }) async {
+    final client = _buildClient(sourceId);
+    await client.attachSessionHeaderFromStorage();
+    return client.checkFavorite(galleryId);
+  }
+
+  Future<ApiFavoriteStatus> addFavorite({
+    required String sourceId,
+    required int galleryId,
+  }) async {
+    final client = _buildClient(sourceId);
+    await client.attachSessionHeaderFromStorage();
+    return client.addFavorite(galleryId);
+  }
+
+  Future<ApiFavoriteStatus> removeFavorite({
+    required String sourceId,
+    required int galleryId,
+  }) async {
+    final client = _buildClient(sourceId);
+    await client.attachSessionHeaderFromStorage();
+    return client.removeFavorite(galleryId);
+  }
+
+  Future<Map<String, dynamic>> getUserProfile(String sourceId) async {
+    final client = _buildClient(sourceId);
+    await client.attachSessionHeaderFromStorage();
+    return client.getUserProfile();
+  }
+
+  ConfigDrivenApiAuthClient _buildClient(String sourceId) {
+    final raw = _configService.getRawConfig(sourceId);
+    if (raw == null) {
+      throw StateError('Missing config for source: $sourceId');
+    }
+
+    final config = ApiAuthConfig.fromSourceConfig(raw);
+    return ConfigDrivenApiAuthClient(
+      dio: _dio,
+      config: config,
+      logger: _logger,
+    );
+  }
+
+  String? _getPowAction(String sourceId) {
+    final raw = _configService.getRawConfig(sourceId);
+    if (raw == null) return null;
+
+    final auth = raw['auth'] as Map<String, dynamic>?;
+    return auth?['powAction']?.toString().trim();
+  }
+
+  String? _resolveCaptchaBaseUrl({
+    required Map<String, dynamic> rawConfig,
+    required String apiBase,
+  }) {
+    final auth = rawConfig['auth'] as Map<String, dynamic>?;
+    final configuredBaseUrl = auth?['captchaBaseUrl']?.toString().trim();
+    final rawValue = (configuredBaseUrl != null && configuredBaseUrl.isNotEmpty)
+        ? configuredBaseUrl
+        : apiBase.trim();
+
+    if (rawValue.isEmpty) return null;
+
+    final uri = Uri.tryParse(rawValue);
+    if (uri == null || (!uri.hasScheme || !uri.hasAuthority)) {
+      _logger.w('Invalid captcha base URL in config: $rawValue');
+      return null;
+    }
+
+    return uri.origin;
+  }
+}

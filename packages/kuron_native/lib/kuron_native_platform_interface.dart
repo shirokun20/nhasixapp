@@ -65,7 +65,8 @@ abstract class KuronNativePlatform extends PlatformInterface {
   Future<Map<String, dynamic>?> extractZipFile({
     required String contentUri,
     required String destinationPath,
-    Function(int processed, int total, int imageCount, String currentFile)? onProgress,
+    Function(int processed, int total, int imageCount, String currentFile)?
+    onProgress,
   }) {
     throw UnimplementedError('extractZipFile() has not been implemented.');
   }
@@ -136,5 +137,20 @@ abstract class KuronNativePlatform extends PlatformInterface {
     bool clearCookies = false,
   }) {
     throw UnimplementedError('showLoginWebView() has not been implemented.');
+  }
+
+  /// Open a native WebView Activity for CAPTCHA solving and return token.
+  ///
+  /// Returns a Map with:
+  /// - `success` (bool)
+  /// - `token` (String?)
+  /// - `errorCode` (String?)
+  /// - `errorMessage` (String?)
+  Future<Map<String, dynamic>?> showCaptchaWebView({
+    required String provider,
+    required String siteKey,
+    String? baseUrl,
+  }) {
+    throw UnimplementedError('showCaptchaWebView() has not been implemented.');
   }
 }

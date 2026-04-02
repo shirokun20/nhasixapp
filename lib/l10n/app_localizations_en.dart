@@ -15,6 +15,98 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appSubtitle => 'Enhanced Reading Experience';
 
   @override
+  String sourceAuthProfileTitle(String sourceId) {
+    return 'Profile $sourceId';
+  }
+
+  @override
+  String sourceAuthLoginTitle(String sourceId) {
+    return 'Login $sourceId';
+  }
+
+  @override
+  String get sourceAuthConnectedAccount => 'Connected Account';
+
+  @override
+  String get sourceAuthSecureLogin => 'Secure Login';
+
+  @override
+  String get sourceAuthConnectedDescription =>
+      'Your account is connected and ready.';
+
+  @override
+  String get sourceAuthLoginDescription =>
+      'Sign in to sync your personalized favorites.';
+
+  @override
+  String get sourceAuthUser => 'User';
+
+  @override
+  String get sourceAuthSlug => 'Slug';
+
+  @override
+  String get sourceAuthAuthenticated => 'Authenticated';
+
+  @override
+  String get sourceAuthRefreshProfile => 'Refresh Profile';
+
+  @override
+  String get sourceAuthLogout => 'Logout';
+
+  @override
+  String get sourceAuthUsername => 'Username';
+
+  @override
+  String get sourceAuthPassword => 'Password';
+
+  @override
+  String get sourceAuthCaptchaVerified =>
+      'CAPTCHA verified and stored securely';
+
+  @override
+  String get sourceAuthCaptchaRequired => 'Please solve CAPTCHA to continue';
+
+  @override
+  String get sourceAuthCaptchaSolved => 'CAPTCHA Solved';
+
+  @override
+  String get sourceAuthSolveCaptcha => 'Solve CAPTCHA';
+
+  @override
+  String get sourceAuthLoginButton => 'Login';
+
+  @override
+  String get sourceAuthLoginSuccess => 'Login successful';
+
+  @override
+  String get sourceAuthSigningInSecurely => 'Signing in securely';
+
+  @override
+  String get sourceAuthStepValidateRequest => 'Validate request';
+
+  @override
+  String get sourceAuthStepSecureAuth => 'Secure authentication';
+
+  @override
+  String get sourceAuthStepFetchProfile => 'Fetch profile';
+
+  @override
+  String get sourceAuthFlowPreparingSession => 'Preparing secure session...';
+
+  @override
+  String get sourceAuthFlowSolvingChallenge => 'Solving security challenge...';
+
+  @override
+  String get sourceAuthFlowFetchingProfile =>
+      'Session verified. Fetching profile...';
+
+  @override
+  String get sourceAuthFlowLoginSuccess => 'Login successful';
+
+  @override
+  String get sourceAuthCaptchaCaptured => 'CAPTCHA captured successfully';
+
+  @override
   String get home => 'Home';
 
   @override

@@ -10,9 +10,20 @@ import 'package:nhasixapp/presentation/cubits/network/network_cubit.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/presentation/cubits/crotpedia_auth/crotpedia_auth_cubit.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/services/source_auth_service.dart';
 import '../../core/routing/app_route.dart';
 import 'common/source_selector.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+
+class _SourceAuthIdentity {
+  final bool authenticated;
+  final String? displayName;
+
+  const _SourceAuthIdentity({
+    required this.authenticated,
+    this.displayName,
+  });
+}
 
 class AppDrawerContent extends StatefulWidget {
   const AppDrawerContent({
@@ -88,6 +99,20 @@ class _AppDrawerContentState extends State<AppDrawerContent>
     }
   }
 
+  Future<_SourceAuthIdentity> _loadSourceAuthIdentity(String sourceId) async {
+    final authService = getIt<SourceAuthService>();
+    final authenticated = await authService.hasSession(sourceId);
+    if (!authenticated) {
+      return const _SourceAuthIdentity(authenticated: false);
+    }
+
+    final displayName = await authService.getSessionDisplayName(sourceId);
+    return _SourceAuthIdentity(
+      authenticated: true,
+      displayName: displayName,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -147,6 +172,64 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                   children: [
                     const SourceSelector(),
                     const SizedBox(height: 8),
+
+                    if (context.watch<SourceCubit>().state.activeSource !=
+                            null &&
+                        context
+                            .watch<SourceCubit>()
+                            .state
+                            .activeSource!
+                            .supportsAuthentication &&
+                        context.watch<SourceCubit>().state.activeSource!.id !=
+                            SourceType.crotpedia.id) ...[
+                      Builder(
+                        builder: (_) {
+                          final sourceId = context
+                              .watch<SourceCubit>()
+                              .state
+                              .activeSource!
+                              .id;
+
+                          return FutureBuilder<_SourceAuthIdentity>(
+                            future: _loadSourceAuthIdentity(sourceId),
+                            builder: (context, snapshot) {
+                              final identity = snapshot.data;
+                              final isLoggedIn =
+                                  identity?.authenticated == true;
+                              final displayName =
+                                  identity?.displayName?.trim() ?? '';
+
+                              final label = isLoggedIn
+                                  ? (displayName.isNotEmpty
+                                      ? 'Profile ($displayName)'
+                                      : 'Profile')
+                                  : 'Login / Account';
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildSectionLabel('ACCOUNT', theme),
+                                  const SizedBox(height: 8),
+                                  _buildNavItem(
+                                    context,
+                                    icon: isLoggedIn
+                                        ? Icons.verified_user_rounded
+                                        : Icons.account_circle_rounded,
+                                    label: label,
+                                    route:
+                                        '${AppRoute.sourceLogin}?source=$sourceId',
+                                    isSelected:
+                                        isSelected(AppRoute.sourceLogin),
+                                    theme: theme,
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                    ],
 
                     // Crotpedia specific actions
                     if (context.watch<SourceCubit>().state.activeSource?.id ==

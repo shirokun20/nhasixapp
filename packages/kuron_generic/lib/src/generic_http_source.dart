@@ -361,10 +361,17 @@ class GenericHttpSource implements ContentSource {
       const [];
 
   @override
-  bool get supportsAuthentication => false;
+  bool get supportsAuthentication {
+    final auth = _rawConfig['auth'] as Map<String, dynamic>?;
+    final features = _rawConfig['features'] as Map<String, dynamic>?;
+    return (auth?['enabled'] == true) || (features?['auth'] == true);
+  }
 
   @override
-  bool get supportsBookmarks => false;
+  bool get supportsBookmarks {
+    final features = _rawConfig['features'] as Map<String, dynamic>?;
+    return features?['bookmark'] == true || features?['favorite'] == true;
+  }
 
   @override
   bool get showsPageCountInList => true;

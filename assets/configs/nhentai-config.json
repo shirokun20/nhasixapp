@@ -33,6 +33,34 @@
         ],
         "useMirrors": false
     },
+    "auth": {
+        "enabled": true,
+        "mode": "tokenApi",
+        "authorizationScheme": "User",
+        "powAction": "login",
+        "endpoints": {
+            "pow": "/api/v2/pow",
+            "captcha": "/api/v2/captcha",
+            "login": "/api/v2/auth/login",
+            "refresh": "/api/v2/auth/refresh",
+            "logout": "/api/v2/auth/logout",
+            "favorites": "/api/v2/favorites",
+            "galleryFavorite": "/api/v2/galleries/{gallery_id}/favorite",
+            "user": "/api/v2/user"
+        },
+        "fields": {
+            "username": "username",
+            "password": "password",
+            "captchaResponse": "captcha_response",
+            "powChallenge": "pow_challenge",
+            "powNonce": "pow_nonce",
+            "powAction": "pow_action",
+            "accessToken": "access_token",
+            "refreshToken": "refresh_token",
+            "expiresIn": "expires_in",
+            "tokenType": "token_type"
+        }
+    },
     "selectors": {
         "items": {
             "selector": "$.result[*]",
@@ -280,6 +308,7 @@
         "related": true,
         "randomGallery": true,
         "download": true,
+        "auth": true,
         "favorite": true,
         "chapters": false,
         "bookmark": false,

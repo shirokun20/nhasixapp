@@ -112,6 +112,7 @@ import 'package:nhasixapp/services/image_cache_service.dart';
 import 'package:nhasixapp/services/image_metadata_service.dart';
 import 'package:nhasixapp/services/export_service.dart';
 import 'package:nhasixapp/services/legal_content_service.dart';
+import 'package:nhasixapp/services/source_auth_service.dart';
 import 'package:nhasixapp/services/cache/cache_manager.dart' as multi_cache;
 
 final getIt = GetIt.instance;
@@ -321,6 +322,13 @@ void _setupServices() {
   getIt.registerLazySingleton<LegalContentService>(() => LegalContentService(
         dio: getIt<Dio>(),
         prefs: getIt<SharedPreferences>(),
+      ));
+
+  // Source Auth Service - Config-driven token API auth for generic sources
+  getIt.registerLazySingleton<SourceAuthService>(() => SourceAuthService(
+        configService: getIt<RemoteConfigService>(),
+        dio: getIt<Dio>(),
+        logger: getIt<Logger>(),
       ));
 }
 
@@ -760,6 +768,12 @@ void _setupCubits() {
   // CrotpediaAuthCubit - Crotpedia login management
   getIt.registerLazySingleton<CrotpediaAuthCubit>(() => CrotpediaAuthCubit(
         adapter: getIt<WebViewSessionAdapter>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // SourceAuthCubit - Generic config-driven source login management
+  getIt.registerFactory<SourceAuthCubit>(() => SourceAuthCubit(
+        sourceAuthService: getIt<SourceAuthService>(),
         logger: getIt<Logger>(),
       ));
 

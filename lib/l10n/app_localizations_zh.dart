@@ -15,6 +15,94 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appSubtitle => 'Enhanced Reading Experience';
 
   @override
+  String sourceAuthProfileTitle(String sourceId) {
+    return '个人资料 $sourceId';
+  }
+
+  @override
+  String sourceAuthLoginTitle(String sourceId) {
+    return '登录 $sourceId';
+  }
+
+  @override
+  String get sourceAuthConnectedAccount => '已连接账号';
+
+  @override
+  String get sourceAuthSecureLogin => '安全登录';
+
+  @override
+  String get sourceAuthConnectedDescription => '您的账号已连接并可使用。';
+
+  @override
+  String get sourceAuthLoginDescription => '登录以同步您的个性化收藏。';
+
+  @override
+  String get sourceAuthUser => '用户';
+
+  @override
+  String get sourceAuthSlug => '标识';
+
+  @override
+  String get sourceAuthAuthenticated => '已认证';
+
+  @override
+  String get sourceAuthRefreshProfile => '刷新资料';
+
+  @override
+  String get sourceAuthLogout => '退出登录';
+
+  @override
+  String get sourceAuthUsername => '用户名';
+
+  @override
+  String get sourceAuthPassword => '密码';
+
+  @override
+  String get sourceAuthCaptchaVerified => 'CAPTCHA 已验证并安全保存';
+
+  @override
+  String get sourceAuthCaptchaRequired => '请先完成 CAPTCHA 以继续';
+
+  @override
+  String get sourceAuthCaptchaSolved => 'CAPTCHA 已完成';
+
+  @override
+  String get sourceAuthSolveCaptcha => '完成 CAPTCHA';
+
+  @override
+  String get sourceAuthLoginButton => '登录';
+
+  @override
+  String get sourceAuthLoginSuccess => '登录成功';
+
+  @override
+  String get sourceAuthSigningInSecurely => '正在安全登录';
+
+  @override
+  String get sourceAuthStepValidateRequest => '校验请求';
+
+  @override
+  String get sourceAuthStepSecureAuth => '安全认证';
+
+  @override
+  String get sourceAuthStepFetchProfile => '获取资料';
+
+  @override
+  String get sourceAuthFlowPreparingSession => '正在准备安全会话...';
+
+  @override
+  String get sourceAuthFlowSolvingChallenge => '正在完成安全挑战...';
+
+  @override
+  String get sourceAuthFlowFetchingProfile => '会话已验证。正在获取资料...';
+
+  @override
+  String get sourceAuthFlowLoginSuccess => '登录成功';
+
+  @override
+  String get sourceAuthCaptchaCaptured => 'CAPTCHA 已成功保存';
+
+  @override
   String get home => '首页';
 
   @override

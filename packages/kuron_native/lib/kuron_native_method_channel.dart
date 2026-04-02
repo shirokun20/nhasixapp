@@ -13,7 +13,8 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   Function(int progress, String message)? _onPdfProgress;
 
   /// Progress callback for ZIP extraction
-  Function(int processed, int total, int imageCount, String currentFile)? _onZipExtractionProgress;
+  Function(int processed, int total, int imageCount, String currentFile)?
+  _onZipExtractionProgress;
 
   /// Constructor
   MethodChannelKuronNative() {
@@ -99,10 +100,9 @@ class MethodChannelKuronNative extends KuronNativePlatform {
 
   @override
   Future<Uint8List?> readZipBytes(String contentUri) async {
-    final bytes = await methodChannel.invokeMethod<Uint8List>(
-      'readZipBytes',
-      {'contentUri': contentUri},
-    );
+    final bytes = await methodChannel.invokeMethod<Uint8List>('readZipBytes', {
+      'contentUri': contentUri,
+    });
     return bytes;
   }
 
@@ -110,16 +110,14 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   Future<Map<String, dynamic>?> extractZipFile({
     required String contentUri,
     required String destinationPath,
-    Function(int processed, int total, int imageCount, String currentFile)? onProgress,
+    Function(int processed, int total, int imageCount, String currentFile)?
+    onProgress,
   }) async {
     _onZipExtractionProgress = onProgress;
     try {
       final result = await methodChannel.invokeMapMethod<String, dynamic>(
         'extractZipFile',
-        {
-          'contentUri': contentUri,
-          'destinationPath': destinationPath,
-        },
+        {'contentUri': contentUri, 'destinationPath': destinationPath},
       );
       return result;
     } finally {
@@ -223,6 +221,19 @@ class MethodChannelKuronNative extends KuronNativePlatform {
           'enableAdBlock': enableAdBlock,
           'clearCookies': clearCookies,
         });
+    return result;
+  }
+
+  @override
+  Future<Map<String, dynamic>?> showCaptchaWebView({
+    required String provider,
+    required String siteKey,
+    String? baseUrl,
+  }) async {
+    final result = await methodChannel.invokeMapMethod<String, dynamic>(
+      'showCaptchaWebView',
+      {'provider': provider, 'siteKey': siteKey, 'baseUrl': baseUrl},
+    );
     return result;
   }
 }

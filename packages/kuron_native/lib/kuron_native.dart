@@ -56,7 +56,8 @@ class KuronNative {
   Future<Map<String, dynamic>?> extractZipFile({
     required String contentUri,
     required String destinationPath,
-    Function(int processed, int total, int imageCount, String currentFile)? onProgress,
+    Function(int processed, int total, int imageCount, String currentFile)?
+    onProgress,
   }) {
     return KuronNativePlatform.instance.extractZipFile(
       contentUri: contentUri,
@@ -136,6 +137,18 @@ class KuronNative {
       ssoRedirectUrl: ssoRedirectUrl,
       enableAdBlock: enableAdBlock,
       clearCookies: clearCookies,
+    );
+  }
+
+  Future<Map<String, dynamic>?> showCaptchaWebView({
+    required String provider,
+    required String siteKey,
+    String? baseUrl,
+  }) {
+    return KuronNativePlatform.instance.showCaptchaWebView(
+      provider: provider,
+      siteKey: siteKey,
+      baseUrl: baseUrl,
     );
   }
 

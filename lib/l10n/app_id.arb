@@ -10,6 +10,44 @@
   "errorConnectionRefused": "Koneksi ditolak. Server mungkin sedang down.",
   "appTitle": "Kuron",
   "appSubtitle": "NHentai",
+  "sourceAuthProfileTitle": "Profil {sourceId}",
+  "@sourceAuthProfileTitle": {
+    "placeholders": {
+      "sourceId": {"type": "String"}
+    }
+  },
+  "sourceAuthLoginTitle": "Masuk {sourceId}",
+  "@sourceAuthLoginTitle": {
+    "placeholders": {
+      "sourceId": {"type": "String"}
+    }
+  },
+  "sourceAuthConnectedAccount": "Akun Terhubung",
+  "sourceAuthSecureLogin": "Masuk Aman",
+  "sourceAuthConnectedDescription": "Akun Anda sudah terhubung dan siap digunakan.",
+  "sourceAuthLoginDescription": "Masuk untuk sinkronisasi favorit personal Anda.",
+  "sourceAuthUser": "Pengguna",
+  "sourceAuthSlug": "Slug",
+  "sourceAuthAuthenticated": "Terautentikasi",
+  "sourceAuthRefreshProfile": "Segarkan Profil",
+  "sourceAuthLogout": "Keluar",
+  "sourceAuthUsername": "Username",
+  "sourceAuthPassword": "Kata sandi",
+  "sourceAuthCaptchaVerified": "CAPTCHA terverifikasi dan tersimpan aman",
+  "sourceAuthCaptchaRequired": "Silakan selesaikan CAPTCHA untuk lanjut",
+  "sourceAuthCaptchaSolved": "CAPTCHA Selesai",
+  "sourceAuthSolveCaptcha": "Selesaikan CAPTCHA",
+  "sourceAuthLoginButton": "Masuk",
+  "sourceAuthLoginSuccess": "Masuk berhasil",
+  "sourceAuthSigningInSecurely": "Sedang masuk dengan aman",
+  "sourceAuthStepValidateRequest": "Validasi permintaan",
+  "sourceAuthStepSecureAuth": "Autentikasi aman",
+  "sourceAuthStepFetchProfile": "Ambil profil",
+  "sourceAuthFlowPreparingSession": "Menyiapkan sesi aman...",
+  "sourceAuthFlowSolvingChallenge": "Menyelesaikan tantangan keamanan...",
+  "sourceAuthFlowFetchingProfile": "Sesi terverifikasi. Mengambil profil...",
+  "sourceAuthFlowLoginSuccess": "Masuk berhasil",
+  "sourceAuthCaptchaCaptured": "CAPTCHA berhasil disimpan",
   
   "home": "Beranda",
   "search": "Cari",

@@ -2,6 +2,44 @@
   "@@locale": "en",
   "appTitle": "Kuron",
   "appSubtitle": "NHentai",
+  "sourceAuthProfileTitle": "Profile {sourceId}",
+  "@sourceAuthProfileTitle": {
+    "placeholders": {
+      "sourceId": {"type": "String"}
+    }
+  },
+  "sourceAuthLoginTitle": "Login {sourceId}",
+  "@sourceAuthLoginTitle": {
+    "placeholders": {
+      "sourceId": {"type": "String"}
+    }
+  },
+  "sourceAuthConnectedAccount": "Connected Account",
+  "sourceAuthSecureLogin": "Secure Login",
+  "sourceAuthConnectedDescription": "Your account is connected and ready.",
+  "sourceAuthLoginDescription": "Sign in to sync your personalized favorites.",
+  "sourceAuthUser": "User",
+  "sourceAuthSlug": "Slug",
+  "sourceAuthAuthenticated": "Authenticated",
+  "sourceAuthRefreshProfile": "Refresh Profile",
+  "sourceAuthLogout": "Logout",
+  "sourceAuthUsername": "Username",
+  "sourceAuthPassword": "Password",
+  "sourceAuthCaptchaVerified": "CAPTCHA verified and stored securely",
+  "sourceAuthCaptchaRequired": "Please solve CAPTCHA to continue",
+  "sourceAuthCaptchaSolved": "CAPTCHA Solved",
+  "sourceAuthSolveCaptcha": "Solve CAPTCHA",
+  "sourceAuthLoginButton": "Login",
+  "sourceAuthLoginSuccess": "Login successful",
+  "sourceAuthSigningInSecurely": "Signing in securely",
+  "sourceAuthStepValidateRequest": "Validate request",
+  "sourceAuthStepSecureAuth": "Secure authentication",
+  "sourceAuthStepFetchProfile": "Fetch profile",
+  "sourceAuthFlowPreparingSession": "Preparing secure session...",
+  "sourceAuthFlowSolvingChallenge": "Solving security challenge...",
+  "sourceAuthFlowFetchingProfile": "Session verified. Fetching profile...",
+  "sourceAuthFlowLoginSuccess": "Login successful",
+  "sourceAuthCaptchaCaptured": "CAPTCHA captured successfully",
   
   "home": "Home",
   "search": "Search",

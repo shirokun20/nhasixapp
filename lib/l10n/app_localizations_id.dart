@@ -15,6 +15,100 @@ class AppLocalizationsId extends AppLocalizations {
   String get appSubtitle => 'Pengalaman Membaca yang Ditingkatkan';
 
   @override
+  String sourceAuthProfileTitle(String sourceId) {
+    return 'Profil $sourceId';
+  }
+
+  @override
+  String sourceAuthLoginTitle(String sourceId) {
+    return 'Masuk $sourceId';
+  }
+
+  @override
+  String get sourceAuthConnectedAccount => 'Akun Terhubung';
+
+  @override
+  String get sourceAuthSecureLogin => 'Masuk Aman';
+
+  @override
+  String get sourceAuthConnectedDescription =>
+      'Akun Anda sudah terhubung dan siap digunakan.';
+
+  @override
+  String get sourceAuthLoginDescription =>
+      'Masuk untuk sinkronisasi favorit personal Anda.';
+
+  @override
+  String get sourceAuthUser => 'Pengguna';
+
+  @override
+  String get sourceAuthSlug => 'Slug';
+
+  @override
+  String get sourceAuthAuthenticated => 'Terautentikasi';
+
+  @override
+  String get sourceAuthRefreshProfile => 'Segarkan Profil';
+
+  @override
+  String get sourceAuthLogout => 'Keluar';
+
+  @override
+  String get sourceAuthUsername => 'Username';
+
+  @override
+  String get sourceAuthPassword => 'Kata sandi';
+
+  @override
+  String get sourceAuthCaptchaVerified =>
+      'CAPTCHA terverifikasi dan tersimpan aman';
+
+  @override
+  String get sourceAuthCaptchaRequired =>
+      'Silakan selesaikan CAPTCHA untuk lanjut';
+
+  @override
+  String get sourceAuthCaptchaSolved => 'CAPTCHA Selesai';
+
+  @override
+  String get sourceAuthSolveCaptcha => 'Selesaikan CAPTCHA';
+
+  @override
+  String get sourceAuthLoginButton => 'Masuk';
+
+  @override
+  String get sourceAuthLoginSuccess => 'Masuk berhasil';
+
+  @override
+  String get sourceAuthSigningInSecurely => 'Sedang masuk dengan aman';
+
+  @override
+  String get sourceAuthStepValidateRequest => 'Validasi permintaan';
+
+  @override
+  String get sourceAuthStepSecureAuth => 'Autentikasi aman';
+
+  @override
+  String get sourceAuthStepFetchProfile => 'Ambil profil';
+
+  @override
+  String get sourceAuthFlowPreparingSession => 'Menyiapkan sesi aman...';
+
+  @override
+  String get sourceAuthFlowSolvingChallenge =>
+      'Menyelesaikan tantangan keamanan...';
+
+  @override
+  String get sourceAuthFlowFetchingProfile =>
+      'Sesi terverifikasi. Mengambil profil...';
+
+  @override
+  String get sourceAuthFlowLoginSuccess => 'Masuk berhasil';
+
+  @override
+  String get sourceAuthCaptchaCaptured => 'CAPTCHA berhasil disimpan';
+
+  @override
   String get home => 'Beranda';
 
   @override

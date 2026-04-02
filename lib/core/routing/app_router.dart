@@ -18,6 +18,7 @@ import 'package:nhasixapp/presentation/pages/history/history_screen.dart';
 import 'package:nhasixapp/presentation/pages/about/about_screen.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/pages/crotpedia/crotpedia_login_page.dart';
+import 'package:nhasixapp/presentation/pages/auth/source_login_page.dart';
 import 'package:nhasixapp/core/models/image_metadata.dart';
 import 'package:kuron_core/kuron_core.dart' hide FilterItem, SearchFilter;
 import 'package:nhasixapp/core/utils/app_animations.dart';
@@ -356,6 +357,21 @@ class AppRouter {
         ),
       ),
 
+      // Generic Source Login Screen (config-driven)
+      GoRoute(
+        path: AppRoute.sourceLogin,
+        name: AppRoute.sourceLoginName,
+        pageBuilder: (context, state) {
+          final sourceId = state.uri.queryParameters['source'] ?? 'nhentai';
+          return AppAnimations.animatedPageBuilder(
+            context,
+            state,
+            SourceLoginPage(sourceId: sourceId),
+            type: RouteTransitionType.fadeSlide,
+          );
+        },
+      ),
+
       // Crotpedia Genre List
       GoRoute(
         path: AppRoute.crotpediaGenreList,
@@ -516,6 +532,10 @@ class AppRouter {
 
   static void goToCrotpediaLogin(BuildContext context) {
     context.push(AppRoute.crotpediaLogin);
+  }
+
+  static void goToSourceLogin(BuildContext context, String sourceId) {
+    context.push('${AppRoute.sourceLogin}?source=$sourceId');
   }
 
   static Future<List<FilterItem>?> goToFilterData(

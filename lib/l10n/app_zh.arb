@@ -10,6 +10,44 @@
   "errorConnectionRefused": "连接被拒绝，服务器可能已停止服务。",
   "appTitle": "Kuron",
   "appSubtitle": "Enhanced Reading Experience",
+  "sourceAuthProfileTitle": "个人资料 {sourceId}",
+  "@sourceAuthProfileTitle": {
+    "placeholders": {
+      "sourceId": {"type": "String"}
+    }
+  },
+  "sourceAuthLoginTitle": "登录 {sourceId}",
+  "@sourceAuthLoginTitle": {
+    "placeholders": {
+      "sourceId": {"type": "String"}
+    }
+  },
+  "sourceAuthConnectedAccount": "已连接账号",
+  "sourceAuthSecureLogin": "安全登录",
+  "sourceAuthConnectedDescription": "您的账号已连接并可使用。",
+  "sourceAuthLoginDescription": "登录以同步您的个性化收藏。",
+  "sourceAuthUser": "用户",
+  "sourceAuthSlug": "标识",
+  "sourceAuthAuthenticated": "已认证",
+  "sourceAuthRefreshProfile": "刷新资料",
+  "sourceAuthLogout": "退出登录",
+  "sourceAuthUsername": "用户名",
+  "sourceAuthPassword": "密码",
+  "sourceAuthCaptchaVerified": "CAPTCHA 已验证并安全保存",
+  "sourceAuthCaptchaRequired": "请先完成 CAPTCHA 以继续",
+  "sourceAuthCaptchaSolved": "CAPTCHA 已完成",
+  "sourceAuthSolveCaptcha": "完成 CAPTCHA",
+  "sourceAuthLoginButton": "登录",
+  "sourceAuthLoginSuccess": "登录成功",
+  "sourceAuthSigningInSecurely": "正在安全登录",
+  "sourceAuthStepValidateRequest": "校验请求",
+  "sourceAuthStepSecureAuth": "安全认证",
+  "sourceAuthStepFetchProfile": "获取资料",
+  "sourceAuthFlowPreparingSession": "正在准备安全会话...",
+  "sourceAuthFlowSolvingChallenge": "正在完成安全挑战...",
+  "sourceAuthFlowFetchingProfile": "会话已验证。正在获取资料...",
+  "sourceAuthFlowLoginSuccess": "登录成功",
+  "sourceAuthCaptchaCaptured": "CAPTCHA 已成功保存",
   "home": "首页",
   "search": "搜索",
   "favorites": "收藏",
