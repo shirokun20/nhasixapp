@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:kuron_core/kuron_core.dart';
 
 class TagBlacklistUtils {
@@ -25,7 +27,71 @@ class TagBlacklistUtils {
   }
 
   static List<String> parseManualEntries(String rawInput) {
-    return sanitizeEntries(rawInput.split(RegExp(r'[,;\n]')));
+    final raw = rawInput.trim();
+    if (raw.isEmpty) {
+      return const [];
+    }
+
+    final entries = <String>[];
+
+    // Support pasting API payloads like {"tag_ids":[149646,...]} or [149646,...].
+    entries.addAll(_extractIdsFromJsonPayload(raw));
+
+    for (final chunk in raw.split(RegExp(r'[,;\n]'))) {
+      final trimmed = chunk.trim();
+      if (trimmed.isEmpty) {
+        continue;
+      }
+
+      final normalizedPrefixedId = _normalizePrefixedId(trimmed);
+      if (normalizedPrefixedId != null) {
+        entries.add(normalizedPrefixedId);
+        continue;
+      }
+
+      entries.add(trimmed);
+    }
+
+    return sanitizeEntries(entries);
+  }
+
+  static List<String> _extractIdsFromJsonPayload(String rawInput) {
+    try {
+      final decoded = jsonDecode(rawInput);
+
+      if (decoded is List) {
+        return decoded
+            .whereType<num>()
+            .map((entry) => entry.toInt().toString())
+            .toList(growable: false);
+      }
+
+      if (decoded is Map) {
+        final tagIds =
+            decoded['tag_ids'] ?? decoded['tagIds'] ?? decoded['ids'];
+        if (tagIds is List) {
+          return tagIds
+              .whereType<num>()
+              .map((entry) => entry.toInt().toString())
+              .toList(growable: false);
+        }
+      }
+    } catch (_) {
+      // Not JSON payload; continue with regular parsing.
+    }
+
+    return const [];
+  }
+
+  static String? _normalizePrefixedId(String value) {
+    final lowered = value.trim().toLowerCase();
+    final match =
+        RegExp(r'^(?:id|tag_id|tagid|tag):\s*(\d+)$').firstMatch(lowered);
+    if (match == null) {
+      return null;
+    }
+
+    return match.group(1);
   }
 
   static List<String> mergeEntries(

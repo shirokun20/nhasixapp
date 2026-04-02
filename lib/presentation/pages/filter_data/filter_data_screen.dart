@@ -51,6 +51,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
     'character',
     'parody',
     'group',
+    'language',
   ];
 
   // Add ValueNotifier for real-time updates
@@ -112,7 +113,17 @@ class _FilterDataScreenState extends State<FilterDataScreen>
   }
 
   void _onFilterItemTap(Tag tag) {
-    _filterDataCubit.toggleFilterItem(tag);
+    if (widget.supportsExclude) {
+      _filterDataCubit.toggleFilterItem(tag);
+      return;
+    }
+
+    final selectedItem = _filterDataCubit.getSelectedFilterItem(tag.name);
+    if (selectedItem == null) {
+      _filterDataCubit.addIncludeFilter(tag);
+    } else {
+      _filterDataCubit.removeFilterItem(selectedItem.value);
+    }
   }
 
   void _onRemoveSelectedFilter(String value) {
@@ -375,8 +386,19 @@ class _FilterDataScreenState extends State<FilterDataScreen>
               spacing: 8,
               runSpacing: 8,
               children: (state.searchResults ?? []).map((tag) {
-                final isIncluded = state.isIncluded(tag.name);
-                final isExcluded = state.isExcluded(tag.name);
+                final selectedItem = (state.selectedFilters ?? [])
+                    .cast<FilterItem?>()
+                    .firstWhere(
+                      (item) =>
+                          item != null &&
+                          ((item.tagId != null && item.tagId == tag.id) ||
+                              item.value == tag.name),
+                      orElse: () => null,
+                    );
+                final isIncluded =
+                    selectedItem != null && !selectedItem.isExcluded;
+                final isExcluded =
+                    selectedItem != null && selectedItem.isExcluded;
                 return _FilterTagChip(
                   key: ValueKey('${tag.name}_${isIncluded}_$isExcluded'),
                   tag: tag,

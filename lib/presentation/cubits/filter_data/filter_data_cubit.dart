@@ -238,8 +238,11 @@ class FilterDataCubit extends Cubit<FilterDataState> {
   /// Toggle filter item selection
   void toggleFilterItem(Tag tag, {bool? forceExclude}) {
     try {
-      final existingIndex =
-          _selectedFilters.indexWhere((item) => item.value == tag.name);
+      final existingIndex = _selectedFilters.indexWhere(
+        (item) =>
+            (item.tagId != null && item.tagId == tag.id) ||
+            item.value == tag.name,
+      );
 
       if (existingIndex >= 0) {
         final existingItem = _selectedFilters[existingIndex];
@@ -250,14 +253,32 @@ class FilterDataCubit extends Cubit<FilterDataState> {
           _logger.d('FilterDataCubit: Removed filter item: ${tag.name}');
         } else {
           // Currently included, switch to excluded
-          _selectedFilters[existingIndex] = FilterItem.exclude(tag.name);
+          _selectedFilters[existingIndex] = FilterItem.exclude(
+            tag.name,
+            tagId: tag.id,
+            tagType: tag.type,
+            tagName: tag.name,
+            tagSlug: tag.slug,
+          );
           _logger.d('FilterDataCubit: Switched to exclude: ${tag.name}');
         }
       } else {
         // Not selected, add as include or exclude based on forceExclude
         final newItem = forceExclude == true
-            ? FilterItem.exclude(tag.name)
-            : FilterItem.include(tag.name);
+            ? FilterItem.exclude(
+                tag.name,
+                tagId: tag.id,
+                tagType: tag.type,
+                tagName: tag.name,
+                tagSlug: tag.slug,
+              )
+            : FilterItem.include(
+                tag.name,
+                tagId: tag.id,
+                tagType: tag.type,
+                tagName: tag.name,
+                tagSlug: tag.slug,
+              );
         _selectedFilters.add(newItem);
         _logger.d(
             'FilterDataCubit: Added filter item: ${tag.name} (${newItem.isExcluded ? 'exclude' : 'include'})');

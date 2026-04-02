@@ -1,5 +1,9 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:logger/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
+import 'dart:convert';
 import 'package:kuron_core/kuron_core.dart';
 
 import 'package:nhasixapp/core/utils/tag_blacklist_utils.dart';
@@ -146,17 +150,148 @@ class TagBlacklistService extends ChangeNotifier {
   TagBlacklistService({
     required SourceAuthService sourceAuthService,
     required Logger logger,
+    required SharedPreferences prefs,
   })  : _sourceAuthService = sourceAuthService,
-        _logger = logger;
+        _logger = logger,
+        _prefs = prefs {
+    _loadCachedBlacklists();
+  }
 
   final SourceAuthService _sourceAuthService;
   final Logger _logger;
+  final SharedPreferences _prefs;
+
+  static const String _keyOnlineEntriesCache = 'blacklist_online_entries';
+  static const String _keyOnlineRulesCache = 'blacklist_online_rules';
 
   final Map<String, List<String>> _onlineEntriesBySource = {};
   final Map<String, List<OnlineBlacklistRule>> _onlineRulesBySource = {};
   final Map<String, bool> _hasSessionBySource = {};
   final Set<String> _syncingSources = {};
   final Set<String> _syncingRulesSources = {};
+
+  void _notifyListenersSafely() {
+    if (!hasListeners) {
+      return;
+    }
+
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    final shouldDefer = phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.midFrameMicrotasks;
+
+    if (shouldDefer) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (hasListeners) {
+          notifyListeners();
+        }
+      });
+      return;
+    }
+
+    notifyListeners();
+  }
+
+  /// Load cached online blacklists from SharedPreferences
+  void _loadCachedBlacklists() {
+    try {
+      // Load online entries cache
+      final entriesJson = _prefs.getString(_keyOnlineEntriesCache);
+      if (entriesJson != null && entriesJson.isNotEmpty) {
+        try {
+          final data = jsonDecode(entriesJson) as Map<String, dynamic>;
+          _onlineEntriesBySource.clear();
+          data.forEach((sourceId, entries) {
+            if (entries is List) {
+              _onlineEntriesBySource[sourceId] = List<String>.from(entries);
+            } else {
+              _logger.w(
+                  'Skipping invalid entries for $sourceId: expected List, got ${entries.runtimeType}');
+            }
+          });
+          _logger.i(
+              'Loaded cached online entries for ${_onlineEntriesBySource.keys.length} sources');
+        } catch (e) {
+          _logger.w(
+              'Failed to parse cached online entries (will retry on sync): $e');
+          _onlineEntriesBySource.clear();
+        }
+      }
+
+      // Load online rules cache
+      final rulesJson = _prefs.getString(_keyOnlineRulesCache);
+      if (rulesJson != null && rulesJson.isNotEmpty) {
+        try {
+          final data = jsonDecode(rulesJson) as Map<String, dynamic>;
+          _onlineRulesBySource.clear();
+          data.forEach((sourceId, rulesData) {
+            if (rulesData is List) {
+              _onlineRulesBySource[sourceId] = (rulesData)
+                  .map((rule) {
+                    try {
+                      return OnlineBlacklistRule.fromMap(
+                          rule as Map<String, dynamic>);
+                    } catch (e) {
+                      _logger.w('Skipping invalid rule: $e');
+                      return null;
+                    }
+                  })
+                  .whereType<OnlineBlacklistRule>()
+                  .toList();
+            } else {
+              _logger.w(
+                  'Skipping invalid rules for $sourceId: expected List, got ${rulesData.runtimeType}');
+            }
+          });
+          _logger.i(
+              'Loaded cached online rules for ${_onlineRulesBySource.keys.length} sources');
+        } catch (e) {
+          _logger.w(
+              'Failed to parse cached online rules (will retry on sync): $e');
+          _onlineRulesBySource.clear();
+        }
+      }
+    } catch (e) {
+      _logger.e('Error loading cached blacklists: $e');
+      _onlineEntriesBySource.clear();
+      _onlineRulesBySource.clear();
+    }
+  }
+
+  /// Save online entries to SharedPreferences
+  Future<void> _saveCachedOnlineEntries() async {
+    try {
+      final data = <String, dynamic>{};
+      _onlineEntriesBySource.forEach((sourceId, entries) {
+        data[sourceId] = entries;
+      });
+      await _prefs.setString(_keyOnlineEntriesCache, jsonEncode(data));
+      _logger
+          .d('Saved ${_onlineEntriesBySource.keys.length} online entry caches');
+    } catch (e) {
+      _logger.w('Failed to save cached online entries: $e');
+    }
+  }
+
+  /// Save online rules to SharedPreferences
+  Future<void> _saveCachedOnlineRules() async {
+    try {
+      final data = <String, dynamic>{};
+      _onlineRulesBySource.forEach((sourceId, rules) {
+        data[sourceId] = rules
+            .map((rule) => {
+                  'token': rule.token,
+                  'type': rule.type,
+                  'name': rule.name,
+                  'id': rule.id,
+                })
+            .toList();
+      });
+      await _prefs.setString(_keyOnlineRulesCache, jsonEncode(data));
+      _logger.d('Saved ${_onlineRulesBySource.keys.length} online rule caches');
+    } catch (e) {
+      _logger.w('Failed to save cached online rules: $e');
+    }
+  }
 
   bool supportsOnlineSync(String sourceId) {
     return _sourceAuthService.supportsOnlineBlacklistRead(sourceId);
@@ -215,7 +350,7 @@ class TagBlacklistService extends ChangeNotifier {
       _onlineEntriesBySource.remove(sourceId);
       _hasSessionBySource[sourceId] = false;
       if (hadCache) {
-        notifyListeners();
+        _notifyListenersSafely();
       }
       return;
     }
@@ -225,7 +360,7 @@ class TagBlacklistService extends ChangeNotifier {
     }
 
     _syncingSources.add(sourceId);
-    notifyListeners();
+    _notifyListenersSafely();
 
     try {
       final hasSession = await _sourceAuthService.hasSession(sourceId);
@@ -237,7 +372,7 @@ class TagBlacklistService extends ChangeNotifier {
             (_onlineEntriesBySource[sourceId] ?? const []).isNotEmpty;
         _onlineEntriesBySource.remove(sourceId);
         if (hadCache || previousSession != hasSession) {
-          notifyListeners();
+          _notifyListenersSafely();
         }
         return;
       }
@@ -250,7 +385,9 @@ class TagBlacklistService extends ChangeNotifier {
       if (!listEquals(previousEntries, nextEntries) ||
           previousSession != hasSession) {
         _onlineEntriesBySource[sourceId] = nextEntries;
-        notifyListeners();
+        // Persist in background (fire and forget)
+        unawaited(_saveCachedOnlineEntries());
+        _notifyListenersSafely();
       }
     } catch (error, stackTrace) {
       _logger.w(
@@ -260,7 +397,7 @@ class TagBlacklistService extends ChangeNotifier {
       );
     } finally {
       _syncingSources.remove(sourceId);
-      notifyListeners();
+      _notifyListenersSafely();
     }
   }
 
@@ -272,7 +409,7 @@ class TagBlacklistService extends ChangeNotifier {
       final hadRules = (_onlineRulesBySource[sourceId] ?? const []).isNotEmpty;
       _onlineRulesBySource.remove(sourceId);
       if (hadRules) {
-        notifyListeners();
+        _notifyListenersSafely();
       }
       return;
     }
@@ -282,7 +419,7 @@ class TagBlacklistService extends ChangeNotifier {
     }
 
     _syncingRulesSources.add(sourceId);
-    notifyListeners();
+    _notifyListenersSafely();
 
     try {
       final hasSession = await _sourceAuthService.hasSession(sourceId);
@@ -294,7 +431,7 @@ class TagBlacklistService extends ChangeNotifier {
             (_onlineRulesBySource[sourceId] ?? const []).isNotEmpty;
         _onlineRulesBySource.remove(sourceId);
         if (hadRules || previousSession != hasSession) {
-          notifyListeners();
+          _notifyListenersSafely();
         }
         return;
       }
@@ -322,7 +459,9 @@ class TagBlacklistService extends ChangeNotifier {
       if (!listEquals(previousTokens, nextTokens) ||
           previousSession != hasSession) {
         _onlineRulesBySource[sourceId] = parsedRules;
-        notifyListeners();
+        // Persist in background (fire and forget)
+        unawaited(_saveCachedOnlineRules());
+        _notifyListenersSafely();
       }
     } catch (error, stackTrace) {
       _logger.w(
@@ -332,7 +471,7 @@ class TagBlacklistService extends ChangeNotifier {
       );
     } finally {
       _syncingRulesSources.remove(sourceId);
-      notifyListeners();
+      _notifyListenersSafely();
     }
   }
 

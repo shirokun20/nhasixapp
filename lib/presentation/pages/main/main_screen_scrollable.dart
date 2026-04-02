@@ -102,7 +102,9 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     });
 
     _initializeContent();
-    unawaited(_refreshBlacklistForActiveSource());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_refreshBlacklistForActiveSource());
+    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showMaintenanceSnackbarIfNeeded();
