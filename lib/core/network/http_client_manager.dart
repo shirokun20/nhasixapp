@@ -90,9 +90,6 @@ class HttpClientManager {
           _logger?.d(
             'HTTP Response: ${response.statusCode} ${_redactedTarget(response.requestOptions.uri)}',
           );
-          _logger?.d(
-            'HTTP data: ${response.data}',
-          );
           handler.next(response);
         },
       ),
