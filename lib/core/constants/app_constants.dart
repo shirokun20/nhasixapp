@@ -111,6 +111,7 @@ class AppStorage {
       SourceType.nhentai.id,
       SourceType.crotpedia.id,
       SourceType.komiktap.id,
+      'local', // For manually imported ZIP files
     ];
   }
 

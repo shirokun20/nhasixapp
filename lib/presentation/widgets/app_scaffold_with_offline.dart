@@ -122,6 +122,16 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
                   // On large screens, hide the drawer from Scaffold (sidebar is used instead)
                   // On small screens, use the provided drawer
                   drawer: isLargeScreen ? null : widget.drawer,
+                  // Increase drawer edge drag width to 25% of screen width for easier gesture
+                  drawerEdgeDragWidth: isLargeScreen
+                      ? 0
+                      : constraints.maxWidth * 0.25,
+                  // Add haptic feedback when drawer state changes
+                  onDrawerChanged: (isOpen) {
+                    if (isOpen) {
+                      HapticFeedback.lightImpact();
+                    }
+                  },
                   floatingActionButton: widget.floatingActionButton,
                   bottomNavigationBar: widget.bottomNavigationBar,
                   body: Column(

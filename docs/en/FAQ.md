@@ -114,8 +114,8 @@ You can either:
 
 Go to **About → Check for Updates**. You'll be notified when a new version is available on GitHub.
 
-Current latest release: **v0.9.13+21**
-https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.13%2B21
+Current latest release: **v0.9.14+23**
+https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.14%2B23
 
 ---
 

@@ -14,3 +14,4 @@ export 'source/source_state.dart';
 // as they are screen-specific and provided locally rather than app-wide
 
 export 'crotpedia_auth/crotpedia_auth_cubit.dart';
+export 'source_auth/source_auth_cubit.dart';

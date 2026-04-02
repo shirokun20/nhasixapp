@@ -15,6 +15,98 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appSubtitle => 'Enhanced Reading Experience';
 
   @override
+  String sourceAuthProfileTitle(String sourceId) {
+    return 'Profile $sourceId';
+  }
+
+  @override
+  String sourceAuthLoginTitle(String sourceId) {
+    return 'Login $sourceId';
+  }
+
+  @override
+  String get sourceAuthConnectedAccount => 'Connected Account';
+
+  @override
+  String get sourceAuthSecureLogin => 'Secure Login';
+
+  @override
+  String get sourceAuthConnectedDescription =>
+      'Your account is connected and ready.';
+
+  @override
+  String get sourceAuthLoginDescription =>
+      'Sign in to sync your personalized favorites.';
+
+  @override
+  String get sourceAuthUser => 'User';
+
+  @override
+  String get sourceAuthSlug => 'Slug';
+
+  @override
+  String get sourceAuthAuthenticated => 'Authenticated';
+
+  @override
+  String get sourceAuthRefreshProfile => 'Refresh Profile';
+
+  @override
+  String get sourceAuthLogout => 'Logout';
+
+  @override
+  String get sourceAuthUsername => 'Username';
+
+  @override
+  String get sourceAuthPassword => 'Password';
+
+  @override
+  String get sourceAuthCaptchaVerified =>
+      'CAPTCHA verified and stored securely';
+
+  @override
+  String get sourceAuthCaptchaRequired => 'Please solve CAPTCHA to continue';
+
+  @override
+  String get sourceAuthCaptchaSolved => 'CAPTCHA Solved';
+
+  @override
+  String get sourceAuthSolveCaptcha => 'Solve CAPTCHA';
+
+  @override
+  String get sourceAuthLoginButton => 'Login';
+
+  @override
+  String get sourceAuthLoginSuccess => 'Login successful';
+
+  @override
+  String get sourceAuthSigningInSecurely => 'Signing in securely';
+
+  @override
+  String get sourceAuthStepValidateRequest => 'Validate request';
+
+  @override
+  String get sourceAuthStepSecureAuth => 'Secure authentication';
+
+  @override
+  String get sourceAuthStepFetchProfile => 'Fetch profile';
+
+  @override
+  String get sourceAuthFlowPreparingSession => 'Preparing secure session...';
+
+  @override
+  String get sourceAuthFlowSolvingChallenge => 'Solving security challenge...';
+
+  @override
+  String get sourceAuthFlowFetchingProfile =>
+      'Session verified. Fetching profile...';
+
+  @override
+  String get sourceAuthFlowLoginSuccess => 'Login successful';
+
+  @override
+  String get sourceAuthCaptchaCaptured => 'CAPTCHA captured successfully';
+
+  @override
   String get home => 'Home';
 
   @override
@@ -31,6 +123,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get randomGallery => 'Random Gallery';
+
+  @override
+  String get randomGalleryLoadingTitle => 'Random Gallery';
+
+  @override
+  String get randomGalleryLoadingMessage => 'Fetching a random gallery...';
+
+  @override
+  String get randomGalleryFoundTitle => 'Found';
+
+  @override
+  String get randomGalleryFoundMessage => 'Opening gallery details...';
+
+  @override
+  String get randomGalleryNoResult => 'No random gallery found. Try again.';
+
+  @override
+  String get randomGalleryError =>
+      'Error loading random gallery. Please try again.';
+
+  @override
+  String get randomGalleryUnavailableTitle => 'Feature unavailable';
+
+  @override
+  String get randomGalleryUnavailableMessage =>
+      'Random Gallery is not available for this source.';
 
   @override
   String get offlineContent => 'Offline Content';
@@ -3331,6 +3449,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get storageDescription => 'Choose a folder to save downloads';
+
+  @override
+  String get downloadDirectory => 'Download Directory';
+
+  @override
+  String get changeDirectory => 'Change Directory';
+
+  @override
+  String get downloadDirectoryUpdated => 'Download directory updated';
+
+  @override
+  String get useDefaultInternalStorage =>
+      'Use default internal storage location';
+
+  @override
+  String get confirmResetStorageDirectory =>
+      'Reset download directory to default internal storage?';
+
+  @override
+  String get downloadDirectoryReset => 'Download directory reset to default';
 
   @override
   String get backupNotFound => 'Backup Not Found';

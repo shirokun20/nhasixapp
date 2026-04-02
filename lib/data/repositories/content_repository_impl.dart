@@ -274,6 +274,32 @@ class ContentRepositoryImpl implements ContentRepository {
   }
 
   @override
+  Future<List<Content>> getRandomGalleries({
+    String? sourceId,
+    int count = 1,
+  }) async {
+    try {
+      _logger
+          .i('Getting random galleries (sourceId: $sourceId, count: $count)');
+      final source = sourceId != null
+          ? contentSourceRegistry.getSource(sourceId)
+          : _activeSource;
+
+      if (source == null) {
+        _logger.w('Source not found: $sourceId');
+        return [];
+      }
+
+      final coreRandom = await source.getRandom(count: count);
+      return coreRandom.map(_mapToAppContent).toList();
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get random galleries',
+          error: e, stackTrace: stackTrace);
+      return [];
+    }
+  }
+
+  @override
   Future<List<Tag>> getAllTags({
     String? type,
     TagSortOption sortBy = TagSortOption.count,
@@ -398,6 +424,12 @@ class ContentRepositoryImpl implements ContentRepository {
     String? requestedSourceId,
   }) {
     final source = (requestedSourceId ?? content.sourceId).toLowerCase();
+    // Backward-compat cache healing: older nhentai detail cache entries were
+    // saved before favorites mapping was fixed, so force refresh when zero.
+    if (source == 'nhentai' && content.favorites == 0) {
+      return true;
+    }
+
     if (source == 'hitomi') {
       return true;
     }

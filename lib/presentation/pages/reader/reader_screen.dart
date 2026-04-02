@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-// import 'package:flutter/services.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -58,6 +58,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
   int _lastReportedPage = 1;
   int _lastSavedPage = 0; // Track last saved page to prevent backward saves
 
+  // 🐛 FIX: Cache rendered image heights to prevent scroll jumping on scroll-up
+  // When items are rebuilt after disposal, the loading placeholder must match
+  // the original image height to keep the scroll offset stable.
+  final Map<int, double> _cachedImageHeights = {};
+
   // Prefetch control
   final Set<int> _prefetchedPages = <int>{};
   static const int _prefetchCount = 3;
@@ -76,6 +81,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Timer? _pageUpdateTimer; // Separate timer for page updates
   Timer? _uiToggleDebounceTimer;
   bool _lastUIVisibleState = true;
+
+  // 🎯 Tap-to-toggle detection for continuous scroll
+  Offset _tapDownPosition = Offset.zero;
+  DateTime _tapDownTime = DateTime.now();
+
+  // 🎯 Floating page indicator (ValueNotifiers avoid full-screen rebuild)
+  final ValueNotifier<int> _visiblePageNotifier = ValueNotifier<int>(1);
+  final ValueNotifier<bool> _scrollingNotifier = ValueNotifier<bool>(false);
+  Timer? _scrollIndicatorTimer;
 
   // 🚀 OPTIMIZATION: Preload content before BlocProvider setup
   Content? _preloadedContent;
@@ -354,6 +368,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
     if (estimatedPage != _lastReportedPage) {
       _lastReportedPage = estimatedPage;
 
+      // 🎯 Update floating page indicator (no setState needed — ValueNotifier)
+      _visiblePageNotifier.value = estimatedPage;
+
       // 🚀 OPTIMIZATION: Debounce page updates to reduce DB writes
       _debouncePageUpdate(estimatedPage, state);
 
@@ -365,6 +382,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
         sourceId: state.content?.sourceId,
       );
     }
+
+    // 🎯 Show floating page indicator while scrolling, auto-hide after 2s
+    _scrollingNotifier.value = true;
+    _scrollIndicatorTimer?.cancel();
+    _scrollIndicatorTimer = Timer(const Duration(seconds: 2), () {
+      _scrollingNotifier.value = false;
+    });
 
     // 🐛 FIX: Check if user truly reached bottom using scroll metrics
     // More reliable than pixel threshold
@@ -458,8 +482,29 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _saveDebounceTimer?.cancel();
     _pageUpdateTimer?.cancel();
     _uiToggleDebounceTimer?.cancel();
+    _scrollIndicatorTimer?.cancel();
+    _visiblePageNotifier.dispose();
+    _scrollingNotifier.dispose();
+
+    // 🎬 Restore system UI when leaving reader
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: SystemUiOverlay.values,
+    );
 
     super.dispose();
+  }
+
+  /// 🎬 Toggle immersive mode (hide/show status bar & navigation bar)
+  void _toggleImmersiveMode(bool immersive) {
+    if (immersive) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    } else {
+      SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.manual,
+        overlays: SystemUiOverlay.values,
+      );
+    }
   }
 
   /// Prefetch next few images in background for smoother reading experience
@@ -722,11 +767,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
           // Ignore timer-only or unrelated state updates.
           return previous.currentPage != current.currentPage ||
               previous.readingMode != current.readingMode ||
+              previous.showUI != current.showUI ||
               prevContentId != currContentId ||
               prevImageCount != currImageCount;
         },
         listener: (context, state) {
           _syncControllersWithState(state);
+
+          // 🎬 Toggle immersive mode based on UI visibility
+          _toggleImmersiveMode(!(state.showUI ?? false));
 
           // Prefetch only when listener-relevant states change.
           if (state.content != null && state.content!.imageUrls.isNotEmpty) {
@@ -831,8 +880,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
         // Main reader content
         _buildReaderContent(state),
 
-        // UI overlay
-        if (state.showUI ?? false) _buildUIOverlay(state),
+        // 🎬 Animated UI overlay (always in tree for smooth transitions)
+        _buildAnimatedUIOverlay(state),
+
+        // 🎯 Floating page indicator for continuous scroll
+        if (state.readingMode == ReadingMode.continuousScroll)
+          _buildFloatingPageIndicator(state),
       ],
     );
   }
@@ -1022,55 +1075,73 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final pageCount = state.content?.imageUrls.length ?? 0;
     final totalItems = showNavigation ? pageCount + 1 : pageCount;
 
-    // 🐛 BUG FIX: Remove GestureDetector wrapper to prevent scroll gesture conflicts
-    // GestureDetector blocks ListView scroll gestures, causing:
-    // 1. Unable to scroll down
-    // 2. Unable to scroll back to top from bottom
-    // For continuous scroll mode, UI toggle is available via top bar only
+    // 🎯 Tap-to-toggle: Use Listener (raw pointer) instead of GestureDetector
+    // to avoid competing with ListView's scroll gesture recognizer.
+    // Detects quick taps (< 20px movement, < 300ms) in center 60% of screen.
 
     // 🚀 OPTIMIZATION: Get enableZoom once outside itemBuilder to avoid BlocBuilder in ListView
     final enableZoom = state.enableZoom ?? true;
     final isHeavySource = _isHeavyPrefetchSource(state.content?.sourceId);
     final viewportHeight = MediaQuery.of(context).size.height;
 
-    // 🐛 FIX: Wrap ListView with NotificationListener for accurate scroll tracking
-    return NotificationListener<ScrollNotification>(
-      onNotification: (ScrollNotification notification) {
-        if (notification is ScrollUpdateNotification) {
-          _onScrollNotification(notification, state);
-        }
-        return false; // Allow notification to bubble up
+    // 🎯 Wrap in Listener for tap-to-toggle UI (bypasses gesture arena)
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (event) {
+        _tapDownPosition = event.position;
+        _tapDownTime = DateTime.now();
       },
-      child: ListView.builder(
-        controller: _scrollController,
-        physics: isHeavySource
-            ? const ClampingScrollPhysics()
-            : const BouncingScrollPhysics(),
-        cacheExtent: isHeavySource
-            ? viewportHeight *
-                0.25 // 🔥 THERMAL: reduce offscreen builds for heavy sources
-            : 2500.0, // Keep fewer offscreen pages for heavy sources
-        addAutomaticKeepAlives:
-            false, // 🔥 THERMAL: Disabled for all modes to reduce memory
-        itemCount: totalItems,
-        itemBuilder: (context, index) {
-          if (showNavigation && index == pageCount) {
-            return SizedBox(
-              height: MediaQuery.of(context).size.height * 0.8,
-              child: _buildChapterNavigationPage(state),
-            );
+      onPointerUp: (event) {
+        final distance = (event.position - _tapDownPosition).distance;
+        final duration = DateTime.now().difference(_tapDownTime);
+        // Quick tap with minimal movement = toggle UI
+        if (distance < 20 && duration.inMilliseconds < 300) {
+          final screenHeight = MediaQuery.of(context).size.height;
+          final tapY = event.position.dy;
+          // Only in center 60% of screen (avoid accidental taps near edges)
+          if (tapY > screenHeight * 0.2 && tapY < screenHeight * 0.8) {
+            _readerCubit.toggleUI();
           }
-
-          final pageNumber = index + 1;
-          final imageUrl = state.content?.imageUrls[index] ?? '';
-          return _buildImageViewer(
-            imageUrl,
-            pageNumber,
-            isContinuous: true,
-            enableZoom: enableZoom,
-            sourceId: state.content?.sourceId,
-          );
+        }
+      },
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (ScrollNotification notification) {
+          if (notification is ScrollUpdateNotification) {
+            _onScrollNotification(notification, state);
+          }
+          return false; // Allow notification to bubble up
         },
+        child: ListView.builder(
+          controller: _scrollController,
+          physics: isHeavySource
+              ? const ClampingScrollPhysics()
+              : const BouncingScrollPhysics(),
+          cacheExtent: isHeavySource
+              ? viewportHeight *
+                  0.25 // 🔥 THERMAL: reduce offscreen builds for heavy sources
+              : 2500.0, // Keep fewer offscreen pages for heavy sources
+          addAutomaticKeepAlives:
+              false, // 🔥 THERMAL: Disabled for all modes to reduce memory
+          itemCount: totalItems,
+          itemBuilder: (context, index) {
+            if (showNavigation && index == pageCount) {
+              return SizedBox(
+                height: MediaQuery.of(context).size.height * 0.8,
+                child: _buildChapterNavigationPage(state),
+              );
+            }
+
+            final pageNumber = index + 1;
+            final imageUrl = state.content?.imageUrls[index] ?? '';
+            return _buildImageViewer(
+              imageUrl,
+              pageNumber,
+              isContinuous: true,
+              enableZoom: enableZoom,
+              sourceId: state.content?.sourceId,
+            );
+          },
+        ),
       ),
     );
   }
@@ -1090,20 +1161,43 @@ class _ReaderScreenState extends State<ReaderScreen> {
           : getIt<ContentSourceRegistry>()
               .getSource(sourceId)
               ?.getImageDownloadHeaders(imageUrl: imageUrl);
-      return Container(
+      // 🐛 FIX: Use cached height (or viewport fallback) to prevent scroll
+      // jumping when items are rebuilt during scroll-up.
+      final cachedHeight = _cachedImageHeights[pageNumber];
+      final fallbackHeight = MediaQuery.of(context).size.height;
+
+      return SizedBox(
         key: ValueKey(
             'image_viewer_$pageNumber'), // 🐛 FIX: Preserve widget identity to prevent re-loading
-        margin: const EdgeInsets.only(bottom: 8.0),
-        child: ExtendedImageReaderWidget(
-          imageUrl: imageUrl,
-          contentId: widget.contentId,
-          pageNumber: pageNumber,
-          readingMode: ReadingMode.continuousScroll,
-          sourceId: sourceId,
-          httpHeaders: headers,
-          enableZoom: zoom,
-          onImageLoaded:
-              _readerCubit.onImageLoaded, // 🎨 Auto-detect webtoon/manhwa
+        height: cachedHeight ?? fallbackHeight,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: ExtendedImageReaderWidget(
+            imageUrl: imageUrl,
+            contentId: widget.contentId,
+            pageNumber: pageNumber,
+            readingMode: ReadingMode.continuousScroll,
+            sourceId: sourceId,
+            httpHeaders: headers,
+            enableZoom: zoom,
+            onImageLoaded: (int page, Size imageSize) {
+              // Cache rendered height: image scaled to screen width
+              final screenWidth = MediaQuery.of(context).size.width;
+              if (imageSize.width > 0) {
+                final renderedHeight =
+                    imageSize.height * (screenWidth / imageSize.width);
+                // Add margin (8.0) to match the padding
+                final totalHeight = renderedHeight + 8.0;
+                if (_cachedImageHeights[page] != totalHeight) {
+                  _cachedImageHeights[page] = totalHeight;
+                  // Rebuild to apply the accurate height
+                  if (mounted) setState(() {});
+                }
+              }
+              // Forward to cubit for webtoon detection
+              _readerCubit.onImageLoaded(page, imageSize);
+            },
+          ),
         ),
       );
     }
@@ -1142,19 +1236,99 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
   }
 
-  Widget _buildUIOverlay(ReaderState state) {
-    return SafeArea(
-      child: Column(
-        children: [
-          // Top bar
-          _buildTopBar(state),
+  /// 🎬 Animated UI overlay — always in widget tree for smooth fade/slide transitions
+  Widget _buildAnimatedUIOverlay(ReaderState state) {
+    final isVisible = state.showUI ?? false;
 
-          const Spacer(),
+    return IgnorePointer(
+      ignoring: !isVisible,
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Top bar — slides down from top
+            AnimatedSlide(
+              offset: isVisible ? Offset.zero : const Offset(0, -1),
+              duration: const Duration(milliseconds: 280),
+              curve: Curves.easeOutCubic,
+              child: AnimatedOpacity(
+                opacity: isVisible ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 250),
+                child: _buildTopBar(state),
+              ),
+            ),
 
-          // Bottom bar - hide in continuous scroll mode to avoid blocking
-          if (state.readingMode != ReadingMode.continuousScroll)
-            _buildBottomBar(state),
-        ],
+            const Spacer(),
+
+            // Bottom bar — slides up from bottom (paginated modes only)
+            if (state.readingMode != ReadingMode.continuousScroll)
+              AnimatedSlide(
+                offset: isVisible ? Offset.zero : const Offset(0, 1),
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeOutCubic,
+                child: AnimatedOpacity(
+                  opacity: isVisible ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 250),
+                  child: _buildBottomBar(state),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 🎯 Floating page indicator pill for continuous scroll mode
+  /// Uses ValueNotifiers to avoid full-screen rebuilds during scroll.
+  Widget _buildFloatingPageIndicator(ReaderState state) {
+    final totalPages = state.content?.pageCount ?? 0;
+    if (totalPages == 0) return const SizedBox.shrink();
+
+    return Positioned(
+      bottom: 24,
+      left: 0,
+      right: 0,
+      child: Center(
+        child: ValueListenableBuilder<bool>(
+          valueListenable: _scrollingNotifier,
+          builder: (context, isScrolling, _) {
+            return AnimatedOpacity(
+              opacity: isScrolling ? 1.0 : 0.0,
+              duration: Duration(milliseconds: isScrolling ? 200 : 600),
+              curve: Curves.easeOut,
+              child: ValueListenableBuilder<int>(
+                valueListenable: _visiblePageNotifier,
+                builder: (context, page, _) {
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .inverseSurface
+                          .withValues(alpha: 0.85),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      '$page / $totalPages',
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: Theme.of(context).colorScheme.onInverseSurface,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        ),
       ),
     );
   }

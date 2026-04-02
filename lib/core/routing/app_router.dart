@@ -18,12 +18,14 @@ import 'package:nhasixapp/presentation/pages/history/history_screen.dart';
 import 'package:nhasixapp/presentation/pages/about/about_screen.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/pages/crotpedia/crotpedia_login_page.dart';
+import 'package:nhasixapp/presentation/pages/auth/source_login_page.dart';
 import 'package:nhasixapp/core/models/image_metadata.dart';
 import 'package:kuron_core/kuron_core.dart' hide FilterItem, SearchFilter;
 import 'package:nhasixapp/core/utils/app_animations.dart';
 import 'package:nhasixapp/presentation/pages/crotpedia/genre_list_screen.dart'; // NEW
 import 'package:nhasixapp/presentation/pages/crotpedia/doujin_list_screen.dart'; // NEW
 import 'package:nhasixapp/presentation/pages/crotpedia/request_list_screen.dart'; // NEW
+import 'package:nhasixapp/presentation/pages/tag_detail/tag_detail_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AppRouter {
@@ -287,6 +289,27 @@ class AppRouter {
         ),
       ),
 
+      // Tag Detail Screen
+      GoRoute(
+        path: AppRoute.tagDetail,
+        name: AppRoute.tagDetailName,
+        pageBuilder: (context, state) {
+          final tagType = state.uri.queryParameters['tagType'] ?? 'tag';
+          final slug = state.uri.queryParameters['slug'] ?? '';
+          final sourceId = state.uri.queryParameters['sourceId'] ?? 'nhentai';
+          return AppAnimations.animatedPageBuilder(
+            context,
+            state,
+            TagDetailScreen(
+              tagType: tagType,
+              slug: slug,
+              sourceId: sourceId,
+            ),
+            type: RouteTransitionType.fadeSlide,
+          );
+        },
+      ),
+
       // Status Screen
       GoRoute(
         path: AppRoute.status,
@@ -332,6 +355,21 @@ class AppRouter {
           const CrotpediaLoginPage(),
           type: RouteTransitionType.fadeSlide,
         ),
+      ),
+
+      // Generic Source Login Screen (config-driven)
+      GoRoute(
+        path: AppRoute.sourceLogin,
+        name: AppRoute.sourceLoginName,
+        pageBuilder: (context, state) {
+          final sourceId = state.uri.queryParameters['source'] ?? 'nhentai';
+          return AppAnimations.animatedPageBuilder(
+            context,
+            state,
+            SourceLoginPage(sourceId: sourceId),
+            type: RouteTransitionType.fadeSlide,
+          );
+        },
       ),
 
       // Crotpedia Genre List
@@ -494,6 +532,10 @@ class AppRouter {
 
   static void goToCrotpediaLogin(BuildContext context) {
     context.push(AppRoute.crotpediaLogin);
+  }
+
+  static void goToSourceLogin(BuildContext context, String sourceId) {
+    context.push('${AppRoute.sourceLogin}?source=$sourceId');
   }
 
   static Future<List<FilterItem>?> goToFilterData(

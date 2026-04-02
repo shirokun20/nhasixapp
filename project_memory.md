@@ -13,7 +13,7 @@
 | **Repo** | `shirokun20/nhasixapp` |
 | **Platform** | Android (Flutter) |
 | **Flutter SDK** | Stable (3.24+, Dart 3.5+ via FVM) |
-| **Version** | 0.9.14+22 |
+| **Version** | 0.9.14+23 |
 | **Architecture** | Clean Architecture (Domain → Data → Presentation) |
 | **State Management** | `flutter_bloc` / `Cubit` (extending `BaseCubit`) |
 | **DI** | `GetIt` (`core/di/`) |
@@ -89,17 +89,20 @@ lib/
 ### 🚧 In Progress (0)
 - *(None)*
 
-### 📋 Analysis Phase (5)
+### 📋 Analysis Phase (6)
 - app_audit_hardcode_ui_desktop
 - download_metadata_revamp
 - flutter-desktop-migration
 - komiktap_navigation_lists
+- qol_enhancements ✨ **NEW** (Issue #32: Login, Gesture, Global Sort)
 - reader-ads
 
 ### 🔮 Future/Backlog (1)
 - nhentai_search_revamp
 
-### 🐛 Open Issues (2)
+### 🐛 Open Issues (4)
+- import-zip-and-metadata-bug (2026-03-31) → (Bug: KomikTap/Crotpedia Title Fixed ✅, Feature: Import ZIP Pending)
+- qol_enhancements — Issue #32: Login/Gesture/Sort (2026-03-30) → `analysis-plan/qol_enhancements/`
 - download range ignores page bounds (2026-02-17)
 - download metadata chapter parentid (2026-02-15)
 
@@ -116,6 +119,20 @@ Project ini menggunakan search tools modern sebagai pengganti `grep`:
 | `semgrep` | AST-aware Dart patterns | `semgrep --lang dart -e '$PATTERN' lib/` |
 
 > Lihat `smart_search.sh` dan `search-tools/SKILL.md` untuk detail.
+
+---
+
+## 🚀 RTK - Rust Token Killer
+
+Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 60-90%):
+
+| Aturan | Deskripsi |
+|---|---|
+| **Awalan `rtk`** | Selalu tambahkan `rtk` di depan perintah terminal (git, flutter, ls, dll). |
+| **Penyaringan** | RTK membuang boilerplate/noise agar AI fokus pada data relevan. |
+| **Statistik** | Gunakan `rtk gain` untuk melihat total penghematan token. |
+
+> Konfigurasi global tersedia di `~/.gemini/GEMINI.md` dan `AGENTS.md`.
 
 ---
 
@@ -163,6 +180,11 @@ Project ini menggunakan search tools modern sebagai pengganti `grep`:
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-04-02 | Copilot | Native CAPTCHA migration + favorites online hardening | ✅ Done | Migrated CAPTCHA solving flow from embedded `webview_flutter` page to `kuron_native` (`showCaptchaWebView`) with a dedicated Android `CaptchaWebViewActivity`, token/error JS bridge, and status-bar-safe toolbar insets. In parallel, stabilized online favorites with auto-retry for transient network failures and localized friendly error messaging to avoid raw DioException output in UI. |
+| 2026-04-02 | Copilot | QoL Enhancements moved to onprogress | ✅ Done | Moved Issue #32 analysis into `projects/onprogress-plan/qol_enhancements/`, updated the plan header/footer to execution, and created `progress.md` so the lifecycle now matches the onprogress workflow. |
+| 2026-04-02 | Copilot | Workflow phase rule correction | ✅ Done | Reaffirmed the lifecycle rule: analysis stays read-only and tasks only move into `projects/onprogress-plan/` after explicit user approval. Added matching session and repo memory notes so future turns keep the same boundary. |
+| 2026-03-31 | Antigravity | Build Bump +23: Release prep & docs sync | ✅ Done | Build number bumped from +22 → +23 across all release files. Updated: `pubspec.yaml`, `CHANGELOG.md` (new section with 8 recent commits), `README.md`, `README_ID.md`, `docs/en/FAQ.md`, `docs/id/FAQ.md` all synced to `v0.9.14+23`. Created annotated Git tag `v0.9.14+23` with full commit history and pushed to remote (`78b4294`). No breaking changes — pure build increment with reader enhancements (height caching, floating page indicator) + offline metadata fixes (duplicate prevention, ZIP fileSize, auto-generated manifest.json) + ZIP handler migration to `kuron_native`. |
+| 2026-03-31 | Antigravity | KomikTap & Crotpedia Metadata Bug Fix | ✅ Done | Diagnosed and fixed empty/ciphertext `title` generation inside `metadata.json` when downloading chapters. Implemented a fallback in `DownloadBloc._onStart()` to restore `updatedDownload.title` if the scraper returns corrupted detail titles. Added `DownloadStorageUtils.getSafeTitleFromMetadata` on-the-fly formatter using the original slug `id` to fix retroactively broken offline files so they display cleanly instead of showing `Elegant ID` hashes. Unit tested via `download_storage_utils_test.dart` (all passed). Feature request for ZIP import remains open for Claude. |
 | 2026-03-29 | Codex | Hitomi favorite cover fix | ✅ Done | Verified directly against `favorites.json` and `curl`: the saved Hitomi cover URL for `1852370` returned `404` both with and without headers because the persisted path was stale (`.../1774742402/...`). Then confirmed the current resolver path from live `galleries/1852370.js` + `gg.js` worked only with Hitomi headers: without `Referer/User-Agent` it returned `404`, with headers it returned `200 image/webp`. Implemented two-part fix in Favorites: `FavoritesScreen` now passes per-source image headers into `ContentCard.buildImage()`, and Hitomi favorite cards now refresh stale persisted cover URLs by resolving the latest cover from the source and caching it per content id. Verified with `fvm dart analyze` on touched files. |
 | 2026-03-29 | Codex | Codex CLI chat reset guidance | ✅ Done | Verified local environment uses `codex-cli 0.118.0-alpha.2`. Checked local CLI help and official OpenAI Codex Help Center docs. Result: no explicit `clear chat` command surfaced in current CLI help; recommended workflow is to start a new session for a true context reset, while `clear`/`Ctrl+L` only clears terminal output. |
 | 2026-03-29 | Codex | Nhentai API v2 endpoint migration + Hitomi release diagnostics | ✅ Done | Updated the active config-driven nhentai runtime only: bundled `nhentai-config.json` now points to list=`/api/v2/galleries?page={page}`, search=`/api/v2/search?...`, detail/comments=`/api/v2/galleries/{id}?include=comments`, related=`/api/v2/galleries/{id}/related`. Confirmed live JSON via `curl`: list/search now return compact items (`english_title`, `japanese_title`, relative `thumbnail`, `tag_ids`), while detail returns `title`, `cover`, `thumbnail`, `pages`, and embedded `comments`. Migrated nhentai image handling to a path-driven config model using `assetHosts` + selectors like `listThumbnailPath`, `detailCoverPath`, and `imagePaths`, so runtime no longer depends on the old template-based `coverUrlBuilder` / `imageUrlBuilder` for v2 assets. Added config-driven fallback language resolution from `tag_ids` (`6346=japanese`, `12227=english`, `29963=chinese`) so list cards no longer show `unknown` when compact payload omits named tags. Follow-up fix: normalized numeric `tag_ids` to strings before `languageTagMap` lookup, because v2 list/search returns integer IDs and the JSON config map is string-keyed; this removed the remaining false `unknown` language icons on compact cards. Follow-up fix: `GenericUrlBuilder.buildSearchUrl()` now removes empty query placeholders like `sort=` and `query=` from final URLs, because nhentai `v2` returns HTTP 400 for `/api/v2/search?...&sort=&page=1` but accepts the same request when the empty parameter is omitted. Follow-up fix: `GenericRestAdapter.search()` now propagates `SearchFilter.sort` into REST URLs using config-driven `searchConfig.sortingConfig.options`, and `nhentai-config.json` now maps `newest` to `apiValue: "date"` so default searches use `sort=date` while UI changes to `popular` / `popular-week` / `popular-today` correctly update the request URL. Added targeted builder and REST adapter regression tests. Follow-up instrumentation for Hitomi release triage: added targeted `logger` diagnostics in the special `HitomiAdapter`, Hitomi download-header path in `GenericHttpSource`, and Hitomi AVIF->WEBP reader fallback in `ExtendedImageReaderWidget`, so release `logcat` now shows query normalization, nozomi/gallery/gg.js requests, image-host resolution, generated reader URLs, and download headers without changing source behavior. Verified `fvm dart analyze` clean and `fvm flutter test packages/kuron_special/test/hitomi/hitomi_adapter_test.dart` passed. Kept legacy `kuron_nhentai` / `NhentaiApiClient` helpers untouched because nhentai runtime is now fully config-driven. |
@@ -221,9 +243,39 @@ All 3 providers fully wired, registered, and smoke tested:
 - **Hitomi**: Fallback support → Search→Detail→Reader validated ✅
 - **Test Coverage**: 8 EHentai + 2 HentaiNexus tests passing ✅
 
-**Project Status**: Version 0.9.14+22 | Moved to `success-plan/` | Production-Ready
+**Project Status**: Version 0.9.14+23 | Moved to `success-plan/` | Production-Ready
 
 ---
+
+## 🆕 Latest Session — 2026-03-31
+
+### Build Bump +23: Release Prep & Docs Sync ✅
+
+**Version**: `0.9.14+22` → `0.9.14+23`
+
+**Files Updated** (6 total):
+1. `pubspec.yaml` → version bumped
+2. `CHANGELOG.md` → new `[0.9.14+23] - 2026-03-31` section added with 8 commits (reader enhancements, offline fixes, ZIP handler migration)
+3. `README.md` → download link updated to `v0.9.14+23` with `%2B` encoding
+4. `README_ID.md` → download link updated to `v0.9.14+23` with `%2B` encoding
+5. `docs/en/FAQ.md` → latest release updated from `v0.9.13+21` to `v0.9.14+23`
+6. `docs/id/FAQ.md` → "Rilis terbaru" updated from `v0.9.13+21` to `v0.9.14+23`
+
+**Git Release**:
+- Annotated tag: `v0.9.14+23`
+- Remote commit hash: `78b4294`
+- Pushed & verified on origin ✅
+
+**Included Changes**:
+- ✨ Reader: Image height caching, floating page indicator
+- 🐛 Offline: Prevent duplicate externally-imported items
+- 🐛 ZIP: Calculate & persist `fileSize` on import
+- 🐛 Metadata: Auto-generate `metadata.json` for manual offline imports
+- ♻️ Migration: ZIP handler moved from `MainActivity` to `kuron_native` plugin
+- ♻️ Refactor: `ImportZipUseCase` readability improvements
+- 📝 Docs: Comprehensive ZIP Import feature guide added
+
+**Production Ready** ✅
 
 ## �📦 Key Commands
 
@@ -251,7 +303,53 @@ dart scripts/project_status.dart           # Update dashboards
 
 ---
 
-## Latest Session — 2026-03-29
+## 🆕 Latest Session — 2026-03-30
+
+### QoL Enhancements Analysis (Issue #32) — API v2 Verified
+
+- Terhubung ke GitHub repo via `rtk gh issue list/view`, membaca Issue #32 (@viaans)
+- Membaca **live nhentai API v2 docs** (`https://nhentai.net/api/v2/docs`) — hasil jauh lebih kaya dari asumsi awal
+- Membuat & memperbarui `projects/analysis-plan/qol_enhancements/qol_enhancements_2026-03-30.md`
+
+**Key API v2 findings & Final QoL Plan (Issue #32):**
+- **P0 (Config)**: Update `nhentai-config.json` (Tambah flags: auth, blacklist, random, comments).
+- **P1 (Login & Sync)**: REST Auth (Token-based) + PoW/Captcha bypass via Mini WebView + **Favorit Sync (Online ↔ Local)**.
+- **P2 (Gesture)**: UI-only fix, `drawerEdgeDragWidth` 25% + HapticFeedback.
+- **P3 (Settings)**: Hub Settings Terpusat + UI Input **Local Blacklist**.
+- **P4 (History/Search)**: Native Tag Explorer (Live API v2) menggantikan JSON lokal statis.
+- **P5 (Blacklist)**: NSFW Blur/Censor kover galeri (Hybrid: Local + Online API).
+- **P6 (Interactive)**: Tombol **Random Gallery (Gacha)** + Fitur **Submit Comments**.
+
+Status: **Analysis Phase (CLEAN & COMPLETE)** — Dokumen: `projects/analysis-plan/qol_enhancements/qol_enhancements_2026-03-30.md`.
+Siap dieksekusi ke `onprogress-plan/` pada sesi berikutnya.
+
+---
+
+## 🆕 Latest Session — 2026-04-02
+
+### Native CAPTCHA Migration + Online Favorites Stabilization ✅
+
+- Migrated CAPTCHA flow from Flutter embedded WebView to native plugin path:
+  - Added `showCaptchaWebView` to `packages/kuron_native/lib/kuron_native_platform_interface.dart`.
+  - Added method-channel wiring in `packages/kuron_native/lib/kuron_native_method_channel.dart`.
+  - Added public wrapper in `packages/kuron_native/lib/kuron_native.dart`.
+- Implemented native Android CAPTCHA activity:
+  - Added `packages/kuron_native/android/src/main/kotlin/id/nhasix/kuron_native/kuron_native/CaptchaWebViewActivity.kt`.
+  - Added plugin handler + activity result mapping in `KuronNativePlugin.kt`.
+  - Registered activity in `packages/kuron_native/android/src/main/AndroidManifest.xml`.
+- Migrated app-side page:
+  - `lib/presentation/pages/auth/captcha_solver_page.dart` now calls `KuronNative.instance.showCaptchaWebView(...)`.
+- Fixed native activity issues found on device:
+  - Corrected malformed HTML injection in Kotlin raw strings (removed escaped quotes causing broken resource URLs like `%22https:/...`).
+  - Added system bar inset handling so toolbar back/reload no longer overlaps status bar/notch.
+- Hardened online favorites UX:
+  - Added retry with backoff for transient online-favorites network failures.
+  - Mapped errors to localized, user-friendly messages to avoid raw DioException output.
+  - Added online favorites search and improved thumbnail/asset host resolution from source config.
+
+---
+
+## Previous Session — 2026-03-29
 
 ### Hitomi Release Diagnostics + Native Download Extension Fix
 

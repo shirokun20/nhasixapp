@@ -232,16 +232,36 @@ class DownloadStorageUtils {
     }
   }
 
-  /// Extract safe title from metadata - handles both null and empty string cases
-  /// If title is null or empty, returns contentId as fallback
-  /// Critical for metadata sync operations where title field might be missing
+  /// Critical for metadata sync operations where title field might be missing or corrupt (e.g. KomikTap ciphertext bug).
   static String getSafeTitleFromMetadata(
     Map<String, dynamic>? metadata,
     String contentId,
   ) {
-    if (metadata == null) return contentId;
+    String formatSlug(String slug) {
+      if (slug.isEmpty || !slug.contains('-')) return slug;
+      return slug.split('-').map((word) {
+        if (word.isEmpty) return '';
+        return word[0].toUpperCase() + word.substring(1).toLowerCase();
+      }).join(' ');
+    }
+
+    if (metadata == null) return formatSlug(contentId);
+    
     final title = metadata['title'] as String? ?? '';
-    return title.isNotEmpty ? title : contentId;
+    final rawId = metadata['id'] as String? ?? '';
+    final originalId = rawId.isNotEmpty ? rawId : contentId;
+    
+    // If title is genuinely empty, convert slug to human-readable title
+    if (title.isEmpty) {
+      return formatSlug(originalId);
+    }
+    
+    // Fallback for ciphertext bug (Cloudflare encryption output: very long, no spaces)
+    if (title.length > 50 && !title.contains(' ')) {
+      return formatSlug(originalId);
+    }
+    
+    return title;
   }
 
   /// Save metadata to file

@@ -5,6 +5,10 @@
           android:name=".WebViewActivity"
           android:theme="@style/Theme.AppCompat.Light.NoActionBar"
           android:windowSoftInputMode="adjustResize"/>
+        <activity
+          android:name=".CaptchaWebViewActivity"
+          android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+          android:windowSoftInputMode="adjustResize"/>
       <activity
           android:name=".pdf.PdfReaderActivity"
           android:theme="@style/Theme.AppCompat.NoActionBar"

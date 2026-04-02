@@ -5,12 +5,14 @@ import '../../core/constants/text_style_const.dart';
 import '../../core/config/remote_config_service.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/routing/app_router.dart';
+import 'random_gallery_button.dart';
 
 class AppMainHeaderWidget extends StatelessWidget
     implements PreferredSizeWidget {
   final bool isOffline;
   final VoidCallback? onRefresh;
   final VoidCallback? onImport;
+  final VoidCallback? onImportZip;
   final VoidCallback? onExport;
   final Future<Map<String, dynamic>>? offlineStats;
   final String? title;
@@ -25,6 +27,7 @@ class AppMainHeaderWidget extends StatelessWidget
     this.isOffline = false,
     this.onRefresh,
     this.onImport,
+    this.onImportZip,
     this.onExport,
     this.offlineStats,
     this.title,
@@ -114,6 +117,16 @@ class AppMainHeaderWidget extends StatelessWidget
                   ),
                   tooltip: 'Import from Backup',
                 ),
+              // Import ZIP Button
+              if (onImportZip != null)
+                IconButton(
+                  onPressed: onImportZip,
+                  icon: Icon(
+                    Icons.folder_zip,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  tooltip: 'Import ZIP File',
+                ),
               // Export Button
               if (onExport != null)
                 IconButton(
@@ -138,6 +151,7 @@ class AppMainHeaderWidget extends StatelessWidget
                 ),
                 tooltip: l10n.search,
               ),
+              const RandomGalleryButton(),
               PopupMenuButton<String>(
                 color: Theme.of(context).colorScheme.surfaceContainer,
                 icon: Icon(Icons.more_vert,

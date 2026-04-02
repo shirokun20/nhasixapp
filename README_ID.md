@@ -1,4 +1,5 @@
-# 📱 NhasixApp - Pengalaman Membaca Mobile yang Ditingkatkan
+![Kuron](https://socialify.git.ci/shirokun20/nhasixapp/image?custom_description=&description=1&font=Source+Code+Pro&forks=1&issues=1&logo=https://github.com/shirokun20/nhasixapp/blob/master/assets/icons/logo_app.png%3Fraw%3Dtrue&name=1&owner=1&pattern=Floating+Cogs&pulls=1&stargazers=1&theme=Auto)
+# 📱 Kuron - Klien tidak resmi NHentai
 
 [![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
@@ -7,6 +8,7 @@
 [![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.14-green?style=for-the-badge&logo=android&logoColor=white)](#)
 [![Downloads](https://img.shields.io/github/downloads/shirokun20/nhasixapp/total?style=for-the-badge&logo=github&logoColor=white&color=007ec6)](https://github.com/shirokun20/nhasixapp/releases)
 [![Hits](https://komarev.com/ghpvc/?username=shirokun20&repo=nhasixapp&style=for-the-badge&color=007ec6)](https://github.com/shirokun20/nhasixapp)
+<a href="https://trakteer.id/shirokun20" target="_blank"><img src="https://img.shields.io/badge/Support_Me-Trakteer-be1e2d?style=for-the-badge&logo=ko-fi&logoColor=white" height="30"/></a>
 
 > [!TIP]
 > **[🇺🇸 Read in English](README.md)**
@@ -17,7 +19,7 @@
 
 ## 📥 **Download Rilis Terbaru**
 
-[📦 **Download v0.9.14+22**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.14)
+[📦 **Download v0.9.14+23**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.14%2B23)
 
 | Varian | Ukuran | Cocok Untuk | Status |
 |:-------|:----:|:---------|:------:|

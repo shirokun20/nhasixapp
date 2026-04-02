@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../widgets/shimmer_loading_widgets.dart';
 
 import 'package:kuron_core/kuron_core.dart';
@@ -9,11 +11,14 @@ import 'package:logger/web.dart';
 import 'package:kuron_native/utils/backup_utils.dart';
 
 import '../../../core/constants/text_style_const.dart';
+import '../../../core/config/remote_config_service.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/routing/app_router.dart';
+import '../../../core/utils/error_message_utils.dart';
 import '../../../core/utils/storage_settings.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/responsive_grid_delegate.dart';
+import '../../../services/source_auth_service.dart';
 import '../../cubits/favorite/favorite_cubit.dart';
 import '../../cubits/settings/settings_cubit.dart';
 import '../../widgets/widgets.dart';
@@ -30,7 +35,12 @@ class FavoritesScreen extends StatefulWidget {
 }
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
+  static const int _onlineFavoritesMaxAttempts = 3;
+  static const Duration _onlineFavoritesRetryDelay =
+      Duration(milliseconds: 700);
+
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _onlineSearchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
   // Selection mode for batch operations
@@ -39,20 +49,395 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   // Cubit instance to avoid context issues
   late FavoriteCubit _favoriteCubit;
+  late SourceAuthService _sourceAuthService;
+
+  int _activeTabIndex = 0;
+  String? _onlineFavoriteSourceId;
+  bool _onlineHasSession = false;
+  bool _onlineLoading = false;
+  bool _onlineLoadingMore = false;
+  bool _onlineLoadMoreScheduled = false;
+  bool _onlineHasMore = true;
+  int _onlinePage = 1;
+  String? _onlineError;
+  String _onlineSearchQuery = '';
+  Timer? _onlineSearchDebounce;
+  String _onlineThumbnailHost = '';
+  String _onlineImageHost = '';
+  final List<Map<String, dynamic>> _onlineFavorites = <Map<String, dynamic>>[];
 
   @override
   void initState() {
     super.initState();
     _favoriteCubit = getIt<FavoriteCubit>();
+    _sourceAuthService = getIt<SourceAuthService>();
     _scrollController.addListener(_onScroll);
+    unawaited(_initializeOnlineFavorites());
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _onlineSearchController.dispose();
+    _onlineSearchDebounce?.cancel();
     _scrollController.dispose();
     _favoriteCubit.close();
     super.dispose();
+  }
+
+  Future<void> _initializeOnlineFavorites() async {
+    final sourceId = _resolveOnlineFavoriteSourceId();
+    final hosts = _resolveOnlineAssetHosts(sourceId);
+    if (!mounted) return;
+
+    setState(() {
+      _onlineFavoriteSourceId = sourceId;
+      _onlineError = null;
+      _onlineSearchQuery = '';
+      _onlineSearchController.clear();
+      _onlineThumbnailHost = hosts.$1;
+      _onlineImageHost = hosts.$2;
+      _onlineFavorites.clear();
+      _onlinePage = 1;
+      _onlineHasMore = true;
+    });
+
+    if (sourceId == null) return;
+
+    final hasSession = await _sourceAuthService.hasSession(sourceId);
+    if (!mounted) return;
+
+    setState(() {
+      _onlineHasSession = hasSession;
+    });
+
+    if (hasSession) {
+      await _loadOnlineFavorites(refresh: true);
+    }
+  }
+
+  (String, String) _resolveOnlineAssetHosts(String? sourceId) {
+    if (sourceId == null) return ('', '');
+
+    final rawConfig = getIt<RemoteConfigService>().getRawConfig(sourceId);
+    final assetHosts = rawConfig?['assetHosts'] as Map<String, dynamic>?;
+    final thumbnailHost = assetHosts?['thumbnail']?.toString().trim() ?? '';
+    final imageHost = assetHosts?['image']?.toString().trim() ?? '';
+    return (thumbnailHost, imageHost);
+  }
+
+  String? _resolveOnlineFavoriteSourceId() {
+    final configService = getIt<RemoteConfigService>();
+    final candidates = _sourceAuthService.getSourcesSupportingOnlineFavorites();
+    for (final sourceId in candidates) {
+      final favoriteEnabled = configService.isFeatureEnabled(
+          sourceId, (feature) => feature.favorite);
+      if (favoriteEnabled) {
+        return sourceId;
+      }
+    }
+
+    return null;
+  }
+
+  Future<void> _loadOnlineFavorites({bool refresh = false}) async {
+    final sourceId = _onlineFavoriteSourceId;
+    if (sourceId == null) return;
+    if (!_onlineHasSession) return;
+
+    if (refresh) {
+      setState(() {
+        _onlineLoading = true;
+        _onlineError = null;
+        _onlinePage = 1;
+        _onlineHasMore = true;
+      });
+    } else {
+      if (_onlineLoadingMore || !_onlineHasMore) return;
+      setState(() {
+        _onlineLoadingMore = true;
+        _onlineError = null;
+      });
+    }
+
+    try {
+      final page = refresh ? 1 : _onlinePage + 1;
+      final favorites = await _getOnlineFavoritesWithRetry(
+        sourceId: sourceId,
+        query: _onlineSearchQuery,
+        page: page,
+      );
+
+      final mapped = favorites
+          .map((item) => _mapOnlineFavoriteItem(item))
+          .toList(growable: false);
+
+      if (!mounted) return;
+
+      setState(() {
+        if (refresh) {
+          _onlineFavorites
+            ..clear()
+            ..addAll(mapped);
+        } else {
+          _onlineFavorites.addAll(mapped);
+        }
+        _onlinePage = page;
+        _onlineHasMore = mapped.isNotEmpty;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      if (_isUnauthorizedOnlineFavoritesError(e)) {
+        setState(() {
+          _onlineHasSession = false;
+          _onlineError = null;
+          _onlineHasMore = false;
+          _onlineFavorites.clear();
+        });
+        return;
+      }
+
+      final l10n = AppLocalizations.of(context);
+      final friendlyError = ErrorMessageUtils.getFriendlyErrorMessage(e, l10n);
+
+      if (!refresh && _onlineFavorites.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              friendlyError,
+              style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                  Theme.of(context).colorScheme.onError),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      } else {
+        setState(() {
+          _onlineError = friendlyError;
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _onlineLoading = false;
+          _onlineLoadingMore = false;
+        });
+      }
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _getOnlineFavoritesWithRetry({
+    required String sourceId,
+    required String query,
+    required int page,
+  }) async {
+    dynamic lastError;
+
+    for (var attempt = 1; attempt <= _onlineFavoritesMaxAttempts; attempt++) {
+      try {
+        return await _sourceAuthService.getFavorites(
+          sourceId,
+          query: query,
+          page: page,
+        );
+      } catch (error) {
+        lastError = error;
+        final isLastAttempt = attempt >= _onlineFavoritesMaxAttempts;
+        if (isLastAttempt || !_isRetriableOnlineFavoritesError(error)) {
+          rethrow;
+        }
+
+        Logger().w(
+          'Online favorites request failed, retrying '
+          '($attempt/$_onlineFavoritesMaxAttempts): $error',
+        );
+
+        final delay = Duration(
+          milliseconds: _onlineFavoritesRetryDelay.inMilliseconds * attempt,
+        );
+        await Future<void>.delayed(delay);
+      }
+    }
+
+    throw lastError ?? Exception('Unknown online favorites error');
+  }
+
+  bool _isRetriableOnlineFavoritesError(dynamic error) {
+    if (error is DioException) {
+      switch (error.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+        case DioExceptionType.connectionError:
+        case DioExceptionType.unknown:
+          return true;
+        case DioExceptionType.badResponse:
+          final statusCode = error.response?.statusCode ?? 0;
+          return statusCode == 429 || statusCode >= 500;
+        case DioExceptionType.badCertificate:
+        case DioExceptionType.cancel:
+          return false;
+      }
+    }
+
+    final message = error.toString().toLowerCase();
+    return message.contains('connection reset') ||
+        message.contains('socketexception') ||
+        message.contains('timed out') ||
+        message.contains('timeout');
+  }
+
+  bool _isUnauthorizedOnlineFavoritesError(dynamic error) {
+    if (error is DioException) {
+      final statusCode = error.response?.statusCode ?? 0;
+      return statusCode == 401 || statusCode == 403;
+    }
+
+    final message = error.toString().toLowerCase();
+    return message.contains('status code of 401') ||
+        message.contains('status code of 403') ||
+        message.contains('unauthorized');
+  }
+
+  void _scheduleOnlineFavoritesLoadMore() {
+    if (_onlineLoadingMore || !_onlineHasMore || _onlineLoadMoreScheduled) {
+      return;
+    }
+
+    _onlineLoadMoreScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _onlineLoadMoreScheduled = false;
+      if (!mounted || _onlineLoadingMore || !_onlineHasMore) return;
+      unawaited(_loadOnlineFavorites());
+    });
+  }
+
+  Map<String, dynamic> _mapOnlineFavoriteItem(
+    Map<String, dynamic> item,
+  ) {
+    final id = item['id']?.toString() ?? '';
+    final title =
+        (item['english_title'] ?? item['japanese_title'] ?? '#$id').toString();
+    final coverUrl = _resolveOnlineThumbnailUrl(item);
+
+    return <String, dynamic>{
+      'id': id,
+      'source_id': _onlineFavoriteSourceId,
+      'title': title,
+      'cover_url': coverUrl,
+      'added_at': null,
+    };
+  }
+
+  String _resolveOnlineThumbnailUrl(Map<String, dynamic> item) {
+    final thumbPath = _extractAssetPath(item['thumbnail']);
+    if (thumbPath.isNotEmpty) {
+      return _resolveAssetUrl(
+        host: _onlineThumbnailHost,
+        pathValue: thumbPath,
+      );
+    }
+
+    final coverPath = _extractAssetPath(item['cover']);
+    if (coverPath.isNotEmpty) {
+      return _resolveAssetUrl(
+        host: _onlineImageHost,
+        pathValue: coverPath,
+      );
+    }
+
+    return '';
+  }
+
+  String _extractAssetPath(dynamic rawValue) {
+    if (rawValue == null) return '';
+
+    if (rawValue is String) {
+      return rawValue.trim();
+    }
+
+    if (rawValue is Map<String, dynamic>) {
+      return rawValue['path']?.toString().trim() ?? '';
+    }
+
+    if (rawValue is Map) {
+      return rawValue['path']?.toString().trim() ?? '';
+    }
+
+    return '';
+  }
+
+  String _resolveAssetUrl({required String host, required String pathValue}) {
+    final normalizedPath = pathValue.trim();
+    if (normalizedPath.isEmpty) return '';
+    if (normalizedPath.startsWith('http://') ||
+        normalizedPath.startsWith('https://')) {
+      return normalizedPath;
+    }
+    if (normalizedPath.startsWith('//')) {
+      return 'https:$normalizedPath';
+    }
+    if (host.isEmpty) {
+      return normalizedPath;
+    }
+
+    return Uri.parse(host).resolve(normalizedPath).toString();
+  }
+
+  void _onOnlineSearchChanged(String value) {
+    _onlineSearchDebounce?.cancel();
+    _onlineSearchDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (!mounted) return;
+      final normalized = value.trim();
+      if (normalized == _onlineSearchQuery) return;
+      setState(() {
+        _onlineSearchQuery = normalized;
+      });
+      unawaited(_loadOnlineFavorites(refresh: true));
+    });
+  }
+
+  Widget _buildOnlineSearchBar() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      color: Theme.of(context).colorScheme.surfaceContainer,
+      child: TextField(
+        controller: _onlineSearchController,
+        style: TextStyleConst.withColor(
+            TextStyleConst.bodyMedium, Theme.of(context).colorScheme.onSurface),
+        decoration: InputDecoration(
+          hintText: AppLocalizations.of(context)!.search,
+          hintStyle: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+              Theme.of(context).colorScheme.onSurfaceVariant),
+          prefixIcon: Icon(Icons.search,
+              color: Theme.of(context).colorScheme.onSurfaceVariant),
+          suffixIcon: _onlineSearchController.text.isNotEmpty
+              ? IconButton(
+                  icon: Icon(Icons.clear,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  onPressed: () {
+                    _onlineSearchController.clear();
+                    _onOnlineSearchChanged('');
+                    setState(() {});
+                  },
+                )
+              : null,
+          filled: true,
+          fillColor: Theme.of(context).colorScheme.surface,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+        onChanged: (value) {
+          setState(() {});
+          _onOnlineSearchChanged(value);
+        },
+      ),
+    );
   }
 
   void _onScroll() {
@@ -405,39 +790,75 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => _favoriteCubit..loadFavorites(),
-      child: AppScaffoldWithOffline(
-        title: AppLocalizations.of(context)!.favorites,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        appBar: _buildAppBar(),
-        drawer: AppMainDrawerWidget(context: context),
-        body: BlocBuilder<FavoriteCubit, FavoriteState>(
-          builder: (context, state) {
-            return Column(
-              children: [
-                _buildSearchBar(),
-                if (_isSelectionMode) _buildSelectionToolbar(state),
-                Expanded(child: _buildContent(state)),
-              ],
-            );
-          },
+      child: DefaultTabController(
+        length: 2,
+        child: AppScaffoldWithOffline(
+          title: AppLocalizations.of(context)!.favorites,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          appBar: _buildAppBar(),
+          drawer: AppMainDrawerWidget(context: context),
+          body: Column(
+            children: [
+              Container(
+                color: Theme.of(context).colorScheme.surfaceContainer,
+                child: TabBar(
+                  onTap: (index) {
+                    setState(() {
+                      _activeTabIndex = index;
+                      if (_activeTabIndex != 0 && _isSelectionMode) {
+                        _isSelectionMode = false;
+                        _selectedItems.clear();
+                      }
+                    });
+                  },
+                  tabs: [
+                    Tab(text: AppLocalizations.of(context)!.offline),
+                    Tab(text: AppLocalizations.of(context)!.online),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    BlocBuilder<FavoriteCubit, FavoriteState>(
+                      builder: (context, state) {
+                        return Column(
+                          children: [
+                            _buildSearchBar(),
+                            if (_isSelectionMode) _buildSelectionToolbar(state),
+                            Expanded(child: _buildContent(state)),
+                          ],
+                        );
+                      },
+                    ),
+                    _buildOnlineFavoritesContent(),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final isOnlineTab = _activeTabIndex == 1;
+
     return AppBar(
       backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
       elevation: 0,
       title: Text(
-        _isSelectionMode
+        _isSelectionMode && !isOnlineTab
             ? AppLocalizations.of(context)!
                 .selectedItemsCount(_selectedItems.length)
-            : AppLocalizations.of(context)!.favorites,
+            : isOnlineTab
+                ? '${AppLocalizations.of(context)!.favorites} (${AppLocalizations.of(context)!.online})'
+                : AppLocalizations.of(context)!.favorites,
         style: TextStyleConst.withColor(TextStyleConst.headingMedium,
             Theme.of(context).colorScheme.onSurface),
       ),
-      leading: _isSelectionMode
+      leading: _isSelectionMode && !isOnlineTab
           ? IconButton(
               icon: Icon(Icons.close,
                   color: Theme.of(context).colorScheme.onSurface),
@@ -445,7 +866,22 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             )
           : null,
       actions: [
-        if (!_isSelectionMode) ...[
+        if (isOnlineTab) ...[
+          IconButton(
+            icon: Icon(Icons.login,
+                color: Theme.of(context).colorScheme.onSurface),
+            tooltip: AppLocalizations.of(context)!.login,
+            onPressed: _openOnlineSourceLogin,
+          ),
+          IconButton(
+            icon: Icon(Icons.refresh,
+                color: Theme.of(context).colorScheme.onSurface),
+            tooltip: AppLocalizations.of(context)!.refreshAction,
+            onPressed: _onlineHasSession
+                ? () => _loadOnlineFavorites(refresh: true)
+                : null,
+          ),
+        ] else if (!_isSelectionMode) ...[
           IconButton(
             icon: Icon(Icons.select_all,
                 color: Theme.of(context).colorScheme.onSurface),
@@ -568,6 +1004,206 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         },
       ),
     );
+  }
+
+  void _openOnlineSourceLogin() {
+    final sourceId = _onlineFavoriteSourceId;
+    if (sourceId == null) return;
+    context.push('/source-login?source=$sourceId');
+  }
+
+  Widget _buildOnlineFavoritesContent() {
+    final sourceId = _onlineFavoriteSourceId;
+    if (sourceId == null) {
+      return Center(
+        child: Text(
+          'No online favorites source available.',
+          style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+              Theme.of(context).colorScheme.onSurfaceVariant),
+        ),
+      );
+    }
+
+    Widget content;
+    if (!_onlineHasSession) {
+      content = Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.lock_outline,
+                size: 56,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                AppLocalizations.of(context)!.loginRequiredForAction,
+                textAlign: TextAlign.center,
+                style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                    Theme.of(context).colorScheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: _openOnlineSourceLogin,
+                icon: const Icon(Icons.login),
+                label: Text(AppLocalizations.of(context)!.login),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else if (_onlineLoading) {
+      content = const ListShimmer(itemCount: 8);
+    } else if (_onlineError != null) {
+      content = Center(
+        child: AppErrorWidget(
+          title: AppLocalizations.of(context)!.error,
+          message: _onlineError!,
+          onRetry: () => _loadOnlineFavorites(refresh: true),
+        ),
+      );
+    } else if (_onlineFavorites.isEmpty) {
+      content = Center(
+        child: Text(
+          AppLocalizations.of(context)!.noFavoritesYet,
+          style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+              Theme.of(context).colorScheme.onSurfaceVariant),
+        ),
+      );
+    } else {
+      content = RefreshIndicator(
+        onRefresh: () => _loadOnlineFavorites(refresh: true),
+        child: ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: _onlineFavorites.length + (_onlineHasMore ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index >= _onlineFavorites.length) {
+              _scheduleOnlineFavoritesLoadMore();
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            final item = _onlineFavorites[index];
+            final id = item['id']?.toString() ?? '';
+            final coverUrl = item['cover_url']?.toString() ?? '';
+
+            return Card(
+              color: Theme.of(context).colorScheme.surfaceContainer,
+              margin: const EdgeInsets.only(bottom: 12),
+              child: ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                isThreeLine: true,
+                minVerticalPadding: 6,
+                minLeadingWidth: 64,
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    width: 64,
+                    height: 84,
+                    child: _FavoriteCoverImage(
+                      contentId: id,
+                      sourceId: item['source_id']?.toString(),
+                      coverUrl: coverUrl,
+                    ),
+                  ),
+                ),
+                title: Text(
+                  item['title']?.toString() ?? '#$id',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                      Theme.of(context).colorScheme.onSurface),
+                ),
+                subtitle: Text(
+                  '#$id',
+                  style: TextStyleConst.withColor(TextStyleConst.caption,
+                      Theme.of(context).colorScheme.onSurfaceVariant),
+                ),
+                onTap: () {
+                  AppRouter.goToContentDetail(
+                    context,
+                    id,
+                    sourceId: item['source_id']?.toString(),
+                  );
+                },
+                trailing: IconButton(
+                  icon: Icon(
+                    Icons.favorite,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  tooltip: AppLocalizations.of(context)!.remove,
+                  onPressed: () => _removeOnlineFavorite(id),
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        if (_onlineHasSession) _buildOnlineSearchBar(),
+        Expanded(child: content),
+      ],
+    );
+  }
+
+  Future<void> _removeOnlineFavorite(String contentId) async {
+    final sourceId = _onlineFavoriteSourceId;
+    if (sourceId == null) return;
+
+    final galleryId = int.tryParse(contentId);
+    if (galleryId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Unsupported gallery ID for online favorite.',
+            style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                Theme.of(context).colorScheme.onError),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    try {
+      await _sourceAuthService.removeFavorite(
+        sourceId: sourceId,
+        galleryId: galleryId,
+      );
+      if (!mounted) return;
+      await _loadOnlineFavorites(refresh: true);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.removedFromFavorites,
+            style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                Theme.of(context).colorScheme.onPrimary),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.failedToRemoveFavorite(e.toString()),
+            style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
+                Theme.of(context).colorScheme.onError),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
   }
 
   Widget _buildSelectionToolbar(FavoriteState state) {

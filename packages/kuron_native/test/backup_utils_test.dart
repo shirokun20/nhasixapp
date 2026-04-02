@@ -24,6 +24,24 @@ class MockKuronNativePlatform
       Uint8List.fromList(<int>[]);
 
   @override
+  Future<String?> pickZipFile() async => null;
+
+  @override
+  Future<Uint8List?> readZipBytes(String contentUri) async => null;
+
+  @override
+  Future<Map<String, dynamic>?> extractZipFile({
+    required String contentUri,
+    required String destinationPath,
+    Function(int processed, int total, int imageCount, String currentFile)?
+    onProgress,
+  }) async => {
+    'success': true,
+    'imageCount': 0,
+    'destinationPath': destinationPath,
+  };
+
+  @override
   Future<String?> getPlatformVersion() => Future.value('1.0.0');
 
   @override
@@ -74,6 +92,13 @@ class MockKuronNativePlatform
     bool enableAdBlock = false,
     bool clearCookies = false,
   }) => Future.value({'success': true, 'cookies': []});
+
+  @override
+  Future<Map<String, dynamic>?> showCaptchaWebView({
+    required String provider,
+    required String siteKey,
+    String? baseUrl,
+  }) => Future.value({'success': true, 'token': 'mock-token'});
 
   @override
   Future<void> clearCookies() async {}

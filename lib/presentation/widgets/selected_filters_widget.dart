@@ -56,111 +56,62 @@ class SelectedFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isExclude = filterItem.isExcluded;
+    final bg = isExclude ? cs.error : cs.primary;
+    final onBg = isExclude ? cs.onError : cs.onPrimary;
+
     return Container(
       decoration: BoxDecoration(
-        color: _getChipColor(context),
+        color: bg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: _getBorderColor(context),
-          width: 1,
-        ),
+        boxShadow: [
+          BoxShadow(
+            color: bg.withValues(alpha: 0.4),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: IntrinsicWidth(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Prefix icon
-            Padding(
-              padding: const EdgeInsets.only(left: 12),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 10),
+            child: Icon(
+              isExclude ? Icons.remove_rounded : Icons.add_rounded,
+              size: 14,
+              color: onBg,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
+            child: Text(
+              filterItem.value,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: onBg,
+                letterSpacing: 0.1,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          GestureDetector(
+            onTap: onRemove,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 8, left: 2),
               child: Icon(
-                filterItem.isExcluded ? Icons.remove : Icons.add,
-                size: 16,
-                color: _getIconColor(context),
+                Icons.close_rounded,
+                size: 14,
+                color: onBg.withValues(alpha: 0.8),
               ),
             ),
-
-            // Filter text
-            Flexible(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 8,
-                ),
-                child: Text(
-                  filterItem.value,
-                  style: TextStyleConst.label.copyWith(
-                    color: _getTextColor(context),
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-
-            // Remove button
-            GestureDetector(
-              onTap: onRemove,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                margin: const EdgeInsets.only(right: 8),
-                decoration: BoxDecoration(
-                  color: _getRemoveButtonColor(context),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.close,
-                  size: 14,
-                  color: _getRemoveIconColor(context),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
-  }
-
-  Color _getChipColor(BuildContext context) {
-    if (filterItem.isExcluded) {
-      return Theme.of(context).colorScheme.error.withValues(alpha: 0.1);
-    }
-    return Theme.of(context).colorScheme.primary.withValues(alpha: 0.1);
-  }
-
-  Color _getBorderColor(BuildContext context) {
-    if (filterItem.isExcluded) {
-      return Theme.of(context).colorScheme.error.withValues(alpha: 0.3);
-    }
-    return Theme.of(context).colorScheme.primary.withValues(alpha: 0.3);
-  }
-
-  Color _getIconColor(BuildContext context) {
-    if (filterItem.isExcluded) {
-      return Theme.of(context).colorScheme.error;
-    }
-    return Theme.of(context).colorScheme.primary;
-  }
-
-  Color _getTextColor(BuildContext context) {
-    if (filterItem.isExcluded) {
-      return Theme.of(context).colorScheme.error;
-    }
-    return Theme.of(context).colorScheme.primary;
-  }
-
-  Color _getRemoveButtonColor(BuildContext context) {
-    if (filterItem.isExcluded) {
-      return Theme.of(context).colorScheme.error.withValues(alpha: 0.2);
-    }
-    return Theme.of(context).colorScheme.primary.withValues(alpha: 0.2);
-  }
-
-  Color _getRemoveIconColor(BuildContext context) {
-    if (filterItem.isExcluded) {
-      return Theme.of(context).colorScheme.error;
-    }
-    return Theme.of(context).colorScheme.primary;
   }
 }
 

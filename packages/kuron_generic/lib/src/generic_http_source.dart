@@ -24,6 +24,9 @@ import 'url_builder/generic_url_builder.dart';
 /// (REST/JSON) or a `scraper` block (HTML scraping).
 class GenericHttpSource implements ContentSource {
   final Map<String, dynamic> _rawConfig;
+  final Dio _dio;
+  final HeadersGenerator? _headersGenerator;
+  final DelayApplier? _delayApplier;
   final GenericAdapter _adapter;
   // ignore: unused_field — will be used in Phase 2 when filter UI is wired up
   final GenericFilterTransformer _filterTransformer;
@@ -46,6 +49,9 @@ class GenericHttpSource implements ContentSource {
     DelayApplier? delayApplier,
     GenericAdapter? adapterOverride,
   })  : _rawConfig = rawConfig,
+        _dio = dio,
+        _headersGenerator = headersGenerator,
+        _delayApplier = delayApplier,
         _logger = logger,
         _filterTransformer = const GenericFilterTransformer(),
         _id = rawConfig['source'] as String? ?? 'unknown',
@@ -154,9 +160,159 @@ class GenericHttpSource implements ContentSource {
 
   @override
   Future<List<Content>> getRandom({int count = 1}) async {
-    // Generic sources don't expose a random endpoint by default.
-    _logger.d('$_id: getRandom not supported — returning empty');
-    return const [];
+    try {
+      final api = _rawConfig['api'] as Map<String, dynamic>?;
+      final scraper = _rawConfig['scraper'] as Map<String, dynamic>?;
+      final endpoints =
+          (api?['endpoints'] as Map<String, dynamic>?) ?? const {};
+      final configuredRandomEndpoint =
+          endpoints['random']?.toString().trim() ?? '';
+      final scraperRandomEndpoint =
+          ((scraper?['endpoints'] as Map<String, dynamic>?)?['random']
+                  ?.toString()
+                  .trim() ??
+              scraper?['randomUrl']?.toString().trim() ??
+              '');
+
+      final randomEndpoint = configuredRandomEndpoint;
+      final apiBase = api?['apiBase']?.toString() ?? _baseUrl;
+
+      if (randomEndpoint.isEmpty) {
+        if (api != null) {
+          _logger.d(
+            '$_id: getRandom not supported — missing api.endpoints.random in config',
+          );
+        } else if (scraper != null) {
+          _logger.d(
+            '$_id: getRandom not supported for scraper source — random scraping endpoint not implemented (config value: "$scraperRandomEndpoint")',
+          );
+        } else {
+          _logger.d('$_id: getRandom not supported — no api/scraper block');
+        }
+        return const [];
+      }
+
+      _logger.i('$_id: Fetching random galleries (count: $count)');
+      final results = <Content>[];
+
+      for (var index = 0; index < count; index++) {
+        try {
+          final url = Uri.parse(apiBase).resolve(randomEndpoint).toString();
+          _logger.d('$_id: Random request #${index + 1}: GET $url');
+
+          await _prepareRandomRequest(referer: _baseUrl);
+          final response = await _dio.get<dynamic>(
+            url,
+            options: Options(
+              headers: _mergeHeaders(_dio.options.headers, {
+                if (!_defaultHeaders.containsKey('Accept'))
+                  'Accept': 'application/json',
+                if (!_defaultHeaders.containsKey('Referer'))
+                  'Referer': refererHeader,
+              }),
+            ),
+          );
+
+          final contentId = _extractRandomContentId(response.data, response);
+          if (contentId == null || contentId.isEmpty) {
+            _logger
+                .w('$_id: Failed to extract content ID from random response');
+            continue;
+          }
+
+          _logger.d('$_id: Extracted content ID: $contentId from random');
+          final detail = await getDetail(contentId);
+          results.add(detail);
+        } catch (e) {
+          _logger.w('$_id: Failed to fetch random gallery ${index + 1}: $e');
+        }
+      }
+
+      _logger.i(
+          '$_id: Successfully fetched ${results.length}/$count random galleries');
+      return results;
+    } catch (e, stackTrace) {
+      _logger.e('$_id: Failed to get random galleries',
+          error: e, stackTrace: stackTrace);
+      return const [];
+    }
+  }
+
+  Future<void> _prepareRandomRequest({String? referer}) async {
+    if (_delayApplier != null) {
+      await _delayApplier();
+    }
+
+    if (_headersGenerator != null) {
+      final generatedHeaders = _headersGenerator(referer: referer);
+      _dio.options.headers =
+          _mergeHeaders(_dio.options.headers, generatedHeaders);
+      return;
+    }
+
+    if (_defaultHeaders.isNotEmpty) {
+      _dio.options.headers =
+          _mergeHeaders(_dio.options.headers, _defaultHeaders);
+    }
+  }
+
+  Map<String, dynamic> _mergeHeaders(
+    Map<String, dynamic>? base,
+    Map<String, dynamic> extra,
+  ) {
+    final merged = <String, dynamic>{
+      if (base != null) ...base,
+      ...extra,
+    };
+    return merged;
+  }
+
+  /// Extract content ID from a random API response.
+  String? _extractRandomContentId(dynamic data, Response<dynamic> response) {
+    try {
+      if (data is Map<String, dynamic>) {
+        final id = data['id'];
+        if (id != null) {
+          return id.toString();
+        }
+
+        final result = data['result'];
+        if (result is Map<String, dynamic> && result['id'] != null) {
+          return result['id'].toString();
+        }
+
+        if (result is List && result.isNotEmpty) {
+          final first = result.first;
+          if (first is Map<String, dynamic> && first['id'] != null) {
+            return first['id'].toString();
+          }
+        }
+      }
+
+      if (data is List && data.isNotEmpty) {
+        final first = data.first;
+        if (first is Map<String, dynamic> && first['id'] != null) {
+          return first['id'].toString();
+        }
+      }
+
+      if (data is String) {
+        final idMatch = RegExp(r'"id"\s*:\s*(\d+)').firstMatch(data);
+        if (idMatch != null) {
+          return idMatch.group(1);
+        }
+      }
+
+      final pathMatch = RegExp(r'/g/(\d+)/').firstMatch(response.realUri.path);
+      if (pathMatch != null) {
+        return pathMatch.group(1);
+      }
+
+      return null;
+    } catch (e) {
+      _logger.w('$_id: Failed to extract content ID from random response: $e');
+      return null;
+    }
   }
 
   @override
@@ -205,10 +361,17 @@ class GenericHttpSource implements ContentSource {
       const [];
 
   @override
-  bool get supportsAuthentication => false;
+  bool get supportsAuthentication {
+    final auth = _rawConfig['auth'] as Map<String, dynamic>?;
+    final features = _rawConfig['features'] as Map<String, dynamic>?;
+    return (auth?['enabled'] == true) || (features?['auth'] == true);
+  }
 
   @override
-  bool get supportsBookmarks => false;
+  bool get supportsBookmarks {
+    final features = _rawConfig['features'] as Map<String, dynamic>?;
+    return features?['bookmark'] == true || features?['favorite'] == true;
+  }
 
   @override
   bool get showsPageCountInList => true;

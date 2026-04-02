@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
@@ -8,7 +10,6 @@ import '../../../l10n/app_localizations.dart';
 import '../../../domain/entities/entities.dart';
 import '../../cubits/filter_data/filter_data_cubit.dart';
 import '../../widgets/filter_data_search_widget.dart';
-import '../../widgets/filter_item_card_widget.dart';
 import '../../widgets/selected_filters_widget.dart';
 import '../../widgets/filter_type_tab_bar_widget.dart';
 import '../../widgets/app_scaffold_with_offline.dart';
@@ -41,6 +42,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
   late final TabController _tabController;
   late final TextEditingController _searchController;
   late final FocusNode _searchFocusNode;
+  Timer? _searchDebounce;
 
   // Filter types for tab bar
   final List<String> _filterTypes = [
@@ -86,6 +88,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
     if (!widget.hideOtherTabs) {
       _tabController.removeListener(_onTabChanged);
     }
+    _searchDebounce?.cancel();
     _tabController.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
@@ -102,19 +105,14 @@ class _FilterDataScreenState extends State<FilterDataScreen>
   }
 
   void _onSearchChanged(String query) {
-    _filterDataCubit.searchFilterData(query);
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 500), () {
+      _filterDataCubit.searchFilterData(query);
+    });
   }
 
   void _onFilterItemTap(Tag tag) {
     _filterDataCubit.toggleFilterItem(tag);
-  }
-
-  void _onFilterItemInclude(Tag tag) {
-    _filterDataCubit.addIncludeFilter(tag);
-  }
-
-  void _onFilterItemExclude(Tag tag) {
-    _filterDataCubit.addExcludeFilter(tag);
   }
 
   void _onRemoveSelectedFilter(String value) {
@@ -371,28 +369,23 @@ class _FilterDataScreenState extends State<FilterDataScreen>
             );
           }
 
-          return ListView.builder(
+          return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
-            itemCount: state.searchResults?.length,
-            itemBuilder: (context, index) {
-              final tag = state.searchResults![index];
-              final isIncluded = state.isIncluded(tag.name);
-              final isExcluded = state.isExcluded(tag.name);
-
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: FilterItemCard(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: (state.searchResults ?? []).map((tag) {
+                final isIncluded = state.isIncluded(tag.name);
+                final isExcluded = state.isExcluded(tag.name);
+                return _FilterTagChip(
                   key: ValueKey('${tag.name}_${isIncluded}_$isExcluded'),
                   tag: tag,
                   isIncluded: isIncluded,
                   isExcluded: isExcluded,
                   onTap: () => _onFilterItemTap(tag),
-                  onInclude: () => _onFilterItemInclude(tag),
-                  onExclude: () => _onFilterItemExclude(tag),
-                  supportsExclude: widget.supportsExclude,
-                ),
-              );
-            },
+                );
+              }).toList(),
+            ),
           );
         }
 
@@ -463,5 +456,150 @@ class _FilterDataScreenState extends State<FilterDataScreen>
       return TagType.getDisplayName(_filterTypes[currentIndex]);
     }
     return 'Filter';
+  }
+}
+
+/// Small chip widget for a single tag in the filter list.
+/// Tap cycles: unselected → include (green) → exclude (red) → unselected.
+class _FilterTagChip extends StatelessWidget {
+  const _FilterTagChip({
+    super.key,
+    required this.tag,
+    required this.isIncluded,
+    required this.isExcluded,
+    required this.onTap,
+  });
+
+  final Tag tag;
+  final bool isIncluded;
+  final bool isExcluded;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final typeColor = _tagTypeColor(context);
+
+    // Solid fill for selected states, tinted background for default
+    final Color bg;
+    final Color border;
+    final Color labelColor;
+    final Color countColor;
+    final List<BoxShadow> shadows;
+    final IconData? icon;
+    final double borderWidth;
+
+    if (isIncluded) {
+      bg = colorScheme.primary;
+      border = colorScheme.primary;
+      labelColor = colorScheme.onPrimary;
+      countColor = colorScheme.onPrimary.withValues(alpha: 0.7);
+      shadows = [
+        BoxShadow(
+          color: colorScheme.primary.withValues(alpha: 0.45),
+          blurRadius: 8,
+          spreadRadius: 0,
+          offset: const Offset(0, 2),
+        ),
+      ];
+      icon = Icons.add_rounded;
+      borderWidth = 0;
+    } else if (isExcluded) {
+      bg = colorScheme.error;
+      border = colorScheme.error;
+      labelColor = colorScheme.onError;
+      countColor = colorScheme.onError.withValues(alpha: 0.7);
+      shadows = [
+        BoxShadow(
+          color: colorScheme.error.withValues(alpha: 0.45),
+          blurRadius: 8,
+          spreadRadius: 0,
+          offset: const Offset(0, 2),
+        ),
+      ];
+      icon = Icons.remove_rounded;
+      borderWidth = 0;
+    } else {
+      bg = typeColor.withValues(alpha: 0.08);
+      border = typeColor.withValues(alpha: 0.35);
+      labelColor = typeColor;
+      countColor = typeColor.withValues(alpha: 0.6);
+      shadows = const [];
+      icon = null;
+      borderWidth = 1;
+    }
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.symmetric(
+          horizontal: isIncluded || isExcluded ? 10 : 12,
+          vertical: 7,
+        ),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(20),
+          border: borderWidth > 0
+              ? Border.all(color: border, width: borderWidth)
+              : null,
+          boxShadow: shadows,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 15, color: labelColor),
+              const SizedBox(width: 3),
+            ],
+            Text(
+              tag.name,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isIncluded || isExcluded
+                    ? FontWeight.w700
+                    : FontWeight.w400,
+                color: labelColor,
+                letterSpacing: isIncluded || isExcluded ? 0.1 : 0,
+              ),
+            ),
+            if (tag.count > 0) ...[
+              const SizedBox(width: 5),
+              Text(
+                _formatCount(tag.count),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w400,
+                  color: countColor,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatCount(int count) {
+    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1)}M';
+    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1)}k';
+    return '$count';
+  }
+
+  Color _tagTypeColor(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    switch (tag.type.toLowerCase()) {
+      case 'artist':
+        return cs.primary;
+      case 'character':
+        return cs.secondary;
+      case 'parody':
+        return cs.tertiary;
+      case 'group':
+        return cs.error;
+      default:
+        return cs.onSurfaceVariant;
+    }
   }
 }

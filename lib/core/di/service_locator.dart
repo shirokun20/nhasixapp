@@ -18,6 +18,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart'
 import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_generic/kuron_generic.dart';
 import 'package:kuron_special/kuron_special.dart';
+import 'package:kuron_native/kuron_native.dart';
 
 // Core Network
 import 'package:nhasixapp/core/network/http_client_manager.dart';
@@ -34,6 +35,7 @@ import 'package:nhasixapp/core/network/dns_resolver.dart'; // NEW
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/anti_detection.dart';
 import 'package:nhasixapp/data/datasources/remote/nhentai_scraper.dart';
+import 'package:nhasixapp/data/datasources/remote/tags/tags_remote_data_source.dart';
 import 'package:nhasixapp/data/datasources/local/tag_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/request_rate_manager.dart';
 import 'package:nhasixapp/data/datasources/local/doujin_list_dao.dart';
@@ -56,12 +58,14 @@ import 'package:nhasixapp/presentation/cubits/comments/comments_cubit.dart';
 // Repositories
 import 'package:nhasixapp/domain/repositories/repositories.dart';
 import 'package:nhasixapp/domain/repositories/crotpedia/crotpedia_feature_repository.dart';
+import 'package:nhasixapp/domain/repositories/tag_repository.dart';
 import 'package:nhasixapp/data/repositories/content_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/user_data_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/settings_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/reader_settings_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/reader_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/crotpedia/crotpedia_feature_repository_impl.dart';
+import 'package:nhasixapp/data/repositories/tag_repository_impl.dart';
 
 // Use Cases
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
@@ -79,11 +83,16 @@ import 'package:nhasixapp/domain/usecases/settings/save_user_preferences_usecase
 import 'package:nhasixapp/domain/usecases/crotpedia/get_genre_list_usecase.dart';
 import 'package:nhasixapp/domain/usecases/crotpedia/get_doujin_list_usecase.dart';
 import 'package:nhasixapp/domain/usecases/crotpedia/get_request_list_usecase.dart';
+import 'package:nhasixapp/domain/usecases/imports/import_zip_usecase.dart';
+import 'package:nhasixapp/domain/usecases/tags/get_tags_by_type_usecase.dart';
+import 'package:nhasixapp/domain/usecases/tags/get_tag_autocomplete_usecase.dart';
+import 'package:nhasixapp/domain/usecases/tags/get_tag_detail_usecase.dart';
 
 // Services
 import 'package:nhasixapp/services/native_download_service.dart';
 import 'package:nhasixapp/services/native_pdf_service.dart';
 import 'package:nhasixapp/services/native_backup_service.dart';
+import 'package:nhasixapp/services/native_zip_import_service.dart';
 import 'package:nhasixapp/services/native_pdf_reader_service.dart';
 import 'package:nhasixapp/services/download_service.dart';
 
@@ -103,6 +112,7 @@ import 'package:nhasixapp/services/image_cache_service.dart';
 import 'package:nhasixapp/services/image_metadata_service.dart';
 import 'package:nhasixapp/services/export_service.dart';
 import 'package:nhasixapp/services/legal_content_service.dart';
+import 'package:nhasixapp/services/source_auth_service.dart';
 import 'package:nhasixapp/services/cache/cache_manager.dart' as multi_cache;
 
 final getIt = GetIt.instance;
@@ -215,6 +225,8 @@ void _setupServices() {
 
   // Native Services
   getIt.registerLazySingleton<NativeBackupService>(() => NativeBackupService());
+  getIt.registerLazySingleton<NativeZipImportService>(
+      () => NativeZipImportService());
   getIt.registerLazySingleton<NativePdfReaderService>(
     () => NativePdfReaderService(),
   );
@@ -310,6 +322,13 @@ void _setupServices() {
   getIt.registerLazySingleton<LegalContentService>(() => LegalContentService(
         dio: getIt<Dio>(),
         prefs: getIt<SharedPreferences>(),
+      ));
+
+  // Source Auth Service - Config-driven token API auth for generic sources
+  getIt.registerLazySingleton<SourceAuthService>(() => SourceAuthService(
+        configService: getIt<RemoteConfigService>(),
+        dio: getIt<Dio>(),
+        logger: getIt<Logger>(),
       ));
 }
 
@@ -559,6 +578,19 @@ void _setupRepositories() {
             sharedPreferences: getIt<SharedPreferences>(),
             logger: getIt<Logger>(),
           ));
+
+  // Tags Remote Data Source
+  getIt.registerLazySingleton<TagsRemoteDataSource>(() => TagsRemoteDataSource(
+        dio: getIt<Dio>(),
+        logger: getIt<Logger>(),
+        configService: getIt<RemoteConfigService>(),
+      ));
+
+  // Tag Repository
+  getIt.registerLazySingleton<TagRepository>(() => TagRepositoryImpl(
+        remoteDataSource: getIt<TagsRemoteDataSource>(),
+        logger: getIt<Logger>(),
+      ));
 }
 
 /// Setup use cases
@@ -576,6 +608,22 @@ void _setupUseCases() {
       () => GetDoujinListUseCase(getIt<CrotpediaFeatureRepository>()));
   getIt.registerLazySingleton<GetRequestListUseCase>(
       () => GetRequestListUseCase(getIt<CrotpediaFeatureRepository>()));
+
+  // Import Use Cases
+  getIt.registerLazySingleton<ImportZipUseCase>(
+    () => ImportZipUseCase(
+      kuronNative: KuronNative.instance,
+      userDataRepository: getIt<UserDataRepository>(),
+    ),
+  );
+
+  // Tag Use Cases
+  getIt.registerLazySingleton<GetTagsByTypeUseCase>(
+      () => GetTagsByTypeUseCase(getIt<TagRepository>()));
+  getIt.registerLazySingleton<GetTagAutocompleteUseCase>(
+      () => GetTagAutocompleteUseCase(getIt<TagRepository>()));
+  getIt.registerLazySingleton<GetTagDetailUseCase>(
+      () => GetTagDetailUseCase(getIt<TagRepository>()));
 
   // Content Use Cases
   getIt.registerLazySingleton<GetContentListUseCase>(
@@ -595,7 +643,7 @@ void _setupUseCases() {
   getIt.registerLazySingleton<RemoveFromFavoritesUseCase>(
       () => RemoveFromFavoritesUseCase(getIt()));
   getIt.registerLazySingleton<GetFavoritesUseCase>(
-      () => GetFavoritesUseCase(getIt()));
+      () => GetFavoritesUseCase(getIt(), getIt()));
 
   // Download Use Cases
   getIt.registerLazySingleton<DownloadContentUseCase>(
@@ -723,6 +771,12 @@ void _setupCubits() {
         logger: getIt<Logger>(),
       ));
 
+  // SourceAuthCubit - Generic config-driven source login management
+  getIt.registerFactory<SourceAuthCubit>(() => SourceAuthCubit(
+        sourceAuthService: getIt<SourceAuthService>(),
+        logger: getIt<Logger>(),
+      ));
+
   // CrotpediaFeatureCubit - Crotpedia features (Genre, Doujin, Request lists)
   getIt.registerFactory<CrotpediaFeatureCubit>(() => CrotpediaFeatureCubit(
         getGenreListUseCase: getIt<GetGenreListUseCase>(),
@@ -734,6 +788,8 @@ void _setupCubits() {
   // FilterDataCubit - Filter data screen management
   getIt.registerFactory<FilterDataCubit>(() => FilterDataCubit(
         tagDataManager: getIt<TagDataManager>(),
+        getTagsByTypeUseCase: getIt<GetTagsByTypeUseCase>(),
+        getTagAutocompleteUseCase: getIt<GetTagAutocompleteUseCase>(),
         logger: getIt<Logger>(),
       ));
 

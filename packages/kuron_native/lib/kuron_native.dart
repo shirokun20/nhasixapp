@@ -33,6 +33,39 @@ class KuronNative {
     return KuronNativePlatform.instance.pickBinaryFile(mimeType: mimeType);
   }
 
+  /// Pick a ZIP file using native file picker and return content URI.
+  /// Returns the content URI of the selected ZIP file, or null if cancelled.
+  Future<String?> pickZipFile() {
+    return KuronNativePlatform.instance.pickZipFile();
+  }
+
+  /// Read ZIP file bytes from content URI.
+  /// Returns the bytes of the ZIP file.
+  Future<Uint8List?> readZipBytes(String contentUri) {
+    return KuronNativePlatform.instance.readZipBytes(contentUri);
+  }
+
+  /// Extract ZIP file natively to destination directory with progress notifications.
+  ///
+  /// This is a native Android implementation that:
+  /// - Streams ZIP data directly to disk (no memory loading)
+  /// - Shows system notifications with progress
+  /// - Calls onProgress callback for real-time updates
+  ///
+  /// Returns a map with 'success', 'imageCount', and 'destinationPath'.
+  Future<Map<String, dynamic>?> extractZipFile({
+    required String contentUri,
+    required String destinationPath,
+    Function(int processed, int total, int imageCount, String currentFile)?
+    onProgress,
+  }) {
+    return KuronNativePlatform.instance.extractZipFile(
+      contentUri: contentUri,
+      destinationPath: destinationPath,
+      onProgress: onProgress,
+    );
+  }
+
   Future<String?> startDownload({
     required String url,
     required String fileName,
@@ -104,6 +137,18 @@ class KuronNative {
       ssoRedirectUrl: ssoRedirectUrl,
       enableAdBlock: enableAdBlock,
       clearCookies: clearCookies,
+    );
+  }
+
+  Future<Map<String, dynamic>?> showCaptchaWebView({
+    required String provider,
+    required String siteKey,
+    String? baseUrl,
+  }) {
+    return KuronNativePlatform.instance.showCaptchaWebView(
+      provider: provider,
+      siteKey: siteKey,
+      baseUrl: baseUrl,
     );
   }
 

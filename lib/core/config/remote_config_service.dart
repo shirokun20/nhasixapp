@@ -20,7 +20,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// On [smartInitialize] the service:
 /// 1. Loads bundled defaults (`nhentai`, `app`, `tags`).
 /// 2. Restores manually installed sources from local cache.
-/// 3. Performs best-effort self-refresh via each source's `configUrl`.
+/// 3. Performs best-effort self-refresh via each non-bundled source's
+///    `configUrl`.
 ///
 /// Config is intentionally **not time-expiring** — invalidation is purely
 /// version-driven (bumping version in manifest triggers re-download).
@@ -279,11 +280,18 @@ class RemoteConfigService {
   ///
   /// This is called by `GenericHttpSource` during initialization so each
   /// source can describe its own update endpoint, independent of the CDN
-  /// manifest. The config is refreshed only if the remote version string
-  /// differs from the currently loaded one.
+  /// manifest. The config is refreshed only when the remote version is newer
+  /// than the currently loaded one.
   ///
   /// Returns `true` if the config was refreshed, `false` otherwise.
   Future<bool> refreshSourceFromConfigUrl(String sourceId) async {
+    if (_bundledSourceIds.contains(sourceId)) {
+      _logger.d(
+        '$sourceId: bundled source uses APK config only — skipping configUrl refresh',
+      );
+      return false;
+    }
+
     final raw = _rawSourceConfigs[sourceId];
     final dynamic rawConfigUrl = raw?['configUrl'];
     final configUrl = rawConfigUrl is String ? rawConfigUrl : null;
@@ -314,6 +322,14 @@ class RemoteConfigService {
       if (remoteVersion == localVersion) {
         _logger.d(
           '$sourceId: configUrl version $remoteVersion == local — no update',
+        );
+        return false;
+      }
+
+      if (!_isRemoteVersionNewer(remoteVersion, localVersion)) {
+        _logger.w(
+          '$sourceId: skip configUrl refresh because remote version '
+          '$remoteVersion is not newer than local $localVersion',
         );
         return false;
       }
@@ -664,6 +680,37 @@ class RemoteConfigService {
     }
   }
 
+  bool _isRemoteVersionNewer(String? remote, String? local) {
+    if (remote == null || remote.isEmpty) return false;
+    if (local == null || local.isEmpty) return true;
+
+    final remoteParts = _parseVersionParts(remote);
+    final localParts = _parseVersionParts(local);
+    final maxLength = remoteParts.length > localParts.length
+        ? remoteParts.length
+        : localParts.length;
+
+    for (var i = 0; i < maxLength; i++) {
+      final r = i < remoteParts.length ? remoteParts[i] : 0;
+      final l = i < localParts.length ? localParts[i] : 0;
+      if (r > l) return true;
+      if (r < l) return false;
+    }
+
+    return false;
+  }
+
+  List<int> _parseVersionParts(String version) {
+    final normalized = version.trim();
+    if (normalized.isEmpty) return const [];
+
+    return normalized
+        .split('.')
+        .map(
+            (part) => int.tryParse(part.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0)
+        .toList();
+  }
+
   Future<void> _loadTagsManifest() async {
     try {
       final assetString = await rootBundle.loadString(_tagsAssetPath);
@@ -688,6 +735,7 @@ class RemoteConfigService {
 
     final futures = _rawSourceConfigs.keys
         .where((id) => !manifestIds.contains(id))
+        .where((id) => !_bundledSourceIds.contains(id))
         .where((id) {
           final dynamic configUrl = _rawSourceConfigs[id]?['configUrl'];
           return configUrl is String && configUrl.isNotEmpty;

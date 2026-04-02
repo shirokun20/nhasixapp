@@ -64,22 +64,6 @@ class LocalDataSource {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
-      // Also save/update history with title for future retrieval
-      if (title != null && title.isNotEmpty) {
-        await db.insert(
-          'history',
-          {
-            'id': id,
-            'source_id': sourceId,
-            'title': title,
-            'cover_url': coverUrl,
-            'last_viewed': DateTime.now().millisecondsSinceEpoch,
-          },
-          conflictAlgorithm:
-              ConflictAlgorithm.ignore, // Don't override existing history
-        );
-      }
-
       _logger.d('Added content $id from $sourceId to favorites');
     } catch (e) {
       _logger.e('Error adding to favorites: $e');
@@ -289,6 +273,7 @@ class LocalDataSource {
         return [];
       }
 
+      // Build WHERE clause
       String whereClause = '1=1';
       final List<dynamic> whereArgs = [];
 
@@ -305,15 +290,36 @@ class LocalDataSource {
       // Map orderBy field names to actual column names
       final columnName = _mapOrderByField(orderBy);
       final orderDirection = descending ? 'DESC' : 'ASC';
-      final orderByClause = '$columnName $orderDirection';
 
-      final result = await db.query(
-        'downloads',
-        where: whereClause,
-        whereArgs: whereArgs.isNotEmpty ? whereArgs : null,
-        orderBy: orderByClause,
-        limit: limit,
-        offset: offset,
+      // Use raw query with GROUP BY to prevent duplicates
+      // Group by id to ensure only one entry per content (in case of duplicate source_id entries)
+      final sql = '''
+        SELECT
+          id,
+          source_id,
+          title,
+          cover_url,
+          download_path,
+          state,
+          downloaded_pages,
+          total_pages,
+          start_time,
+          end_time,
+          file_size,
+          error_message,
+          retry_count,
+          start_page,
+          end_page
+        FROM downloads
+        WHERE $whereClause
+        GROUP BY id
+        ORDER BY $columnName $orderDirection
+        LIMIT ? OFFSET ?
+      ''';
+
+      final result = await db.rawQuery(
+        sql,
+        [...whereArgs, limit, offset],
       );
 
       return result.map((row) => DownloadStatusModel.fromMap(row)).toList();
@@ -378,8 +384,9 @@ class LocalDataSource {
         whereArgs.add(sourceId.toLowerCase());
       }
 
+      // Count DISTINCT ids to avoid counting duplicates
       final result = await db.rawQuery(
-        'SELECT COUNT(*) as count FROM downloads WHERE $whereClause',
+        'SELECT COUNT(DISTINCT id) as count FROM downloads WHERE $whereClause',
         whereArgs.isNotEmpty ? whereArgs : null,
       );
       return result.first['count'] as int;
@@ -460,13 +467,34 @@ class LocalDataSource {
         whereArgs.add(sourceId.toLowerCase());
       }
 
-      final result = await db.query(
-        'downloads',
-        where: whereClause,
-        whereArgs: whereArgs,
-        orderBy: 'start_time DESC',
-        limit: limit,
-        offset: offset,
+      // Use raw query with GROUP BY to prevent duplicates
+      final sql = '''
+        SELECT
+          id,
+          source_id,
+          title,
+          cover_url,
+          download_path,
+          state,
+          downloaded_pages,
+          total_pages,
+          start_time,
+          end_time,
+          file_size,
+          error_message,
+          retry_count,
+          start_page,
+          end_page
+        FROM downloads
+        WHERE $whereClause
+        GROUP BY id
+        ORDER BY start_time DESC
+        LIMIT ? OFFSET ?
+      ''';
+
+      final result = await db.rawQuery(
+        sql,
+        [...whereArgs, limit, offset],
       );
 
       _logger.d(
@@ -555,7 +583,7 @@ class LocalDataSource {
       }
 
       final result = await db.rawQuery(
-        'SELECT COUNT(*) as count FROM downloads WHERE $whereClause',
+        'SELECT COUNT(DISTINCT id) as count FROM downloads WHERE $whereClause',
         whereArgs,
       );
       return result.first['count'] as int;

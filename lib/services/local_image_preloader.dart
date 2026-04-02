@@ -6,6 +6,8 @@ import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
+import '../core/utils/storage_settings.dart';
+
 /// Enhanced Local Image Preloader Service
 ///
 /// Provides progressive image loading with priority:
@@ -20,6 +22,7 @@ class LocalImagePreloader {
   static const Duration _cacheExpiryDuration =
       Duration(hours: 6); // Cache expires in 6 hours
   static final Logger _logger = Logger();
+  static bool _didLogDownloadDirectorySelection = false;
 
   /// Get all possible base paths where images might be stored
   /// Priority: External Download -> Internal Cache (with expiry) -> Internal App Documents
@@ -67,57 +70,55 @@ class LocalImagePreloader {
   /// Reference implementation from download_service.dart _getDownloadsDirectory()
   static Future<List<String>> _getDownloadDirectories() async {
     final List<String> downloadPaths = [];
+    final bool shouldLog = !_didLogDownloadDirectorySelection;
 
     try {
-      // Get external storage directory first
-      Directory? externalDir;
-      try {
-        externalDir = await getExternalStorageDirectory();
-      } catch (e) {
-        _logger.w('Could not get external storage directory: $e');
+      // Prefer app-managed custom storage root when available.
+      final customRoot = await StorageSettings.getCustomRootPath();
+      if (customRoot != null && customRoot.trim().isNotEmpty) {
+        final rootDir = Directory(customRoot);
+        if (await rootDir.exists()) {
+          downloadPaths.add(customRoot);
+          if (shouldLog) {
+            _logger.d('🐛 Using custom storage root for images: $customRoot');
+          }
+        } else {
+          _logger.w(
+              'Custom storage root is set but not accessible for images: $customRoot');
+        }
       }
 
+      // App-specific external storage is safer than public Downloads on Android.
+      final externalDir = await getExternalStorageDirectory();
       if (externalDir != null) {
-        // Try to find Downloads folder in external storage root
-        final externalRoot = externalDir.path.split('/Android')[0];
-
-        // Common Downloads folder names (same as download_service.dart)
-        final downloadsFolderNames = [
-          'Download', // English (most common)
-          'Downloads', // English alternative
-          'Unduhan', // Indonesian
-          'Descargas', // Spanish
-          'Téléchargements', // French
-          'Downloads', // German uses English
-          'ダウンロード', // Japanese
-        ];
-
-        // Try each possible Downloads folder
-        for (final folderName in downloadsFolderNames) {
-          final downloadsDir = Directory(path.join(externalRoot, folderName));
-          if (await downloadsDir.exists()) {
-            downloadPaths.add(downloadsDir.path);
-            // _logger.d('🐛 Found Downloads directory: ${downloadsDir.path}');
+        final appExternalDownloads = path.join(externalDir.path, 'downloads');
+        final appExternalDir = Directory(appExternalDownloads);
+        if (!await appExternalDir.exists()) {
+          await appExternalDir.create(recursive: true);
+        }
+        if (!downloadPaths.contains(appExternalDownloads)) {
+          downloadPaths.add(appExternalDownloads);
+          if (shouldLog) {
+            _logger.d(
+                '🐛 Using app-specific external storage: $appExternalDownloads');
           }
         }
       }
 
-      // Fallback: Try hardcoded common paths
-      final commonPaths = [
-        '/storage/emulated/0/Download',
-        '/storage/emulated/0/Downloads',
-        '/storage/emulated/0/Unduhan',
-        '/sdcard/Download',
-        '/sdcard/Downloads',
-      ];
-
-      for (final commonPath in commonPaths) {
-        final dir = Directory(commonPath);
-        if (await dir.exists() && !downloadPaths.contains(commonPath)) {
-          downloadPaths.add(commonPath);
-          _logger.d('🐛 Found Downloads directory at common path: $commonPath');
+      // Internal app documents fallback is always writable.
+      final appDir = await getApplicationDocumentsDirectory();
+      final internalDownloads = path.join(appDir.path, 'downloads');
+      final internalDir = Directory(internalDownloads);
+      if (!await internalDir.exists()) {
+        await internalDir.create(recursive: true);
+      }
+      if (!downloadPaths.contains(internalDownloads)) {
+        downloadPaths.add(internalDownloads);
+        if (shouldLog) {
+          _logger.d('🐛 Using app documents storage: $internalDownloads');
         }
       }
+      _didLogDownloadDirectorySelection = true;
     } catch (e) {
       _logger.e('Error detecting Downloads directories: $e');
     }
