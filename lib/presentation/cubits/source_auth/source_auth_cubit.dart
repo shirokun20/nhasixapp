@@ -8,6 +8,11 @@ part 'source_auth_state.dart';
 class SourceAuthCubit extends BaseCubit<SourceAuthState> {
   final SourceAuthService _sourceAuthService;
 
+  void _emitSafe(SourceAuthState nextState) {
+    if (isClosed) return;
+    emit(nextState);
+  }
+
   SourceAuthCubit({
     required SourceAuthService sourceAuthService,
     required super.logger,
@@ -15,7 +20,7 @@ class SourceAuthCubit extends BaseCubit<SourceAuthState> {
         super(initialState: const SourceAuthState.initial());
 
   Future<void> initialize(String sourceId) async {
-    emit(state.copyWith(
+    _emitSafe(state.copyWith(
       sourceId: sourceId,
       loading: true,
       clearError: true,
@@ -66,7 +71,7 @@ class SourceAuthCubit extends BaseCubit<SourceAuthState> {
         }
       }
 
-      emit(state.copyWith(
+      _emitSafe(state.copyWith(
         loading: false,
         authenticated: hasSession,
         accountName: accountName,
@@ -87,7 +92,7 @@ class SourceAuthCubit extends BaseCubit<SourceAuthState> {
       ));
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'initialize');
-      emit(state.copyWith(
+      _emitSafe(state.copyWith(
         loading: false,
         authenticated: false,
         errorMessage: e.toString(),
@@ -106,11 +111,11 @@ class SourceAuthCubit extends BaseCubit<SourceAuthState> {
   }) async {
     final sourceId = state.sourceId;
     if (sourceId.isEmpty) {
-      emit(state.copyWith(errorMessage: 'Source is not initialized'));
+      _emitSafe(state.copyWith(errorMessage: 'Source is not initialized'));
       return;
     }
 
-    emit(state.copyWith(
+    _emitSafe(state.copyWith(
       loading: true,
       clearError: true,
       loginFlowActive: true,
@@ -120,7 +125,7 @@ class SourceAuthCubit extends BaseCubit<SourceAuthState> {
     ));
 
     try {
-      emit(state.copyWith(
+      _emitSafe(state.copyWith(
         loginFlowProgress: 0.35,
         loginFlowMessage: 'source_auth.flow.solving_challenge',
       ));
@@ -132,7 +137,7 @@ class SourceAuthCubit extends BaseCubit<SourceAuthState> {
         captchaResponse: captchaResponse,
       );
 
-      emit(state.copyWith(
+      _emitSafe(state.copyWith(
         loginFlowProgress: 0.72,
         loginFlowMessage: 'source_auth.flow.fetching_profile',
       ));
@@ -156,7 +161,7 @@ class SourceAuthCubit extends BaseCubit<SourceAuthState> {
         }
       }
 
-      emit(state.copyWith(
+      _emitSafe(state.copyWith(
         loading: false,
         authenticated: true,
         accountName: accountName,
@@ -172,7 +177,7 @@ class SourceAuthCubit extends BaseCubit<SourceAuthState> {
       ));
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'login');
-      emit(state.copyWith(
+      _emitSafe(state.copyWith(
         loading: false,
         authenticated: false,
         errorMessage: e.toString(),
@@ -185,7 +190,7 @@ class SourceAuthCubit extends BaseCubit<SourceAuthState> {
   }
 
   void clearLoginFlowState() {
-    emit(state.copyWith(
+    _emitSafe(state.copyWith(
       loginFlowActive: false,
       loginFlowSuccess: false,
       loginFlowProgress: 0,
@@ -198,7 +203,7 @@ class SourceAuthCubit extends BaseCubit<SourceAuthState> {
 
     final sourceId = state.sourceId;
 
-    emit(state.copyWith(
+    _emitSafe(state.copyWith(
       loading: true,
       clearError: true,
       authenticated: false,
@@ -233,7 +238,7 @@ class SourceAuthCubit extends BaseCubit<SourceAuthState> {
       final email = profile['email']?.toString().trim();
       final slug = profile['slug']?.toString().trim();
 
-      emit(state.copyWith(
+      _emitSafe(state.copyWith(
         accountName: (profileUsername != null && profileUsername.isNotEmpty)
             ? profileUsername
             : state.accountName,
@@ -247,7 +252,7 @@ class SourceAuthCubit extends BaseCubit<SourceAuthState> {
         await initialize(state.sourceId);
         return;
       }
-      emit(state.copyWith(errorMessage: e.toString()));
+      _emitSafe(state.copyWith(errorMessage: e.toString()));
     }
   }
 
