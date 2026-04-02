@@ -180,6 +180,7 @@ Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 6
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-04-02 | Copilot | Native CAPTCHA migration + favorites online hardening | ✅ Done | Migrated CAPTCHA solving flow from embedded `webview_flutter` page to `kuron_native` (`showCaptchaWebView`) with a dedicated Android `CaptchaWebViewActivity`, token/error JS bridge, and status-bar-safe toolbar insets. In parallel, stabilized online favorites with auto-retry for transient network failures and localized friendly error messaging to avoid raw DioException output in UI. |
 | 2026-04-02 | Copilot | QoL Enhancements moved to onprogress | ✅ Done | Moved Issue #32 analysis into `projects/onprogress-plan/qol_enhancements/`, updated the plan header/footer to execution, and created `progress.md` so the lifecycle now matches the onprogress workflow. |
 | 2026-04-02 | Copilot | Workflow phase rule correction | ✅ Done | Reaffirmed the lifecycle rule: analysis stays read-only and tasks only move into `projects/onprogress-plan/` after explicit user approval. Added matching session and repo memory notes so future turns keep the same boundary. |
 | 2026-03-31 | Antigravity | Build Bump +23: Release prep & docs sync | ✅ Done | Build number bumped from +22 → +23 across all release files. Updated: `pubspec.yaml`, `CHANGELOG.md` (new section with 8 recent commits), `README.md`, `README_ID.md`, `docs/en/FAQ.md`, `docs/id/FAQ.md` all synced to `v0.9.14+23`. Created annotated Git tag `v0.9.14+23` with full commit history and pushed to remote (`78b4294`). No breaking changes — pure build increment with reader enhancements (height caching, floating page indicator) + offline metadata fixes (duplicate prevention, ZIP fileSize, auto-generated manifest.json) + ZIP handler migration to `kuron_native`. |
@@ -321,6 +322,30 @@ dart scripts/project_status.dart           # Update dashboards
 
 Status: **Analysis Phase (CLEAN & COMPLETE)** — Dokumen: `projects/analysis-plan/qol_enhancements/qol_enhancements_2026-03-30.md`.
 Siap dieksekusi ke `onprogress-plan/` pada sesi berikutnya.
+
+---
+
+## 🆕 Latest Session — 2026-04-02
+
+### Native CAPTCHA Migration + Online Favorites Stabilization ✅
+
+- Migrated CAPTCHA flow from Flutter embedded WebView to native plugin path:
+  - Added `showCaptchaWebView` to `packages/kuron_native/lib/kuron_native_platform_interface.dart`.
+  - Added method-channel wiring in `packages/kuron_native/lib/kuron_native_method_channel.dart`.
+  - Added public wrapper in `packages/kuron_native/lib/kuron_native.dart`.
+- Implemented native Android CAPTCHA activity:
+  - Added `packages/kuron_native/android/src/main/kotlin/id/nhasix/kuron_native/kuron_native/CaptchaWebViewActivity.kt`.
+  - Added plugin handler + activity result mapping in `KuronNativePlugin.kt`.
+  - Registered activity in `packages/kuron_native/android/src/main/AndroidManifest.xml`.
+- Migrated app-side page:
+  - `lib/presentation/pages/auth/captcha_solver_page.dart` now calls `KuronNative.instance.showCaptchaWebView(...)`.
+- Fixed native activity issues found on device:
+  - Corrected malformed HTML injection in Kotlin raw strings (removed escaped quotes causing broken resource URLs like `%22https:/...`).
+  - Added system bar inset handling so toolbar back/reload no longer overlaps status bar/notch.
+- Hardened online favorites UX:
+  - Added retry with backoff for transient online-favorites network failures.
+  - Mapped errors to localized, user-friendly messages to avoid raw DioException output.
+  - Added online favorites search and improved thumbnail/asset host resolution from source config.
 
 ---
 
