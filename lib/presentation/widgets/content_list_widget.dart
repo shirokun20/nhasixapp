@@ -339,6 +339,8 @@ class _ContentListWidgetState extends State<ContentListWidget> {
             child: FeaturedContentCard(
               content: state.contents.first,
               onTap: () => widget.onContentTap?.call(state.contents.first),
+              isBlurred:
+                  widget.shouldBlurContent?.call(state.contents.first) ?? false,
             ),
           ),
 

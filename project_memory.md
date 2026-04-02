@@ -180,6 +180,7 @@ Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 6
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-04-02 | Codex | QoL blacklist offline+online completion | ✅ Done | Finished Sub-Plan P5 for `qol_enhancements`: persisted local `blacklistedTags` through `PreferencesService` + `SettingsCubit`, added a modern blacklist manager in Settings, extended config-driven auth with nhentai `/api/v2/blacklist/ids`, and merged cached online IDs with local rules through `TagBlacklistUtils` / `TagBlacklistService`. Applied blurred blacklist cover overlays across main cards, generic content cards, tag-browse results, and offline library cards. |
 | 2026-04-02 | Copilot | Native CAPTCHA migration + favorites online hardening | ✅ Done | Migrated CAPTCHA solving flow from embedded `webview_flutter` page to `kuron_native` (`showCaptchaWebView`) with a dedicated Android `CaptchaWebViewActivity`, token/error JS bridge, and status-bar-safe toolbar insets. In parallel, stabilized online favorites with auto-retry for transient network failures and localized friendly error messaging to avoid raw DioException output in UI. |
 | 2026-04-02 | Copilot | QoL Enhancements moved to onprogress | ✅ Done | Moved Issue #32 analysis into `projects/onprogress-plan/qol_enhancements/`, updated the plan header/footer to execution, and created `progress.md` so the lifecycle now matches the onprogress workflow. |
 | 2026-04-02 | Copilot | Workflow phase rule correction | ✅ Done | Reaffirmed the lifecycle rule: analysis stays read-only and tasks only move into `projects/onprogress-plan/` after explicit user approval. Added matching session and repo memory notes so future turns keep the same boundary. |
@@ -346,6 +347,21 @@ Siap dieksekusi ke `onprogress-plan/` pada sesi berikutnya.
   - Added retry with backoff for transient online-favorites network failures.
   - Mapped errors to localized, user-friendly messages to avoid raw DioException output.
   - Added online favorites search and improved thumbnail/asset host resolution from source config.
+
+### Tag Blacklist (Offline + Online) Completion ✅
+
+- Finished P5 delivery for QoL Enhancements:
+  - Added persistent local `blacklistedTags` support in `PreferencesService` and `SettingsCubit`.
+  - Added `TagBlacklistUtils` for normalized tag/name/id matching and multi-entry parsing.
+  - Added `TagBlacklistService` to cache/sync online blacklist IDs from config-driven auth sources.
+- Extended generic nhentai auth config/runtime:
+  - Added blacklist endpoints + feature flag to `assets/configs/nhentai-config.json`.
+  - Added config-driven blacklist fetch support in `ConfigDrivenApiAuthClient` and `SourceAuthService`.
+- Upgraded UX:
+  - Added modern blacklist manager UI to `SettingsScreen` with chip previews, sheet editor, and login shortcut.
+  - Applied blurred/dimmed blacklist overlays on main cards, generic content cards, tag-browse lists, and offline library items.
+- Added regression coverage:
+  - Added `test/unit/core/utils/tag_blacklist_utils_test.dart` for parsing and matching rules.
 
 ---
 

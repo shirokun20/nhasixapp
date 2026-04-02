@@ -1,4 +1,5 @@
 import '../../../domain/entities/entities.dart';
+import '../../../core/utils/tag_blacklist_utils.dart';
 import '../../../services/preferences_service.dart';
 import '../../../services/app_disguise_service.dart';
 import '../../../l10n/app_localizations.dart';
@@ -104,6 +105,13 @@ class SettingsCubit extends BaseCubit<SettingsState> {
   Future<void> updateBlurThumbnails(bool blurThumbnails) async {
     await _updateSetting(
         (prefs) => prefs.copyWith(blurThumbnails: blurThumbnails));
+  }
+
+  Future<void> updateBlacklistedTags(List<String> blacklistedTags) async {
+    final sanitized = TagBlacklistUtils.sanitizeEntries(blacklistedTags);
+    await _updateSetting(
+      (prefs) => prefs.copyWith(blacklistedTags: sanitized),
+    );
   }
 
   /// Update pagination setting

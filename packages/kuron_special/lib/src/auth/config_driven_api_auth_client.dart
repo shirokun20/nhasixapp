@@ -413,6 +413,23 @@ class ConfigDrivenApiAuthClient {
     }
   }
 
+  Future<List<String>> getBlacklistIds() async {
+    final endpoint = _config.blacklistIdsEndpoint ?? _config.blacklistEndpoint;
+    if (endpoint == null || endpoint.isEmpty) {
+      throw StateError('blacklist ids endpoint is not configured');
+    }
+
+    try {
+      final response = await _dio.get<dynamic>(_resolveUrl(endpoint));
+      return _parseBlacklistIds(response.data);
+    } on DioException catch (e) {
+      if (_isUnauthorized(e)) {
+        await _clearSessionLocally();
+      }
+      rethrow;
+    }
+  }
+
   ApiFavoriteStatus _parseFavoriteStatus(dynamic raw) {
     final data = _toJsonMap(raw);
     final favorited = data['favorited'] == true;
@@ -421,6 +438,42 @@ class ConfigDrivenApiAuthClient {
       favorited: favorited,
       numFavorites: numFavorites,
     );
+  }
+
+  List<String> _parseBlacklistIds(dynamic raw) {
+    final values = <dynamic>[];
+
+    if (raw is List) {
+      values.addAll(raw);
+    } else if (raw is Map) {
+      final data = Map<String, dynamic>.from(raw);
+      for (final candidate in [
+        data['ids'],
+        data['blacklist'],
+        data['result'],
+        data['data']
+      ]) {
+        if (candidate is List) {
+          values.addAll(candidate);
+          break;
+        }
+      }
+    }
+
+    return values
+        .map((value) {
+          if (value is Map) {
+            return value['id'] ??
+                value['tag_id'] ??
+                value['tagId'] ??
+                value['value'];
+          }
+          return value;
+        })
+        .where((value) => value != null)
+        .map((value) => value.toString().trim())
+        .where((value) => value.isNotEmpty)
+        .toList(growable: false);
   }
 
   Future<Map<String, dynamic>> getUserProfile() async {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -6,6 +7,7 @@ import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_generic/kuron_generic.dart';
 import 'package:kuron_native/kuron_native.dart';
@@ -17,6 +19,9 @@ import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import '../../../domain/entities/user_preferences.dart';
+import '../../../core/routing/app_route.dart';
+import '../../../core/utils/tag_blacklist_utils.dart';
+import '../../../services/tag_blacklist_service.dart';
 
 import '../../cubits/settings/settings_cubit.dart';
 import '../../cubits/source/source_cubit.dart';
@@ -34,6 +39,15 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  late final TagBlacklistService _tagBlacklistService;
+
+  @override
+  void initState() {
+    super.initState();
+    _tagBlacklistService = getIt<TagBlacklistService>();
+    unawaited(_tagBlacklistService.syncOnlineEntries('nhentai'));
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -157,6 +171,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
               theme: theme,
             ),
           ], theme),
+
+          const SizedBox(height: 24),
+
+          _buildSectionHeader(
+            Icons.visibility_off_outlined,
+            'CONTENT FILTERS',
+            theme,
+          ),
+          const SizedBox(height: 12),
+          _buildInfoBanner(
+            'Blur covers that match your local tag rules, even when browsing offline. If you are logged into nhentai, online blacklist IDs are merged automatically.',
+            Icons.shield_moon_outlined,
+            theme,
+          ),
+          const SizedBox(height: 12),
+          _buildTagBlacklistSection(context, prefs, theme),
 
           const SizedBox(height: 24),
 
@@ -534,6 +564,556 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTagBlacklistSection(
+    BuildContext context,
+    UserPreferences prefs,
+    ThemeData theme,
+  ) {
+    return AnimatedBuilder(
+      animation: _tagBlacklistService,
+      builder: (context, _) {
+        final onlineEntries = _tagBlacklistService.getCachedOnlineEntries(
+          'nhentai',
+        );
+        final mergedEntries = _tagBlacklistService.getMergedEntries(
+          sourceId: 'nhentai',
+          localEntries: prefs.blacklistedTags,
+        );
+        final supportsOnline = _tagBlacklistService.supportsOnlineSync(
+          'nhentai',
+        );
+        final hasSession = _tagBlacklistService.hasActiveSession('nhentai');
+        final isSyncing = _tagBlacklistService.isSyncing('nhentai');
+
+        return _buildSettingsCard([
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        Icons.visibility_off_rounded,
+                        size: 18,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Tag blacklist',
+                            style: TextStyleConst.bodyLarge.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Local entries work offline. Logged-in nhentai accounts also pull online blacklist IDs.',
+                            style: TextStyleConst.bodySmall.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    FilledButton.tonalIcon(
+                      onPressed: () =>
+                          _showTagBlacklistSheet(context, prefs, theme),
+                      icon: const Icon(Icons.tune_rounded, size: 18),
+                      label: const Text('Manage'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildBlacklistStatChip(
+                      theme: theme,
+                      label: 'Local',
+                      value: '${prefs.blacklistedTags.length}',
+                      icon: Icons.sd_storage_rounded,
+                    ),
+                    _buildBlacklistStatChip(
+                      theme: theme,
+                      label: 'Online',
+                      value: supportsOnline
+                          ? (hasSession ? '${onlineEntries.length}' : 'Login')
+                          : 'N/A',
+                      icon: Icons.cloud_sync_rounded,
+                      isLoading: isSyncing,
+                    ),
+                    _buildBlacklistStatChip(
+                      theme: theme,
+                      label: 'Active',
+                      value: '${mergedEntries.length}',
+                      icon: Icons.layers_rounded,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                if (mergedEntries.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Text(
+                      'No blacklist rules yet. Add tag names like romance, artist:foo, or numeric tag IDs.',
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                else
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: mergedEntries
+                        .take(12)
+                        .map((entry) => _buildBlacklistEntryChip(theme, entry))
+                        .toList(),
+                  ),
+              ],
+            ),
+          ),
+        ], theme);
+      },
+    );
+  }
+
+  Widget _buildBlacklistStatChip({
+    required ThemeData theme,
+    required String label,
+    required String value,
+    required IconData icon,
+    bool isLoading = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isLoading)
+            SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: theme.colorScheme.primary,
+              ),
+            )
+          else
+            Icon(icon, size: 16, color: theme.colorScheme.primary),
+          const SizedBox(width: 8),
+          Text(
+            '$label • $value',
+            style: TextStyleConst.labelMedium.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBlacklistEntryChip(ThemeData theme, String entry) {
+    final chipLabel = int.tryParse(entry) != null ? '#$entry' : entry;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        chipLabel,
+        style: TextStyleConst.labelMedium.copyWith(
+          color: theme.colorScheme.onPrimaryContainer,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showTagBlacklistSheet(
+    BuildContext context,
+    UserPreferences prefs,
+    ThemeData theme,
+  ) async {
+    final controller = TextEditingController();
+    var localEntries = List<String>.from(prefs.blacklistedTags);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            final mediaQuery = MediaQuery.of(sheetContext);
+            final onlineEntries = _tagBlacklistService.getCachedOnlineEntries(
+              'nhentai',
+            );
+            final mergedEntries = _tagBlacklistService.getMergedEntries(
+              sourceId: 'nhentai',
+              localEntries: localEntries,
+            );
+            final hasSession = _tagBlacklistService.hasActiveSession('nhentai');
+            final isSyncing = _tagBlacklistService.isSyncing('nhentai');
+
+            Future<void> addEntries() async {
+              final parsedEntries =
+                  TagBlacklistUtils.parseManualEntries(controller.text);
+              if (parsedEntries.isEmpty) {
+                return;
+              }
+
+              localEntries = TagBlacklistUtils.sanitizeEntries([
+                ...localEntries,
+                ...parsedEntries,
+              ]);
+              await context
+                  .read<SettingsCubit>()
+                  .updateBlacklistedTags(localEntries);
+              controller.clear();
+              if (sheetContext.mounted) {
+                setSheetState(() {});
+              }
+            }
+
+            Future<void> removeEntry(String entry) async {
+              localEntries = localEntries
+                  .where((current) => current != entry)
+                  .toList(growable: false);
+              await context
+                  .read<SettingsCubit>()
+                  .updateBlacklistedTags(localEntries);
+              if (sheetContext.mounted) {
+                setSheetState(() {});
+              }
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(28),
+                  ),
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 42,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.outline
+                                  .withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primary
+                                    .withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Icon(
+                                Icons.visibility_off_rounded,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Manage tag blacklist',
+                                    style: TextStyleConst.headingSmall.copyWith(
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Add tag names, typed rules like artist:foo, or numeric tag IDs. Separate multiple values with commas or new lines.',
+                                    style: TextStyleConst.bodySmall.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+                        TextField(
+                          controller: controller,
+                          minLines: 1,
+                          maxLines: 3,
+                          decoration: InputDecoration(
+                            hintText: 'romance, artist:example, 12345',
+                            prefixIcon: const Icon(Icons.tag_rounded),
+                            filled: true,
+                            fillColor:
+                                theme.colorScheme.surfaceContainerHighest,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(18),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.outline
+                                    .withValues(alpha: 0.2),
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(18),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.outline
+                                    .withValues(alpha: 0.2),
+                              ),
+                            ),
+                          ),
+                          onSubmitted: (_) => addEntries(),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: isSyncing
+                                    ? null
+                                    : () async {
+                                        await _tagBlacklistService
+                                            .syncOnlineEntries(
+                                          'nhentai',
+                                          forceRefresh: true,
+                                        );
+                                        if (sheetContext.mounted) {
+                                          setSheetState(() {});
+                                        }
+                                      },
+                                icon: isSyncing
+                                    ? SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                      )
+                                    : const Icon(Icons.sync_rounded, size: 18),
+                                label: const Text('Refresh online'),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: addEntries,
+                                icon: const Icon(Icons.add_rounded, size: 18),
+                                label: const Text('Add rules'),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+                        Text(
+                          'Local rules (${localEntries.length})',
+                          style: TextStyleConst.bodyLarge.copyWith(
+                            color: theme.colorScheme.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        if (localEntries.isEmpty)
+                          _buildSheetHint(
+                            theme,
+                            'Nothing saved locally yet. Local rules are always applied, including offline results.',
+                          )
+                        else
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: localEntries
+                                .map(
+                                  (entry) => InputChip(
+                                    label: Text(
+                                      int.tryParse(entry) != null
+                                          ? '#$entry'
+                                          : entry,
+                                    ),
+                                    onDeleted: () => removeEntry(entry),
+                                    deleteIconColor:
+                                        theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                        const SizedBox(height: 20),
+                        Text(
+                          hasSession
+                              ? 'Online nhentai sync (${onlineEntries.length})'
+                              : 'Online nhentai sync',
+                          style: TextStyleConst.bodyLarge.copyWith(
+                            color: theme.colorScheme.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        if (!hasSession)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerHighest
+                                  .withValues(alpha: 0.7),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: theme.colorScheme.outline
+                                    .withValues(alpha: 0.2),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Login required to merge your nhentai account blacklist IDs.',
+                                  style: TextStyleConst.bodySmall.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                OutlinedButton.icon(
+                                  onPressed: () {
+                                    Navigator.of(sheetContext).pop();
+                                    context.push(
+                                      '${AppRoute.sourceLogin}?source=nhentai',
+                                    );
+                                  },
+                                  icon: const Icon(Icons.login_rounded),
+                                  label: const Text('Open nhentai login'),
+                                ),
+                              ],
+                            ),
+                          )
+                        else if (onlineEntries.isEmpty)
+                          _buildSheetHint(
+                            theme,
+                            'No online blacklist IDs returned yet. Tap refresh if you recently changed them on nhentai.',
+                          )
+                        else
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: onlineEntries
+                                .map((entry) => _buildBlacklistEntryChip(
+                                      theme,
+                                      entry,
+                                    ))
+                                .toList(),
+                          ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Active coverage (${mergedEntries.length})',
+                          style: TextStyleConst.bodyLarge.copyWith(
+                            color: theme.colorScheme.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        if (mergedEntries.isEmpty)
+                          _buildSheetHint(
+                            theme,
+                            'Blacklisted galleries will be blurred here once you add local rules or sync online IDs.',
+                          )
+                        else
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: mergedEntries
+                                .take(24)
+                                .map((entry) =>
+                                    _buildBlacklistEntryChip(theme, entry))
+                                .toList(),
+                          ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            onPressed: () => Navigator.of(sheetContext).pop(),
+                            child: const Text('Done'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildSheetHint(ThemeData theme, String text) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Text(
+        text,
+        style: TextStyleConst.bodySmall.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
       ),
     );
   }
